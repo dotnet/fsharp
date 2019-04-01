@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../artifacts/bin/fcs/net45"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Notes on the FSharpChecker operations queue
 =================================================

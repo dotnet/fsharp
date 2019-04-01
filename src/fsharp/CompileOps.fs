@@ -45,6 +45,8 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 
+open FSharp.Compiler.DotNetFrameworkDependencies
+
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
@@ -1778,221 +1780,7 @@ let OutputDiagnosticContext prefix fileLineFn os err =
             Printf.bprintf os "%s%s\n" prefix line
             Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
 
-//----------------------------------------------------------------------------
-
-let GetFSharpCoreLibraryName () = "FSharp.Core"
-
-// If necessary assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
-let GetDefaultFSharpCoreReference () = typeof<list<int>>.Assembly.Location
-
-type private TypeInThisAssembly = class end
-
-// Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
-// or the System.ValueTuple.dll that sits alongside the compiler. (Note we always ship one with the compiler)
-let GetDefaultSystemValueTupleReference () =
-    try
-        let asm = typeof<System.ValueTuple<int, int>>.Assembly 
-        if asm.FullName.StartsWithOrdinal("System.ValueTuple") then  
-            Some asm.Location
-        else
-            let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
-            let valueTuplePath = Path.Combine(location, "System.ValueTuple.dll")
-            if File.Exists(valueTuplePath) then
-                Some valueTuplePath
-            else
-                None
-    with _ -> None
-
-let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
-
-// This list is the default set of references for "non-project" files. 
-//
-// These DLLs are
-//    (a) included in the environment used for all .fsx files (see service.fs)
-//    (b) included in environment for files 'orphaned' from a project context
-//            -- for orphaned files (files in VS without a project context)
-//            -- for files given on a command line without --noframework set
-let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) = 
-    [ if assumeDotNetFramework then 
-          yield "System"
-          yield "System.Xml" 
-          yield "System.Runtime.Remoting"
-          yield "System.Runtime.Serialization.Formatters.Soap"
-          yield "System.Data"
-          yield "System.Drawing"
-          yield "System.Core"
-
-          // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll. These are needed
-          // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
-          // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
-          yield "System.Runtime" // lots of types
-          yield "System.Linq" // System.Linq.Expressions.Expression<T> 
-          yield "System.Reflection" // System.Reflection.ParameterInfo
-          yield "System.Linq.Expressions" // System.Linq.IQueryable<T>
-          yield "System.Threading.Tasks" // valuetype [System.Threading.Tasks]System.Threading.CancellationToken
-          yield "System.IO"  //  System.IO.TextWriter
-          //yield "System.Console"  //  System.Console.Out etc.
-          yield "System.Net.Requests"  //  System.Net.WebResponse etc.
-          yield "System.Collections" // System.Collections.Generic.List<T>
-          yield "System.Runtime.Numerics" // BigInteger
-          yield "System.Threading"  // OperationCanceledException
-
-          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources 
-          match GetDefaultSystemValueTupleReference() with  
-          | None -> () 
-          | Some v -> yield v 
-
-          yield "System.Web"
-          yield "System.Web.Services"
-          yield "System.Windows.Forms"
-          yield "System.Numerics" 
-     else
-          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll")    // mscorlib
-          yield typeof<System.Console>.Assembly.Location                                                        // System.Console
-          yield typeof<System.Collections.BitArray>.Assembly.Location                                           // System.Collections
-          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel
-          yield typeof<System.IO.File>.Assembly.Location                                                        // System.IO.FileSystem
-          yield typeof<System.IO.TextWriter>.Assembly.Location                                                  // System.IO
-          yield typeof<System.Linq.Enumerable>.Assembly.Location                                                // System.Linq
-          yield typeof<System.Xml.XmlNodeType>.Assembly.Location                                                // System.Xml
-          yield typeof<System.Xml.Linq.XDocument>.Assembly.Location                                             // System.Xml.Linq
-          yield typeof<System.Net.WebRequest>.Assembly.Location                                                 // System.Net.Requests
-          yield typeof<System.Numerics.BigInteger>.Assembly.Location                                            // System.Runtime.Numerics
-          yield typeof<System.Net.Security.AuthenticatedStream>.Assembly.Location                               // System.Net.Security
-          yield typeof<System.Security.Principal.GenericIdentity>.Assembly.Location                             // System.Security.Claims
-          yield typeof<System.Text.RegularExpressions.Regex>.Assembly.Location                                  // System.Text.RegularExpressions.Regex
-          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location                                 // System.Threading.Tasks
-          yield typeof<System.Threading.Thread>.Assembly.Location                                               // System.Threading
-          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location                                // FSharp.Core
-    ]
-
-
-// A set of assemblies to always consider to be system assemblies. A common set of these can be used a shared 
-// resources between projects in the compiler services. Also all assembles where well-known system types exist
-// referenced from TcGlobals must be listed here.
-let SystemAssemblies () = 
-   HashSet
-    [ yield "mscorlib"
-      yield "netstandard"
-      yield "System.Runtime"
-      yield GetFSharpCoreLibraryName() 
-      yield "System"
-      yield "System.Xml" 
-      yield "System.Runtime.Remoting"
-      yield "System.Runtime.Serialization.Formatters.Soap"
-      yield "System.Data"
-      yield "System.Deployment"
-      yield "System.Design"
-      yield "System.Messaging"
-      yield "System.Drawing"
-      yield "System.Net"
-      yield "System.Web"
-      yield "System.Web.Services"
-      yield "System.Windows.Forms"
-      yield "System.Core"
-      yield "System.Runtime"
-      yield "System.Observable"
-      yield "System.Numerics"
-      yield "System.ValueTuple"
-
-      // Additions for coreclr and portable profiles
-      yield "System.Collections"
-      yield "System.Collections.Concurrent"
-      yield "System.Console"
-      yield "System.Diagnostics.Debug"
-      yield "System.Diagnostics.Tools"
-      yield "System.Globalization"
-      yield "System.IO"
-      yield "System.Linq"
-      yield "System.Linq.Expressions"
-      yield "System.Linq.Queryable"
-      yield "System.Net.Requests"
-      yield "System.Reflection"
-      yield "System.Reflection.Emit"
-      yield "System.Reflection.Emit.ILGeneration"
-      yield "System.Reflection.Extensions"
-      yield "System.Resources.ResourceManager"
-      yield "System.Runtime.Extensions"
-      yield "System.Runtime.InteropServices"
-      yield "System.Runtime.InteropServices.PInvoke"
-      yield "System.Runtime.Numerics"
-      yield "System.Text.Encoding"
-      yield "System.Text.Encoding.Extensions"
-      yield "System.Text.RegularExpressions"
-      yield "System.Threading"
-      yield "System.Threading.Tasks"
-      yield "System.Threading.Tasks.Parallel"
-      yield "System.Threading.Thread"
-      yield "System.Threading.ThreadPool"
-      yield "System.Threading.Timer"
-
-      yield "FSharp.Compiler.Interactive.Settings"
-      yield "Microsoft.Win32.Registry"
-      yield "System.Diagnostics.Tracing"
-      yield "System.Globalization.Calendars"
-      yield "System.Reflection.Primitives"
-      yield "System.Runtime.Handles"
-      yield "Microsoft.Win32.Primitives"
-      yield "System.IO.FileSystem"
-      yield "System.Net.Primitives"
-      yield "System.Net.Sockets"
-      yield "System.Private.Uri"
-      yield "System.AppContext"
-      yield "System.Buffers"
-      yield "System.Collections.Immutable"
-      yield "System.Diagnostics.DiagnosticSource"
-      yield "System.Diagnostics.Process"
-      yield "System.Diagnostics.TraceSource"
-      yield "System.Globalization.Extensions"
-      yield "System.IO.Compression"
-      yield "System.IO.Compression.ZipFile"
-      yield "System.IO.FileSystem.Primitives"
-      yield "System.Net.Http"
-      yield "System.Net.NameResolution"
-      yield "System.Net.WebHeaderCollection"
-      yield "System.ObjectModel"
-      yield "System.Reflection.Emit.Lightweight"
-      yield "System.Reflection.Metadata"
-      yield "System.Reflection.TypeExtensions"
-      yield "System.Runtime.InteropServices.RuntimeInformation"
-      yield "System.Runtime.Loader"
-      yield "System.Security.Claims"
-      yield "System.Security.Cryptography.Algorithms"
-      yield "System.Security.Cryptography.Cng"
-      yield "System.Security.Cryptography.Csp"
-      yield "System.Security.Cryptography.Encoding"
-      yield "System.Security.Cryptography.OpenSsl"
-      yield "System.Security.Cryptography.Primitives"
-      yield "System.Security.Cryptography.X509Certificates"
-      yield "System.Security.Principal"
-      yield "System.Security.Principal.Windows"
-      yield "System.Threading.Overlapped"
-      yield "System.Threading.Tasks.Extensions"
-      yield "System.Xml.ReaderWriter"
-      yield "System.Xml.XDocument"
-
-      ] 
-
-// The set of references entered into the TcConfigBuilder for scripts prior to computing
-// the load closure. 
-//
-// REVIEW: it isn't clear if there is any negative effect
-// of leaving an assembly off this list.
-let BasicReferencesForScriptLoadClosure(useFsiAuxLib, assumeDotNetFramework) = 
-    [
-     if assumeDotNetFramework then 
-         
-#if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
-         yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll"); // mscorlib
-#else
-         yield "mscorlib"
-#endif
-         yield GetDefaultFSharpCoreReference() ] @ // Need to resolve these explicitly so they will be found in the reference assemblies directory which is where the .xml files are.
-    DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) @ 
-    [ if useFsiAuxLib then yield GetFsiLibraryName () ]
-
 let (++) x s = x @ [s]
-
 
 
 //----------------------------------------------------------------------------
@@ -2357,11 +2145,7 @@ type TcConfigBuilder =
 
     static member Initial =
         {
-#if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
-          primaryAssembly = PrimaryAssembly.System_Runtime // defaut value, can be overridden using the command line switch
-#else
           primaryAssembly = PrimaryAssembly.Mscorlib // defaut value, can be overridden using the command line switch
-#endif          
           light = None
           noFeedback = false
           stackReserveSize = None
@@ -2771,11 +2555,11 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     // Look for an explicit reference to mscorlib and use that to compute clrRoot and targetFrameworkVersion
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.primaryAssembly.Name)
     let fslibReference, fslibExplicitFilenameOpt = 
-        let (_, fileNameOpt) as res = computeKnownDllReference(GetFSharpCoreLibraryName())
+        let (_, fileNameOpt) as res = computeKnownDllReference(getFSharpCoreLibraryName)
         match fileNameOpt with
         | None -> 
             // if FSharp.Core was not provided explicitly - use version that was referenced by compiler
-            AssemblyReference(range0, GetDefaultFSharpCoreReference(), None), None
+            AssemblyReference(range0, getDefaultFSharpCoreReference, None), None
         | _ -> res
 
     // If either mscorlib.dll/System.Runtime.dll/netstandard.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
@@ -2813,7 +2597,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
                 None, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
 
-    let systemAssemblies = SystemAssemblies ()
+    let systemAssemblies = systemAssemblies
 
     // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
     // FUTURE: remove this, we only read the binary for the exception it raises
@@ -3719,11 +3503,11 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
             let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
             if tcConfig.framework then 
-                for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
+                for s in defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
             if tcConfig.useFsiAuxLib then
-                let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName() + ".dll")
+                let name = Path.Combine(tcConfig.fsharpBinariesDir, getFsiLibraryName + ".dll")
                 yield AssemblyReference(rangeStartup, name, None)
 
             yield! tcConfig.referencedDLLs
@@ -3817,7 +3601,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
+    let rname = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
     PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) pickleCcuInfo 
         { mspec=mspec 
           compileTimeWorkingDir=tcConfig.implicitIncludeDir
@@ -3829,7 +3613,7 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) =
 let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
+    let rname = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
     PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
 //----------------------------------------------------------------------------
@@ -3942,7 +3726,13 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
         if disposed then assert false
 
     static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) =
-        match (Some ccu.Contents, nsname) ||> List.fold (fun entityOpt n -> match entityOpt with None -> None | Some entity -> entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind n) with
+        let matchNameSpace (entityOpt: Entity option) n =
+            match entityOpt with
+            | None -> None
+            | Some entity ->
+                entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind n
+
+        match (Some ccu.Contents, nsname) ||> List.fold(matchNameSpace) with
         | Some ns ->
                 match Map.tryFind tname ns.ModuleOrNamespaceType.TypesByMangledName with
                 | Some _ -> true
@@ -4778,7 +4568,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
         let fslibCcu = 
             if tcConfig.compilingFslib then 
                 // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
-                CcuThunk.CreateDelayed(GetFSharpCoreLibraryName())
+                CcuThunk.CreateDelayed(getFSharpCoreLibraryName)
             else
                 let fslibCcuInfo =
                     let coreLibraryReference = tcConfig.CoreLibraryDllReference()
@@ -4790,7 +4580,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                             // Are we using a "non-canonical" FSharp.Core?
                             match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
                             | Some resolution -> Some resolution
-                            | _ -> tcResolutions.TryFindByOriginalReferenceText (GetFSharpCoreLibraryName())  // was the ".dll" elided?
+                            | _ -> tcResolutions.TryFindByOriginalReferenceText (getFSharpCoreLibraryName)  // was the ".dll" elided?
                     
                     match resolvedAssemblyRef with 
                     | Some coreLibraryResolution -> 
@@ -5125,7 +4915,7 @@ module private ScriptPreprocessClosure =
         applyCommandLineArgs tcConfigB
 
         match basicReferences with 
-        | None -> BasicReferencesForScriptLoadClosure(useFsiAuxLib, assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
+        | None -> (basicReferencesForScriptLoadClosure useFsiAuxLib assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
         | Some rs -> for m, r in rs do tcConfigB.AddReferencedAssemblyByPath(m, r)
 
         tcConfigB.resolutionEnvironment <-
@@ -5135,7 +4925,7 @@ module private ScriptPreprocessClosure =
             | CodeContext.CompilationAndEvaluation -> ResolutionEnvironment.CompilationAndEvaluation
         tcConfigB.framework <- false 
         tcConfigB.useSimpleResolution <- useSimpleResolution
-        // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should
+        // Indicates that there are some references not in basicReferencesForScriptLoadClosure which should
         // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
         TcConfig.Create(tcConfigB, validate=true)
@@ -5670,3 +5460,7 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+
+// Existing public APIs delegate to newer implementations
+let GetFSharpCoreLibraryName () = getFSharpCoreLibraryName
+let DefaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework = defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework
