@@ -925,7 +925,7 @@ let p_ILPublicKey x st =
     | PublicKey b      -> p_byte 0 st; p_bytes b st
     | PublicKeyToken b -> p_byte 1 st; p_bytes b st
 
-let p_ILVersion x st = p_tup4 p_uint16 p_uint16 p_uint16 p_uint16 x st
+let p_ILVersion (x: ILVersionInfo) st = p_tup4 p_uint16 p_uint16 p_uint16 p_uint16 (x.Major, x.Minor, x.Build, x.Revision) st
 
 let p_ILModuleRef (x: ILModuleRef) st =
     p_tup3 p_string p_bool (p_option p_bytes) (x.Name, x.HasMetadata, x.Hash) st
@@ -948,7 +948,9 @@ let u_ILPublicKey st =
     | 1 -> u_bytes st |> PublicKeyToken
     | _ -> ufailwith st "u_ILPublicKey"
 
-let u_ILVersion st = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
+let u_ILVersion st = 
+    let (major, minor, build, revision) = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
+    ILVersionInfo(major, minor, build, revision)
 
 let u_ILModuleRef st =
     let (a, b, c) = u_tup3 u_string u_bool (u_option u_bytes) st
