@@ -709,10 +709,10 @@ let rec GetIdxForTypeDef cenv key  =
 
 let rec GetAssemblyRefAsRow cenv (aref: ILAssemblyRef) =
     AssemblyRefRow 
-        ((match aref.Version with None -> 0us | Some (x, _, _, _) -> x), 
-         (match aref.Version with None -> 0us | Some (_, y, _, _) -> y), 
-         (match aref.Version with None -> 0us | Some (_, _, z, _) -> z), 
-         (match aref.Version with None -> 0us | Some (_, _, _, w) -> w), 
+        ((match aref.Version with None -> 0us | Some (version) -> version.Major), 
+         (match aref.Version with None -> 0us | Some (version) -> version.Minor), 
+         (match aref.Version with None -> 0us | Some (version) -> version.Build), 
+         (match aref.Version with None -> 0us | Some (version) -> version.Revision), 
          ((match aref.PublicKey with Some (PublicKey _) -> 0x0001 | _ -> 0x0000)
           ||| (if aref.Retargetable then 0x0100 else 0x0000)), 
          BlobIndex (match aref.PublicKey with 
@@ -2822,10 +2822,10 @@ and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) =
 and GetManifsetAsAssemblyRow cenv m = 
     UnsharedRow 
         [|ULong m.AuxModuleHashAlgorithm
-          UShort (match m.Version with None -> 0us | Some (x, _, _, _) -> x)
-          UShort (match m.Version with None -> 0us | Some (_, y, _, _) -> y)
-          UShort (match m.Version with None -> 0us | Some (_, _, z, _) -> z)
-          UShort (match m.Version with None -> 0us | Some (_, _, _, w) -> w)
+          UShort (match m.Version with None -> 0us | Some (version) -> version.Major)
+          UShort (match m.Version with None -> 0us | Some (version) -> version.Minor)
+          UShort (match m.Version with None -> 0us | Some (version) -> version.Build)
+          UShort (match m.Version with None -> 0us | Some (version) -> version.Revision)
           ULong 
             ( (match m.AssemblyLongevity with 
               | ILAssemblyLongevity.Unspecified ->       0x0000
@@ -3091,9 +3091,8 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let (mdtableVersionMajor, mdtableVersionMinor) = metadataSchemaVersionSupportedByCLRVersion desiredMetadataVersion
 
-    let version = 
-      let (a, b, c, _) = desiredMetadataVersion
-      System.Text.Encoding.UTF8.GetBytes (sprintf "v%d.%d.%d" a b c)
+    let version =
+      System.Text.Encoding.UTF8.GetBytes (sprintf "v%d.%d.%d" desiredMetadataVersion.Major desiredMetadataVersion.Minor desiredMetadataVersion.Build)
 
 
     let paddedVersionLength = align 0x4 (Array.length version)
@@ -3634,7 +3633,7 @@ let writeBinaryAndReportMappings (outfile,
                 | ILScopeRef.Module(_) -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Module"
                 | ILScopeRef.Assembly(aref) ->
                     match aref.Version with
-                    | Some (2us, _, _, _) -> parseILVersion "2.0.50727.0"
+                    | Some (version) when version.Major = 2us -> parseILVersion "2.0.50727.0"
                     | Some v -> v
                     | None -> failwith "Expected msorlib to have a version number"
 

@@ -7004,13 +7004,13 @@ let tnames_SignatureDataVersionAttr = splitILTypeName tname_SignatureDataVersion
 
 let tref_SignatureDataVersionAttr () = mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), tname_SignatureDataVersionAttr)
 
-let mkSignatureDataVersionAttr (g: TcGlobals) ((v1, v2, v3, _) : ILVersionInfo)  = 
+let mkSignatureDataVersionAttr (g: TcGlobals) (version: ILVersionInfo)  = 
     mkILCustomAttribute g.ilg
         (tref_SignatureDataVersionAttr(), 
          [g.ilg.typ_Int32;g.ilg.typ_Int32;g.ilg.typ_Int32], 
-         [ILAttribElem.Int32 (int32 v1)
-          ILAttribElem.Int32 (int32 v2) 
-          ILAttribElem.Int32 (int32 v3)], [])
+         [ILAttribElem.Int32 (int32 version.Major)
+          ILAttribElem.Int32 (int32 version.Minor) 
+          ILAttribElem.Int32 (int32 version.Build)], [])
 
 let tname_AutoOpenAttr = FSharpLib.Core + ".AutoOpenAttribute"
 
@@ -7040,11 +7040,11 @@ let TryFindInternalsVisibleToAttr ilg cattr =
     else
         None
 
-let IsMatchingSignatureDataVersionAttr ilg ((v1, v2, v3, _) : ILVersionInfo)  cattr = 
+let IsMatchingSignatureDataVersionAttr ilg (version: ILVersionInfo) cattr = 
     IsSignatureDataVersionAttr cattr &&
     match decodeILAttribData ilg cattr with 
     |  [ILAttribElem.Int32 u1; ILAttribElem.Int32 u2;ILAttribElem.Int32 u3 ], _ -> 
-        (v1 = uint16 u1) && (v2 = uint16 u2) && (v3 = uint16 u3)
+        (version.Major = uint16 u1) && (version.Minor = uint16 u2) && (version.Build = uint16 u3)
     | _ -> 
         warning(Failure(FSComp.SR.tastUnexpectedDecodeOfInterfaceDataVersionAttribute()))
         false

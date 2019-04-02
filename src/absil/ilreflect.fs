@@ -310,8 +310,8 @@ let convAssemblyRef (aref: ILAssemblyRef) =
      | None -> ()
      | Some (PublicKey      bytes) -> asmName.SetPublicKey(bytes)
      | Some (PublicKeyToken bytes) -> asmName.SetPublicKeyToken(bytes))
-    let setVersion (major, minor, build, rev) = 
-       asmName.Version <- System.Version (int32 major, int32 minor, int32 build, int32 rev)
+    let setVersion (version: ILVersionInfo) = 
+       asmName.Version <- System.Version (int32 version.Major, int32 version.Minor, int32 version.Build, int32 version.Revision)
     Option.iter setVersion aref.Version
     //  asmName.ProcessorArchitecture <- System.Reflection.ProcessorArchitecture.MSIL
 #if !FX_RESHAPED_GLOBALIZATION

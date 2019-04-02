@@ -50,7 +50,7 @@ open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.ReferenceResolver
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 
 open Internal.Utilities
 open Internal.Utilities.Collections

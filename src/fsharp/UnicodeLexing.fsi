@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.UnicodeLexing
 
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open Microsoft.FSharp.Text
 open Internal.Utilities.Text.Lexing
 

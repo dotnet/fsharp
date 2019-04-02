@@ -3,7 +3,7 @@
 // LexBuffers are for use with automatically generated lexical analyzers,
 // in particular those produced by 'fslex'.
 
-namespace Microsoft.FSharp.Compiler.Text
+namespace FSharp.Compiler.Text
 
 type ISourceText =
 
@@ -36,7 +36,7 @@ module SourceText =
 namespace Internal.Utilities.Text.Lexing
 
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Control
 
