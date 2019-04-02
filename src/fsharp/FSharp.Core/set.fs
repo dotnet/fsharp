@@ -481,7 +481,7 @@ module internal SetTree =
         let rec loop m acc = 
             match m with 
             | SetNode (k, l, r, _) -> loop l (k :: loop r acc)
-            | SetOne k ->  k ::acc
+            | SetOne k ->  k :: acc
             | SetEmpty -> acc
         loop s []
 

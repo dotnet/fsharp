@@ -2097,7 +2097,7 @@ module Codebuf =
             let roots, found = 
                 (false, roots) ||> List.mapFold (fun found (r, children) -> 
                     if found then ((r, children), true)
-                    elif contains x r then ((r, x::children), true) 
+                    elif contains x r then ((r, x :: children), true) 
                     else ((r, children), false))
 
             if found then roots 
@@ -3142,8 +3142,8 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
       // If there are any generic parameters in the binary we're emitting then mark that 
       // table as sorted, otherwise don't. This maximizes the number of assemblies we emit 
       // which have an ECMA-v.1. compliant set of sorted tables. 
-      (if tableSize (TableNames.GenericParam) > 0 then 0x00000400 else 0x00000000) ||| 
-      (if tableSize (TableNames.GenericParamConstraint) > 0 then 0x00001000 else 0x00000000) ||| 
+      (if tableSize TableNames.GenericParam > 0 then 0x00000400 else 0x00000000) ||| 
+      (if tableSize TableNames.GenericParamConstraint > 0 then 0x00001000 else 0x00000000) ||| 
       0x00000200
     
     reportTime showTimes "Layout Header of Tables"
@@ -3705,7 +3705,7 @@ let writeBinaryAndReportMappings (outfile,
           let debugEmbeddedPdbChunk, next = 
               let streamLength = 
                     match pdbOpt with
-                    | Some (_, _, stream) -> int(stream.Length)
+                    | Some (_, _, stream) -> int stream.Length
                     | None -> 0
               chunk (align 0x4 (match embeddedPDB with 
                                 | true -> 8 + streamLength

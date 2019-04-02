@@ -1216,14 +1216,14 @@ and /// Represents a type definition, exception definition, module definition or
             let ilTypeRefForCompilationPath (CompPath(sref, p)) item = 
                 let rec top racc p = 
                     match p with 
-                    | [] -> ILTypeRef.Create(sref, [], textOfPath (List.rev (item::racc)))
-                    | (h, istype)::t -> 
+                    | [] -> ILTypeRef.Create(sref, [], textOfPath (List.rev (item :: racc)))
+                    | (h, istype) :: t -> 
                         match istype with 
                         | FSharpModuleWithSuffix | ModuleOrType -> 
-                            let outerTypeName = (textOfPath (List.rev (h::racc)))
+                            let outerTypeName = (textOfPath (List.rev (h :: racc)))
                             ILTypeRef.Create(sref, (outerTypeName :: List.map (fun (nm, _) -> nm) t), item)
                         | _ -> 
-                          top (h::racc) t
+                          top (h :: racc) t
                 top [] p 
 
 
@@ -4309,7 +4309,7 @@ and
         match ccu.TypeForwarders.TryGetValue key with
         | true, entity -> Some(entity.Force())
         | _ -> None
-        //printfn "trying to forward %A::%s from ccu '%s', res = '%A'" p n ccu.AssemblyName res.IsSome
+        //printfn "trying to forward %A :: %s from ccu '%s', res = '%A'" p n ccu.AssemblyName res.IsSome
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
     member ccu.MemberSignatureEquality(ty1: TType, ty2: TType) = 
@@ -4618,9 +4618,9 @@ and
         let rec loop (args: ArgReprInfo list list) acc = 
             match args with 
             | [] -> acc 
-            | []::t -> loop t acc 
-            | [_]::t -> loop t (acc+1) 
-            | (_::_::h)::t -> loop t (acc + h.Length + 2) 
+            | [] :: t -> loop t acc 
+            | [_] :: t -> loop t (acc+1) 
+            | (_ :: _ :: h) :: t -> loop t (acc + h.Length + 2) 
         loop args 0
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -5071,7 +5071,7 @@ and
 
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
-/// TImplFile(qualifiedNameOfFile, pragmas, implementationExpressionWithSignature, hasExplicitEntryPoint, isScript)
+/// TImplFile (qualifiedNameOfFile, pragmas, implementationExpressionWithSignature, hasExplicitEntryPoint, isScript)
 and 
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TypedImplFile = 
@@ -5080,7 +5080,7 @@ and
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TImplFile(...)"
+    override x.ToString() = "TImplFile (...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 ///
@@ -5259,9 +5259,9 @@ let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 // make up the entire compilation unit
 //---------------------------------------------------------------------------
 
-let mapTImplFile f (TImplFile(fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = TImplFile(fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)
-let mapAccImplFile f z (TImplFile(fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = let moduleExpr, z = f z moduleExpr in TImplFile(fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes), z
-let foldTImplFile f z (TImplFile(_, _, moduleExpr, _, _, _)) = f z moduleExpr
+let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)
+let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = let moduleExpr, z = f z moduleExpr in TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes), z
+let foldTImplFile f z (TImplFile (_, _, moduleExpr, _, _, _)) = f z moduleExpr
 
 //---------------------------------------------------------------------------
 // Equality relations on locally defined things 
@@ -5604,7 +5604,7 @@ let fullCompPathOfModuleOrNamespace (m: ModuleOrNamespace) =
 let inline canAccessCompPathFrom (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
     let rec loop p1 p2 = 
         match p1, p2 with 
-        | (a1, k1)::rest1, (a2, k2)::rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
+        | (a1, k1) :: rest1, (a2, k2) :: rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
         | [], _ -> true 
         | _ -> false // cpath1 is longer
     loop cpath1 cpath2 &&

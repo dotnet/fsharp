@@ -211,7 +211,7 @@ let LowerSeqExpr g amap overallExpr =
                 let dispose = dispose2
                 let checkDispose = checkDispose2
                 generate, dispose, checkDispose)
-            stateVars = vref::res2.stateVars }
+            stateVars = vref :: res2.stateVars }
 
     let RepresentBindingsAsLifted mkBinds res2 =
         // printfn "found top level let  "

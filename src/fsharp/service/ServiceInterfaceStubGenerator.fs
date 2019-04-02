@@ -62,7 +62,7 @@ module internal CodeGenerationUtils =
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
         | SynExpr.Sequential (_, _, e, Sequentials es, _) ->
-            Some(e::es)
+            Some(e :: es)
         | SynExpr.Sequential (_, _, e1, e2, _) ->
             Some [e1; e2]
         | _ -> None
@@ -667,7 +667,7 @@ module internal InterfaceStubGenerator =
 
     /// Find corresponding interface declaration at a given position
     let tryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
-        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
+        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
 
         and walkSynModuleOrNamespace(SynModuleOrNamespace(decls = decls; range = range)) =

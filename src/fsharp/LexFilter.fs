@@ -992,7 +992,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
         prevWasAtomicEnd <- isAtomicExprEndToken tok
         tok
     
-    let rec suffixExists p l = match l with [] -> false | _::t -> p t || suffixExists p t
+    let rec suffixExists p l = match l with [] -> false | _ :: t -> p t || suffixExists p t
 
     let tokenBalancesHeadContext token stack = 
         match token, stack with 

@@ -76,9 +76,9 @@ let GetSuperTypeOfType g amap m ty =
             Some g.obj_ty
         elif isFSharpStructOrEnumTy g ty then
             if isFSharpEnumTy g ty then
-                Some(g.system_Enum_ty)
+                Some g.system_Enum_ty
             else
-                Some (g.system_Value_ty)
+                Some g.system_Value_ty
         elif isAnonRecdTy g ty then
             Some g.obj_ty
         elif isRecdTy g ty || isUnionTy g ty then
@@ -524,7 +524,7 @@ type OptionalArgInfo =
                         PassByRef (ty, analyze ty)
                     elif isObjTy g ty then
                         match ilParam.Marshal with
-                        | Some(ILNativeType.IUnknown | ILNativeType.IDispatch | ILNativeType.Interface) -> Constant(ILFieldInit.Null)
+                        | Some(ILNativeType.IUnknown | ILNativeType.IDispatch | ILNativeType.Interface) -> Constant ILFieldInit.Null
                         | _ ->
                             if   TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute ilParam.CustomAttrs then WrapperForIUnknown
                             elif TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute ilParam.CustomAttrs then WrapperForIDispatch

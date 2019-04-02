@@ -884,7 +884,7 @@ module internal SymbolHelpers =
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> bufs (fun os -> NicePrint.outputILTypeRef denv os finfo.ILTypeRef; bprintf os ".%s" finfo.FieldName)
         | Item.Event einfo -> bufs (fun os -> NicePrint.outputTyconRef denv os einfo.DeclaringTyconRef; bprintf os ".%s" einfo.EventName)
-        | Item.Property(_, (pinfo::_)) -> bufs (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
+        | Item.Property(_, (pinfo :: _)) -> bufs (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName, _, _) -> customOpName
         | Item.CtorGroup(_, minfo :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef)
         | Item.MethodGroup(_, _, Some minfo) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
@@ -892,7 +892,7 @@ module internal SymbolHelpers =
         | Item.UnqualifiedType (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
         | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
-        | Item.Types(_, ty:: _) -> 
+        | Item.Types(_, ty :: _) -> 
             match tryDestAppTy g ty with
             | ValueSome tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
@@ -945,7 +945,7 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, minfo :: _, _) ->
             GetXmlCommentForMethInfoItem infoReader m item minfo
 
-        | Item.Types(_, ((TType_app(tcref, _)):: _)) -> 
+        | Item.Types(_, ((TType_app(tcref, _)) :: _)) -> 
             GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib tcref  || tcref.XmlDoc.NonEmpty then Some tcref.XmlDoc else None) infoReader m item 
 
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
@@ -984,7 +984,7 @@ module internal SymbolHelpers =
             let g = infoReader.g
             let amap = infoReader.amap
             match item with
-            | Item.Types(_, ((TType_app(tcref, _)):: _))
+            | Item.Types(_, ((TType_app(tcref, _)) :: _))
             | Item.UnqualifiedType(tcref :: _) ->
                 let ty = generalizedTyconRef tcref
                 Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
@@ -1169,7 +1169,7 @@ module internal SymbolHelpers =
            FSharpStructuredToolTipElement.Single(layout, xml)
 
         // Types.
-        | Item.Types(_, ((TType_app(tcref, _)):: _))
+        | Item.Types(_, ((TType_app(tcref, _)) :: _))
         | Item.UnqualifiedType (tcref :: _) -> 
             let denv = { denv with shortTypeNames = true  }
             let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
@@ -1196,7 +1196,7 @@ module internal SymbolHelpers =
                     ([], modrefs) 
                     ||> Seq.fold (fun st modref -> 
                         match fullDisplayTextOfParentOfModRef modref with 
-                        | ValueSome txt -> txt::st 
+                        | ValueSome txt -> txt :: st 
                         | _ -> st) 
                     |> Seq.mapi (fun i x -> i, x) 
                     |> Seq.toList
@@ -1359,7 +1359,7 @@ module internal SymbolHelpers =
         | Item.Types(_, ((AppTy g (tcref, _)) :: _)) 
         | Item.DelegateCtor(AppTy g (tcref, _))
         | Item.FakeInterfaceCtor(AppTy g (tcref, _))
-        | Item.UnqualifiedType (tcref::_)
+        | Item.UnqualifiedType (tcref :: _)
         | Item.ExnCase tcref -> 
             // strip off any abbreviation
             match generalizedTyconRef tcref with 
@@ -1436,7 +1436,7 @@ module internal SymbolHelpers =
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef) + ".#ctor"|> Some
                    | ParentNone -> None
 #if !NO_EXTENSIONTYPING
-            | ProvidedMeth _::_ -> None
+            | ProvidedMeth _ :: _ -> None
 #endif
             | minfo :: _ ->
                 let tcref = minfo.DeclaringTyconRef

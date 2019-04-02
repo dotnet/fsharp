@@ -267,15 +267,15 @@ module List =
     let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
     
     let splitAfter n l = 
-        let rec split_after_acc n l1 l2 = if n <= 0 then List.rev l1, l2 else split_after_acc (n-1) ((List.head l2):: l1) (List.tail l2) 
+        let rec split_after_acc n l1 l2 = if n <= 0 then List.rev l1, l2 else split_after_acc (n-1) ((List.head l2) :: l1) (List.tail l2) 
         split_after_acc n [] l
 
     let existsi f xs = 
-       let rec loop i xs = match xs with [] -> false | h::t -> f i h || loop (i+1) t
+       let rec loop i xs = match xs with [] -> false | h :: t -> f i h || loop (i+1) t
        loop 0 xs
     
     let existsTrue (xs: bool list) = 
-       let rec loop i xs = match xs with [] -> false | h::t -> h || loop (i+1) t
+       let rec loop i xs = match xs with [] -> false | h :: t -> h || loop (i+1) t
        loop 0 xs
 
     let lengthsEqAndForall2 p l1 l2 = 
@@ -285,27 +285,27 @@ module List =
     let rec findi n f l = 
         match l with 
         | [] -> None
-        | h::t -> if f h then Some (h, n) else findi (n+1) f t
+        | h :: t -> if f h then Some (h, n) else findi (n+1) f t
 
     let rec drop n l = 
         match l with 
         | [] -> []
-        | _::xs -> if n=0 then l else drop (n-1) xs
+        | _ :: xs -> if n=0 then l else drop (n-1) xs
 
     let splitChoose select l =
         let rec ch acc1 acc2 l = 
             match l with 
             | [] -> List.rev acc1, List.rev acc2
-            | x::xs -> 
+            | x :: xs -> 
                 match select x with
-                | Choice1Of2 sx -> ch (sx::acc1) acc2 xs
-                | Choice2Of2 sx -> ch acc1 (sx::acc2) xs
+                | Choice1Of2 sx -> ch (sx :: acc1) acc2 xs
+                | Choice2Of2 sx -> ch acc1 (sx :: acc2) xs
 
         ch [] [] l
 
     let rec checkq l1 l2 = 
         match l1, l2 with 
-        | h1::t1, h2::t2 -> h1 === h2 && checkq t1 t2
+        | h1 :: t1, h2 :: t2 -> h1 === h2 && checkq t1 t2
         | _ -> true
 
     let mapq (f: 'T -> 'T) inp =
@@ -335,14 +335,14 @@ module List =
                 Debug.Assert(false, "empty list")
                 invalidArg "l" "empty list" 
             | [h] -> List.rev acc, h
-            | h::t -> loop (h::acc) t
+            | h :: t -> loop (h :: acc) t
         loop [] l
 
     let tryRemove f inp = 
         let rec loop acc l = 
             match l with
             | [] -> None
-            | h :: t -> if f h then Some (h, List.rev acc @ t) else loop (h::acc) t
+            | h :: t -> if f h then Some (h, List.rev acc @ t) else loop (h :: acc) t
         loop [] inp
             
     let headAndTail l =
@@ -350,7 +350,7 @@ module List =
         | [] -> 
             Debug.Assert(false, "empty list")
             failwith "List.headAndTail"
-        | h::t -> h, t
+        | h :: t -> h, t
 
     let zip4 l1 l2 l3 l4 = 
         List.zip l1 (List.zip3 l2 l3 l4) |> List.map (fun (x1, (x2, x3, x4)) -> (x1, x2, x3, x4))
@@ -362,7 +362,7 @@ module List =
 
     let rec iter3 f l1 l2 l3 = 
         match l1, l2, l3 with 
-        | h1::t1, h2::t2, h3::t3 -> f h1 h2 h3; iter3 f t1 t2 t3
+        | h1 :: t1, h2 :: t2, h3 :: t3 -> f h1 h2 h3; iter3 f t1 t2 t3
         | [], [], [] -> ()
         | _ -> failwith "iter3"
 
@@ -370,7 +370,7 @@ module List =
         let rec loop acc l =
             match l with
             | [] -> List.rev acc, []
-            | x::xs -> if p x then List.rev acc, l else loop (x::acc) xs
+            | x :: xs -> if p x then List.rev acc, l else loop (x :: acc) xs
         loop [] l
 
     let order (eltOrder: IComparer<'T>) =
@@ -381,7 +381,7 @@ module List =
                       | [], [] -> 0
                       | [], _ -> -1
                       | _, [] -> 1
-                      | x::xs, y::ys -> 
+                      | x :: xs, y :: ys -> 
                           let cxy = eltOrder.Compare(x, y)
                           if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
@@ -396,22 +396,22 @@ module List =
     let rec assoc x l = 
         match l with 
         | [] -> indexNotFound()
-        | ((h, r)::t) -> if x = h then r else assoc x t
+        | ((h, r) :: t) -> if x = h then r else assoc x t
 
     let rec memAssoc x l = 
         match l with 
         | [] -> false
-        | ((h, _)::t) -> x = h || memAssoc x t
+        | ((h, _) :: t) -> x = h || memAssoc x t
 
     let rec memq x l = 
         match l with 
         | [] -> false 
-        | h::t -> LanguagePrimitives.PhysicalEquality x h || memq x t
+        | h :: t -> LanguagePrimitives.PhysicalEquality x h || memq x t
 
     let mapNth n f xs =
         let rec mn i = function
           | []    -> []
-          | x::xs -> if i=n then f x::xs else x::mn (i+1) xs
+          | x :: xs -> if i=n then f x :: xs else x :: mn (i+1) xs
        
         mn 0 xs
     let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
@@ -420,7 +420,7 @@ module List =
     let mapHeadTail fhead ftail = function
       | []    -> []
       | [x]   -> [fhead x]
-      | x::xs -> fhead x :: List.map ftail xs
+      | x :: xs -> fhead x :: List.map ftail xs
 
     let collectFold f s l = 
       let l, s = List.mapFold f s l

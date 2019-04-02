@@ -1145,8 +1145,8 @@ let pdbWriteDebugInfo (writer: PdbWriter) =
     writer.symWriter.GetDebugInfo(&iDD, length, &length, data)
 
     { iddCharacteristics = iDD.Characteristics
-      iddMajorVersion = (int32)iDD.MajorVersion
-      iddMinorVersion = (int32)iDD.MinorVersion
+      iddMajorVersion = int32 iDD.MajorVersion
+      iddMinorVersion = int32 iDD.MinorVersion
       iddType = iDD.Type
       iddData = data}
 #endif

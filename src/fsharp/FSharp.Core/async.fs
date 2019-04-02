@@ -682,7 +682,7 @@ namespace Microsoft.FSharp.Control
                     executeImmediately ()
                 // See bug 370350; this logic is incorrect from the perspective of how SynchronizationContext is meant to work,
                 // but the logic works for mainline scenarios (WinForms/WPF/ASP.NET) and we won't change it again.
-                | _ when Object.Equals(syncCtxt, currentSyncCtxt) && thread.Equals(Thread.CurrentThread) ->
+                | _ when Object.Equals(syncCtxt, currentSyncCtxt) && thread.Equals Thread.CurrentThread ->
                     executeImmediately ()
                 | _ ->
                     trampolineHolder.PostOrQueueWithTrampoline syncCtxt action
@@ -800,7 +800,7 @@ namespace Microsoft.FSharp.Control
                                     result
                                 | None ->
                                     // Otherwise save the continuation and call it in RegisterResult
-                                    savedConts <- (SuspendedAsync<_>(ctxt))::savedConts
+                                    savedConts <- (SuspendedAsync<_>(ctxt)) :: savedConts
                                     None
                             )
                     match resOpt with
@@ -979,7 +979,7 @@ namespace Microsoft.FSharp.Control
                             let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
                             ctxt.CallExceptionContinuation edi
                     elif completedTask.IsFaulted then
-                        let edi = ExceptionDispatchInfo.RestoreOrCapture(completedTask.Exception)
+                        let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
                         ctxt.CallExceptionContinuation edi
                     else
                         ctxt.cont completedTask.Result) |> unfake
@@ -998,7 +998,7 @@ namespace Microsoft.FSharp.Control
                             let edi = ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask))
                             ctxt.CallExceptionContinuation edi
                     elif completedTask.IsFaulted then
-                        let edi = ExceptionDispatchInfo.RestoreOrCapture(completedTask.Exception)
+                        let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
                         ctxt.CallExceptionContinuation edi
                     else
                         ctxt.cont ()) |> unfake

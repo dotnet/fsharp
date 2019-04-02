@@ -343,8 +343,8 @@ module MapTree =
         let rec loop m acc = 
             match m with 
             | MapEmpty -> acc
-            | MapOne (k, v) -> (k, v):: acc
-            | MapNode (k, v, l, r, _) -> loop l ((k, v):: loop r acc)
+            | MapOne (k, v) -> (k, v) :: acc
+            | MapNode (k, v, l, r, _) -> loop l ((k, v) :: loop r acc)
         loop m []
 
     let toArray m =
@@ -650,7 +650,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 
         member __.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member m.Contains x = m.ContainsKey(x.Key) && Unchecked.equals m.[x.Key] x.Value
+        member m.Contains x = m.ContainsKey x.Key && Unchecked.equals m.[x.Key] x.Value
 
         member __.CopyTo(arr, i) = MapTree.copyToArray tree arr i
 

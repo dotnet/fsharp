@@ -885,7 +885,7 @@ module internal ExtensionTyping =
         let rec declaringTypes (st: Tainted<ProvidedType>) accu =
             match TryTypeMember(st, name, "DeclaringType", m, null, fun st -> st.DeclaringType) with
             |   Tainted.Null -> accu
-            |   dt -> declaringTypes dt (CheckAndComputeProvidedNameProperty(m, dt, (fun dt -> dt.Name), "Name")::accu)
+            |   dt -> declaringTypes dt (CheckAndComputeProvidedNameProperty(m, dt, (fun dt -> dt.Name), "Name") :: accu)
         let path = 
             [|  match namespaceName with 
                 | null -> ()

@@ -1095,7 +1095,7 @@ type internal FsiDynamicCompiler
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath) 
 
-            for (TImplFile(_qname,_,mexpr,_,_,_)) in declaredImpls do
+            for (TImplFile (_qname,_,mexpr,_,_,_)) in declaredImpls do
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr 
                 if not (Layout.isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
@@ -1134,7 +1134,7 @@ type internal FsiDynamicCompiler
         let prefix = mkFragmentPath i
         let prefixPath = pathOfLid prefix
         let impl = SynModuleOrNamespace(prefix,(*isRec*)false, NamedModule,defs,PreXmlDoc.Empty,[],None,rangeStdin)
-        let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(true (* isLastCompiland *), false (* isExe *)) ))
+        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(true (* isLastCompiland *), false (* isExe *)) ))
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
@@ -1738,7 +1738,7 @@ type internal FsiStdinLexerProvider
 
         Lexhelp.resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer 
-        let defines = "INTERACTIVE"::tcConfigB.conditionalCompilationDefines
+        let defines = "INTERACTIVE":: tcConfigB.conditionalCompilationDefines
         let lexargs = mkLexargs (sourceFileName,defines, interactiveInputLightSyntaxStatus, lexResourceManager, ref [], errorLogger) 
         let tokenizer = LexFilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
@@ -1975,7 +1975,7 @@ type internal FsiInteractionProcessor
             | None                                      -> None,None,istate
             | Some (IHash _)                            -> action,None,istate
             | Some (IDefns ([],_))                      -> None,None,istate
-            | Some (IDefns (SynModuleDecl.HashDirective(hash,mh)::defs,m)) -> 
+            | Some (IDefns (SynModuleDecl.HashDirective(hash,mh) :: defs,m)) -> 
                 Some (IHash(hash,mh)),Some (IDefns(defs,m)),istate
 
             | Some (IDefns (defs,m))                    -> 

@@ -11,6 +11,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Diagnostics
+open System.Text.RegularExpressions
  
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler 
@@ -19,17 +20,22 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
 
 /// Methods for dealing with F# sources files.
 module SourceFile =
+
     /// Source file extensions
     let private compilableExtensions = CompileOps.FSharpSigFileSuffixes @ CompileOps.FSharpImplFileSuffixes @ CompileOps.FSharpScriptFileSuffixes
+
     /// Single file projects extensions
     let private singleFileProjectExtensions = CompileOps.FSharpScriptFileSuffixes
+
     /// Whether or not this file is compilable
     let IsCompilable file =
         let ext = Path.GetExtension file
         compilableExtensions |> List.exists(fun e->0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
+
     /// Whether or not this file should be a single-file project
     let MustBeSingleFileProject file =
         let ext = Path.GetExtension file
@@ -105,9 +111,9 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
        ErrorScope.Protect Range.range0 
             (fun () -> 
                 match input with
-                | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = modules))) ->
+                | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = modules))) ->
                     NavigationImpl.getNavigationFromImplFile modules 
-                | Some(ParsedInput.SigFile(ParsedSigFileInput _)) ->
+                | Some (ParsedInput.SigFile (ParsedSigFileInput _)) ->
                     NavigationImpl.empty
                 | _ -> 
                     NavigationImpl.empty )
@@ -386,7 +392,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
             let walkImplFile (modules: SynModuleOrNamespace list) = List.collect walkModule modules
                      
             match input with
-            | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = modules))) -> walkImplFile modules 
+            | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = modules))) -> walkImplFile modules 
             | _ -> []
  
         ErrorScope.Protect Range.range0 
@@ -420,8 +426,8 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
 
     member scope.FileName =
       match input with
-      | Some(ParsedInput.ImplFile(ParsedImplFileInput(fileName = modname))) 
-      | Some(ParsedInput.SigFile(ParsedSigFileInput(fileName = modname))) -> modname
+      | Some (ParsedInput.ImplFile (ParsedImplFileInput (fileName = modname))) 
+      | Some (ParsedInput.SigFile (ParsedSigFileInput (fileName = modname))) -> modname
       | _ -> ""
     
     // Get items for the navigation drop down bar       
@@ -444,8 +450,6 @@ type EntityKind =
     override x.ToString() = sprintf "%A" x
 
 module UntypedParseImpl =
-    open System.Text.RegularExpressions
-    open FSharp.Compiler.PrettyNaming
     
     let emptyStringSet = HashSet<string>()
 
@@ -482,10 +486,10 @@ module UntypedParseImpl =
                 else
                     let inFront, r = CheckLongIdent longIdent
                     if inFront then
-                        Some(synExpr.Range)
+                        Some (synExpr.Range)
                     else
                         // see comment below for SynExpr.DotSet
-                        Some((unionRanges synExpr.Range r))
+                        Some ((unionRanges synExpr.Range r))
             | SynExpr.Set (synExpr, synExpr2, range) ->
                 if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
@@ -501,14 +505,14 @@ module UntypedParseImpl =
                 else
                     let inFront, r = CheckLongIdent longIdent
                     if inFront then
-                        Some(synExpr.Range)
+                        Some (synExpr.Range)
                     else
                         // f(0).X.Y.Z
                         //       ^
                         //      -   r has this value
                         // ----     synExpr.Range has this value
                         // ------   we want this value
-                        Some((unionRanges synExpr.Range r))
+                        Some ((unionRanges synExpr.Range r))
             | SynExpr.DotNamedIndexedPropertySet (synExpr, LongIdentWithDots(longIdent, _), synExpr2, synExpr3, _range) ->  
                 if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
@@ -519,14 +523,14 @@ module UntypedParseImpl =
                 else
                     let inFront, r = CheckLongIdent longIdent
                     if inFront then
-                        Some(synExpr.Range)
+                        Some (synExpr.Range)
                     else
-                        Some((unionRanges synExpr.Range r))
+                        Some ((unionRanges synExpr.Range r))
             | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _range) ->  // get this for e.g. "bar()."
                 if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
-                    Some(synExpr.Range) 
+                    Some (synExpr.Range) 
             | SynExpr.FromParseError (synExpr, range) -> 
                 if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
@@ -539,7 +543,7 @@ module UntypedParseImpl =
                 | None ->
                     // (expr).(expr) is an ML-deprecated array lookup, but we want intellisense on the dot
                     // also want it for e.g. [|arr|].(0)
-                    Some(expr.Range) 
+                    Some (expr.Range) 
                 | x -> x  // we found the answer deeper somewhere in the lhs
             | SynExpr.Const (SynConst.Double(_), range) -> Some range 
             | _ -> defaultTraverse expr
@@ -596,7 +600,7 @@ module UntypedParseImpl =
     // walk the AST to find the position here:
     //    f(x)   .   iden
     //       ^
-    // On success, return Some(thatPos, boolTrueIfCursorIsAfterTheDotButBeforeTheIdentifier)
+    // On success, return Some (thatPos, boolTrueIfCursorIsAfterTheDotButBeforeTheIdentifier)
     // If there's no dot, return None, so for example
     //    foo
     //      ^
@@ -620,7 +624,7 @@ module UntypedParseImpl =
                             // but the dive algorithm will dive down into this node, and this is the one case where we do want to give a result despite the cursor
                             // not properly being in a node.
                             match traverseSynExpr e with
-                            | None -> Some(e.Range.End, false)
+                            | None -> Some (e.Range.End, false)
                             | r -> r
                         | _ -> 
                             // This happens for e.g. "System.Console.[]$", where the ".[]" token is thrown away by the parser and we dive into the System.Console longId 
@@ -632,10 +636,10 @@ module UntypedParseImpl =
                             let resultIfLeftOfLongId =
                                 match optExprIfLeftOfLongId with
                                 | None -> None
-                                | Some e -> Some(e.Range.End, posGeq lidwd.Range.Start pos)
+                                | Some e -> Some (e.Range.End, posGeq lidwd.Range.Start pos)
                             match dots |> List.mapi (fun i x -> i, x) |> List.rev |> List.tryFind (fun (_, m) -> posGt pos m.Start) with
                             | None -> resultIfLeftOfLongId
-                            | Some(n, _) -> Some((List.item n lid).idRange.End, (List.length lid = n+1)    // foo.$
+                            | Some (n, _) -> Some ((List.item n lid).idRange.End, (List.length lid = n+1)    // foo.$
                                                                               || (posGeq (List.item (n+1) lid).idRange.Start pos))  // foo.$bar
                         match expr with
                         | SynExpr.LongIdent (_isOptional, lidwd, _altNameRefCell, _m) ->
@@ -647,7 +651,7 @@ module UntypedParseImpl =
                         | SynExpr.DotGet (exprLeft, dotm, lidwd, _m) ->
                             let afterDotBeforeLid = mkRange dotm.FileName dotm.End lidwd.Range.Start 
                             [ dive exprLeft exprLeft.Range traverseSynExpr
-                              dive exprLeft afterDotBeforeLid (fun e -> Some(e.Range.End, true))
+                              dive exprLeft afterDotBeforeLid (fun e -> Some (e.Range.End, true))
                               dive lidwd lidwd.Range (traverseLidOrElse (Some exprLeft))
                             ] |> pick expr
                         | SynExpr.DotSet (exprLeft, lidwd, exprRhs, _m) ->
@@ -673,7 +677,7 @@ module UntypedParseImpl =
                         | SynExpr.Const (SynConst.Double(_), m) ->
                             if posEq m.End pos then
                                 // the cursor is at the dot
-                                Some(m.End, false)
+                                Some (m.End, false)
                             else
                                 // the cursor is left of the dot
                                 None
@@ -682,7 +686,7 @@ module UntypedParseImpl =
                             | None -> 
                                 if posEq m.End pos then
                                     // the cursor is at the dot
-                                    Some(e.Range.End, false)
+                                    Some (e.Range.End, false)
                                 else
                                     // the cursor is left of the dot
                                     None
@@ -694,7 +698,7 @@ module UntypedParseImpl =
                             | None ->
                                 // (expr).(expr) is an ML-deprecated array lookup, but we want intellisense on the dot
                                 // also want it for e.g. [|arr|].(0)
-                                Some(lhs.Range.End, false)
+                                Some (lhs.Range.End, false)
                             | x -> x  // we found the answer deeper somewhere in the lhs
                         | _ -> defaultTraverse expr }
         AstTraversal.Traverse(pos, parseTree, walker)
@@ -706,7 +710,7 @@ module UntypedParseImpl =
 
         /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
         let rec (|Sequentials|_|) = function
-            | SynExpr.Sequential (_, _, e, Sequentials es, _) -> Some(e::es)
+            | SynExpr.Sequential (_, _, e, Sequentials es, _) -> Some (e :: es)
             | SynExpr.Sequential (_, _, e1, e2, _) -> Some [e1; e2]
             | _ -> None
 
@@ -716,7 +720,7 @@ module UntypedParseImpl =
             if isPosInRange range then f()
             else None
 
-        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
+        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
 
         and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, r)) =
@@ -996,12 +1000,12 @@ module UntypedParseImpl =
             let rec collect plid (parts : Ident list) (dots : range list) = 
                 match parts, dots with
                 | [], _ -> Some (plid, None)
-                | x::xs, ds ->
+                | x :: xs, ds ->
                     if rangeContainsPos x.idRange pos then
                         // pos lies with the range of current identifier
                         let s = x.idText.Substring(0, pos.Column - x.idRange.Start.Column)
                         let residue = if s.Length <> 0 then Some s else None
-                        Some(plid, residue)
+                        Some (plid, residue)
                     elif posGt x.idRange.Start pos then
                         // can happen if caret is placed after dot but before the existing identifier A. $ B
                         // return accumulated plid with no residue
@@ -1010,11 +1014,11 @@ module UntypedParseImpl =
                         match ds with
                         | [] -> 
                             // pos lies after the id and no dots found - return accumulated plid and current id as residue 
-                            Some(plid, Some(x.idText))
-                        | d::ds ->
+                            Some (plid, Some (x.idText))
+                        | d :: ds ->
                             if posGeq pos d.End  then 
                                 // pos lies after the dot - proceed to the next identifier
-                                collect ((x.idText)::plid) xs ds
+                                collect ((x.idText) :: plid) xs ds
                             else
                                 // pos after the id but before the dot
                                 // A $.B - return nothing
@@ -1022,7 +1026,7 @@ module UntypedParseImpl =
 
             match collect [] lid dots with
             | Some (parts, residue) ->
-                Some((List.rev parts), residue)
+                Some ((List.rev parts), residue)
             | None -> None
         
         let (|Class|Interface|Struct|Unknown|Invalid|) synAttributes = 
@@ -1034,11 +1038,11 @@ module UntypedParseImpl =
             let rec getKind isClass isInterface isStruct = 
                 function
                 | [] -> isClass, isInterface, isStruct
-                | (SynAttr "Class")::xs -> getKind true isInterface isStruct xs
-                | (SynAttr "AbstractClass")::xs -> getKind true isInterface isStruct xs
-                | (SynAttr "Interface")::xs -> getKind isClass true isStruct xs
-                | (SynAttr "Struct")::xs -> getKind isClass isInterface true xs
-                | _::xs -> getKind isClass isInterface isStruct xs
+                | (SynAttr "Class") :: xs -> getKind true isInterface isStruct xs
+                | (SynAttr "AbstractClass") :: xs -> getKind true isInterface isStruct xs
+                | (SynAttr "Interface") :: xs -> getKind isClass true isStruct xs
+                | (SynAttr "Struct") :: xs -> getKind isClass isInterface true xs
+                | _ :: xs -> getKind isClass isInterface isStruct xs
 
             match getKind false false false synAttributes with
             | false, false, false -> Unknown
@@ -1082,13 +1086,13 @@ module UntypedParseImpl =
         let (|Operator|_|) name e = 
             match e with
             | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, lhs, _), rhs, _) 
-                when ident.idText = name -> Some(lhs, rhs)
+                when ident.idText = name -> Some (lhs, rhs)
             | _ -> None
 
         // checks if we are in rhs of the range operator
         let isInRhsOfRangeOp (p : AstTraversal.TraversePath) = 
             match p with
-            | TS.Expr(Operator "op_Range" _)::_ -> true
+            | TS.Expr(Operator "op_Range" _) :: _ -> true
             | _ -> false
 
         let (|Setter|_|) e =
@@ -1146,9 +1150,9 @@ module UntypedParseImpl =
         let isOnTheRightOfComma (elements: SynExpr list) (commas: range list) current = 
             let rec loop elements (commas: range list) = 
                 match elements with
-                | x::xs ->
+                | x :: xs ->
                     match commas with
-                    | c::cs -> 
+                    | c :: cs -> 
                         if x === current then posLt c.End pos || posEq c.End pos 
                         else loop xs cs
                     | _ -> false
@@ -1157,9 +1161,9 @@ module UntypedParseImpl =
 
         let (|PartOfParameterList|_|) precedingArgument path =
             match path with
-            | TS.Expr(SynExpr.Paren _)::TS.Expr(NewObjectOrMethodCall args)::_ -> 
+            | TS.Expr(SynExpr.Paren _) :: TS.Expr(NewObjectOrMethodCall args) :: _ -> 
                 if Option.isSome precedingArgument then None else Some args
-            | TS.Expr(SynExpr.Tuple (false, elements, commas, _))::TS.Expr(SynExpr.Paren _)::TS.Expr(NewObjectOrMethodCall args)::_ -> 
+            | TS.Expr(SynExpr.Tuple (false, elements, commas, _)) :: TS.Expr(SynExpr.Paren _) :: TS.Expr(NewObjectOrMethodCall args) :: _ -> 
                 match precedingArgument with
                 | None -> Some args
                 | Some e ->
@@ -1186,7 +1190,7 @@ module UntypedParseImpl =
                             // new A($)
                             | SynExpr.Const (SynConst.Unit, m) when rangeContainsPos m pos ->
                                 match path with
-                                | TS.Expr(NewObjectOrMethodCall args)::_ -> 
+                                | TS.Expr(NewObjectOrMethodCall args) :: _ -> 
                                     Some (CompletionContext.ParameterList args)
                                 | _ -> 
                                     defaultTraverse expr
@@ -1213,7 +1217,7 @@ module UntypedParseImpl =
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
-                            | TS.Expr(_)::TS.Binding(_):: TS.MemberDefn(_)::TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _))::_ ->  
+                            | TS.Expr(_) :: TS.Binding(_) :: TS.MemberDefn(_) :: TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _)) :: _ ->  
                                 RecordContext.Constructor(id.idText)
                             | _ -> RecordContext.New completionPath
                         match field with

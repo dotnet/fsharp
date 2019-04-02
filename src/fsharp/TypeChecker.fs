@@ -622,7 +622,7 @@ let BuildRootModuleExpr enclosingNamespacePath (cpath: CompilationPath) mexpr =
 /// Try to take the "FSINNN" prefix off a namespace path
 let TryStripPrefixPath (g: TcGlobals) (enclosingNamespacePath: Ident list) = 
     match enclosingNamespacePath with 
-    | p::rest when
+    | p :: rest when
         g.isInteractive &&
         not (isNil rest) &&
         p.idText.StartsWithOrdinal FsiDynamicModulePrefix && 
@@ -642,7 +642,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
             | None -> enclosingNamespacePath
 
         match enclosingNamespacePathToOpen with
-        | id::rest ->
+        | id :: rest ->
             let ad = env.eAccessRights
             match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
@@ -891,7 +891,7 @@ let TcConst cenv ty m env c =
 
         | SynMeasure.Power(ms, exponent, _) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent)
         | SynMeasure.Product(ms1, ms2, _) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2)     
-        | SynMeasure.Divide(ms1, ((SynMeasure.Seq (_::(_::_), _)) as ms2), m) -> 
+        | SynMeasure.Divide(ms1, ((SynMeasure.Seq (_ :: (_ :: _), _)) as ms2), m) -> 
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
             Measure.Prod(tcMeasure ms1, Measure.Inv (tcMeasure ms2))
         | SynMeasure.Divide(ms1, ms2, _) -> 
@@ -1811,7 +1811,7 @@ let CombineSyntacticAndInferredArities g declKind rhsExpr prelimScheme =
                     // If the expression infers additional arguments then use those (this shouldn't happen, since the
                     // arity inference done on the syntactic form should give identical results)
                     | [], ais | ais, [] -> ais
-                    | (h1::t1), (h2::t2) -> choose h1 h2 :: loop t1 t2
+                    | (h1 :: t1), (h2 :: t2) -> choose h1 h2 :: loop t1 t2
                 let curriedArgInfos = loop curriedArgInfosFromSyntax curriedArgInfosFromExpression
                 PartialValReprInfo (curriedArgInfos, retInfoFromSyntax)
 
@@ -2019,7 +2019,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
                         errorR (FieldsFromDifferentTypes(env.DisplayEnv, fref1, fref2, m))
                         fs, rfldsList
                     else
-                        Map.add fref2.FieldName fldExpr fs, (fref2.FieldName, fldExpr)::rfldsList
+                        Map.add fref2.FieldName fldExpr fs, (fref2.FieldName, fldExpr) :: rfldsList
 
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
     tcref, fldsmap, List.rev rfldsList
@@ -2436,7 +2436,7 @@ type NormalizedBindingRhs =
 
 let PushOnePatternToRhs (cenv: cenv) isMember p (NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr)) = 
     let spats, rhsExpr = PushPatternToExpr cenv.synArgNameGenerator isMember p rhsExpr
-    NormalizedBindingRhs(spats::spatsL, rtyOpt, rhsExpr)
+    NormalizedBindingRhs(spats :: spatsL, rtyOpt, rhsExpr)
 
 type NormalizedBindingPatternInfo = 
     NormalizedBindingPat of SynPat * NormalizedBindingRhs * SynValData * SynValTyparDecls 
@@ -3541,12 +3541,12 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
         match expr with 
         | SynExpr.Sequential (_, true, e1, e2, _) -> 
             if IsSimpleSemicolonSequenceElement e1 then 
-                GetSimpleSemicolonSequenceOfComprehension e2 (e1::acc)
+                GetSimpleSemicolonSequenceOfComprehension e2 (e1 :: acc)
             else
                 None 
         | e -> 
             if IsSimpleSemicolonSequenceElement e then 
-                Some(List.rev (e::acc))
+                Some(List.rev (e :: acc))
             else 
                 None 
 
@@ -4778,18 +4778,18 @@ and TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m =
     match args with
     | [] -> error(InternalError("empty tuple type", m))
     | [(_, ty)] -> let ty, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty in [ty], tpenv
-    | (isquot, ty)::args -> 
+    | (isquot, ty) :: args -> 
         let ty, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
         let tys, tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
         if isquot then errorR(Error(FSComp.SR.tcUnexpectedSlashInType(), m))
-        ty::tys, tpenv
+        ty :: tys, tpenv
 
 // Type-check a list of measures separated by juxtaposition, * or /
 and TcMeasuresAsTuple cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) args m = 
     let rec gather args tpenv isquot acc =
         match args with
         | [] -> acc, tpenv
-        | (nextisquot, ty)::args -> 
+        | (nextisquot, ty) :: args -> 
             let ms1, tpenv = TcMeasure cenv newOk checkCxs occ env tpenv ty m
             gather args tpenv nextisquot (if isquot then Measure.Prod(acc, Measure.Inv ms1) else Measure.Prod(acc, ms1))
     gather args tpenv false Measure.One
@@ -5681,17 +5681,17 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
 
     // f x
     | SynExpr.App (hpa, _, func, arg, mFuncAndArg) ->
-        TcExprThen cenv overallTy env tpenv func ((DelayedApp (hpa, arg, mFuncAndArg)):: delayed)
+        TcExprThen cenv overallTy env tpenv func ((DelayedApp (hpa, arg, mFuncAndArg)) :: delayed)
 
     // e<tyargs>
     | SynExpr.TypeApp (func, _, typeArgs, _, _, mTypeArgs, mFuncAndTypeArgs) ->
-        TcExprThen cenv overallTy env tpenv func ((DelayedTypeApp (typeArgs, mTypeArgs, mFuncAndTypeArgs)):: delayed)
+        TcExprThen cenv overallTy env tpenv func ((DelayedTypeApp (typeArgs, mTypeArgs, mFuncAndTypeArgs)) :: delayed)
 
     // e1.id1
     // e1.id1.id2
     // etc.
     | SynExpr.DotGet (e1, _, LongIdentWithDots(longId, _), _) ->
-        TcExprThen cenv overallTy env tpenv e1 ((DelayedDotLookup (longId, synExpr.RangeSansAnyExtraDot))::delayed)
+        TcExprThen cenv overallTy env tpenv e1 ((DelayedDotLookup (longId, synExpr.RangeSansAnyExtraDot)) :: delayed)
            
     // e1.[e2]
     // e1.[e21, ..., e2n]
@@ -6517,7 +6517,7 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty: TType) virtNameAndArit
         let _, synValInfo = GetNameAndArityOfObjExprBinding cenv env bind
         let arity = 
             match SynInfo.AritiesOfArgs synValInfo with            
-            | _::x::_ -> x
+            | _ :: x :: _ -> x
             | _ -> 0
         
         match absSlotsByName with 
@@ -6809,7 +6809,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
                                 | Some x -> x
                                 | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(), synObjTy.Range))
 
-                            yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal]::methodVars, bindingBody, id.idRange) ]
+                            yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal] :: methodVars, bindingBody, id.idRange) ]
               (implty, overrides'))
             
         let (objTy', overrides') = allTypeImpls.Head
@@ -7350,7 +7350,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             | true, [_] -> ()
             | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
             Some opData
-        | true, opData::_ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange)); Some opData
+        | true, opData :: _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange)); Some opData
         | _ -> None
 
     /// Decide if the identifier represents a use of a custom query operator
@@ -7607,7 +7607,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             | SynExpr.FromParseError (SynExpr.App (_, _, f, arg, _), _)
             | SynExpr.App (_, _, f, arg, _) -> 
                 let g, acc = strip f 
-                g, (arg::acc) 
+                g, (arg :: acc) 
             | _ -> e, []
         let g, acc = strip e
         g, List.rev acc
@@ -8706,7 +8706,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 
         match delayed with 
         // This is where the constructor is applied to an argument 
-        | ((DelayedApp (atomicFlag, (FittedArgs args as origArg), mExprAndArg))::otherDelayed) ->
+        | ((DelayedApp (atomicFlag, (FittedArgs args as origArg), mExprAndArg)) :: otherDelayed) ->
             // assert the overall result type if possible
             if isNil otherDelayed then 
                 UnifyTypes cenv env mExprAndArg overallTy ucaseAppTy 
@@ -8817,10 +8817,10 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             let exprTy = tyOfExpr g expr
             PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) exprTy ExprAtomicFlag.Atomic delayed 
 
-    | Item.Types(nm, (ty::_)) -> 
+    | Item.Types(nm, (ty :: _)) -> 
     
         match delayed with 
-        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs))::(DelayedDotLookup (longId, mLongId))::otherDelayed) ->
+        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedDotLookup (longId, mLongId)) :: otherDelayed) ->
 
             // If Item.Types is returned then the ty will be of the form TType_app(tcref, genericTyargs) where tyargs 
             // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args 
@@ -8832,7 +8832,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
             TcItemThen cenv overallTy env tpenv (ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId IgnoreOverrides true) otherDelayed
             
-        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs))::_delayed') ->
+        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: _delayed') ->
             // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
             let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty tyargs
             let item = Item.Types(nm, [ty])
@@ -8851,7 +8851,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         // Static method calls Type.Foo(arg1, ..., argn) 
         let meths = List.map (fun minfo -> minfo, None) minfos
         match delayed with 
-        | (DelayedApp (atomicFlag, arg, mExprAndArg)::otherDelayed) ->
+        | (DelayedApp (atomicFlag, arg, mExprAndArg) :: otherDelayed) ->
             TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag otherDelayed
 
         | (DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed) ->
@@ -8899,12 +8899,12 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | (minfo :: _) -> minfo.ApparentEnclosingType
             | [] -> error(Error(FSComp.SR.tcTypeHasNoAccessibleConstructor(), mItem))
         match delayed with 
-        | ((DelayedApp (_, arg, mExprAndArg))::otherDelayed) ->
+        | ((DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.DisplayEnv, env.eAccessRights)
             TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
-        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs))::(DelayedApp (_, arg, mExprAndArg))::otherDelayed) ->
+        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
             let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tyargs
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.DisplayEnv, env.eAccessRights)
@@ -8925,7 +8925,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             minfosAfterTyArgs |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.ApparentEnclosingType objTyAfterTyArgs)
             TcCtorCall true cenv env tpenv overallTy objTyAfterTyArgs (Some mExprAndTypeArgs) itemAfterTyArgs false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
-        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs))::otherDelayed) ->
+        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: otherDelayed) ->
 
             let objTy, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tyargs
 
@@ -9062,9 +9062,9 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         
     | Item.DelegateCtor ty ->
         match delayed with 
-        | ((DelayedApp (atomicFlag, arg, mItemAndArg))::otherDelayed) ->
+        | ((DelayedApp (atomicFlag, arg, mItemAndArg)) :: otherDelayed) ->
             TcNewDelegateThen cenv overallTy env tpenv mItem mItemAndArg ty arg atomicFlag otherDelayed
-        | ((DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs))::(DelayedApp (atomicFlag, arg, mItemAndArg))::otherDelayed) ->
+        | ((DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs)) :: (DelayedApp (atomicFlag, arg, mItemAndArg)) :: otherDelayed) ->
             let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mItemAndTypeArgs ty tyargs
             
             // Report information about the whole expression including type arguments to VS
@@ -9105,7 +9105,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             PropagateThenTcDelayed cenv overallTy env tpenv mStmt (MakeApplicableExprNoFlex cenv vexp) (tyOfExpr g vexp) ExprAtomicFlag.NonAtomic otherDelayed
 
         // Value instantiation: v<tyargs> ... 
-        | (DelayedTypeApp(tys, _mTypeArgs, mExprAndTypeArgs)::otherDelayed) ->
+        | (DelayedTypeApp(tys, _mTypeArgs, mExprAndTypeArgs) :: otherDelayed) ->
             // Note: we know this is a NormalValUse or PossibleConstrainedCall because: 
             //   - it isn't a CtorValUsedAsSuperInit 
             //   - it isn't a CtorValUsedAsSelfInit 
@@ -11658,7 +11658,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
         { SyntacticBinding = revisedBinding
           RecBindingInfo = rbinfo }
 
-    ((primaryBinding::extraBindings), (vspec::extraValues)), (tpenv, recBindIdx)
+    ((primaryBinding :: extraBindings), (vspec :: extraValues)), (tpenv, recBindIdx)
 
 
 and AnalyzeAndMakeAndPublishRecursiveValues overridesOK cenv env tpenv binds = 
@@ -11752,7 +11752,7 @@ and TcLetrecBinding
         uncheckedRecBindsTable.Remove rbind.RecBindingInfo.Val.Stamp
     
     // Add one binding to the candidates eligible for generalization
-    let preGeneralizationRecBinds = (preGeneralizationRecBind::preGeneralizationRecBinds)
+    let preGeneralizationRecBinds = (preGeneralizationRecBind :: preGeneralizationRecBinds)
 
     // Incrementally generalize as many bindings as we can
     TcIncrementalLetRecGeneralization cenv scopem (envNonRec, generalizedRecBinds, preGeneralizationRecBinds, tpenv, uncheckedRecBindsTable) 
@@ -12432,7 +12432,7 @@ let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId: Ident li
     let ad = env.eAccessRights
     match longId with
     | [] -> Result []
-    | id::rest ->
+    | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
         match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
         | Result res -> Result res
@@ -12452,7 +12452,7 @@ let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) =
         let p = 
             match p with 
             | [] -> []
-            | (h, _):: t -> if h.StartsWithOrdinal FsiDynamicModulePrefix then t else p
+            | (h, _) :: t -> if h.StartsWithOrdinal FsiDynamicModulePrefix then t else p
 
         // See https://fslang.uservoice.com/forums/245727-f-language/suggestions/6107641-make-microsoft-prefix-optional-when-using-core-f
         let isFSharpCoreSpecialCase =
@@ -12779,7 +12779,7 @@ module IncrClassChecking =
                         else 
                             let tauTy = ctorInfo.InstanceCtorThisVal.Type --> v.TauType
                             let (ValReprInfo(tpNames, args, ret)) = topValInfo
-                            let topValInfo = ValReprInfo(tpNames, ValReprInfo.selfMetadata::args, ret)
+                            let topValInfo = ValReprInfo(tpNames, ValReprInfo.selfMetadata :: args, ret)
                             tauTy, topValInfo
                     // Add the enclosing type parameters on to the function
                     let topValInfo = 
@@ -13964,7 +13964,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id::rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+            | id :: rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
         let mvvs = ForceRaise resolved
         if isNil mvvs then env else
         let modrefs = mvvs |> List.map p23
@@ -15956,7 +15956,7 @@ module EstablishTypeDefinitionCores =
                 if ListSet.contains (===) tycon2 tycons && // note: only add if tycon2 is initial
                     not (List.exists (fun (tc, tc2) -> tc === tycon && tc2 === tycon2) acc)  // note: only add if (tycon, tycon2) not already an edge
                 then
-                    (tycon, tycon2)::acc
+                    (tycon, tycon2) :: acc
                 else acc // note: all edges added are (tycon, _)
             let insertEdgeToType ty acc = 
                 match tryDestAppTy g ty with
@@ -16325,11 +16325,11 @@ module TcDeclarations =
     //   atMostOne inherit.
     let private CheckMembersForm ds = 
         match ds with
-        | d::ds when isImplicitCtor d ->
+        | d :: ds when isImplicitCtor d ->
             // Implicit construction 
             let ds = 
                 match ds with
-                | d::ds when isImplicitInherit d -> ds  // skip inherit call if it comes next 
+                | d :: ds when isImplicitInherit d -> ds  // skip inherit call if it comes next 
                 | _ -> ds
 
             // Skip over 'let' and 'do' bindings
@@ -16789,7 +16789,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let resolved =
                 match p with
                 | [] -> Result []
-                | id::rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+                | id :: rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
@@ -17503,7 +17503,7 @@ let TypeCheckOneImplFile
        (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) 
        env 
        (rootSigOpt: ModuleOrNamespaceType option)
-       (ParsedImplFileInput(_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) =
+       (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) =
 
  eventually {
     let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring)    
@@ -17597,7 +17597,7 @@ let TypeCheckOneImplFile
             | _ -> ()
         | _ -> ())
 
-    let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes)
+    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes)
 
     return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
  } 
@@ -17605,7 +17605,7 @@ let TypeCheckOneImplFile
 
 
 /// Check an entire signature file
-let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput(_, qualNameOfFile, _, _, sigFileFrags)) = 
+let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (_, qualNameOfFile, _, _, sigFileFrags)) = 
  eventually {     
     let cenv = cenv.Create (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring)
     let envinner, mtypeAcc = MakeInitialEnv tcEnv 

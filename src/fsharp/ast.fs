@@ -101,7 +101,7 @@ type XmlDoc =
         let rec processLines (lines: string list) =
             match lines with
             | [] -> []
-            | (lineA:: rest) as lines ->
+            | (lineA :: rest) as lines ->
                 let lineAT = lineA.TrimStart([|' '|])
                 if lineAT = "" then processLines rest
                 else if lineAT.StartsWithOrdinal("<") then lines
@@ -175,8 +175,8 @@ type LongIdentWithDots =
        | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
        | LongIdentWithDots([id], []) -> id.idRange
        | LongIdentWithDots([id], [m]) -> unionRanges id.idRange m
-       | LongIdentWithDots(h::t, []) -> unionRanges h.idRange (List.last t).idRange
-       | LongIdentWithDots(h::t, dotms) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotms)
+       | LongIdentWithDots(h :: t, []) -> unionRanges h.idRange (List.last t).idRange
+       | LongIdentWithDots(h :: t, dotms) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotms)
 
     member this.Lid = match this with LongIdentWithDots(lid, _) -> lid
 
@@ -186,7 +186,7 @@ type LongIdentWithDots =
        match this with
        | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
        | LongIdentWithDots([id], _) -> id.idRange
-       | LongIdentWithDots(h::t, dotms) ->
+       | LongIdentWithDots(h :: t, dotms) ->
            let nonExtraDots = if dotms.Length = t.Length then dotms else List.truncate t.Length dotms
            unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
@@ -1700,7 +1700,7 @@ let rangeOfLid (lid: Ident list) =
     match lid with
     | [] -> failwith "rangeOfLid"
     | [id] -> id.idRange
-    | h::t -> unionRanges h.idRange (List.last t).idRange
+    | h :: t -> unionRanges h.idRange (List.last t).idRange
 
 [<RequireQualifiedAccess>]
 type ScopedPragma =
@@ -1708,7 +1708,7 @@ type ScopedPragma =
    // Note: this type may be extended in the future with optimization on/off switches etc.
 
 // These are the results of parsing + folding in the implicit file name
-/// ImplFile(modname, isScript, qualName, hashDirectives, modules, isLastCompiland)
+/// ImplFile (modname, isScript, qualName, hashDirectives, modules, isLastCompiland)
 
 /// QualifiedNameOfFile acts to fully-qualify module specifications and implementations,
 /// most importantly the ones that simply contribute fragments to a namespace (i.e. the ParsedSigFileFragment.NamespaceFragment case)
@@ -1915,7 +1915,7 @@ let rec SimplePatsOfPat synArgNameGenerator p =
         let ps2, laterf =
           List.foldBack
             (fun (p', rhsf) (ps', rhsf') ->
-              p'::ps',
+              p':: ps',
               (composeFunOpt rhsf rhsf'))
             (List.map (SimplePatOfPat synArgNameGenerator) ps)
             ([], None)
@@ -1954,13 +1954,13 @@ let PushCurriedPatternsToExpr synArgNameGenerator wholem isMember pats rhs =
               // accumulate the body. This builds "let (UnionCase y) = tmp2 in body"
               let body = appFunOpt bodyf body
               // accumulate the patterns
-              let spatsl = spats::spatsl
+              let spatsl = spats :: spatsl
               (spatsl, body))
     // Second phase: build lambdas. Mark subsequent ones with "true" indicating they are part of an iterated sequence of lambdas
     let expr =
         match spatsl with
         | [] -> rhs
-        | h::t ->
+        | h :: t ->
             let expr = List.foldBack (fun spats e -> SynExpr.Lambda (isMember, true, spats, e, wholem)) t rhs
             let expr = SynExpr.Lambda (isMember, false, h, expr, wholem)
             expr
@@ -2166,11 +2166,11 @@ module SynInfo =
 
     /// Add a parameter entry to the syntactic value information to represent the '()' argument to a property getter. This is
     /// used for the implicit '()' argument in property getter signature specifications.
-    let IncorporateEmptyTupledArgForPropertyGetter (SynValInfo(args, retInfo)) = SynValInfo([]::args, retInfo)
+    let IncorporateEmptyTupledArgForPropertyGetter (SynValInfo(args, retInfo)) = SynValInfo([] :: args, retInfo)
 
     /// Add a parameter entry to the syntactic value information to represent the 'this' argument. This is
     /// used for the implicit 'this' argument in member signature specifications.
-    let IncorporateSelfArg (SynValInfo(args, retInfo)) = SynValInfo(selfMetadata::args, retInfo)
+    let IncorporateSelfArg (SynValInfo(args, retInfo)) = SynValInfo(selfMetadata :: args, retInfo)
 
     /// Add a parameter entry to the syntactic value information to represent the value argument for a property setter. This is
     /// used for the implicit value argument in property setter signature specifications.

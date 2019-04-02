@@ -2017,8 +2017,9 @@ and u_tycon_repr st =
                         let rec find acc enclosingTypeNames (tdefs: ILTypeDefs) =
                             match enclosingTypeNames with
                             | [] -> List.rev acc, tdefs.FindByName iltref.Name
-                            | h::t -> let nestedTypeDef = tdefs.FindByName h
-                                      find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
+                            | h :: t ->
+                                let nestedTypeDef = tdefs.FindByName h
+                                find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
                         let nestedILTypeDefs, ilTypeDef = find [] iltref.Enclosing iILModule.TypeDefs
                         TILObjectRepr(TILObjectReprData(st.iilscope, nestedILTypeDefs, ilTypeDef))
                     with _ ->

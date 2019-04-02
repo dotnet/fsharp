@@ -259,7 +259,7 @@ namespace Microsoft.FSharp.Control
                 async {
                     match x.ScanArrivals f with
                     | None ->
-                        let! ok = waitOne(Timeout.Infinite)
+                        let! ok = waitOne Timeout.Infinite
                         if ok then
                             return! scanNoTimeout()
                         else

@@ -350,7 +350,7 @@ module Query =
             | Let(v1, (TupleGet(Var pA, m) as e1), rest)
                   when p = pA && m = n->
                       let restvs, b = stripSuccessiveProjLets p (n+1) rest
-                      (v1, e1)::restvs, b
+                      (v1, e1) :: restvs, b
             | _ -> ([], expr)
         match lam with
         | Lambda(v, body) ->
@@ -363,7 +363,7 @@ module Query =
     let (|LambdasNoDetupling|_|) (inpExpr: Expr) =
         let rec loop rvs rprojs e =
             match  e with
-            | LambdaNoDetupling(v, projs, body) -> loop (v::rvs) (projs::rprojs) body
+            | LambdaNoDetupling(v, projs, body) -> loop (v :: rvs) (projs :: rprojs) body
             | _ ->
                 match rvs with
                 | [] -> None

@@ -217,7 +217,7 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
     
     let AddIfNotPresent(filename: string) =
         if not(!allSources |> List.contains filename) then
-            allSources := filename::!allSources
+            allSources := filename :: !allSources
     
     let AppendClosureInformation filename =
         if IsScript filename then 
@@ -279,7 +279,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
     let dllFiles, sourceFiles = inputFiles |> List.map(fun p -> trimQuotes p) |> List.partition Filename.isDll
     match dllFiles with
     | [] -> ()
-    | h::_ -> errorR (Error(FSComp.SR.fscReferenceOnCommandLine h, rangeStartup))
+    | h :: _ -> errorR (Error(FSComp.SR.fscReferenceOnCommandLine h, rangeStartup))
 
     dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup, f))
     sourceFiles
@@ -312,7 +312,7 @@ module InterfaceFileWriter =
             fprintfn os "#light" 
             fprintfn os "" 
 
-        for (TImplFile(_, _, mexpr, _, _, _)) in declaredImpls do
+        for (TImplFile (_, _, mexpr, _, _, _)) in declaredImpls do
             let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
             writeViaBufferWithEnvironmentNewLines os (fun os s -> Printf.bprintf os "%s\n\n" s)
               (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Layout.squashTo 80 |> Layout.showL)
@@ -1465,7 +1465,7 @@ module StaticLinker =
               let providerGeneratedILModules, ilxMainModule = 
                   // Build a dictionary of all remapped IL type defs 
                   let ilOrigTyRefsForProviderGeneratedTypesToRelocate = 
-                      let rec walk acc (ProviderGeneratedType(ilOrigTyRef, _, xs) as node) = List.fold walk ((ilOrigTyRef, node)::acc) xs 
+                      let rec walk acc (ProviderGeneratedType(ilOrigTyRef, _, xs) as node) = List.fold walk ((ilOrigTyRef, node) :: acc) xs 
                       dict (Seq.fold walk [] tcImports.ProviderGeneratedTypeRoots)
 
                   // Build a dictionary of all IL type defs, mapping ilOrigTyRef --> ilTypeDef
@@ -1524,14 +1524,14 @@ module StaticLinker =
                           let rec loop xs acc = 
                               match xs with 
                               | [] -> List.rev acc, None, [] 
-                              | h::t -> if p h then List.rev acc, Some h, t else loop t (h::acc)
+                              | h :: t -> if p h then List.rev acc, Some h, t else loop t (h :: acc)
                           loop xs []
 
                       /// Implant the (nested) type definition 'td' at path 'enc' in 'tdefs'. 
                       let rec implantTypeDef isNested (tdefs: ILTypeDefs) (enc: string list) (td: ILTypeDef) = 
                           match enc with 
                           | [] -> addILTypeDef td tdefs
-                          | h::t -> 
+                          | h :: t -> 
                                let tdefs = tdefs.AsList
                                let (ltdefs, htd, rtdefs) = 
                                    match tdefs |> trySplitFind (fun td -> td.Name = h) with 
@@ -1658,7 +1658,7 @@ let GetStrongNameSigner signingInfo =
                 else
                     Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
                 with e -> 
-                    // Note:: don't use errorR here since we really want to fail and not produce a binary
+                    // Note :: don't use errorR here since we really want to fail and not produce a binary
                     error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
 
 //----------------------------------------------------------------------------
@@ -1887,7 +1887,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // it as the updated global error logger and never remove it
     let oldLogger = errorLogger
     let errorLogger = 
-        let scopedPragmas = [ for (TImplFile(_, pragmas, _, _, _, _)) in typedImplFiles do yield! pragmas ]
+        let scopedPragmas = [ for (TImplFile (_, pragmas, _, _, _, _)) in typedImplFiles do yield! pragmas ]
         GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, oldLogger)
 
     let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)

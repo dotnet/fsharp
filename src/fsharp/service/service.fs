@@ -285,7 +285,7 @@ type TypeCheckInfo
         
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(_,Item.Types(_,(ty::_)), _, denv, nenv, ad, m)::_, Some _ -> 
+        | CNR(_,Item.Types(_,(ty :: _)), _, denv, nenv, ad, m) :: _, Some _ -> 
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true ty 
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck 
@@ -297,7 +297,7 @@ type TypeCheckInfo
         //   let varA = if b then 0 else varA.
         // then the expression typings get confused (thinking 'varA:int'), so we use name resolution even for usual values.
         
-        | CNR(_, Item.Value(vref), occurence, denv, nenv, ad, m)::_, Some _ ->
+        | CNR(_, Item.Value(vref), occurence, denv, nenv, ad, m) :: _, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then 
               // Return empty list to stop further lookup - for value declarations
               NameResResult.Cancel(denv, m)
@@ -339,8 +339,8 @@ type TypeCheckInfo
         let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
         
         match items, membersByResidue with 
-        | CNR(_,Item.Types(_,(ty::_)),_,_,_,_,_)::_, Some _ -> Some ty
-        | CNR(_, Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
+        | CNR(_,Item.Types(_,(ty :: _)),_,_,_,_,_) :: _, Some _ -> Some ty
+        | CNR(_, Item.Value(vref), occurence,_,_,_,_) :: _, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then None
             else Some (StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
         | _, _ -> None
@@ -349,7 +349,7 @@ type TypeCheckInfo
         methods
         |> List.collect (fun meth ->
             match meth.GetParamDatas(amap, m, meth.FormalMethodInst) with
-            | x::_ -> x |> List.choose(fun (ParamData(_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) -> 
+            | x :: _ -> x |> List.choose(fun (ParamData(_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) -> 
                 match name with
                 | Some n -> Some (Item.ArgName(n, ty, Some (ArgumentContainer.Method meth)))
                 | None -> None
@@ -361,12 +361,12 @@ type TypeCheckInfo
         let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
         let result =
             match cnrs with
-            | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
+            | CNR(_, Item.CtorGroup(_, ((ctor :: _) as ctors)), _, denv, nenv, ad, m) :: _ ->
                 let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.ApparentEnclosingType
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
                 Some (denv, m, items)
-            | CNR(_, Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) ::_ ->
+            | CNR(_, Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
                 let props = 
                     methods
                     |> List.collect (fun meth ->
@@ -506,12 +506,12 @@ type TypeCheckInfo
     
     let GetBaseClassCandidates = function
         | Item.ModuleOrNamespaces _ -> true
-        | Item.Types(_, ty::_) when (isClassTy g ty) && not (isSealedTy g ty) -> true
+        | Item.Types(_, ty :: _) when (isClassTy g ty) && not (isSealedTy g ty) -> true
         | _ -> false   
 
     let GetInterfaceCandidates = function
         | Item.ModuleOrNamespaces _ -> true
-        | Item.Types(_, ty::_) when (isInterfaceTy g ty) -> true
+        | Item.Types(_, ty :: _) when (isInterfaceTy g ty) -> true
         | _ -> false   
 
 
@@ -1040,7 +1040,7 @@ type TypeCheckInfo
                         |> List.filter(fun ar->isPosMatch(pos, ar.originalReference))
 
             match matches with 
-            | resolved::_ // Take the first seen
+            | resolved :: _ // Take the first seen
             | [resolved] -> 
                 let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
@@ -1228,9 +1228,9 @@ type TypeCheckInfo
                   match item.Item with 
 #if !NO_EXTENSIONTYPING
 // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
-                  | Item.CtorGroup  (name, ProvidedMeth (_)::_   )
-                  | Item.MethodGroup(name, ProvidedMeth (_)::_, _)
-                  | Item.Property   (name, ProvidedProp (_)::_   ) -> FSharpFindDeclFailureReason.ProvidedMember name             
+                  | Item.CtorGroup  (name, ProvidedMeth (_) :: _   )
+                  | Item.MethodGroup(name, ProvidedMeth (_) :: _, _)
+                  | Item.Property   (name, ProvidedProp (_) :: _   ) -> FSharpFindDeclFailureReason.ProvidedMember name             
                   | Item.Event      (      ProvidedEvent(_) as e ) -> FSharpFindDeclFailureReason.ProvidedMember e.EventName        
                   | Item.ILField    (      ProvidedField(_) as f ) -> FSharpFindDeclFailureReason.ProvidedMember f.FieldName        
                   | SymbolHelpers.ItemIsProvidedType g (tcref)     -> FSharpFindDeclFailureReason.ProvidedType   tcref.DisplayName

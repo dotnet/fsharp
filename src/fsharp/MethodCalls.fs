@@ -658,7 +658,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
         ((args, vexprty), arities) ||> List.mapFold (fun (args, fty) arity -> 
             match arity, args with 
             | (0|1), [] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
-            | 0, (arg::argst) -> 
+            | 0, (arg :: argst) -> 
                 let msg = Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))
                 warning(InternalError(sprintf "Unexpected zero arity, args = %s" msg, m))
                 arg, (argst, rangeOfFunTy g fty)

@@ -75,7 +75,7 @@ module NavigationImpl =
     
     let rangeOfDecls2 f decls = 
       match (decls |> List.map (f >> (fun (d:FSharpNavigationDeclarationItem) -> d.bodyRange))) with 
-      | hd::tl -> tl |> List.fold unionRangesChecked hd
+      | hd :: tl -> tl |> List.fold unionRangesChecked hd
       | [] -> range.Zero
     
     let rangeOfDecls = rangeOfDecls2 fst
@@ -143,8 +143,8 @@ module NavigationImpl =
                   | MemberKind.PropertyGet -> FSharpGlyph.Property, PropertyDecl
                 let lidShow, rangeMerge = 
                   match lid with 
-                  | _thisVar::nm::_ -> (List.tail lid, nm.idRange) 
-                  | hd::_ -> (lid, hd.idRange) 
+                  | _thisVar :: nm :: _ -> (List.tail lid, nm.idRange) 
+                  | hd :: _ -> (lid, hd.idRange) 
                   | _ -> (lid, m)
                 [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m, enclosingEntityKind, isAbstract, access) ]
             | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, access, _), _ -> 
@@ -287,7 +287,7 @@ module NavigationImpl =
                                 FSharpGlyph.Module, m, 
                                 unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
                                 singleTopLevel, FSharpEnclosingEntityKind.Module, false, access), (addItemName(textOfLid id)), nested
-                    decl::other)
+                    decl :: other)
                   
         let items = 
             items 
@@ -400,7 +400,7 @@ module NavigationImpl =
                 
                 // Get nested modules and types (for the left dropdown)
                 let other = processFSharpNavigationTopLevelSigDeclarations(newBaseName, decls)
-                createDeclLid(baseName, lid, ModuleDecl, FSharpGlyph.Module, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested, FSharpEnclosingEntityKind.Module, false, access)::other
+                createDeclLid(baseName, lid, ModuleDecl, FSharpGlyph.Module, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested, FSharpEnclosingEntityKind.Module, false, access) :: other
                   
             | SynModuleSigDecl.Types(tydefs, _) -> tydefs |> List.collect (processTycon baseName)                                    
             | SynModuleSigDecl.Exception (defn,_) -> processExnSig baseName defn
@@ -424,7 +424,7 @@ module NavigationImpl =
                             FSharpGlyph.Module, m, 
                             unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
                             singleTopLevel, FSharpEnclosingEntityKind.Module, false, access), (addItemName(textOfLid id)), nested
-                decl::other)
+                decl :: other)
         
         let items = 
             items 
@@ -440,8 +440,8 @@ module NavigationImpl =
 
     let getNavigation (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.SigFile(ParsedSigFileInput(modules = modules)) -> getNavigationFromSigFile modules
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = modules)) -> getNavigationFromImplFile modules
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = modules)) -> getNavigationFromSigFile modules
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> getNavigationFromImplFile modules
 
     let empty = FSharpNavigationItems([||])
 
@@ -570,7 +570,7 @@ module NavigateTo =
             let ctor = mapMemberKind memberFlags.MemberKind
             addValSig ctor valSig isSig container
     
-        let rec walkSigFileInput (ParsedSigFileInput(fileName, _, _, _, moduleOrNamespaceList)) = 
+        let rec walkSigFileInput (ParsedSigFileInput (fileName, _, _, _, moduleOrNamespaceList)) = 
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespaceSig item { Type = ContainerType.File; Name = fileName }
     
@@ -627,7 +627,7 @@ module NavigateTo =
             | SynMemberSig.Inherit _
             | SynMemberSig.Interface _ -> ()
     
-        and walkImplFileInpit (ParsedImplFileInput(fileName = fileName; modules = moduleOrNamespaceList)) = 
+        and walkImplFileInpit (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = 
             let container = { Type = ContainerType.File; Name = fileName }
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespace item container

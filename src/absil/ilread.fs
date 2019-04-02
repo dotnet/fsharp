@@ -276,17 +276,17 @@ type MemoryMapFile(fileName: string, view: MemoryMapView, hMap: MemoryMapping.HA
     let mutable closed = false
     static member Create fileName =
         let hFile = MemoryMapping.CreateFile (fileName, MemoryMapping.GENERIC_READ, MemoryMapping.FILE_SHARE_READ_WRITE, IntPtr.Zero, MemoryMapping.OPEN_EXISTING, 0, IntPtr.Zero )
-        if hFile.Equals(MemoryMapping.INVALID_HANDLE) then
+        if hFile.Equals MemoryMapping.INVALID_HANDLE then
             failwithf "CreateFile(0x%08x)" (Marshal.GetHRForLastWin32Error())
         let protection = 0x00000002
         let hMap = MemoryMapping.CreateFileMapping (hFile, IntPtr.Zero, protection, 0, 0, null )
         ignore(MemoryMapping.CloseHandle hFile)
-        if hMap.Equals(MemoryMapping.NULL_HANDLE) then
+        if hMap.Equals MemoryMapping.NULL_HANDLE then
             failwithf "CreateFileMapping(0x%08x)" (Marshal.GetHRForLastWin32Error())
 
         let hView = MemoryMapping.MapViewOfFile (hMap, MemoryMapping.MAP_READ, 0, 0, 0n)
 
-        if hView.Equals(IntPtr.Zero) then
+        if hView.Equals IntPtr.Zero then
            failwithf "MapViewOfFile(0x%08x)" (Marshal.GetHRForLastWin32Error())
 
         let view = MemoryMapView hView 
@@ -529,7 +529,7 @@ let sigptrGetZInt32 bytes sigptr =
 let rec sigptrFoldAcc f n (bytes: byte[]) (sigptr: int) i acc = 
     if i < n then 
         let x, sp = f bytes sigptr
-        sigptrFoldAcc f n bytes sp (i+1) (x::acc)
+        sigptrFoldAcc f n bytes sp (i+1) (x :: acc)
     else 
         List.rev acc, sigptr
 
@@ -1028,7 +1028,7 @@ let seekReadOptionalIndexedRow info =
     match seekReadIndexedRows info with 
     | [k] -> Some k
     | [] -> None
-    | h::_ -> 
+    | h :: _ -> 
         dprintn ("multiple rows found when indexing table") 
         Some h 
         
@@ -1569,7 +1569,7 @@ let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
         let mdv = ctxt.mdfile.GetView()
         let dataStartPoints = 
             let res = ref []
-            for i = 1 to ctxt.getNumRows (TableNames.FieldRVA) do
+            for i = 1 to ctxt.getNumRows TableNames.FieldRVA do
                 let rva, _fidx = seekReadFieldRVARow ctxt mdv i
                 res := ("field", rva) :: !res
             for i = 1 to ctxt.getNumRows TableNames.ManifestResource do
@@ -1612,7 +1612,7 @@ let rvaToData (ctxt: ILMetadataReader) (pectxt: PEReader) nm rva =
         match l with 
         | [] -> 
             failwithf "find_text_data_extent: none found for fileName=%s, name=%s, rva=0x%08x, start=0x%08x" ctxt.fileName nm rva start 
-        | e::t -> 
+        | e :: t -> 
            if start < e then 
              let pev = pectxt.pefile.GetView()
              seekReadBytes pev start (e - start)
@@ -1635,7 +1635,7 @@ let rec seekReadModule (ctxt: ILMetadataReader) (pectxtEager: PEReader) pevEager
     let nativeResources = readNativeResources pectxtEager
 
     { Manifest =
-         if ctxt.getNumRows (TableNames.Assembly) > 0 then Some (seekReadAssemblyManifest ctxt pectxtEager 1) 
+         if ctxt.getNumRows TableNames.Assembly > 0 then Some (seekReadAssemblyManifest ctxt pectxtEager 1) 
          else None
       CustomAttrsStored = ctxt.customAttrsReader_Module
       MetadataIndex = idx
@@ -2140,7 +2140,7 @@ and sigptrGetArgTys (ctxt: ILMetadataReader) n numtypars bytes sigptr acc =
         (List.rev acc, Some varargs), sigptr
       else
         let x, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-        sigptrGetArgTys ctxt (n-1) numtypars bytes sigptr (x::acc)
+        sigptrGetArgTys ctxt (n-1) numtypars bytes sigptr (x :: acc)
          
 and sigptrGetLocal (ctxt: ILMetadataReader) numtypars bytes sigptr = 
     let pinned, sigptr = 
@@ -2472,7 +2472,7 @@ and seekReadoptional_MethodSemantics ctxt id =
     match seekReadMultipleMethodSemantics ctxt id with 
     | [] -> None
     | [h] -> Some h
-    | h::_ -> dprintn "multiple method semantics found"; Some h
+    | h :: _ -> dprintn "multiple method semantics found"; Some h
 
 and seekReadMethodSemantics ctxt id =
     match seekReadoptional_MethodSemantics ctxt id with 

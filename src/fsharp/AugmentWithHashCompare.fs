@@ -299,7 +299,7 @@ let mkExnEquality (g: TcGlobals) exnref (exnc: Tycon) =
         mkCallGenericEqualityEROuter g m fty
           (mkExnCaseFieldGet(thise, exnref, i, m))
           (mkExnCaseFieldGet(thate, exnref, i, m)) 
-    let expr = mkEqualsTestConjuncts g m (List.mapi mkTest (exnc.AllInstanceFieldsAsList)) 
+    let expr = mkEqualsTestConjuncts g m (List.mapi mkTest exnc.AllInstanceFieldsAsList) 
     let expr =
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
         let cases = 
@@ -323,7 +323,7 @@ let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (t
           compe
           (mkExnCaseFieldGet(thise, exnref, i, m))
           (mkExnCaseFieldGet(thataddre, exnref, i, m))
-    let expr = mkEqualsTestConjuncts g m (List.mapi mkTest (exnc.AllInstanceFieldsAsList)) 
+    let expr = mkEqualsTestConjuncts g m (List.mapi mkTest exnc.AllInstanceFieldsAsList) 
     let expr =
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
         let cases =
@@ -615,7 +615,7 @@ let mkExnHashWithComparer g exnref (exnc: Tycon) compe =
         mkCallGenericHashWithComparerOuter g m fty compe e
        
     let accv, acce = mkMutableCompGenLocal m "i" g.int_ty                  
-    let stmt = mkCombineHashGenerators g m (List.mapi mkHash (exnc.AllInstanceFieldsAsList)) (mkLocalValRef accv) acce
+    let stmt = mkCombineHashGenerators g m (List.mapi mkHash exnc.AllInstanceFieldsAsList) (mkLocalValRef accv) acce
     let expr = mkCompGenLet m accv (mkZero g m) stmt 
     let expr = mkBindNullHash g m thise expr
     thisv, expr
@@ -922,7 +922,7 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let _, tmty = mkMinimalTy g tcref
     let vis = tcref.TypeReprAccessibility
-    let tps = tcref.Typars(tcref.Range)
+    let tps = tcref.Typars tcref.Range
     let objGetHashCodeVal = mkValSpec g tcref tmty vis  (Some(mkGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashTy g tmty)) unitArg
     let withcGetHashCodeVal = mkValSpec g tcref tmty vis (Some(mkIStructuralEquatableGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashWithComparerTy g tmty)) unaryArg
     let withcEqualsVal  = mkValSpec g tcref tmty vis (Some(mkIStructuralEquatableEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsWithComparerTy g tmty)) tupArg
@@ -931,7 +931,7 @@ let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
 let MakeBindingsForCompareAugmentation g (tycon: Tycon) = 
     let tcref = mkLocalTyconRef tycon 
     let m = tycon.Range
-    let tps = tycon.Typars(tycon.Range)
+    let tps = tycon.Typars m
     let mkCompare comparef =
         match tycon.GeneratedCompareToValues with 
         | None ->  []
@@ -964,7 +964,7 @@ let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
 let MakeBindingsForCompareWithComparerAugmentation g (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars(tycon.Range)
+    let tps = tycon.Typars m
     let mkCompare comparef = 
         match tycon.GeneratedCompareToWithComparerValues with
         | None -> []
@@ -990,7 +990,7 @@ let MakeBindingsForCompareWithComparerAugmentation g (tycon: Tycon) =
 let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars(tycon.Range)
+    let tps = tycon.Typars m
     let mkStructuralEquatable hashf equalsf =
         match tycon.GeneratedHashAndEqualsWithComparerValues with
         | None -> []

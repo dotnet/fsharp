@@ -569,7 +569,7 @@ let MapD f xs =
     let rec loop acc xs = 
         match xs with
         | [] -> ResultD (List.rev acc) 
-        | h :: t -> f h ++ (fun x -> loop (x::acc) t)
+        | h :: t -> f h ++ (fun x -> loop (x :: acc) t)
 
     loop [] xs
 
@@ -601,7 +601,7 @@ let IterateIdxD f xs =
 let rec Iterate2D f xs ys = 
     match xs, ys with 
     | [], [] -> CompleteD 
-    | h1 :: t1, h2::t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2) 
+    | h1 :: t1, h2 :: t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2) 
     | _ -> failwith "Iterate2D"
 
 /// Keep the warnings, propagate the error to the exception continuation.

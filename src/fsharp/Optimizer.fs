@@ -551,7 +551,7 @@ let inline BindInternalValsToUnknown cenv vs env =
     env
 #endif
 
-let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo)::env.typarInfos } 
+let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
 
 let BindTypeVarsToUnknown (tps: Typar list) env = 
     if isNil tps then env else
@@ -1405,7 +1405,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
               match argsr with 
               | (Expr.Val (VRefLocal vspec2, _, _)) :: argsr2
                  when valEq vspec1 vspec2 && IsUniqueUse vspec2 (List.rev rargsl@argsr2) -> Some(List.rev rargsl, argsr2)
-              | argsrh :: argsrt when not (ExprHasEffect cenv.g argsrh) -> GetImmediateUseContext (argsrh::rargsl) argsrt 
+              | argsrh :: argsrt when not (ExprHasEffect cenv.g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
               | _ -> None
 
         match stripExpr e2 with 
@@ -1429,9 +1429,9 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
          // Note: do not include functions with a single arg of unit type, introduced by abstractBigTargets 
          | Expr.App (f, f0ty, tyargs, args, m) 
                when not (vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated) ->
-             match GetImmediateUseContext [] (f::args) with 
+             match GetImmediateUseContext [] (f :: args) with 
              | Some([], rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (e1, f0ty, [tyargs], rargs, m))
-             | Some(f::largs, rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (f, f0ty, [tyargs], largs @ (e1::rargs), m))
+             | Some(f :: largs, rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (f, f0ty, [tyargs], largs @ (e1 :: rargs), m))
              | None -> None
 
          // Bug 6311: a special case of nested elimination of locals (which really should be handled more generally)
@@ -1450,7 +1450,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
          // 'let x = e in op[x;....]'
          | Expr.Op (c, tyargs, args, m) -> 
              match GetImmediateUseContext [] args with 
-             | Some(largs, rargs) -> Some (Expr.Op (c, tyargs, (largs @ (e1:: rargs)), m))
+             | Some(largs, rargs) -> Some (Expr.Op (c, tyargs, (largs @ (e1 :: rargs)), m))
              | None -> None
 
          | _ ->  
@@ -1664,9 +1664,9 @@ let (|AnyRefTupleTrans|) e =
 
 /// Look for any QueryBuilder.* operation and transform
 let (|AnyQueryBuilderOpTrans|_|) g = function
-    | Expr.App ((Expr.Val (vref, _, _) as v), vty, tyargs, [builder; AnyRefTupleTrans( (src::rest), replaceArgs) ], m) when 
+    | Expr.App ((Expr.Val (vref, _, _) as v), vty, tyargs, [builder; AnyRefTupleTrans( (src :: rest), replaceArgs) ], m) when 
           (match vref.ApparentEnclosingEntity with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
-         Some (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource::rest)], m)))
+         Some (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
     | _ -> None
 
 let mkUnitDelayLambda (g: TcGlobals) m e =
@@ -2497,13 +2497,13 @@ and CanDevirtualizeApplication cenv v vref ty args =
 and TakeAddressOfStructArgumentIfNeeded cenv (vref: ValRef) ty args m =
     if vref.IsInstanceMember && isStructTy cenv.g ty then 
         match args with 
-        | objArg::rest -> 
+        | objArg :: rest -> 
             // We set NeverMutates here, allowing more address-taking. This is valid because we only ever use DevirtualizeApplication to transform 
             // known calls to known generated F# code for CompareTo, Equals and GetHashCode.
             // If we ever reuse DevirtualizeApplication to transform an arbitrary virtual call into a 
             // direct call then this assumption is not valid.
             let wrap, objArgAddress, _readonly, _writeonly = mkExprAddrOfExpr cenv.g true false NeverMutates objArg None m
-            wrap, (objArgAddress::rest)
+            wrap, (objArgAddress :: rest)
         | _ -> 
             // no wrapper, args stay the same 
             id, args
@@ -2524,8 +2524,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     // e.g rewrite 
     //      'LanguagePrimitives.HashCompare.GenericComparisonIntrinsic (x: C) (y: C)' 
     //  --> 'x.CompareTo(y: C)' where this is a direct call to the implementation of CompareTo, i.e.
-    //        C::CompareTo(C)
-    //    not C::CompareTo(obj)
+    //        C :: CompareTo(C)
+    //    not C :: CompareTo(obj)
     //
     // If C is a struct type then we have to take the address of 'c'
     
@@ -3337,7 +3337,7 @@ and OptimizeModuleDef cenv (env, bindInfosColl) x =
         (TMDefLet(bindR, m), 
          notlazy { ValInfos=ValInfos [mkValBind bind (mkValInfo binfo bind.Var)] 
                    ModuleOrNamespaceInfos = NameMap.empty }), 
-        (env, ([bindInfo]::bindInfosColl))
+        (env, ([bindInfo] :: bindInfosColl))
 
     | TMDefDo(e, m) ->
         let (e, _einfo) = OptimizeExpr cenv env e
@@ -3367,7 +3367,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
     let env, mexprR, minfo = 
         match mexpr with 
         // FSI: FSI compiles everything as if you're typing incrementally into one module 
@@ -3386,10 +3386,10 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qn
     let hidden = ComputeHidingInfoAtAssemblyBoundary mexpr.Type hidden
 
     let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-    env, TImplFile(qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes), minfo, hidden
+    env, TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes), minfo, hidden
 
 /// Entry point
-let OptimizeImplFile(settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 

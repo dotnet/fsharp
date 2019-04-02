@@ -81,7 +81,7 @@ let DecideExpr cenv exprF noInterceptF z expr  =
     | Expr.Obj (_, _, baseValOpt, superInitCall, overrides, iimpls, _m) -> 
         let CheckMethod z (TObjExprMethod(_, _attribs, _tps, vs, body, _m)) = 
             let vs = List.concat vs
-            let syntacticArgs = (match baseValOpt with Some x -> x:: vs | None -> vs)
+            let syntacticArgs = (match baseValOpt with Some x -> x :: vs | None -> vs)
             let z = Zset.union z (DecideEscapes syntacticArgs body)
             exprF z body
 

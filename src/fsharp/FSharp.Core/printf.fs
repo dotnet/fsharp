@@ -843,7 +843,7 @@ module internal PrintfImpl =
                     adaptPaddedFormatted spec getFormat f right
 
         let inline withPadding (spec: FormatSpecifier) (f: 'T -> string) left right =
-            if not (spec.IsWidthSpecified) then
+            if not spec.IsWidthSpecified then
                 box f
             else
                 if isLeftJustify spec.Flags then
@@ -1532,7 +1532,7 @@ module internal PrintfImpl =
         static let generate fmt = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt)        
         static let mutable map = System.Collections.Concurrent.ConcurrentDictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
         static let getOrAddFunc = Func<_, _>(generate)
-        static let get(key: string) = map.GetOrAdd(key, getOrAddFunc)
+        static let get (key: string) = map.GetOrAdd(key, getOrAddFunc)
 
         [<DefaultValue>]
         [<ThreadStatic>]
@@ -1543,7 +1543,7 @@ module internal PrintfImpl =
                 && key.Value.Equals (fst Cache<'T, 'State, 'Residue, 'Result>.last) then
                     snd Cache<'T, 'State, 'Residue, 'Result>.last
             else
-                let v = get(key.Value)
+                let v = get key.Value
                 Cache<'T, 'State, 'Residue, 'Result>.last <- (key.Value, v)
                 v
 

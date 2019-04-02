@@ -429,7 +429,7 @@ let SplitRelatedDiagnostics(err: PhasedDiagnostic) =
           SplitRelatedException e.InnerException
       | e -> 
            ToPhased e, []
-    SplitRelatedException(err.Exception)
+    SplitRelatedException err.Exception
 
 
 let DeclareMesssage = FSharp.Compiler.DiagnosticMessage.DeclareResourceString
@@ -1578,7 +1578,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) =
               System.Diagnostics.Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
 #endif
 
-    OutputExceptionR os (err.Exception)
+    OutputExceptionR os err.Exception
 
 
 // remove any newlines and tabs 
@@ -1760,7 +1760,7 @@ let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, erro
             os.Append txt |> ignore
         | Diagnostic.Long(_, details) ->
             match details.Location with
-            | Some l when not l.IsEmpty -> os.Append(l.TextRepresentation) |> ignore
+            | Some l when not l.IsEmpty -> os.Append l.TextRepresentation |> ignore
             | _ -> ()
             os.Append( details.Canonical.TextRepresentation ) |> ignore
             os.Append( details.Message ) |> ignore
@@ -1939,15 +1939,20 @@ and IProjectReference =
 
 type AssemblyReference = 
     | AssemblyReference of range * string * IProjectReference option
+
     member x.Range = (let (AssemblyReference(m, _, _)) = x in m)
+
     member x.Text = (let (AssemblyReference(_, text, _)) = x in text)
+
     member x.ProjectReference = (let (AssemblyReference(_, _, contents)) = x in contents)
+
     member x.SimpleAssemblyNameIs name = 
         (String.Compare(fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0) ||
         (let text = x.Text.ToLowerInvariant()
          not (text.Contains "/") && not (text.Contains "\\") && not (text.Contains ".dll") && not (text.Contains ".exe") &&
-           try let aname = System.Reflection.AssemblyName(x.Text) in aname.Name = name 
+           try let aname = System.Reflection.AssemblyName x.Text in aname.Name = name 
            with _ -> false) 
+
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
@@ -2547,7 +2552,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         | [r] -> nameOfDll r
         | [] -> 
             defaultCoreLibraryReference, None
-        | r:: _ -> 
+        | r :: _ -> 
             // Recover by picking the first one.
             errorR(Error(FSComp.SR.buildMultipleReferencesNotAllowed libraryName, rangeCmdArgs)) 
             nameOfDll r
@@ -3111,8 +3116,8 @@ let GetScopedPragmasForHashDirective hd =
 let GetScopedPragmasForInput input = 
 
     match input with 
-    | ParsedInput.SigFile (ParsedSigFileInput(scopedPragmas=pragmas)) -> pragmas
-    | ParsedInput.ImplFile (ParsedImplFileInput(scopedPragmas=pragmas)) -> pragmas
+    | ParsedInput.SigFile (ParsedSigFileInput (scopedPragmas=pragmas)) -> pragmas
+    | ParsedInput.ImplFile (ParsedImplFileInput (scopedPragmas=pragmas)) -> pragmas
 
 
 
@@ -3189,8 +3194,8 @@ let PrepandPathToSpec x (SynModuleOrNamespaceSig(p, b, c, d, e, f, g, h)) = SynM
 
 let PrependPathToInput x inp = 
     match inp with 
-    | ParsedInput.ImplFile (ParsedImplFileInput(b, c, q, d, hd, impls, e)) -> ParsedInput.ImplFile (ParsedImplFileInput(b, c, PrepandPathToQualFileName x q, d, hd, List.map (PrepandPathToImpl x) impls, e))
-    | ParsedInput.SigFile (ParsedSigFileInput(b, q, d, hd, specs)) -> ParsedInput.SigFile(ParsedSigFileInput(b, PrepandPathToQualFileName x q, d, hd, List.map (PrepandPathToSpec x) specs))
+    | ParsedInput.ImplFile (ParsedImplFileInput (b, c, q, d, hd, impls, e)) -> ParsedInput.ImplFile (ParsedImplFileInput (b, c, PrepandPathToQualFileName x q, d, hd, List.map (PrepandPathToImpl x) impls, e))
+    | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs)) -> ParsedInput.SigFile (ParsedSigFileInput (b, PrepandPathToQualFileName x q, d, hd, List.map (PrepandPathToSpec x) specs))
 
 let ComputeAnonModuleName check defaultNamespace filename (m: range) = 
     let modname = CanonicalizeFilename filename
@@ -3269,7 +3274,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
 
 
 
-let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImplFile(hashDirectives, impls)) = 
+let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImplFile (hashDirectives, impls)) = 
     match impls |> List.rev |> List.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
     | Some lid when impls.Length > 1 -> 
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
@@ -3287,9 +3292,9 @@ let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImp
                 | _ -> () 
           for hd in hashDirectives do 
               yield! GetScopedPragmasForHashDirective hd ]
-    ParsedInput.ImplFile(ParsedImplFileInput(filename, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland))
+    ParsedInput.ImplFile (ParsedImplFileInput (filename, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland))
   
-let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSigFile(hashDirectives, specs)) = 
+let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSigFile (hashDirectives, specs)) = 
     match specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
     | Some lid when specs.Length > 1 -> 
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
@@ -3307,7 +3312,7 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
           for hd in hashDirectives do 
               yield! GetScopedPragmasForHashDirective hd ]
 
-    ParsedInput.SigFile(ParsedSigFileInput(filename, qualName, scopedPragmas, hashDirectives, specs))
+    ParsedInput.SigFile (ParsedSigFileInput (filename, qualName, scopedPragmas, hashDirectives, specs))
 
 type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 
@@ -3332,13 +3337,13 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
 let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
-    | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
+    | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
         let qualNameOfFileT, moduleNamesDictT = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
-        let inputT = ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualNameOfFileT, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
+        let inputT = ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput (fileName, isScript, qualNameOfFileT, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
         inputT, moduleNamesDictT
-    | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules)) ->
+    | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput (fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules)) ->
         let qualNameOfFileT, moduleNamesDictT = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
-        let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules))
+        let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput (fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules))
         inputT, moduleNamesDictT
 
 let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
@@ -3417,9 +3422,9 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
                     let flattenModSpec (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) = flattenSpecs decls
                     let flattenModImpl (SynModuleOrNamespace(_, _, _, decls, _, _, _, _)) = flattenDefns decls
                     match res with 
-                    | ParsedInput.SigFile(ParsedSigFileInput(_, _, _, _, specs)) -> 
+                    | ParsedInput.SigFile (ParsedSigFileInput (_, _, _, _, specs)) -> 
                         dprintf "parsing yielded %d specs" (List.collect flattenModSpec specs).Length
-                    | ParsedInput.ImplFile(ParsedImplFileInput(modules = impls)) -> 
+                    | ParsedInput.ImplFile (ParsedImplFileInput (modules = impls)) -> 
                         dprintf "parsing yielded %d definitions" (List.collect flattenModImpl impls).Length
                 res
             )
@@ -4042,17 +4047,17 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
              provider, 
              st: Tainted<ProvidedType> option) = 
         match remainingNamespace with
-        | next::rest ->
+        | next :: rest ->
             // Inject the namespace entity 
             match entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind next with
             | Some childEntity ->
-                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, childEntity, next::injectedNamspace, rest, provider, st)
+                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, childEntity, next :: injectedNamspace, rest, provider, st)
             | None -> 
                 // Build up the artificial namespace if there is not a real one.
                 let cpath = CompPath(ILScopeRef.Local, injectedNamspace |> List.rev |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace)) )
                 let newNamespace = NewModuleOrNamespace (Some cpath) taccessPublic (ident(next, rangeStartup)) XmlDoc.Empty [] (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType Namespace)) 
                 entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation newNamespace
-                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, newNamespace, next::injectedNamspace, rest, provider, st)
+                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, newNamespace, next :: injectedNamspace, rest, provider, st)
         | [] -> 
             match st with
             | Some st ->
@@ -4075,7 +4080,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                 // Add to the existing list of extensions
                 | TProvidedNamespaceExtensionPoint(resolutionFolder, prior) as repr -> 
                     if not(prior |> List.exists(fun r->Tainted.EqTainted r provider)) then 
-                        TProvidedNamespaceExtensionPoint(resolutionFolder, provider::prior)
+                        TProvidedNamespaceExtensionPoint(resolutionFolder, provider :: prior)
                     else 
                         repr
 
@@ -4488,10 +4493,10 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                     // But don't cache resolution failures because the assembly may appear on the disk later.
                     let resolved, unresolved = TcConfig.TryResolveLibsUsingMSBuildRules(tcConfig, [ assemblyReference ], assemblyReference.Range, mode)
                     match resolved, unresolved with
-                    | (assemblyResolution::_, _) -> 
+                    | (assemblyResolution :: _, _) -> 
                         resolutions <- resolutions.AddResolutionResults resolved
                         ResultD [assemblyResolution]
-                    | (_, _::_) -> 
+                    | (_, _ :: _) -> 
                         resolutions <- resolutions.AddUnresolvedReferences unresolved
                         ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
                     | [], [] -> 
@@ -4671,8 +4676,8 @@ let ProcessMetaCommandsFromInput
 
     let canHaveScriptMetaCommands = 
         match inp with 
-        | ParsedInput.SigFile(_) -> false
-        | ParsedInput.ImplFile(ParsedImplFileInput(isScript = isScript)) -> isScript
+        | ParsedInput.SigFile (_) -> false
+        | ParsedInput.ImplFile (ParsedImplFileInput (isScript = isScript)) -> isScript
 
     let ProcessMetaCommand state hash =
         let mutable matchedm = range0
@@ -4762,11 +4767,11 @@ let ProcessMetaCommandsFromInput
          decls
 
     match inp with 
-    | ParsedInput.SigFile(ParsedSigFileInput(_, _, _, hashDirectives, specs)) -> 
+    | ParsedInput.SigFile (ParsedSigFileInput (_, _, _, hashDirectives, specs)) -> 
         let state = List.fold ProcessMetaCommand state0 hashDirectives
         let state = List.fold ProcessMetaCommandsFromModuleSpec state specs
         state
-    | ParsedInput.ImplFile(ParsedImplFileInput(_, _, _, _, hashDirectives, impls, _)) -> 
+    | ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, hashDirectives, impls, _)) -> 
         let state = List.fold ProcessMetaCommand state0 hashDirectives
         let state = List.fold ProcessMetaCommandsFromModuleImpl state impls
         state
@@ -5011,13 +5016,13 @@ module private ScriptPreprocessClosure =
                 match List.frontAndBack closureFiles with
                 | rest, ClosureFile
                            (filename, m, 
-                            Some(ParsedInput.ImplFile(ParsedImplFileInput(name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _))), 
+                            Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _))), 
                             parseDiagnostics, metaDiagnostics, nowarns) -> 
 
                     let isLastCompiland = (true, tcConfig.target.IsExe)
                     rest @ [ClosureFile
                                 (filename, m, 
-                                 Some(ParsedInput.ImplFile(ParsedImplFileInput(name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland))), 
+                                 Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland))), 
                                  parseDiagnostics, metaDiagnostics, nowarns)]
 
                 | _ -> closureFiles
@@ -5295,7 +5300,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
           let m = inp.Range
           let amap = tcImports.GetImportMap()
           match inp with 
-          | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
+          | ParsedInput.SigFile (ParsedSigFileInput (_, qualNameOfFile, _, _, _) as file) ->
                 
               // Check if we've seen this top module signature before. 
               if Zmap.mem qualNameOfFile tcState.tcsRootSigs then 
@@ -5334,7 +5339,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
 
               return (tcEnv, EmptyTopAttrs, None, ccuSigForFile), tcState
 
-          | ParsedInput.ImplFile (ParsedImplFileInput(_, _, qualNameOfFile, _, _, _, _) as file) ->
+          | ParsedInput.ImplFile (ParsedImplFileInput (_, _, qualNameOfFile, _, _, _, _) as file) ->
             
               // Check if we've got an interface for this fragment 
               let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile

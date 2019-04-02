@@ -27,7 +27,7 @@ let rec stripUpTo n test dest x =
     if test x then 
         let l, r = dest x
         let ls, res = stripUpTo (n-1) test dest r
-        (l::ls), res
+        (l :: ls), res
     else ([], x)
 
 // -------------------------------------------------------------------- 
@@ -231,7 +231,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
             let storers, (loaders2 : ILInstr list list) =  unwind rest
             (List.rev (List.concat storers) : ILInstr list) , List.concat loaders2
         else 
-            stripUpTo n (function (_x::_y) -> true | _ -> false) (function (x::y) -> (x, y) | _ -> failwith "no!") loaders
+            stripUpTo n (function (_x :: _y) -> true | _ -> false) (function (x :: y) -> (x, y) | _ -> failwith "no!") loaders
             
     let rec buildApp fst loaders apps =
         // Strip off one valid indirect call.  [fst] indicates if this is the 
@@ -369,7 +369,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let fixupArg mkEnv mkArg n = 
                   let rec findMatchingArg l c = 
                       match l with 
-                      | ((m, _)::t) -> 
+                      | ((m, _) :: t) -> 
                           if n = m then mkEnv c
                           else findMatchingArg t (c+1)
                       | [] -> mkArg (n - argToFreeVarMap.Length + 1)

@@ -221,7 +221,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     // Recognize applications of module functions.
     match expr with
     // Detect expression tree exprSplices
-    | Expr.App (InnerExprPat(Expr.Val (vf, _, _)), _, _, x0::rest, m)
+    | Expr.App (InnerExprPat(Expr.Val (vf, _, _)), _, _, x0 :: rest, m)
            when isSplice cenv.g vf ->
         let idx = cenv.exprSplices.Count
         let ty = tyOfExpr cenv.g expr
@@ -259,7 +259,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         let objArgs, curriedArgs =
             match takesInstanceArg, curriedArgs with
             | false, curriedArgs -> [], curriedArgs
-            | true, (objArg::curriedArgs) -> [objArg], curriedArgs
+            | true, (objArg :: curriedArgs) -> [objArg], curriedArgs
             | true, [] -> wfail(InternalError("warning: unexpected missing object argument when generating quotation for call to F# object member " + vref.LogicalName, m))
 
         if verboseCReflect then
@@ -305,7 +305,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                     if isMember then
                         // This is an application of a member method
                         // We only count one argument block for these.
-                        let callArgs = (objArgs::untupledCurriedArgs) |> List.concat
+                        let callArgs = (objArgs :: untupledCurriedArgs) |> List.concat
 
                         let parentTyconR = ConvTyconRef cenv vref.TopValDeclaringEntity m
                         let isNewObj = isNewObj || valUseFlags || isSelfInit
@@ -676,7 +676,7 @@ and ConvLetBind cenv env (bind : Binding) =
 
 and ConvLValueArgs cenv env args =
     match args with
-    | obj::rest -> ConvLValueExpr cenv env obj :: ConvExprs cenv env rest
+    | obj :: rest -> ConvLValueExpr cenv env obj :: ConvExprs cenv env rest
     | [] -> []
 
 and ConvLValueExpr cenv env expr =
@@ -692,7 +692,7 @@ and ConvLValueExprCore cenv env expr =
         | TOp.UnionCaseFieldGetAddr (ucref, n, _), [e], _ -> ConvUnionFieldGet cenv env m ucref n tyargs e
         | TOp.ILAsm ([ I_ldflda(fspec) ], _rtys), _, _  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm ([ I_ldsflda(fspec) ], _rtys), _, _  -> ConvLdfld  cenv env m fspec tyargs args
-        | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr::idxs), [elemty]  ->
+        | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr :: idxs), [elemty]  ->
             match shape.Rank, idxs with
             | 1, [idx1] -> ConvExpr cenv env (mkCallArrayGet cenv.g m elemty arr idx1)
             | 2, [idx1; idx2] -> ConvExpr cenv env (mkCallArray2DGet cenv.g m elemty arr idx1 idx2)

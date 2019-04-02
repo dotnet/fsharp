@@ -63,8 +63,8 @@ module internal Adapters =
     let (|LeftSequentialSeries|) e =
         let rec leftSequentialSeries acc e =
             match e with 
-            | Patterns.Sequential(e1, e2) -> leftSequentialSeries (e2::acc) e1
-            | _ -> e::acc
+            | Patterns.Sequential(e1, e2) -> leftSequentialSeries (e2 :: acc) e1
+            | _ -> e :: acc
         leftSequentialSeries [] e
 
     /// Tests whether a list consists only of assignments of properties of the 
@@ -75,9 +75,9 @@ module internal Adapters =
             match x with 
             // detect " v.X <- y"
             | ((Patterns.PropertySet(Some(Patterns.Var var), _, _, _)) as p) :: xs when var = varArg ->
-                propSetList (p::acc) xs
+                propSetList (p :: acc) xs
             // skip unit values
-            | (Patterns.Value (v, _))::xs when v = null -> propSetList acc xs
+            | (Patterns.Value (v, _)) :: xs when v = null -> propSetList acc xs
             // detect "v"
             | [Patterns.Var var] when var = varArg -> Some acc
             | _ -> None
@@ -136,9 +136,9 @@ module internal Adapters =
 
     let rec NewAnonymousObject (args:Expr list) : Expr = 
         match args with 
-        | x1::x2::x3::x4::x5::x6::x7::x8::tail ->
+        | x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: tail ->
             // Too long to fit single tuple - nested tuple after first 7
-            OneNewAnonymousObject [ x1; x2; x3; x4; x5; x6; x7; NewAnonymousObject (x8::tail) ]
+            OneNewAnonymousObject [ x1; x2; x3; x4; x5; x6; x7; NewAnonymousObject (x8 :: tail) ]
         | args -> 
             OneNewAnonymousObject args
 
@@ -200,8 +200,8 @@ module internal Adapters =
         | TupleConv convs -> 
             assert (FSharpType.IsTuple ty)
             match convs with 
-            | x1::x2::x3::x4::x5::x6::x7::x8::tail ->
-                RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType [x1;x2;x3;x4;x5;x6;x7;TupleConv (x8::tail)])
+            | x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: tail ->
+                RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType [x1;x2;x3;x4;x5;x6;x7;TupleConv (x8 :: tail)])
             | _ -> 
                 RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType convs)
         | RecordConv (_,convs) -> 

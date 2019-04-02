@@ -122,7 +122,7 @@ let isRemapEmpty remap =
 let rec instTyparRef tpinst ty tp =
     match tpinst with 
     | [] -> ty
-    | (tp', ty'):: t -> 
+    | (tp', ty') :: t -> 
         if typarEq tp tp' then ty' 
         else instTyparRef t ty tp
 
@@ -132,7 +132,7 @@ let instMeasureTyparRef tpinst unt (tp: Typar) =
         let rec loop tpinst = 
             match tpinst with 
             | [] -> unt
-            | (tp', ty'):: t -> 
+            | (tp', ty') :: t -> 
                 if typarEq tp tp' then 
                     match ty' with 
                     | TType_measure unt -> unt
@@ -456,7 +456,7 @@ let rec MeasureVarExponent tp unt =
 let ListMeasureVarOccs unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp:: acc
+        | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp :: acc
         | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt', _) -> gather acc unt'
         | Measure.Inv unt' -> gather acc unt'
@@ -471,7 +471,7 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
             if List.exists (fun (tp', _) -> typarEq tp tp') acc then acc 
             else 
                 let e = MeasureVarExponent tp untexpr
-                if e = ZeroRational then acc else (tp, e):: acc
+                if e = ZeroRational then acc else (tp, e) :: acc
         | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
         | Measure.Inv unt' -> gather acc unt'
         | Measure.RationalPower(unt', _) -> gather acc unt'
@@ -485,7 +485,7 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
         | Measure.Con c -> 
             if List.exists (fun (c', _) -> tyconRefEq g c c') acc then acc else 
             let e = MeasureExprConExponent g eraseAbbrevs c untexpr
-            if e = ZeroRational then acc else (c, e):: acc
+            if e = ZeroRational then acc else (c, e) :: acc
         | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
         | Measure.Inv unt' -> gather acc unt'
         | Measure.RationalPower(unt', _) -> gather acc unt'
@@ -497,7 +497,7 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
 let ListMeasureConOccsAfterRemapping g r unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Con c -> if List.exists (tyconRefEq g (r c)) acc then acc else r c:: acc
+        | Measure.Con c -> if List.exists (tyconRefEq g (r c)) acc then acc else r c :: acc
         | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt', _) -> gather acc unt'
         | Measure.Inv unt' -> gather acc unt'
@@ -521,7 +521,7 @@ let MeasureProdOpt m1 m2 =
 let ProdMeasures ms = 
     match ms with 
     | [] -> Measure.One 
-    | m:: ms -> List.foldBack MeasureProdOpt ms m
+    | m :: ms -> List.foldBack MeasureProdOpt ms m
 
 let isDimensionless g tyarg =
     match stripTyparEqns tyarg with
@@ -1105,7 +1105,7 @@ let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)
     let rec loop prior_cpath (path: Ident list) cpath (modul: ModuleOrNamespace) =
         let mtype = modul.ModuleOrNamespaceType 
         match path, cpath with 
-        | (hpath:: tpath), ((_, mkind):: tcpath) -> 
+        | (hpath :: tpath), ((_, mkind) :: tcpath) -> 
             let modName = hpath.idText 
             if not (Map.containsKey modName mtype.AllEntitiesByCompiledAndLogicalMangledNames) then 
                 let smodul = NewModuleOrNamespace (Some(CompPath(scoref, prior_cpath))) taccessPublic hpath xml [] (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType mkind))
@@ -1220,7 +1220,7 @@ let mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (b, rty) =
         | _ -> 
             match vsl with 
             | [] -> error(InternalError("mk_basev_multi_lambdas_core: can't attach a basev to a non-lambda expression", m))
-            | h:: t -> 
+            | h :: t -> 
                 let b, rty = mkMultiLambdasCore m t (b, rty)
                 (rebuildLambda m ctorThisValOpt baseValOpt h (b, rty), (typeOfLambdaArg m h --> rty))
     mkTypeLambda m tps expr
@@ -1502,7 +1502,7 @@ let rec stripFunTy g ty =
     if isFunTy g ty then 
         let (d, r) = destFunTy g ty 
         let more, rty = stripFunTy g r 
-        d:: more, rty
+        d :: more, rty
     else [], ty
 
 let applyForallTy g ty tyargs = 
@@ -1530,7 +1530,7 @@ let rec stripFunTyN g n ty =
     assert (n >= 0)
     if n > 0 && isFunTy g ty then 
         let (d, r) = destFunTy g ty
-        let more, rty = stripFunTyN g (n-1) r in d:: more, rty
+        let more, rty = stripFunTyN g (n-1) r in d :: more, rty
     else [], ty
 
         
@@ -2227,7 +2227,7 @@ let GetMemberTypeInFSharpForm g memberFlags arities ty m =
             | [] -> 
                 errorR(InternalError("value does not have a valid member type", m))
                 argInfos
-            | _:: t -> t
+            | _ :: t -> t
         else argInfos
     tps, argInfos, rty, retInfo
 
@@ -2428,16 +2428,16 @@ module PrettyTypes =
         let rec choose (tps: Typar list) (typeIndex, measureIndex) acc = 
             match tps with
             | [] -> List.rev acc
-            | tp:: tps ->
+            | tp :: tps ->
             
 
                 // Use a particular name, possibly after incrementing indexes
                 let useThisName (nm, typeIndex, measureIndex) = 
-                    choose tps (typeIndex, measureIndex) (nm:: acc)
+                    choose tps (typeIndex, measureIndex) (nm :: acc)
 
                 // Give up, try again with incremented indexes
                 let tryAgain (typeIndex, measureIndex) = 
-                    choose (tp:: tps) (typeIndex, measureIndex) acc
+                    choose (tp :: tps) (typeIndex, measureIndex) acc
 
                 let tryName (nm, typeIndex, measureIndex) f = 
                     if List.contains nm alreadyInUse then 
@@ -2840,13 +2840,13 @@ let qualifiedMangledNameOfTyconRef tcref nm =
 let rec firstEq p1 p2 = 
     match p1 with
     | [] -> true 
-    | h1:: t1 -> 
+    | h1 :: t1 -> 
         match p2 with 
-        | h2:: t2 -> h1 = h2 && firstEq t1 t2
+        | h2 :: t2 -> h1 = h2 && firstEq t1 t2
         | _ -> false 
 
 let rec firstRem p1 p2 = 
-   match p1 with [] -> p2 | _:: t1 -> firstRem t1 (List.tail p2)
+   match p1 with [] -> p2 | _ :: t1 -> firstRem t1 (List.tail p2)
 
 let trimPathByDisplayEnv denv path =
     let findOpenedNamespace openedPath = 
@@ -3781,7 +3781,7 @@ module DebugPrint =
         let z = z --- sepL(tagText "`") --- (spaceListL (List.map atomL args))
         z
        
-    and implFileL (TImplFile(_, _, mexpr, _, _, _)) =
+    and implFileL (TImplFile (_, _, mexpr, _, _, _)) =
         aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL mexpr]
 
     and mexprL x =
@@ -3879,7 +3879,7 @@ let wrapModuleOrNamespaceExprInNamespace (id: Ident) cpath mexpr =
     TMDefRec (false, [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 // cleanup: make this a property
-let SigTypeOfImplFile (TImplFile(_, _, mexpr, _, _, _)) = mexpr.Type 
+let SigTypeOfImplFile (TImplFile (_, _, mexpr, _, _, _)) = mexpr.Type 
 
 //--------------------------------------------------------------------------
 // Data structures representing what gets hidden and what gets remapped (i.e. renamed or alpha-converted)
@@ -4574,7 +4574,7 @@ and accFreeInExprs opts (exprs: Exprs) acc =
     | [h]-> 
         // tailcall - e.g. Cons(x, Cons(x2, .......Cons(x1000000, Nil))) and [| x1; .... ; x1000000 |]
         accFreeInExpr opts h acc
-    | h:: t -> 
+    | h :: t -> 
         let acc = accFreeInExpr opts h acc
         accFreeInExprs opts t acc
 
@@ -4785,7 +4785,7 @@ let decideStaticOptimizationConstraint g c =
 let rec DecideStaticOptimizations g cs = 
     match cs with 
     | [] -> StaticOptimizationAnswer.Yes
-    | h:: t -> 
+    | h :: t -> 
         let d = decideStaticOptimizationConstraint g h 
         if d = StaticOptimizationAnswer.No then StaticOptimizationAnswer.No 
         elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t 
@@ -5705,7 +5705,7 @@ let rec accTargetsOfDecisionTree tree acc =
     | TDSwitch (_, cases, dflt, _) -> 
         List.foldBack (fun (c: DecisionTreeCase) -> accTargetsOfDecisionTree c.CaseTree) cases 
             (Option.foldBack accTargetsOfDecisionTree dflt acc)
-    | TDSuccess (_, i) -> i:: acc
+    | TDSuccess (_, i) -> i :: acc
     | TDBind (_, rest) -> accTargetsOfDecisionTree rest acc
 
 let rec mapTargetsOfDecisionTree f tree =
@@ -5772,7 +5772,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
             | TDSuccess (es, i) -> 
                 branchesToTargets.[i] <- (List.rev accBinds, es) :: branchesToTargets.[i]
             | TDBind (bind, rest) -> 
-                accumulateTipsOfDecisionTree (bind:: accBinds) rest 
+                accumulateTipsOfDecisionTree (bind :: accBinds) rest 
 
         // Compute the targets that can only be reached one way
         accumulateTipsOfDecisionTree [] tree 
@@ -6010,7 +6010,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy, [aexpr; nexpr], m), readonly, writeonly
 
         // LVALUE of "e.[n1, n2]", "e.[n1, n2, n3]", "e.[n1, n2, n3, n4]" where e is an array of structs 
-        | Expr.App (Expr.Val (vref, _, _), _, [elemTy], (aexpr:: args), _) 
+        | Expr.App (Expr.Val (vref, _, _), _, [elemTy], (aexpr :: args), _) 
              when (valRefEq g vref g.array2D_get_vref || valRefEq g vref g.array3D_get_vref || valRefEq g vref g.array4D_get_vref) -> 
         
             let readonly = false // array address is never forced to be readonly
@@ -6022,7 +6022,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
                 | Some vf -> valRefEq g vf g.addrof2_vref
                 | _ -> false
             
-            None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy, (aexpr:: args), m), readonly, writeonly
+            None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy, (aexpr :: args), m), readonly, writeonly
 
         // LVALUE: "&meth(args)" where meth has a byref or inref return. Includes "&span.[idx]".
         | Expr.Let (TBind(vref, e, _), Expr.Op (TOp.LValueOp (LByrefGet, vref2), _, _, _), _, _)  
@@ -6429,7 +6429,7 @@ let mkCompGenSequential m e1 e2 = mkSequential SuppressSequencePointOnExprOfSequ
 let rec mkSequentials spSeq g m es = 
     match es with 
     | [e] -> e 
-    | e:: es -> mkSequential spSeq m e (mkSequentials spSeq g m es) 
+    | e :: es -> mkSequential spSeq m e (mkSequentials spSeq g m es) 
     | [] -> mkUnit g m
 
 let mkGetArg0 m ty = mkAsmExpr ( [ mkLdarg0 ], [], [], [ty], m) 
@@ -6985,8 +6985,8 @@ let TryDecodeTypeProviderAssemblyAttr ilg (cattr: ILAttribute) =
     if isTypeProviderAssemblyAttr cattr then 
         let parms, _args = decodeILAttribData ilg cattr 
         match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
-        | (ILAttribElem.String (Some assemblyName))::_ -> Some assemblyName
-        | (ILAttribElem.String None)::_ -> Some null
+        | (ILAttribElem.String (Some assemblyName)) :: _ -> Some assemblyName
+        | (ILAttribElem.String None) :: _ -> Some null
         | [] -> Some null
         | _ -> None
     else
@@ -8626,7 +8626,7 @@ let GetTypeOfIntrinsicMemberInCompiledForm g (vref: ValRef) =
             | [] -> 
                 errorR(InternalError("value does not have a valid member type", vref.Range))
                 argInfos
-            | h::_ -> h :: argInfos
+            | h :: _ -> h :: argInfos
         else argInfos
     tps, argInfos, rty, retInfo
 

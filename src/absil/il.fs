@@ -88,7 +88,7 @@ let rec splitNamespaceAux (nm: string) =
     | -1 -> [nm]
     | idx ->
         let s1, s2 = splitNameAt nm idx
-        s1::splitNamespaceAux s2
+        s1 :: splitNamespaceAux s2
 
 /// Global State. All namespace splits ever seen
 // ++GLOBAL MUTABLE STATE (concurrency-safe)
@@ -2173,7 +2173,7 @@ type ILNestedExportedType =
 and ILNestedExportedTypes =
     | ILNestedExportedTypes of Lazy<Map<string, ILNestedExportedType>>
 
-    member x.AsList = let (ILNestedExportedTypes ltab) = x in Map.foldBack (fun _x y r -> y::r) (ltab.Force()) []
+    member x.AsList = let (ILNestedExportedTypes ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
 
 and [<NoComparison; NoEquality>]
     ILExportedTypeOrForwarder =
@@ -2193,7 +2193,7 @@ and [<NoComparison; NoEquality>]
 and ILExportedTypesAndForwarders =
     | ILExportedTypesAndForwarders of Lazy<Map<string, ILExportedTypeOrForwarder>>
 
-    member x.AsList = let (ILExportedTypesAndForwarders ltab) = x in Map.foldBack (fun _x y r -> y::r) (ltab.Force()) []
+    member x.AsList = let (ILExportedTypesAndForwarders ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
 
 [<RequireQualifiedAccess>]
 type ILResourceAccess =
@@ -3182,7 +3182,7 @@ let mkILResources l = ILResources l
 let addMethodImplToTable y tab =
     let key = (y.Overrides.MethodRef.Name, y.Overrides.MethodRef.ArgTypes.Length)
     let prev = Map.tryFindMulti key tab
-    Map.add key (y::prev) tab
+    Map.add key (y :: prev) tab
 
 let mkILMethodImpls l = ILMethodImpls (notlazy (List.foldBack addMethodImplToTable l Map.empty))
 
@@ -3949,7 +3949,7 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
           let rec parseElems acc n sigptr =
             if n = 0 then List.rev acc, sigptr else
             let v, sigptr = parseVal elemTy sigptr
-            parseElems (v ::acc) (n-1) sigptr
+            parseElems (v :: acc) (n-1) sigptr
           let elems, sigptr = parseElems [] n sigptr
           ILAttribElem.Array (elemTy, elems), sigptr
       | ILType.Value _ -> (* assume it is an enumeration *)
@@ -3959,10 +3959,10 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
     let rec parseFixed argtys sigptr =
       match argtys with
         [] -> [], sigptr
-      | h::t ->
+      | h :: t ->
           let nh, sigptr = parseVal h sigptr
           let nt, sigptr = parseFixed t sigptr
-          nh ::nt, sigptr
+          nh :: nt, sigptr
     let fixedArgs, sigptr = parseFixed ca.Method.FormalArgTypes sigptr
     let nnamed, sigptr = sigptr_get_u16 bytes sigptr
     let rec parseNamed acc n sigptr =
@@ -4228,10 +4228,10 @@ let computeILRefs modul =
         refsM = HashSet<_>(HashIdentity.Structural) }
 
     refs_of_modul s modul
-    { AssemblyReferences = Seq.fold (fun acc x -> x::acc) [] s.refsA
-      ModuleReferences = Seq.fold (fun acc x -> x::acc) [] s.refsM }
+    { AssemblyReferences = Seq.fold (fun acc x -> x :: acc) [] s.refsA
+      ModuleReferences = Seq.fold (fun acc x -> x :: acc) [] s.refsM }
 
-let tspan = TimeSpan (DateTime.UtcNow.Ticks - DateTime (2000, 1, 1).Ticks)
+let tspan = TimeSpan (DateTime.UtcNow.Ticks - DateTime(2000, 1, 1).Ticks)
 
 let parseILVersion (vstr : string) =
     // matches "v1.2.3.4" or "1.2.3.4". Note, if numbers are missing, returns -1 (not 0).
@@ -4241,8 +4241,8 @@ let parseILVersion (vstr : string) =
 
     // account for wildcards
     if versionComponents.Length > 2 then
-      let defaultBuild = (uint16)tspan.Days % UInt16.MaxValue - 1us
-      let defaultRevision = (uint16)(DateTime.UtcNow.TimeOfDay.TotalSeconds / 2.0) % UInt16.MaxValue - 1us
+      let defaultBuild = uint16 tspan.Days % UInt16.MaxValue - 1us
+      let defaultRevision = uint16 (DateTime.UtcNow.TimeOfDay.TotalSeconds / 2.0) % UInt16.MaxValue - 1us
       if versionComponents.[2] = "*" then
         if versionComponents.Length > 3 then
           failwith "Invalid version format"

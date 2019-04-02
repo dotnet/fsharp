@@ -325,7 +325,7 @@ let NestedTypeRefForCompLoc cloc n =
     | [] ->
         let tyname = mkTopName cloc.Namespace n
         mkILTyRef(cloc.Scope, tyname)
-    | h::t -> mkILNestedTyRef(cloc.Scope, mkTopName cloc.Namespace h :: t, n)
+    | h :: t -> mkILNestedTyRef(cloc.Scope, mkTopName cloc.Namespace h :: t, n)
     
 let CleanUpGeneratedTypeName (nm: string) =
     if nm.IndexOfAny IllegalCharactersInTypeAndNamespaceNames = -1 then
@@ -929,7 +929,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
             else
                match flatArgInfos with
                | [] -> error(InternalError("This instance method '" + vref.LogicalName + "' has no arguments", m))
-               | (h, _):: t -> h, t
+               | (h, _) :: t -> h, t
 
         let thisTy = if isByrefTy g thisTy then destByrefTy g thisTy else thisTy
         let thisArgTys = argsOfAppTy g thisTy
@@ -1168,7 +1168,7 @@ and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
 let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, typedImplFiles) =
     let cloc = CompLocForFragment fragName ccu
     let allocVal = ComputeAndAddStorageForLocalTopVal (amap, g, intraAssemblyInfo, true, NoShadowLocal)
-    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile(qname, _, mexpr, _, _, _)) ->
+    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile (qname, _, mexpr, _, _, _)) ->
         let cloc = { cloc with TopImplQualifiedName = qname.Text }
         if isIncrementalFragment then
             match mexpr with
@@ -4005,7 +4005,7 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
     else
         let eenvUnderTypars = AddTyparsToEnv methTyparsOfOverridingMethod eenvinner
         let methodParams = List.concat methodParams
-        let methodParamsNonSelf = match methodParams with [] -> [] | _::t -> t // drop the 'this' arg when computing better argument names for IL parameters
+        let methodParamsNonSelf = match methodParams with [] -> [] | _ :: t -> t // drop the 'this' arg when computing better argument names for IL parameters
         let ilParamsOfOverridingMethod, ilReturnOfOverridingMethod =
             GenActualSlotsig m cenv eenvUnderTypars slotsig methTyparsOfOverridingMethod methodParamsNonSelf
 
@@ -4520,7 +4520,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
         if isLocalTypeFunc then
             let rec strip lambdas acc =
                 match lambdas with
-                | Lambdas_forall(gp, r) -> strip r (gp::acc)
+                | Lambdas_forall(gp, r) -> strip r (gp :: acc)
                 | Lambdas_return returnTy -> List.rev acc, returnTy, lambdas
                 | _ -> failwith "AdjustNamedLocalTypeFuncIlxClosureInfo: local functions can currently only be type functions"
             strip ilCloLambdas []
@@ -5082,7 +5082,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ ->
             let isLocalTypeFunc = Option.isSome selfv && (IsNamedLocalTypeFuncVal cenv.g (Option.get selfv) e)
             let selfv = (match e with Expr.Obj _ -> None | _ when isLocalTypeFunc -> None | _ -> Option.map mkLocalValRef selfv)
-            let clo, _, eenvclo = GetIlxClosureInfo cenv m isLocalTypeFunc selfv {eenv with letBoundVars=(mkLocalValRef boundv)::eenv.letBoundVars} e
+            let clo, _, eenvclo = GetIlxClosureInfo cenv m isLocalTypeFunc selfv {eenv with letBoundVars=(mkLocalValRef boundv) :: eenv.letBoundVars} e
             clo.cloFreeVars |> List.iter (fun fv ->
                 if Zset.contains fv forwardReferenceSet then
                     match StorageForVal m fv eenvclo with
@@ -5639,7 +5639,7 @@ and GenMethodForBinding
         | Some _ when ValSpecIsCompiledAsInstance g v ->
             match methodVars with
             | [] -> error(InternalError("Internal error: empty argument list for instance method", v.Range))
-            | h::t -> [h], t, true
+            | h :: t -> [h], t, true
         | _ -> [], methodVars, false
 
     let nonUnitNonSelfMethodVars, body = BindUnitVars g (nonSelfMethodVars, paramInfos, body)
@@ -6077,7 +6077,7 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
                 let cloinfoGenerate eenv =
                     let eenvinner =
                         {eenv with
-                             letBoundVars=(mkLocalValRef v)::eenv.letBoundVars}
+                             letBoundVars=(mkLocalValRef v) :: eenv.letBoundVars}
                     let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range true None eenvinner (Option.get repr)
                     cloinfo
         
@@ -6402,7 +6402,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
 
 /// Generate the namespace fragments in a single file
-and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes), optimizeDuringCodeGen) =
+and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes), optimizeDuringCodeGen) =
     let g = cenv.g
     let m = qname.Range
 

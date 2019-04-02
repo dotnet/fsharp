@@ -433,7 +433,7 @@ module internal IncrementalBuild =
     /// Get all the results for the given expr.
     let AllResultsOfExpr extractor (bt: PartialBuild) (expr: VectorBuildRule) = 
         let GetAvailable (rv: ResultVector) = 
-            let Extract acc (_, result) = (extractor result)::acc
+            let Extract acc (_, result) = (extractor result) :: acc
             List.rev (rv.FoldLeft Extract [])
         let GetVectorResultById id = 
             match bt.Results.TryFind id with
@@ -803,7 +803,7 @@ module internal IncrementalBuild =
         let worklist = CollectActions cache target bt 
             
         match worklist with 
-        | action::_ -> 
+        | action :: _ -> 
             let! res = ExecuteApply ctok save action bt
             return Some res
         | _ -> 
@@ -1781,7 +1781,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                 tcConfigB.conditionalCompilationDefines <- 
                     let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
-                    define::tcConfigB.conditionalCompilationDefines
+                    define :: tcConfigB.conditionalCompilationDefines
 
                 tcConfigB.projectReferences <- projectReferences
 

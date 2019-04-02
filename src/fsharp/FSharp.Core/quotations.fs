@@ -33,7 +33,7 @@ module Helpers =
     let qOneOrMoreRLinear q inp =
         let rec queryAcc rvs e =
             match q e with
-            | Some(v, body) -> queryAcc (v::rvs) body
+            | Some(v, body) -> queryAcc (v :: rvs) body
             | None ->
                 match rvs with
                 | [] -> None
@@ -43,7 +43,7 @@ module Helpers =
     let qOneOrMoreLLinear q inp =
         let rec queryAcc e rvs =
             match q e with
-            | Some(body, v) -> queryAcc body (v::rvs)
+            | Some(body, v) -> queryAcc body (v :: rvs)
             | None ->
                 match rvs with
                 | [] -> None
@@ -245,13 +245,13 @@ and [<CompiledName("FSharpExpr")>]
         let rec (|NLambdas|_|) n (e:Expr) =
             match e with
             | _ when n <= 0 -> Some([], e)
-            | Lambda(v, NLambdas ((-) n 1) (vs, b)) -> Some(v::vs, b)
+            | Lambda(v, NLambdas ((-) n 1) (vs, b)) -> Some(v :: vs, b)
             | _ -> None
 
         match x.Tree with
         | CombTerm(AppOp, args) -> combL "Application" (exprs args)
         | CombTerm(IfThenElseOp, args) -> combL "IfThenElse" (exprs args)
-        | CombTerm(LetRecOp, [IteratedLambda(vs, E(CombTerm(LetRecCombOp, b2::bs)))]) -> combL "LetRecursive" [listL (List.map2 pairL (List.map varL vs) (exprs bs) ); b2.GetLayout long]
+        | CombTerm(LetRecOp, [IteratedLambda(vs, E(CombTerm(LetRecCombOp, b2 :: bs)))]) -> combL "LetRecursive" [listL (List.map2 pairL (List.map varL vs) (exprs bs) ); b2.GetLayout long]
         | CombTerm(LetOp, [e;E(LambdaTerm(v, b))]) -> combL "Let" [varL v; e.GetLayout long; b.GetLayout long]
         | CombTerm(NewRecordOp ty, args) -> combL "NewRecord" (typeL ty :: exprs args)
         | CombTerm(NewUnionCaseOp unionCase, args) -> combL "NewUnionCase" (ucaseL unionCase :: exprs args)
@@ -261,11 +261,11 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(ValueOp(v, _, Some nm), []) -> combL "ValueWithName" [objL v; wordL (tagLocal nm)]
         | CombTerm(ValueOp(v, _, None), []) -> combL "Value" [objL v]
         | CombTerm(WithValueOp(v, _), [defn]) -> combL "WithValue" [objL v; expr defn]
-        | CombTerm(InstanceMethodCallOp minfo, obj::args) -> combL "Call" [someL obj; minfoL minfo; listL (exprs args)]
+        | CombTerm(InstanceMethodCallOp minfo, obj :: args) -> combL "Call" [someL obj; minfoL minfo; listL (exprs args)]
         | CombTerm(StaticMethodCallOp minfo, args) -> combL "Call" [noneL; minfoL minfo; listL (exprs args)]
-        | CombTerm(InstancePropGetOp pinfo, (obj::args)) -> combL "PropertyGet" [someL obj; pinfoL pinfo; listL (exprs args)]
+        | CombTerm(InstancePropGetOp pinfo, (obj :: args)) -> combL "PropertyGet" [someL obj; pinfoL pinfo; listL (exprs args)]
         | CombTerm(StaticPropGetOp pinfo, args) -> combL "PropertyGet" [noneL; pinfoL pinfo; listL (exprs args)]
-        | CombTerm(InstancePropSetOp pinfo, (obj::args)) -> combL "PropertySet" [someL obj; pinfoL pinfo; listL (exprs args)]
+        | CombTerm(InstancePropSetOp pinfo, (obj :: args)) -> combL "PropertySet" [someL obj; pinfoL pinfo; listL (exprs args)]
         | CombTerm(StaticPropSetOp pinfo, args) -> combL "PropertySet" [noneL; pinfoL pinfo; listL (exprs args)]
         | CombTerm(InstanceFieldGetOp finfo, [obj]) -> combL "FieldGet" [someL obj; finfoL finfo]
         | CombTerm(StaticFieldGetOp finfo, []) -> combL "FieldGet" [noneL; finfoL finfo]
@@ -346,7 +346,7 @@ module Patterns =
     let (|E|) (e: Expr) = e.Tree
     let (|ES|) (es: list<Expr>) = es |> List.map (fun e -> e.Tree)
     let (|FrontAndBack|_|) es =
-        let rec loop acc xs = match xs with [] -> None | [h] -> Some (List.rev acc, h) | h::t -> loop (h::acc) t
+        let rec loop acc xs = match xs with [] -> None | [h] -> Some (List.rev acc, h) | h :: t -> loop (h :: acc) t
         loop [] es
 
 
@@ -484,14 +484,14 @@ module Patterns =
     let (|PropertyGet|_|) input =
         match input with
         | E(CombTerm(StaticPropGetOp pinfo, args)) -> Some(None, pinfo, args)
-        | E(CombTerm(InstancePropGetOp pinfo, obj::args)) -> Some(Some obj, pinfo, args)
+        | E(CombTerm(InstancePropGetOp pinfo, obj :: args)) -> Some(Some obj, pinfo, args)
         | _ -> None
 
     [<CompiledName("PropertySetPattern")>]
     let (|PropertySet|_|) input =
         match input with
         | E(CombTerm(StaticPropSetOp pinfo, FrontAndBack(args, v))) -> Some(None, pinfo, args, v)
-        | E(CombTerm(InstancePropSetOp pinfo, obj::FrontAndBack(args, v))) -> Some(Some obj, pinfo, args, v)
+        | E(CombTerm(InstancePropSetOp pinfo, obj :: FrontAndBack(args, v))) -> Some(Some obj, pinfo, args, v)
         | _ -> None
 
 
@@ -518,7 +518,7 @@ module Patterns =
     let (|Call|_|) input =
         match input with
         | E(CombTerm(StaticMethodCallOp minfo, args)) -> Some(None, minfo, args)
-        | E(CombTerm(InstanceMethodCallOp minfo, (obj::args))) -> Some(Some obj, minfo, args)
+        | E(CombTerm(InstanceMethodCallOp minfo, (obj :: args))) -> Some(Some obj, minfo, args)
         | _ -> None
 
     let (|LetRaw|_|) input =
@@ -542,7 +542,7 @@ module Patterns =
     let rec (|NLambdas|_|) n (e:Expr) =
         match e with
         | _ when n <= 0 -> Some([], e)
-        | Lambda(v, NLambdas ((-) n 1) (vs, b)) -> Some(v::vs, b)
+        | Lambda(v, NLambdas ((-) n 1) (vs, b)) -> Some(v :: vs, b)
         | _ -> None
 
     [<CompiledName("NewDelegatePattern")>]
@@ -564,7 +564,7 @@ module Patterns =
     [<CompiledName("LetRecursivePattern")>]
     let (|LetRecursive|_|) input =
         match input with
-        | LetRecRaw(IteratedLambda(vs1, E(CombTerm(LetRecCombOp, body::es)))) -> Some(List.zip vs1 es, body)
+        | LetRecRaw(IteratedLambda(vs1, E(CombTerm(LetRecCombOp, body :: es)))) -> Some(List.zip vs1 es, body)
         | _ -> None
 
     //--------------------------------------------------------------------------
@@ -848,7 +848,7 @@ module Patterns =
         match pinfo.GetGetMethod(true).IsStatic with
         | false ->
             checkObj pinfo obj
-            mkFEN (InstancePropGetOp pinfo) (obj::args)
+            mkFEN (InstancePropGetOp pinfo) (obj :: args)
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
     let mkStaticPropSet (pinfo:PropertyInfo, args:list<Expr>, value:Expr) =
@@ -866,7 +866,7 @@ module Patterns =
         match pinfo.GetSetMethod(true).IsStatic with
         | false ->
             checkObj pinfo obj
-            mkFEN (InstancePropSetOp pinfo) (obj::(args@[value]))
+            mkFEN (InstancePropSetOp pinfo) (obj :: (args@[value]))
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
     let mkInstanceMethodCall (obj, minfo:MethodInfo, args:list<Expr>) =
@@ -875,7 +875,7 @@ module Patterns =
         match minfo.IsStatic with
         | false ->
             checkObj minfo obj
-            mkFEN (InstanceMethodCallOp minfo) (obj::args)
+            mkFEN (InstanceMethodCallOp minfo) (obj :: args)
         | true -> invalidArg  "minfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
     let mkStaticMethodCall (minfo:MethodInfo, args:list<Expr>) =
@@ -923,7 +923,7 @@ module Patterns =
     let mkLetRec (ves:(Var*Expr) list, body) =
         List.iter checkBind ves
         let vs, es = List.unzip ves
-        mkLetRecRaw(mkIteratedLambdas (vs, mkLetRecCombRaw (body::es)))
+        mkLetRecRaw(mkIteratedLambdas (vs, mkLetRecCombRaw (body :: es)))
 
     let ReflectedDefinitionsResourceNameBase = "ReflectedDefinitions"
 
@@ -976,7 +976,7 @@ module Patterns =
                 let haveResT  = methInfo.ReturnType
                 // check for match
                 if argTs.Length <> haveArgTs.Length then false (* method argument length mismatch *) else
-                let res = typesEqual (resT::argTs) (haveResT::haveArgTs)
+                let res = typesEqual (resT :: argTs) (haveResT :: haveArgTs)
                 res
             // return MethodInfo for (generic) type's (generic) method
             match List.tryFind select methInfos with
@@ -1191,9 +1191,9 @@ module Patterns =
         let rec split l =
             match l with
             | 0, xs -> [], xs
-            | n, x::xs ->
+            | n, x :: xs ->
                 let front, back = split (n-1, xs)
-                x::front, back
+                x :: front, back
             | _, [] -> failwith "List.chop: not enough elts list"
         split (n, xs)
 
@@ -1306,7 +1306,7 @@ module Patterns =
             let tag = u_byte_as_int st
             match tag with
             | 0 -> List.rev acc
-            | 1 -> let a = f st in u_list_aux f (a::acc) st
+            | 1 -> let a = f st in u_list_aux f (a :: acc) st
             | n -> failwith ("u_list: found number " + string n)
 
         let u_list f st = u_list_aux f [] st
@@ -2157,7 +2157,7 @@ module DerivedPatterns =
             | Let(v1, TupleGet(Var pA, m), rest)
                   when p = pA && m = n->
                       let restvs, b = stripSuccessiveProjLets p (n+1) rest
-                      v1::restvs, b
+                      v1 :: restvs, b
             | _ -> ([], expr)
         match lam.Tree with
         | LambdaTerm(v, body) ->
@@ -2263,9 +2263,9 @@ module ExprShape =
             | UnionCaseTestOp unionCase, [arg] -> mkUnionCaseTest(unionCase, arg)
             | NewTupleOp ty, _ -> mkNewTupleWithType(ty, arguments)
             | TupleGetOp(ty, i), [arg] -> mkTupleGet(ty, i, arg)
-            | InstancePropGetOp pinfo, (obj::args) -> mkInstancePropGet(obj, pinfo, args)
+            | InstancePropGetOp pinfo, (obj :: args) -> mkInstancePropGet(obj, pinfo, args)
             | StaticPropGetOp pinfo, _ -> mkStaticPropGet(pinfo, arguments)
-            | InstancePropSetOp pinfo, obj::(FrontAndBack(args, v)) -> mkInstancePropSet(obj, pinfo, args, v)
+            | InstancePropSetOp pinfo, obj :: (FrontAndBack(args, v)) -> mkInstancePropSet(obj, pinfo, args, v)
             | StaticPropSetOp pinfo, (FrontAndBack(args, v)) -> mkStaticPropSet(pinfo, args, v)
             | InstanceFieldGetOp finfo, [obj] -> mkInstanceFieldGet(obj, finfo)
             | StaticFieldGetOp finfo, [] -> mkStaticFieldGet(finfo )
@@ -2274,7 +2274,7 @@ module ExprShape =
             | NewObjectOp minfo, _ -> mkCtorCall(minfo, arguments)
             | DefaultValueOp ty, _ -> mkDefaultValue ty
             | StaticMethodCallOp minfo, _ -> mkStaticMethodCall(minfo, arguments)
-            | InstanceMethodCallOp minfo, obj::args -> mkInstanceMethodCall(obj, minfo, args)
+            | InstanceMethodCallOp minfo, obj :: args -> mkInstanceMethodCall(obj, minfo, args)
             | CoerceOp ty, [arg] -> mkCoerce(ty, arg)
             | NewArrayOp ty, _ -> mkNewArray(ty, arguments)
             | NewDelegateOp ty, [arg] -> mkNewDelegate(ty, arg)

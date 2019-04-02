@@ -148,7 +148,7 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range,
         | E.NewUnionCase (_unionType, _unionCase, es) -> es
         | E.NewTuple (_tupleType, es) -> es
         | E.TupleGet (_tupleType, _itemIndex, tupleExpr) -> [tupleExpr]
-        | E.Call (objOpt, _b, _c, _d, es) -> (match objOpt with None -> es | Some x -> x::es)
+        | E.Call (objOpt, _b, _c, _d, es) -> (match objOpt with None -> es | Some x -> x :: es)
         | E.NewObject (_a, _b, c) -> c
         | E.FSharpFieldGet (objOpt, _b, _c) -> (match objOpt with None -> [] | Some x -> [x])
         | E.FSharpFieldSet (objOpt, _b, _c, d) -> (match objOpt with None -> [d] | Some x -> [x;d])
@@ -319,7 +319,7 @@ module FSharpExprConvert =
             | TOp.UnionCaseFieldGetAddr (uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr (exprOfExprAddr cenv arg, uref, tyargs, n, m)
             | TOp.ILAsm ([ I_ldflda fspec ], rtys), [arg], _  -> mkAsmExpr ([ mkNormalLdfld fspec ], tyargs, [exprOfExprAddr cenv arg], rtys, m)
             | TOp.ILAsm ([ I_ldsflda fspec ], rtys), _, _  -> mkAsmExpr ([ mkNormalLdsfld fspec ], tyargs, args, rtys, m)
-            | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr::idxs), [elemty]  -> 
+            | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr :: idxs), [elemty]  -> 
                 match shape.Rank, idxs with 
                 | 1, [idx1] -> mkCallArrayGet cenv.g m elemty arr idx1
                 | 2, [idx1; idx2] -> mkCallArray2DGet cenv.g m elemty arr idx1 idx2
@@ -426,7 +426,7 @@ module FSharpExprConvert =
         let objArgs, curriedArgs = 
             match takesInstanceArg, curriedArgs with 
             | false, curriedArgs -> [], curriedArgs
-            | true, (objArg::curriedArgs) -> [objArg], curriedArgs
+            | true, (objArg :: curriedArgs) -> [objArg], curriedArgs
             | true, [] -> failwith ("warning: unexpected missing object argument when generating quotation for call to F# object member "+vref.LogicalName)
 
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
@@ -463,7 +463,7 @@ module FSharpExprConvert =
                 | _ -> (fun subCallR -> (subCallR, laterArgs) ||> List.fold (fun fR arg -> E.Application (Mk2 cenv arg fR, [], [ConvExpr cenv env arg])) |> contf)
                     
             if isMember then 
-                let callArgs = (objArgs::untupledCurriedArgs) |> List.concat
+                let callArgs = (objArgs :: untupledCurriedArgs) |> List.concat
                 let enclTyArgs, methTyArgs = List.splitAfter numEnclTypeArgs tyargs
                 // tailcall
                 ConvObjectModelCallLinear cenv env (isNewObj, FSharpMemberOrFunctionOrValue(cenv, vref), enclTyArgs, methTyArgs, callArgs) contf2
@@ -1103,12 +1103,12 @@ module FSharpExprConvert =
         match args with 
         | [] -> contf []
         | [arg] -> ConvExprLinear cenv env arg (fun argR -> contf [argR])
-        | arg::rest -> ConvExprLinear cenv env arg (fun argR -> ConvExprsLinear cenv env rest (fun restR -> contf (argR :: restR)))
+        | arg :: rest -> ConvExprLinear cenv env arg (fun argR -> ConvExprsLinear cenv env rest (fun restR -> contf (argR :: restR)))
 
     and ConvTargetsLinear cenv env tgs contf = 
         match tgs with 
         | [] -> contf []
-        | TTarget(vars, rhs, _)::rest -> 
+        | TTarget(vars, rhs, _) :: rest -> 
             let varsR = (List.rev vars) |> List.map (ConvVal cenv)
             ConvExprLinear cenv env rhs (fun targetR -> 
             ConvTargetsLinear cenv env rest (fun restR -> 
@@ -1242,7 +1242,7 @@ and FSharpImplementationFileDeclaration =
     | InitAction of FSharpExpr
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
-    let (TImplFile(qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes)) = mimpl 
+    let (TImplFile (qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes)) = mimpl 
     let rec getDecls2 (ModuleOrNamespaceExprWithSig(_mty, def, _m)) = getDecls def
     and getBind (bind: Binding) = 
         let v = bind.Var

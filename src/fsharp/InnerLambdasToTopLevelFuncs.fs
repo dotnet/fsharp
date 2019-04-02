@@ -45,7 +45,7 @@ let fringeTR tr =
     let rec collect tr acc =
         match tr with
         | TreeNode subts -> List.foldBack collect subts acc
-        | LeafNode x     -> x::acc
+        | LeafNode x     -> x :: acc
 
     collect tr []
 
@@ -438,7 +438,7 @@ module Pass2_DetermineReqdItems =
         else
           {state with
                revDeclist = fclass :: state.revDeclist
-               stack = (let env = ReqdItemsForDefn.Initial reqdTypars0 m in (fclass, reqdVals0, env)::state.stack) }
+               stack = (let env = ReqdItemsForDefn.Initial reqdTypars0 m in (fclass, reqdVals0, env) :: state.stack) }
 
     /// POP & SAVE = end collecting for fclass and store
     let SaveFrame     (fclass: BindingGroupSharingSameReqdItems) state =
@@ -448,7 +448,7 @@ module Pass2_DetermineReqdItems =
         else
             match state.stack with
             | []                             -> internalError "trl: popFrame has empty stack"
-            | (fclass, _reqdVals0, env)::stack -> (* ASSERT: same fclass *)
+            | (fclass, _reqdVals0, env) :: stack -> (* ASSERT: same fclass *)
                 {state with
                    stack        = stack
                    reqdItemsMap = Zmap.add  fclass env   state.reqdItemsMap
@@ -1311,9 +1311,9 @@ module Pass4_RewriteAssembly =
             let rhs, z = TransModuleDef penv z rhs
             ModuleOrNamespaceBinding.Module(nm, rhs), z
 
-    let TransImplFile penv z (TImplFile(fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+    let TransImplFile penv z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
         let moduleExpr, z = TransModuleExpr penv z moduleExpr
-        (TImplFile(fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)), z
+        (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)), z
 
 //-------------------------------------------------------------------------
 // pass5: copyExpr

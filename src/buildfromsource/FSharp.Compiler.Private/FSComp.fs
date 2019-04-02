@@ -67,7 +67,7 @@ type internal SR private() =
         | '%' -> go args ty (i+1)
         | 'd'
         | 'f'
-        | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n::args) rty (i+1))
+        | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n :: args) rty (i+1))
         | _ -> failwith "bad format specifier"
 
     // newlines and tabs get converted to strings when read from a resource file

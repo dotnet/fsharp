@@ -392,12 +392,12 @@ let rec isMemOfActives p1 actives =
 let rec lookupActive x l =
     match l with
     | [] -> raise (KeyNotFoundException())
-    | (Active(h, r1, r2)::t) -> if pathEq x h then (r1, r2) else lookupActive x t
+    | (Active(h, r1, r2) :: t) -> if pathEq x h then (r1, r2) else lookupActive x t
 
 let rec removeActive x l =
     match l with
     | [] -> []
-    | ((Active(h, _, _) as p) ::t) -> if pathEq x h then t else p:: removeActive x t
+    | ((Active(h, _, _) as p) :: t) -> if pathEq x h then t else p :: removeActive x t
 
 //---------------------------------------------------------------------------
 // Utilities
@@ -457,7 +457,7 @@ let isDiscrimSubsumedBy g amap m d1 d2 =
 let rec chooseSimultaneousEdgeSet prevOpt f l =
     match l with
     | [] -> [], []
-    | h::t ->
+    | h :: t ->
         match f prevOpt h with
         | Some x, _ ->
              let l, r = chooseSimultaneousEdgeSet (Some x) f t
@@ -494,7 +494,7 @@ let discrimsHaveSameSimultaneousClass g d1 d2 =
 /// Decide the next pattern to investigate
 let ChooseInvestigationPointLeftToRight frontiers =
     match frontiers with
-    | Frontier (_i, actives, _) ::_t ->
+    | Frontier (_i, actives, _) :: _t ->
         let rec choose l =
             match l with
             | [] -> failwith "ChooseInvestigationPointLeftToRight: no non-immediate patterns in first rule"
@@ -507,7 +507,7 @@ let ChooseInvestigationPointLeftToRight frontiers =
 
 
 #if OPTIMIZE_LIST_MATCHING
-// This is an initial attempt to remove extra typetests/castclass for simple list pattern matching "match x with h::t -> ... | [] -> ..."
+// This is an initial attempt to remove extra typetests/castclass for simple list pattern matching "match x with h :: t -> ... | [] -> ..."
 // The problem with this technique is that it creates extra locals which inhibit the process of converting pattern matches into linear let bindings.
 
 let (|ListConsDiscrim|_|) g = function
@@ -568,11 +568,11 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // 'isinst' tests where we have stored the result of the 'isinst' in a variable
     // In this case the 'expr' already holds the result of the 'isinst' test.
 
-    | (TCase(DecisionTreeTest.IsInst _, success)):: edges, dflt  when Option.isSome inpExprOpt ->
+    | (TCase(DecisionTreeTest.IsInst _, success)) :: edges, dflt  when Option.isSome inpExprOpt ->
         TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g expr edges dflt m)], Some success, m)
 
     // isnull and isinst tests
-    | (TCase((DecisionTreeTest.IsNull | DecisionTreeTest.IsInst _), _) as edge):: edges, dflt  ->
+    | (TCase((DecisionTreeTest.IsNull | DecisionTreeTest.IsInst _), _) as edge) :: edges, dflt  ->
         TDSwitch(expr, [edge], Some (BuildSwitch inpExprOpt g expr edges dflt m), m)
 
 #if OPTIMIZE_LIST_MATCHING
@@ -628,24 +628,24 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
             match curr, edges with
             | None, [] -> []
             | Some last, [] -> [List.rev last]
-            | None, h::t -> compactify (Some [h]) t
-            | Some (prev::moreprev), h::t ->
+            | None, h :: t -> compactify (Some [h]) t
+            | Some (prev :: moreprev), h :: t ->
                 match constOfCase prev, constOfCase h with
                 | Const.SByte iprev, Const.SByte inext when int32 iprev + 1 = int32 inext ->
-                    compactify (Some (h::prev::moreprev)) t
+                    compactify (Some (h :: prev :: moreprev)) t
                 | Const.Int16 iprev, Const.Int16 inext when int32 iprev + 1 = int32 inext ->
-                    compactify (Some (h::prev::moreprev)) t
+                    compactify (Some (h :: prev :: moreprev)) t
                 | Const.Int32 iprev, Const.Int32 inext when iprev+1 = inext ->
-                    compactify (Some (h::prev::moreprev)) t
+                    compactify (Some (h :: prev :: moreprev)) t
                 | Const.Byte iprev, Const.Byte inext when int32 iprev + 1 = int32 inext ->
-                    compactify (Some (h::prev::moreprev)) t
+                    compactify (Some (h :: prev :: moreprev)) t
                 | Const.UInt16 iprev, Const.UInt16 inext when int32 iprev+1 = int32 inext ->
-                    compactify (Some (h::prev::moreprev)) t
+                    compactify (Some (h :: prev :: moreprev)) t
                 | Const.UInt32 iprev, Const.UInt32 inext when int32 iprev+1 = int32 inext ->
-                    compactify (Some (h::prev::moreprev)) t
+                    compactify (Some (h :: prev :: moreprev)) t
                 | Const.Char cprev, Const.Char cnext when (int32 cprev + 1 = int32 cnext) ->
-                    compactify (Some (h::prev::moreprev)) t
-                |       _ ->  (List.rev (prev::moreprev)) :: compactify None edges
+                    compactify (Some (h :: prev :: moreprev)) t
+                |       _ ->  (List.rev (prev :: moreprev)) :: compactify None edges
 
             | _ -> failwith "internal error: compactify"
         let edgeGroups = compactify None edges'
@@ -653,11 +653,11 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 
     // For a total pattern match, run the active pattern, bind the result and
     // recursively build a switch in the choice type
-    | (TCase(DecisionTreeTest.ActivePatternCase _, _)::_), _ ->
+    | (TCase(DecisionTreeTest.ActivePatternCase _, _) :: _), _ ->
        error(InternalError("DecisionTreeTest.ActivePatternCase should have been eliminated", m))
 
     // For a complete match, optimize one test to be the default
-    | (TCase(_, tree)::rest), None -> TDSwitch (expr, rest, Some tree, m)
+    | (TCase(_, tree) :: rest), None -> TDSwitch (expr, rest, Some tree, m)
 
     // Otherwise let codegen make the choices
     | _ -> TDSwitch (expr, edges, dflt, m)
@@ -902,7 +902,7 @@ let CompilePatternBasic
             // However, we are not allowed to copy expressions until type checking is complete, because this
             // would lose recursive fixup points within the expressions (see FSharp 1.0 bug 4821).
 
-            mkBoolSwitch m whenExpr rhs' (InvestigateFrontiers (RefutedWhenClause::refuted) rest)
+            mkBoolSwitch m whenExpr rhs' (InvestigateFrontiers (RefutedWhenClause :: refuted) rest)
 
         | None -> rhs'
 
@@ -1281,9 +1281,9 @@ let CompilePatternBasic
                 | Some (vref, _) when not (doesActivePatternHaveFreeTypars g vref) -> vref.Stamp
                 | _ -> genUniquePathId()
             let inp = Active(PathQuery(path, uniqId), subExpr, p)
-            [(inp::accActive, accValMap)]
+            [(inp :: accActive, accValMap)]
         | _ ->
-            [(inp::accActive, accValMap)]
+            [(inp :: accActive, accValMap)]
 
     and BindProjectionPatterns ps s =
         List.foldBack (fun p sofar -> List.collect (BindProjectionPattern p) sofar) ps [s]

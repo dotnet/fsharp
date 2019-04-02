@@ -987,7 +987,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
             CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f)
 
     // Allow base calls to IL methods
-    | Expr.Op (TOp.ILCall (virt, _, _, _, _, _, _, mref, enclTypeArgs, methTypeArgs, tys), tyargs, (Expr.Val (baseVal, _, _)::rest), m) 
+    | Expr.Op (TOp.ILCall (virt, _, _, _, _, _, _, mref, enclTypeArgs, methTypeArgs, tys), tyargs, (Expr.Val (baseVal, _, _) :: rest), m) 
           when not virt && baseVal.BaseOrThisInfo = BaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
@@ -1101,7 +1101,7 @@ and CheckMethod cenv env baseValOpt (TObjExprMethod(_, attribs, tps, vs, body, m
     let env = BindArgVals env vs
     CheckAttribs cenv env attribs
     CheckNoReraise cenv None body
-    CheckEscapes cenv true m (match baseValOpt with Some x -> x:: vs | None -> vs) body |> ignore
+    CheckEscapes cenv true m (match baseValOpt with Some x -> x :: vs | None -> vs) body |> ignore
     CheckExpr cenv { env with returnScope = env.returnScope + 1 } body PermitByRefExpr.YesReturnableNonLocal |> ignore
 
 and CheckInterfaceImpls cenv env baseValOpt l = 
@@ -1354,7 +1354,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
             // Recursively check in same context, e.g. if at PermitOnlyReturnable the obj arg must also be returnable
             CheckExpr cenv env obj context
 
-        | [ I_ldelema (_, isNativePtr, _, _) ], lhsArray::indices ->
+        | [ I_ldelema (_, isNativePtr, _, _) ], lhsArray :: indices ->
             if context.Disallow && cenv.reportErrors && not isNativePtr && isByrefLikeTy g m (tyOfExpr g expr) then
                 errorR(Error(FSComp.SR.chkNoAddressOfArrayElementAtThisPoint(), m))
             // permit byref for lhs lvalue 
@@ -1407,7 +1407,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
             for v in thisAndBase do v.SetHasBeenReferenced() 
             // instance method 'this' is always considered used
             match mi.MemberFlags.IsInstance, restArgs with
-            | true, firstArg::_ -> firstArg.SetHasBeenReferenced()
+            | true, firstArg :: _ -> firstArg.SetHasBeenReferenced()
             | _ -> ()
             // any byRef arguments are considered used, as they may be 'out's
             restArgs |> List.iter (fun arg -> if isByrefTy g arg.Type then arg.SetHasBeenReferenced())
@@ -1639,7 +1639,7 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         let (TAccess l) = access
         // FSharp 1.0 bug 1908: Values hidden by signatures are implicitly at least 'internal'
         let scoref = cpath().ILScopeRef
-        TAccess(CompPath(scoref, [])::l)
+        TAccess(CompPath(scoref, []) :: l)
     else 
         access
 
@@ -1958,7 +1958,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 for minfo in immediateMeths do
                     match h.TryGetValue minfo.LogicalName with
                     | true, methods -> 
-                        h.[minfo.LogicalName] <- minfo::methods
+                        h.[minfo.LogicalName] <- minfo :: methods
                     | false, _ -> 
                         h.[minfo.LogicalName] <- [minfo]
                 h
@@ -2079,14 +2079,14 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
                     errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 
-            hashOfImmediateProps.[nm] <- pinfo::others
+            hashOfImmediateProps.[nm] <- pinfo :: others
             
         if not (isInterfaceTy g ty) then
             let hashOfAllVirtualMethsInParent = new Dictionary<string, _>()
             for minfo in allVirtualMethsInParent do
                 let nm = minfo.LogicalName
                 let others = getHash hashOfAllVirtualMethsInParent nm
-                hashOfAllVirtualMethsInParent.[nm] <- minfo::others
+                hashOfAllVirtualMethsInParent.[nm] <- minfo :: others
             for minfo in immediateMeths do
                 if not minfo.IsDispatchSlot && not minfo.IsVirtual && minfo.IsInstance then
                     let nm = minfo.LogicalName

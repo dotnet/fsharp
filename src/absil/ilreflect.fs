@@ -483,7 +483,7 @@ let envPopTyvars emEnv = {emEnv with emTyvars = List.tail emEnv.emTyvars}
 let envGetTyvar emEnv u16 =  
     match emEnv.emTyvars with
     | [] -> failwith "envGetTyvar: not scope of type vars"
-    | tvs::_ -> 
+    | tvs :: _ -> 
         let i = int32 u16 
         if i<0 || i>= Array.length tvs then
             failwith (sprintf "want tyvar #%d, but only had %d tyvars" i (Array.length tvs))
@@ -492,7 +492,7 @@ let envGetTyvar emEnv u16 =
 
 let isEmittedTypeRef emEnv tref = Zmap.mem tref emEnv.emTypMap
 
-let envAddEntryPt emEnv mref = {emEnv with emEntryPts = mref::emEnv.emEntryPts}
+let envAddEntryPt emEnv mref = {emEnv with emEntryPts = mref :: emEnv.emEntryPts}
 
 let envPopEntryPts emEnv = {emEnv with emEntryPts = []}, emEnv.emEntryPts
 
@@ -908,7 +908,7 @@ let emitInstrCompare emEnv (ilG: ILGenerator) comp targ =
 
 /// Emit the volatile. prefix
 let emitInstrVolatile (ilG: ILGenerator) = function
-    | Volatile -> ilG.EmitAndLog (OpCodes.Volatile)
+    | Volatile -> ilG.EmitAndLog OpCodes.Volatile
     | Nonvolatile -> ()
 
 /// Emit the align. prefix
@@ -921,7 +921,7 @@ let emitInstrAlign (ilG: ILGenerator) = function
 /// Emit the tail. prefix if necessary
 let emitInstrTail (ilG: ILGenerator) tail emitTheCall = 
     match tail with
-    | Tailcall -> ilG.EmitAndLog (OpCodes.Tailcall); emitTheCall(); ilG.EmitAndLog (OpCodes.Ret)
+    | Tailcall -> ilG.EmitAndLog OpCodes.Tailcall; emitTheCall(); ilG.EmitAndLog OpCodes.Ret
     | Normalcall -> emitTheCall()
 
 let emitInstrNewobj cenv emEnv (ilG: ILGenerator) mspec varargs =
@@ -975,47 +975,47 @@ let setArrayMethInfo n ty =
 
 let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr = 
     match instr with 
-    | AI_add -> ilG.EmitAndLog (OpCodes.Add) 
-    | AI_add_ovf -> ilG.EmitAndLog (OpCodes.Add_Ovf) 
-    | AI_add_ovf_un -> ilG.EmitAndLog (OpCodes.Add_Ovf_Un)
-    | AI_and -> ilG.EmitAndLog (OpCodes.And)
-    | AI_div -> ilG.EmitAndLog (OpCodes.Div)
-    | AI_div_un -> ilG.EmitAndLog (OpCodes.Div_Un)
-    | AI_ceq -> ilG.EmitAndLog (OpCodes.Ceq)
-    | AI_cgt -> ilG.EmitAndLog (OpCodes.Cgt)
-    | AI_cgt_un -> ilG.EmitAndLog (OpCodes.Cgt_Un)
-    | AI_clt -> ilG.EmitAndLog (OpCodes.Clt)
-    | AI_clt_un -> ilG.EmitAndLog (OpCodes.Clt_Un)
+    | AI_add -> ilG.EmitAndLog OpCodes.Add 
+    | AI_add_ovf -> ilG.EmitAndLog OpCodes.Add_Ovf 
+    | AI_add_ovf_un -> ilG.EmitAndLog OpCodes.Add_Ovf_Un
+    | AI_and -> ilG.EmitAndLog OpCodes.And
+    | AI_div -> ilG.EmitAndLog OpCodes.Div
+    | AI_div_un -> ilG.EmitAndLog OpCodes.Div_Un
+    | AI_ceq -> ilG.EmitAndLog OpCodes.Ceq
+    | AI_cgt -> ilG.EmitAndLog OpCodes.Cgt
+    | AI_cgt_un -> ilG.EmitAndLog OpCodes.Cgt_Un
+    | AI_clt -> ilG.EmitAndLog OpCodes.Clt
+    | AI_clt_un -> ilG.EmitAndLog OpCodes.Clt_Un
     // conversion 
     | AI_conv dt -> 
         match dt with
-        | DT_I -> ilG.EmitAndLog (OpCodes.Conv_I)
-        | DT_I1 -> ilG.EmitAndLog (OpCodes.Conv_I1)
-        | DT_I2 -> ilG.EmitAndLog (OpCodes.Conv_I2)
-        | DT_I4 -> ilG.EmitAndLog (OpCodes.Conv_I4)
-        | DT_I8 -> ilG.EmitAndLog (OpCodes.Conv_I8)
-        | DT_U -> ilG.EmitAndLog (OpCodes.Conv_U)      
-        | DT_U1 -> ilG.EmitAndLog (OpCodes.Conv_U1)      
-        | DT_U2 -> ilG.EmitAndLog (OpCodes.Conv_U2)      
-        | DT_U4 -> ilG.EmitAndLog (OpCodes.Conv_U4)      
-        | DT_U8 -> ilG.EmitAndLog (OpCodes.Conv_U8)
-        | DT_R -> ilG.EmitAndLog (OpCodes.Conv_R_Un)
-        | DT_R4 -> ilG.EmitAndLog (OpCodes.Conv_R4)
-        | DT_R8 -> ilG.EmitAndLog (OpCodes.Conv_R8)
+        | DT_I -> ilG.EmitAndLog OpCodes.Conv_I
+        | DT_I1 -> ilG.EmitAndLog OpCodes.Conv_I1
+        | DT_I2 -> ilG.EmitAndLog OpCodes.Conv_I2
+        | DT_I4 -> ilG.EmitAndLog OpCodes.Conv_I4
+        | DT_I8 -> ilG.EmitAndLog OpCodes.Conv_I8
+        | DT_U -> ilG.EmitAndLog OpCodes.Conv_U      
+        | DT_U1 -> ilG.EmitAndLog OpCodes.Conv_U1      
+        | DT_U2 -> ilG.EmitAndLog OpCodes.Conv_U2      
+        | DT_U4 -> ilG.EmitAndLog OpCodes.Conv_U4      
+        | DT_U8 -> ilG.EmitAndLog OpCodes.Conv_U8
+        | DT_R -> ilG.EmitAndLog OpCodes.Conv_R_Un
+        | DT_R4 -> ilG.EmitAndLog OpCodes.Conv_R4
+        | DT_R8 -> ilG.EmitAndLog OpCodes.Conv_R8
         | DT_REF -> failwith "AI_conv DT_REF?" // XXX - check
     // conversion - ovf checks
     | AI_conv_ovf dt -> 
         match dt with
-        | DT_I -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I)
-        | DT_I1 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I1)
-        | DT_I2 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I2)
-        | DT_I4 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I4)
-        | DT_I8 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I8)
-        | DT_U -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U)      
-        | DT_U1 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U1)      
-        | DT_U2 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U2)      
-        | DT_U4 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U4)
-        | DT_U8 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U8)
+        | DT_I -> ilG.EmitAndLog OpCodes.Conv_Ovf_I
+        | DT_I1 -> ilG.EmitAndLog OpCodes.Conv_Ovf_I1
+        | DT_I2 -> ilG.EmitAndLog OpCodes.Conv_Ovf_I2
+        | DT_I4 -> ilG.EmitAndLog OpCodes.Conv_Ovf_I4
+        | DT_I8 -> ilG.EmitAndLog OpCodes.Conv_Ovf_I8
+        | DT_U -> ilG.EmitAndLog OpCodes.Conv_Ovf_U      
+        | DT_U1 -> ilG.EmitAndLog OpCodes.Conv_Ovf_U1      
+        | DT_U2 -> ilG.EmitAndLog OpCodes.Conv_Ovf_U2      
+        | DT_U4 -> ilG.EmitAndLog OpCodes.Conv_Ovf_U4
+        | DT_U8 -> ilG.EmitAndLog OpCodes.Conv_Ovf_U8
         | DT_R -> failwith "AI_conv_ovf DT_R?" // XXX - check       
         | DT_R4 -> failwith "AI_conv_ovf DT_R4?" // XXX - check       
         | DT_R8 -> failwith "AI_conv_ovf DT_R8?" // XXX - check       
@@ -1023,40 +1023,40 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
     // conversion - ovf checks and unsigned 
     | AI_conv_ovf_un dt -> 
         match dt with
-        | DT_I -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I_Un)
-        | DT_I1 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I1_Un)
-        | DT_I2 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I2_Un)
-        | DT_I4 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I4_Un)
-        | DT_I8 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_I8_Un)
-        | DT_U -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U_Un)            
-        | DT_U1 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U1_Un)      
-        | DT_U2 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U2_Un)      
-        | DT_U4 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U4_Un)      
-        | DT_U8 -> ilG.EmitAndLog (OpCodes.Conv_Ovf_U8_Un)
+        | DT_I -> ilG.EmitAndLog OpCodes.Conv_Ovf_I_Un
+        | DT_I1 -> ilG.EmitAndLog OpCodes.Conv_Ovf_I1_Un
+        | DT_I2 -> ilG.EmitAndLog OpCodes.Conv_Ovf_I2_Un
+        | DT_I4 -> ilG.EmitAndLog OpCodes.Conv_Ovf_I4_Un
+        | DT_I8 -> ilG.EmitAndLog OpCodes.Conv_Ovf_I8_Un
+        | DT_U -> ilG.EmitAndLog OpCodes.Conv_Ovf_U_Un            
+        | DT_U1 -> ilG.EmitAndLog OpCodes.Conv_Ovf_U1_Un      
+        | DT_U2 -> ilG.EmitAndLog OpCodes.Conv_Ovf_U2_Un      
+        | DT_U4 -> ilG.EmitAndLog OpCodes.Conv_Ovf_U4_Un      
+        | DT_U8 -> ilG.EmitAndLog OpCodes.Conv_Ovf_U8_Un
         | DT_R -> failwith "AI_conv_ovf_un DT_R?" // XXX - check       
         | DT_R4 -> failwith "AI_conv_ovf_un DT_R4?" // XXX - check       
         | DT_R8 -> failwith "AI_conv_ovf_un DT_R8?" // XXX - check       
         | DT_REF -> failwith "AI_conv_ovf_un DT_REF?" // XXX - check
-    | AI_mul -> ilG.EmitAndLog (OpCodes.Mul)
-    | AI_mul_ovf -> ilG.EmitAndLog (OpCodes.Mul_Ovf)
-    | AI_mul_ovf_un -> ilG.EmitAndLog (OpCodes.Mul_Ovf_Un)
-    | AI_rem -> ilG.EmitAndLog (OpCodes.Rem)
-    | AI_rem_un -> ilG.EmitAndLog (OpCodes.Rem_Un)
-    | AI_shl -> ilG.EmitAndLog (OpCodes.Shl)
-    | AI_shr -> ilG.EmitAndLog (OpCodes.Shr)
-    | AI_shr_un -> ilG.EmitAndLog (OpCodes.Shr_Un)
-    | AI_sub -> ilG.EmitAndLog (OpCodes.Sub)
-    | AI_sub_ovf -> ilG.EmitAndLog (OpCodes.Sub_Ovf)
-    | AI_sub_ovf_un -> ilG.EmitAndLog (OpCodes.Sub_Ovf_Un)
-    | AI_xor -> ilG.EmitAndLog (OpCodes.Xor)
-    | AI_or -> ilG.EmitAndLog (OpCodes.Or)
-    | AI_neg -> ilG.EmitAndLog (OpCodes.Neg)
-    | AI_not -> ilG.EmitAndLog (OpCodes.Not)
-    | AI_ldnull -> ilG.EmitAndLog (OpCodes.Ldnull)
-    | AI_dup -> ilG.EmitAndLog (OpCodes.Dup)
-    | AI_pop -> ilG.EmitAndLog (OpCodes.Pop)
-    | AI_ckfinite -> ilG.EmitAndLog (OpCodes.Ckfinite)
-    | AI_nop -> ilG.EmitAndLog (OpCodes.Nop)
+    | AI_mul -> ilG.EmitAndLog OpCodes.Mul
+    | AI_mul_ovf -> ilG.EmitAndLog OpCodes.Mul_Ovf
+    | AI_mul_ovf_un -> ilG.EmitAndLog OpCodes.Mul_Ovf_Un
+    | AI_rem -> ilG.EmitAndLog OpCodes.Rem
+    | AI_rem_un -> ilG.EmitAndLog OpCodes.Rem_Un
+    | AI_shl -> ilG.EmitAndLog OpCodes.Shl
+    | AI_shr -> ilG.EmitAndLog OpCodes.Shr
+    | AI_shr_un -> ilG.EmitAndLog OpCodes.Shr_Un
+    | AI_sub -> ilG.EmitAndLog OpCodes.Sub
+    | AI_sub_ovf -> ilG.EmitAndLog OpCodes.Sub_Ovf
+    | AI_sub_ovf_un -> ilG.EmitAndLog OpCodes.Sub_Ovf_Un
+    | AI_xor -> ilG.EmitAndLog OpCodes.Xor
+    | AI_or -> ilG.EmitAndLog OpCodes.Or
+    | AI_neg -> ilG.EmitAndLog OpCodes.Neg
+    | AI_not -> ilG.EmitAndLog OpCodes.Not
+    | AI_ldnull -> ilG.EmitAndLog OpCodes.Ldnull
+    | AI_dup -> ilG.EmitAndLog OpCodes.Dup
+    | AI_pop -> ilG.EmitAndLog OpCodes.Pop
+    | AI_ckfinite -> ilG.EmitAndLog OpCodes.Ckfinite
+    | AI_nop -> ilG.EmitAndLog OpCodes.Nop
     | AI_ldc (DT_I4, ILConst.I4 i32) -> ilG.EmitAndLog (OpCodes.Ldc_I4, i32)
     | AI_ldc (DT_I8, ILConst.I8 i64) -> ilG.Emit(OpCodes.Ldc_I8, i64)
     | AI_ldc (DT_R4, ILConst.R4 r32) -> ilG.Emit(OpCodes.Ldc_R4, r32)
@@ -1068,20 +1068,20 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         emitInstrAlign ilG align
         emitInstrVolatile ilG vol
         match dt with
-        | DT_I -> ilG.EmitAndLog (OpCodes.Ldind_I)
-        | DT_I1 -> ilG.EmitAndLog (OpCodes.Ldind_I1)
-        | DT_I2 -> ilG.EmitAndLog (OpCodes.Ldind_I2)
-        | DT_I4 -> ilG.EmitAndLog (OpCodes.Ldind_I4)
-        | DT_I8 -> ilG.EmitAndLog (OpCodes.Ldind_I8)
+        | DT_I -> ilG.EmitAndLog OpCodes.Ldind_I
+        | DT_I1 -> ilG.EmitAndLog OpCodes.Ldind_I1
+        | DT_I2 -> ilG.EmitAndLog OpCodes.Ldind_I2
+        | DT_I4 -> ilG.EmitAndLog OpCodes.Ldind_I4
+        | DT_I8 -> ilG.EmitAndLog OpCodes.Ldind_I8
         | DT_R -> failwith "emitInstr cenv: ldind R"
-        | DT_R4 -> ilG.EmitAndLog (OpCodes.Ldind_R4)
-        | DT_R8 -> ilG.EmitAndLog (OpCodes.Ldind_R8)
+        | DT_R4 -> ilG.EmitAndLog OpCodes.Ldind_R4
+        | DT_R8 -> ilG.EmitAndLog OpCodes.Ldind_R8
         | DT_U -> failwith "emitInstr cenv: ldind U"
-        | DT_U1 -> ilG.EmitAndLog (OpCodes.Ldind_U1)
-        | DT_U2 -> ilG.EmitAndLog (OpCodes.Ldind_U2)
-        | DT_U4 -> ilG.EmitAndLog (OpCodes.Ldind_U4)
+        | DT_U1 -> ilG.EmitAndLog OpCodes.Ldind_U1
+        | DT_U2 -> ilG.EmitAndLog OpCodes.Ldind_U2
+        | DT_U4 -> ilG.EmitAndLog OpCodes.Ldind_U4
         | DT_U8 -> failwith "emitInstr cenv: ldind U8"
-        | DT_REF -> ilG.EmitAndLog (OpCodes.Ldind_Ref)
+        | DT_REF -> ilG.EmitAndLog OpCodes.Ldind_Ref
     | I_ldloc u16 -> ilG.EmitAndLog (OpCodes.Ldloc, int16 u16)
     | I_ldloca u16 -> ilG.EmitAndLog (OpCodes.Ldloca, int16 u16)
     | I_starg u16 -> ilG.EmitAndLog (OpCodes.Starg, int16 u16)
@@ -1089,26 +1089,26 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         emitInstrAlign ilG align
         emitInstrVolatile ilG vol
         match dt with
-        | DT_I -> ilG.EmitAndLog (OpCodes.Stind_I)
-        | DT_I1 -> ilG.EmitAndLog (OpCodes.Stind_I1)
-        | DT_I2 -> ilG.EmitAndLog (OpCodes.Stind_I2)
-        | DT_I4 -> ilG.EmitAndLog (OpCodes.Stind_I4)
-        | DT_I8 -> ilG.EmitAndLog (OpCodes.Stind_I8)
+        | DT_I -> ilG.EmitAndLog OpCodes.Stind_I
+        | DT_I1 -> ilG.EmitAndLog OpCodes.Stind_I1
+        | DT_I2 -> ilG.EmitAndLog OpCodes.Stind_I2
+        | DT_I4 -> ilG.EmitAndLog OpCodes.Stind_I4
+        | DT_I8 -> ilG.EmitAndLog OpCodes.Stind_I8
         | DT_R -> failwith "emitInstr cenv: stind R"
-        | DT_R4 -> ilG.EmitAndLog (OpCodes.Stind_R4)
-        | DT_R8 -> ilG.EmitAndLog (OpCodes.Stind_R8)
-        | DT_U -> ilG.EmitAndLog (OpCodes.Stind_I)    // NOTE: unsigned -> int conversion
-        | DT_U1 -> ilG.EmitAndLog (OpCodes.Stind_I1)   // NOTE: follows code ilwrite.fs
-        | DT_U2 -> ilG.EmitAndLog (OpCodes.Stind_I2)   // NOTE: is it ok?
-        | DT_U4 -> ilG.EmitAndLog (OpCodes.Stind_I4)   // NOTE: it is generated by bytearray tests
-        | DT_U8 -> ilG.EmitAndLog (OpCodes.Stind_I8)   // NOTE: unsigned -> int conversion
-        | DT_REF -> ilG.EmitAndLog (OpCodes.Stind_Ref)
+        | DT_R4 -> ilG.EmitAndLog OpCodes.Stind_R4
+        | DT_R8 -> ilG.EmitAndLog OpCodes.Stind_R8
+        | DT_U -> ilG.EmitAndLog OpCodes.Stind_I    // NOTE: unsigned -> int conversion
+        | DT_U1 -> ilG.EmitAndLog OpCodes.Stind_I1   // NOTE: follows code ilwrite.fs
+        | DT_U2 -> ilG.EmitAndLog OpCodes.Stind_I2   // NOTE: is it ok?
+        | DT_U4 -> ilG.EmitAndLog OpCodes.Stind_I4   // NOTE: it is generated by bytearray tests
+        | DT_U8 -> ilG.EmitAndLog OpCodes.Stind_I8   // NOTE: unsigned -> int conversion
+        | DT_REF -> ilG.EmitAndLog OpCodes.Stind_Ref
     | I_stloc u16 -> ilG.EmitAndLog (OpCodes.Stloc, int16 u16)
     | I_br targ -> ilG.EmitAndLog (OpCodes.Br, envGetLabel emEnv targ)
     | I_jmp mspec -> ilG.EmitAndLog (OpCodes.Jmp, convMethodSpec cenv emEnv mspec)
     | I_brcmp (comp, targ) -> emitInstrCompare emEnv ilG comp targ 
     | I_switch labels -> ilG.Emit(OpCodes.Switch, Array.ofList (List.map (envGetLabel emEnv) labels))
-    | I_ret -> ilG.EmitAndLog (OpCodes.Ret)
+    | I_ret -> ilG.EmitAndLog OpCodes.Ret
 
     | I_call (tail, mspec, varargs) -> 
         emitSilverlightCheck ilG
@@ -1144,9 +1144,9 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
     | I_newobj (mspec, varargs) -> 
         emitInstrNewobj cenv emEnv ilG mspec varargs
 
-    | I_throw -> ilG.EmitAndLog (OpCodes.Throw)
-    | I_endfinally -> ilG.EmitAndLog (OpCodes.Endfinally)
-    | I_endfilter -> ilG.EmitAndLog (OpCodes.Endfilter) 
+    | I_throw -> ilG.EmitAndLog OpCodes.Throw
+    | I_endfinally -> ilG.EmitAndLog OpCodes.Endfinally
+    | I_endfilter -> ilG.EmitAndLog OpCodes.Endfilter 
     | I_leave label -> ilG.EmitAndLog (OpCodes.Leave, envGetLabel emEnv label)
     | I_ldsfld (vol, fspec) -> emitInstrVolatile ilG vol; ilG.EmitAndLog (OpCodes.Ldsfld, convFieldSpec cenv emEnv fspec)
     | I_ldfld (align, vol, fspec) -> emitInstrAlign ilG align; emitInstrVolatile ilG vol; ilG.EmitAndLog (OpCodes.Ldfld, convFieldSpec cenv emEnv fspec)
@@ -1192,50 +1192,50 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
     // In AbsIL these instructions include 
     // both the single-dimensional variants (with ILArrayShape == ILArrayShape.SingleDimensional) 
     // and calls to the "special" multi-dimensional "methods" such as 
-    //   newobj void string[, ]::.ctor(int32, int32) 
-    //   call string string[, ]::Get(int32, int32) 
-    //   call string& string[, ]::Address(int32, int32) 
-    //   call void string[, ]::Set(int32, int32, string) 
+    //   newobj void string[, ] :: .ctor(int32, int32) 
+    //   call string string[, ] :: Get(int32, int32) 
+    //   call string& string[, ] :: Address(int32, int32) 
+    //   call void string[, ] :: Set(int32, int32, string) 
     // The IL reader transforms calls of this form to the corresponding 
     // generalized instruction with the corresponding ILArrayShape 
     // argument. This is done to simplify the IL and make it more uniform. 
     // The IL writer then reverses this when emitting the binary. 
     | I_ldelem dt -> 
         match dt with
-        | DT_I -> ilG.EmitAndLog (OpCodes.Ldelem_I)
-        | DT_I1 -> ilG.EmitAndLog (OpCodes.Ldelem_I1)
-        | DT_I2 -> ilG.EmitAndLog (OpCodes.Ldelem_I2)
-        | DT_I4 -> ilG.EmitAndLog (OpCodes.Ldelem_I4)
-        | DT_I8 -> ilG.EmitAndLog (OpCodes.Ldelem_I8)
+        | DT_I -> ilG.EmitAndLog OpCodes.Ldelem_I
+        | DT_I1 -> ilG.EmitAndLog OpCodes.Ldelem_I1
+        | DT_I2 -> ilG.EmitAndLog OpCodes.Ldelem_I2
+        | DT_I4 -> ilG.EmitAndLog OpCodes.Ldelem_I4
+        | DT_I8 -> ilG.EmitAndLog OpCodes.Ldelem_I8
         | DT_R -> failwith "emitInstr cenv: ldelem R"
-        | DT_R4 -> ilG.EmitAndLog (OpCodes.Ldelem_R4)
-        | DT_R8 -> ilG.EmitAndLog (OpCodes.Ldelem_R8)
+        | DT_R4 -> ilG.EmitAndLog OpCodes.Ldelem_R4
+        | DT_R8 -> ilG.EmitAndLog OpCodes.Ldelem_R8
         | DT_U -> failwith "emitInstr cenv: ldelem U"
-        | DT_U1 -> ilG.EmitAndLog (OpCodes.Ldelem_U1)
-        | DT_U2 -> ilG.EmitAndLog (OpCodes.Ldelem_U2)
-        | DT_U4 -> ilG.EmitAndLog (OpCodes.Ldelem_U4)
+        | DT_U1 -> ilG.EmitAndLog OpCodes.Ldelem_U1
+        | DT_U2 -> ilG.EmitAndLog OpCodes.Ldelem_U2
+        | DT_U4 -> ilG.EmitAndLog OpCodes.Ldelem_U4
         | DT_U8 -> failwith "emitInstr cenv: ldelem U8"
-        | DT_REF -> ilG.EmitAndLog (OpCodes.Ldelem_Ref)
+        | DT_REF -> ilG.EmitAndLog OpCodes.Ldelem_Ref
 
     | I_stelem dt -> 
         match dt with
-        | DT_I -> ilG.EmitAndLog (OpCodes.Stelem_I)
-        | DT_I1 -> ilG.EmitAndLog (OpCodes.Stelem_I1)
-        | DT_I2 -> ilG.EmitAndLog (OpCodes.Stelem_I2)
-        | DT_I4 -> ilG.EmitAndLog (OpCodes.Stelem_I4)
-        | DT_I8 -> ilG.EmitAndLog (OpCodes.Stelem_I8)
+        | DT_I -> ilG.EmitAndLog OpCodes.Stelem_I
+        | DT_I1 -> ilG.EmitAndLog OpCodes.Stelem_I1
+        | DT_I2 -> ilG.EmitAndLog OpCodes.Stelem_I2
+        | DT_I4 -> ilG.EmitAndLog OpCodes.Stelem_I4
+        | DT_I8 -> ilG.EmitAndLog OpCodes.Stelem_I8
         | DT_R -> failwith "emitInstr cenv: stelem R"
-        | DT_R4 -> ilG.EmitAndLog (OpCodes.Stelem_R4)
-        | DT_R8 -> ilG.EmitAndLog (OpCodes.Stelem_R8)
+        | DT_R4 -> ilG.EmitAndLog OpCodes.Stelem_R4
+        | DT_R8 -> ilG.EmitAndLog OpCodes.Stelem_R8
         | DT_U -> failwith "emitInstr cenv: stelem U"
         | DT_U1 -> failwith "emitInstr cenv: stelem U1"
         | DT_U2 -> failwith "emitInstr cenv: stelem U2"
         | DT_U4 -> failwith "emitInstr cenv: stelem U4"
         | DT_U8 -> failwith "emitInstr cenv: stelem U8"
-        | DT_REF -> ilG.EmitAndLog (OpCodes.Stelem_Ref)
+        | DT_REF -> ilG.EmitAndLog OpCodes.Stelem_Ref
 
     | I_ldelema (ro, _isNativePtr, shape, ty) -> 
-        if (ro = ReadonlyAddress) then ilG.EmitAndLog (OpCodes.Readonly)
+        if (ro = ReadonlyAddress) then ilG.EmitAndLog OpCodes.Readonly
         if (shape = ILArrayShape.SingleDimensional) 
         then ilG.EmitAndLog (OpCodes.Ldelema, convType cenv emEnv ty)
         else 
@@ -1283,12 +1283,12 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             let meth = modB.GetArrayMethodAndLog (aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null: Type), Array.create shape.Rank (typeof<int>))
             ilG.EmitAndLog (OpCodes.Newobj, meth)
 
-    | I_ldlen -> ilG.EmitAndLog (OpCodes.Ldlen)
+    | I_ldlen -> ilG.EmitAndLog OpCodes.Ldlen
     | I_mkrefany ty -> ilG.EmitAndLog (OpCodes.Mkrefany, convType cenv emEnv ty)
-    | I_refanytype -> ilG.EmitAndLog (OpCodes.Refanytype)
+    | I_refanytype -> ilG.EmitAndLog OpCodes.Refanytype
     | I_refanyval ty -> ilG.EmitAndLog (OpCodes.Refanyval, convType cenv emEnv ty)
-    | I_rethrow -> ilG.EmitAndLog (OpCodes.Rethrow)
-    | I_break -> ilG.EmitAndLog (OpCodes.Break)
+    | I_rethrow -> ilG.EmitAndLog OpCodes.Rethrow
+    | I_break -> ilG.EmitAndLog OpCodes.Break
     | I_seqpoint src -> 
 #if FX_RESHAPED_REFEMIT
         ignore src
@@ -1299,18 +1299,18 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             let symDoc = modB.DefineDocumentAndLog (src.Document.File, guid src.Document.Language, guid src.Document.Vendor, guid src.Document.DocumentType)
             ilG.MarkSequencePointAndLog (symDoc, src.Line, src.Column, src.EndLine, src.EndColumn)
 #endif
-    | I_arglist -> ilG.EmitAndLog (OpCodes.Arglist)
-    | I_localloc -> ilG.EmitAndLog (OpCodes.Localloc)
+    | I_arglist -> ilG.EmitAndLog OpCodes.Arglist
+    | I_localloc -> ilG.EmitAndLog OpCodes.Localloc
 
     | I_cpblk (align, vol) -> 
         emitInstrAlign ilG align
         emitInstrVolatile ilG vol
-        ilG.EmitAndLog (OpCodes.Cpblk)
+        ilG.EmitAndLog OpCodes.Cpblk
 
     | I_initblk (align, vol) -> 
         emitInstrAlign ilG align
         emitInstrVolatile ilG vol
-        ilG.EmitAndLog (OpCodes.Initblk)
+        ilG.EmitAndLog OpCodes.Initblk
 
     | EI_ldlen_multi (_, m) -> 
         emitInstr cenv modB emEnv ilG (mkLdcInt32 m)
@@ -1636,7 +1636,7 @@ let buildFieldPass2 cenv tref (typB: TypeBuilder) emEnv (fdef: ILFieldDef) =
                 // => its underlying type cannot be explicitly specified and will be inferred at the very moment of first field definition
                 // => here we cannot detect if underlying type is already set so as a conservative solution we delay initialization of fields
                 // to the end of pass2 (types and members are already created but method bodies are yet not emitted)
-                { emEnv with delayedFieldInits = (fun() -> fieldB.SetConstant(convFieldInit initial))::emEnv.delayedFieldInits }
+                { emEnv with delayedFieldInits = (fun() -> fieldB.SetConstant(convFieldInit initial)) :: emEnv.delayedFieldInits }
     fdef.Offset |> Option.iter (fun offset -> fieldB.SetOffset offset)
     // custom attributes: done on pass 3 as they may reference attribute constructors generated on
     // pass 2.
@@ -2121,7 +2121,7 @@ let emitModuleFragment (ilg, emEnv, asmB: AssemblyBuilder, modB: ModuleBuilder, 
         None
       with 
          | :? System.Reflection.TargetInvocationException as e ->
-             Some(e.InnerException)
+             Some e.InnerException
    
     let emEnv, entryPts = envPopEntryPts emEnv
     let execs = List.map execEntryPtFun entryPts
