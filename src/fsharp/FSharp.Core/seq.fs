@@ -82,7 +82,7 @@ namespace Microsoft.FSharp.Collections
               }
 
       let mapi f (e : IEnumerator<_>) : IEnumerator<_> =
-          let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+          let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
           let i = ref (-1)
           upcast
               {  new MapEnumerator<_>() with
@@ -97,7 +97,7 @@ namespace Microsoft.FSharp.Collections
               }
 
       let map2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_>=
-          let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+          let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
           upcast
               {  new MapEnumerator<_>() with
                      member this.DoMoveNext curr =
@@ -116,7 +116,7 @@ namespace Microsoft.FSharp.Collections
               }
 
       let mapi2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_> =
-          let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+          let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt f
           let i = ref (-1)
           upcast
               {  new MapEnumerator<_>() with
@@ -135,7 +135,7 @@ namespace Microsoft.FSharp.Collections
               }
 
       let map3 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) (e3 : IEnumerator<_>) : IEnumerator<_> =
-        let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+        let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt f
         upcast
             {  new MapEnumerator<_>() with
                    member this.DoMoveNext curr =
@@ -308,8 +308,8 @@ namespace Microsoft.FSharp.Collections
             //System.Console.WriteLine("{0}.appG", box g)
             let res = g.Apply()
             match res with
-            | Goto(next) ->
-                Goto(next)
+            | Goto next ->
+                Goto next
             | Yield _ ->
                 res
             | Stop ->
@@ -384,7 +384,7 @@ namespace Microsoft.FSharp.Collections
             let mutable finished = false
             member e.Generator = g
             interface IEnumerator<'T> with
-                member x.Current= match curr with Some(v) -> v | None -> raise <| System.InvalidOperationException (SR.GetString(SR.moveNextNotCalledOrFinished))
+                member x.Current= match curr with Some v -> v | None -> raise <| System.InvalidOperationException (SR.GetString(SR.moveNextNotCalledOrFinished))
             interface System.Collections.IEnumerator with
                 member x.Current = box (x :> IEnumerator<_>).Current
                 member x.MoveNext() =
@@ -394,10 +394,10 @@ namespace Microsoft.FSharp.Collections
                         curr <- None
                         finished <- true
                         false
-                     | Yield(v) ->
-                        curr <- Some(v)
+                     | Yield v ->
+                        curr <- Some v
                         true
-                     | Goto(next) ->
+                     | Goto next ->
                         (g <- next)
                         (x :> IEnumerator).MoveNext())
                 member x.Reset() = IEnumerator.noReset()
@@ -509,7 +509,7 @@ namespace Microsoft.FSharp.Collections
         let iteri action (source : seq<'T>) =
             checkNonNull "source" source
             use e = source.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt action
             let mutable i = 0
             while e.MoveNext() do
                 f.Invoke(i, e.Current)
@@ -548,7 +548,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt action
             while (e1.MoveNext() && e2.MoveNext()) do
                 f.Invoke(e1.Current, e2.Current)
 
@@ -558,7 +558,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(action)
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt action
             let mutable i = 0
             while (e1.MoveNext() && e2.MoveNext()) do
                 f.Invoke(i, e1.Current, e2.Current)
@@ -659,7 +659,7 @@ namespace Microsoft.FSharp.Collections
             let mutable res = None
             while (Option.isNone res && e.MoveNext()) do
                 let c = e.Current
-                if predicate c then res <- Some(c)
+                if predicate c then res <- Some c
             res
 
         [<CompiledName("Find")>]
@@ -717,7 +717,7 @@ namespace Microsoft.FSharp.Collections
         let fold<'T,'State> folder (state:'State) (source : seq<'T>)  =
             checkNonNull "source" source
             use e = source.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
             let mutable state = state
             while e.MoveNext() do
                 state <- f.Invoke(state, e.Current)
@@ -731,7 +731,7 @@ namespace Microsoft.FSharp.Collections
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
 
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(folder)
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt folder
 
             let mutable state = state
             while e1.MoveNext() && e2.MoveNext() do
@@ -744,7 +744,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator()
             if not (e.MoveNext()) then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(reduction)
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt reduction
             let mutable state = e.Current
             while e.MoveNext() do
                 state <- f.Invoke(state, e.Current)
@@ -773,7 +773,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(comparer)
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt comparer
             let rec go () =
                 let e1ok = e1.MoveNext()
                 let e2ok = e2.MoveNext()
@@ -826,7 +826,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("FoldBack")>]
         let foldBack<'T,'State> folder (source : seq<'T>) (state:'State) =
             checkNonNull "source" source
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
             let arr = toArray source
             let len = arr.Length
             foldArraySubRight f arr 0 (len - 1) state
@@ -843,7 +843,7 @@ namespace Microsoft.FSharp.Collections
             match arr.Length with
             | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | len ->
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(reduction)
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt reduction
                 foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
 
         [<CompiledName("Singleton")>]
@@ -873,7 +873,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Scan")>]
         let scan<'T,'State> folder (state:'State) (source : seq<'T>) =
             checkNonNull "source" source
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
             seq { let zref = ref state
                   yield !zref
                   use ie = source.GetEnumerator()
@@ -1087,7 +1087,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             seq { let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
                   for v in source do
-                      if hashSet.Add(v) then
+                      if hashSet.Add v then
                           yield v }
 
         [<CompiledName("DistinctBy")>]
@@ -1340,7 +1340,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
-            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(predicate)
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt predicate
             let mutable ok = true
             while (ok && e1.MoveNext() && e2.MoveNext()) do
                 ok <- p.Invoke(e1.Current, e2.Current)
@@ -1352,7 +1352,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
-            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(predicate)
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt predicate
             let mutable ok = false
             while (not ok && e1.MoveNext() && e2.MoveNext()) do
                 ok <- p.Invoke(e1.Current, e2.Current)

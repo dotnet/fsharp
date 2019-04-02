@@ -1480,8 +1480,8 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         // This is important for calls to operators on generated provided types. There is an (unchecked) condition
         // that generative providers do not re=order arguments or insert any more information into operator calls.
         match callMethInfoOpt, callExpr with 
-        | Some methInfo, Expr.Op(TOp.ILCall(_useCallVirt, _isProtected, _, _isNewObj, NormalValUse, _isProp, _noTailCall, ilMethRef, _actualTypeInst, actualMethInst, _ilReturnTys), [], args, m)
-             when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val(v, _, _) -> valEq v.Deref b | _ -> false) ->
+        | Some methInfo, Expr.Op (TOp.ILCall (_useCallVirt, _isProtected, _, _isNewObj, NormalValUse, _isProp, _noTailCall, ilMethRef, _actualTypeInst, actualMethInst, _ilReturnTys), [], args, m)
+             when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val (v, _, _) -> valEq v.Deref b | _ -> false) ->
                 let declaringType = Import.ImportProvidedType amap m (methInfo.PApply((fun x -> x.DeclaringType), m))
                 if isILAppTy g declaringType then 
                     let extOpt = None  // EXTENSION METHODS FROM TYPE PROVIDERS: for extension methods coming from the type providers we would have something here.
@@ -2817,7 +2817,7 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
             if minfo.IsStruct && minfo.IsInstance && (match argExprs with [] -> false | h :: _ -> not (isByrefTy g (tyOfExpr g h))) then 
                 let h, t = List.headAndTail argExprs
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
-                ResultD (Some (wrap (Expr.Op(TOp.TraitCall(traitInfo), [], (h' :: t), m))))
+                ResultD (Some (wrap (Expr.Op (TOp.TraitCall (traitInfo), [], (h' :: t), m))))
             else        
                 ResultD (Some (MakeMethInfoCall amap m minfo methArgTys argExprs ))
 

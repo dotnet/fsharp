@@ -130,7 +130,7 @@ module internal Adapters =
         let typ = anonObjectTypes.[args.Length - 1]
         let typ = typ.MakeGenericType [| for a in args -> a.Type |]
         let ctor = typ.GetConstructors().[0]
-        let res = Expr.NewObject(ctor, args)
+        let res = Expr.NewObject (ctor, args)
         assert (match res with NewAnonymousObject _ -> true | _ -> false)
         res
 
@@ -149,7 +149,7 @@ module internal Adapters =
 
             // Get property (at most the last one)
             let propInfo = newType.GetProperty ("Item"  + string (1 + min i 7))
-            let res = Expr.PropertyGet(inst, propInfo)
+            let res = Expr.PropertyGet (inst, propInfo)
             // Do we need to add another property get for the last property?
             if i < 7 then res 
             else walk (i - 7) res (newType.GetGenericArguments().[7]) 
@@ -240,7 +240,7 @@ module internal Adapters =
         let expr = 
             match expr with 
             | ExprShape.ShapeCombination(comb,args) -> match args with [] -> expr | _ -> ExprShape.RebuildShapeCombination(comb,List.map CleanupLeaf args)
-            | ExprShape.ShapeLambda(v,body) -> Expr.Lambda(v, CleanupLeaf body)
+            | ExprShape.ShapeLambda(v,body) -> Expr.Lambda (v, CleanupLeaf body)
             | ExprShape.ShapeVar _ -> expr
         match expr with 
 
@@ -249,13 +249,13 @@ module internal Adapters =
         | ObjectConstruction(var, init, propSets) ->
             // Wrap object initialization into a value (
             let methInfo = MemberInitializationHelperMeth.MakeGenericMethod [|  var.Type |]
-            Expr.Call(methInfo, [ List.reduceBack (fun a b -> Expr.Sequential(a,b)) (propSets @ [init]) ])
+            Expr.Call (methInfo, [ List.reduceBack (fun a b -> Expr.Sequential (a,b)) (propSets @ [init]) ])
 
         // Detect all anonymous type constructions - wrap them in 'NewAnonymousObjectHelper'
         // so that it can be translated to Expression.New with member arguments.
         | NewAnonymousObject(ctor, args) ->
             let methInfo = NewAnonymousObjectHelperMeth.MakeGenericMethod [|  ctor.DeclaringType |]
-            Expr.Call(methInfo, [ Expr.NewObject(ctor,args) ])
+            Expr.Call (methInfo, [ Expr.NewObject (ctor,args) ])
         | expr -> 
             expr
 
@@ -265,7 +265,7 @@ module internal Adapters =
         let e = 
             match e with 
             | ExprShape.ShapeCombination(comb,args) -> ExprShape.RebuildShapeCombination(comb,List.map SimplifyConsumingExpr args)
-            | ExprShape.ShapeLambda(v,body) -> Expr.Lambda(v, SimplifyConsumingExpr body)
+            | ExprShape.ShapeLambda(v,body) -> Expr.Lambda (v, SimplifyConsumingExpr body)
             | ExprShape.ShapeVar _ -> e
         match e with
         | Patterns.TupleGet(Patterns.NewTuple els,i) -> els.[i]

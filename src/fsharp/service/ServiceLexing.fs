@@ -316,7 +316,7 @@ type FSharpTokenizerLexState =
       OtherBits: int64 }
     static member Initial = { PosBits = 0L; OtherBits = 0L }
     member this.Equals (other: FSharpTokenizerLexState) = (this.PosBits = other.PosBits) && (this.OtherBits = other.OtherBits)
-    override this.Equals (obj: obj) = match obj with :? FSharpTokenizerLexState as other -> this.Equals(other) | _ -> false
+    override this.Equals (obj: obj) = match obj with :? FSharpTokenizerLexState as other -> this.Equals other | _ -> false
     override this.GetHashCode () = hash this.PosBits + hash this.OtherBits
 
 type FSharpTokenizerColorState =
@@ -432,7 +432,7 @@ module internal LexerStateEncoding =
             | LexCont.Token ifd                                       -> FSharpTokenizerColorState.Token, 0L, pos0, ifd
             | LexCont.IfDefSkip (ifd, n, m)                             -> FSharpTokenizerColorState.IfDefSkip, int64 n, m.Start, ifd
             | LexCont.EndLine(LexerEndlineContinuation.Skip(ifd, n, m)) -> FSharpTokenizerColorState.EndLineThenSkip, int64 n, m.Start, ifd
-            | LexCont.EndLine(LexerEndlineContinuation.Token(ifd))    -> FSharpTokenizerColorState.EndLineThenToken, 0L, pos0, ifd
+            | LexCont.EndLine(LexerEndlineContinuation.Token ifd)    -> FSharpTokenizerColorState.EndLineThenToken, 0L, pos0, ifd
             | LexCont.String (ifd, m)                                  -> FSharpTokenizerColorState.String, 0L, m.Start, ifd
             | LexCont.Comment (ifd, n, m)                               -> FSharpTokenizerColorState.Comment, int64 n, m.Start, ifd
             | LexCont.SingleLineComment (ifd, n, m)                     -> FSharpTokenizerColorState.SingleLineComment, int64 n, m.Start, ifd
@@ -461,7 +461,7 @@ module internal LexerStateEncoding =
             |  FSharpTokenizerColorState.VerbatimString             -> LexCont.VerbatimString (ifd, mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.TripleQuoteString          -> LexCont.TripleQuoteString (ifd, mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.EndLineThenSkip            -> LexCont.EndLine(LexerEndlineContinuation.Skip(ifd, n1, mkRange "file" p1 p1))
-            |  FSharpTokenizerColorState.EndLineThenToken           -> LexCont.EndLine(LexerEndlineContinuation.Token(ifd))
+            |  FSharpTokenizerColorState.EndLineThenToken           -> LexCont.EndLine(LexerEndlineContinuation.Token ifd)
             | _ -> LexCont.Token [] 
         lightSyntaxStatusInital, lexcont
 
@@ -512,7 +512,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
     let fsx = match filename with
               | None -> false
-              | Some(value) -> CompileOps.IsScript(value)
+              | Some value -> CompileOps.IsScript value
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...
@@ -521,7 +521,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     
     // Stack for tokens that are split during postprocessing    
     let mutable tokenStack = new Stack<_>()
-    let delayToken tok = tokenStack.Push(tok)
+    let delayToken tok = tokenStack.Push tok
 
     // Process: anywhite* #<directive>
     let processDirective (str: string) directiveLength delay cont =
@@ -536,7 +536,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         let comment = rest.IndexOf('/')
         let spaceLength = if comment = -1 then rest.Length else comment
         if (spaceLength > 0) then delay(WHITESPACE cont, offset, offset + spaceLength - 1)
-        if (comment <> -1) then delay(COMMENT(cont), offset + comment, offset + rest.Length - 1) 
+        if (comment <> -1) then delay(COMMENT cont, offset + comment, offset + rest.Length - 1) 
     
     // Split a directive line from lexer into tokens usable in VS
     let processDirectiveLine ofs f =
@@ -564,7 +564,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             let offset = processDirective str 2 delay cont      
             // Process: anywhite+ ident
             let rest, spaces = 
-                let w = str.Substring(offset) 
+                let w = str.Substring offset 
                 let r = w.TrimStart [| ' '; '\t' |]
                 r, w.Length - r.Length      
             let beforeIdent = offset + spaces      
@@ -581,9 +581,9 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 
     do match filename with 
         | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
-        | Some(value) -> resetLexbufPos value lexbuf
+        | Some value -> resetLexbufPos value lexbuf
      
-    member x.ScanToken(lexintInitial) : FSharpTokenInfo option * FSharpTokenizerLexState = 
+    member x.ScanToken lexintInitial : FSharpTokenInfo option * FSharpTokenizerLexState = 
 
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
@@ -594,7 +594,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         // Build the arguments to the lexer function
         let lexargs = if lightSyntaxStatusInital then lexArgsLightOn else lexArgsLightOff
 
-        let GetTokenWithPosition(lexcontInitial) = 
+        let GetTokenWithPosition lexcontInitial = 
             // Column of token
             let ColumnsOfCurrentToken() = 
                 let leftp = lexbuf.StartPos 
@@ -620,11 +620,11 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                   // because sometimes token shouldn't be split. However it is just for colorization & 
                   // for VS (which needs to recognize when user types ".").
                   match token with
-                  | HASH_IF(m, lineStr, cont) when lineStr <> "" ->
+                  | HASH_IF (m, lineStr, cont) when lineStr <> "" ->
                       false, processHashIfLine m.StartColumn lineStr cont
-                  | HASH_ELSE(m, lineStr, cont) when lineStr <> "" ->
+                  | HASH_ELSE (m, lineStr, cont) when lineStr <> "" ->
                       false, processHashEndElse m.StartColumn lineStr 4 cont                  
-                  | HASH_ENDIF(m, lineStr, cont) when lineStr <> "" ->
+                  | HASH_ENDIF (m, lineStr, cont) when lineStr <> "" ->
                       false, processHashEndElse m.StartColumn lineStr 5 cont
                   | RQUOTE_DOT (s, raw) -> 
                       delayToken(DOT, rightc, rightc)
@@ -638,41 +638,41 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                       false, (greaters.[0] false, leftc, rightc - opstr.Length + 1)
                   // break up any operators that start with '.' so that we can get auto-popup-completion for e.g. "x.+1"  when typing the dot
                   | INFIX_STAR_STAR_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(INFIX_STAR_STAR_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(INFIX_STAR_STAR_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | PLUS_MINUS_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(PLUS_MINUS_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(PLUS_MINUS_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | INFIX_COMPARE_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(INFIX_COMPARE_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(INFIX_COMPARE_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | INFIX_AT_HAT_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(INFIX_AT_HAT_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(INFIX_AT_HAT_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | INFIX_BAR_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(INFIX_BAR_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(INFIX_BAR_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | PREFIX_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(PREFIX_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(PREFIX_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | INFIX_STAR_DIV_MOD_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(INFIX_STAR_DIV_MOD_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(INFIX_STAR_DIV_MOD_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | INFIX_AMP_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(INFIX_AMP_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(INFIX_AMP_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | ADJACENT_PREFIX_OP opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(ADJACENT_PREFIX_OP(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(ADJACENT_PREFIX_OP(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | FUNKY_OPERATOR_NAME opstr when opstr.StartsWithOrdinal(".") ->
-                      delayToken(FUNKY_OPERATOR_NAME(opstr.Substring(1)), leftc+1, rightc)
+                      delayToken(FUNKY_OPERATOR_NAME(opstr.Substring 1), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | _ -> false, (token, leftc, rightc)
             with
             | e -> false, (EOF LexerStateEncoding.revertToDefaultLexCont, 0, 0) // REVIEW: report lex failure here        
         
         // Grab a token
-        let isCached, (token, leftc, rightc) = GetTokenWithPosition(lexcontInitial)
+        let isCached, (token, leftc, rightc) = GetTokenWithPosition lexcontInitial
                  
         // Check for end-of-string and failure
         let tokenDataOption, lexcontFinal, tokenTag = 
@@ -699,21 +699,21 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                       FSharpTokenTriggerClass=triggerClass
                       Tag=tokenTag
                       FullMatchedLength=fullMatchedLength} 
-                Some(tokenData), lexcontFinal, tokenTag
+                Some tokenData, lexcontFinal, tokenTag
                 
         // Get the final lex int and color state                
-        let FinalState(lexcontFinal) = 
+        let FinalState lexcontFinal = 
             LexerStateEncoding.encodeLexInt lightSyntaxStatus.Status lexcontFinal 
                 
         // Check for patterns like #-IDENT and see if they look like meta commands for .fsx files. If they do then merge them into a single token.
         let tokenDataOption, lexintFinal = 
-            let lexintFinal = FinalState(lexcontFinal)
+            let lexintFinal = FinalState lexcontFinal
             match tokenDataOption, singleLineTokenState, tokenTagToTokenId tokenTag with 
-            | Some(tokenData), SingleLineTokenState.BeforeHash, TOKEN_HASH ->
+            | Some tokenData, SingleLineTokenState.BeforeHash, TOKEN_HASH ->
                 // Don't allow further matches.
                 singleLineTokenState <- SingleLineTokenState.NoFurtherMatchPossible
                 // Peek at the next token
-                let isCached, (nextToken, _, rightc) = GetTokenWithPosition(lexcontInitial)
+                let isCached, (nextToken, _, rightc) = GetTokenWithPosition lexcontInitial
                 match nextToken with 
                 | IDENT possibleMetacommand -> 
                     match fsx, possibleMetacommand with
@@ -738,10 +738,10 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     // These are for script and non-script
                     | _, "nowarn" -> 
                         // Merge both tokens into one.
-                        let lexcontFinal = if (isCached) then lexcontInitial else LexerStateEncoding.computeNextLexState token lexcontInitial 
+                        let lexcontFinal = if isCached then lexcontInitial else LexerStateEncoding.computeNextLexState token lexcontInitial 
                         let tokenData = {tokenData with RightColumn=rightc;ColorClass=FSharpTokenColorKind.PreprocessorKeyword;CharClass=FSharpTokenCharKind.Keyword;FSharpTokenTriggerClass=FSharpTokenTriggerClass.None} 
-                        let lexintFinal = FinalState(lexcontFinal)
-                        Some(tokenData), lexintFinal
+                        let lexintFinal = FinalState lexcontFinal
+                        Some tokenData, lexintFinal
                     | _ -> tokenDataOption, lexintFinal
                 | _ -> tokenDataOption, lexintFinal
             | _, SingleLineTokenState.BeforeHash, TOKEN_WHITESPACE -> 
@@ -771,7 +771,7 @@ type FSharpSourceTokenizer(defineConstants : string list, filename : string opti
         FSharpLineTokenizer(lexbuf, Some lineText.Length, filename, lexArgsLightOn, lexArgsLightOff)
 
     
-    member this.CreateBufferTokenizer(bufferFiller) = 
+    member this.CreateBufferTokenizer bufferFiller = 
         let lexbuf = UnicodeLexing.FunctionAsLexbuf bufferFiller
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
 

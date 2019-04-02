@@ -29,7 +29,7 @@ module Zmap =
         try Zmap.find k mp
         with e ->
             dprintf "Zmap.force: %s %s\n" str (soK k)
-            PreserveStackTrace(e)
+            PreserveStackTrace e
             raise e
 
 //-------------------------------------------------------------------------
@@ -1126,19 +1126,19 @@ module Pass4_RewriteAssembly =
                 List.mapFold (fun z (tType, objExprs) ->
                     let objExprs', z' = List.mapFold (TransMethod penv) z objExprs
                     (tType, objExprs'), z') z iimpls
-            let expr = Expr.Obj(newUnique(), ty, basev, basecall, overrides, iimpls, m)
+            let expr = Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m)
             let pds, z = ExtractPreDecs z
             MakePreDecs m pds expr, z (* if TopLevel, lift preDecs over the ilobj expr *)
 
         // lambda, tlambda - explicit lambda terms
-        | Expr.Lambda(_, ctorThisValOpt, baseValOpt, argvs, body, m, rty) ->
+        | Expr.Lambda (_, ctorThisValOpt, baseValOpt, argvs, body, m, rty) ->
             let z = EnterInner z
             let body, z = TransExpr penv z body
             let z = ExitInner z
             let pds, z = ExtractPreDecs z
             MakePreDecs m pds (rebuildLambda m ctorThisValOpt baseValOpt argvs (body, rty)), z
 
-        | Expr.TyLambda(_, argtyvs, body, m, rty) ->
+        | Expr.TyLambda (_, argtyvs, body, m, rty) ->
             let z = EnterInner z
             let body, z = TransExpr penv z body
             let z = ExitInner z
@@ -1147,7 +1147,7 @@ module Pass4_RewriteAssembly =
 
         /// Lifting TLR out over constructs (disabled)
         /// Lift minimally to ensure the defn is not lifted up and over defns on which it depends (disabled)
-        | Expr.Match(spBind, exprm, dtree, targets, m, ty) ->
+        | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
             let targets = Array.toList targets
             let dtree, z   = TransDecisionTree penv z dtree
             let targets, z = List.mapFold (TransDecisionTreeTarget penv) z targets
@@ -1161,19 +1161,19 @@ module Pass4_RewriteAssembly =
 
         | Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
             let argExprs,z = List.mapFold (TransExpr penv) z argExprs
-            Expr.Quote(a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty),z
+            Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty),z
 
         | Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty) -> 
-            Expr.Quote(a,{contents=None},isFromQueryExpression,m,ty),z
+            Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty),z
 
         | Expr.Op (c,tyargs,args,m) -> 
             let args,z = List.mapFold (TransExpr penv) z args
-            Expr.Op(c,tyargs,args,m),z
+            Expr.Op (c,tyargs,args,m),z
 
         | Expr.StaticOptimization (constraints,e2,e3,m) ->
             let e2,z = TransExpr penv z e2
             let e3,z = TransExpr penv z e3
-            Expr.StaticOptimization(constraints,e2,e3,m),z
+            Expr.StaticOptimization (constraints,e2,e3,m),z
 
         | Expr.TyChoose (_,_,m) -> 
             error(Error(FSComp.SR.tlrUnexpectedTExpr(),m))
@@ -1185,7 +1185,7 @@ module Pass4_RewriteAssembly =
         | Expr.Sequential (e1, e2, dir, spSeq, m) ->
             let e1, z = TransExpr penv z e1
             TransLinearExpr penv z e2 (contf << (fun (e2, z) ->
-                Expr.Sequential(e1, e2, dir, spSeq, m), z))
+                Expr.Sequential (e1, e2, dir, spSeq, m), z))
 
          // letrec - pass_recbinds does the work
          | Expr.LetRec (binds, e, m, _) ->
@@ -1295,12 +1295,12 @@ module Pass4_RewriteAssembly =
         | TMDefDo(e, m)            ->
             let _bind, z = TransExpr penv z e
             TMDefDo(e, m), z
-        | TMDefs(defs)   ->
+        | TMDefs defs   ->
             let defs, z = TransModuleDefs penv z defs
-            TMDefs(defs), z
-        | TMAbstract(mexpr) ->
+            TMDefs defs, z
+        | TMAbstract mexpr ->
             let mexpr, z = TransModuleExpr penv z mexpr
-            TMAbstract(mexpr), z
+            TMAbstract mexpr, z
     and TransModuleBindings penv z binds = List.mapFold (TransModuleBinding penv) z  binds
     and TransModuleBinding penv z x =
         match x with

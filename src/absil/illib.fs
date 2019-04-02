@@ -495,10 +495,10 @@ module ValueOptionInternal =
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
 type String with
-    member inline x.StartsWithOrdinal(value) =
+    member inline x.StartsWithOrdinal value =
         x.StartsWith(value, StringComparison.Ordinal)
 
-    member inline x.EndsWithOrdinal(value) =
+    member inline x.EndsWithOrdinal value =
         x.EndsWith(value, StringComparison.Ordinal)
 
 module String =
@@ -508,7 +508,7 @@ module String =
 
     let sub (s: string) (start: int) (len: int) = s.Substring(start, len)
 
-    let contains (s: string) (c: char) = s.IndexOf(c) <> -1
+    let contains (s: string) (c: char) = s.IndexOf c <> -1
 
     let order = LanguagePrimitives.FastGenericComparer<string>
    
@@ -543,7 +543,7 @@ module String =
         | None -> str
         | Some c  -> 
             strArr.[0] <- Char.ToLower c
-            String (strArr)
+            String strArr
 
     let extractTrailingIndex (str: string) =
         match str with
@@ -569,7 +569,7 @@ module String =
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
             None
-        elif value.StartsWithOrdinal(pattern) then
+        elif value.StartsWithOrdinal pattern then
             Some()
         else None
 
@@ -583,14 +583,14 @@ module String =
     let getLines (str: string) =
         use reader = new StringReader(str)
         [|
-        let line = ref (reader.ReadLine())
-        while not (isNull !line) do
-            yield !line
-            line := reader.ReadLine()
-        if str.EndsWithOrdinal("\n") then
-            // last trailing space not returned
-            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-            yield String.Empty
+            let line = ref (reader.ReadLine())
+            while not (isNull !line) do
+                yield !line
+                line := reader.ReadLine()
+            if str.EndsWithOrdinal("\n") then
+                // last trailing space not returned
+                // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
+                yield String.Empty
         |]
 
 module Dictionary = 
@@ -810,9 +810,9 @@ type CancellableBuilder() =
 
     member x.Bind(e, k) = Cancellable.bind k e
 
-    member x.Return(v) = Cancellable.ret v
+    member x.Return v = Cancellable.ret v
 
-    member x.ReturnFrom(v) = v
+    member x.ReturnFrom v = v
 
     member x.Combine(e1, e2) = e1 |> Cancellable.bind (fun () -> e2)
 
@@ -822,7 +822,7 @@ type CancellableBuilder() =
 
     member x.TryFinally(e, compensation) =  Cancellable.tryFinally e compensation
 
-    member x.Delay(f) = Cancellable.delay f
+    member x.Delay f = Cancellable.delay f
 
     member x.Zero() = Cancellable.ret ()
 
@@ -850,12 +850,12 @@ module Eventually =
     let rec box e = 
         match e with 
         | Done x -> Done (Operators.box x) 
-        | NotYetDone (work) -> NotYetDone (fun ctok -> box (work ctok))
+        | NotYetDone work -> NotYetDone (fun ctok -> box (work ctok))
 
     let rec forceWhile ctok check e = 
         match e with 
-        | Done x -> Some(x)
-        | NotYetDone (work) -> 
+        | Done x -> Some x
+        | NotYetDone work -> 
             if not(check()) 
             then None
             else forceWhile ctok check (work ctok) 
@@ -918,7 +918,7 @@ module Eventually =
     let delay (f: unit -> Eventually<'T>) = NotYetDone (fun _ctok -> f())
 
     let tryFinally e compensation =
-        catch (e) 
+        catch e 
         |> bind (fun res -> 
             compensation()
             match res with 
@@ -937,9 +937,9 @@ type EventuallyBuilder() =
 
     member x.Bind(e, k) = Eventually.bind k e
 
-    member x.Return(v) = Eventually.Done v
+    member x.Return v = Eventually.Done v
 
-    member x.ReturnFrom(v) = v
+    member x.ReturnFrom v = v
 
     member x.Combine(e1, e2) = e1 |> Eventually.bind (fun () -> e2)
 
@@ -947,7 +947,7 @@ type EventuallyBuilder() =
 
     member x.TryFinally(e, compensation) = Eventually.tryFinally e compensation
 
-    member x.Delay(f) = Eventually.delay f
+    member x.Delay f = Eventually.delay f
 
     member x.Zero() = Eventually.Done ()
 
@@ -966,7 +966,7 @@ type UniqueStampGenerator<'T when 'T : equality>() =
     let encodeTab = new Dictionary<'T, int>(HashIdentity.Structural)
     let mutable nItems = 0
     let encode str =
-        match encodeTab.TryGetValue(str) with
+        match encodeTab.TryGetValue str with
         | true, idx -> idx
         | _ ->
             let idx = nItems
@@ -974,7 +974,7 @@ type UniqueStampGenerator<'T when 'T : equality>() =
             nItems <- nItems + 1
             idx
 
-    member this.Encode(str) = encode str
+    member this.Encode str = encode str
 
     member this.Table = encodeTab.Keys
 
@@ -983,7 +983,7 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
     
     let table = new Dictionary<'T, 'U>(keyComparer) 
 
-    member t.Apply(x) = 
+    member t.Apply x = 
         if (match canMemoize with None -> true | Some f -> f x) then 
             let mutable res = Unchecked.defaultof<'U>
             let ok = table.TryGetValue(x, &res)
@@ -1044,13 +1044,13 @@ type LazyWithContext<'T, 'ctxt> =
         | null -> x.value 
         | _ -> 
             // Enter the lock in case another thread is in the process of evaluating the result
-            Monitor.Enter(x);
+            Monitor.Enter x;
             try 
-                x.UnsynchronizedForce(ctxt)
+                x.UnsynchronizedForce ctxt
             finally
-                Monitor.Exit(x)
+                Monitor.Exit x
 
-    member x.UnsynchronizedForce(ctxt) = 
+    member x.UnsynchronizedForce ctxt = 
         match x.funcOrException with 
         | null -> x.value 
         | :? LazyWithContextFailure as res -> 
@@ -1104,15 +1104,15 @@ module IPartialEqualityComparer =
     let partialDistinctBy (per: IPartialEqualityComparer<'T>) seq =
         let wper = 
             { new IPartialEqualityComparer<WrapType<'T>> with
-                member __.InEqualityRelation (Wrap x) = per.InEqualityRelation (x)
+                member __.InEqualityRelation (Wrap x) = per.InEqualityRelation x
                 member __.Equals(Wrap x, Wrap y) = per.Equals(x, y)
-                member __.GetHashCode (Wrap x) = per.GetHashCode(x) }
+                member __.GetHashCode (Wrap x) = per.GetHashCode x }
         // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
         let dict = Dictionary<WrapType<'T>, obj>(wper)
         seq |> List.filter (fun v -> 
-            let key = Wrap(v)
-            if (per.InEqualityRelation(v)) then 
-                if dict.ContainsKey(key) then false else (dict.[key] <- null; true)
+            let key = Wrap v
+            if (per.InEqualityRelation v) then 
+                if dict.ContainsKey key then false else (dict.[key] <- null; true)
             else true)
 
 //-------------------------------------------------------------------------
@@ -1350,18 +1350,18 @@ module Shim =
 
             member __.IsInvalidPathShim(path: string) = 
                 let isInvalidPath(p: string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+                    String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
                 let isInvalidFilename(p: string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+                    String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
                 let isInvalidDirectory(d: string) = 
                     d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
-                isInvalidPath (path) || 
-                let directory = Path.GetDirectoryName(path)
-                let filename = Path.GetFileName(path)
-                isInvalidDirectory(directory) || isInvalidFilename(filename)
+                isInvalidPath path || 
+                let directory = Path.GetDirectoryName path
+                let filename = Path.GetFileName path
+                isInvalidDirectory directory || isInvalidFilename filename
 
             member __.GetTempPathShim() = Path.GetTempPath()
 
@@ -1372,7 +1372,7 @@ module Shim =
             member __.FileDelete (fileName: string) = File.Delete fileName
 
             member __.IsStableFileHeuristic (fileName: string) = 
-                let directory = Path.GetDirectoryName(fileName)
+                let directory = Path.GetDirectoryName fileName
                 directory.Contains("Reference Assemblies/") || 
                 directory.Contains("Reference Assemblies\\") || 
                 directory.Contains("packages/") || 

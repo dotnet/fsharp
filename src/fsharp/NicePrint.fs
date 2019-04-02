@@ -616,7 +616,7 @@ module private PrintTypes =
     /// See also dataExprL - there is overlap between these that should be removed 
     let rec private layoutAttribArg denv arg = 
         match arg with 
-        | Expr.Const(c, _, ty) -> 
+        | Expr.Const (c, _, ty) -> 
             if isEnumTy denv.g ty then 
                 WordL.keywordEnum ^^ angleL (layoutType denv ty) ^^ bracketL (layoutConst denv.g ty c)
             else
@@ -1961,7 +1961,7 @@ module private PrintData =
 
         | Expr.Val (v, _, _) -> wordL (tagLocal v.DisplayName)
         | Expr.Link rX -> dataExprWrapL denv isAtomic (!rX)
-        | Expr.Op (TOp.UnionCase(c), _, args, _) -> 
+        | Expr.Op (TOp.UnionCase (c), _, args, _) -> 
             if denv.g.unionCaseRefEq c denv.g.nil_ucref then wordL (tagPunctuation "[]")
             elif denv.g.unionCaseRefEq c denv.g.cons_ucref then 
                 let rec strip = function (Expr.Op (TOp.UnionCase _, _, [h;t], _)) -> h::strip t | _ -> []
@@ -1971,7 +1971,7 @@ module private PrintData =
             else 
                 (wordL (tagUnionCase c.CaseName) ++ bracketL (commaListL (dataExprsL denv args)))
             
-        | Expr.Op (TOp.ExnConstr(c), _, args, _) -> (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
+        | Expr.Op (TOp.ExnConstr (c), _, args, _) -> (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
         | Expr.Op (TOp.Tuple _, _, xs, _) -> tupleL (dataExprsL denv xs)
         | Expr.Op (TOp.Recd (_, tc), _, xs, _) -> 
             let fields = tc.TrueInstanceFieldsAsList

@@ -424,7 +424,7 @@ let NextExtensionMethodPriority() = uint64 (newStamp())
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
     let g = amap.g
     // Type must be non-generic and have 'Extension' attribute
-    if isNil(tcrefOfStaticClass.Typars(m)) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcrefOfStaticClass then
+    if isNil(tcrefOfStaticClass.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcrefOfStaticClass then
         let pri = NextExtensionMethodPriority()
         let ty = generalizedTyconRef tcrefOfStaticClass
 
@@ -796,7 +796,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
        mty.TypeAndExceptionDefinitions
        |> List.choose (fun tycon ->
            let tcref = modref.NestedTyconRef tycon
-           if IsEntityAccessible amap m ad tcref then Some(tcref) else None)
+           if IsEntityAccessible amap m ad tcref then Some tcref else None)
 
     let nenv = (nenv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false
     let vrefs =
@@ -1098,7 +1098,7 @@ let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceR
     let importProvidedType t = Import.ImportProvidedType amap m t
     let isSuppressRelocate = amap.g.isInteractive || st.PUntaint((fun st -> st.IsSuppressRelocate), m)
     let tycon = Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
-    modref.ModuleOrNamespaceType.AddProvidedTypeEntity(tycon)
+    modref.ModuleOrNamespaceType.AddProvidedTypeEntity tycon
     let tcref = modref.NestedTyconRef tycon
     System.Diagnostics.Debug.Assert(modref.TryDeref.IsSome)
     tcref
@@ -1126,7 +1126,7 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
             dprintfn "resolving name '%s' in TProvidedTypeExtensionPoint '%s'" typeName (sty.PUntaint((fun sty -> sty.FullName), m))
 #endif
 
-        match sty.PApply((fun sty -> sty.GetNestedType(typeName)), m) with
+        match sty.PApply((fun sty -> sty.GetNestedType typeName), m) with
         | Tainted.Null ->
             //if staticResInfo.NumStaticArgs > 0 then
             //    error(Error(FSComp.SR.etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters(), m))
@@ -1271,42 +1271,42 @@ let (|ValRefOfEvent|_|) (evt: EventInfo) = evt.ArbitraryValRef
 let rec (|RecordFieldUse|_|) (item: Item) =
     match item with
     | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, name))) -> Some (name, tcref)
-    | Item.SetterArg(_, RecordFieldUse(f)) -> Some(f)
+    | Item.SetterArg(_, RecordFieldUse f) -> Some f
     | _ -> None
 
 let rec (|ILFieldUse|_|) (item: Item) =
     match item with
-    | Item.ILField(finfo) -> Some(finfo)
-    | Item.SetterArg(_, ILFieldUse(f)) -> Some(f)
+    | Item.ILField finfo -> Some finfo
+    | Item.SetterArg(_, ILFieldUse f) -> Some f
     | _ -> None
 
 let rec (|PropertyUse|_|) (item: Item) =
     match item with
-    | Item.Property(_, pinfo::_) -> Some(pinfo)
-    | Item.SetterArg(_, PropertyUse(pinfo)) -> Some(pinfo)
+    | Item.Property(_, pinfo::_) -> Some pinfo
+    | Item.SetterArg(_, PropertyUse pinfo) -> Some pinfo
     | _ -> None
 
 let rec (|FSharpPropertyUse|_|) (item: Item) =
     match item with
-    | Item.Property(_, [ValRefOfProp vref]) -> Some(vref)
-    | Item.SetterArg(_, FSharpPropertyUse(propDef)) -> Some(propDef)
+    | Item.Property(_, [ValRefOfProp vref]) -> Some vref
+    | Item.SetterArg(_, FSharpPropertyUse propDef) -> Some propDef
     | _ -> None
 
 let (|MethodUse|_|) (item: Item) =
     match item with
-    | Item.MethodGroup(_, [minfo], _) -> Some(minfo)
+    | Item.MethodGroup(_, [minfo], _) -> Some minfo
     | _ -> None
 
 let (|FSharpMethodUse|_|) (item: Item) =
     match item with
-    | Item.MethodGroup(_, [ValRefOfMeth vref], _) -> Some(vref)
-    | Item.Value(vref) when vref.IsMember -> Some(vref)
+    | Item.MethodGroup(_, [ValRefOfMeth vref], _) -> Some vref
+    | Item.Value vref when vref.IsMember -> Some vref
     | _ -> None
 
 let (|EntityUse|_|) (item: Item) =
     match item with
     | Item.UnqualifiedType (tcref:: _) -> Some tcref
-    | Item.ExnCase(tcref) -> Some tcref
+    | Item.ExnCase tcref -> Some tcref
     | Item.Types(_, [AbbrevOrAppTy tcref])
     | Item.DelegateCtor(AbbrevOrAppTy tcref)
     | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref) -> Some tcref
@@ -1318,7 +1318,7 @@ let (|EntityUse|_|) (item: Item) =
 
 let (|EventUse|_|) (item: Item) =
     match item with
-    | Item.Event(einfo) -> Some einfo
+    | Item.Event einfo -> Some einfo
     | _ -> None
 
 let (|FSharpEventUse|_|) (item: Item) =
@@ -1402,7 +1402,7 @@ let ItemsAreEffectivelyEqual g orig other =
         | Some vref1, Some vref2 -> valRefDefnEq g vref1 vref2
         | _ -> false
 
-    | PropertyUse(pinfo1), PropertyUse(pinfo2) ->
+    | PropertyUse pinfo1, PropertyUse pinfo2 ->
         PropInfo.PropInfosUseIdenticalDefinitions pinfo1 pinfo2 ||
         // Allow for equality up to signature matching
         match pinfo1.ArbitraryValRef, pinfo2.ArbitraryValRef with
@@ -1475,7 +1475,7 @@ type TcResolutions
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
 
-    static let empty = TcResolutions(ResizeArray(0), ResizeArray(0), ResizeArray(0), ResizeArray(0))
+    static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
 
     member this.CapturedEnvs = capturedEnvs
     member this.CapturedExpressionTypings = capturedExprTypes
@@ -1506,7 +1506,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
     let capturedNameResolutions = ()
     do ignore capturedNameResolutions // don't capture this!
 
-    member this.GetUsesOfSymbol(item) =
+    member this.GetUsesOfSymbol item =
         // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
         // This is unlikely in practice, though, because we filter down the set of all symbol uses to those specifically for the given `item`.
         // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
@@ -1607,8 +1607,8 @@ type TcResultsSinkImpl(g, ?source: string) =
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
             capturedFormatSpecifierLocations.Add((m, numArgs))
 
-        member sink.NotifyOpenDeclaration(openDeclaration) =
-            capturedOpenDeclarations.Add(openDeclaration)
+        member sink.NotifyOpenDeclaration openDeclaration =
+            capturedOpenDeclarations.Add openDeclaration
 
         member sink.CurrentSource = source
 
@@ -1660,7 +1660,7 @@ let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, denv, ad) =
 let CallOpenDeclarationSink (sink: TcResultsSink) (openDeclaration: OpenDeclaration) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyOpenDeclaration(openDeclaration)
+    | Some sink -> sink.NotifyOpenDeclaration openDeclaration
 
 //-------------------------------------------------------------------------
 // Check inferability of type parameters in resolved items.
@@ -1745,7 +1745,7 @@ type ResolutionInfo =
                 else
                     Item.Types(eref.DisplayName, [FreshenTycon ncenv m eref])
             CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occ, nenv.eDisplayEnv, ad))
-        warnings(typarChecker)
+        warnings typarChecker
 
     static member Empty =
         ResolutionInfo([], (fun _ -> ()))
@@ -2094,7 +2094,7 @@ let CoreDisplayName(pinfo: PropInfo) =
 let DecodeFSharpEvent (pinfos: PropInfo list) ad g (ncenv: NameResolver) m =
     match pinfos with
     | [pinfo] when pinfo.IsFSharpEventProperty ->
-        let nm = CoreDisplayName(pinfo)
+        let nm = CoreDisplayName pinfo
         let minfos1 = GetImmediateIntrinsicMethInfosOfType (Some("add_"+nm), ad) g ncenv.amap m pinfo.ApparentEnclosingType
         let minfos2 = GetImmediateIntrinsicMethInfosOfType (Some("remove_"+nm), ad) g ncenv.amap m pinfo.ApparentEnclosingType
         match  minfos1, minfos2 with
@@ -2105,7 +2105,7 @@ let DecodeFSharpEvent (pinfos: PropInfo list) ad g (ncenv: NameResolver) m =
             // FOUND PROPERTY-AS-EVENT BUT DIDN'T FIND CORRESPONDING ADD/REMOVE METHODS
             Some(Item.Property (nm, pinfos))
     | pinfo :: _ ->
-        let nm = CoreDisplayName(pinfo)
+        let nm = CoreDisplayName pinfo
         Some(Item.Property (nm, pinfos))
     | _ ->
         None
@@ -2173,8 +2173,8 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             | Some (EventItem (einfo :: _)) when isLookUpExpr ->
                 success [resInfo, Item.Event einfo, rest]
 
-            | Some (RecdFieldItem (rfinfo)) when (match lookupKind with LookupKind.Expr | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) ->
-                success [resInfo, Item.RecdField(rfinfo), rest]
+            | Some (RecdFieldItem rfinfo) when (match lookupKind with LookupKind.Expr | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) ->
+                success [resInfo, Item.RecdField rfinfo, rest]
 
             | _ ->
 
@@ -2739,7 +2739,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                (warnOnUpper = WarnOnUpperCase) &&
                id.idText.Length >= 3 &&
                System.Char.ToLowerInvariant id.idText.[0] <> id.idText.[0] then
-              warning(UpperCaseIdentifierInPattern(m))
+              warning(UpperCaseIdentifierInPattern m)
             Item.NewDef id
 
         // Long identifiers in patterns
@@ -2933,7 +2933,7 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                     success(ResolutionInfo.Empty, tcref)
                 | [] ->
                     let suggestPossibleTypes() =
-                        nenv.TyconsByDemangledNameAndArity(fullyQualified)
+                        nenv.TyconsByDemangledNameAndArity fullyQualified
                         |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad kv.Value)
                         |> Seq.collect (fun e ->
                             match occurence with
@@ -3287,7 +3287,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
 
     match item1, item with
     | Item.MethodGroup(name, minfos1, _), Item.MethodGroup(_, [], _) when not (isNil minfos1) ->
-        error(Error(FSComp.SR.methodIsNotStatic(name), wholem))
+        error(Error(FSComp.SR.methodIsNotStatic name, wholem))
     | _ -> ()
 
     // Fake idents e.g. 'Microsoft.FSharp.Core.None' have identical ranges for each part
@@ -3614,7 +3614,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         |> List.choose (fun pinfo->
             let pinfoOpt = DecodeFSharpEvent [pinfo] ad g ncenv m
             match pinfoOpt, completionTargets with
-            | Some(Item.Event(einfo)), ResolveCompletionTargets.All _ -> if IsStandardEventInfo ncenv.InfoReader m ad einfo then pinfoOpt else None
+            | Some(Item.Event einfo), ResolveCompletionTargets.All _ -> if IsStandardEventInfo ncenv.InfoReader m ad einfo then pinfoOpt else None
             | _ -> pinfoOpt)
 
     // REVIEW: add a name filter here in the common cases?
@@ -3661,7 +3661,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo ->
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
+                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
 #endif
 
                     minfos
@@ -4361,7 +4361,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             if methsWithStaticParams.IsEmpty then minfos
                             else minfos |> List.filter (fun minfo ->
                                     let nm = minfo.LogicalName
-                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
+                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
         #endif
 
                         minfos

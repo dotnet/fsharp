@@ -1221,7 +1221,7 @@ type internal FsiDynamicCompiler
         let bindingA = mkBind (mkSynPatVar None itID) expr (* let it = <expr> *)  // NOTE: the generalizability of 'expr' must not be damaged, e.g. this can't be an application 
         //let saverPath  = ["Microsoft";"FSharp";"Compiler";"Interactive";"RuntimeHelpers";"SaveIt"]
         //let dots = List.replicate (saverPath.Length - 1) m
-        //let bindingB = mkBind (SynPat.Wild m) (SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.LongIdent(false, LongIdentWithDots(List.map (mkSynId m) saverPath,dots),None,m), itExp,m)) (* let _  = saverPath it *)
+        //let bindingB = mkBind (SynPat.Wild m) (SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) saverPath,dots),None,m), itExp,m)) (* let _  = saverPath it *)
         let defA = SynModuleDecl.Let (false, [bindingA], m)
         //let defB = SynModuleDecl.Let (false, [bindingB], m)
         
@@ -1231,9 +1231,9 @@ type internal FsiDynamicCompiler
     member __.CreateDebuggerBreak (m : range) =
         let breakPath = ["System";"Diagnostics";"Debugger";"Break"]
         let dots = List.replicate (breakPath.Length - 1) m
-        let methCall = SynExpr.LongIdent(false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
-        let args = SynExpr.Const(SynConst.Unit, m)
-        let breakStatement = SynExpr.App(ExprAtomicFlag.Atomic, false, methCall, args, m)
+        let methCall = SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
+        let args = SynExpr.Const (SynConst.Unit, m)
+        let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
         SynModuleDecl.DoExpr(SequencePointInfoForBinding.NoSequencePointAtDoBinding, breakStatement, m)
 
     member __.EvalRequireReference (ctok, istate, m, path) = 
@@ -2212,7 +2212,7 @@ type internal FsiInteractionProcessor
             let expr = parseExpression tokenizer 
             let m = expr.Range
             // Make this into "(); expr" to suppress generalization and compilation-as-function
-            let exprWithSeq = SynExpr.Sequential(SequencePointInfoForSeq.SuppressSequencePointOnStmtOfSequential,true,SynExpr.Const(SynConst.Unit,m.StartRange), expr, m)
+            let exprWithSeq = SynExpr.Sequential (SequencePointInfoForSeq.SuppressSequencePointOnStmtOfSequential,true,SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
             mainThreadProcessParsedExpression ctok errorLogger (exprWithSeq, istate))
         |> commitResult
 

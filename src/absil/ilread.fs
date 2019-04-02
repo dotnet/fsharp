@@ -39,8 +39,8 @@ let alwaysMemoryMapFSC = try (System.Environment.GetEnvironmentVariable("FSharp_
 let stronglyHeldReaderCacheSizeDefault = 30
 let stronglyHeldReaderCacheSize = try (match System.Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s) with _ -> stronglyHeldReaderCacheSizeDefault
 
-let singleOfBits (x: int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes(x), 0)
-let doubleOfBits (x: int64) = System.BitConverter.Int64BitsToDouble(x)
+let singleOfBits (x: int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes x, 0)
+let doubleOfBits (x: int64) = System.BitConverter.Int64BitsToDouble x
 
 //---------------------------------------------------------------------
 // Utilities.  
@@ -164,7 +164,7 @@ type RawMemoryView(obj: obj, start: nativeint, len: int) =
         if nativeint i > nativeint len then failwithf "RawMemoryView overrun, i = %d, obj = %A" i obj
         let pStart = start + nativeint i
         let mutable p = start 
-        while Marshal.ReadByte(p) <> 0uy do
+        while Marshal.ReadByte p <> 0uy do
             p <- p + 1n
         int (p - pStart) 
 
@@ -258,7 +258,7 @@ type MemoryMapView(start: nativeint) =
     override m.CountUtf8String i = 
         let pStart = start + nativeint i
         let mutable p = start 
-        while Marshal.ReadByte(p) <> 0uy do
+        while Marshal.ReadByte p <> 0uy do
             p <- p + 1n
         int (p - pStart) 
 
@@ -280,7 +280,7 @@ type MemoryMapFile(fileName: string, view: MemoryMapView, hMap: MemoryMapping.HA
             failwithf "CreateFile(0x%08x)" (Marshal.GetHRForLastWin32Error())
         let protection = 0x00000002
         let hMap = MemoryMapping.CreateFileMapping (hFile, IntPtr.Zero, protection, 0, 0, null )
-        ignore(MemoryMapping.CloseHandle(hFile))
+        ignore(MemoryMapping.CloseHandle hFile)
         if hMap.Equals(MemoryMapping.NULL_HANDLE) then
             failwithf "CreateFileMapping(0x%08x)" (Marshal.GetHRForLastWin32Error())
 
@@ -289,7 +289,7 @@ type MemoryMapFile(fileName: string, view: MemoryMapView, hMap: MemoryMapping.HA
         if hView.Equals(IntPtr.Zero) then
            failwithf "MapViewOfFile(0x%08x)" (Marshal.GetHRForLastWin32Error())
 
-        let view = MemoryMapView(hView) 
+        let view = MemoryMapView hView 
 
         MemoryMapFile(fileName, view, hMap, hView)
 
@@ -338,7 +338,7 @@ type ByteView(bytes: byte[]) =
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
 type ByteFile(fileName: string, bytes: byte[]) = 
-    let view = ByteView(bytes)
+    let view = ByteView bytes
     do stats.byteFileCount <- stats.byteFileCount + 1
     member __.FileName = fileName
     interface BinaryFile with
@@ -353,7 +353,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     do stats.weakByteFileCount <- stats.weakByteFileCount + 1
 
     /// Used to check that the file hasn't changed
-    let fileStamp = FileSystem.GetLastWriteTimeShim(fileName)
+    let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
     let weakBytes = new WeakReference<byte[]> (null)
@@ -367,7 +367,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
             let strongBytes = 
                 let mutable tg = null
                 if not (weakBytes.TryGetTarget(&tg)) then 
-                    if FileSystem.GetLastWriteTimeShim(fileName) <> fileStamp then 
+                    if FileSystem.GetLastWriteTimeShim fileName <> fileStamp then 
                         error (Error (FSComp.SR.ilreadFileChanged fileName, range0))
 
                     let bytes = 
@@ -381,7 +381,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
 
                 tg
 
-            (ByteView(strongBytes) :> BinaryView)
+            (ByteView strongBytes :> BinaryView)
 
     
 let seekReadByte (mdv: BinaryView) addr = mdv.ReadByte addr
@@ -671,8 +671,8 @@ let instrs () =
    i_ldc_i4_s, I_i32_i8_instr (noPrefixes mkLdcInt32)
    i_ldc_r4, I_r4_instr (noPrefixes (fun x -> (AI_ldc (DT_R4, ILConst.R4 x)))) 
    i_ldc_r8, I_r8_instr (noPrefixes (fun x -> (AI_ldc (DT_R8, ILConst.R8 x))))
-   i_ldfld, I_field_instr (volatileOrUnalignedPrefix(fun (x, y) fspec -> I_ldfld(x, y, fspec)))
-   i_stfld, I_field_instr (volatileOrUnalignedPrefix(fun (x, y) fspec -> I_stfld(x, y, fspec)))
+   i_ldfld, I_field_instr (volatileOrUnalignedPrefix(fun (x, y) fspec -> I_ldfld (x, y, fspec)))
+   i_stfld, I_field_instr (volatileOrUnalignedPrefix(fun (x, y) fspec -> I_stfld (x, y, fspec)))
    i_ldsfld, I_field_instr (volatilePrefix (fun x fspec -> I_ldsfld (x, fspec)))
    i_stsfld, I_field_instr (volatilePrefix (fun x fspec -> I_stsfld (x, fspec)))
    i_ldflda, I_field_instr (noPrefixes I_ldflda)
@@ -925,7 +925,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
             | null -> cache := new Dictionary<_, _>(11 (* sz: int *) ) 
             | _ -> ()
             !cache
-        match cache.TryGetValue(idx) with
+        match cache.TryGetValue idx with
         | true, v ->
             incr count
             v
@@ -1708,7 +1708,7 @@ and seekReadAssemblyRefUncached ctxtH idx =
          locale = readStringHeapOption ctxt localeIdx)
 
 and seekReadModuleRef (ctxt: ILMetadataReader) mdv idx =
-    let (nameIdx) = seekReadModuleRefRow ctxt mdv idx
+    let nameIdx = seekReadModuleRefRow ctxt mdv idx
     ILModuleRef.Create(name = readStringHeap ctxt nameIdx, hasMetadata=true, hash=None)
 
 and seekReadFile (ctxt: ILMetadataReader) mdv idx =
@@ -2137,7 +2137,7 @@ and sigptrGetArgTys (ctxt: ILMetadataReader) n numtypars bytes sigptr acc =
       let b0, sigptr2 = sigptrGetByte bytes sigptr
       if b0 = et_SENTINEL then 
         let varargs, sigptr = sigptrGetVarArgTys ctxt n numtypars bytes sigptr2
-        (List.rev acc, Some(varargs)), sigptr
+        (List.rev acc, Some varargs), sigptr
       else
         let x, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
         sigptrGetArgTys ctxt (n-1) numtypars bytes sigptr (x::acc)
@@ -2602,7 +2602,7 @@ and seekReadConstant (ctxt: ILMetadataReader) idx =
   | x when x = uint16 et_STRING -> 
     let blobHeap = readBlobHeap ctxt vidx
     let s = System.Text.Encoding.Unicode.GetString(blobHeap, 0, blobHeap.Length)
-    ILFieldInit.String (s)  
+    ILFieldInit.String s  
   | x when x = uint16 et_BOOLEAN -> ILFieldInit.Bool (readBlobHeapAsBool ctxt vidx) 
   | x when x = uint16 et_CHAR -> ILFieldInit.Char (readBlobHeapAsUInt16 ctxt vidx) 
   | x when x = uint16 et_I1 -> ILFieldInit.Int8 (readBlobHeapAsSByte ctxt vidx) 
@@ -2676,7 +2676,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
    let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
    let ilOffsetsOfLabels = new Dictionary<_, _>(sz/2)
    let tryRawToLabel rawOffset =
-       match labelsOfRawOffsets.TryGetValue(rawOffset) with
+       match labelsOfRawOffsets.TryGetValue rawOffset with
        | true, v -> Some v
        | _ -> None
 
@@ -2843,7 +2843,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
              let (tab, idx) = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
              if tab <> TableNames.UserStrings then dprintn "warning: bad table in user string for ldstr"
-             f prefixes (readUserStringHeap ctxt (idx))
+             f prefixes (readUserStringHeap ctxt idx)
 
          | I_conditional_i32_instr f ->
              let offsDest = (seekReadInt32 pev (start + (!curr)))
@@ -3114,7 +3114,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                       end
                    
                     let key = (tryStart, tryFinish)
-                    match sehMap.TryGetValue(key) with
+                    match sehMap.TryGetValue key with
                     | true, prev -> sehMap.[key] <- prev @ [clause]
                     | _ -> sehMap.[key] <- [clause])
                   clauses
@@ -3163,24 +3163,24 @@ and sigptrGetILNativeType ctxt bytes sigptr =
         List.assoc ntbyte (Lazy.force ILNativeTypeMap), sigptr
     elif ntbyte = 0x0uy then ILNativeType.Empty, sigptr
     elif ntbyte = nt_CUSTOMMARSHALER then  
-        // reading native type blob (CM1), sigptr= "+string sigptr+ ", bytes.Length = "+string bytes.Length) 
+        // reading native type blob CM1, sigptr= "+string sigptr+ ", bytes.Length = "+string bytes.Length) 
         let guidLen, sigptr = sigptrGetZInt32 bytes sigptr
-        // reading native type blob (CM2), sigptr= "+string sigptr+", guidLen = "+string ( guidLen)) 
+        // reading native type blob CM2, sigptr= "+string sigptr+", guidLen = "+string ( guidLen)) 
         let guid, sigptr = sigptrGetBytes ( guidLen) bytes sigptr
-        // reading native type blob (CM3), sigptr= "+string sigptr) 
+        // reading native type blob CM3, sigptr= "+string sigptr) 
         let nativeTypeNameLen, sigptr = sigptrGetZInt32 bytes sigptr
-        // reading native type blob (CM4), sigptr= "+string sigptr+", nativeTypeNameLen = "+string ( nativeTypeNameLen)) 
+        // reading native type blob CM4, sigptr= "+string sigptr+", nativeTypeNameLen = "+string ( nativeTypeNameLen)) 
         let nativeTypeName, sigptr = sigptrGetString ( nativeTypeNameLen) bytes sigptr
-        // reading native type blob (CM4), sigptr= "+string sigptr+", nativeTypeName = "+nativeTypeName) 
-        // reading native type blob (CM5), sigptr= "+string sigptr) 
+        // reading native type blob CM4, sigptr= "+string sigptr+", nativeTypeName = "+nativeTypeName) 
+        // reading native type blob CM5, sigptr= "+string sigptr) 
         let custMarshallerNameLen, sigptr = sigptrGetZInt32 bytes sigptr
-        // reading native type blob (CM6), sigptr= "+string sigptr+", custMarshallerNameLen = "+string ( custMarshallerNameLen)) 
+        // reading native type blob CM6, sigptr= "+string sigptr+", custMarshallerNameLen = "+string ( custMarshallerNameLen)) 
         let custMarshallerName, sigptr = sigptrGetString ( custMarshallerNameLen) bytes sigptr
-        // reading native type blob (CM7), sigptr= "+string sigptr+", custMarshallerName = "+custMarshallerName) 
+        // reading native type blob CM7, sigptr= "+string sigptr+", custMarshallerName = "+custMarshallerName) 
         let cookieStringLen, sigptr = sigptrGetZInt32 bytes sigptr
-        // reading native type blob (CM8), sigptr= "+string sigptr+", cookieStringLen = "+string ( cookieStringLen)) 
+        // reading native type blob CM8, sigptr= "+string sigptr+", cookieStringLen = "+string ( cookieStringLen)) 
         let cookieString, sigptr = sigptrGetBytes ( cookieStringLen) bytes sigptr
-        // reading native type blob (CM9), sigptr= "+string sigptr) 
+        // reading native type blob CM9, sigptr= "+string sigptr) 
         ILNativeType.Custom (guid, nativeTypeName, custMarshallerName, cookieString), sigptr
     elif ntbyte = nt_FIXEDSYSSTRING then 
       let i, sigptr = sigptrGetZInt32 bytes sigptr
@@ -3220,7 +3220,7 @@ and sigptrGetILNativeType ctxt bytes sigptr =
              let additive, sigptr = 
                if sigptr >= bytes.Length then 0, sigptr
                else sigptrGetZInt32 bytes sigptr
-             ILNativeType.Array (Some nt, Some(pnum, Some(additive))), sigptr
+             ILNativeType.Array (Some nt, Some(pnum, Some additive)), sigptr
     else (ILNativeType.Empty, sigptr)
       
 // Note, pectxtEager and pevEager must not be captured by the results of this function
@@ -3320,7 +3320,7 @@ let getPdbReader pdbDirPath fileName =
                                             file = url))
 
               let docfun url =
-                  match tab.TryGetValue(url) with
+                  match tab.TryGetValue url with
                   | true, doc -> doc
                   | _ -> failwith ("Document with URL " + url + " not found in list of documents in the PDB file")
               Some (pdbr, docfun)
@@ -3735,7 +3735,7 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
        optHeaderSize <> 0xf0 then failwith "not a PE file - bad optional header size"
     let x64adjust = optHeaderSize - 0xe0
     let only64 = (optHeaderSize = 0xf0) (* May want to read in the optional header Magic number and check that as well... *)
-    let platform = match machine with | 0x8664 -> Some(AMD64) | 0x200 -> Some(IA64) | _ -> Some(X86) 
+    let platform = match machine with | 0x8664 -> Some AMD64 | 0x200 -> Some IA64 | _ -> Some X86 
     let sectionHeadersStartPhysLoc = peOptionalHeaderPhysLoc + optHeaderSize
 
     let flags = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 18)
@@ -4007,8 +4007,8 @@ let OpenILModuleReader fileName opts =
     // Pseudo-normalize the paths.
     let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_,_) as key), keyOk = 
         try 
-           let fullPath = FileSystem.GetFullPathShim(fileName)
-           let writeTime = FileSystem.GetLastWriteTimeShim(fileName)
+           let fullPath = FileSystem.GetFullPathShim fileName
+           let writeTime = FileSystem.GetLastWriteTimeShim fileName
            let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
            key, true
         with exn -> 

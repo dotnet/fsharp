@@ -220,7 +220,7 @@ module Structure =
             match expression with
             | SynExpr.Upcast (e, _, _)
             | SynExpr.Downcast (e, _, _)
-            | SynExpr.AddressOf(_, e, _, _)
+            | SynExpr.AddressOf (_, e, _, _)
             | SynExpr.InferredDowncast (e, _)
             | SynExpr.InferredUpcast (e, _)
             | SynExpr.DotGet (e, _, _, _)
