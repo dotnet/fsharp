@@ -1491,7 +1491,7 @@ type ILReturn =
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
 
-    member x.WithCustomAttrs customAttrs = { x with CustomAttrsStored = storeILCustomAttrs customAttrs }
+    member x.WithCustomAttrs(customAttrs) = { x with CustomAttrsStored = storeILCustomAttrs customAttrs }
 
 type ILOverridesSpec =
     | OverridesSpec of ILMethodRef * ILType
@@ -1696,18 +1696,18 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
         x.With(attributes = (
                 if x.IsVirtual then x.Attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
                 else failwith "WithHideBySig"))
-    member x.WithHideBySig condition = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.HideBySig))
-    member x.WithFinal condition = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Final))
-    member x.WithAbstract condition = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Abstract))
-    member x.WithAccess access = x.With(attributes = (x.Attributes &&& ~~~MethodAttributes.MemberAccessMask ||| convertMemberAccess access))
+    member x.WithHideBySig(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.HideBySig))
+    member x.WithFinal(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Final))
+    member x.WithAbstract(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Abstract))
+    member x.WithAccess(access) = x.With(attributes = (x.Attributes &&& ~~~MethodAttributes.MemberAccessMask ||| convertMemberAccess access))
     member x.WithNewSlot = x.With(attributes = (x.Attributes ||| MethodAttributes.NewSlot))
-    member x.WithSecurity condition = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.HasSecurity))
-    member x.WithPInvoke condition = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.PinvokeImpl))
-    member x.WithPreserveSig condition = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.PreserveSig))
-    member x.WithSynchronized condition = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Synchronized))
-    member x.WithNoInlining condition = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.NoInlining))
-    member x.WithAggressiveInlining condition = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.AggressiveInlining))
-    member x.WithRuntime condition = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
+    member x.WithSecurity(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.HasSecurity))
+    member x.WithPInvoke(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.PinvokeImpl))
+    member x.WithPreserveSig(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.PreserveSig))
+    member x.WithSynchronized(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Synchronized))
+    member x.WithNoInlining(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.NoInlining))
+    member x.WithAggressiveInlining(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.AggressiveInlining))
+    member x.WithRuntime(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
 
 /// Index table by name and arity.
 type MethodDefMap = Map<string, ILMethodDef list>
@@ -1881,13 +1881,13 @@ type ILFieldDef(name: string, fieldType: ILType, attributes: FieldAttributes, da
     member x.NotSerialized = x.Attributes &&& FieldAttributes.NotSerialized <> enum 0
     member x.IsInitOnly = x.Attributes &&& FieldAttributes.InitOnly <> enum 0
     member x.Access = memberAccessOfFlags (int x.Attributes)
-    member x.WithAccess access = x.With(attributes = (x.Attributes &&& ~~~FieldAttributes.FieldAccessMask ||| convertFieldAccess access))
-    member x.WithInitOnly condition = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.InitOnly))
-    member x.WithStatic condition = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.Static))
-    member x.WithSpecialName condition = x.With(attributes = (x.Attributes |> conditionalAdd condition (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName)))
-    member x.WithNotSerialized condition = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.NotSerialized))
-    member x.WithLiteralDefaultValue literal = x.With(literalValue = literal, attributes = (x.Attributes |> conditionalAdd literal.IsSome (FieldAttributes.Literal ||| FieldAttributes.HasDefault)))
-    member x.WithFieldMarshal marshal = x.With(marshal = marshal, attributes = (x.Attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal))
+    member x.WithAccess(access) = x.With(attributes = (x.Attributes &&& ~~~FieldAttributes.FieldAccessMask ||| convertFieldAccess access))
+    member x.WithInitOnly(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.InitOnly))
+    member x.WithStatic(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.Static))
+    member x.WithSpecialName(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName)))
+    member x.WithNotSerialized(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.NotSerialized))
+    member x.WithLiteralDefaultValue(literal) = x.With(literalValue = literal, attributes = (x.Attributes |> conditionalAdd literal.IsSome (FieldAttributes.Literal ||| FieldAttributes.HasDefault)))
+    member x.WithFieldMarshal(marshal) = x.With(marshal = marshal, attributes = (x.Attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal))
 
 // Index table by name. Keep a canonical list to make sure field order is not disturbed for binary manipulation.
 type ILFieldDefs =
@@ -2091,18 +2091,18 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
     member x.HasSecurity = x.Attributes &&& TypeAttributes.HasSecurity <> enum 0
     member x.Encoding = typeEncodingOfFlags (int x.Attributes)
     member x.IsStructOrEnum = x.IsStruct || x.IsEnum
-    member x.WithAccess access = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access))
-    member x.WithNestedAccess access = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertToNestedTypeAccess access))
-    member x.WithSealed condition = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Sealed))
-    member x.WithSerializable condition = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Serializable))
-    member x.WithAbstract condition = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Abstract))
-    member x.WithImport condition = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Import))
-    member x.WithHasSecurity condition = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.HasSecurity))
-    member x.WithLayout layout = x.With(attributes=(x.Attributes ||| convertLayout layout), layout = layout)
-    member x.WithKind kind = x.With(attributes=(x.Attributes ||| convertTypeKind kind), extends = match kind with ILTypeDefKind.Interface -> None | _ -> x.Extends)
-    member x.WithEncoding encoding = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.StringFormatMask ||| convertEncoding encoding))
-    member x.WithSpecialName condition = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.SpecialName))
-    member x.WithInitSemantics init = x.With(attributes=(x.Attributes ||| convertInitSemantics init))
+    member x.WithAccess(access) = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access))
+    member x.WithNestedAccess(access) = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertToNestedTypeAccess access))
+    member x.WithSealed(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Sealed))
+    member x.WithSerializable(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Serializable))
+    member x.WithAbstract(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Abstract))
+    member x.WithImport(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Import))
+    member x.WithHasSecurity(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.HasSecurity))
+    member x.WithLayout(layout) = x.With(attributes=(x.Attributes ||| convertLayout layout), layout = layout)
+    member x.WithKind(kind) = x.With(attributes=(x.Attributes ||| convertTypeKind kind), extends = match kind with ILTypeDefKind.Interface -> None | _ -> x.Extends)
+    member x.WithEncoding(encoding) = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.StringFormatMask ||| convertEncoding encoding))
+    member x.WithSpecialName(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.SpecialName))
+    member x.WithInitSemantics(init) = x.With(attributes=(x.Attributes ||| convertInitSemantics init))
 
 and [<Sealed>] ILTypeDefs(f : unit -> ILPreTypeDef[]) =
 
