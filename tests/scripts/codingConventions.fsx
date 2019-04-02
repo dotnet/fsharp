@@ -117,3 +117,19 @@ let internalSpacing =
 
 printfn "Top files that have internal spacing in lines:\n%A" (Array.truncate 10 internalSpacing)
 
+printfn "------ cenv.g ----------"
+
+
+let cenv_dot_g =
+    let re =  Regex("cenv\.g")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have endless cenv.g:\n%A" (Array.truncate 10 cenv_dot_g)
+
