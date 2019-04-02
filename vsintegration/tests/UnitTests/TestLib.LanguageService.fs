@@ -391,8 +391,7 @@ type LanguageServiceBaseTests() =
         AppDomain.CurrentDomain.AssemblyLoad.Add AssertNotBackVersionAssembly
 
         UIStuff.SetupSynchronizationContext()
-        new Microsoft.VisualStudio.FSharp.Editor.FSharpPackage() |> ignore  // will force us to capture the dummy context we just set up
-            
+
         defaultVS <- ops.CreateVisualStudio()
         currentVS <- defaultVS
         

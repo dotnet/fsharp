@@ -18,8 +18,8 @@
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <EnableDefaultItems>false</EnableDefaultItems>
-    <TargetFramework>net46</TargetFramework>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFramework>net472</TargetFramework>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <IsPackage>true</IsPackage>
     <CreateVsixContainer>false</CreateVsixContainer>
     <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
