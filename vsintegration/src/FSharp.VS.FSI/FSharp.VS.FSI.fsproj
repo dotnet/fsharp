@@ -76,4 +76,12 @@
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
+      <AssemblyName>FSharp.VS.FSI.Base</AssemblyName>
+      <Version>$(VSAssemblyVersion)</Version>
+      <CodeBase>$PackageFolder$\FSharp.VS.FSI.dll</CodeBase>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>
