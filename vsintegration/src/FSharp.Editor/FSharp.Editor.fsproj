@@ -162,4 +162,17 @@
     <PackageReference Include="VSSDK.VSLangProj" Version="$(VSSDKVSLangProjPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
+      <AssemblyName>FSharp.Editor</AssemblyName>
+      <Version>$(VSAssemblyVersion)</Version>
+      <CodeBase>$PackageFolder$\FSharp.Editor.dll</CodeBase>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
+      <AssemblyName>FSharp.UIResources</AssemblyName>
+      <Version>$(VSAssemblyVersion)</Version>
+      <CodeBase>$PackageFolder$\FSharp.UIResources.dll</CodeBase>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

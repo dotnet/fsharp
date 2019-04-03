@@ -73,12 +73,20 @@ jobs:
       ArtifactName: 'VSSetup'
     condition: succeeded()
 
-    # Archive NuGet packages to DevOps.
+  # Archive NuGet packages to DevOps.
   - task: PublishBuildArtifacts@1
     displayName: Publish Artifact Packages
     inputs:
       PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(BuildConfiguration)'
       ArtifactName: 'Packages'
+    condition: succeeded()
+
+  # Publish nightly package to ADO
+  - task: PublishBuildArtifacts@1
+    displayName: Publish Artifact Nightly
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\VisualFSharpFull.vsix'
+      ArtifactName: 'Nightly'
     condition: succeeded()
 
   # Publish nightly package to MyGet
