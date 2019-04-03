@@ -2200,3 +2200,7 @@ let mainCompile
         defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
 
 
+// See https://github.com/Microsoft/visualfsharp/issues/6417, if a compile of the FSharp.Compiler.Services.dll or other compiler
+// binary produces exactly 65536 methods then older versions of the compiler raise a bug.  If you hit this bug again then try removing
+// this.
+let dummyMethodFOrBug6417() = () 
