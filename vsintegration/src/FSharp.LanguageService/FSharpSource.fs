@@ -371,7 +371,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                   Stamp = None }
                 |> ic.GetParsingOptionsFromProjectOptions
 
-            ic.ParseFile(fileName, source.GetText(), co) |> Async.RunSynchronously
+            ic.ParseFile(fileName,  FSharp.Compiler.Text.SourceText.ofString (source.GetText()), co) |> Async.RunSynchronously
 
         override source.GetCommentFormat() = 
             let mutable info = new CommentInfo()

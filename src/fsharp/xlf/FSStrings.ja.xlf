@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">一部の抽象メンバーが実装されなかったため、この型は 'abstract' です。これが意図的な場合、型に '[&lt;AbstractClass&gt;]' 属性を追加してください。</target>
+        <target state="translated">これは 'abstract' 型です。一部の抽象メンバーに実装がありません。意図的な場合には、型に '[&lt;AbstractClass&gt;]' 属性を追加してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1279,7 +1279,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">thread-static および context-static の 'let' 束縛は使用されなくなりました。代わりに、クラスには 'static val mutable &lt;ident&gt; : &lt;type&gt;' という形式の宣言を使用してください。また、この宣言に 'DefaultValue' 属性を追加し、新しいスレッドごとに値が既定値に初期化されることを示してください。</target>
+        <target state="translated">Thread 静的および context 静的 'let' バインディングは使用されなくなりました。代わりに、クラスで 'static val mutable &lt;ident&gt; : &lt;type&gt;' という形式の宣言を使用します。新しいスレッドごとに値を既定値に初期化することを示すには、この宣言に 'DefaultValue' 属性を追加します。</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1289,7 +1289,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
         <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">この式の結果は型 '{0}' を持ち、暗黙的に無視されます。'expr |&gt; ignore' のように 'ignore' を使用してこの値を明示的に破棄するか、'let result = expr' のように 'let' を使用して結果を名前にバインドすることをご考慮ください。</target>
+        <target state="translated">この式の結果の型は '{0}' で、暗黙的に無視されます。'ignore' を使用してこの値を明示的に破棄してください (例: 'expr |&gt; ignore')。または 'let' を使用して結果を名前にバインドします (例: 'let result = expr')。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
@@ -1299,17 +1299,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">この等式の結果は型 '{0}' を持ち、暗黙的に破棄されます。'let' を使用して結果を名前にバインドすることを検討してください。例: 'let result = expression'。値をプロパティに設定する場合は、'&lt;-' 演算子を使用します。例: '{1}.{2} &lt;- expression'。</target>
+        <target state="translated">この等式の結果の種類は '{0}' で、暗黙的に破棄されます。'let' を使用して結果を名前にバインドすることを検討してください。たとえば、'let result = expression' などとします。値をプロパティに設定する場合には、'&lt;-' 演算子を使用して '{1}.{2} &lt;- expression' などとします。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">この等式の結果は型 '{0}' を持ち、暗黙的に破棄されます。'let' を使用して結果を名前にバインドすることを検討してください。例: 'let result = expression'。値を変換する場合は、値 'mutable' をマークして、'&lt;-' 演算子を使用します。例: '{1} &lt;- expression'。</target>
+        <target state="translated">この等式の結果の型は '{0}' で、暗黙的に破棄されます。'let' を使用して結果に名前をバインドすることを検討してください。たとえば、'let result = expression' などとします。値を意図的に変更する場合には、値に 'mutable' というマークを付け、'&lt;-' 演算子を使用して '{1} &lt;- expression' などとします。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">この等式の結果は型 '{0}' を持ち、暗黙的に破棄されます。'let' を使用して結果を名前にバインドすることを検討してください。例: 'let result = expression'。値を変換する場合は、'&lt;-' 演算子を使用します。例: '{1} &lt;- expression'。</target>
+        <target state="translated">この等式の結果の型は '{0}' で、暗黙的に破棄されます。'let' を使用して結果を名前にバインドすることを検討してください。たとえば、'let result = expression' などとします。意図的に値を変更する場合、'&lt;-' 演算子を '{1} &lt;- expression' などと使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1344,7 +1344,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">定義されるオブジェクトに対する再帰参照は、遅延参照を使用して、実行時に初期化の正常性がチェックされます。メンバー内、または '&lt;ctor-expr&gt; then &lt;expr&gt;' 形式の後続の式内に自己参照を配置してください。</target>
+        <target state="translated">定義しているオブジェクトへの再帰的参照は、遅延参照を使用して実行時に初期化の正常性がチェックされます。メンバー内、または '&lt;ctor-expr&gt; then &lt;expr&gt;' の後続の式内に自己参照を配置してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1609,7 +1609,7 @@
       </trans-unit>
       <trans-unit id="MSBuildReferenceResolutionError">
         <source>{0} (Code={1})</source>
-        <target state="translated">{0} (Code={1})</target>
+        <target state="translated">{0} (コード={1})</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetInvocationExceptionWrapper">
@@ -1619,12 +1619,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.BAR">
         <source>symbol '{|'</source>
-        <target state="new">symbol '{|'</target>
+        <target state="translated">シンボル '{|'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
-        <target state="new">symbol '|}'</target>
+        <target state="translated">シンボル '|}'</target>
         <note />
       </trans-unit>
     </body>

@@ -267,7 +267,7 @@ if($ENV{REDUCED_RUNTIME} ne "1"){
        my $scriptPath = dirname(__FILE__);
        my @configurations = ("Debug", "Release");
        foreach my $config (@configurations) {
-         $PEVERIFY = "$scriptPath\\..\\..\\..\\artifacts\\bin\\PEVerify\\$config\\net46\\PEVerify.exe";
+         $PEVERIFY = "$scriptPath\\..\\..\\..\\artifacts\\bin\\PEVerify\\$config\\net472\\PEVerify.exe";
          if (-e $PEVERIFY) {
            $ENV{PEVERIFY} = $PEVERIFY;
            last;
