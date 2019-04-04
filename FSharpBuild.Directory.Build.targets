@@ -1,12 +1,8 @@
 <Project>
-
   <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" />
   <Import Project="eng\targets\NuGet.targets" />
+  <Import Project="eng\targets\NGenBinaries.targets" />
   <Import Project="FSharp.Profiles.props" />
-
-  <PropertyGroup>
-    <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
-  </PropertyGroup>
 
   <PropertyGroup Condition="'$(UseAssetTargetFallback)' == 'true'">
     <!--

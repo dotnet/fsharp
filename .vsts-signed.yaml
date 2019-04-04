@@ -73,7 +73,7 @@ jobs:
       ArtifactName: 'VSSetup'
     condition: succeeded()
 
-    # Archive NuGet packages to DevOps.
+  # Archive NuGet packages to DevOps.
   - task: PublishBuildArtifacts@1
     displayName: Publish Artifact Packages
     inputs:
@@ -81,12 +81,20 @@ jobs:
       ArtifactName: 'Packages'
     condition: succeeded()
 
+  # Publish nightly package to ADO
+  - task: PublishBuildArtifacts@1
+    displayName: Publish Artifact Nightly
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\VisualFSharpFull.vsix'
+      ArtifactName: 'Nightly'
+    condition: succeeded()
+
   # Publish nightly package to MyGet
   - task: PowerShell@1
     displayName: Publish nightly package to MyGet
     inputs:
       scriptName: 'setup\publish-assets.ps1'
-      arguments: '-binariesPath artifacts\bin -configuration $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
+      arguments: '-artifactsPath artifacts -configuration $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
     condition: succeeded()
 
   # Package publish

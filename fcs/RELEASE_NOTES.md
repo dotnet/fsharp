@@ -1,3 +1,6 @@
+#### 23.0.1
+  * FSharp.Compiler.Service nuget now uses net461, netstandard2.0 and FSharp.Core 4.6.2
+
 #### 22.0.3
   * [Add entity.DeclaringEntity](https://github.com/Microsoft/visualfsharp/pull/4633), [FCS feature request](https://github.com/fsharp/FSharp.Compiler.Service/issues/830)
 
@@ -10,7 +13,7 @@
 
 #### 21.0.1
   * Use new .NET SDK project files
-  * FSharp.Compiler.Service nuget now uses net45 and netstandard2.0
+  * FSharp.Compiler.Service nuget now uses net461 and netstandard2.0
   * FSharp.Compiler.Service netstandard2.0 now supports type providers
   
 #### 19.0.1

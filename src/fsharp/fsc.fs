@@ -533,18 +533,18 @@ module VersionResourceFormat =
                for child in children do 
                    yield! child  |]
 
-    let Version((v1, v2, v3, v4):ILVersionInfo) = 
+    let Version(version: ILVersionInfo) = 
         [| // DWORD dwFileVersionMS
            // Specifies the most significant 32 bits of the file's binary 
            // version number. This member is used with dwFileVersionLS to form a 64-bit value used 
            // for numeric comparisons. 
-           yield! i32 (int32 v1 <<< 16 ||| int32 v2) 
+           yield! i32 (int32 version.Major <<< 16 ||| int32 version.Minor) 
            
            // DWORD dwFileVersionLS 
            // Specifies the least significant 32 bits of the file's binary 
            // version number. This member is used with dwFileVersionMS to form a 64-bit value used 
            // for numeric comparisons. 
-           yield! i32 (int32 v3 <<< 16 ||| int32 v4) 
+           yield! i32 (int32 version.Build <<< 16 ||| int32 version.Revision) 
         |]
 
     let String(string, value) = 
@@ -824,7 +824,7 @@ module MainModuleBuilder =
 
     let productVersion findStringAttr (fileVersion: ILVersionInfo) =
         let attrName = "System.Reflection.AssemblyInformationalVersionAttribute"
-        let toDotted (v1, v2, v3, v4) = sprintf "%d.%d.%d.%d" v1 v2 v3 v4
+        let toDotted (version: ILVersionInfo) = sprintf "%d.%d.%d.%d" version.Major version.Minor version.Build version.Revision
         match findStringAttr attrName with
         | None | Some "" -> fileVersion |> toDotted
         | Some (AttributeHelpers.ILVersion(v)) -> v |> toDotted
@@ -840,7 +840,7 @@ module MainModuleBuilder =
             |> Seq.takeWhile ((<>) 0us) 
             |> Seq.toList
         match validParts @ [0us; 0us; 0us; 0us] with
-        | major :: minor :: build :: rev :: _ -> (major, minor, build, rev)
+        | major :: minor :: build :: rev :: _ -> ILVersionInfo(major, minor, build, rev)
         | x -> failwithf "error converting product version '%s' to binary, tried '%A' " version x
 
 
@@ -986,8 +986,8 @@ module MainModuleBuilder =
                      // specify the major language, and the high-order 6 bits specify the sublanguage. 
                      // For a table of valid identifiers see Language Identifiers.                                           //
                      // see e.g. http://msdn.microsoft.com/en-us/library/aa912040.aspx 0000 is neutral and 04b0(hex)=1252(dec) is the code page.
-                      [ ("000004b0", [ yield ("Assembly Version", (let v1, v2, v3, v4 = assemblyVersion in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
-                                       yield ("FileVersion", (let v1, v2, v3, v4 = fileVersionInfo in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
+                      [ ("000004b0", [ yield ("Assembly Version", (sprintf "%d.%d.%d.%d" assemblyVersion.Major assemblyVersion.Minor assemblyVersion.Build assemblyVersion.Revision))
+                                       yield ("FileVersion", (sprintf "%d.%d.%d.%d" fileVersionInfo.Major fileVersionInfo.Minor fileVersionInfo.Build fileVersionInfo.Revision))
                                        yield ("ProductVersion", productVersionString)
                                        match tcConfig.outputFile with
                                        | Some f -> yield ("OriginalFilename", Path.GetFileName(f))
@@ -1510,7 +1510,7 @@ module StaticLinker =
 
                               let access = (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public)
                               let tdefs = mkILTypeDefs (List.map buildRelocatedGeneratedType ch)
-                              mkILSimpleClass ilGlobals (ilTgtTyRef.Name, access, emptyILMethods, emptyILFields, tdefs , emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 
+                              mkILSimpleClass ilGlobals (ilTgtTyRef.Name, access, emptyILMethods, emptyILFields, tdefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 
 
                       [ for (ProviderGeneratedType(_, ilTgtTyRef, _) as node) in tcImports.ProviderGeneratedTypeRoots  do
                            yield (ilTgtTyRef, buildRelocatedGeneratedType node) ]
@@ -2000,7 +2000,7 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
     // data structures involved here are so large we can't take the risk.
     Args(ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, 
          generatedCcu, outfile, typedAssembly, topAttrs, pdbFile, assemblyName, 
-         assemVerFromAttrib, signingInfo ,exiter)
+         assemVerFromAttrib, signingInfo,exiter)
 
   
 /// Phase 2a: encode signature data, optimize, encode optimization data
