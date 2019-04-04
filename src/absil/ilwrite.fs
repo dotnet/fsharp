@@ -3203,7 +3203,6 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let codedTables = 
           
-        let sizesTable = Array.map Array.length sortedTables
         let bignessTable = Array.map (fun rows -> Array.length rows >= 0x10000) sortedTables
         let bigness (tab: int32) = bignessTable.[tab]
         
