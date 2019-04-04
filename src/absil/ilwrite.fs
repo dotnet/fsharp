@@ -90,7 +90,10 @@ type ByteBuffer with
     member buf.EmitZUntaggedIndex big idx = 
         if big then buf.EmitInt32 idx
         else
-            // idx 0x10000 is allowed for method table idx + 1 for just beyond last index of method table
+            // Note, we can have idx=0x10000 generated for method table idx + 1 for just beyond last index of method table.
+            // This indicates that a MethodList, FieldList, PropertyList or EventList has zero entries
+            // For this case, the EmitInt32AsUInt16 writes a 0 (null) into the field.  Binary readers respect this as an empty
+            // list of methods/fields/properties/events.
             if idx > 0x10000 then 
                 System.Diagnostics.Debug.Assert (false, "EmitZUntaggedIndex: too big for small address or simple index")
             buf.EmitInt32AsUInt16 idx
@@ -3203,7 +3206,6 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
         let sizesTable = Array.map Array.length sortedTables
         let bignessTable = Array.map (fun rows -> Array.length rows >= 0x10000) sortedTables
         let bigness (tab: int32) = bignessTable.[tab]
-        let size (tab: int32) = sizesTable.[tab]
         
         let codedBigness nbits tab =
           (tableSize tab) >= (0x10000 >>> nbits)
