@@ -113,9 +113,9 @@ open FSharp.Compiler.Lib
 //    [[FORMAL: SameArg xi]] -> xi
 //    [[FORMAL: NewArgs vs]] -> [ [v1] ... [vN] ]                // list up individual args for Expr.Lambda
 //
-//    [[REBIND: xi , SameArg xi]] -> // no binding needed
+//    [[REBIND: xi, SameArg xi]] -> // no binding needed
 //    [[REBIND: [u], NewArgs vs]] -> u = "rebuildTuple(cpi, vs)"
-//    [[REBIND: us , NewArgs vs]] -> "rebuildTuple(cpi, vs)" then bind us to buildProjections. // for Expr.Lambda
+//    [[REBIND: us, NewArgs vs]] -> "rebuildTuple(cpi, vs)" then bind us to buildProjections. // for Expr.Lambda
 //
 //    rebuildTuple - create tuple based on vs fringe according to cpi tuple structure.
 //
@@ -201,7 +201,7 @@ module GlobalUsageAnalysis =
 
     /// Log the use of a value with a particular tuple chape at a callsite
     /// Note: this routine is called very frequently
-    let logUse (f:Val) tup z =
+    let logUse (f: Val) tup z =
        {z with Uses = 
                   match Zmap.tryFind f z.Uses with
                   | Some sites -> Zmap.add f (tup::sites) z.Uses
@@ -215,7 +215,7 @@ module GlobalUsageAnalysis =
         
 
     /// Log the definition of a non-recursive binding
-    let logNonRecBinding z (bind:Binding) =
+    let logNonRecBinding z (bind: Binding) =
         let v = bind.Var
         let vs = [v]
         {z with RecursiveBindings = Zmap.add v (false, vs) z.RecursiveBindings
@@ -346,7 +346,7 @@ let rec ValReprInfoForTS ts =
 
 let rec andTS ts tsB =
     match ts, tsB with
-    | _ , UnknownTS -> UnknownTS
+    | _, UnknownTS -> UnknownTS
     | UnknownTS, _ -> UnknownTS
     | TupleTS ss, TupleTS ssB  -> 
         if ss.Length <> ssB.Length then UnknownTS (* different tuple instances *)
@@ -378,9 +378,9 @@ let typeTS g tys = tys |> uncheckedTypeTS g |> checkTS
 let rebuildTS g m ts vs =
     let rec rebuild vs ts = 
       match vs, ts with
-      | []   , UnknownTS   -> internalError "rebuildTS: not enough fringe to build tuple"
+      | [], UnknownTS   -> internalError "rebuildTS: not enough fringe to build tuple"
       | v::vs, UnknownTS   -> (exprForVal m v, v.Type), vs
-      | vs   , TupleTS tss -> 
+      | vs, TupleTS tss -> 
           let xtys, vs = List.mapFold rebuild vs tss
           let xs, tys  = List.unzip xtys
           let x  = mkRefTupled g m xs tys
@@ -415,10 +415,10 @@ let rec minimalCallPattern callPattern =
 let commonCallPattern callPatterns =
     let rec andCPs cpA cpB =
       match cpA, cpB with
-      | []       , []        -> []
+      | [], []        -> []
       | tsA::tsAs, tsB::tsBs -> andTS tsA tsB :: andCPs tsAs tsBs
       | _tsA::_tsAs, []        -> [] (* now trim to shortest - UnknownTS     :: andCPs tsAs []   *)
-      | []       , _tsB::_tsBs -> [] (* now trim to shortest - UnknownTS     :: andCPs []   tsBs *)
+      | [], _tsB::_tsBs -> [] (* now trim to shortest - UnknownTS     :: andCPs []   tsBs *)
    
     List.reduce andCPs callPatterns
 
@@ -453,7 +453,7 @@ type Transform =
 // transform - mkTransform - decided, create necessary stuff
 //-------------------------------------------------------------------------
 
-let mkTransform g (f:Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list * Val list) list) =
+let mkTransform g (f: Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list * Val list) list) =
     // Create formal choices for x1...xp under callPattern  
     let transformedFormals = 
         (callPattern, tyfringes) ||>  List.map2 (fun cpi (tyfringe, vs) -> 
@@ -522,7 +522,7 @@ let zipCallPatternArgTys m g (callPattern : TupleStructure list) (vss : Val list
 // transform - vTransforms - defnSuggestedCP
 //-------------------------------------------------------------------------
 
-/// v = LAM tps. lam vs1:ty1 ... vsN:tyN. body.
+/// v = LAM tps. lam vs1: ty1 ... vsN: tyN. body.
 /// The types suggest a tuple structure CallPattern.
 /// The buildProjections of the vsi trim this down,
 /// since do not want to take as components any tuple that is required (projected to).
@@ -530,7 +530,7 @@ let decideFormalSuggestedCP g z tys vss =
 
     let rec trimTsByAccess accessors ts =
         match ts, accessors with
-        | UnknownTS , _                       -> UnknownTS
+        | UnknownTS, _                       -> UnknownTS
         | TupleTS _tss, []                     -> UnknownTS (* trim it, require the val at this point *)
         | TupleTS tss, TupleGet (i, _ty)::accessors -> 
             let tss = List.mapNth i (trimTsByAccess accessors) tss
@@ -559,7 +559,7 @@ let decideFormalSuggestedCP g z tys vss =
 // transform - decideTransform
 //-------------------------------------------------------------------------
 
-let decideTransform g z v callPatterns (m, tps, vss:Val list list, rty) =
+let decideTransform g z v callPatterns (m, tps, vss: Val list list, rty) =
     let tys = List.map (typeOfLambdaArg m) vss       (* arg types *)
     (* NOTE: 'a in arg types may have been instanced at different tuples... *)
     (*       commonCallPattern has to handle those cases. *)
@@ -587,7 +587,7 @@ let decideTransform g z v callPatterns (m, tps, vss:Val list list, rty) =
 // Public f could be used beyond assembly.
 // For now, suppressing any transforms on these.
 // Later, could transform f and fix up local calls and provide an f wrapper for beyond. 
-let eligibleVal g m (v:Val) =
+let eligibleVal g m (v: Val) =
     let dllImportStubOrOtherNeverInline = (v.InlineInfo = ValInline.Never)
     let mutableVal = v.IsMutable
     let byrefVal = isByrefLikeTy g m v.Type
@@ -679,11 +679,11 @@ let buildProjections env bindings x xtys =
     let bindings = pushL (List.rev binds) bindings
     bindings, vixs
 
-let rec collapseArg env bindings ts (x:Expr) =
+let rec collapseArg env bindings ts (x: Expr) =
     let m = x.Range
     let env = rangeE env m
     match ts, x with
-    | UnknownTS  , x -> 
+    | UnknownTS, x -> 
         let bindings, vx = noEffectExpr env bindings x
         bindings, [vx]
     | TupleTS tss, Expr.Op(TOp.Tuple tupInfo, _xtys, xs, _) when not (evalTupInfoIsStruct tupInfo) -> 
@@ -700,7 +700,7 @@ let rec collapseArg env bindings ts (x:Expr) =
 
 and collapseArgs env bindings n (callPattern) args =
     match callPattern, args with
-    | []     , args        -> bindings, args
+    | [], args        -> bindings, args
     | ts::tss, arg::args -> 
         let env1 = suffixE env (string n)
         let bindings, xty  = collapseArg  env1 bindings ts    arg     
@@ -715,10 +715,10 @@ and collapseArgs env bindings n (callPattern) args =
 //-------------------------------------------------------------------------
 
 // REVIEW: use mkLet etc. 
-let mkLets binds (body:Expr) = 
+let mkLets binds (body: Expr) = 
     (binds, body) ||> List.foldBack (fun b acc -> mkLetBind acc.Range b acc) 
 
-let fixupApp (penv:penv) (fx, fty, tys, args, m) =
+let fixupApp (penv: penv) (fx, fty, tys, args, m) =
 
     // Is it a val app, where the val has a transform? 
     match fx with
@@ -754,9 +754,9 @@ let transFormal ybi xi =
 
 let transRebind ybi xi =
     match xi, ybi with
-    | _ , SameArg        -> []                    (* no rebinding, reused original formal *)
+    | _, SameArg        -> []                    (* no rebinding, reused original formal *)
     | [u], NewArgs (_vs, x) -> [mkCompGenBind u x]
-    | us , NewArgs (_vs, x) -> List.map2 mkCompGenBind us (tryDestRefTupleExpr x)
+    | us, NewArgs (_vs, x) -> List.map2 mkCompGenBind us (tryDestRefTupleExpr x)
 
 
 //-------------------------------------------------------------------------
@@ -820,7 +820,7 @@ let passBinds penv binds = binds |> List.map (passBind penv)
 
 let passBindRhs conv (TBind (v, repr, letSeqPtOpt)) = TBind(v, conv repr, letSeqPtOpt)
 
-let preInterceptExpr (penv:penv) conv expr =
+let preInterceptExpr (penv: penv) conv expr =
   match expr with
   | Expr.LetRec (binds, e, m, _) ->
      let binds = List.map (passBindRhs conv) binds
@@ -837,8 +837,7 @@ let preInterceptExpr (penv:penv) conv expr =
      Some (fixupApp penv (f, fty, tys, args, m) )
   | _ -> None
   
-
-let postTransformExpr (penv:penv) expr =
+let postTransformExpr (penv: penv) expr =
     match expr with
     | Expr.LetRec (binds, e, m, _) ->
         let binds = passBinds penv binds

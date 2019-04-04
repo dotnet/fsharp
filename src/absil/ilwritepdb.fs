@@ -31,17 +31,17 @@ type BlobBuildingStream () =
     override this.CanSeek  = false
     override this.Length   = int64(builder.Count)
 
-    override this.Write(buffer:byte array, offset:int, count:int) = builder.WriteBytes(buffer, offset, count)
-    override this.WriteByte(value:byte) = builder.WriteByte(value)
-    member   this.WriteInt32(value:int) = builder.WriteInt32(value)
+    override this.Write(buffer: byte array, offset: int, count: int) = builder.WriteBytes(buffer, offset, count)
+    override this.WriteByte(value: byte) = builder.WriteByte(value)
+    member   this.WriteInt32(value: int) = builder.WriteInt32(value)
     member   this.ToImmutableArray() = builder.ToImmutableArray()
-    member   this.TryWriteBytes(stream:Stream, length:int) = builder.TryWriteBytes(stream, length)
+    member   this.TryWriteBytes(stream: Stream, length: int) = builder.TryWriteBytes(stream, length)
 
     override this.Flush() = ()
-    override this.Dispose(_disposing:bool) = ()
-    override this.Seek(_offset:int64, _origin:SeekOrigin) = raise (new NotSupportedException())
-    override this.Read(_buffer:byte array, _offset:int, _count:int) = raise (new NotSupportedException())
-    override this.SetLength(_value:int64) = raise (new NotSupportedException())
+    override this.Dispose(_disposing: bool) = ()
+    override this.Seek(_offset: int64, _origin: SeekOrigin) = raise (new NotSupportedException())
+    override this.Read(_buffer: byte array, _offset: int, _count: int) = raise (new NotSupportedException())
+    override this.SetLength(_value: int64) = raise (new NotSupportedException())
     override val Position = 0L with get, set
 
 // -------------------------------------------------------------------- 
@@ -78,7 +78,7 @@ type PdbSequencePoint =
 
 type PdbMethodData = 
     { MethToken: int32
-      MethName:string
+      MethName: string
       LocalSignatureToken: int32
       Params: PdbLocalVar array
       RootScope: PdbMethodScope option
@@ -129,7 +129,7 @@ type idd =
 // Portable PDB Writer
 //---------------------------------------------------------------------
 let cvMagicNumber = 0x53445352L
-let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) = 
+let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) = 
     let iddCvBuffer =
         // Debug directory entry
         let path = (System.Text.Encoding.UTF8.GetBytes filepath)
@@ -153,7 +153,7 @@ let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk
     }
 
 let pdbMagicNumber= 0x4244504dL
-let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64) (stream:MemoryStream) =
+let pdbGetPdbDebugInfo (embeddedPDBChunk: BinaryChunk) (uncompressedLength: int64) (stream: MemoryStream) =
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
         let (offset, size) = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
@@ -172,7 +172,7 @@ let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64)
       iddChunk = embeddedPDBChunk
     }
 
-let pdbGetDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) (embeddedPDBChunk:BinaryChunk option) (uncompressedLength:int64) (stream:MemoryStream option) = 
+let pdbGetDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) (embeddedPDBChunk: BinaryChunk option) (uncompressedLength: int64) (stream: MemoryStream option) = 
     match stream, embeddedPDBChunk with
     | None, _  | _, None -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk |]
     | Some s, Some chunk -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk; pdbGetPdbDebugInfo chunk uncompressedLength s |]
@@ -184,7 +184,7 @@ let hashSizeOfMD5 = 16
 // If the FIPS algorithm policy is enabled on the computer (e.g., for US government employees and contractors)
 // then obtaining the MD5 implementation in BCL will throw. 
 // In this case, catch the failure, and not set a checksum. 
-let checkSum (url:string) =
+let checkSum (url: string) =
     try
         use file = FileSystem.FileStreamReadShim(url)
         use md5 = System.Security.Cryptography.MD5.Create()
@@ -219,7 +219,7 @@ let getRowCounts tableRowCounts =
     tableRowCounts |> Seq.iter(fun x -> builder.Add(x))
     builder.MoveToImmutable()
 
-let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) isDeterministic =
+let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (sourceLink: string) showTimes (info: PdbData) isDeterministic =
     sortMethods showTimes info
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
@@ -228,7 +228,7 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         | _ -> info.Documents
 
     let metadata = MetadataBuilder()
-    let serializeDocumentName (name:string) =
+    let serializeDocumentName (name: string) =
         let count s c = s |> Seq.filter(fun ch -> if c = ch then true else false) |> Seq.length
 
         let s1, s2 = '/', '\\'
@@ -369,36 +369,63 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
                         builder.WriteCompressedInteger( 0 )
                         builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle (sps.[i].Document))) )
                     else
+                        //=============================================================================================================================================
                         // Sequence-point-record
-                        let offsetDelta =
-                            if i > 0 then sps.[i].Offset - sps.[i - 1].Offset                           // delta from previous offset
-                            else sps.[i].Offset                                                         // delta IL offset
+                        // Validate these with magic numbers according to the portable pdb spec Sequence point dexcription:
+                        // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#methoddebuginformation-table-0x31
+                        //
+                        // So the spec is actually bit iffy!!!!! (More like guidelines really.  )
+                        //  It uses code similar to this to validate the values
+                        //    if (result < 0 || result >= ushort.MaxValue)  // be errorfull
+                        // Spec Says 0x10000 and value max = 0xFFFF but it can't even be = to maxvalue, and so the range is 0 .. 0xfffe inclusive
+                        //=============================================================================================================================================
 
-                        if i < 1 || offsetDelta <> 0 then                                               // ILOffset must not be 0
+                        let capValue v maxValue =
+                            if v < 0 then 0
+                            elif v > maxValue then maxValue
+                            else v
+
+                        let capOffset v = capValue v 0xfffe
+                        let capLine v =  capValue v 0x1ffffffe
+                        let capColumn v = capValue v 0xfffe
+
+                        let offset = capOffset sps.[i].Offset
+                        let startLine = capLine sps.[i].Line
+                        let endLine = capLine sps.[i].EndLine
+                        let startColumn = capColumn sps.[i].Column
+                        let endColumn = capColumn sps.[i].EndColumn
+
+                        let offsetDelta =                                                               // delta from previous offset
+                            if i > 0 then offset - capOffset sps.[i - 1].Offset
+                            else offset
+
+                        if i < 1 || offsetDelta > 0 then
                             builder.WriteCompressedInteger(offsetDelta)
 
-                            if sps.[i].Line = 0xfeefee && sps.[i].EndLine = 0xfeefee then               // Hidden-sequence-point-record
+                                                                                                        // Hidden-sequence-point-record
+                            if startLine = 0xfeefee || endLine = 0xfeefee || (startColumn = 0 && endColumn = 0)
+                            then
                                 builder.WriteCompressedInteger(0)
                                 builder.WriteCompressedInteger(0)
                             else                                                                        // Non-hidden-sequence-point-record
-                                let deltaLines = sps.[i].EndLine - sps.[i].Line                         // lines
+                                let deltaLines = endLine - startLine                                    // lines
                                 builder.WriteCompressedInteger(deltaLines)
 
-                                let deltaColumns = sps.[i].EndColumn - sps.[i].Column                   // Columns
+                                let deltaColumns = endColumn - startColumn                              // Columns
                                 if deltaLines = 0 then
                                     builder.WriteCompressedInteger(deltaColumns)
                                 else
                                     builder.WriteCompressedSignedInteger(deltaColumns)
 
                                 if previousNonHiddenStartLine < 0 then                                  // delta Start Line & Column:
-                                    builder.WriteCompressedInteger(sps.[i].Line)
-                                    builder.WriteCompressedInteger(sps.[i].Column)
+                                    builder.WriteCompressedInteger(startLine)
+                                    builder.WriteCompressedInteger(startColumn)
                                 else
-                                    builder.WriteCompressedSignedInteger(sps.[i].Line - previousNonHiddenStartLine)
-                                    builder.WriteCompressedSignedInteger(sps.[i].Column - previousNonHiddenStartColumn)
+                                    builder.WriteCompressedSignedInteger(startLine - previousNonHiddenStartLine)
+                                    builder.WriteCompressedSignedInteger(startColumn - previousNonHiddenStartColumn)
 
-                                previousNonHiddenStartLine <- sps.[i].Line
-                                previousNonHiddenStartColumn <- sps.[i].Column
+                                previousNonHiddenStartLine <- startLine
+                                previousNonHiddenStartColumn <- startColumn
 
                 getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob(builder)
 
@@ -407,7 +434,7 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         // Write the scopes
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
         let writeMethodScope scope =
-            let scopeSorter (scope1:PdbMethodScope) (scope2:PdbMethodScope) =
+            let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
                 if scope1.StartOffset > scope2.StartOffset then 1
                 elif scope1.StartOffset < scope2.StartOffset then -1
                 elif (scope1.EndOffset - scope1.StartOffset) > (scope2.EndOffset - scope2.StartOffset) then -1
@@ -452,7 +479,7 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         match isDeterministic with
         | false -> null
         | true ->
-            let convert (content:IEnumerable<Blob>) = 
+            let convert (content: IEnumerable<Blob>) = 
                 use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
                 let hash = content 
                            |> Seq.collect (fun c -> c.GetBytes().Array |> sha.ComputeHash)
@@ -468,20 +495,20 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
     reportTime showTimes "PDB: Created"
     (portablePdbStream.Length, contentId, portablePdbStream)
 
-let compressPortablePdbStream (uncompressedLength:int64) (contentId:BlobContentId) (stream:MemoryStream) =
+let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobContentId) (stream: MemoryStream) =
     let compressedStream = new MemoryStream()
     use compressionStream = new DeflateStream(compressedStream, CompressionMode.Compress,true)
     stream.WriteTo(compressionStream)
     (uncompressedLength, contentId, compressedStream)
 
-let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk =
+let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk =
     try FileSystem.FileDelete fpdb with _ -> ()
     use pdbFile = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
     stream.WriteTo(pdbFile)
     reportTime showTimes "PDB: Closed"
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fpdb cvChunk None 0L None
 
-let embedPortablePdbInfo (uncompressedLength:int64)  (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk pdbChunk =
+let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk =
     reportTime showTimes "PDB: Closed"
     let fn = Path.GetFileName(fpdb)
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) uncompressedLength (Some stream)
@@ -622,15 +649,15 @@ let (?) this memb (args:'Args) : 'R =
 // Creating instances of needed classes from 'Mono.CompilerServices.SymbolWriter' assembly
 
 let monoCompilerSvc = new AssemblyName("Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
-let ctor (asmName:AssemblyName) clsName (args:obj[]) = 
+let ctor (asmName: AssemblyName) clsName (args: obj[]) = 
     let asm = Assembly.Load(asmName)
     let ty = asm.GetType(clsName)
     System.Activator.CreateInstance(ty, args)
 
-let createSourceMethodImpl (name:string) (token:int) (namespaceID:int) = 
+let createSourceMethodImpl (name: string) (token: int) (namespaceID: int) = 
     ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.SourceMethodImpl" [| box name; box token; box namespaceID |]
 
-let createWriter (f:string) = 
+let createWriter (f: string) = 
     ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.MonoSymbolWriter" [| box f |]
 
 //---------------------------------------------------------------------
@@ -675,7 +702,7 @@ let writeMdbInfo fmdb f info =
                 wr?MarkSequencePoint(sp.Offset, cue?get_SourceFile(), sp.Line, sp.Column, false)
 
             // Walk through the tree of scopes and write all variables
-            let rec writeScope (scope:PdbMethodScope) = 
+            let rec writeScope (scope: PdbMethodScope) = 
                 wr?OpenScope(scope.StartOffset) |> ignore
                 for local in scope.Locals do
                     wr?DefineLocalVariable(local.Index, local.Name)
@@ -701,7 +728,7 @@ let writeMdbInfo fmdb f info =
 //---------------------------------------------------------------------
 open Printf
 
-let logDebugInfo (outfile:string) (info:PdbData) = 
+let logDebugInfo (outfile: string) (info: PdbData) = 
     use sw = new StreamWriter(new FileStream(outfile + ".debuginfo", FileMode.Create))
 
     fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome
@@ -727,7 +754,7 @@ let logDebugInfo (outfile:string) (info:PdbData) =
 
       // Walk through the tree of scopes and write all variables
       fprintfn sw "     Scopes:"
-      let rec writeScope offs (scope:PdbMethodScope) = 
+      let rec writeScope offs (scope: PdbMethodScope) = 
         fprintfn sw "      %s- [%d-%d]" offs scope.StartOffset scope.EndOffset
         if scope.Locals.Length > 0 then
           fprintfn sw "      %s  Locals: %A" offs [ for p in scope.Locals -> sprintf "%d: %s" p.Index p.Name ]

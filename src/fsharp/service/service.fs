@@ -37,11 +37,11 @@ open FSharp.Compiler.Layout
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypeChecker
-open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices.SymbolHelpers
 
 open Internal.Utilities
@@ -3354,7 +3354,7 @@ type CompilerEnvironment =
 module CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
     /// are not associated with a project
-    let DefaultReferencesForOrphanSources(assumeDotNetFramework) = DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework)
+    let DefaultReferencesForOrphanSources assumeDotNetFramework = DefaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
     let GetCompilationDefinesForEditing (parsingOptions: FSharpParsingOptions) =

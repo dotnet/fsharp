@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+
+  <PropertyGroup>
+    <PreRelease>true</PreRelease>
+    <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
+    <PackageId>FSharp.Core</PackageId>
+    <NuspecFile>FSharp.Core.nuspec</NuspecFile>
+    <IsPackable>true</IsPackable>
+    <PackageDescription>FSharp.Core redistributables from Visual F# Tools version $(FSPackageMajorVersion) For F# $(FSCoreMajorVersion)</PackageDescription>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="Build" />
+
+</Project>

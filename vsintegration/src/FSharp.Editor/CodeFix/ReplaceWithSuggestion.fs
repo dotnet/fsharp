@@ -11,7 +11,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider

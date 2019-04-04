@@ -80,7 +80,7 @@ let debug = false
 //     let x, y = [], []
 //
 // BindSubExprOfInput actually produces the binding
-// e.g. let v2 = \Gamma ['a, 'b]. ([] : 'a , [] : 'b)
+// e.g. let v2 = \Gamma ['a, 'b]. ([] : 'a, [] : 'b)
 //      let (x, y) = p.
 // When v = x, gtvs = 'a, 'b.  We must bind:
 //     x --> \Gamma A. fst (v2[A, <dummy>])
@@ -210,7 +210,7 @@ let RefuteDiscrimSet g m path discrims =
 
         | PathArray (p, ty, len, n) ->
             let flds, eCoversVals = mkOneKnown tm n (List.replicate len ty)
-            go p (fun _ -> Expr.Op(TOp.Array, [ty], flds , m), eCoversVals)
+            go p (fun _ -> Expr.Op(TOp.Array, [ty], flds, m), eCoversVals)
 
         | PathExnConstr (p, ecref, n) ->
             let flds, eCoversVals = ecref |> recdFieldTysOfExnDefRef |> mkOneKnown tm n
@@ -298,7 +298,7 @@ let RefuteDiscrimSet g m path discrims =
                 Expr.Op(TOp.UnionCase(ucref2), tinst, flds, m), false
 
         | [DecisionTreeTest.ArrayLength (n, ty)] ->
-            Expr.Op(TOp.Array, [ty], mkUnknowns (List.replicate (n+1) ty) , m), false
+            Expr.Op(TOp.Array, [ty], mkUnknowns (List.replicate (n+1) ty), m), false
 
         | _ ->
             raise CannotRefute
@@ -435,7 +435,7 @@ let discrimsEq (g: TcGlobals) d1 d2 =
   | DecisionTreeTest.UnionCase (c1, _),    DecisionTreeTest.UnionCase(c2, _) -> g.unionCaseRefEq c1 c2
   | DecisionTreeTest.ArrayLength (n1, _),   DecisionTreeTest.ArrayLength(n2, _) -> (n1=n2)
   | DecisionTreeTest.Const c1,              DecisionTreeTest.Const c2 -> (c1=c2)
-  | DecisionTreeTest.IsNull ,               DecisionTreeTest.IsNull -> true
+  | DecisionTreeTest.IsNull,               DecisionTreeTest.IsNull -> true
   | DecisionTreeTest.IsInst (srcty1, tgty1), DecisionTreeTest.IsInst (srcty2, tgty2) -> typeEquiv g srcty1 srcty2 && typeEquiv g tgty1 tgty2
   | DecisionTreeTest.ActivePatternCase (_, _, vrefOpt1, n1, _),        DecisionTreeTest.ActivePatternCase (_, _, vrefOpt2, n2, _) ->
       match vrefOpt1, vrefOpt2 with
@@ -478,7 +478,7 @@ let canCompactConstantClass c =
 let discrimsHaveSameSimultaneousClass g d1 d2 =
     match d1, d2 with
     | DecisionTreeTest.Const _,              DecisionTreeTest.Const _
-    | DecisionTreeTest.IsNull ,               DecisionTreeTest.IsNull
+    | DecisionTreeTest.IsNull,               DecisionTreeTest.IsNull
     | DecisionTreeTest.ArrayLength _,   DecisionTreeTest.ArrayLength _
     | DecisionTreeTest.UnionCase _,    DecisionTreeTest.UnionCase _  -> true
 
@@ -836,7 +836,7 @@ let CompilePatternBasic
     // The main recursive loop of the pattern match compiler
     let rec InvestigateFrontiers refuted frontiers =
         match frontiers with
-        | [] -> failwith "CompilePattern:compile - empty clauses: at least the final clause should always succeed"
+        | [] -> failwith "CompilePattern: compile - empty clauses: at least the final clause should always succeed"
         | (Frontier (i, active, valMap)) :: rest ->
 
             // Check to see if we've got a succeeding clause.  There may still be a 'when' condition for the clause
@@ -1315,7 +1315,7 @@ let CompilePatternBasic
 
     dtree, targets
 
-let isPartialOrWhenClause (c:TypedMatchClause) = isPatternPartial c.Pattern || c.GuardExpr.IsSome
+let isPartialOrWhenClause (c: TypedMatchClause) = isPatternPartial c.Pattern || c.GuardExpr.IsSome
 
 
 let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: TypedMatchClause list) inputTy resultTy =

@@ -42,11 +42,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
     open EnvDTE
 
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Private", CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Server.Shared", CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.UIResources", CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-    do ()
-
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
             /// custom/extended property pages.

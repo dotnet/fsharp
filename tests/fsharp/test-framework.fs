@@ -184,7 +184,11 @@ let config configurationName envVars =
     let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireFile (artifactsBinPath ++ "FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireFile (artifactsBinPath ++ "FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
-    let dotNetExe = artifactsPath ++ "toolset" ++ "dotnet" ++ "dotnet.exe"
+    let dotNetExe =
+        // first look for {repoRoot}\.dotnet\dotnet.exe, otherwise fallback to %PATH%
+        let repoLocalDotnetPath = repoRoot ++ ".dotnet" ++ "dotnet.exe"
+        if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
+        else "dotnet.exe"
     // ildasm requires coreclr.dll to run which has already been restored to the packages directory
     File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
