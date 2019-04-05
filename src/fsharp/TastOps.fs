@@ -3029,43 +3029,35 @@ let isSpanLikeTy g m ty =
     isByrefLikeTy g m ty && 
     not (isByrefTy g ty)
 
-let isSpanTyconRef (g: TcGlobals) m (tcref: TyconRef) =
-    if isByrefLikeTyconRef g m tcref then
-        match tcref.ILTyconInfo with
-        | TILObjectReprData(_, _, ilTypeDef) -> ilTypeDef.Name = tname_Span
-    else
-        false
+let isSpanTyconRef (g: TcGlobals) (tcref: TyconRef) =
+    tyconRefEq g g.span_tcr tcref
     
-let isSpanTy g m ty =
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g m tcref | _ -> false)
+let isSpanTy g ty =
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g tcref | _ -> false)
 
-let tryDestSpanTy (g:TcGlobals) m ty =
+let tryDestSpanTy (g:TcGlobals) ty =
     match tryAppTy g ty with
-    | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> ValueSome(ty)
+    | ValueSome(tcref, [ty]) when isSpanTyconRef g tcref -> ValueSome(ty)
     | _ -> ValueNone
 
-let destSpanTy g m ty =
-    match tryDestSpanTy g m ty with
+let destSpanTy g ty =
+    match tryDestSpanTy g ty with
     | ValueSome(ty) -> ty
     | _ -> failwith "destSpanTy"
 
-let isReadOnlySpanTyconRef (g: TcGlobals) m (tcref: TyconRef) =
-    if isByrefLikeTyconRef g m tcref then
-        match tcref.ILTyconInfo with
-        | TILObjectReprData(_, _, ilTypeDef) -> ilTypeDef.Name = tname_ReadOnlySpan
-    else
-        false
+let isReadOnlySpanTyconRef (g: TcGlobals) (tcref: TyconRef) =
+    tyconRefEq g g.readonlyspan_tcr tcref
 
-let isReadOnlySpanTy g m ty =
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
+let isReadOnlySpanTy g ty =
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isReadOnlySpanTyconRef g tcref | _ -> false)
 
-let tryDestReadOnlySpanTy (g:TcGlobals) m ty =
+let tryDestReadOnlySpanTy (g:TcGlobals) ty =
     match tryAppTy g ty with
-    | ValueSome(tcref, [ty]) when isReadOnlySpanTyconRef g m tcref -> ValueSome(ty)
+    | ValueSome(tcref, [ty]) when isReadOnlySpanTyconRef g tcref -> ValueSome(ty)
     | _ -> ValueNone
 
-let destReadOnlySpanTy g m ty =
-    match tryDestReadOnlySpanTy g m ty with
+let destReadOnlySpanTy g ty =
+    match tryDestReadOnlySpanTy g ty with
     | ValueSome(ty) -> ty
     | _ -> failwith "destReadOnlySpanTy"
 

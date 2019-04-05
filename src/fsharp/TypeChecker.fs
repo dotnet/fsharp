@@ -7147,10 +7147,10 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
             (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart (mkLdlen cenv.g mForLoopStart arrExpr)))
 
         // optimize 'for i in span do' 
-        | _ when isSpanTy cenv.g mWholeExpr enumExprTy -> 
+        | _ when isSpanTy cenv.g enumExprTy -> 
             let spanVar, spanExpr = mkCompGenLocal mEnumExpr "span" enumExprTy
             let idxVar, idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
-            let elemTy = destSpanTy cenv.g mWholeExpr enumExprTy
+            let elemTy = destSpanTy cenv.g enumExprTy
             let elemAddrTy = mkByrefTy cenv.g elemTy
 
             // Evaluate the span index lookup
@@ -7168,10 +7168,10 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
             (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart lengthExpr))
 
         // optimize 'for i in readOnlySpan do' 
-        | _ when isReadOnlySpanTy cenv.g mWholeExpr enumExprTy -> 
+        | _ when isReadOnlySpanTy cenv.g enumExprTy -> 
             let spanVar, spanExpr = mkCompGenLocal mEnumExpr "readOnlySpan" enumExprTy
             let idxVar, idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
-            let elemTy = destReadOnlySpanTy cenv.g mWholeExpr enumExprTy
+            let elemTy = destReadOnlySpanTy cenv.g enumExprTy
 
             // Evaluate the read-only span index lookup
             let bodyExprFixup elemVar bodyExpr = mkCompGenLet mForLoopStart elemVar (mkCall_ReadOnlySpan_Item cenv.g mForLoopStart elemTy spanExpr idxExpr) bodyExpr

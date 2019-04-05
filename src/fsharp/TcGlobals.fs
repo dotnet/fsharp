@@ -462,7 +462,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_struct_tuple5_tcr      = findSysTyconRef sys "ValueTuple`5" 
   let v_struct_tuple6_tcr      = findSysTyconRef sys "ValueTuple`6" 
   let v_struct_tuple7_tcr      = findSysTyconRef sys "ValueTuple`7" 
-  let v_struct_tuple8_tcr      = findSysTyconRef sys "ValueTuple`8" 
+  let v_struct_tuple8_tcr      = findSysTyconRef sys "ValueTuple`8"
+  let v_span_tcr            = findSysTyconRef sys tname_Span
+  let v_readonlyspan_tcr    = findSysTyconRef sys tname_ReadOnlySpan 
   
   let v_choice2_tcr     = mk_MFCore_tcref fslibCcu "Choice`2" 
   let v_choice3_tcr     = mk_MFCore_tcref fslibCcu "Choice`3" 
@@ -993,6 +995,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.struct_tuple6_tcr     = v_struct_tuple6_tcr
   member __.struct_tuple7_tcr     = v_struct_tuple7_tcr
   member __.struct_tuple8_tcr     = v_struct_tuple8_tcr
+  member __.span_tcr         = v_span_tcr
+  member __.readonlyspan_tcr = v_readonlyspan_tcr
   member __.choice2_tcr    = v_choice2_tcr
   member __.choice3_tcr    = v_choice3_tcr
   member __.choice4_tcr    = v_choice4_tcr
