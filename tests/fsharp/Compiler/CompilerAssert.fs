@@ -24,7 +24,7 @@ module CompilerAssert =
             ProjectFileName = "Z:\\test.fsproj"
             ProjectId = None
             SourceFiles = [|"test.fs"|]
-#if NET472
+#if !NETCOREAPP
             OtherOptions = [||]
 #else
             OtherOptions = 

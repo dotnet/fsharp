@@ -7,9 +7,7 @@ open NUnit.Framework
 [<TestFixture>]
 module AnonRecordsTests =
 
-#if !NETCOREAPP
     [<Test>]
-#endif
     let NotStructConstraintPass() =
         CompilerAssert.Pass
             """
@@ -17,9 +15,7 @@ type RefClass<'a when 'a : not struct>() = class end
 let rAnon = RefClass<{| R: int |}>()
             """
 
-#if !NETCOREAPP
     [<Test>]
-#endif
     let StructConstraintPass() =
         CompilerAssert.Pass
             """
@@ -27,9 +23,7 @@ type StructClass<'a when 'a : struct>() = class end
 let sAnon = StructClass<struct {| S: int |}>()
             """
 
-#if !NETCOREAPP
     [<Test>]
-#endif
     let NotStructConstraintFail() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -40,9 +34,7 @@ let rAnon = RefClass<struct {| R: int |}>()
             (3, 12, 3, 41)
             "A generic construct requires that the type 'struct {|R : int|}' have reference semantics, but it does not, i.e. it is a struct"
 
-#if !NETCOREAPP
     [<Test>]
-#endif
     let StructConstraintFail() =
         CompilerAssert.TypeCheckSingleError
             """

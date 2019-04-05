@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 
-#if NET472
+#if !NETCOREAPP
 [<TestFixture>]
 module SpanOptimizationTests =
 
