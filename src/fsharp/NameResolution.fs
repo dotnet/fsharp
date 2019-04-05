@@ -23,7 +23,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open System.Collections.Generic
 
 #if !NO_EXTENSIONTYPING
@@ -1101,7 +1101,7 @@ let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceR
     let tycon = Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
     modref.ModuleOrNamespaceType.AddProvidedTypeEntity(tycon)
     let tcref = modref.NestedTyconRef tycon
-    System.Diagnostics.Debug.Assert(ValueOptionInternal.isSome modref.TryDeref)
+    System.Diagnostics.Debug.Assert(modref.TryDeref.IsSome)
     tcref
 
 
@@ -3392,7 +3392,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 AfterResolution.RecordResolution (None, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
             | true, true  ->
                 AfterResolution.RecordResolution (Some unrefinedItem, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
-            | _ , false   ->
+            | _, false   ->
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
 

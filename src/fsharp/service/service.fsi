@@ -14,7 +14,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler 
+open FSharp.Compiler
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
@@ -26,7 +26,7 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]

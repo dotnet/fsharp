@@ -53,7 +53,15 @@ type PublicKey =
     member KeyToken: byte[]
     static member KeyAsToken: byte[] -> PublicKey 
 
-type ILVersionInfo = uint16 * uint16 * uint16 * uint16
+[<Struct>]
+type ILVersionInfo =
+
+    val Major: uint16
+    val Minor: uint16
+    val Build: uint16
+    val Revision: uint16
+
+    new : major: uint16 * minor: uint16 * build: uint16 * revision: uint16 -> ILVersionInfo
 
 [<Sealed>]
 type ILAssemblyRef =

@@ -1,19 +1,8 @@
 <Project>
-
+  <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" />
+  <Import Project="eng\targets\NuGet.targets" />
+  <Import Project="eng\targets\NGenBinaries.targets" />
   <Import Project="FSharp.Profiles.props" />
-
-  <PropertyGroup>
-    <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(UseAssetTargetFallback)' == 'true'">
-    <!--
-    HACK: Necessary because the `netstandard1.6` version of FSharp.Compiler.Private requires a package that isn't
-    necessary for `net46`, but the package has a requirement on `net462`.  The reference is excluded from the build
-    during `net46`, but for purposes of restore needs to be present.
-    -->
-    <AssetTargetFallback>$(AssetTargetFallback);net462</AssetTargetFallback>
-  </PropertyGroup>
 
   <PropertyGroup>
     <CompileDependsOn>$(CompileDependsOn);CopyAndSubstituteTextFiles</CompileDependsOn>
@@ -33,10 +22,5 @@
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
   </Target>
-
-  <Import Project="build\targets\NGenOrCrossGen.targets" />
-  <Import Project="build\targets\ConvertPortablePdbs.targets" />
-  <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
-  <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />
 
 </Project>

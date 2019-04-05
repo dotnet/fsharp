@@ -3378,7 +3378,7 @@ NextControl:
             End If
 
             ' Remove the project directory path
-            If String.Compare(BasePath, Microsoft.VisualBasic.Strings.Left(DirectoryPath, Len(BasePath)), StringComparison.OrdinalIgnoreCase) = 0 Then
+            If String.Compare(BasePath, VisualBasic.Left(DirectoryPath, Len(BasePath)), StringComparison.OrdinalIgnoreCase) = 0 Then
                 Dim ch As Char = CChar(Mid(DirectoryPath, Len(BasePath), 1))
                 If ch = System.IO.Path.DirectorySeparatorChar OrElse ch = System.IO.Path.AltDirectorySeparatorChar Then
                     RelativePath = Mid(DirectoryPath, Len(BasePath) + 1)

@@ -66,7 +66,7 @@ type QuotationGenerationScope =
 
     static member ComputeQuotationFormat g =
         let deserializeExValRef = ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info
-        if ValueOptionInternal.isSome deserializeExValRef.TryDeref then
+        if deserializeExValRef.TryDeref.IsSome then
             QuotationSerializationFormat.FSharp_40_Plus
         else
             QuotationSerializationFormat.FSharp_20_Plus
@@ -300,7 +300,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                          else tryDestRefTupleExpr arg))
 
                 if verboseCReflect then
-                    dprintfn "vref.DisplayName  = %A , after unit adjust, #untupledCurriedArgs = %A, #curriedArgInfos = %d" vref.DisplayName  (List.map List.length untupledCurriedArgs) curriedArgInfos.Length
+                    dprintfn "vref.DisplayName  = %A, after unit adjust, #untupledCurriedArgs = %A, #curriedArgInfos = %d" vref.DisplayName  (List.map List.length untupledCurriedArgs) curriedArgInfos.Length
                 let subCall =
                     if isMember then
                         // This is an application of a member method

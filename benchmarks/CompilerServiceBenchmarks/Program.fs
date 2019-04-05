@@ -1,13 +1,13 @@
 ﻿open System
 open System.IO
 open System.Text
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Text
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.CodeAnalysis.Text
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open CodeAnalysis.Text
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 

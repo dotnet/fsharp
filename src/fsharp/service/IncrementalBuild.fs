@@ -529,7 +529,7 @@ module internal IncrementalBuild =
                     match found with
                     | VectorResult rv ->
                         if rv.Size <> expectedWidth then 
-                            actionFunc (ResizeResultAction(ve.Id , expectedWidth)) acc
+                            actionFunc (ResizeResultAction(ve.Id, expectedWidth)) acc
                         else acc
                     | _ -> acc
                 | None -> acc        
@@ -1286,7 +1286,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
         try  
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename , isLastCompiland, errorLogger, (*retryLocked*)true)
+            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
             fileParsed.Trigger (filename)
 
             input, sourceRange, filename, errorLogger.GetErrors ()
@@ -1735,7 +1735,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                        frameworkTcImportsCache: FrameworkImportsCache,
                        loadClosureOpt: LoadClosure option,
                        sourceFiles: string list,
-                       commandLineArgs:string list,
+                       commandLineArgs: string list,
                        projectReferences, projectDirectory,
                        useScriptResolutionRules, keepAssemblyContents,
                        keepAllBackgroundResolutions, maxTimeShareMilliseconds,
@@ -1784,11 +1784,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                 tcConfigB.projectReferences <- projectReferences
 
-#if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
-                tcConfigB.useSimpleResolution <- true // turn off msbuild resolution
-#else
                 tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
-#endif
+
                 // Apply command-line arguments and collect more source files if they are in the arguments
                 let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
 
@@ -1815,11 +1812,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             | None -> ()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-
             let niceNameGen = NiceNameGenerator()
-        
             let outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
-        
+
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
             // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
             // included in these references. 

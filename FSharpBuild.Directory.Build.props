@@ -1,25 +1,18 @@
 <Project>
 
-  <Import Project="build\targets\AssemblyVersions.props" />
-  <Import Project="build\targets\PackageVersions.props" />
-  <Import Project="build\targets\GitHash.props" />
-  <Import Project="build\targets\CommonPackages.targets" />
+  <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" />
+  <Import Project="eng\targets\Settings.props" />
+
+  <PropertyGroup>
+    <BUILD_IN_FSHARP_REPOSITORY>true</BUILD_IN_FSHARP_REPOSITORY>
+  </PropertyGroup>
 
   <!-- directory locations -->
   <PropertyGroup>
-    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
-    <ArtifactsDir>$(RepoRoot)artifacts</ArtifactsDir>
-    <ToolsRoot>$(ArtifactsDir)\toolset</ToolsRoot>
-    <ArtifactsBinDir>$(ArtifactsDir)\bin</ArtifactsBinDir>
-    <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
-    <ArtifactsPackagesDir>$(ArtifactsDir)\packages</ArtifactsPackagesDir>
-    <BaseOutputPath>$(ArtifactsBinDir)\$(MSBuildProjectName)</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(ArtifactsObjDir)\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
-    <ProtoOutputPath Condition="'$(OS)' != 'Unix'">$(ArtifactsBinDir)\fsc\Proto\net472</ProtoOutputPath>
-    <ProtoOutputPath Condition="'$(OS)' == 'Unix'">$(ArtifactsBinDir)/fsc/Proto/netcoreapp2.1</ProtoOutputPath>
+    <ProtoOutputPath Condition="'$(OS)' != 'Unix'">$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
+    <ProtoOutputPath Condition="'$(OS)' == 'Unix'">$(ArtifactsDir)/fsc/Proto/netcoreapp2.1</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
   </PropertyGroup>
@@ -62,13 +55,8 @@
 
   <!-- signing -->
   <PropertyGroup>
-    <SkipSigning>false</SkipSigning>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
-    <StrongNames>true</StrongNames>
-    <DelaySign>true</DelaySign>
+    <StrongNameKeyId>Microsoft</StrongNameKeyId>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(MonoPackaging)' == 'true'">
     <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\test.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
@@ -83,6 +71,8 @@
 
   <!-- other -->
   <PropertyGroup>
+    <NoWarn Condition="'$(Language)' == 'F#'">$(NoWarn);FS2003</NoWarn><!-- warning when AssemblyInformationalVersion looks like '1.2.3-dev' -->
+    <NoCompilerStandardLib>true</NoCompilerStandardLib><!-- necessary for resource generation using csc.exe -->
     <DebugType>portable</DebugType>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>

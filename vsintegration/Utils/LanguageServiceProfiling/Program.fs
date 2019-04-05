@@ -42,8 +42,8 @@ Results look like this:
 *)
 
 open FSharp.Compiler
+open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Text
 open System
 open System.IO
 open LanguageServiceProfiling
