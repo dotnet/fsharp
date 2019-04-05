@@ -23,7 +23,7 @@
     <FSProductVersion Condition="'$(OfficialBuildId)' == ''">$(FSProductVersion).0</FSProductVersion>
     <!-- PR builds should specify a 4-part version number -->
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>0</VSMinorVersion>
+    <VSMinorVersion>1</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersion>
     <VSAssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VSAssemblyVersion).0</VSAssemblyVersion>
