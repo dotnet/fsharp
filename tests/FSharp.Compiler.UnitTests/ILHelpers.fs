@@ -17,7 +17,7 @@ module ILChecker =
 
     let private (++) a b = Path.Combine(a,b)
 
-    let private getfullpath workDir path =
+    let private getfullpath workDir (path: string) =
         let rooted =
             if Path.IsPathRooted(path) then path
             else Path.Combine(workDir, path)

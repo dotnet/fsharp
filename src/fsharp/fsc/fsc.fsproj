@@ -5,13 +5,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
     <TargetExt>.exe</TargetExt>
-    <AssemblyName>fsc</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 

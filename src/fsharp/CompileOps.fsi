@@ -17,7 +17,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open Microsoft.FSharp.Core.CompilerServices
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

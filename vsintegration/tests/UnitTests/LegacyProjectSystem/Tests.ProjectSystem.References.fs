@@ -248,6 +248,7 @@ type References() =
         with e ->
             TheTests.HelpfulAssertMatches ' ' "A reference to '.*' could not be added. A reference to the component '.*' already exists in the project." e.Message
 
+    [<Ignore("Legacy test, NRE trying to get UI thread.")>]
     [<Test>]
     member public this.``ReferenceResolution.Bug650591.AutomationReference.Add.FullPath``() = 
         match Net20AssemExPath() with

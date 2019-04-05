@@ -75,7 +75,7 @@ module CoreTests =
     let namespaceAttributes () = singleTestBuildAndRun "core/namespaces" FSC_BASIC
 
     [<Test>]
-    let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_BASIC
+    let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_BASIC // TODO: fails on coreclr
 
     [<Test>]
     let ``unicode2-FSI_BASIC`` () = singleTestBuildAndRun "core/unicode" FSI_BASIC
@@ -164,7 +164,7 @@ module CoreTests =
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
-    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
+    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC // TODO: fails on coreclr
 
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC

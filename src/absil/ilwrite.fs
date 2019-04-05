@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
@@ -34,10 +34,10 @@ let showEntryLookups = false
 //---------------------------------------------------------------------
 
 // Little-endian encoding of int32 
-let b0 n =  byte (n &&& 0xFF)
-let b1 n =  byte ((n >>> 8) &&& 0xFF)
-let b2 n =  byte ((n >>> 16) &&& 0xFF)
-let b3 n =  byte ((n >>> 24) &&& 0xFF)
+let b0 n = byte (n &&& 0xFF)
+let b1 n = byte ((n >>> 8) &&& 0xFF)
+let b2 n = byte ((n >>> 16) &&& 0xFF)
+let b3 n = byte ((n >>> 24) &&& 0xFF)
 
 // Little-endian encoding of int64 
 let dw7 n = byte ((n >>> 56) &&& 0xFFL)
@@ -46,7 +46,7 @@ let dw5 n = byte ((n >>> 40) &&& 0xFFL)
 let dw4 n = byte ((n >>> 32) &&& 0xFFL)
 let dw3 n = byte ((n >>> 24) &&& 0xFFL)
 let dw2 n = byte ((n >>> 16) &&& 0xFFL)
-let dw1 n = byte ((n >>> 8)  &&& 0xFFL)
+let dw1 n = byte ((n >>> 8) &&& 0xFFL)
 let dw0 n = byte (n &&& 0xFFL)
 
 let bitsOfSingle (x: float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes(x), 0)
@@ -71,16 +71,16 @@ type ByteBuffer with
 
     /// Emit int32 as compressed unsigned integer
     member buf.EmitZ32 n = 
-        if n >= 0 &&  n <= 0x7F then 
+        if n >= 0 && n <= 0x7F then 
             buf.EmitIntAsByte n  
         elif n >= 0x80 && n <= 0x3FFF then 
             buf.EmitIntAsByte (0x80 ||| (n >>> 8))
             buf.EmitIntAsByte (n &&& 0xFF) 
         else 
-            buf.EmitIntAsByte (0xc0l ||| ((n >>> 24) &&& 0xFF))
-            buf.EmitIntAsByte (           (n >>> 16) &&& 0xFF)
-            buf.EmitIntAsByte (           (n >>> 8)  &&& 0xFF)
-            buf.EmitIntAsByte (            n         &&& 0xFF)
+            buf.EmitIntAsByte (0xC0 ||| ((n >>> 24) &&& 0xFF))
+            buf.EmitIntAsByte ((n >>> 16) &&& 0xFF)
+            buf.EmitIntAsByte ((n >>> 8) &&& 0xFF)
+            buf.EmitIntAsByte (n &&& 0xFF)
 
     member buf.EmitPadding n = 
         for i = 0 to n-1 do
@@ -144,7 +144,7 @@ let checkFixup32 (data: byte[]) offset exp =
     if data.[offset] <> b0 exp then failwith "fixup sanity check failed"
 
 let applyFixup32 (data: byte[]) offset v = 
-    data.[offset] <-   b0 v
+    data.[offset] <- b0 v
     data.[offset+1] <- b1 v
     data.[offset+2] <- b2 v
     data.[offset+3] <- b3 v
@@ -222,59 +222,59 @@ module RowElementTags =
     let [<Literal>] Blob = 5
     let [<Literal>] String = 6
     let [<Literal>] SimpleIndexMin = 7
-    let SimpleIndex         (t : TableName)             = assert (t.Index <= 112); SimpleIndexMin + t.Index
+    let SimpleIndex (t : TableName) = assert (t.Index <= 112); SimpleIndexMin + t.Index
     let [<Literal>] SimpleIndexMax = 119
 
     let [<Literal>] TypeDefOrRefOrSpecMin = 120
-    let TypeDefOrRefOrSpec  (t: TypeDefOrRefTag)        = assert (t.Tag <= 2); TypeDefOrRefOrSpecMin + t.Tag (* + 111 + 1 = 0x70 + 1 = max TableName.Tndex  + 1 *)
+    let TypeDefOrRefOrSpec (t: TypeDefOrRefTag) = assert (t.Tag <= 2); TypeDefOrRefOrSpecMin + t.Tag (* + 111 + 1 = 0x70 + 1 = max TableName.Tndex + 1 *)
     let [<Literal>] TypeDefOrRefOrSpecMax = 122
 
     let [<Literal>] TypeOrMethodDefMin = 123
-    let TypeOrMethodDef     (t: TypeOrMethodDefTag)     = assert (t.Tag <= 1); TypeOrMethodDefMin + t.Tag  (* + 2 + 1 = max TypeDefOrRefOrSpec.Tag  + 1 *)
+    let TypeOrMethodDef (t: TypeOrMethodDefTag) = assert (t.Tag <= 1); TypeOrMethodDefMin + t.Tag (* + 2 + 1 = max TypeDefOrRefOrSpec.Tag + 1 *)
     let [<Literal>] TypeOrMethodDefMax = 124
 
     let [<Literal>] HasConstantMin = 125
-    let HasConstant         (t: HasConstantTag)         = assert (t.Tag <= 2); HasConstantMin + t.Tag (* + 1 + 1 = max TypeOrMethodDef.Tag  + 1 *)
+    let HasConstant (t: HasConstantTag) = assert (t.Tag <= 2); HasConstantMin + t.Tag (* + 1 + 1 = max TypeOrMethodDef.Tag + 1 *)
     let [<Literal>] HasConstantMax = 127
 
     let [<Literal>] HasCustomAttributeMin = 128
-    let HasCustomAttribute  (t: HasCustomAttributeTag)  = assert (t.Tag <= 21); HasCustomAttributeMin + t.Tag  (* + 2 + 1 = max HasConstant.Tag  + 1 *)
+    let HasCustomAttribute (t: HasCustomAttributeTag) = assert (t.Tag <= 21); HasCustomAttributeMin + t.Tag (* + 2 + 1 = max HasConstant.Tag + 1 *)
     let [<Literal>] HasCustomAttributeMax = 149
 
     let [<Literal>] HasFieldMarshalMin = 150
-    let HasFieldMarshal     (t: HasFieldMarshalTag)     = assert (t.Tag <= 1); HasFieldMarshalMin + t.Tag  (* + 21 + 1 = max HasCustomAttribute.Tag  + 1 *)
+    let HasFieldMarshal (t: HasFieldMarshalTag) = assert (t.Tag <= 1); HasFieldMarshalMin + t.Tag (* + 21 + 1 = max HasCustomAttribute.Tag + 1 *)
     let [<Literal>] HasFieldMarshalMax = 151
 
     let [<Literal>] HasDeclSecurityMin = 152
-    let HasDeclSecurity     (t: HasDeclSecurityTag)     = assert (t.Tag <= 2); HasDeclSecurityMin + t.Tag  (* + 1 + 1 = max HasFieldMarshal.Tag  + 1 *)
+    let HasDeclSecurity (t: HasDeclSecurityTag) = assert (t.Tag <= 2); HasDeclSecurityMin + t.Tag (* + 1 + 1 = max HasFieldMarshal.Tag + 1 *)
     let [<Literal>] HasDeclSecurityMax = 154
 
     let [<Literal>] MemberRefParentMin = 155
-    let MemberRefParent     (t: MemberRefParentTag)     = assert (t.Tag <= 4); MemberRefParentMin + t.Tag  (* + 2 + 1 = max HasDeclSecurity.Tag  + 1 *)
+    let MemberRefParent (t: MemberRefParentTag) = assert (t.Tag <= 4); MemberRefParentMin + t.Tag (* + 2 + 1 = max HasDeclSecurity.Tag + 1 *)
     let [<Literal>] MemberRefParentMax = 159
 
     let [<Literal>] HasSemanticsMin = 160
-    let HasSemantics        (t: HasSemanticsTag)        = assert (t.Tag <= 1); HasSemanticsMin + t.Tag  (* + 4 + 1 = max MemberRefParent.Tag  + 1 *)
+    let HasSemantics (t: HasSemanticsTag) = assert (t.Tag <= 1); HasSemanticsMin + t.Tag (* + 4 + 1 = max MemberRefParent.Tag + 1 *)
     let [<Literal>] HasSemanticsMax = 161
 
     let [<Literal>] MethodDefOrRefMin = 162
-    let MethodDefOrRef      (t: MethodDefOrRefTag)      = assert (t.Tag <= 2); MethodDefOrRefMin + t.Tag  (* + 1 + 1 = max HasSemantics.Tag  + 1 *)
+    let MethodDefOrRef (t: MethodDefOrRefTag) = assert (t.Tag <= 2); MethodDefOrRefMin + t.Tag (* + 1 + 1 = max HasSemantics.Tag + 1 *)
     let [<Literal>] MethodDefOrRefMax = 164
 
     let [<Literal>] MemberForwardedMin = 165
-    let MemberForwarded     (t: MemberForwardedTag)     = assert (t.Tag <= 1); MemberForwardedMin + t.Tag  (* + 2 + 1 = max MethodDefOrRef.Tag  + 1 *)
+    let MemberForwarded (t: MemberForwardedTag) = assert (t.Tag <= 1); MemberForwardedMin + t.Tag (* + 2 + 1 = max MethodDefOrRef.Tag + 1 *)
     let [<Literal>] MemberForwardedMax = 166
 
     let [<Literal>] ImplementationMin = 167
-    let Implementation      (t: ImplementationTag)      = assert (t.Tag <= 2); ImplementationMin + t.Tag  (* + 1 + 1 = max MemberForwarded.Tag  + 1 *)
+    let Implementation (t: ImplementationTag) = assert (t.Tag <= 2); ImplementationMin + t.Tag (* + 1 + 1 = max MemberForwarded.Tag + 1 *)
     let [<Literal>] ImplementationMax = 169
 
     let [<Literal>] CustomAttributeTypeMin = 170
-    let CustomAttributeType (t: CustomAttributeTypeTag) = assert (t.Tag <= 3); CustomAttributeTypeMin + t.Tag  (* + 2 + 1 = max Implementation.Tag + 1 *)
+    let CustomAttributeType (t: CustomAttributeTypeTag) = assert (t.Tag <= 3); CustomAttributeTypeMin + t.Tag (* + 2 + 1 = max Implementation.Tag + 1 *)
     let [<Literal>] CustomAttributeTypeMax = 173
 
     let [<Literal>] ResolutionScopeMin = 174
-    let ResolutionScope     (t: ResolutionScopeTag)     = assert (t.Tag <= 4); ResolutionScopeMin + t.Tag  (* + 3 + 1 = max CustomAttributeType.Tag  + 1 *)
+    let ResolutionScope (t: ResolutionScopeTag) = assert (t.Tag <= 4); ResolutionScopeMin + t.Tag (* + 3 + 1 = max CustomAttributeType.Tag + 1 *)
     let [<Literal>] ResolutionScopeMax = 178
 
 [<Struct>]
@@ -284,37 +284,37 @@ type RowElement(tag: int32, idx: int32) =
     member x.Val = idx
 
 // These create RowElements
-let UShort (x: uint16)    = RowElement(RowElementTags.UShort, int32 x)
-let ULong (x: int32)      = RowElement(RowElementTags.ULong, x)
-/// Index into cenv.data or cenv.resources.  Gets fixed up later once we known an overall
-/// location for the data section.  flag indicates if offset is relative to cenv.resources. 
+let UShort (x: uint16) = RowElement(RowElementTags.UShort, int32 x)
+let ULong (x: int32) = RowElement(RowElementTags.ULong, x)
+/// Index into cenv.data or cenv.resources. Gets fixed up later once we known an overall
+/// location for the data section. flag indicates if offset is relative to cenv.resources. 
 let Data (x: int, k: bool) = RowElement((if k then RowElementTags.DataResources else RowElementTags.Data ), x)
 /// pos. in guid array 
-let Guid (x: int)         = RowElement(RowElementTags.Guid, x)
+let Guid (x: int) = RowElement(RowElementTags.Guid, x)
 /// pos. in blob array 
-let Blob (x: int)         = RowElement(RowElementTags.Blob, x)
+let Blob (x: int) = RowElement(RowElementTags.Blob, x)
 /// pos. in string array 
-let StringE (x: int)      = RowElement(RowElementTags.String, x)
+let StringE (x: int) = RowElement(RowElementTags.String, x)
 /// pos. in some table 
-let SimpleIndex         (t, x: int) = RowElement(RowElementTags.SimpleIndex t, x)
-let TypeDefOrRefOrSpec  (t, x: int) = RowElement(RowElementTags.TypeDefOrRefOrSpec t, x)
-let TypeOrMethodDef     (t, x: int) = RowElement(RowElementTags.TypeOrMethodDef t, x)
-let HasConstant         (t, x: int) = RowElement(RowElementTags.HasConstant t, x)
-let HasCustomAttribute  (t, x: int) = RowElement(RowElementTags.HasCustomAttribute t, x)
-let HasFieldMarshal     (t, x: int) = RowElement(RowElementTags.HasFieldMarshal t, x)
-let HasDeclSecurity     (t, x: int) = RowElement(RowElementTags.HasDeclSecurity t, x)
-let MemberRefParent     (t, x: int) = RowElement(RowElementTags.MemberRefParent t, x)
-let HasSemantics        (t, x: int) = RowElement(RowElementTags.HasSemantics t, x)
-let MethodDefOrRef      (t, x: int) = RowElement(RowElementTags.MethodDefOrRef t, x)
-let MemberForwarded     (t, x: int) = RowElement(RowElementTags.MemberForwarded t, x)
-let Implementation      (t, x: int) = RowElement(RowElementTags.Implementation t, x)
+let SimpleIndex (t, x: int) = RowElement(RowElementTags.SimpleIndex t, x)
+let TypeDefOrRefOrSpec (t, x: int) = RowElement(RowElementTags.TypeDefOrRefOrSpec t, x)
+let TypeOrMethodDef (t, x: int) = RowElement(RowElementTags.TypeOrMethodDef t, x)
+let HasConstant (t, x: int) = RowElement(RowElementTags.HasConstant t, x)
+let HasCustomAttribute (t, x: int) = RowElement(RowElementTags.HasCustomAttribute t, x)
+let HasFieldMarshal (t, x: int) = RowElement(RowElementTags.HasFieldMarshal t, x)
+let HasDeclSecurity (t, x: int) = RowElement(RowElementTags.HasDeclSecurity t, x)
+let MemberRefParent (t, x: int) = RowElement(RowElementTags.MemberRefParent t, x)
+let HasSemantics (t, x: int) = RowElement(RowElementTags.HasSemantics t, x)
+let MethodDefOrRef (t, x: int) = RowElement(RowElementTags.MethodDefOrRef t, x)
+let MemberForwarded (t, x: int) = RowElement(RowElementTags.MemberForwarded t, x)
+let Implementation (t, x: int) = RowElement(RowElementTags.Implementation t, x)
 let CustomAttributeType (t, x: int) = RowElement(RowElementTags.CustomAttributeType t, x)
-let ResolutionScope     (t, x: int) = RowElement(RowElementTags.ResolutionScope t, x)
+let ResolutionScope (t, x: int) = RowElement(RowElementTags.ResolutionScope t, x)
 (*
 type RowElement = 
     | UShort of uint16
     | ULong of int32
-    | Data of int * bool // Index into cenv.data or cenv.resources.  Will be adjusted later in writing once we fix an overall location for the data section.  flag indicates if offset is relative to cenv.resources. 
+    | Data of int * bool // Index into cenv.data or cenv.resources. Will be adjusted later in writing once we fix an overall location for the data section. flag indicates if offset is relative to cenv.resources. 
     | Guid of int // pos. in guid array 
     | Blob of int // pos. in blob array 
     | String of int // pos. in string array 
@@ -328,7 +328,7 @@ type RowElement =
     | MemberRefParent of MemberRefParentTag * int
     | HasSemantics of HasSemanticsTag * int
     | MethodDefOrRef of MethodDefOrRefTag * int
-    | MemberForwarded of  MemberForwardedTag * int
+    | MemberForwarded of MemberForwardedTag * int
     | Implementation of ImplementationTag * int
     | CustomAttributeType of CustomAttributeTypeTag * int
     | ResolutionScope of ResolutionScopeTag * int
@@ -349,7 +349,7 @@ let hashRow (elems: RowElement[]) =
     acc
 
 let equalRows (elems: RowElement[]) (elems2: RowElement[]) = 
-    if elems.Length <> elems2.Length  then false else
+    if elems.Length <> elems2.Length then false else
     let mutable ok = true
     let n = elems.Length
     let mutable i = 0 
@@ -383,7 +383,7 @@ let AssemblyRefRow(s1, s2, s3, s4, l1, b1, nameIdx, str2, b2) =
 
 /// Special representation the computes the hash more efficiently
 let MemberRefRow(mrp: RowElement, nmIdx: StringIndex, blobIdx: BlobIndex) = 
-    let hashCode =   combineHash (hash blobIdx) (combineHash (hash nmIdx) (hash mrp))
+    let hashCode = combineHash (hash blobIdx) (combineHash (hash nmIdx) (hash mrp))
     let genericRow = [| mrp; StringE nmIdx; Blob blobIdx |]
     new SharedRow(genericRow, hashCode)
 
@@ -409,10 +409,10 @@ type UnsharedRow(elems: RowElement[]) =
 // This environment keeps track of how many generic parameters are in scope. 
 // This lets us translate AbsIL type variable number to IL type variable numbering 
 type ILTypeWriterEnv = { EnclosingTyparCount: int }
-let envForTypeDef (td: ILTypeDef)               = { EnclosingTyparCount=td.GenericParams.Length }
-let envForMethodRef env (ty: ILType)           = { EnclosingTyparCount=(match ty with ILType.Array _ -> env.EnclosingTyparCount | _ -> ty.GenericArgs.Length) }
-let envForNonGenericMethodRef _mref            = { EnclosingTyparCount=System.Int32.MaxValue }
-let envForFieldSpec (fspec: ILFieldSpec)        = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
+let envForTypeDef (td: ILTypeDef) = { EnclosingTyparCount=td.GenericParams.Length }
+let envForMethodRef env (ty: ILType) = { EnclosingTyparCount=(match ty with ILType.Array _ -> env.EnclosingTyparCount | _ -> ty.GenericArgs.Length) }
+let envForNonGenericMethodRef _mref = { EnclosingTyparCount=System.Int32.MaxValue }
+let envForFieldSpec (fspec: ILFieldSpec) = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
 let envForOverrideSpec (ospec: ILOverridesSpec) = { EnclosingTyparCount=ospec.DeclaringType.GenericArgs.Length }
 
 //---------------------------------------------------------------------
@@ -426,7 +426,7 @@ type MetadataTable<'T> =
 #if DEBUG
       mutable lookups: int
 #endif
-      mutable rows: ResizeArray<'T>  }
+      mutable rows: ResizeArray<'T> }
     member x.Count = x.rows.Count
 
     static member New(nm, hashEq) = 
@@ -561,7 +561,7 @@ type cenv =
       showTimes: bool
       desiredMetadataVersion: ILVersionInfo
       requiredDataFixups: (int32 * (int * bool)) list ref
-      /// References to strings in codestreams: offset of code and a (fixup-location , string token) list) 
+      /// References to strings in codestreams: offset of code and a (fixup-location, string token) list) 
       mutable requiredStringFixups: (int32 * (int * int) list) list 
       codeChunks: ByteBuffer 
       mutable nextCodeAddr: int32
@@ -584,8 +584,8 @@ type cenv =
       tables: MetadataTable[]
       AssemblyRefs: MetadataTable<SharedRow>
       fieldDefs: MetadataTable<FieldDefKey>
-      methodDefIdxsByKey:  MetadataTable<MethodDefKey>
-      methodDefIdxs:  Dictionary<ILMethodDef, int>
+      methodDefIdxsByKey: MetadataTable<MethodDefKey>
+      methodDefIdxs: Dictionary<ILMethodDef, int>
       propertyDefs: MetadataTable<PropertyTableKey>
       eventDefs: MetadataTable<EventTableKey>
       typeDefs: MetadataTable<TypeDefTableKey> 
@@ -620,7 +620,7 @@ let metadataSchemaVersionSupportedByCLRVersion v =
     // Later Whidbey versions are post 2.0.40607.0.. However we assume 
     // internal builds such as 2.0.x86chk are Whidbey Beta 2 or later 
     if compareILVersions v (parseILVersion ("2.0.40520.0")) >= 0 &&
-       compareILVersions  v (parseILVersion ("2.0.40608.0")) < 0 then 1, 1
+       compareILVersions v (parseILVersion ("2.0.40608.0")) < 0 then 1, 1
     elif compareILVersions v (parseILVersion ("2.0.0.0")) >= 0 then 2, 0
     else 1, 0 
 
@@ -628,7 +628,7 @@ let headerVersionSupportedByCLRVersion v =
    // The COM20HEADER version number 
    // Whidbey version numbers are 2.5 
    // Earlier are 2.0 
-   // From an email from jeffschw: "Be built with a compiler that marks the COM20HEADER with Major >=2 and Minor >= 5.  The V2.0 compilers produce images with 2.5, V1.x produces images with 2.0." 
+   // From an email from jeffschw: "Be built with a compiler that marks the COM20HEADER with Major >=2 and Minor >= 5. The V2.0 compilers produce images with 2.5, V1.x produces images with 2.0." 
     if compareILVersions v (parseILVersion ("2.0.0.0")) >= 0 then 2, 5
     else 2, 0 
 
@@ -650,7 +650,7 @@ type ILTokenMappings =
       EventTokenMap: ILTypeDef list * ILTypeDef -> ILEventDef -> int32 }
 
 let recordRequiredDataFixup requiredDataFixups (buf: ByteBuffer) pos lab =
-    requiredDataFixups :=  (pos, lab) :: !requiredDataFixups
+    requiredDataFixups := (pos, lab) :: !requiredDataFixups
     // Write a special value in that we check later when applying the fixup 
     buf.EmitInt32 0xdeaddddd
 
@@ -695,12 +695,12 @@ and GenTypeDefsPass1 enc cenv tds = List.iter (GenTypeDefPass1 enc cenv) tds
 // Pass 2 - allocate indexes for methods and fields and write rows for types 
 //=====================================================================
 
-let rec GetIdxForTypeDef cenv key  = 
+let rec GetIdxForTypeDef cenv key = 
     try cenv.typeDefs.GetTableEntry key
     with 
       :? KeyNotFoundException -> 
         let (TdKey (enc, n) ) = key
-        errorR(InternalError("One of your modules expects the type '"+String.concat "." (enc@[n])+"' to be defined within the module being emitted.  You may be missing an input file", range0))
+        errorR(InternalError("One of your modules expects the type '"+String.concat "." (enc@[n])+"' to be defined within the module being emitted. You may be missing an input file", range0))
         0
     
 // -------------------------------------------------------------------- 
@@ -709,14 +709,14 @@ let rec GetIdxForTypeDef cenv key  =
 
 let rec GetAssemblyRefAsRow cenv (aref: ILAssemblyRef) =
     AssemblyRefRow 
-        ((match aref.Version with None -> 0us | Some (x, _, _, _) -> x), 
-         (match aref.Version with None -> 0us | Some (_, y, _, _) -> y), 
-         (match aref.Version with None -> 0us | Some (_, _, z, _) -> z), 
-         (match aref.Version with None -> 0us | Some (_, _, _, w) -> w), 
+        ((match aref.Version with None -> 0us | Some (version) -> version.Major), 
+         (match aref.Version with None -> 0us | Some (version) -> version.Minor), 
+         (match aref.Version with None -> 0us | Some (version) -> version.Build), 
+         (match aref.Version with None -> 0us | Some (version) -> version.Revision), 
          ((match aref.PublicKey with Some (PublicKey _) -> 0x0001 | _ -> 0x0000)
           ||| (if aref.Retargetable then 0x0100 else 0x0000)), 
          BlobIndex (match aref.PublicKey with 
-                    | None ->  0 
+                    | None -> 0 
                     | Some (PublicKey b | PublicKeyToken b) -> GetBytesAsBlobIdx cenv b), 
          StringIndex (GetStringHeapIdx cenv aref.Name), 
          StringIndex (match aref.Locale with None -> 0 | Some s -> GetStringHeapIdx cenv s), 
@@ -731,9 +731,9 @@ and GetModuleRefAsRow cenv (mref: ILModuleRef) =
 
 and GetModuleRefAsFileRow cenv (mref: ILModuleRef) =
     SharedRow 
-        [|  ULong (if mref.HasMetadata then 0x0000 else 0x0001)
-            StringE (GetStringHeapIdx cenv mref.Name)
-            (match mref.Hash with None -> Blob 0 | Some s -> Blob (GetBytesAsBlobIdx cenv s)) |]
+        [| ULong (if mref.HasMetadata then 0x0000 else 0x0001)
+           StringE (GetStringHeapIdx cenv mref.Name)
+           (match mref.Hash with None -> Blob 0 | Some s -> Blob (GetBytesAsBlobIdx cenv s)) |]
 
 and GetModuleRefAsIdx cenv mref = 
     FindOrAddSharedRow cenv TableNames.ModuleRef (GetModuleRefAsRow cenv mref)
@@ -755,7 +755,7 @@ let isTypeLocal (ty: ILType) = ty.IsNominal && isNil ty.GenericArgs && isTypeRef
 
 let GetScopeRefAsImplementationElem cenv scoref = 
     match scoref with 
-    | ILScopeRef.Local ->  (i_AssemblyRef, 0)
+    | ILScopeRef.Local -> (i_AssemblyRef, 0)
     | ILScopeRef.Assembly aref -> (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
     | ILScopeRef.Module mref -> (i_File, GetModuleRefAsFileIdx cenv mref)
  
@@ -857,7 +857,7 @@ and GetTypeAsTypeDefOrRef cenv env (ty: ILType) =
 and GetTypeAsBytes cenv env ty = emitBytesViaBuffer (fun bb -> EmitType cenv env bb ty)
 
 and GetTypeOfLocalAsBytes cenv env (l: ILLocal) = 
-    emitBytesViaBuffer (fun bb ->  EmitLocalInfo cenv env bb l)
+    emitBytesViaBuffer (fun bb -> EmitLocalInfo cenv env bb l)
 
 and GetTypeAsBlobIdx cenv env (ty: ILType) = 
     GetBytesAsBlobIdx cenv (GetTypeAsBytes cenv env ty)
@@ -871,39 +871,39 @@ and GetTypeAsTypeSpecIdx cenv env ty =
 and EmitType cenv env bb ty =
     match ty with 
   // REVIEW: what are these doing here? 
-    | ILType.Value tspec when tspec.Name = "System.String" ->   bb.EmitByte et_STRING 
-    | ILType.Value tspec when tspec.Name = "System.Object" ->   bb.EmitByte et_OBJECT 
-    | ty when isILSByteTy ty ->   bb.EmitByte et_I1 
-    | ty when isILInt16Ty ty ->   bb.EmitByte et_I2 
-    | ty when isILInt32Ty ty ->    bb.EmitByte et_I4 
-    | ty when isILInt64Ty ty ->     bb.EmitByte et_I8 
-    | ty when isILByteTy ty ->     bb.EmitByte et_U1 
-    | ty when isILUInt16Ty ty ->     bb.EmitByte et_U2 
-    | ty when isILUInt32Ty ty ->     bb.EmitByte et_U4 
-    | ty when isILUInt64Ty ty ->     bb.EmitByte et_U8 
-    | ty when isILDoubleTy ty ->     bb.EmitByte et_R8 
-    | ty when isILSingleTy ty ->     bb.EmitByte et_R4 
-    | ty when isILBoolTy ty ->     bb.EmitByte et_BOOLEAN 
-    | ty when isILCharTy ty ->     bb.EmitByte et_CHAR 
-    | ty when isILStringTy ty ->     bb.EmitByte et_STRING 
-    | ty when isILObjectTy ty ->     bb.EmitByte et_OBJECT 
-    | ty when isILIntPtrTy ty ->     bb.EmitByte et_I 
-    | ty when isILUIntPtrTy ty ->     bb.EmitByte et_U 
-    | ty when isILTypedReferenceTy ty ->     bb.EmitByte et_TYPEDBYREF 
+    | ILType.Value tspec when tspec.Name = "System.String" -> bb.EmitByte et_STRING 
+    | ILType.Value tspec when tspec.Name = "System.Object" -> bb.EmitByte et_OBJECT 
+    | ty when isILSByteTy ty -> bb.EmitByte et_I1 
+    | ty when isILInt16Ty ty -> bb.EmitByte et_I2 
+    | ty when isILInt32Ty ty -> bb.EmitByte et_I4 
+    | ty when isILInt64Ty ty -> bb.EmitByte et_I8 
+    | ty when isILByteTy ty -> bb.EmitByte et_U1 
+    | ty when isILUInt16Ty ty -> bb.EmitByte et_U2 
+    | ty when isILUInt32Ty ty -> bb.EmitByte et_U4 
+    | ty when isILUInt64Ty ty -> bb.EmitByte et_U8 
+    | ty when isILDoubleTy ty -> bb.EmitByte et_R8 
+    | ty when isILSingleTy ty -> bb.EmitByte et_R4 
+    | ty when isILBoolTy ty -> bb.EmitByte et_BOOLEAN 
+    | ty when isILCharTy ty -> bb.EmitByte et_CHAR 
+    | ty when isILStringTy ty -> bb.EmitByte et_STRING 
+    | ty when isILObjectTy ty -> bb.EmitByte et_OBJECT 
+    | ty when isILIntPtrTy ty -> bb.EmitByte et_I 
+    | ty when isILUIntPtrTy ty -> bb.EmitByte et_U 
+    | ty when isILTypedReferenceTy ty -> bb.EmitByte et_TYPEDBYREF 
 
-    | ILType.Boxed tspec ->  EmitTypeSpec cenv env bb (et_CLASS, tspec)
-    | ILType.Value tspec ->  EmitTypeSpec cenv env bb (et_VALUETYPE, tspec)
+    | ILType.Boxed tspec -> EmitTypeSpec cenv env bb (et_CLASS, tspec)
+    | ILType.Value tspec -> EmitTypeSpec cenv env bb (et_VALUETYPE, tspec)
     | ILType.Array (shape, ty) ->  
         if shape = ILArrayShape.SingleDimensional then (bb.EmitByte et_SZARRAY ; EmitType cenv env bb ty)
         else (bb.EmitByte et_ARRAY; EmitType cenv env bb ty; EmitArrayShape bb shape)
     | ILType.TypeVar tv ->  
         let cgparams = env.EnclosingTyparCount
-        if int32 tv <  cgparams then 
+        if int32 tv < cgparams then 
             bb.EmitByte et_VAR
             bb.EmitZ32 (int32 tv)
         else
             bb.EmitByte et_MVAR
-            bb.EmitZ32 (int32 tv -  cgparams)
+            bb.EmitZ32 (int32 tv - cgparams)
 
     | ILType.Byref ty -> 
         bb.EmitByte et_BYREF
@@ -964,9 +964,9 @@ let rec GetVariantTypeAsInt32 ty =
         (List.assoc ty (Lazy.force ILVariantTypeMap ))
     else 
         match ty with 
-        | ILNativeVariant.Array  vt -> vt_ARRAY  ||| GetVariantTypeAsInt32  vt
-        | ILNativeVariant.Vector vt -> vt_VECTOR ||| GetVariantTypeAsInt32  vt
-        | ILNativeVariant.Byref  vt -> vt_BYREF  ||| GetVariantTypeAsInt32  vt
+        | ILNativeVariant.Array vt -> vt_ARRAY ||| GetVariantTypeAsInt32 vt
+        | ILNativeVariant.Vector vt -> vt_VECTOR ||| GetVariantTypeAsInt32 vt
+        | ILNativeVariant.Byref vt -> vt_BYREF ||| GetVariantTypeAsInt32 vt
         | _ -> failwith "Unexpected variant type"
 
 // based on information in ECMA and asmparse.y in the CLR codebase 
@@ -1006,8 +1006,8 @@ and EmitNativeType bb ty =
           | None -> () 
           | Some n -> 
                let u1 = Bytes.stringAsUtf8NullTerminated n
-               bb.EmitZ32 (Array.length u1) ; bb.EmitBytes  u1
-      | ILNativeType.Array (nt, sizeinfo) ->  (* REVIEW: check if this corresponds to the ECMA spec *)
+               bb.EmitZ32 (Array.length u1) ; bb.EmitBytes u1
+      | ILNativeType.Array (nt, sizeinfo) -> (* REVIEW: check if this corresponds to the ECMA spec *)
           bb.EmitByte nt_ARRAY 
           match nt with 
           | None -> bb.EmitZ32 (int nt_MAX)
@@ -1023,8 +1023,8 @@ and EmitNativeType bb ty =
               bb.EmitZ32 pnum
             (* ElemMul *) (* z_u32 0x1l *) 
               match additive with 
-              |  None -> ()
-              |  Some n ->  (* NumElem *) bb.EmitZ32 n
+              | None -> ()
+              | Some n -> (* NumElem *) bb.EmitZ32 n
       | _ -> failwith "Unexpected native type"
 
 // -------------------------------------------------------------------- 
@@ -1038,9 +1038,9 @@ let rec GetFieldInitAsBlobIdx cenv (x: ILFieldInit) =
 and GetFieldInit (bb: ByteBuffer) x = 
     match x with 
     | ILFieldInit.String b -> bb.EmitBytes (System.Text.Encoding.Unicode.GetBytes b)
-    | ILFieldInit.Bool b ->  bb.EmitByte (if b then 0x01uy else 0x00uy)
+    | ILFieldInit.Bool b -> bb.EmitByte (if b then 0x01uy else 0x00uy)
     | ILFieldInit.Char x -> bb.EmitUInt16 x
-    | ILFieldInit.Int8 x -> bb.EmitByte (byte  x)
+    | ILFieldInit.Int8 x -> bb.EmitByte (byte x)
     | ILFieldInit.Int16 x -> bb.EmitUInt16 (uint16 x)
     | ILFieldInit.Int32 x -> bb.EmitInt32 x
     | ILFieldInit.Int64 x -> bb.EmitInt64 x
@@ -1050,7 +1050,7 @@ and GetFieldInit (bb: ByteBuffer) x =
     | ILFieldInit.UInt64 x -> bb.EmitInt64 (int64 x)
     | ILFieldInit.Single x -> bb.EmitInt32 (bitsOfSingle x)
     | ILFieldInit.Double x -> bb.EmitInt64 (bitsOfDouble x)
-    | ILFieldInit.Null  -> bb.EmitInt32 0
+    | ILFieldInit.Null -> bb.EmitInt32 0
 
 and GetFieldInitFlags i = 
     UShort 
@@ -1078,20 +1078,20 @@ and GetFieldInitFlags i =
 let GetMemberAccessFlags access = 
     match access with
     | ILMemberAccess.Public -> 0x00000006
-    | ILMemberAccess.Private  -> 0x00000001
-    | ILMemberAccess.Family  -> 0x00000004
+    | ILMemberAccess.Private -> 0x00000001
+    | ILMemberAccess.Family -> 0x00000004
     | ILMemberAccess.CompilerControlled -> 0x00000000
     | ILMemberAccess.FamilyAndAssembly -> 0x00000002
     | ILMemberAccess.FamilyOrAssembly -> 0x00000005
     | ILMemberAccess.Assembly -> 0x00000003
 
-let GetTypeAccessFlags  access = 
+let GetTypeAccessFlags access = 
     match access with 
     | ILTypeDefAccess.Public -> 0x00000001
-    | ILTypeDefAccess.Private  -> 0x00000000
+    | ILTypeDefAccess.Private -> 0x00000000
     | ILTypeDefAccess.Nested ILMemberAccess.Public -> 0x00000002
-    | ILTypeDefAccess.Nested ILMemberAccess.Private  -> 0x00000003
-    | ILTypeDefAccess.Nested ILMemberAccess.Family  -> 0x00000004
+    | ILTypeDefAccess.Nested ILMemberAccess.Private -> 0x00000003
+    | ILTypeDefAccess.Nested ILMemberAccess.Family -> 0x00000004
     | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> 0x00000006
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
@@ -1120,12 +1120,12 @@ and GetTypeOptionAsTypeDefOrRef cenv env tyOpt =
 
 and GetTypeDefAsPropertyMapRow cenv tidx = 
     UnsharedRow
-        [| SimpleIndex (TableNames.TypeDef,  tidx)
+        [| SimpleIndex (TableNames.TypeDef, tidx)
            SimpleIndex (TableNames.Property, cenv.propertyDefs.Count + 1) |]  
 
 and GetTypeDefAsEventMapRow cenv tidx = 
     UnsharedRow
-        [| SimpleIndex (TableNames.TypeDef,  tidx)
+        [| SimpleIndex (TableNames.TypeDef, tidx)
            SimpleIndex (TableNames.Event, cenv.eventDefs.Count + 1) |]  
     
 and GetKeyForFieldDef tidx (fd: ILFieldDef) = 
@@ -1143,16 +1143,16 @@ and GenMethodDefPass2 cenv tidx md =
          "method" 
          (fun (key: MethodDefKey) -> 
            dprintn "Duplicate in method table is:"
-           dprintn ("  Type index: "+string key.TypeIdx)
-           dprintn ("  Method name: "+key.Name)
-           dprintn ("  Method arity (num generic params): "+string key.GenericArity)
+           dprintn (" Type index: "+string key.TypeIdx)
+           dprintn (" Method name: "+key.Name)
+           dprintn (" Method arity (num generic params): "+string key.GenericArity)
            key.Name
          )
          (GetKeyForMethodDef tidx md) 
     
     cenv.methodDefIdxs.[md] <- idx
 
-and GetKeyForPropertyDef tidx (x: ILPropertyDef)  = 
+and GetKeyForPropertyDef tidx (x: ILPropertyDef) = 
     PropKey (tidx, x.Name, x.PropertyType, x.Args)
 
 and GenPropertyDefPass2 cenv tidx x = 
@@ -1220,14 +1220,14 @@ let FindMethodDefIdx cenv mdkey =
       let typeNameOfIdx i = 
         match 
            (cenv.typeDefs.dict 
-             |> Seq.fold (fun  sofar kvp -> 
+             |> Seq.fold (fun sofar kvp -> 
                 let tkey2 = kvp.Key 
                 let tidx2 = kvp.Value 
                 if i = tidx2 then 
                     if sofar = None then 
                         Some tkey2 
                     else failwith "multiple type names map to index" 
-                else sofar)  None) with 
+                else sofar) None) with 
           | Some x -> x
           | None -> raise MethodDefNotFound 
       let (TdKey (tenc, tname)) = typeNameOfIdx mdkey.TypeIdx
@@ -1270,7 +1270,7 @@ let GetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
         let mdkey = MethodDefKey (tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
         FindMethodDefIdx cenv mdkey
     with e ->
-        failwithf "Error in GetMethodRefAsMethodDefIdx for mref = %A, error: %s" (mref.Name, tref.Name)  e.Message
+        failwithf "Error in GetMethodRefAsMethodDefIdx for mref = %A, error: %s" (mref.Name, tref.Name) e.Message
 
 let rec MethodRefInfoAsMemberRefRow cenv env fenv (nm, ty, callconv, args, ret, varargs, genarity) =
     MemberRefRow(GetTypeAsMemberRefParent cenv env ty, 
@@ -1280,9 +1280,9 @@ let rec MethodRefInfoAsMemberRefRow cenv env fenv (nm, ty, callconv, args, ret, 
 and GetMethodRefInfoAsBlobIdx cenv env info = 
     GetBytesAsBlobIdx cenv (GetCallsigAsBytes cenv env info)
 
-let GetMethodRefInfoAsMemberRefIdx cenv env  ((_, ty, _, _, _, _, _) as minfo) = 
+let GetMethodRefInfoAsMemberRefIdx cenv env ((_, ty, _, _, _, _, _) as minfo) = 
     let fenv = envForMethodRef env ty
-    FindOrAddSharedRow cenv TableNames.MemberRef (MethodRefInfoAsMemberRefRow cenv env fenv  minfo)
+    FindOrAddSharedRow cenv TableNames.MemberRef (MethodRefInfoAsMemberRefRow cenv env fenv minfo)
 
 let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env ((nm, ty: ILType, cc, args, ret, varargs, genarity) as minfo) =
     if Option.isNone varargs && (isAlwaysMethodDef || isTypeLocal ty) then
@@ -1350,15 +1350,15 @@ and InfoOfMethodSpec (mspec: ILMethodSpec, varargs) =
 
 let rec GetOverridesSpecAsMemberRefIdx cenv env ospec = 
     let fenv = envForOverrideSpec ospec
-    let row = MethodRefInfoAsMemberRefRow cenv env fenv  (ospec.MethodRef.Name, ospec.DeclaringType, ospec.MethodRef.CallingConv, ospec.MethodRef.ArgTypes, ospec.MethodRef.ReturnType, None, ospec.MethodRef.GenericArity)
-    FindOrAddSharedRow cenv TableNames.MemberRef  row
+    let row = MethodRefInfoAsMemberRefRow cenv env fenv (ospec.MethodRef.Name, ospec.DeclaringType, ospec.MethodRef.CallingConv, ospec.MethodRef.ArgTypes, ospec.MethodRef.ReturnType, None, ospec.MethodRef.GenericArity)
+    FindOrAddSharedRow cenv TableNames.MemberRef row
      
 and GetOverridesSpecAsMethodDefOrRef cenv env (ospec: ILOverridesSpec) =
     let ty = ospec.DeclaringType
     if isTypeLocal ty then 
         if not ty.IsNominal then failwith "GetOverridesSpecAsMethodDefOrRef: unexpected local tref-ty" 
         try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv ospec.MethodRef)
-        with MethodDefNotFound ->  (mdor_MemberRef, GetOverridesSpecAsMemberRefIdx cenv env ospec) 
+        with MethodDefNotFound -> (mdor_MemberRef, GetOverridesSpecAsMemberRefIdx cenv env ospec) 
     else 
         (mdor_MemberRef, GetOverridesSpecAsMemberRefIdx cenv env ospec) 
 
@@ -1394,7 +1394,7 @@ and GetCustomAttrRow cenv hca (attr: ILAttribute) =
     for element in attr.Elements do
         match element with
         | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
-        | ILAttribElem.TypeRef (Some tref) -> GetTypeRefAsTypeRefIdx cenv tref  |> ignore
+        | ILAttribElem.TypeRef (Some tref) -> GetTypeRefAsTypeRefIdx cenv tref |> ignore
         | _ -> ()
 
     UnsharedRow
@@ -1426,7 +1426,7 @@ and GenSecurityDeclsPass3 cenv hds attrs =
     List.iter (GenSecurityDeclPass3 cenv hds) attrs 
 
 // -------------------------------------------------------------------- 
-// ILFieldSpec --> FieldRef  or ILFieldDef row
+// ILFieldSpec --> FieldRef or ILFieldDef row
 // -------------------------------------------------------------------- 
 
 let rec GetFieldSpecAsMemberRefRow cenv env fenv (fspec: ILFieldSpec) = 
@@ -1508,7 +1508,7 @@ type ExceptionClauseSpec = (int * int * int * int * ExceptionClauseKind)
 type CodeBuffer = 
 
     // -------------------------------------------------------------------- 
-    // Buffer to write results of emitting code into.  Also record:
+    // Buffer to write results of emitting code into. Also record:
     //   - branch sources (where fixups will occur)
     //   - possible branch destinations
     //   - locations of embedded handles into the string table
@@ -1535,7 +1535,7 @@ type CodeBuffer =
 
     member codebuf.EmitExceptionClause seh = codebuf.seh <- seh :: codebuf.seh
 
-    member codebuf.EmitSeqPoint cenv (m: ILSourceMarker)  = 
+    member codebuf.EmitSeqPoint cenv (m: ILSourceMarker) = 
         if cenv.generatePdb then 
           // table indexes are 1-based, document array indexes are 0-based 
           let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1  
@@ -1574,8 +1574,8 @@ type CodeBuffer =
 
 module Codebuf = 
      // -------------------------------------------------------------------- 
-     // Applying branch fixups.  Use short versions of instructions
-     // wherever possible.  Sadly we can only determine if we can use a short
+     // Applying branch fixups. Use short versions of instructions
+     // wherever possible. Sadly we can only determine if we can use a short
      // version after we've layed out the code for all other instructions.  
      // This in turn means that using a short version may change 
      // the various offsets into the code.
@@ -1596,7 +1596,7 @@ module Codebuf =
       let newCode = ByteBuffer.Create origCode.Length
 
       // Copy over all the code, working out whether the branches will be short 
-      // or long and adjusting the branch destinations.  Record an adjust function to adjust all the other 
+      // or long and adjusting the branch destinations. Record an adjust function to adjust all the other 
       // gumpf that refers to fixed offsets in the code stream. 
       let newCode, newReqdBrFixups, adjuster = 
           let remainingReqdFixups = ref orderedOrigReqdBrFixups
@@ -1630,7 +1630,7 @@ module Codebuf =
               origWhere := origEndOfNoBranchBlock
               newWhere := !newWhere + nobranch_len
                 
-              // Now do the branch instruction.  Decide whether the fixup will be short or long in the new code 
+              // Now do the branch instruction. Decide whether the fixup will be short or long in the new code 
               if doingLast then 
                   doneLast := true
               else 
@@ -1648,7 +1648,7 @@ module Codebuf =
                     match i, tgs with 
                     | (_, Some i_short), [tg] 
                         when
-                           // Use the original offsets to compute if the branch is small or large.  This is 
+                           // Use the original offsets to compute if the branch is small or large. This is 
                            // a safe approximation because code only gets smaller. 
                            (let origDest =
                                 match origAvailBrFixups.TryGetValue tg with
@@ -1687,7 +1687,7 @@ module Codebuf =
                   
                   if !origWhere <> origEndOfInstr then dprintn "mismatch between origWhere and origEndOfInstr"
 
-          let adjuster  = 
+          let adjuster = 
             let arr = Array.ofList (List.rev !adjustments)
             fun addr -> 
               let i = 
@@ -1706,7 +1706,7 @@ module Codebuf =
       let newAvailBrFixups = 
           let tab = Dictionary<_, _>(10, HashIdentity.Structural) 
           for (KeyValue(tglab, origBrDest)) in origAvailBrFixups do 
-              tab.[tglab]  <- adjuster origBrDest
+              tab.[tglab] <- adjuster origBrDest
           tab
       let newReqdStringFixups = List.map (fun (origFixupLoc, stok) -> adjuster origFixupLoc, stok) origReqdStringFixups
       let newSeqPoints = Array.map (fun (sp: PdbSequencePoint) -> {sp with Offset=adjuster sp.Offset}) origSeqPoints
@@ -1773,7 +1773,7 @@ module Codebuf =
     let emitInstrCode (codebuf: CodeBuffer) i = 
         if i > 0xFF then 
             assert (i >>> 8 = 0xFE) 
-            codebuf.EmitByte ((i >>> 8)  &&& 0xFF) 
+            codebuf.EmitByte ((i >>> 8) &&& 0xFF) 
             codebuf.EmitByte (i &&& 0xFF) 
         else 
             codebuf.EmitByte i
@@ -1835,49 +1835,49 @@ module Codebuf =
         match instr with
         | si when isNoArgInstr si ->
              emitInstrCode codebuf (encodingsOfNoArgInstr si)
-        | I_brcmp (cmp, tg1)  -> 
+        | I_brcmp (cmp, tg1) -> 
             codebuf.RecordReqdBrFixup ((Lazy.force ILCmpInstrMap).[cmp], Some (Lazy.force ILCmpInstrRevMap).[cmp]) tg1
         | I_br tg -> codebuf.RecordReqdBrFixup (i_br, Some i_br_s) tg
-        | I_seqpoint s ->   codebuf.EmitSeqPoint cenv s
+        | I_seqpoint s -> codebuf.EmitSeqPoint cenv s
         | I_leave tg -> codebuf.RecordReqdBrFixup (i_leave, Some i_leave_s) tg
-        | I_call  (tl, mspec, varargs)      -> 
+        | I_call (tl, mspec, varargs) -> 
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_call (mspec, varargs)
             //emitAfterTailcall codebuf tl
-        | I_callvirt      (tl, mspec, varargs)      -> 
+        | I_callvirt (tl, mspec, varargs) -> 
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
             //emitAfterTailcall codebuf tl
-        | I_callconstraint        (tl, ty, mspec, varargs)   -> 
+        | I_callconstraint (tl, ty, mspec, varargs) -> 
             emitTailness cenv codebuf tl
             emitConstrained cenv codebuf env ty
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
             //emitAfterTailcall codebuf tl
-        | I_newobj        (mspec, varargs) -> 
+        | I_newobj (mspec, varargs) -> 
             emitMethodSpecInstr cenv codebuf env i_newobj (mspec, varargs)
-        | I_ldftn mspec   -> 
+        | I_ldftn mspec -> 
             emitMethodSpecInstr cenv codebuf env i_ldftn (mspec, None)
-        | I_ldvirtftn     mspec   -> 
+        | I_ldvirtftn mspec -> 
             emitMethodSpecInstr cenv codebuf env i_ldvirtftn (mspec, None)
 
-        | I_calli (tl, callsig, varargs)    -> 
+        | I_calli (tl, callsig, varargs) -> 
             emitTailness cenv codebuf tl
             emitInstrCode codebuf i_calli 
             codebuf.EmitUncodedToken (getUncodedToken TableNames.StandAloneSig (GetCallsigAsStandAloneSigIdx cenv env (callsig, varargs)))
             //emitAfterTailcall codebuf tl
 
-        | I_ldarg u16 ->  emitShortUInt16Instr codebuf (i_ldarg_s, i_ldarg) u16 
-        | I_starg u16 ->  emitShortUInt16Instr codebuf (i_starg_s, i_starg) u16 
-        | I_ldarga u16 ->  emitShortUInt16Instr codebuf (i_ldarga_s, i_ldarga) u16 
-        | I_ldloc u16 ->  emitShortUInt16Instr codebuf (i_ldloc_s, i_ldloc) u16 
-        | I_stloc u16 ->  emitShortUInt16Instr codebuf (i_stloc_s, i_stloc) u16 
-        | I_ldloca u16 ->  emitShortUInt16Instr codebuf (i_ldloca_s, i_ldloca) u16 
+        | I_ldarg u16 -> emitShortUInt16Instr codebuf (i_ldarg_s, i_ldarg) u16 
+        | I_starg u16 -> emitShortUInt16Instr codebuf (i_starg_s, i_starg) u16 
+        | I_ldarga u16 -> emitShortUInt16Instr codebuf (i_ldarga_s, i_ldarga) u16 
+        | I_ldloc u16 -> emitShortUInt16Instr codebuf (i_ldloc_s, i_ldloc) u16 
+        | I_stloc u16 -> emitShortUInt16Instr codebuf (i_stloc_s, i_stloc) u16 
+        | I_ldloca u16 -> emitShortUInt16Instr codebuf (i_ldloca_s, i_ldloca) u16 
 
-        | I_cpblk (al, vol)        -> 
+        | I_cpblk (al, vol) -> 
             emitAlignment codebuf al 
             emitVolatility codebuf vol
             emitInstrCode codebuf i_cpblk
-        | I_initblk       (al, vol)        -> 
+        | I_initblk (al, vol) -> 
             emitAlignment codebuf al 
             emitVolatility codebuf vol
             emitInstrCode codebuf i_initblk
@@ -1894,90 +1894,90 @@ module Codebuf =
             emitInstrCode codebuf i_ldc_r8 
             codebuf.EmitInt64 (bitsOfDouble x)
 
-        | I_ldind (al, vol, dt)     -> 
+        | I_ldind (al, vol, dt) -> 
             emitAlignment codebuf al 
             emitVolatility codebuf vol
             emitInstrCode codebuf 
               (match dt with 
               | DT_I -> i_ldind_i
-              | DT_I1  -> i_ldind_i1     
-              | DT_I2  -> i_ldind_i2     
-              | DT_I4  -> i_ldind_i4     
-              | DT_U1  -> i_ldind_u1     
-              | DT_U2  -> i_ldind_u2     
-              | DT_U4  -> i_ldind_u4     
-              | DT_I8  -> i_ldind_i8     
-              | DT_R4  -> i_ldind_r4     
-              | DT_R8  -> i_ldind_r8     
-              | DT_REF  -> i_ldind_ref
+              | DT_I1 -> i_ldind_i1     
+              | DT_I2 -> i_ldind_i2     
+              | DT_I4 -> i_ldind_i4     
+              | DT_U1 -> i_ldind_u1     
+              | DT_U2 -> i_ldind_u2     
+              | DT_U4 -> i_ldind_u4     
+              | DT_I8 -> i_ldind_i8     
+              | DT_R4 -> i_ldind_r4     
+              | DT_R8 -> i_ldind_r8     
+              | DT_REF -> i_ldind_ref
               | _ -> failwith "ldind")
 
-        | I_stelem dt     -> 
+        | I_stelem dt -> 
             emitInstrCode codebuf 
               (match dt with 
               | DT_I | DT_U -> i_stelem_i
-              | DT_U1 | DT_I1  -> i_stelem_i1     
-              | DT_I2 | DT_U2  -> i_stelem_i2     
-              | DT_I4 | DT_U4  -> i_stelem_i4     
-              | DT_I8 | DT_U8  -> i_stelem_i8     
-              | DT_R4  -> i_stelem_r4     
-              | DT_R8  -> i_stelem_r8     
-              | DT_REF  -> i_stelem_ref
+              | DT_U1 | DT_I1 -> i_stelem_i1     
+              | DT_I2 | DT_U2 -> i_stelem_i2     
+              | DT_I4 | DT_U4 -> i_stelem_i4     
+              | DT_I8 | DT_U8 -> i_stelem_i8     
+              | DT_R4 -> i_stelem_r4     
+              | DT_R8 -> i_stelem_r8     
+              | DT_REF -> i_stelem_ref
               | _ -> failwith "stelem")
 
-        | I_ldelem dt     -> 
+        | I_ldelem dt -> 
             emitInstrCode codebuf 
               (match dt with 
               | DT_I -> i_ldelem_i
-              | DT_I1  -> i_ldelem_i1     
-              | DT_I2  -> i_ldelem_i2     
-              | DT_I4  -> i_ldelem_i4     
-              | DT_I8  -> i_ldelem_i8     
-              | DT_U1  -> i_ldelem_u1     
-              | DT_U2  -> i_ldelem_u2     
-              | DT_U4  -> i_ldelem_u4     
-              | DT_R4  -> i_ldelem_r4     
-              | DT_R8  -> i_ldelem_r8     
-              | DT_REF  -> i_ldelem_ref
+              | DT_I1 -> i_ldelem_i1     
+              | DT_I2 -> i_ldelem_i2     
+              | DT_I4 -> i_ldelem_i4     
+              | DT_I8 -> i_ldelem_i8     
+              | DT_U1 -> i_ldelem_u1     
+              | DT_U2 -> i_ldelem_u2     
+              | DT_U4 -> i_ldelem_u4     
+              | DT_R4 -> i_ldelem_r4     
+              | DT_R8 -> i_ldelem_r8     
+              | DT_REF -> i_ldelem_ref
               | _ -> failwith "ldelem")
 
-        | I_stind (al, vol, dt)     -> 
+        | I_stind (al, vol, dt) -> 
             emitAlignment codebuf al 
             emitVolatility codebuf vol
             emitInstrCode codebuf 
               (match dt with 
               | DT_U | DT_I -> i_stind_i
-              | DT_U1 | DT_I1  -> i_stind_i1     
-              | DT_U2 | DT_I2  -> i_stind_i2     
-              | DT_U4 | DT_I4  -> i_stind_i4     
-              | DT_U8 | DT_I8  -> i_stind_i8     
-              | DT_R4  -> i_stind_r4     
-              | DT_R8  -> i_stind_r8     
-              | DT_REF  -> i_stind_ref
+              | DT_U1 | DT_I1 -> i_stind_i1     
+              | DT_U2 | DT_I2 -> i_stind_i2     
+              | DT_U4 | DT_I4 -> i_stind_i4     
+              | DT_U8 | DT_I8 -> i_stind_i8     
+              | DT_R4 -> i_stind_r4     
+              | DT_R8 -> i_stind_r8     
+              | DT_REF -> i_stind_ref
               | _ -> failwith "stelem")
 
-        | I_switch labs    ->  codebuf.RecordReqdBrFixups (i_switch, None) labs
+        | I_switch labs -> codebuf.RecordReqdBrFixups (i_switch, None) labs
 
-        | I_ldfld (al, vol, fspec)  -> 
+        | I_ldfld (al, vol, fspec) -> 
             emitAlignment codebuf al 
             emitVolatility codebuf vol
             emitFieldSpecInstr cenv codebuf env i_ldfld fspec
-        | I_ldflda        fspec   -> 
+        | I_ldflda fspec -> 
             emitFieldSpecInstr cenv codebuf env i_ldflda fspec
-        | I_ldsfld        (vol, fspec)     -> 
+        | I_ldsfld (vol, fspec) -> 
             emitVolatility codebuf vol
             emitFieldSpecInstr cenv codebuf env i_ldsfld fspec
-        | I_ldsflda       fspec   -> 
+        | I_ldsflda fspec -> 
             emitFieldSpecInstr cenv codebuf env i_ldsflda fspec
-        | I_stfld (al, vol, fspec)  -> 
+        | I_stfld (al, vol, fspec) -> 
             emitAlignment codebuf al 
             emitVolatility codebuf vol
             emitFieldSpecInstr cenv codebuf env i_stfld fspec
-        | I_stsfld        (vol, fspec)     -> 
+        | I_stsfld (vol, fspec) -> 
             emitVolatility codebuf vol
             emitFieldSpecInstr cenv codebuf env i_stsfld fspec
 
-        | I_ldtoken  tok  -> 
+        | I_ldtoken tok -> 
             emitInstrCode codebuf i_ldtoken
             codebuf.EmitUncodedToken 
               (match tok with 
@@ -1996,14 +1996,14 @@ module Codebuf =
               | ILToken.ILField fspec ->
                   match GetFieldSpecAsFieldDefOrRef cenv env fspec with 
                   | (true, idx) -> getUncodedToken TableNames.Field idx
-                  | (false, idx)  -> getUncodedToken TableNames.MemberRef idx)
-        | I_ldstr s       -> 
+                  | (false, idx) -> getUncodedToken TableNames.MemberRef idx)
+        | I_ldstr s -> 
             emitInstrCode codebuf i_ldstr
             codebuf.RecordReqdStringFixup (GetUserStringHeapIdx cenv s)
 
-        | I_box  ty       -> emitTypeInstr cenv codebuf env i_box ty
-        | I_unbox  ty     -> emitTypeInstr cenv codebuf env i_unbox ty
-        | I_unbox_any  ty -> emitTypeInstr cenv codebuf env i_unbox_any ty 
+        | I_box ty -> emitTypeInstr cenv codebuf env i_box ty
+        | I_unbox ty -> emitTypeInstr cenv codebuf env i_unbox ty
+        | I_unbox_any ty -> emitTypeInstr cenv codebuf env i_unbox_any ty 
 
         | I_newarr (shape, ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
@@ -2016,7 +2016,7 @@ module Codebuf =
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_stelem_any ty  
             else 
-                let args = List.init (shape.Rank+1) (fun i -> if i < shape.Rank then  cenv.ilg.typ_Int32 else ty)
+                let args = List.init (shape.Rank+1) (fun i -> if i < shape.Rank then cenv.ilg.typ_Int32 else ty)
                 emitMethodSpecInfoInstr cenv codebuf env i_call ("Set", mkILArrTy(ty, shape), ILCallingConv.Instance, args, ILType.Void, None, [])
 
         | I_ldelem_any (shape, ty) -> 
@@ -2026,7 +2026,7 @@ module Codebuf =
                 let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
                 emitMethodSpecInfoInstr cenv codebuf env i_call ("Get", mkILArrTy(ty, shape), ILCallingConv.Instance, args, ty, None, [])
 
-        | I_ldelema  (ro, _isNativePtr, shape, ty) -> 
+        | I_ldelema (ro, _isNativePtr, shape, ty) -> 
             if (ro = ReadonlyAddress) then
                 emitInstrCode codebuf i_readonly
             if (shape = ILArrayShape.SingleDimensional) then   
@@ -2035,26 +2035,26 @@ module Codebuf =
                 let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
                 emitMethodSpecInfoInstr cenv codebuf env i_call ("Address", mkILArrTy(ty, shape), ILCallingConv.Instance, args, ILType.Byref ty, None, [])
 
-        | I_castclass  ty -> emitTypeInstr cenv codebuf env i_castclass ty
-        | I_isinst  ty -> emitTypeInstr cenv codebuf env i_isinst ty
-        | I_refanyval  ty -> emitTypeInstr cenv codebuf env i_refanyval ty
-        | I_mkrefany  ty -> emitTypeInstr cenv codebuf env i_mkrefany ty
-        | I_initobj  ty -> emitTypeInstr cenv codebuf env i_initobj ty
-        | I_ldobj  (al, vol, ty) -> 
+        | I_castclass ty -> emitTypeInstr cenv codebuf env i_castclass ty
+        | I_isinst ty -> emitTypeInstr cenv codebuf env i_isinst ty
+        | I_refanyval ty -> emitTypeInstr cenv codebuf env i_refanyval ty
+        | I_mkrefany ty -> emitTypeInstr cenv codebuf env i_mkrefany ty
+        | I_initobj ty -> emitTypeInstr cenv codebuf env i_initobj ty
+        | I_ldobj (al, vol, ty) -> 
             emitAlignment codebuf al 
             emitVolatility codebuf vol
             emitTypeInstr cenv codebuf env i_ldobj ty
-        | I_stobj  (al, vol, ty) -> 
+        | I_stobj (al, vol, ty) -> 
             emitAlignment codebuf al 
             emitVolatility codebuf vol
             emitTypeInstr cenv codebuf env i_stobj ty
-        | I_cpobj  ty -> emitTypeInstr cenv codebuf env i_cpobj ty
-        | I_sizeof  ty -> emitTypeInstr cenv codebuf env i_sizeof ty
-        | EI_ldlen_multi (_, m)    -> 
+        | I_cpobj ty -> emitTypeInstr cenv codebuf env i_cpobj ty
+        | I_sizeof ty -> emitTypeInstr cenv codebuf env i_sizeof ty
+        | EI_ldlen_multi (_, m) -> 
             emitShortInt32Instr codebuf (i_ldc_i4_s, i_ldc_i4) m
             emitInstr cenv codebuf env (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [(cenv.ilg.typ_Int32)], (cenv.ilg.typ_Int32))))
 
-        |  _ -> failwith "an IL instruction cannot be emitted"
+        | _ -> failwith "an IL instruction cannot be emitted"
 
 
     let mkScopeNode cenv (localSigs: _[]) (startOffset, endOffset, ls: ILLocalDebugMapping list, childScopes) = 
@@ -2073,7 +2073,7 @@ module Codebuf =
             
 
     // Used to put local debug scopes and exception handlers into a tree form
-    let rangeInsideRange (start_pc1, end_pc1) (start_pc2, end_pc2)  =
+    let rangeInsideRange (start_pc1, end_pc1) (start_pc2, end_pc2) =
       (start_pc1: int) >= start_pc2 && start_pc1 < end_pc2 &&
       (end_pc1: int) > start_pc2 && end_pc1 <= end_pc2 
 
@@ -2198,7 +2198,7 @@ module Codebuf =
 
     let EmitTopCode cenv localSigs env nm code = 
         let codebuf = CodeBuffer.Create nm
-        let origScopes =  emitCode cenv localSigs codebuf env code
+        let origScopes = emitCode cenv localSigs codebuf env code
         let origCode = codebuf.code.Close()
         let origExnClauses = List.rev codebuf.seh
         let origReqdStringFixups = codebuf.reqdStringFixupsInMethod
@@ -2243,7 +2243,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
     if isNil il.Locals && il.MaxStack <= 8 && isNil seh && codeSize < 64 then
         // Use Tiny format 
         let alignedCodeSize = align 4 (codeSize + 1)
-        let codePadding =  (alignedCodeSize - (codeSize + 1))
+        let codePadding = (alignedCodeSize - (codeSize + 1))
         let requiredStringFixups' = (1, requiredStringFixups)
         methbuf.EmitByte (byte codeSize <<< 2 ||| e_CorILMethod_TinyFormat)
         methbuf.EmitBytes code
@@ -2262,7 +2262,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
               (FindOrAddSharedRow cenv TableNames.StandAloneSig (GetLocalSigAsStandAloneSigIdx cenv env il.Locals))
 
         let alignedCodeSize = align 0x4 codeSize
-        let codePadding =  (alignedCodeSize - codeSize)
+        let codePadding = (alignedCodeSize - codeSize)
         
         methbuf.EmitByte flags 
         methbuf.EmitByte 0x30uy // last four bits record size of fat header in 4 byte chunks - this is always 12 bytes = 3 four word chunks 
@@ -2378,7 +2378,7 @@ and GenFieldDefPass3 cenv env fd =
 
 let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp = 
     let flags = 
-        (match  gp.Variance with 
+        (match gp.Variance with 
            | NonVariant -> 0x0000
            | CoVariant -> 0x0001
            | ContraVariant -> 0x0002) |||
@@ -2426,7 +2426,7 @@ and GenGenericParamPass4 cenv env idx owner gp =
 // param and return --> Param Row
 // -------------------------------------------------------------------- 
 
-let rec GetParamAsParamRow cenv _env seq (param: ILParameter)  = 
+let rec GetParamAsParamRow cenv _env seq (param: ILParameter) = 
     let flags = 
         (if param.IsIn then 0x0001 else 0x0000) |||
         (if param.IsOut then 0x0002 else 0x0000) |||
@@ -2519,7 +2519,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 RootScope = Some rootScope
                 Range=  
                   match ilmbody.SourceMarker with 
-                  | Some m  when cenv.generatePdb -> 
+                  | Some m when cenv.generatePdb -> 
                       // table indexes are 1-based, document array indexes are 0-based 
                       let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1 
 
@@ -2548,10 +2548,10 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
           0x0000
       | MethodBody.Native -> 
           failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"
-      | _  -> 0x0000)
+      | _ -> 0x0000)
 
     UnsharedRow 
-       [| ULong  codeAddr  
+       [| ULong codeAddr  
           UShort (uint16 implflags) 
           UShort (uint16 flags) 
           StringE (GetStringHeapIdx cenv md.Name) 
@@ -2580,27 +2580,27 @@ let GenMethodDefPass3 cenv env (md: ILMethodDef) =
     | MethodBody.PInvoke attr ->
         let flags = 
           begin match attr.CallingConv with 
-          | PInvokeCallingConvention.None ->     0x0000
-          | PInvokeCallingConvention.Cdecl ->    0x0200
-          | PInvokeCallingConvention.Stdcall ->  0x0300
+          | PInvokeCallingConvention.None -> 0x0000
+          | PInvokeCallingConvention.Cdecl -> 0x0200
+          | PInvokeCallingConvention.Stdcall -> 0x0300
           | PInvokeCallingConvention.Thiscall -> 0x0400
           | PInvokeCallingConvention.Fastcall -> 0x0500
-          | PInvokeCallingConvention.WinApi ->   0x0100
+          | PInvokeCallingConvention.WinApi -> 0x0100
           end |||
           begin match attr.CharEncoding with 
-          | PInvokeCharEncoding.None ->    0x0000
-          | PInvokeCharEncoding.Ansi ->    0x0002
+          | PInvokeCharEncoding.None -> 0x0000
+          | PInvokeCharEncoding.Ansi -> 0x0002
           | PInvokeCharEncoding.Unicode -> 0x0004
-          | PInvokeCharEncoding.Auto ->    0x0006
+          | PInvokeCharEncoding.Auto -> 0x0006
           end |||
           begin match attr.CharBestFit with 
           | PInvokeCharBestFit.UseAssembly -> 0x0000
-          | PInvokeCharBestFit.Enabled ->  0x0010
+          | PInvokeCharBestFit.Enabled -> 0x0010
           | PInvokeCharBestFit.Disabled -> 0x0020
           end |||
           begin match attr.ThrowOnUnmappableChar with 
           | PInvokeThrowOnUnmappableChar.UseAssembly -> 0x0000
-          | PInvokeThrowOnUnmappableChar.Enabled ->  0x1000
+          | PInvokeThrowOnUnmappableChar.Enabled -> 0x1000
           | PInvokeThrowOnUnmappableChar.Disabled -> 0x2000
           end |||
           (if attr.NoMangle then 0x0001 else 0x0000) |||
@@ -2613,7 +2613,7 @@ let GenMethodDefPass3 cenv env (md: ILMethodDef) =
                   SimpleIndex (TableNames.ModuleRef, GetModuleRefAsIdx cenv attr.Where) |]) |> ignore
     | _ -> ()
 
-let GenMethodDefPass4 cenv env  md = 
+let GenMethodDefPass4 cenv env md = 
     let midx = GetMethodDefIdx cenv md
     List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
 
@@ -2631,7 +2631,7 @@ let rec GetPropertySigAsBlobIdx cenv env prop =
 
 and GetPropertySigAsBytes cenv env (prop: ILPropertyDef) = 
     emitBytesViaBuffer (fun bb -> 
-        let b =  ((hasthisToByte prop.CallingConv) ||| e_IMAGE_CEE_CS_CALLCONV_PROPERTY)
+        let b = ((hasthisToByte prop.CallingConv) ||| e_IMAGE_CEE_CS_CALLCONV_PROPERTY)
         bb.EmitByte b
         bb.EmitZ32 prop.Args.Length
         EmitType cenv env bb prop.PropertyType
@@ -2693,16 +2693,16 @@ and GenEventPass3 cenv env (md: ILEventDef) =
 let rec GetResourceAsManifestResourceRow cenv r = 
     let data, impl = 
         let embedManagedResources (bytes: byte[]) = 
-            // Embedded managed resources must be word-aligned.  However resource format is  
-            // not specified in ECMA.  Some mscorlib resources appear to be non-aligned - it seems it doesn't matter..  
+            // Embedded managed resources must be word-aligned. However resource format is  
+            // not specified in ECMA. Some mscorlib resources appear to be non-aligned - it seems it doesn't matter..  
             let offset = cenv.resources.Position 
-            let alignedOffset =  (align 0x8 offset) 
+            let alignedOffset = (align 0x8 offset) 
             let pad = alignedOffset - offset 
             let resourceSize = bytes.Length 
             cenv.resources.EmitPadding pad 
             cenv.resources.EmitInt32 resourceSize 
             cenv.resources.EmitBytes bytes 
-            Data (alignedOffset, true),  (i_File, 0)  
+            Data (alignedOffset, true), (i_File, 0)  
 
         match r.Location with 
         | ILResourceLocation.LocalIn _ -> embedManagedResources (r.GetBytes())
@@ -2732,7 +2732,7 @@ let rec GenTypeDefPass3 enc cenv (td: ILTypeDef) =
       td.Events.AsList |> List.iter (GenEventPass3 cenv env)
       td.Fields.AsList |> List.iter (GenFieldDefPass3 cenv env)
       td.Methods |> Seq.iter (GenMethodDefPass3 cenv env)
-      td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env  td.GenericParams.Length tidx)
+      td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env td.GenericParams.Length tidx)
     // ClassLayout entry if needed 
       match td.Layout with 
       | ILTypeDefLayout.Auto -> ()
@@ -2749,7 +2749,7 @@ let rec GenTypeDefPass3 enc cenv (td: ILTypeDef) =
       td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef, tidx) gp)  
       td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
-      failwith  ("Error in pass3 for type "+td.Name+", error: "+e.Message)
+      failwith ("Error in pass3 for type "+td.Name+", error: "+e.Message)
       reraise()
       raise e
 
@@ -2782,7 +2782,7 @@ let timestamp = absilWriteGetTimeStamp ()
 // -------------------------------------------------------------------- 
 
 let rec GenNestedExportedTypePass3 cenv cidx (ce: ILNestedExportedType) = 
-    let flags =  GetMemberAccessFlags ce.Access
+    let flags = GetMemberAccessFlags ce.Access
     let nidx = 
       AddUnsharedRow cenv TableNames.ExportedType 
         (UnsharedRow 
@@ -2822,22 +2822,22 @@ and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) =
 and GetManifsetAsAssemblyRow cenv m = 
     UnsharedRow 
         [|ULong m.AuxModuleHashAlgorithm
-          UShort (match m.Version with None -> 0us | Some (x, _, _, _) -> x)
-          UShort (match m.Version with None -> 0us | Some (_, y, _, _) -> y)
-          UShort (match m.Version with None -> 0us | Some (_, _, z, _) -> z)
-          UShort (match m.Version with None -> 0us | Some (_, _, _, w) -> w)
+          UShort (match m.Version with None -> 0us | Some (version) -> version.Major)
+          UShort (match m.Version with None -> 0us | Some (version) -> version.Minor)
+          UShort (match m.Version with None -> 0us | Some (version) -> version.Build)
+          UShort (match m.Version with None -> 0us | Some (version) -> version.Revision)
           ULong 
             ( (match m.AssemblyLongevity with 
-              | ILAssemblyLongevity.Unspecified ->       0x0000
-              | ILAssemblyLongevity.Library ->           0x0002 
+              | ILAssemblyLongevity.Unspecified -> 0x0000
+              | ILAssemblyLongevity.Library -> 0x0002 
               | ILAssemblyLongevity.PlatformAppDomain -> 0x0004
-              | ILAssemblyLongevity.PlatformProcess ->   0x0006
-              | ILAssemblyLongevity.PlatformSystem ->    0x0008) |||
+              | ILAssemblyLongevity.PlatformProcess -> 0x0006
+              | ILAssemblyLongevity.PlatformSystem -> 0x0008) |||
               (if m.Retargetable then 0x100 else 0x0) |||
               // Setting these causes peverify errors. Hence both ilread and ilwrite ignore them and refuse to set them.
               // Any debugging customattributes will automatically propagate
               // REVIEW: No longer appears to be the case
-              (if m.JitTracking then                     0x8000 else 0x0) ||| 
+              (if m.JitTracking then 0x8000 else 0x0) ||| 
               (match m.PublicKey with None -> 0x0000 | Some _ -> 0x0001) ||| 0x0000)
           (match m.PublicKey with None -> Blob 0 | Some x -> Blob (GetBytesAsBlobIdx cenv x))
           StringE (GetStringHeapIdx cenv m.Name)
@@ -2863,7 +2863,7 @@ and newGuid (modul: ILModuleDef) =
 
 and deterministicGuid (modul: ILModuleDef) =
     let n = 16909060
-    let m2 = Seq.sum (Seq.mapi (fun i  x -> i + int x) modul.Name) // use a stable hash
+    let m2 = Seq.sum (Seq.mapi (fun i x -> i + int x) modul.Name) // use a stable hash
     [| b0 n; b1 n; b2 n; b3 n; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
 and GetModuleAsRow (cenv: cenv) (modul: ILModuleDef) = 
@@ -2911,13 +2911,13 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenCustomAttrsPass3Or4 cenv (hca_Module, midx) modul.CustomAttrs
     // GenericParam is the only sorted table indexed by Columns in other tables (GenericParamConstraint\CustomAttributes). 
     // Hence we need to sort it before we emit any entries in GenericParamConstraint\CustomAttributes that are attached to generic params. 
-    // Note this mutates the rows in a table.  'SetRowsOfTable' clears 
+    // Note this mutates the rows in a table. 'SetRowsOfTable' clears 
     // the key --> index map since it is no longer valid 
     cenv.GetTable(TableNames.GenericParam).SetRowsOfSharedTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).GenericRowsOfTable))
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
+let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes) (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
     let isDll = m.IsDLL
 
     let cenv = 
@@ -2969,9 +2969,9 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           normalizeAssemblyRefs = normalizeAssemblyRefs }
 
     // Now the main compilation step 
-    GenModule cenv  m
+    GenModule cenv m
 
-    // .exe files have a .entrypoint instruction.  Do not write it to the entrypoint when writing  dll.
+    // .exe files have a .entrypoint instruction. Do not write it to the entrypoint when writing dll.
     let entryPointToken = 
         match cenv.entrypoint with 
         | Some (epHere, tok) -> 
@@ -2993,12 +2993,12 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
         let enc = tds |> List.map (fun td -> td.Name)
         GetIdxForTypeDef cenv (TdKey(enc, td.Name))
 
-    let strings =     Array.map Bytes.stringAsUtf8NullTerminated cenv.strings.EntriesAsArray
+    let strings = Array.map Bytes.stringAsUtf8NullTerminated cenv.strings.EntriesAsArray
     let userStrings = cenv.userStrings.EntriesAsArray |> Array.map System.Text.Encoding.Unicode.GetBytes
-    let blobs =       cenv.blobs.EntriesAsArray
-    let guids =       cenv.guids.EntriesAsArray
-    let tables =      cenv.tables 
-    let code =        cenv.GetCode() 
+    let blobs = cenv.blobs.EntriesAsArray
+    let guids = cenv.guids.EntriesAsArray
+    let tables = cenv.tables 
+    let code = cenv.GetCode() 
     // turn idx tbls into token maps 
     let mappings =
      { TypeDefTokenMap = (fun t ->
@@ -3026,7 +3026,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
 // TABLES+BLOBS --> PHYSICAL METADATA+BLOBS
 //=====================================================================
 let chunk sz next = ({addr=next; size=sz}, next + sz) 
-let nochunk next = ({addr= 0x0;size= 0x0; } , next)
+let nochunk next = ({addr= 0x0;size= 0x0; }, next)
 
 let count f arr = 
     Array.fold (fun x y -> x + f y) 0x0 arr 
@@ -3091,9 +3091,8 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let (mdtableVersionMajor, mdtableVersionMinor) = metadataSchemaVersionSupportedByCLRVersion desiredMetadataVersion
 
-    let version = 
-      let (a, b, c, _) = desiredMetadataVersion
-      System.Text.Encoding.UTF8.GetBytes (sprintf "v%d.%d.%d" a b c)
+    let version =
+      System.Text.Encoding.UTF8.GetBytes (sprintf "v%d.%d.%d" desiredMetadataVersion.Major desiredMetadataVersion.Minor desiredMetadataVersion.Build)
 
 
     let paddedVersionLength = align 0x4 (Array.length version)
@@ -3101,13 +3100,13 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     // Most addresses after this point are measured from the MD root 
     // Switch to md-rooted addresses 
     let next = metadataHeaderStartChunk.size
-    let _metadataHeaderVersionChunk, next   = chunk paddedVersionLength next
-    let _metadataHeaderEndChunk, next       = chunk 0x04 next
-    let _tablesStreamHeaderChunk, next      = chunk (0x08 + (align 4 ("#~".Length + 0x01))) next
-    let _stringsStreamHeaderChunk, next     = chunk (0x08 + (align 4 ("#Strings".Length + 0x01))) next
+    let _metadataHeaderVersionChunk, next = chunk paddedVersionLength next
+    let _metadataHeaderEndChunk, next = chunk 0x04 next
+    let _tablesStreamHeaderChunk, next = chunk (0x08 + (align 4 ("#~".Length + 0x01))) next
+    let _stringsStreamHeaderChunk, next = chunk (0x08 + (align 4 ("#Strings".Length + 0x01))) next
     let _userStringsStreamHeaderChunk, next = chunk (0x08 + (align 4 ("#US".Length + 0x01))) next
-    let _guidsStreamHeaderChunk, next       = chunk (0x08 + (align 4 ("#GUID".Length + 0x01))) next
-    let _blobsStreamHeaderChunk, next       = chunk (0x08 + (align 4 ("#Blob".Length + 0x01))) next
+    let _guidsStreamHeaderChunk, next = chunk (0x08 + (align 4 ("#GUID".Length + 0x01))) next
+    let _blobsStreamHeaderChunk, next = chunk (0x08 + (align 4 ("#Blob".Length + 0x01))) next
 
     let tablesStreamStart = next
 
@@ -3131,8 +3130,8 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     let (valid1, valid2), _ = 
        (((0, 0), 0), tables) ||> Array.fold (fun ((valid1, valid2) as valid, n) rows -> 
           let valid = 
-              if  rows.Count = 0 then valid else
-              ( (if n < 32 then  valid1 ||| (1 <<< n     ) else valid1), 
+              if rows.Count = 0 then valid else
+              ( (if n < 32 then valid1 ||| (1 <<< n ) else valid1), 
                 (if n >= 32 then valid2 ||| (1 <<< (n-32)) else valid2) )
           (valid, n+1))
 
@@ -3141,7 +3140,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     let sorted1 = 0x3301fa00
     let sorted2 = 
       // If there are any generic parameters in the binary we're emitting then mark that 
-      // table as sorted, otherwise don't.  This maximizes the number of assemblies we emit 
+      // table as sorted, otherwise don't. This maximizes the number of assemblies we emit 
       // which have an ECMA-v.1. compliant set of sorted tables. 
       (if tableSize (TableNames.GenericParam) > 0 then 0x00000400 else 0x00000000) ||| 
       (if tableSize (TableNames.GenericParamConstraint) > 0 then 0x00001000 else 0x00000000) ||| 
@@ -3149,7 +3148,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     
     reportTime showTimes "Layout Header of Tables"
 
-    let guidAddress n =   (if n = 0 then 0 else (n - 1) * 0x10 + 0x01)
+    let guidAddress n = (if n = 0 then 0 else (n - 1) * 0x10 + 0x01)
 
     let stringAddressTable = 
         let tab = Array.create (strings.Length + 1) 0
@@ -3229,7 +3228,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
         let hcaBigness = 
             codedBigness 5 TableNames.Method ||
             codedBigness 5 TableNames.Field ||
-            codedBigness 5 TableNames.TypeRef  ||
+            codedBigness 5 TableNames.TypeRef ||
             codedBigness 5 TableNames.TypeDef ||
             codedBigness 5 TableNames.Param ||
             codedBigness 5 TableNames.InterfaceImpl ||
@@ -3245,7 +3244,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
             codedBigness 5 TableNames.AssemblyRef ||
             codedBigness 5 TableNames.File ||
             codedBigness 5 TableNames.ExportedType ||
-            codedBigness 5 TableNames.ManifestResource  ||
+            codedBigness 5 TableNames.ManifestResource ||
             codedBigness 5 TableNames.GenericParam ||
             codedBigness 5 TableNames.GenericParamConstraint ||
             codedBigness 5 TableNames.MethodSpec
@@ -3290,19 +3289,19 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
         let rsBigness = 
             codedBigness 2 TableNames.Module ||    
             codedBigness 2 TableNames.ModuleRef || 
-            codedBigness 2 TableNames.AssemblyRef  ||
+            codedBigness 2 TableNames.AssemblyRef ||
             codedBigness 2 TableNames.TypeRef
 
-        let tablesBuf =  ByteBuffer.Create 20000
+        let tablesBuf = ByteBuffer.Create 20000
 
-        // Now the coded tables themselves  - first the schemata header 
+        // Now the coded tables themselves - first the schemata header 
         tablesBuf.EmitIntsAsBytes    
             [| 0x00; 0x00; 0x00; 0x00
                mdtableVersionMajor // major version of table schemata 
                mdtableVersionMinor // minor version of table schemata 
                
                ((if stringsBig then 0x01 else 0x00) |||  // bit vector for heap size 
-                (if guidsBig then 0x02 else 0x00)   |||  
+                (if guidsBig then 0x02 else 0x00) |||  
                 (if blobsBig then 0x04 else 0x00))
                0x01 (* reserved, always 1 *) |]
  
@@ -3327,29 +3326,29 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
                     let t = x.Tag
                     let n = x.Val
                     match t with 
-                    | _ when t = RowElementTags.UShort        -> tablesBuf.EmitUInt16 (uint16 n)
-                    | _ when t = RowElementTags.ULong         -> tablesBuf.EmitInt32 n
-                    | _ when t = RowElementTags.Data          -> recordRequiredDataFixup requiredDataFixups tablesBuf (tablesStreamStart + tablesBuf.Position) (n, false)
+                    | _ when t = RowElementTags.UShort -> tablesBuf.EmitUInt16 (uint16 n)
+                    | _ when t = RowElementTags.ULong -> tablesBuf.EmitInt32 n
+                    | _ when t = RowElementTags.Data -> recordRequiredDataFixup requiredDataFixups tablesBuf (tablesStreamStart + tablesBuf.Position) (n, false)
                     | _ when t = RowElementTags.DataResources -> recordRequiredDataFixup requiredDataFixups tablesBuf (tablesStreamStart + tablesBuf.Position) (n, true)
-                    | _ when t = RowElementTags.Guid          -> tablesBuf.EmitZUntaggedIndex -3 guidsStreamPaddedSize guidsBig (guidAddress n)
-                    | _ when t = RowElementTags.Blob          -> tablesBuf.EmitZUntaggedIndex -2 blobsStreamPaddedSize blobsBig  (blobAddress n)
-                    | _ when t = RowElementTags.String        -> tablesBuf.EmitZUntaggedIndex -1 stringsStreamPaddedSize stringsBig (stringAddress n)
-                    | _ when t <= RowElementTags.SimpleIndexMax         -> 
+                    | _ when t = RowElementTags.Guid -> tablesBuf.EmitZUntaggedIndex -3 guidsStreamPaddedSize guidsBig (guidAddress n)
+                    | _ when t = RowElementTags.Blob -> tablesBuf.EmitZUntaggedIndex -2 blobsStreamPaddedSize blobsBig (blobAddress n)
+                    | _ when t = RowElementTags.String -> tablesBuf.EmitZUntaggedIndex -1 stringsStreamPaddedSize stringsBig (stringAddress n)
+                    | _ when t <= RowElementTags.SimpleIndexMax -> 
                         let tnum = t - RowElementTags.SimpleIndexMin
                         tablesBuf.EmitZUntaggedIndex tnum (size tnum) (bigness tnum) n
-                    | _ when t <= RowElementTags.TypeDefOrRefOrSpecMax  -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.TypeDefOrRefOrSpecMin)  2 tdorBigness n
-                    | _ when t <= RowElementTags.TypeOrMethodDefMax     -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.TypeOrMethodDefMin)     1 tomdBigness n
-                    | _ when t <= RowElementTags.HasConstantMax         -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasConstantMin)         2 hcBigness   n
-                    | _ when t <= RowElementTags.HasCustomAttributeMax  -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasCustomAttributeMin)  5 hcaBigness  n
-                    | _ when t <= RowElementTags.HasFieldMarshalMax     -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasFieldMarshalMin)     1 hfmBigness  n
-                    | _ when t <= RowElementTags.HasDeclSecurityMax     -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasDeclSecurityMin)     2 hdsBigness  n
-                    | _ when t <= RowElementTags.MemberRefParentMax     -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.MemberRefParentMin)     3 mrpBigness  n 
-                    | _ when t <= RowElementTags.HasSemanticsMax        -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasSemanticsMin)        1 hsBigness   n 
-                    | _ when t <= RowElementTags.MethodDefOrRefMax      -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.MethodDefOrRefMin)      1 mdorBigness n
-                    | _ when t <= RowElementTags.MemberForwardedMax     -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.MemberForwardedMin)     1 mfBigness   n
-                    | _ when t <= RowElementTags.ImplementationMax      -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.ImplementationMin)      2 iBigness    n
-                    | _ when t <= RowElementTags.CustomAttributeTypeMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.CustomAttributeTypeMin) 3 catBigness  n
-                    | _ when t <= RowElementTags.ResolutionScopeMax     -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.ResolutionScopeMin)     2 rsBigness   n
+                    | _ when t <= RowElementTags.TypeDefOrRefOrSpecMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.TypeDefOrRefOrSpecMin) 2 tdorBigness n
+                    | _ when t <= RowElementTags.TypeOrMethodDefMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.TypeOrMethodDefMin) 1 tomdBigness n
+                    | _ when t <= RowElementTags.HasConstantMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasConstantMin) 2 hcBigness n
+                    | _ when t <= RowElementTags.HasCustomAttributeMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasCustomAttributeMin) 5 hcaBigness n
+                    | _ when t <= RowElementTags.HasFieldMarshalMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasFieldMarshalMin) 1 hfmBigness n
+                    | _ when t <= RowElementTags.HasDeclSecurityMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasDeclSecurityMin) 2 hdsBigness n
+                    | _ when t <= RowElementTags.MemberRefParentMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.MemberRefParentMin) 3 mrpBigness n 
+                    | _ when t <= RowElementTags.HasSemanticsMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasSemanticsMin) 1 hsBigness n 
+                    | _ when t <= RowElementTags.MethodDefOrRefMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.MethodDefOrRefMin) 1 mdorBigness n
+                    | _ when t <= RowElementTags.MemberForwardedMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.MemberForwardedMin) 1 mfBigness n
+                    | _ when t <= RowElementTags.ImplementationMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.ImplementationMin) 2 iBigness n
+                    | _ when t <= RowElementTags.CustomAttributeTypeMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.CustomAttributeTypeMin) 3 catBigness n
+                    | _ when t <= RowElementTags.ResolutionScopeMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.ResolutionScopeMin) 2 rsBigness n
                     | _ -> failwith "invalid tag in row element"
 
         tablesBuf.Close()
@@ -3374,7 +3373,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     reportTime showTimes "Layout Metadata"
 
     let metadata, guidStart =
-      let mdbuf =  ByteBuffer.Create 500000 
+      let mdbuf = ByteBuffer.Create 500000 
       mdbuf.EmitIntsAsBytes 
         [| 0x42; 0x53; 0x4a; 0x42 // Magic signature 
            0x01; 0x00 // Major version 
@@ -3395,7 +3394,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
       mdbuf.EmitIntsAsBytes [| 0x23; 0x7e; 0x00; 0x00; (* #~00 *)|]
       mdbuf.EmitInt32 stringsChunk.addr
       mdbuf.EmitInt32 stringsChunk.size
-      mdbuf.EmitIntsAsBytes  [| 0x23; 0x53; 0x74; 0x72; 0x69; 0x6e; 0x67; 0x73; 0x00; 0x00; 0x00; 0x00 (* "#Strings0000" *)|]
+      mdbuf.EmitIntsAsBytes [| 0x23; 0x53; 0x74; 0x72; 0x69; 0x6e; 0x67; 0x73; 0x00; 0x00; 0x00; 0x00 (* "#Strings0000" *)|]
       mdbuf.EmitInt32 userStringsChunk.addr
       mdbuf.EmitInt32 userStringsChunk.size
       mdbuf.EmitIntsAsBytes [| 0x23; 0x55; 0x53; 0x00; (* #US0*) |]
@@ -3421,7 +3420,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
           mdbuf.EmitIntAsByte 0x00
       reportTime showTimes "Write Metadata Strings"
      // The user string stream 
-      mdbuf.EmitByte  0x00uy
+      mdbuf.EmitByte 0x00uy
       for s in userStrings do
           mdbuf.EmitZ32 (s.Length + 1)
           mdbuf.EmitBytes s
@@ -3450,9 +3449,9 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
    // uses of strings in the code 
     for (codeStartAddr, l) in requiredStringFixups do
         for (codeOffset, userStringIndex) in l do 
-              if codeStartAddr < codep.addr || codeStartAddr >= codep.addr + codep.size  then 
+              if codeStartAddr < codep.addr || codeStartAddr >= codep.addr + codep.size then 
                   failwith "strings-in-code fixup: a group of fixups is located outside the code array"
-              let locInCode =  ((codeStartAddr + codeOffset) - codep.addr)
+              let locInCode = ((codeStartAddr + codeOffset) - codep.addr)
               checkFixup32 code locInCode 0xdeadbeef
               let token = getUncodedToken TableNames.UserStrings (userStringAddress userStringIndex)
               if (Bytes.get code (locInCode-1) <> i_ldstr) then failwith "strings-in-code fixup: not at ldstr instruction!"
@@ -3504,14 +3503,14 @@ let writeInt64 (os: BinaryWriter) x =
     os.Write (dw7 x)
 
 let writeInt32 (os: BinaryWriter) x = 
-    os.Write  (byte (b0 x))
-    os.Write  (byte (b1 x))
-    os.Write  (byte (b2 x))
-    os.Write  (byte (b3 x))  
+    os.Write (byte (b0 x))
+    os.Write (byte (b1 x))
+    os.Write (byte (b2 x))
+    os.Write (byte (b3 x))  
 
 let writeInt32AsUInt16 (os: BinaryWriter) x = 
-    os.Write  (byte (b0 x))
-    os.Write  (byte (b1 x))
+    os.Write (byte (b0 x))
+    os.Write (byte (b1 x))
       
 let writeDirectory os dict =
     writeInt32 os (if dict.size = 0x0 then 0x0 else dict.addr)
@@ -3523,7 +3522,7 @@ let writeBinaryAndReportMappings (outfile,
                                   ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
                                   embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo )
                                   modul normalizeAssemblyRefs =
-    // Store the public key from the signer into the manifest.  This means it will be written 
+    // Store the public key from the signer into the manifest. This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
     reportTime showTimes "Write Started"
@@ -3614,7 +3613,7 @@ let writeBinaryAndReportMappings (outfile,
           let headerSectionPhysSize = nextPhys - headerSectionPhysLoc
           let next = align alignVirt (headerAddr + headerSize)
           
-          // TEXT SECTION:  8 bytes IAT table 72 bytes CLI header 
+          // TEXT SECTION: 8 bytes IAT table 72 bytes CLI header 
 
           let textSectionPhysLoc = nextPhys
           let textSectionAddr = next
@@ -3634,7 +3633,7 @@ let writeBinaryAndReportMappings (outfile,
                 | ILScopeRef.Module(_) -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Module"
                 | ILScopeRef.Assembly(aref) ->
                     match aref.Version with
-                    | Some (2us, _, _, _) -> parseILVersion "2.0.50727.0"
+                    | Some (version) when version.Major = 2us -> parseILVersion "2.0.50727.0"
                     | Some v -> v
                     | None -> failwith "Expected msorlib to have a version number"
 
@@ -3674,7 +3673,7 @@ let writeBinaryAndReportMappings (outfile,
 
           let pdbOpt =
             match portablePDB with
-            | true  -> 
+            | true -> 
                 let (uncompressedLength, contentId, stream) as pdbStream = 
                     generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
 
@@ -3692,7 +3691,7 @@ let writeBinaryAndReportMappings (outfile,
                        sizeof_IMAGE_DEBUG_DIRECTORY
                   ) next
           // The debug data is given to us by the PDB writer and appears to 
-          // typically be the type of the data plus the PDB file name.  We fill 
+          // typically be the type of the data plus the PDB file name. We fill 
           // this in after we've written the binary. We approximate the size according 
           // to what PDB writers seem to require and leave extra space just in case... 
           let debugDataJustInCase = 40
@@ -3718,7 +3717,7 @@ let writeBinaryAndReportMappings (outfile,
           let next = align alignVirt (textSectionAddr + textSectionSize)
           
           // .RSRC SECTION (DATA) 
-          let dataSectionPhysLoc =  nextPhys
+          let dataSectionPhysLoc = nextPhys
           let dataSectionAddr = next
           let dataSectionVirtToPhys v = v - dataSectionAddr + dataSectionPhysLoc
           
@@ -3761,8 +3760,8 @@ let writeBinaryAndReportMappings (outfile,
           let dataSectionPhysSize = nextPhys - dataSectionPhysLoc
           let next = align alignVirt (dataSectionAddr + dataSectionSize)
           
-          // .RELOC SECTION  base reloc table: 0x0c size 
-          let relocSectionPhysLoc =  nextPhys
+          // .RELOC SECTION base reloc table: 0x0c size 
+          let relocSectionPhysLoc = nextPhys
           let relocSectionAddr = next
           let baseRelocTableChunk, next = chunk 0x0c next
 
@@ -3776,8 +3775,8 @@ let writeBinaryAndReportMappings (outfile,
           begin 
             requiredDataFixups |> List.iter
               (fun (metadataOffset32, (dataOffset, kind)) -> 
-                let metadataOffset =  metadataOffset32
-                if metadataOffset < 0 || metadataOffset >= metadata.Length - 4  then failwith "data RVA fixup: fixup located outside metadata"
+                let metadataOffset = metadataOffset32
+                if metadataOffset < 0 || metadataOffset >= metadata.Length - 4 then failwith "data RVA fixup: fixup located outside metadata"
                 checkFixup32 metadata metadataOffset 0xdeaddddd
                 let dataRva = 
                   if kind then
@@ -3795,7 +3794,7 @@ let writeBinaryAndReportMappings (outfile,
           end
           
          // IMAGE TOTAL SIZE 
-          let imageEndSectionPhysLoc =  nextPhys
+          let imageEndSectionPhysLoc = nextPhys
           let imageEndAddr = next
 
           reportTime showTimes "Layout image"
@@ -3805,7 +3804,7 @@ let writeBinaryAndReportMappings (outfile,
               | None -> () 
               | Some pExpected -> 
                   os.Flush()
-                  let pCurrent =  int32 os.BaseStream.Position
+                  let pCurrent = int32 os.BaseStream.Position
                   if pCurrent <> pExpected then 
                     failwith ("warning: "+chunkName+" not where expected, pCurrent = "+string pCurrent+", p.addr = "+string pExpected) 
               writeBytes os chunk 
@@ -3844,7 +3843,7 @@ let writeBinaryAndReportMappings (outfile,
               let final = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
 
               // Confirm we have found the correct data and aren't corrupting the metadata
-              if metadata.[ guidStart..guidStart+3]     <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
+              if metadata.[ guidStart..guidStart+3] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
               if metadata.[ guidStart+12..guidStart+15] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
 
               // Update MVID guid in metadata
@@ -3853,7 +3852,7 @@ let writeBinaryAndReportMappings (outfile,
               // Use last 4 bytes for timestamp - High bit set, to stop tool chains becoming confused
               let timestamp = int final.[16] ||| (int final.[17] <<< 8) ||| (int final.[18] <<< 16) ||| (int (final.[19] ||| 128uy) <<< 24) 
               writeInt32 os timestamp
-              // Update pdbData with new guid and timestamp.  Portable and embedded PDBs don't need the ModuleID
+              // Update pdbData with new guid and timestamp. Portable and embedded PDBs don't need the ModuleID
               // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-determinsitic Windows native code
               { pdbData with ModuleID = final.[0..15] ; Timestamp = timestamp }
             else
@@ -3886,7 +3885,7 @@ let writeBinaryAndReportMappings (outfile,
         // 000000a0 
           writeInt32 os dataSectionPhysSize          // Size of the initialized data section
           writeInt32 os 0x00                         // Size of the uninitialized data section
-          writeInt32 os entrypointCodeChunk.addr     // RVA of entry point , needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000 
+          writeInt32 os entrypointCodeChunk.addr     // RVA of entry point, needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000 
           writeInt32 os textSectionAddr              // e.g. 0x0002000 
        // 000000b0 
           if modul.Is64Bit then
@@ -3919,7 +3918,7 @@ let writeBinaryAndReportMappings (outfile,
           // x86 : IMAGE_DLLCHARACTERISTICS_ NO_SEH | IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE | IMAGE_DLLCHARACTERISTICS_NX_COMPAT
           // x64 : IMAGE_DLLCHARACTERISTICS_ NO_SEH | IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE | IMAGE_DLLCHARACTERISTICS_NX_COMPAT
           let dllCharacteristics = 
-            let flags  = 
+            let flags = 
                 if modul.Is64Bit then (if isItanium then 0x8540 else 0x540)
                 else 0x540
             if modul.UseHighEntropyVA then flags ||| 0x20 // IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
@@ -3982,7 +3981,7 @@ let writeBinaryAndReportMappings (outfile,
           write (Some textSectionHeaderChunk.addr) os "text section header" [| |]
           
        // 00000178  
-          writeBytes os  [| 0x2euy; 0x74uy; 0x65uy; 0x78uy; 0x74uy; 0x00uy; 0x00uy; 0x00uy; |] // ".text\000\000\000" 
+          writeBytes os [| 0x2euy; 0x74uy; 0x65uy; 0x78uy; 0x74uy; 0x00uy; 0x00uy; 0x00uy; |] // ".text\000\000\000" 
        // 00000180  
           writeInt32 os textSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. 
           writeInt32 os textSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section
@@ -4012,7 +4011,7 @@ let writeBinaryAndReportMappings (outfile,
        // 000001c0  
           writeInt32AsUInt16 os 0x00 // NumberOfRelocations Number of relocations, set to 0 if unused. 
           writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
-          writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x40uy |] //  Characteristics Flags: IMAGE_SCN_MEM_READ |  IMAGE_SCN_CNT_INITIALIZED_DATA 
+          writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x40uy |] //  Characteristics Flags: IMAGE_SCN_MEM_READ | IMAGE_SCN_CNT_INITIALIZED_DATA 
           
           write (Some relocSectionHeaderChunk.addr) os "reloc section header" [| |]
        // 000001a0  
@@ -4039,7 +4038,7 @@ let writeBinaryAndReportMappings (outfile,
           // e.g. 0x0200 
           write (Some (textV2P importAddrTableChunk.addr)) os "import addr table" [| |]
           writeInt32 os importNameHintTableChunk.addr 
-          writeInt32 os 0x00  // QUERY 4 bytes of zeros not 2 like ECMA  24.3.1 says 
+          writeInt32 os 0x00  // QUERY 4 bytes of zeros not 2 like ECMA 24.3.1 says 
           
           // e.g. 0x0208 
 
@@ -4052,7 +4051,7 @@ let writeBinaryAndReportMappings (outfile,
           let headerVersionMajor, headerVersionMinor = headerVersionSupportedByCLRVersion desiredMetadataVersion
 
           writePadding os "pad to cli header" cliHeaderPadding 
-          write (Some (textV2P cliHeaderChunk.addr)) os "cli header"  [| |]
+          write (Some (textV2P cliHeaderChunk.addr)) os "cli header" [| |]
           writeInt32 os 0x48 // size of header 
           writeInt32AsUInt16 os headerVersionMajor // Major part of minimum version of CLR reqd. 
           writeInt32AsUInt16 os headerVersionMinor // Minor part of minimum version of CLR reqd. ... 
@@ -4245,7 +4244,7 @@ let writeBinaryAndReportMappings (outfile,
                 for i in idd do
                     // write the debug raw data as given us by the PDB writer 
                     os2.BaseStream.Seek (int64 (textV2P i.iddChunk.addr), SeekOrigin.Begin) |> ignore
-                    if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough.  Debug info may not be usable"
+                    if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough. Debug info may not be usable"
                     writeBytes os2 i.iddData
                 os2.Dispose()
             with e -> 
@@ -4260,7 +4259,7 @@ let writeBinaryAndReportMappings (outfile,
     ignore debugEmbeddedPdbChunk
     reportTime showTimes "Finalize PDB"
 
-    /// Sign the binary.  No further changes to binary allowed past this point! 
+    /// Sign the binary. No further changes to binary allowed past this point! 
     match signer with 
     | None -> ()
     | Some s -> 

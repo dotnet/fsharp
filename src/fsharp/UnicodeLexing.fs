@@ -7,7 +7,6 @@ module internal FSharp.Compiler.UnicodeLexing
 //
 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Text
 open Internal.Utilities
 open System.IO
 

@@ -1,11 +1,9 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-  <Import Project="$(MSBuildThisFileDirectory)..\Directory.Nuget.props" />
+<Project>
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-    <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
 </Project>
