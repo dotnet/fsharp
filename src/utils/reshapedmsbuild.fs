@@ -72,7 +72,8 @@ module internal MsBuildAdapters =
     open Microsoft.FSharp.Core.ReflectionAdapters
 
     /// <summary>
-    /// Used to specify the targeted version of the .NET Framework for some methods of ToolLocationHelper.
+    /// Used to specify the targeted version of the .NET Framework for some methods of ToolLocationHelper.  This is meant to mimic
+    /// the official version here: https://source.dot.net/#q=TargetDotNetFrameworkVersion.
     /// </summary>
     type public TargetDotNetFrameworkVersion =
     | Version11 = 0
@@ -89,7 +90,7 @@ module internal MsBuildAdapters =
     | Version47 = 11
     | Version471 = 12
     | Version472 = 13
-    | VersionLatest = 8  //TargetDotNetFrameworkVersion.Version461
+    | VersionLatest = 13  //TargetDotNetFrameworkVersion.Version472
 
     /// <summary>
     /// Used to specify the targeted bitness of the .NET Framework for some methods of ToolLocationHelper
@@ -759,7 +760,7 @@ module internal ToolLocationHelper =
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion140     // v4.6
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion461 visualStudioVersion150     // v4.6.1
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion462 visualStudioVersion150     // v4.6.2
-            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion47 visualStudioVersion150      // v4.7
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion47  visualStudioVersion150     // v4.7
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion471 visualStudioVersion150     // v4.7.1
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion472 visualStudioVersion150     // v4.7.2
         |]

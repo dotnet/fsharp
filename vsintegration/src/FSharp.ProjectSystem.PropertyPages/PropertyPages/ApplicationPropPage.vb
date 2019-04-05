@@ -14,7 +14,6 @@ Imports Microsoft.VisualStudio.Editors
 Imports OLE = Microsoft.VisualStudio.OLE.Interop
 
 Imports Shell = Microsoft.VisualStudio.Shell
-Imports Interop = Microsoft.VisualStudio.OLE.Interop
 Imports Microsoft.VisualStudio.Editors.PropertyPages
 Imports System.Runtime.InteropServices
 Imports System.ComponentModel
