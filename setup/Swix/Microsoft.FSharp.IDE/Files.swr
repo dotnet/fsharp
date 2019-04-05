@@ -1,7 +1,7 @@
 use vs
 
 package name=Microsoft.FSharp.IDE
-        version=$(FSharpPackageVersion)
+        version=$(VsixVersion)
 
 folder "InstallDir:Common7\IDE\NewScriptItems"
   file source="$(SetupResourcesDir)\NewFileDialog\Script\NewFSharpScriptItems.vsdir"

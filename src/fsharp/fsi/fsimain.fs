@@ -156,16 +156,12 @@ let evaluateSession(argv: string[]) =
         Console.ReadKey() |> ignore
 #endif
 
-#if !FX_REDUCED_CONSOLE
     // When VFSI is running, set the input/output encoding to UTF8.
     // Otherwise, unicode gets lost during redirection.
     // It is required only under Net4.5 or above (with unicode console feature).
     if argv |> Array.exists (fun x -> x.Contains "fsi-server") then
         Console.InputEncoding <- System.Text.Encoding.UTF8 
         Console.OutputEncoding <- System.Text.Encoding.UTF8
-#else
-    ignore argv
-#endif
 
     try
         // Create the console reader

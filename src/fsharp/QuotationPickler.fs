@@ -114,7 +114,7 @@ type ExprData =
   
 let mkVar v = VarExpr v 
 
-let mkHole (v, idx) = HoleExpr (v , idx)
+let mkHole (v, idx) = HoleExpr (v, idx)
 
 let mkApp (a, b) = CombExpr(AppOp, [], [a; b]) 
 

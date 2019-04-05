@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="VisualFSharp" Version="|%CurrentProject%;GetVsixPackageVersion|" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
+    <Identity Id="VisualFSharp" Version="|%CurrentProject%;GetVsixVersion|" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools Binaries to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.Full.Core</PackageId>

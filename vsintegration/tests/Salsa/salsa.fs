@@ -637,7 +637,7 @@ module internal Salsa =
 //                Append(sprintf "       <AllowCrossTargeting>true</AllowCrossTargeting>")
 //                Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" targetFrameworkVersion)
 //            else
-            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.6.1")
+            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.7.2")
             Append "        <NoWarn>"
             for disabledWarning in disabledWarnings do
                 Append (sprintf "            %s;" disabledWarning)                            

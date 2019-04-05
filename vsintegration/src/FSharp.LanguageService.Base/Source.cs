@@ -2141,7 +2141,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 #endif
             if (textSoFar != this.filterText)
             {
+#pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
                 System.Threading.SynchronizationContext.Current.Post((object state) =>
+#pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
                 {
                     this.filterText = textSoFar;
                     if (this.textView != null)

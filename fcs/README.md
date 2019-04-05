@@ -12,12 +12,16 @@ Basically we are packaging up the compiler as a DLL and publishing it as a NuGet
 There are subtle differences between FSharp.Compiler.Service and FSharp.Compiler.Private (shipped with the Visual F# Tools)
 
 - FCS has a public API 
-- FCS is built against **.NET 4.5** and **FSharp.Core 4.0.0.0** to give broader reach
-- FCS has a NuGet package
-- FCS has a .NET Standard 1.6 version in the nuget package
-- FCS testing also tests the "Project Cracker" (see below)
-- FCS doesn't add the System.ValueTuple.dll reference by default, see ``#if COMPILER_SERVICE_AS_DLL`` in compiler codebase
 
+- FCS is built against **.NET 4.6.1** and **FSharp.Core NuGet 4.6.2** to give broader reach
+
+- FCS has a NuGet package
+
+- FCS has a .NET Standard 2.0 version in the nuget package
+
+- FCS testing also tests the "Project Cracker" (see below)
+
+- FCS doesn't add the System.ValueTuple.dll reference by default, see ``#if COMPILER_SERVICE_AS_DLL`` in compiler codebase
 
 ## Version Numbers
 
