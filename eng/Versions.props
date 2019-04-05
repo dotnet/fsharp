@@ -12,18 +12,18 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
-    <FSCoreMajorVersion>4.5</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).5</FSCorePackageVersion>
+    <FSCoreMajorVersion>4.6</FSCoreMajorVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).2</FSCorePackageVersion>
     <FSCoreVersion>$(FSCoreMajorVersion).0</FSCoreVersion>
     <FSCoreVersion Condition="'$(OfficialBuildId)' == ''">$(FSCoreVersion).0</FSCoreVersion>
     <!-- PR builds should specify a 4-part version number -->
-    <FSPackageMajorVersion>10.2</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
+    <FSPackageMajorVersion>10.4</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).2</FSPackageVersion>
     <FSProductVersion>$(FSPackageVersion)</FSProductVersion>
     <FSProductVersion Condition="'$(OfficialBuildId)' == ''">$(FSProductVersion).0</FSProductVersion>
     <!-- PR builds should specify a 4-part version number -->
-    <VSMajorVersion>15</VSMajorVersion>
-    <VSMinorVersion>9</VSMinorVersion>
+    <VSMajorVersion>16</VSMajorVersion>
+    <VSMinorVersion>0</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersion>
     <VSAssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VSAssemblyVersion).0</VSAssemblyVersion>
@@ -35,17 +35,6 @@
     <VersionPrefix Condition="'$(UseFSharpPackageVersion)' == 'true'">$(FSCorePackageVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersion)</VersionPrefix>
-    <!--
-    Previous nightly versions were of the form 15.9.20190322.1, but after the arcade sdk integration, that form
-    changed to 15.9.0.1917201 which breaks the nightly upgrade.  To enable this to work for 15.9 builds we re-insert
-    the build number (date) so that it's always increasing.
-
-    THIS CHANGE SHOULD NOT FLOW INTO ANY DEV16 BRANCHES.
-    -->
-    <_BuildNumber>$(OfficialBuildId)</_BuildNumber>
-    <_BuildNumber Condition="'$(OfficialBuildId)' == ''">$([System.DateTime]::Now.ToString(yyyyMMdd)).0</_BuildNumber>
-    <VsixVersionDateStampFix>$(_BuildNumber.Split('.')[0])</VsixVersionDateStampFix>
-    <VsixVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).$(VsixVersionDateStampFix)</VsixVersionPrefix>
     <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix)</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
@@ -65,12 +54,15 @@
       https://myget.org/F/vs-editor/api/v3/index.json;
       https://vside.myget.org/F/vssdk/api/v3/index.json;
       https://vside.myget.org/F/vs-impl/api/v3/index.json;
+      https://myget.org/F/roslyn_concord/api/v3/index.json;
+      https://vside.myget.org/F/devcore/api/v3/index.json;
     </RestoreSources>
     <!-- version numbers from files -->
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
     <!-- System.* packages -->
     <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
     <SystemConsolePackageVersion>4.3.0</SystemConsolePackageVersion>
+    <SystemDesignPackageVersion>4.0.0</SystemDesignPackageVersion>
     <SystemDiagnosticsProcessPackageVersion>4.3.0</SystemDiagnosticsProcessPackageVersion>
     <SystemDiagnosticsTraceSourcePackageVersion>4.3.0</SystemDiagnosticsTraceSourcePackageVersion>
     <SystemIoCompressionPackageVersion>4.3.0</SystemIoCompressionPackageVersion>
@@ -109,44 +101,46 @@
     <!-- Visual Studio packages -->
     <EnvDTE80PackageVersion>8.0.1</EnvDTE80PackageVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalPackageVersion>14.0.25420</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalPackageVersion>
-    <MicrosoftVisualStudioCoreUtilityPackageVersion>15.8.525</MicrosoftVisualStudioCoreUtilityPackageVersion>
-    <MicrosoftVisualStudioComponentModelHostPackageVersion>15.0.26201-alpha</MicrosoftVisualStudioComponentModelHostPackageVersion>
+    <MicrosoftVisualStudioCoreUtilityPackageVersion>16.0.467</MicrosoftVisualStudioCoreUtilityPackageVersion>
+    <MicrosoftVisualStudioComponentModelHostPackageVersion>16.0.467</MicrosoftVisualStudioComponentModelHostPackageVersion>
     <MicrosoftVisualStudioDesignerInterfacesPackageVersion>1.1.4322</MicrosoftVisualStudioDesignerInterfacesPackageVersion>
-    <MicrosoftVisualStudioEditorPackageVersion>15.8.525</MicrosoftVisualStudioEditorPackageVersion>
-    <MicrosoftVisualStudioImagingPackageVersion>15.0.26201</MicrosoftVisualStudioImagingPackageVersion>
-    <MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>15.8.525</MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>
-    <MicrosoftVisualStudioLanguagePackageVersion>15.8.525</MicrosoftVisualStudioLanguagePackageVersion>
-    <MicrosoftVisualStudioLanguageIntellisensePackageVersion>15.8.525</MicrosoftVisualStudioLanguageIntellisensePackageVersion>
-    <MicrosoftVisualStudioManagedInterfacesPackageVersion>8.0.50727</MicrosoftVisualStudioManagedInterfacesPackageVersion>
+    <MicrosoftVisualStudioEditorPackageVersion>16.0.467</MicrosoftVisualStudioEditorPackageVersion>
+    <MicrosoftVisualStudioImageCatalogPackageVersion>16.0.28727</MicrosoftVisualStudioImageCatalogPackageVersion>
+    <MicrosoftVisualStudioImagingPackageVersion>16.0.28729</MicrosoftVisualStudioImagingPackageVersion>
+    <MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>16.0.467</MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>
+    <MicrosoftVisualStudioLanguagePackageVersion>16.0.467</MicrosoftVisualStudioLanguagePackageVersion>
+    <MicrosoftVisualStudioLanguageIntellisensePackageVersion>16.0.467</MicrosoftVisualStudioLanguageIntellisensePackageVersion>
+    <MicrosoftVisualStudioManagedInterfacesPackageVersion>8.0.50728</MicrosoftVisualStudioManagedInterfacesPackageVersion>
     <MicrosoftVisualStudioOLEInteropPackageVersion>7.10.6071</MicrosoftVisualStudioOLEInteropPackageVersion>
-    <MicrosoftVisualStudioPackageLanguageService150PackageVersion>15.0.26201</MicrosoftVisualStudioPackageLanguageService150PackageVersion>
-    <MicrosoftVisualStudioProjectAggregatorPackageVersion>8.0.50727</MicrosoftVisualStudioProjectAggregatorPackageVersion>
+    <MicrosoftVisualStudioPackageLanguageService150PackageVersion>16.0.28729</MicrosoftVisualStudioPackageLanguageService150PackageVersion>
+    <MicrosoftVisualStudioProjectAggregatorPackageVersion>8.0.50728</MicrosoftVisualStudioProjectAggregatorPackageVersion>
+    <MicrosoftVisualStudioProjectSystemVersion>16.0.201-pre-g7d366164d0</MicrosoftVisualStudioProjectSystemVersion>
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
     <MicrosoftVisualStudioShell140PackageVersion>14.3.25407</MicrosoftVisualStudioShell140PackageVersion>
-    <MicrosoftVisualStudioShell150PackageVersion>15.0.26201</MicrosoftVisualStudioShell150PackageVersion>
-    <MicrosoftVisualStudioShellDesignPackageVersion>15.0.26201</MicrosoftVisualStudioShellDesignPackageVersion>
-    <MicrosoftVisualStudioShellFrameworkPackageVersion>15.9.28307</MicrosoftVisualStudioShellFrameworkPackageVersion>
+    <MicrosoftVisualStudioShell150PackageVersion>16.0.28729</MicrosoftVisualStudioShell150PackageVersion>
+    <MicrosoftVisualStudioShellDesignPackageVersion>16.0.28729</MicrosoftVisualStudioShellDesignPackageVersion>
+    <MicrosoftVisualStudioShellFrameworkPackageVersion>16.0.28729</MicrosoftVisualStudioShellFrameworkPackageVersion>
     <MicrosoftVisualStudioShellImmutable100PackageVersion>10.0.30319</MicrosoftVisualStudioShellImmutable100PackageVersion>
     <MicrosoftVisualStudioShellImmutable110PackageVersion>11.0.50727</MicrosoftVisualStudioShellImmutable110PackageVersion>
     <MicrosoftVisualStudioShellImmutable150PackageVersion>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150PackageVersion>
     <MicrosoftVisualStudioShellInteropPackageVersion>7.10.6072</MicrosoftVisualStudioShellInteropPackageVersion>
-    <MicrosoftVisualStudioShellInterop80PackageVersion>8.0.50727</MicrosoftVisualStudioShellInterop80PackageVersion>
-    <MicrosoftVisualStudioShellInterop90PackageVersion>9.0.30729</MicrosoftVisualStudioShellInterop90PackageVersion>
-    <MicrosoftVisualStudioShellInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioShellInterop100PackageVersion>
-    <MicrosoftVisualStudioShellInterop110PackageVersion>11.0.61030</MicrosoftVisualStudioShellInterop110PackageVersion>
-    <MicrosoftVisualStudioShellInterop120PackageVersion>12.0.30110</MicrosoftVisualStudioShellInterop120PackageVersion>
-    <MicrosoftVisualStudioTextDataPackageVersion>15.8.525</MicrosoftVisualStudioTextDataPackageVersion>
+    <MicrosoftVisualStudioShellInterop80PackageVersion>8.0.50728</MicrosoftVisualStudioShellInterop80PackageVersion>
+    <MicrosoftVisualStudioShellInterop90PackageVersion>9.0.30730</MicrosoftVisualStudioShellInterop90PackageVersion>
+    <MicrosoftVisualStudioShellInterop100PackageVersion>10.0.30320</MicrosoftVisualStudioShellInterop100PackageVersion>
+    <MicrosoftVisualStudioShellInterop110PackageVersion>11.0.61031</MicrosoftVisualStudioShellInterop110PackageVersion>
+    <MicrosoftVisualStudioShellInterop120PackageVersion>12.0.30111</MicrosoftVisualStudioShellInterop120PackageVersion>
+    <MicrosoftVisualStudioTextDataPackageVersion>16.0.467</MicrosoftVisualStudioTextDataPackageVersion>
     <MicrosoftVisualStudioTextManagerInteropPackageVersion>7.10.6071</MicrosoftVisualStudioTextManagerInteropPackageVersion>
-    <MicrosoftVisualStudioTextManagerInterop80PackageVersion>8.0.50727</MicrosoftVisualStudioTextManagerInterop80PackageVersion>
-    <MicrosoftVisualStudioTextManagerInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioTextManagerInterop100PackageVersion>
+    <MicrosoftVisualStudioTextManagerInterop80PackageVersion>8.0.50728</MicrosoftVisualStudioTextManagerInterop80PackageVersion>
+    <MicrosoftVisualStudioTextManagerInterop100PackageVersion>10.0.30320</MicrosoftVisualStudioTextManagerInterop100PackageVersion>
     <MicrosoftVisualStudioTextManagerInterop120PackageVersion>12.0.30112</MicrosoftVisualStudioTextManagerInterop120PackageVersion>
-    <MicrosoftVisualStudioTextUIPackageVersion>15.8.525</MicrosoftVisualStudioTextUIPackageVersion>
-    <MicrosoftVisualStudioTextUIWpfPackageVersion>15.8.525</MicrosoftVisualStudioTextUIWpfPackageVersion>
-    <MicrosoftVisualStudioThreadingPackageVersion>15.8.209</MicrosoftVisualStudioThreadingPackageVersion>
-    <MicrosoftVisualStudioUtilitiesPackageVersion>15.0.26201</MicrosoftVisualStudioUtilitiesPackageVersion>
-    <MicrosoftVisualStudioValidationPackageVersion>15.3.15</MicrosoftVisualStudioValidationPackageVersion>
+    <MicrosoftVisualStudioTextUIPackageVersion>16.0.467</MicrosoftVisualStudioTextUIPackageVersion>
+    <MicrosoftVisualStudioTextUIWpfPackageVersion>16.0.467</MicrosoftVisualStudioTextUIWpfPackageVersion>
+    <MicrosoftVisualStudioThreadingPackageVersion>16.0.102</MicrosoftVisualStudioThreadingPackageVersion>
+    <MicrosoftVisualStudioUtilitiesPackageVersion>16.0.28729</MicrosoftVisualStudioUtilitiesPackageVersion>
+    <MicrosoftVisualStudioValidationPackageVersion>15.3.58</MicrosoftVisualStudioValidationPackageVersion>
     <MicrosoftVisualStudioWCFReferenceInteropPackageVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropPackageVersion>
-    <MicrosoftVSSDKBuildToolsVersion>15.7.109</MicrosoftVSSDKBuildToolsVersion>
+    <MicrosoftVSSDKBuildToolsVersion>16.0.2264</MicrosoftVSSDKBuildToolsVersion>
     <VSSDKDebuggerVisualizersPackageVersion>12.0.4</VSSDKDebuggerVisualizersPackageVersion>
     <VSSDKVSLangProjPackageVersion>7.0.4</VSSDKVSLangProjPackageVersion>
     <VSSDKVSLangProj8PackageVersion>8.0.4</VSSDKVSLangProj8PackageVersion>

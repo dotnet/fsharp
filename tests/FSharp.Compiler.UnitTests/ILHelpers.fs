@@ -10,13 +10,14 @@ open NUnit.Framework
 
 open FSharp.Compiler.SourceCodeServices
 
+[<RequireQualifiedAccess>]
 module ILChecker =
 
-    let checker = FSharpChecker.Create()
+    let checker = Compiler.checker
 
     let private (++) a b = Path.Combine(a,b)
 
-    let private getfullpath workDir path =
+    let private getfullpath workDir (path: string) =
         let rooted =
             if Path.IsPathRooted(path) then path
             else Path.Combine(workDir, path)

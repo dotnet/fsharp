@@ -1491,7 +1491,15 @@ module ByrefReturnMemberTests =
         module OutRefToInRefClassMethod2 =
             type C() = 
                 static member f1 (x: inref<'T>) = 1
-            let f2 (x: outref<'T>) = C.f1(&x)        
+            let f2 (x: outref<'T>) = C.f1(&x)
+
+    module TestStructRecord =
+        [<Struct>]
+        type AnItem =
+            { Link: string }
+
+        let link item =
+            { item with Link = "" }        
     
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

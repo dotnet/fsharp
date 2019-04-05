@@ -9,6 +9,9 @@
     <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls</OtherFlags>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
     <NGenBinary>true</NGenBinary>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
 
   <ItemGroup>

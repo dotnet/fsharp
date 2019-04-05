@@ -1743,17 +1743,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions 
-                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-                       frameworkTcImportsCache: FrameworkImportsCache, 
-                       loadClosureOpt: LoadClosure option, 
-                       sourceFiles: string list, 
-                       commandLineArgs: string list, 
-                       projectReferences, projectDirectory, 
-                       useScriptResolutionRules, keepAssemblyContents, 
-                       keepAllBackgroundResolutions, maxTimeShareMilliseconds, 
-                       tryGetMetadataSnapshot) =
-
+    static member TryCreateBackgroundBuilderForProjectOptions
+                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                       frameworkTcImportsCache: FrameworkImportsCache,
+                       loadClosureOpt: LoadClosure option,
+                       sourceFiles: string list,
+                       commandLineArgs: string list,
+                       projectReferences, projectDirectory,
+                       useScriptResolutionRules, keepAssemblyContents,
+                       keepAllBackgroundResolutions, maxTimeShareMilliseconds,
+                       tryGetMetadataSnapshot, suggestNamesForErrors) =
       let useSimpleResolutionSwitch = "--simpleresolution"
 
       cancellable {
@@ -1881,7 +1880,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpErrorSeverity.Error)
             | _ ->
                 Array.ofList delayedLogger.Diagnostics
-            |> Array.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero))
+            |> Array.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero, suggestNamesForErrors))
 
         return builderOpt, diagnostics
       }

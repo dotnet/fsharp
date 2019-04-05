@@ -86,7 +86,7 @@ module internal NoteworthyParamInfoLocationsImpl =
         let inner = traverseSynExpr synExpr
         match inner with
         | None ->
-            if AstTraversal.rangeContainsPosEdgesExclusive parenRange pos then
+            if AstTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
                 Found (parenRange.Start, [(parenRange.End, getNamedParamName synExpr)], rpRangeOpt.IsSome), None
             else
                 NotFound, None
@@ -103,7 +103,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             let inner = traverseSynExpr synExpr
             match inner with
             | None ->
-                if AstTraversal.rangeContainsPosEdgesExclusive parenRange pos then
+                if AstTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
                     let commasAndCloseParen = ((synExprList, commaRanges@[parenRange]) ||> List.map2 (fun e c -> c.End, getNamedParamName e))
                     let r = Found (parenRange.Start, commasAndCloseParen, rpRangeOpt.IsSome)
                     r, None
