@@ -2027,14 +2027,16 @@ and seekReadFields (ctxt: ILMetadataReader) (numtypars, hasLayout) fidx1 fidx2 =
     mkILFieldsLazy 
        (lazy
            let mdv = ctxt.mdfile.GetView()
-           [ for i = fidx1 to fidx2 - 1 do
-               yield seekReadField ctxt mdv (numtypars, hasLayout) i ])
+           [ if fidx1 > 0 then 
+               for i = fidx1 to fidx2 - 1 do
+                   yield seekReadField ctxt mdv (numtypars, hasLayout) i ])
 
 and seekReadMethods (ctxt: ILMetadataReader) numtypars midx1 midx2 =
     mkILMethodsComputed (fun () -> 
            let mdv = ctxt.mdfile.GetView()
-           [| for i = midx1 to midx2 - 1 do
-                 yield seekReadMethod ctxt mdv numtypars i |])
+           [| if midx1 > 0 then 
+                 for i = midx1 to midx2 - 1 do
+                     yield seekReadMethod ctxt mdv numtypars i |])
 
 and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr = 
     let n, sigptr = sigptrGetZInt32 bytes sigptr
@@ -2506,8 +2508,9 @@ and seekReadEvents (ctxt: ILMetadataReader) numtypars tidx =
                        let (_, endEventIdx) = seekReadEventMapRow ctxt mdv (rowNum + 1)
                        endEventIdx
 
-               [ for i in beginEventIdx .. endEventIdx - 1 do
-                   yield seekReadEvent ctxt mdv numtypars i ])
+               [ if beginEventIdx > 0 then 
+                   for i in beginEventIdx .. endEventIdx - 1 do
+                     yield seekReadEvent ctxt mdv numtypars i ])
 
 and seekReadProperty ctxt mdv numtypars idx =
    let (flags, nameIdx, typIdx) = seekReadPropertyRow ctxt mdv idx
@@ -2548,8 +2551,9 @@ and seekReadProperties (ctxt: ILMetadataReader) numtypars tidx =
                    else
                        let (_, endPropIdx) = seekReadPropertyMapRow ctxt mdv (rowNum + 1)
                        endPropIdx
-               [ for i in beginPropIdx .. endPropIdx - 1 do
-                   yield seekReadProperty ctxt mdv numtypars i ])
+               [ if beginPropIdx > 0 then 
+                   for i in beginPropIdx .. endPropIdx - 1 do
+                     yield seekReadProperty ctxt mdv numtypars i ])
 
 
 and customAttrsReader ctxtH tag: ILAttributesStored = 
