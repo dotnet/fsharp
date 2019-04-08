@@ -78,7 +78,7 @@
 
   <ItemGroup>
     <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
-      <AssemblyName>FSharp.VS.FSI.Base</AssemblyName>
+      <AssemblyName>FSharp.VS.FSI</AssemblyName>
       <Version>$(VSAssemblyVersion)</Version>
       <CodeBase>$PackageFolder$\FSharp.VS.FSI.dll</CodeBase>
     </AssemblyAttribute>

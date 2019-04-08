@@ -71,13 +71,13 @@
     </AssemblyAttribute>
     <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
       <AssemblyName>FSharp.Compiler.Private</AssemblyName>
-      <Version>$(FSProductVersion)$(_BuildNumberSuffix)</Version>
+      <Version>$(FSProductVersion)</Version>
       <CodeBase>$PackageFolder$\FSharp.Compiler.Private.dll</CodeBase>
     </AssemblyAttribute>
     <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
       <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
+      <Version>$(FSProductVersion)</Version>
       <CodeBase>$PackageFolder$\FSharp.Compiler.Server.Shared.dll</CodeBase>
-      <Version>$(FSProductVersion)$(_BuildNumberSuffix)</Version>
     </AssemblyAttribute>
     <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
       <AssemblyName>FSharp.UIResources</AssemblyName>
