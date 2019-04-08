@@ -45,20 +45,20 @@ let MAX_PATH = 260
 
 let E_FAIL = 0x80004005
 
-let bytesToWord ((b0 : byte) , (b1 : byte)) = 
+let bytesToWord ((b0: byte), (b1: byte)) = 
     (int16)b0 ||| ((int16)b1 <<< 8)
-let bytesToDWord ((b0 : byte) , (b1 : byte) , (b2 : byte) , (b3 : byte)) =  
+let bytesToDWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte)) =  
     (int)b0 ||| ((int)b1 <<< 8) ||| ((int)b2 <<< 16) ||| ((int)b3 <<< 24)
-let bytesToQWord ((b0 : byte) , (b1 : byte) , (b2 : byte) , (b3 : byte) , (b4 : byte) , (b5 : byte) , (b6 : byte) , (b7 : byte)) =
+let bytesToQWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte), (b4: byte), (b5: byte), (b6: byte), (b7: byte)) =
     (int64)b0 ||| ((int64)b1 <<< 8) ||| ((int64)b2 <<< 16) ||| ((int64)b3 <<< 24) ||| ((int64)b4 <<< 32) ||| ((int64)b5 <<< 40) ||| ((int64)b6 <<< 48) ||| ((int64)b7 <<< 56)
     
 let dwToBytes n = [| (byte)(n &&& 0xff) ; (byte)((n >>> 8) &&& 0xff) ; (byte)((n >>> 16) &&& 0xff) ; (byte)((n >>> 24) &&& 0xff) |], 4
-let wToBytes (n : int16) = [| (byte)(n &&& 0xffs) ; (byte)((n >>> 8) &&& 0xffs) |], 2
+let wToBytes (n: int16) = [| (byte)(n &&& 0xffs) ; (byte)((n >>> 8) &&& 0xffs) |], 2
 
 #if !FX_NO_LINKEDRESOURCES
 // REVIEW: factor these classes under one hierarchy, use reflection for creation from buffer and toBytes()
 // Though, everything I'd like to unify is static - metaclasses?
-type IMAGE_FILE_HEADER (m:int16, secs:int16, tds:int32, ptst:int32, nos:int32, soh:int16, c:int16) =
+type IMAGE_FILE_HEADER (m: int16, secs: int16, tds: int32, ptst: int32, nos: int32, soh: int16, c: int16) =
         let mutable machine = m
         let mutable numberOfSections = secs
         let mutable timeDateStamp = tds
@@ -109,7 +109,7 @@ type IMAGE_FILE_HEADER (m:int16, secs:int16, tds:int32, ptst:int32, nos:int32, s
             buf.EmitUInt16 ((uint16)characteristics)
             buf.Close()
 
-let bytesToIFH (buffer : byte[]) (offset : int) =
+let bytesToIFH (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_FILE_HEADER.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_FILE_HEADER"
     IMAGE_FILE_HEADER( bytesToWord(buffer.[offset], buffer.[offset+1]), // Machine
@@ -120,7 +120,7 @@ let bytesToIFH (buffer : byte[]) (offset : int) =
             bytesToWord(buffer.[offset+16], buffer.[offset+17]), // SizeOfOptionalHeader
             bytesToWord(buffer.[offset+18], buffer.[offset+19])) // Characteristics
 
-type IMAGE_SECTION_HEADER(n:int64, ai:int32, va:int32, srd:int32, prd:int32, pr:int32, pln:int32, nr:int16, nl:int16, c:int32) =
+type IMAGE_SECTION_HEADER(n: int64, ai: int32, va: int32, srd: int32, prd: int32, pr: int32, pln: int32, nr: int16, nl: int16, c: int32) =
         let mutable name = n
         let mutable addressInfo = ai // PhysicalAddress / VirtualSize
         let mutable virtualAddress = va
@@ -194,7 +194,7 @@ type IMAGE_SECTION_HEADER(n:int64, ai:int32, va:int32, srd:int32, prd:int32, pr:
             buf.Close()
         
 
-let bytesToISH (buffer : byte[]) (offset : int) =
+let bytesToISH (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_SECTION_HEADER.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_SECTION_HEADER"
     IMAGE_SECTION_HEADER(bytesToQWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3], buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]), // Name
@@ -208,7 +208,7 @@ let bytesToISH (buffer : byte[]) (offset : int) =
             bytesToWord(buffer.[offset+34], buffer.[offset+35]), // NumberOfLineNumbers
             bytesToDWord(buffer.[offset+36], buffer.[offset+37], buffer.[offset+38], buffer.[offset+39])) // Characteristics
 
-type IMAGE_SYMBOL(n:int64, v:int32, sn:int16, t:int16, sc:byte, nas:byte) =
+type IMAGE_SYMBOL(n: int64, v: int32, sn: int16, t: int16, sc: byte, nas: byte) =
         let mutable name = n
         let mutable value = v
         let mutable sectionNumber = sn
@@ -253,7 +253,7 @@ type IMAGE_SYMBOL(n:int64, v:int32, sn:int16, t:int16, sc:byte, nas:byte) =
             buf.EmitByte numberOfAuxSymbols
             buf.Close()
 
-let bytesToIS (buffer : byte[]) (offset : int) =
+let bytesToIS (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_SYMBOL.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_SYMBOL"
     IMAGE_SYMBOL( bytesToQWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3], buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]), // Name
@@ -263,7 +263,7 @@ let bytesToIS (buffer : byte[]) (offset : int) =
             buffer.[offset+16], // StorageClass
             buffer.[offset+17]) // NumberOfAuxSymbols
     
-type IMAGE_RELOCATION(va:int32, sti:int32, t:int16) =
+type IMAGE_RELOCATION(va: int32, sti: int32, t: int16) =
     let mutable virtualAddress = va // Also RelocCount
     let mutable symbolTableIndex = sti
     let mutable ty = t // type
@@ -294,14 +294,14 @@ type IMAGE_RELOCATION(va:int32, sti:int32, t:int16) =
         buf.EmitUInt16 ((uint16)ty)
         buf.Close()
         
-let bytesToIR (buffer : byte[]) (offset : int) =
+let bytesToIR (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RELOCATION.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_RELOCATION"
     IMAGE_RELOCATION( bytesToDWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3]),
             bytesToDWord(buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]),
             bytesToWord(buffer.[offset+8], buffer.[offset+9]))
             
-type IMAGE_RESOURCE_DIRECTORY(c:int32, tds:int32, mjv:int16, mnv:int16, nne:int16, nie:int16) =
+type IMAGE_RESOURCE_DIRECTORY(c: int32, tds: int32, mjv: int16, mnv: int16, nne: int16, nie: int16) =
     let mutable characteristics = c
     let mutable timeDateStamp = tds
     let mutable majorVersion = mjv
@@ -345,7 +345,7 @@ type IMAGE_RESOURCE_DIRECTORY(c:int32, tds:int32, mjv:int16, mnv:int16, nne:int1
         buf.EmitUInt16 ((uint16)numberOfIdEntries)
         buf.Close()
         
-let bytesToIRD (buffer:byte[]) (offset:int) =
+let bytesToIRD (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DIRECTORY.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_RESOURCE_DIRECTORY"
     IMAGE_RESOURCE_DIRECTORY( bytesToDWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3]), // Characteristics
@@ -355,7 +355,7 @@ let bytesToIRD (buffer:byte[]) (offset:int) =
         bytesToWord(buffer.[offset+12], buffer.[offset+13]), // NumberOfNamedEntries
         bytesToWord(buffer.[offset+14], buffer.[offset+15])) // NumberOfIdEntries
         
-type IMAGE_RESOURCE_DIRECTORY_ENTRY(n:int32, o:int32) =
+type IMAGE_RESOURCE_DIRECTORY_ENTRY(n: int32, o: int32) =
     let mutable name = n
     let mutable offset = o
     
@@ -381,13 +381,13 @@ type IMAGE_RESOURCE_DIRECTORY_ENTRY(n:int32, o:int32) =
         buf.EmitInt32 offset
         buf.Close()
         
-let bytesToIRDE (buffer:byte[]) (offset:int) =
+let bytesToIRDE (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DIRECTORY_ENTRY.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_RESOURCE_DIRECTORY_ENTRY"
     IMAGE_RESOURCE_DIRECTORY_ENTRY( bytesToDWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3]), // Name
         bytesToDWord(buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7])) // Offset
         
-type IMAGE_RESOURCE_DATA_ENTRY(o:int32, s:int32, c:int32, r:int32) =
+type IMAGE_RESOURCE_DATA_ENTRY(o: int32, s: int32, c: int32, r: int32) =
     let mutable offsetToData = o
     let mutable size = s
     let mutable codePage = c
@@ -415,7 +415,7 @@ type IMAGE_RESOURCE_DATA_ENTRY(o:int32, s:int32, c:int32, r:int32) =
         buf.EmitInt32 codePage
         buf.EmitInt32 reserved
         
-let bytesToIRDataE (buffer:byte[]) (offset:int) =
+let bytesToIRDataE (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DATA_ENTRY.Width then 
         invalidArg "buffer" "buffer too small to fit an IMAGE_RESOURCE_DATA_ENTRY"
     IMAGE_RESOURCE_DATA_ENTRY(bytesToDWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3]), // OffsetToData
@@ -478,7 +478,7 @@ type ResFormatHeader() =
         buf.EmitInt32 dwCharacteristics
         buf.Close()
         
-type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedResource:byte[]) =
+type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLinkedResource: byte[]) =
     let mutable resHdr = ResFormatHeader()
     let mutable dataEntry = Unchecked.defaultof<IMAGE_RESOURCE_DATA_ENTRY>
     let mutable cType = 0
@@ -488,25 +488,25 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
  
     do 
         if (tid &&& 0x80000000) <> 0 then // REVIEW: Are names and types mutually exclusive?  The C++ code didn't seem to think so, but I can't find any documentation
-            resHdr.TypeID <- 0 ; 
+            resHdr.TypeID <- 0 
             let mtid = tid &&& 0x7fffffff
-            cType <- bytesToDWord(pbLinkedResource.[mtid], pbLinkedResource.[mtid+1], pbLinkedResource.[mtid+2], pbLinkedResource.[mtid+3]) ;
-            wzType <- Bytes.zeroCreate ((cType + 1) * 2) ;
+            cType <- bytesToDWord(pbLinkedResource.[mtid], pbLinkedResource.[mtid+1], pbLinkedResource.[mtid+2], pbLinkedResource.[mtid+3]) 
+            wzType <- Bytes.zeroCreate ((cType + 1) * 2) 
             Bytes.blit pbLinkedResource 4 wzType 0 (cType * 2)
         else
-            resHdr.TypeID <- (0xffff ||| ((tid &&& 0xffff) <<< 16)) ;
+            resHdr.TypeID <- (0xffff ||| ((tid &&& 0xffff) <<< 16)) 
             
         if (nid &&& 0x80000000) <> 0 then
-            resHdr.NameID <- 0 ;
+            resHdr.NameID <- 0 
             let mnid = nid &&& 0x7fffffff
-            cName <- bytesToDWord(pbLinkedResource.[mnid], pbLinkedResource.[mnid+1], pbLinkedResource.[mnid+2], pbLinkedResource.[mnid+3]) ;
-            wzName <- Bytes.zeroCreate ((cName + 1) * 2) ;
+            cName <- bytesToDWord(pbLinkedResource.[mnid], pbLinkedResource.[mnid+1], pbLinkedResource.[mnid+2], pbLinkedResource.[mnid+3]) 
+            wzName <- Bytes.zeroCreate ((cName + 1) * 2) 
             Bytes.blit pbLinkedResource 4 wzName 0 (cName * 2)
         else
             resHdr.NameID <- (0xffff ||| ((nid &&& 0xffff) <<< 16))
             
-        resHdr.LangID <- (int16)lid ;
-        dataEntry <- bytesToIRDataE pbLinkedResource dataOffset ;
+        resHdr.LangID <- (int16)lid 
+        dataEntry <- bytesToIRDataE pbLinkedResource dataOffset 
         resHdr.DataSize <- dataEntry.Size
         
     member x.ResHdr
@@ -518,7 +518,7 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
     member x.Name
         with get() = wzName
         
-    member x.Save(ulLinkedResourceBaseRVA:int32, pbLinkedResource:byte[], pUnlinkedResource:byte[], offset:int) =
+    member x.Save(ulLinkedResourceBaseRVA: int32, pbLinkedResource: byte[], pUnlinkedResource: byte[], offset: int) =
         // Dump them to pUnlinkedResource
         // For each resource write header and data
         let size = ref 0
@@ -529,7 +529,7 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
         if Unchecked.defaultof<byte[]> <> wzName then
             resHdr.HeaderSize <- resHdr.HeaderSize + ((cName + 1) * 2) - 4
             
-        let SaveChunk(p : byte[], sz : int) =
+        let SaveChunk(p: byte[], sz: int) =
             if Unchecked.defaultof<byte[]> <>  pUnlinkedResource then
                 Bytes.blit p 0 pUnlinkedResource (!unlinkedResourceOffset + offset) sz
                 unlinkedResourceOffset := !unlinkedResourceOffset + sz
@@ -537,7 +537,7 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
  
             ()
             
-        // ---- Constant part of the header : DWORD, DWORD
+        // ---- Constant part of the header: DWORD, DWORD
         SaveChunk(dwToBytes resHdr.DataSize)
         SaveChunk(dwToBytes resHdr.HeaderSize)
         
@@ -572,16 +572,16 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
         let pbData = pbLinkedResource.[(dataEntry.OffsetToData - ulLinkedResourceBaseRVA) ..]
         SaveChunk(pbData, dataEntry.Size)
         
-        dwFiller <- dataEntry.Size &&& 0x3 ;
+        dwFiller <- dataEntry.Size &&& 0x3 
         if dwFiller <> 0 then
             SaveChunk(bNil, 4 - dwFiller)
             
         !size
 
-let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRVA:int32) (fileType:PEFileType) (outputFilePath:string) = 
+let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseRVA: int32) (fileType: PEFileType) (outputFilePath: string) = 
     let nPEFileType = match fileType with X86  -> 0 | X64 -> 2
-    let mutable tempResFiles : string list = []
-    let mutable objBytes : byte[] = [||]
+    let mutable tempResFiles: string list = []
+    let mutable objBytes: byte[] = [||]
     
     let unlinkedResources = unlinkedResources |> List.filter (fun arr -> arr.Length > 0)
     if isNil unlinkedResources then // bail if there's nothing to link
@@ -619,11 +619,11 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
             let createCvtresArgs path =
                 let tempObjFileName = GetUniqueRandomFileName(path)
                 let mutable cmdLineArgs = sprintf "%s \"/Out:%s\"" cmdLineArgsPreamble tempObjFileName
-                let mutable resFiles : string list = []
+                let mutable resFiles: string list = []
 
                 for _ulr in unlinkedResources do
                     let tempResFileName = GetUniqueRandomFileName(path)
-                    resFiles <- tempResFileName :: resFiles ; 
+                    resFiles <- tempResFileName :: resFiles 
                     cmdLineArgs <- cmdLineArgs + " \"" + tempResFileName + "\""
                 let trf = resFiles
                 let cmd = cmdLineArgs
@@ -633,7 +633,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 let attempts = 
                     outputFilePaths |> 
                     List.map (fun path -> createCvtresArgs path) |> 
-                    List.filter (fun ((argstring:string),(_t:string),(_f:string list)) -> (cvtres.Length + argstring.Length) < MAX_PATH)
+                    List.filter (fun ((argstring: string),(_t: string),(_f: string list)) -> (cvtres.Length + argstring.Length) < MAX_PATH)
                 let invoc,tmp,files = 
                     match attempts with
                     | [] -> createCvtresArgs ".\\" // hope for the best...
@@ -649,7 +649,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 for ulr in unlinkedResources do
                     // REVIEW: What can go wrong here?  What happens when the various file calls fail
                     // dump the unlinked resource bytes into the temp file
-                    System.IO.File.WriteAllBytes(tempResFileNames.[iFiles], ulr) ;
+                    System.IO.File.WriteAllBytes(tempResFileNames.[iFiles], ulr) 
                     iFiles <- iFiles + 1
 
                 // call cvtres.exe using the full cmd line string we've generated
@@ -660,9 +660,9 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
 
                 // REVIEW: We really shouldn't be calling out to cvtres
                 let mutable psi = System.Diagnostics.ProcessStartInfo(cvtres)
-                psi.Arguments <- cmdLineArgs ;
+                psi.Arguments <- cmdLineArgs 
                 psi.CreateNoWindow <- true ; // REVIEW: For some reason, this still creates a window unless WindowStyle is set to hidden
-                psi.WindowStyle <- System.Diagnostics.ProcessWindowStyle.Hidden ;
+                psi.WindowStyle <- System.Diagnostics.ProcessWindowStyle.Hidden 
                 let p = System.Diagnostics.Process.Start(psi)
 
                 // Wait for the process to finish
@@ -671,7 +671,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 check "Process.Start" p.ExitCode // TODO: really need to check against 0
 
                 // Conversion was successful, so read the object file
-                objBytes <- FileSystem.ReadAllBytesShim(tempObjFileName) ; 
+                objBytes <- FileSystem.ReadAllBytesShim(tempObjFileName) 
                 //Array.Copy(objBytes, pbUnlinkedResource, pbUnlinkedResource.Length)
                 FileSystem.FileDelete(tempObjFileName)
             finally
@@ -717,7 +717,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
         let IMAGE_SYM_CLASS_STATIC = 0x3uy
         let IMAGE_SYM_TYPE_NULL = 0x0s
 
-        let GetSymbolEntry (buffer : byte[]) (idx : int) =
+        let GetSymbolEntry (buffer: byte[]) (idx: int) =
             bytesToIS buffer (symbolTableHead + (idx * IMAGE_SYMBOL.Width) )
 
         for iReloc = 0 to (int)(rsrc01.NumberOfRelocations - 1s) do
@@ -746,7 +746,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
         // return the buffer    
         pResBuffer
 
-let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) = 
+let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) = 
     let mutable nResNodes = 0
 
     let pirdType = bytesToIRD pbLinkedResource 0
@@ -756,7 +756,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
     // determine entry buffer size
     // TODO: coalesce these two loops
     for iEntry = 0 to ((int)nEntries - 1) do
-        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
 
         if pirdeType.DataIsDirectory then
             let nameBase = pirdeType.OffsetToDirectory
@@ -765,25 +765,25 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
             let nEntries2 = pirdName.NumberOfNamedEntries + pirdName.NumberOfIdEntries
 
             for iEntry2 = 0 to ((int)nEntries2 - 1) do
-                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
 
                 if pirdeName.DataIsDirectory then
                     let langBase = pirdeName.OffsetToDirectory
                     let pirdLang = bytesToIRD pbLinkedResource langBase
                     let nEntries3 = pirdLang.NumberOfNamedEntries + pirdLang.NumberOfIdEntries
                     
-                    nResNodes <- nResNodes + ((int)nEntries3) ;
+                    nResNodes <- nResNodes + ((int)nEntries3) 
                 else
-                    nResNodes <- nResNodes + 1 ;
+                    nResNodes <- nResNodes + 1 
         else
-            nResNodes <- nResNodes + 1 ;
+            nResNodes <- nResNodes + 1 
 
-    let pResNodes : ResFormatNode [] = Array.zeroCreate nResNodes
-    nResNodes <- 0 ;
+    let pResNodes: ResFormatNode [] = Array.zeroCreate nResNodes
+    nResNodes <- 0 
 
     // fill out the entry buffer
     for iEntry = 0 to ((int)nEntries - 1) do
-        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;  
+        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
         let dwTypeID = pirdeType.Name
         // Need to skip VERSION and RT_MANIFEST resources
         // REVIEW: ideally we shouldn't allocate space for these, or rename properly so we don't get the naming conflict
@@ -795,7 +795,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
             let nEntries2 = pirdName.NumberOfNamedEntries + pirdName.NumberOfIdEntries
                 
             for iEntry2 = 0 to ((int)nEntries2 - 1) do
-                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
                 let dwNameID = pirdeName.Name
 
                 if pirdeName.DataIsDirectory then
@@ -805,7 +805,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
                     let nEntries3 = pirdLang.NumberOfNamedEntries + pirdLang.NumberOfIdEntries
                         
                     for iEntry3 = 0 to ((int)nEntries3 - 1) do
-                        pirdeLang <- bytesToIRDE pbLinkedResource (langBase + (iEntry3 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+                        pirdeLang <- bytesToIRDE pbLinkedResource (langBase + (iEntry3 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
                         let dwLangID = pirdeLang.Name
                             
                         if pirdeLang.DataIsDirectory then
@@ -814,25 +814,25 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
                         else
                             if (not skipResource) then
                                 let rfn = ResFormatNode(dwTypeID, dwNameID, dwLangID, pirdeLang.OffsetToData, pbLinkedResource)
-                                pResNodes.[nResNodes] <- rfn ;
-                                nResNodes <- nResNodes + 1 ;
+                                pResNodes.[nResNodes] <- rfn 
+                                nResNodes <- nResNodes + 1 
                 else
                     if (not skipResource) then
                         let rfn = ResFormatNode(dwTypeID, dwNameID, 0, pirdeName.OffsetToData, pbLinkedResource)
-                        pResNodes.[nResNodes] <- rfn ;
-                        nResNodes <- nResNodes + 1 ;
+                        pResNodes.[nResNodes] <- rfn 
+                        nResNodes <- nResNodes + 1 
         else
             if (not skipResource) then
                 let rfn = ResFormatNode(dwTypeID, 0, 0, pirdeType.OffsetToData, pbLinkedResource) // REVIEW: I believe these 0s are what's causing the duplicate res naming problems
-                pResNodes.[nResNodes] <- rfn ;
-                nResNodes <- nResNodes + 1 ;
+                pResNodes.[nResNodes] <- rfn 
+                nResNodes <- nResNodes + 1 
 
     // Ok, all tree leaves are in ResFormatNode structs, and nResNodes ptrs are in pResNodes
     let mutable size = 0
     if nResNodes <> 0 then
         size <- size + ResFormatHeader.Width ; // sizeof(ResFormatHeader)
         for i = 0 to (nResNodes - 1) do
-            size <- size + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0) ;
+            size <- size + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0) 
 
     let pResBuffer = Bytes.zeroCreate size
 
@@ -857,169 +857,169 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
 [<ComImport; Interface>]
 [<Guid("809c652e-7396-11d2-9771-00a0c9b4d50c") ; InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
 type IMetaDataDispenser = 
-    abstract DefineScope : unit -> unit // need this here to fill the first vtable slot
-    abstract OpenScope : [<In ; MarshalAs(UnmanagedType.LPWStr)>] szScope : string * [<In>] dwOpenFlags:Int32 * [<In>] riid : System.Guid byref * [<Out ; MarshalAs(UnmanagedType.IUnknown)>] punk:Object byref -> unit
+    abstract DefineScope: unit -> unit // need this here to fill the first vtable slot
+    abstract OpenScope: [<In ; MarshalAs(UnmanagedType.LPWStr)>] szScope: string * [<In>] dwOpenFlags: Int32 * [<In>] riid: System.Guid byref * [<Out ; MarshalAs(UnmanagedType.IUnknown)>] punk: Object byref -> unit
 
 [<ComImport; Interface>]
 [<Guid("7DAC8207-D3AE-4c75-9B67-92801A497D44"); InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
 [<CLSCompliant(true)>]
 type IMetadataImport =
-    abstract Placeholder : unit -> unit
+    abstract Placeholder: unit -> unit
     
 [<ComImport; Interface>]
 [<Guid("BA3FEE4C-ECB9-4E41-83B7-183FA41CD859"); InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
 [<CLSCompliant(true)>]
 type IMetadataEmit =
-    abstract Placeholder : unit -> unit
+    abstract Placeholder: unit -> unit
 
 [<ComImport; Interface>]
 [< Guid("B01FAFEB-C450-3A4D-BEEC-B4CEEC01E006") ; InterfaceType(ComInterfaceType.InterfaceIsIUnknown) >]
 [< ComVisible(false) >]
 type ISymUnmanagedDocumentWriter =
-    abstract SetSource : sourceSize : int *  [<MarshalAs(UnmanagedType.LPArray)>] source : byte[] -> unit
-    abstract SetCheckSum : algorithmId : System.Guid * checkSumSize : int * [<MarshalAs(UnmanagedType.LPArray)>]  checkSum : byte [] -> unit
+    abstract SetSource: sourceSize: int *  [<MarshalAs(UnmanagedType.LPArray)>] source: byte[] -> unit
+    abstract SetCheckSum: algorithmId: System.Guid * checkSumSize: int * [<MarshalAs(UnmanagedType.LPArray)>]  checkSum: byte [] -> unit
 
 // Struct used to retrieve info on the debug output    
 [<Struct; StructLayout(LayoutKind.Sequential)>]
 type ImageDebugDirectory = 
-    val Characteristics : int32
-    val TimeDateStamp : int32
-    val MajorVersion : int16
-    val MinorVersion : int16
-    val Type : int32
-    val SizeOfData : int32
-    val AddressOfRawData : int32
-    val PointerToRawData : int32
+    val Characteristics: int32
+    val TimeDateStamp: int32
+    val MajorVersion: int16
+    val MinorVersion: int16
+    val Type: int32
+    val SizeOfData: int32
+    val AddressOfRawData: int32
+    val PointerToRawData: int32
     
 [<ComImport; Interface>]
 [<Guid("0B97726E-9E6D-4f05-9A26-424022093CAA"); InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
 type ISymUnmanagedWriter2 =
-    abstract DefineDocument : [<MarshalAs(UnmanagedType.LPWStr)>] url : string *
-                              language : System.Guid byref *
-                              languageVendor : System.Guid byref *
-                              documentType : System.Guid byref *
-                              [<MarshalAs(UnmanagedType.Interface)>] RetVal : ISymUnmanagedDocumentWriter byref -> unit    
-    abstract SetUserEntryPoint : entryMethod : uint32 -> unit     
-    abstract OpenMethod : meth : int -> unit
-    abstract CloseMethod : unit -> unit    
-    abstract OpenScope : startOffset : int * pRetVal : int byref -> unit    
-    abstract CloseScope : endOffset : int -> unit
-    abstract SetScopeRange : scopeID : int * startOffset : int * endOffset : int -> unit    
-    abstract DefineLocalVariable : [<MarshalAs(UnmanagedType.LPWStr)>] varname : string *
-                                attributes : int *
-                                cSig : int *
-                                [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature : byte[] *
-                                addressKind : int *
-                                addr1 : int *
-                                addr2 : int *
-                                addr3 : int *
-                                startOffset : int *
-                                endOffset : int -> unit
-    abstract DefineParameter : [<MarshalAs(UnmanagedType.LPWStr)>] paramname : string *
-                            attributes : int *
-                            sequence : int *
-                            addressKind : int *
-                            addr1 : int *
-                            addr2 : int *
-                            addr3 : int -> unit
-    abstract DefineField : parent : int *
-                      [<MarshalAs(UnmanagedType.LPWStr)>] fieldname : string *
-                      attributes : int *
-                      cSig : int *
-                      [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=3s)>]signature : byte[] *
-                      addressKind : int *
-                      addr1 : int *
-                      addr2 : int *
-                      addr3 : int -> unit
-    abstract DefineGlobalVariable : [<MarshalAs(UnmanagedType.LPWStr)>] globalvarname : string *
-                                  attributes : int *
-                                  cSig : int *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature : byte[] *
-                                  addressKind : int *
-                                  addr1 : int *
-                                  addr2 : int *
-                                  addr3 : int -> unit
-    abstract Close : unit -> unit
-    abstract SetSymAttribute : parent : int *
-                            [<MarshalAs(UnmanagedType.LPWStr)>] attname : string *
-                            cData : int *
-                            [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]data : byte[] -> unit
-    abstract OpenNamespace : [<MarshalAs(UnmanagedType.LPWStr)>] nsname : string -> unit
-    abstract CloseNamespace : unit -> unit
-    abstract UsingNamespace : [<MarshalAs(UnmanagedType.LPWStr)>] fullName : string -> unit
-    abstract SetMethodSourceRange : startDoc : ISymUnmanagedDocumentWriter *
-                                  startLine : int *
-                                  startColumn : int *
-                                  endDoc : ISymUnmanagedDocumentWriter *
-                                  endLine : int *
-                                  endColumn : int -> unit
-    abstract Initialize : emitter : nativeint *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] filename : string *
-                    stream : IStream *
-                    fullBuild : bool -> unit
-    abstract GetDebugInfo : iDD : ImageDebugDirectory byref *
-                          cData : int * 
-                          pcData : int byref *
-                          [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data : byte[] -> unit
-    abstract DefineSequencePoints : document : ISymUnmanagedDocumentWriter *
-                                  spCount : int *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]offsets : int [] *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]lines : int [] *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]columns : int [] *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]endLines : int [] *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]endColumns : int [] -> unit
-    abstract RemapToken : oldToken : int * newToken : int -> unit
-    abstract Initialize2 : emitter : nativeint *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] tempfilename : string *
-                    stream : IStream *
-                    fullBuild : bool *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] finalfilename : string -> unit
-    abstract DefineConstant : [<MarshalAs(UnmanagedType.LPWStr)>] constname : string *
-                            value : Object *
-                            cSig : int *
-                            [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature : byte[] -> unit
-    abstract Abort : unit -> unit
-    abstract DefineLocalVariable2 : [<MarshalAs(UnmanagedType.LPWStr)>] localvarname2 : string *
-                                  attributes : int *
-                                  sigToken : int *
-                                  addressKind : int *
-                                  addr1 : int *
-                                  addr2 : int *
-                                  addr3 : int *
-                                  startOffset : int *
-                                  endOffset : int -> unit          
-    abstract DefineGlobalVariable2 : [<MarshalAs(UnmanagedType.LPWStr)>] globalvarname2 : string *
-                                    attributes : int *
-                                    sigToken : int *
-                                    addressKind : int *
-                                    addr1 : int *
-                                    addr2 : int *
-                                    addr3 : int -> unit                   
-    abstract DefineConstant2 : [<MarshalAs(UnmanagedType.LPWStr)>] constantname2 : string *
-                              value : Object *
-                              sigToken : int -> unit          
-    abstract OpenMethod2 : method2 : int *
-                          isect : int *
-                          offset : int -> unit
+    abstract DefineDocument: [<MarshalAs(UnmanagedType.LPWStr)>] url: string *
+                              language: System.Guid byref *
+                              languageVendor: System.Guid byref *
+                              documentType: System.Guid byref *
+                              [<MarshalAs(UnmanagedType.Interface)>] RetVal: ISymUnmanagedDocumentWriter byref -> unit    
+    abstract SetUserEntryPoint: entryMethod: uint32 -> unit     
+    abstract OpenMethod: meth: int -> unit
+    abstract CloseMethod: unit -> unit    
+    abstract OpenScope: startOffset: int * pRetVal: int byref -> unit    
+    abstract CloseScope: endOffset: int -> unit
+    abstract SetScopeRange: scopeID: int * startOffset: int * endOffset: int -> unit    
+    abstract DefineLocalVariable: [<MarshalAs(UnmanagedType.LPWStr)>] varname: string *
+                                attributes: int *
+                                cSig: int *
+                                [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] *
+                                addressKind: int *
+                                addr1: int *
+                                addr2: int *
+                                addr3: int *
+                                startOffset: int *
+                                endOffset: int -> unit
+    abstract DefineParameter: [<MarshalAs(UnmanagedType.LPWStr)>] paramname: string *
+                            attributes: int *
+                            sequence: int *
+                            addressKind: int *
+                            addr1: int *
+                            addr2: int *
+                            addr3: int -> unit
+    abstract DefineField: parent: int *
+                      [<MarshalAs(UnmanagedType.LPWStr)>] fieldname: string *
+                      attributes: int *
+                      cSig: int *
+                      [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=3s)>]signature: byte[] *
+                      addressKind: int *
+                      addr1: int *
+                      addr2: int *
+                      addr3: int -> unit
+    abstract DefineGlobalVariable: [<MarshalAs(UnmanagedType.LPWStr)>] globalvarname: string *
+                                  attributes: int *
+                                  cSig: int *
+                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] *
+                                  addressKind: int *
+                                  addr1: int *
+                                  addr2: int *
+                                  addr3: int -> unit
+    abstract Close: unit -> unit
+    abstract SetSymAttribute: parent: int *
+                            [<MarshalAs(UnmanagedType.LPWStr)>] attname: string *
+                            cData: int *
+                            [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]data: byte[] -> unit
+    abstract OpenNamespace: [<MarshalAs(UnmanagedType.LPWStr)>] nsname: string -> unit
+    abstract CloseNamespace: unit -> unit
+    abstract UsingNamespace: [<MarshalAs(UnmanagedType.LPWStr)>] fullName: string -> unit
+    abstract SetMethodSourceRange: startDoc: ISymUnmanagedDocumentWriter *
+                                  startLine: int *
+                                  startColumn: int *
+                                  endDoc: ISymUnmanagedDocumentWriter *
+                                  endLine: int *
+                                  endColumn: int -> unit
+    abstract Initialize: emitter: nativeint *
+                    [<MarshalAs(UnmanagedType.LPWStr)>] filename: string *
+                    stream: IStream *
+                    fullBuild: bool -> unit
+    abstract GetDebugInfo: iDD: ImageDebugDirectory byref *
+                          cData: int * 
+                          pcData: int byref *
+                          [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data: byte[] -> unit
+    abstract DefineSequencePoints: document: ISymUnmanagedDocumentWriter *
+                                  spCount: int *
+                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]offsets: int [] *
+                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]lines: int [] *
+                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]columns: int [] *
+                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]endLines: int [] *
+                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]endColumns: int [] -> unit
+    abstract RemapToken: oldToken: int * newToken: int -> unit
+    abstract Initialize2: emitter: nativeint *
+                    [<MarshalAs(UnmanagedType.LPWStr)>] tempfilename: string *
+                    stream: IStream *
+                    fullBuild: bool *
+                    [<MarshalAs(UnmanagedType.LPWStr)>] finalfilename: string -> unit
+    abstract DefineConstant: [<MarshalAs(UnmanagedType.LPWStr)>] constname: string *
+                            value: Object *
+                            cSig: int *
+                            [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] -> unit
+    abstract Abort: unit -> unit
+    abstract DefineLocalVariable2: [<MarshalAs(UnmanagedType.LPWStr)>] localvarname2: string *
+                                  attributes: int *
+                                  sigToken: int *
+                                  addressKind: int *
+                                  addr1: int *
+                                  addr2: int *
+                                  addr3: int *
+                                  startOffset: int *
+                                  endOffset: int -> unit          
+    abstract DefineGlobalVariable2: [<MarshalAs(UnmanagedType.LPWStr)>] globalvarname2: string *
+                                    attributes: int *
+                                    sigToken: int *
+                                    addressKind: int *
+                                    addr1: int *
+                                    addr2: int *
+                                    addr3: int -> unit                   
+    abstract DefineConstant2: [<MarshalAs(UnmanagedType.LPWStr)>] constantname2: string *
+                              value: Object *
+                              sigToken: int -> unit          
+    abstract OpenMethod2: method2: int *
+                          isect: int *
+                          offset: int -> unit
 
-type PdbWriter = { symWriter : ISymUnmanagedWriter2 }
-type PdbDocumentWriter = { symDocWriter : ISymUnmanagedDocumentWriter }  (* pointer to pDocumentWriter COM object *)
+type PdbWriter = { symWriter: ISymUnmanagedWriter2 }
+type PdbDocumentWriter = { symDocWriter: ISymUnmanagedDocumentWriter }  (* pointer to pDocumentWriter COM object *)
 type idd =
-    { iddCharacteristics: int32;
+    { iddCharacteristics: int32
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
-      iddType: int32;
-      iddData: byte[];}
+      iddType: int32
+      iddData: byte[] }
 #endif
 
 #if !FX_NO_PDB_WRITER
-let pdbInitialize (binaryName:string) (pdbName:string) =
+let pdbInitialize (binaryName: string) (pdbName: string) =
     // collect necessary COM types
     let CorMetaDataDispenser = System.Type.GetTypeFromProgID("CLRMetaData.CorMetaDataDispenser")
   
     // get the importer pointer 
     let mdd = System.Activator.CreateInstance(CorMetaDataDispenser) :?> IMetaDataDispenser
-    let mutable IID_IMetaDataEmit = new Guid("BA3FEE4C-ECB9-4E41-83B7-183FA41CD859");
+    let mutable IID_IMetaDataEmit = new Guid("BA3FEE4C-ECB9-4E41-83B7-183FA41CD859")
     let mutable o = Object()
     mdd.OpenScope(binaryName, 0x1, &IID_IMetaDataEmit, &o) // 0x1 = ofWrite
     let emitterPtr = Marshal.GetComInterfaceForObject(o, typeof<IMetadataEmit>)
@@ -1036,15 +1036,15 @@ let pdbInitialize (binaryName:string) (pdbName:string) =
     { symWriter = writer }
 
 
-[<assembly:System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", Scope="member", Target="FSharp.Compiler.AbstractIL.Internal.Support.#pdbClose(FSharp.Compiler.AbstractIL.Internal.Support+PdbWriter)", MessageId="System.GC.Collect")>]
+[<assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001: AvoidCallingProblematicMethods", Scope="member", Target="FSharp.Compiler.AbstractIL.Internal.Support.#pdbClose(FSharp.Compiler.AbstractIL.Internal.Support+PdbWriter)", MessageId="System.GC.Collect")>]
 do()
 
-let pdbCloseDocument(documentWriter : PdbDocumentWriter) = 
+let pdbCloseDocument(documentWriter: PdbDocumentWriter) = 
     Marshal.ReleaseComObject (documentWriter.symDocWriter)
     |> ignore
 
-[<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", MessageId="System.GC.Collect")>]
-let pdbClose (writer:PdbWriter) dllFilename pdbFilename =
+[<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001: AvoidCallingProblematicMethods", MessageId="System.GC.Collect")>]
+let pdbClose (writer: PdbWriter) dllFilename pdbFilename =
     writer.symWriter.Close()
     // CorSymWriter objects (ISymUnmanagedWriter) lock the files they're operating
     // on (both the pdb and the binary).  The locks are released only when their ref
@@ -1073,7 +1073,7 @@ let pdbClose (writer:PdbWriter) dllFilename pdbFilename =
         System.GC.WaitForPendingFinalizers()
         attempts <- attempts + 1
 
-let pdbSetUserEntryPoint (writer:PdbWriter) (entryMethodToken:int32) =
+let pdbSetUserEntryPoint (writer: PdbWriter) (entryMethodToken: int32) =
     writer.symWriter.SetUserEntryPoint((uint32)entryMethodToken)
 
 // Document checksum algorithms
@@ -1084,7 +1084,7 @@ let hashSizeOfMD5 = 16
 // If the FIPS algorithm policy is enabled on the computer (e.g., for US government employees and contractors)
 // then obtaining the MD5 implementation in BCL will throw. 
 // In this case, catch the failure, and not set a checksum. 
-let internal setCheckSum (url:string, writer:ISymUnmanagedDocumentWriter) =
+let internal setCheckSum (url: string, writer: ISymUnmanagedDocumentWriter) =
     try
         use file = FileSystem.FileStreamReadShim(url)
         use md5 = System.Security.Cryptography.MD5.Create()
@@ -1093,7 +1093,7 @@ let internal setCheckSum (url:string, writer:ISymUnmanagedDocumentWriter) =
             writer.SetCheckSum (guidSourceHashMD5, hashSizeOfMD5, checkSum)
     with _ -> ()
 
-let pdbDefineDocument (writer:PdbWriter) (url:string) = 
+let pdbDefineDocument (writer: PdbWriter) (url: string) = 
     //3F5162F8-07C6-11D3-9053-00C04FA302A1
     //let mutable corSymLanguageTypeCSharp = System.Guid(0x3F5162F8u, 0x07C6us, 0x11D3us, 0x90uy, 0x53uy, 0x00uy, 0xC0uy, 0x4Fuy, 0xA3uy, 0x02uy, 0xA1uy)
     let mutable corSymLanguageTypeFSharp = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
@@ -1104,27 +1104,27 @@ let pdbDefineDocument (writer:PdbWriter) (url:string) =
     setCheckSum (url, docWriter)
     { symDocWriter = docWriter }
 
-let pdbOpenMethod (writer:PdbWriter) (methodToken:int32) = 
+let pdbOpenMethod (writer: PdbWriter) (methodToken: int32) = 
     writer.symWriter.OpenMethod(methodToken)
 
-let pdbCloseMethod (writer:PdbWriter) = 
+let pdbCloseMethod (writer: PdbWriter) = 
     writer.symWriter.CloseMethod()
   
-let pdbOpenScope (writer:PdbWriter) (startOffset:int32) = 
+let pdbOpenScope (writer: PdbWriter) (startOffset: int32) = 
     let mutable retInt = 0
     writer.symWriter.OpenScope(startOffset, &retInt)
     check "action" (retInt)
 
-let pdbCloseScope (writer:PdbWriter) (endOffset:int32) = 
+let pdbCloseScope (writer: PdbWriter) (endOffset: int32) = 
     writer.symWriter.CloseScope(endOffset)
 
-let pdbDefineLocalVariable (writer:PdbWriter) (name:string) (signature:byte[]) (addr1:int32) = 
+let pdbDefineLocalVariable (writer: PdbWriter) (name: string) (signature: byte[]) (addr1: int32) = 
     writer.symWriter.DefineLocalVariable(name, 0, signature.Length, signature, (int)System.Diagnostics.SymbolStore.SymAddressKind.ILOffset, addr1, 0, 0, 0, 0)
 
-let pdbSetMethodRange (writer:PdbWriter) (docWriter1: PdbDocumentWriter) (startLine:int) (startCol:int) (docWriter2: PdbDocumentWriter) (endLine:int) (endCol:int) = 
+let pdbSetMethodRange (writer: PdbWriter) (docWriter1: PdbDocumentWriter) (startLine: int) (startCol: int) (docWriter2: PdbDocumentWriter) (endLine: int) (endCol: int) = 
     writer.symWriter.SetMethodSourceRange(docWriter1.symDocWriter, startLine, startCol, docWriter2.symDocWriter, endLine, endCol)
 
-let pdbDefineSequencePoints (writer:PdbWriter) (docWriter: PdbDocumentWriter) (pts: (int * int * int * int * int) array)  = 
+let pdbDefineSequencePoints (writer: PdbWriter) (docWriter: PdbDocumentWriter) (pts: (int * int * int * int * int)[])  = 
     let offsets = (Array.map (fun (x,_,_,_,_) -> x) pts) 
     let lines = (Array.map (fun (_,x,_,_,_) -> x) pts) 
     let columns = (Array.map (fun (_,_,x,_,_) -> x) pts) 
@@ -1136,13 +1136,13 @@ let pdbWriteDebugInfo (writer: PdbWriter) =
     let mutable iDD = new ImageDebugDirectory()
     let mutable length = 0
     writer.symWriter.GetDebugInfo(&iDD, 0, &length, null)
-    let mutable data : byte [] = Array.zeroCreate length
+    let mutable data: byte [] = Array.zeroCreate length
     writer.symWriter.GetDebugInfo(&iDD, length, &length, data)
 
-    { iddCharacteristics = iDD.Characteristics;
-      iddMajorVersion = (int32)iDD.MajorVersion;
-      iddMinorVersion = (int32)iDD.MinorVersion;
-      iddType = iDD.Type;
+    { iddCharacteristics = iDD.Characteristics
+      iddMajorVersion = (int32)iDD.MajorVersion
+      iddMinorVersion = (int32)iDD.MinorVersion
+      iddType = iDD.Type
       iddData = data}
 #endif
 
@@ -1156,19 +1156,19 @@ type PdbVariable = { symVariable: ISymbolVariable }
 type PdbMethodScope = { symScope: ISymbolScope }
 
 type PdbSequencePoint = 
-    { pdbSeqPointOffset: int;
-      pdbSeqPointDocument: PdbDocument;
-      pdbSeqPointLine: int;
-      pdbSeqPointColumn: int;
-      pdbSeqPointEndLine: int;
-      pdbSeqPointEndColumn: int; }
+    { pdbSeqPointOffset: int
+      pdbSeqPointDocument: PdbDocument
+      pdbSeqPointLine: int
+      pdbSeqPointColumn: int
+      pdbSeqPointEndLine: int
+      pdbSeqPointEndColumn: int }
 
-let pdbReadOpen (moduleName:string) (path:string) :  PdbReader = 
+let pdbReadOpen (moduleName: string) (path: string) : PdbReader = 
     let CorMetaDataDispenser = System.Type.GetTypeFromProgID("CLRMetaData.CorMetaDataDispenser")
-    let mutable IID_IMetaDataImport = new Guid("7DAC8207-D3AE-4c75-9B67-92801A497D44");
+    let mutable IID_IMetaDataImport = new Guid("7DAC8207-D3AE-4c75-9B67-92801A497D44")
     let mdd = System.Activator.CreateInstance(CorMetaDataDispenser) :?> IMetaDataDispenser
-    let mutable o : Object = new Object()
-    mdd.OpenScope(moduleName, 0, &IID_IMetaDataImport, &o) ;
+    let mutable o: Object = new Object()
+    mdd.OpenScope(moduleName, 0, &IID_IMetaDataImport, &o) 
     let importerPtr = Marshal.GetComInterfaceForObject(o, typeof<IMetadataImport>)
     try 
 #if ENABLE_MONO_SUPPORT
@@ -1193,44 +1193,44 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
 
 // The symbol reader's finalize method will clean up any unmanaged resources.
 // If file locks persist, we may want to manually invoke finalize
-let pdbReadClose (_reader:PdbReader) : unit = ()
+let pdbReadClose (_reader: PdbReader) : unit = ()
 
-let pdbReaderGetMethod (reader:PdbReader) (token:int32) : PdbMethod = 
+let pdbReaderGetMethod (reader: PdbReader) (token: int32) : PdbMethod = 
     { symMethod = reader.symReader.GetMethod(System.Diagnostics.SymbolStore.SymbolToken(token)) }
 
-let pdbReaderGetMethodFromDocumentPosition (reader:PdbReader)  (document:PdbDocument) (line:int) (column:int) : PdbMethod = 
+let pdbReaderGetMethodFromDocumentPosition (reader: PdbReader)  (document: PdbDocument) (line: int) (column: int) : PdbMethod = 
     { symMethod = reader.symReader.GetMethodFromDocumentPosition(document.symDocument, line, column) }
 
-let pdbReaderGetDocuments (reader:PdbReader) : PdbDocument array = 
+let pdbReaderGetDocuments (reader: PdbReader) : PdbDocument[] = 
     let arr = reader.symReader.GetDocuments()
     Array.map (fun i -> { symDocument=i }) arr
 
-let pdbReaderGetDocument (reader:PdbReader) (url:string) (language:byte[]) (languageVendor:byte[]) (documentType:byte[]) : PdbDocument = 
+let pdbReaderGetDocument (reader: PdbReader) (url: string) (language: byte[]) (languageVendor: byte[]) (documentType: byte[]) : PdbDocument = 
     { symDocument = reader.symReader.GetDocument(url, System.Guid(language), System.Guid(languageVendor), System.Guid(documentType)) }
 
-let pdbDocumentGetURL (document:PdbDocument) : string = 
+let pdbDocumentGetURL (document: PdbDocument) : string = 
     document.symDocument.URL
 
-let pdbDocumentGetType (document:PdbDocument) : byte[] (* guid *) = 
+let pdbDocumentGetType (document: PdbDocument) : byte[] (* guid *) = 
     let guid = document.symDocument.DocumentType
     guid.ToByteArray()
 
-let pdbDocumentGetLanguage (document:PdbDocument) : byte[] (* guid *) = 
+let pdbDocumentGetLanguage (document: PdbDocument) : byte[] (* guid *) = 
     let guid = document.symDocument.Language
     guid.ToByteArray()
 
-let pdbDocumentGetLanguageVendor (document:PdbDocument) : byte[] = 
+let pdbDocumentGetLanguageVendor (document: PdbDocument) : byte[] = 
     let guid = document.symDocument.LanguageVendor
     guid.ToByteArray()
   
-let pdbDocumentFindClosestLine (document:PdbDocument) (line:int) : int = 
+let pdbDocumentFindClosestLine (document: PdbDocument) (line: int) : int = 
     document.symDocument.FindClosestLine(line)
 
-let pdbMethodGetToken (meth:PdbMethod) : int32 = 
+let pdbMethodGetToken (meth: PdbMethod) : int32 = 
     let token = meth.symMethod.Token
     token.GetToken()
   
-let pdbMethodGetSequencePoints (meth:PdbMethod) : PdbSequencePoint array =
+let pdbMethodGetSequencePoints (meth: PdbMethod) : PdbSequencePoint[] =
     let  pSize = meth.symMethod.SequencePointCount
     let offsets = Array.zeroCreate pSize
     let docs = Array.zeroCreate pSize
@@ -1242,32 +1242,32 @@ let pdbMethodGetSequencePoints (meth:PdbMethod) : PdbSequencePoint array =
     meth.symMethod.GetSequencePoints(offsets, docs, lines, cols, endLines, endColumns)
 
     Array.init pSize (fun i -> 
-        { pdbSeqPointOffset = offsets.[i];
-          pdbSeqPointDocument = { symDocument = docs.[i] };
-          pdbSeqPointLine = lines.[i];
-          pdbSeqPointColumn = cols.[i];
-          pdbSeqPointEndLine = endLines.[i];
-          pdbSeqPointEndColumn = endColumns.[i]; }) 
+        { pdbSeqPointOffset = offsets.[i]
+          pdbSeqPointDocument = { symDocument = docs.[i] }
+          pdbSeqPointLine = lines.[i]
+          pdbSeqPointColumn = cols.[i]
+          pdbSeqPointEndLine = endLines.[i]
+          pdbSeqPointEndColumn = endColumns.[i] }) 
 
-let pdbScopeGetChildren (scope:PdbMethodScope) : PdbMethodScope array = 
+let pdbScopeGetChildren (scope: PdbMethodScope) : PdbMethodScope[] = 
     let arr = scope.symScope.GetChildren()
     Array.map (fun i -> { symScope=i }) arr
 
-let pdbScopeGetOffsets (scope:PdbMethodScope) : int * int =  
+let pdbScopeGetOffsets (scope: PdbMethodScope) : int * int =  
     (scope.symScope.StartOffset, scope.symScope.EndOffset)
 
-let pdbScopeGetLocals (scope:PdbMethodScope) : PdbVariable array = 
+let pdbScopeGetLocals (scope: PdbMethodScope) : PdbVariable[] = 
     let arr = scope.symScope.GetLocals()
     Array.map (fun i -> { symVariable=i }) arr
 
-let pdbVariableGetName (variable:PdbVariable) : string = 
+let pdbVariableGetName (variable: PdbVariable) : string = 
     variable.symVariable.Name
 
-let pdbVariableGetSignature (variable:PdbVariable) :  byte[] = 
+let pdbVariableGetSignature (variable: PdbVariable) : byte[] = 
     variable.symVariable.GetSignature()
 
 // The tuple is (AddressKind, AddressField1)
-let pdbVariableGetAddressAttributes (variable:PdbVariable) :  (int32 * int32) = 
+let pdbVariableGetAddressAttributes (variable: PdbVariable) : (int32 * int32) = 
     (int32 variable.symVariable.AddressKind,variable.symVariable.AddressField1)
 #endif
 
@@ -1283,23 +1283,23 @@ let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
 
 let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
 
-let signerGetPublicKeyForKeyPair (kp:keyPair) : pubkey = 
+let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = 
     let reply = (StrongNameSign.getPublicKeyForKeyPair kp)
     reply
 
-let signerGetPublicKeyForKeyContainer (_kcName:keyContainerName) : pubkey = 
+let signerGetPublicKeyForKeyContainer (_kcName: keyContainerName) : pubkey = 
     raise (NotImplementedException("signerGetPublicKeyForKeyContainer is not yet implemented"))
  
-let signerCloseKeyContainer (_kc:keyContainerName) :unit = 
+let signerCloseKeyContainer (_kc: keyContainerName) : unit = 
     raise (NotImplementedException("signerCloseKeyContainer is not yet implemented"))
 
-let signerSignatureSize (pk:pubkey) : int = 
+let signerSignatureSize (pk: pubkey) : int = 
     (StrongNameSign.signatureSize pk)
 
-let signerSignFileWithKeyPair (fileName:string) (kp:keyPair) :unit =
+let signerSignFileWithKeyPair (fileName: string) (kp: keyPair) : unit =
     (StrongNameSign.signFile fileName kp)
 
-let signerSignFileWithKeyContainer (_fileName:string) (_kcName:keyContainerName) : unit =  
+let signerSignFileWithKeyContainer (_fileName: string) (_kcName: keyContainerName) : unit =  
     raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
 
 #else
@@ -1310,104 +1310,104 @@ type UnusedCOMMethod = unit -> unit
 [<ComImport; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("D332DB9E-B9B3-4125-8207-A14884F53216")>]
 type ICLRMetaHost =
     [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)>]
-    abstract GetRuntime : 
-        [<In; MarshalAs(UnmanagedType.LPWStr)>] version : string *
-        [<In; MarshalAs(UnmanagedType.LPStruct)>] interfaceId : System.Guid -> [<MarshalAs(UnmanagedType.Interface)>] System.Object
+    abstract GetRuntime: 
+        [<In; MarshalAs(UnmanagedType.LPWStr)>] version: string *
+        [<In; MarshalAs(UnmanagedType.LPStruct)>] interfaceId: System.Guid -> [<MarshalAs(UnmanagedType.Interface)>] System.Object
             
     // Methods that we don't need are stubbed out for now...
-    abstract GetVersionFromFile : UnusedCOMMethod
-    abstract EnumerateInstalledRuntimes : UnusedCOMMethod
-    abstract EnumerateLoadedRuntimes : UnusedCOMMethod
-    abstract Reserved01 : UnusedCOMMethod
+    abstract GetVersionFromFile: UnusedCOMMethod
+    abstract EnumerateInstalledRuntimes: UnusedCOMMethod
+    abstract EnumerateLoadedRuntimes: UnusedCOMMethod
+    abstract Reserved01: UnusedCOMMethod
 
 // We don't currently support ComConversionLoss
 [<System.Security.SecurityCritical; Interface>]
 [<ComImport; ComConversionLoss; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("9FD93CCF-3280-4391-B3A9-96E1CDE77C8D")>]
 type ICLRStrongName =
     // Methods that we don't need are stubbed out for now...
-    abstract GetHashFromAssemblyFile : UnusedCOMMethod
-    abstract GetHashFromAssemblyFileW : UnusedCOMMethod
-    abstract GetHashFromBlob : UnusedCOMMethod
-    abstract GetHashFromFile : UnusedCOMMethod
-    abstract GetHashFromFileW : UnusedCOMMethod
-    abstract GetHashFromHandle : UnusedCOMMethod
-    abstract StrongNameCompareAssemblies : UnusedCOMMethod
+    abstract GetHashFromAssemblyFile: UnusedCOMMethod
+    abstract GetHashFromAssemblyFileW: UnusedCOMMethod
+    abstract GetHashFromBlob: UnusedCOMMethod
+    abstract GetHashFromFile: UnusedCOMMethod
+    abstract GetHashFromFileW: UnusedCOMMethod
+    abstract GetHashFromHandle: UnusedCOMMethod
+    abstract StrongNameCompareAssemblies: UnusedCOMMethod
         
     [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)>]
-    abstract StrongNameFreeBuffer : [<In>] pbMemory : nativeint -> unit
+    abstract StrongNameFreeBuffer: [<In>] pbMemory: nativeint -> unit
         
-    abstract StrongNameGetBlob : UnusedCOMMethod
-    abstract StrongNameGetBlobFromImage : UnusedCOMMethod
+    abstract StrongNameGetBlob: UnusedCOMMethod
+    abstract StrongNameGetBlobFromImage: UnusedCOMMethod
 
     [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)>]
     abstract StrongNameGetPublicKey :
-            [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer : string *
-            [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>] pbKeyBlob : byte[] *
-            [<In; MarshalAs(UnmanagedType.U4)>] cbKeyBlob : uint32 *
-            [<Out>] ppbPublicKeyBlob : nativeint byref *
-            [<Out; MarshalAs(UnmanagedType.U4)>] pcbPublicKeyBlob : uint32 byref -> unit
+            [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer: string *
+            [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>] pbKeyBlob: byte[] *
+            [<In; MarshalAs(UnmanagedType.U4)>] cbKeyBlob: uint32 *
+            [<Out>] ppbPublicKeyBlob: nativeint byref *
+            [<Out; MarshalAs(UnmanagedType.U4)>] pcbPublicKeyBlob: uint32 byref -> unit
                 
-    abstract StrongNameHashSize : UnusedCOMMethod
+    abstract StrongNameHashSize: UnusedCOMMethod
 
     [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)>]
-    abstract StrongNameKeyDelete : [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer : string -> unit
+    abstract StrongNameKeyDelete: [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer: string -> unit
 
-    abstract StrongNameKeyGen : UnusedCOMMethod
-    abstract StrongNameKeyGenEx : UnusedCOMMethod
-    abstract StrongNameKeyInstall : UnusedCOMMethod
+    abstract StrongNameKeyGen: UnusedCOMMethod
+    abstract StrongNameKeyGenEx: UnusedCOMMethod
+    abstract StrongNameKeyInstall: UnusedCOMMethod
 
     [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)>]
     abstract StrongNameSignatureGeneration :
-            [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzFilePath : string *
-            [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer : string *
-            [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex=3s)>] pbKeyBlob : byte [] *
-            [<In; MarshalAs(UnmanagedType.U4)>] cbKeyBlob : uint32 *
-            [<Out>] ppbSignatureBlob : nativeint *
-            [<MarshalAs(UnmanagedType.U4)>] pcbSignatureBlob : uint32 byref -> unit
+            [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzFilePath: string *
+            [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer: string *
+            [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex=3s)>] pbKeyBlob: byte [] *
+            [<In; MarshalAs(UnmanagedType.U4)>] cbKeyBlob: uint32 *
+            [<Out>] ppbSignatureBlob: nativeint *
+            [<MarshalAs(UnmanagedType.U4)>] pcbSignatureBlob: uint32 byref -> unit
                 
-    abstract StrongNameSignatureGenerationEx : UnusedCOMMethod
+    abstract StrongNameSignatureGenerationEx: UnusedCOMMethod
 
     [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)>]
     abstract StrongNameSignatureSize :
-            [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>] pbPublicKeyBlob : byte[] *
-            [<In; MarshalAs(UnmanagedType.U4)>] cbPublicKeyBlob : uint32 *
-            [<Out; MarshalAs(UnmanagedType.U4)>] pcbSize : uint32 byref -> unit
+            [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>] pbPublicKeyBlob: byte[] *
+            [<In; MarshalAs(UnmanagedType.U4)>] cbPublicKeyBlob: uint32 *
+            [<Out; MarshalAs(UnmanagedType.U4)>] pcbSize: uint32 byref -> unit
                 
-    abstract StrongNameSignatureVerification : UnusedCOMMethod
+    abstract StrongNameSignatureVerification: UnusedCOMMethod
 
     [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)>]
     abstract StrongNameSignatureVerificationEx :
-            [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzFilePath : string *
-            [<In; MarshalAs(UnmanagedType.I1)>] fForceVerification : bool *
-            [<In; MarshalAs(UnmanagedType.I1)>] pfWasVerified : bool byref -> [<MarshalAs(UnmanagedType.I1)>] bool
+            [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzFilePath: string *
+            [<In; MarshalAs(UnmanagedType.I1)>] fForceVerification: bool *
+            [<In; MarshalAs(UnmanagedType.I1)>] pfWasVerified: bool byref -> [<MarshalAs(UnmanagedType.I1)>] bool
                 
-    abstract StrongNameSignatureVerificationFromImage : UnusedCOMMethod
-    abstract StrongNameTokenFromAssembly : UnusedCOMMethod
-    abstract StrongNameTokenFromAssemblyEx : UnusedCOMMethod
-    abstract StrongNameTokenFromPublicKey : UnusedCOMMethod
+    abstract StrongNameSignatureVerificationFromImage: UnusedCOMMethod
+    abstract StrongNameTokenFromAssembly: UnusedCOMMethod
+    abstract StrongNameTokenFromAssemblyEx: UnusedCOMMethod
+    abstract StrongNameTokenFromPublicKey: UnusedCOMMethod
     
 
 [<System.Security.SecurityCritical; Interface>]
 [<ComImport; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("BD39D1D2-BA2F-486A-89B0-B4B0CB466891")>]
 type ICLRRuntimeInfo =
     // REVIEW: Methods that we don't need will be stubbed out for now...
-    abstract GetVersionString : unit -> unit
-    abstract GetRuntimeDirectory : unit -> unit
-    abstract IsLoaded : unit -> unit
-    abstract LoadErrorString : unit -> unit
-    abstract LoadLibrary : unit -> unit
-    abstract GetProcAddress : unit -> unit
+    abstract GetVersionString: unit -> unit
+    abstract GetRuntimeDirectory: unit -> unit
+    abstract IsLoaded: unit -> unit
+    abstract LoadErrorString: unit -> unit
+    abstract LoadLibrary: unit -> unit
+    abstract GetProcAddress: unit -> unit
 
     [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)>]
     abstract GetInterface :
-        [<In; MarshalAs(UnmanagedType.LPStruct)>] coClassId : System.Guid *
-        [<In; MarshalAs(UnmanagedType.LPStruct)>] interfaceId : System.Guid -> [<MarshalAs(UnmanagedType.Interface)>]System.Object
+        [<In; MarshalAs(UnmanagedType.LPStruct)>] coClassId: System.Guid *
+        [<In; MarshalAs(UnmanagedType.LPStruct)>] interfaceId: System.Guid -> [<MarshalAs(UnmanagedType.Interface)>]System.Object
     
 [<System.Security.SecurityCritical>]
 [<DllImport("mscoree.dll", SetLastError = true, PreserveSig=false, EntryPoint="CreateInterface")>]
 let CreateInterface (
-                    ([<MarshalAs(UnmanagedType.LPStruct)>] _clsidguid : System.Guid),
-                    ([<MarshalAs(UnmanagedType.LPStruct)>] _guid : System.Guid),
+                    ([<MarshalAs(UnmanagedType.LPStruct)>] _clsidguid: System.Guid),
+                    ([<MarshalAs(UnmanagedType.LPStruct)>] _guid: System.Guid),
                     ([<MarshalAs(UnmanagedType.Interface)>] _metaHost :
                         ICLRMetaHost byref)) : unit = failwith "CreateInterface"
 
@@ -1415,7 +1415,7 @@ let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
 
 let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
 
-let mutable iclrsn : ICLRStrongName option = None
+let mutable iclrsn: ICLRStrongName option = None
 let getICLRStrongName () =
     match iclrsn with
     | None ->
@@ -1445,11 +1445,11 @@ let signerGetPublicKeyForKeyPair kp =
     snt.InvokeMember("PublicKey", (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public), null, sn, [| |], Globalization.CultureInfo.InvariantCulture) :?> byte[] 
  else
     let mutable pSize = 0u
-    let mutable pBuffer : nativeint = (nativeint)0
+    let mutable pBuffer: nativeint = (nativeint)0
     let iclrSN = getICLRStrongName()
 
     iclrSN.StrongNameGetPublicKey(Unchecked.defaultof<string>, kp, (uint32) kp.Length, &pBuffer, &pSize) |> ignore
-    let mutable keybuffer : byte [] = Bytes.zeroCreate ((int)pSize)
+    let mutable keybuffer: byte [] = Bytes.zeroCreate ((int)pSize)
     // Copy the marshalled data over - we'll have to free this ourselves
     Marshal.Copy(pBuffer, keybuffer, 0, (int)pSize)
     iclrSN.StrongNameFreeBuffer(pBuffer) |> ignore
@@ -1457,10 +1457,10 @@ let signerGetPublicKeyForKeyPair kp =
 
 let signerGetPublicKeyForKeyContainer kc =
     let mutable pSize = 0u
-    let mutable pBuffer : nativeint = (nativeint)0
+    let mutable pBuffer: nativeint = (nativeint)0
     let iclrSN = getICLRStrongName()
     iclrSN.StrongNameGetPublicKey(kc, Unchecked.defaultof<byte[]>, 0u, &pBuffer, &pSize) |> ignore
-    let mutable keybuffer : byte [] = Bytes.zeroCreate ((int)pSize)
+    let mutable keybuffer: byte [] = Bytes.zeroCreate ((int)pSize)
     // Copy the marshalled data over - we'll have to free this ourselves later
     Marshal.Copy(pBuffer, keybuffer, 0, (int)pSize)
     iclrSN.StrongNameFreeBuffer(pBuffer) |> ignore
@@ -1470,7 +1470,7 @@ let signerCloseKeyContainer kc =
     let iclrSN = getICLRStrongName()
     iclrSN.StrongNameKeyDelete(kc) |> ignore
 
-let signerSignatureSize (pk:byte[]) = 
+let signerSignatureSize (pk: byte[]) = 
  if IL.runningOnMono then
    if pk.Length > 32 then pk.Length - 32 else 128
  else
@@ -1483,7 +1483,7 @@ let signerSignFileWithKeyPair fileName kp =
  if IL.runningOnMono then 
     let snt = System.Type.GetType("Mono.Security.StrongName") 
     let sn = System.Activator.CreateInstance(snt, [| box kp |])
-    let conv (x:obj) = if (unbox x : bool) then 0 else -1
+    let conv (x: obj) = if (unbox x: bool) then 0 else -1
     snt.InvokeMember("Sign", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, sn, [| box fileName |], Globalization.CultureInfo.InvariantCulture) |> conv |> check "Sign"
     snt.InvokeMember("Verify", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, sn, [| box fileName |], Globalization.CultureInfo.InvariantCulture) |> conv |> check "Verify"
  else

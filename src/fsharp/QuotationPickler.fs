@@ -31,19 +31,19 @@ let mkArrayTy (n, x) = AppType(ArrayTyOp n, [x])
 let mkILNamedTy (r, l) = AppType(NamedTyOp r, l) 
 
 type CtorData = 
-    { ctorParent: NamedTypeData; 
+    { ctorParent: NamedTypeData
       ctorArgTypes: TypeData list; }
 
 type MethodData = 
-    { methParent: NamedTypeData;
-      methName: string;
-      methArgTypes: TypeData list;
-      methRetType: TypeData; 
+    { methParent: NamedTypeData
+      methName: string
+      methArgTypes: TypeData list
+      methRetType: TypeData
       numGenericArgs: int }
   
 type VarData = 
-    { vText: string; 
-      vType: TypeData; 
+    { vText: string
+      vType: TypeData
       vMutable: bool } 
 
 type FieldData = NamedTypeData * string
@@ -114,7 +114,7 @@ type ExprData =
   
 let mkVar v = VarExpr v 
 
-let mkHole (v, idx) = HoleExpr (v , idx)
+let mkHole (v, idx) = HoleExpr (v, idx)
 
 let mkApp (a, b) = CombExpr(AppOp, [], [a; b]) 
 
@@ -269,7 +269,7 @@ module SimplePickle =
         member tbl.ContainsKey x = tbl.tbl.ContainsKey x 
 
     type QuotationPickleOutState = 
-        { os: ByteBuffer; 
+        { os: ByteBuffer
           ostrings: Table<string> }
 
     let p_byte b st = st.os.EmitIntAsByte b
@@ -366,7 +366,7 @@ module SimplePickle =
             let st2 = 
                { os = ByteBuffer.Create 100000
                  ostrings=Table<_>.Create() } 
-            p_tup2 (p_list prim_pstring) p_bytes phase2data st2;
+            p_tup2 (p_list prim_pstring) p_bytes phase2data st2
             st2.os.Close() 
         phase2bytes
 

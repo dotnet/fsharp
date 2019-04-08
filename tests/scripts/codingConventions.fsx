@@ -3,7 +3,7 @@
 open System.IO
 
 let lines = 
-    [| for dir in [ "src/fsharp"; "src/fsharp/symbols"; "src/fsharp/service"; "src/absil" ]do
+    [| for dir in [ "src/fsharp"; "src/fsharp/FSharp.Core"; "src/fsharp/symbols"; "src/fsharp/service"; "src/absil" ]do
           for file in Directory.EnumerateFiles(__SOURCE_DIRECTORY__ + "/../../" + dir,"*.fs") do
         // TcGlobals.fs gets an exception
             let lines = File.ReadAllLines file
@@ -52,4 +52,68 @@ let commas =
 
 printfn "Top files that have commas without spaces: %A" (Array.truncate 10 commas)
 
+
+printfn "------DANGLINE SEMICOLONS----------"
+
+let semis =
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> line.Trim().EndsWith(";"))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have semicolon at end of line: %A" (Array.truncate 10 semis)
+
+
+printfn "------NO SPACE AFTER COLON----------"
+
+open System.Text.RegularExpressions
+
+let noSpaceAfterColons =
+    let re =  Regex(":[a-zA-Z]")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have no space after colon:\n%A" (Array.truncate 10 noSpaceAfterColons)
+
+printfn "------ SPACE BEFORE COLON----------"
+
+
+let spaceBeforeColon =
+    let re =  Regex("[^\\)] : [a-zA-Z]")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have extra space before colon:\n%A" (Array.truncate 10 spaceBeforeColon)
+
+printfn "------ Internal spacing----------"
+
+
+let internalSpacing =
+    let re =  Regex("[^ ]  [^ ]")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have internal spacing in lines:\n%A" (Array.truncate 10 internalSpacing)
 

@@ -1,18 +1,10 @@
 <Project>
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
-    <VSSDKPackageLocation>$(NuGetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)</VSSDKPackageLocation>
   </PropertyGroup>
-
-  <ImportGroup Condition="'$(ImportVsSDK)' == 'true'">
-    <Import Project="$(VSSDKPackageLocation)\build\Microsoft.VsSDK.BuildTools.props" />
-    <Import Project="$(VSSDKPackageLocation)\build\Microsoft.VsSDK.BuildTools.targets" />
-    <Import Project="$(VSSDKPackageLocation)\tools\vssdk\Microsoft.VsSDK.targets" />
-    <Import Project="DisableVsixManifestTargets.targets" Condition="'$(CreateVsixContainer)' == 'false'" />
-  </ImportGroup>
 
   <ItemGroup Condition="'$(NoMsbuild)' != 'true'">
     <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />

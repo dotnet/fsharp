@@ -48,17 +48,13 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.ReferenceResolver
 
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -91,11 +87,7 @@ module internal Utilities =
     let ignoreAllErrors f = try f() with _ -> ()
 
     // TODO: this dotnet/core polyfill can be removed when it surfaces in Type
-#if FX_RESHAPED_REFLECTION
-    let getMember (name: string) (memberType: MemberTypes) (attr: System.Reflection.BindingFlags) (declaringType: Type) =
-#else
     let getMember (name: string) (memberType: MemberTypes) (attr: BindingFlags) (declaringType: Type) =
-#endif
         let memberType =
             if memberType &&& MemberTypes.NestedType = MemberTypes.NestedType then
                 memberType ||| MemberTypes.TypeInfo
@@ -104,11 +96,7 @@ module internal Utilities =
         declaringType.GetMembers(attr) |> Array.filter(fun m -> 0 <> (int(m.MemberType &&& memberType)) && m.Name = name)
 
     let rec tryFindMember (name: string) (memberType: MemberTypes) (declaringType: Type) =
-#if FX_RESHAPED_REFLECTION
-        let bindingFlags = System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic
-#else
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic
-#endif
         match declaringType |> getMember name memberType bindingFlags with
         | [||] -> declaringType.GetInterfaces() |> Array.tryPick (tryFindMember name memberType)
         | [|m|] -> Some m
@@ -183,11 +171,6 @@ module internal Utilities =
         |> ignore
 
         outWriter.WriteLine()
-
-#if FX_RESHAPED_REFLECTION
-// restore type alias
-type BindingFlags = System.Reflection.BindingFlags
-#endif
 
 //----------------------------------------------------------------------------
 // Timing support
@@ -604,12 +587,9 @@ let internal directoryName (s:string) =
 /// Process the command line options 
 type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: string[], tcConfigB, fsiConsoleOutput: FsiConsoleOutput) = 
     let mutable enableConsoleKeyProcessing = 
-#if FX_REDUCED_CONSOLE
-        false
-#else
        // Mono on Win32 doesn't implement correct console processing
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
-#endif
+
     let mutable gui        = not runningOnMono // override via "--gui", on by default except when on Mono
 #if DEBUG
     let mutable showILCode = false // show modul il code 
@@ -714,8 +694,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                                  Some (FSIstrings.SR.fsiHelp()))
         ]);
        PrivateOptions(
-        [   CompilerOption("?"        , tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
-            CompilerOption("help"     , tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
+        [   CompilerOption("?", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
+            CompilerOption("help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
             CompilerOption("full-help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
@@ -1364,10 +1344,8 @@ module internal NativeMethods =
 
     type ControlEventHandler = delegate of int -> bool
 
-#if !FX_REDUCED_CONSOLE
     [<DllImport("kernel32.dll")>]
     extern bool SetConsoleCtrlHandler(ControlEventHandler _callback,bool _add)
-#endif
 
 // One strange case: when a TAE happens a strange thing 
 // occurs the next read from stdin always returns
@@ -1588,23 +1566,17 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
 
 module internal MagicAssemblyResolution =
     // FxCop identifies Assembly.LoadFrom.
-    [<CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", MessageId="System.Reflection.Assembly.UnsafeLoadFrom")>]
-    let private assemblyLoadFrom (path:string) = 
-
     // See bug 5501 for details on decision to use UnsafeLoadFrom here.
     // Summary:
     //  It is an explicit user trust decision to load an assembly with #r. Scripts are not run automatically (for example, by double-clicking in explorer).
     //  We considered setting loadFromRemoteSources in fsi.exe.config but this would transitively confer unsafe loading to the code in the referenced 
     //  assemblies. Better to let those assemblies decide for themselves which is safer.
-#if NETSTANDARD1_6 || NETSTANDARD2_0
-        Assembly.LoadFrom(path)
-#else
-        Assembly.UnsafeLoadFrom(path)
-#endif
+    [<CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", MessageId="System.Reflection.Assembly.UnsafeLoadFrom")>]
+    let private assemblyLoadFrom (path:string) = Assembly.UnsafeLoadFrom(path)
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) = 
 
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
         ignore tcConfigB
         ignore tcImports
         ignore fsiDynamicCompiler
@@ -2001,9 +1973,9 @@ type internal FsiInteractionProcessor
     let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: ErrorLogger, lastResult:option<FsiInteractionStepStatus>)  =
         let action,nextAction,istate = 
             match action with
-            | None                                      -> None  ,None,istate
+            | None                                      -> None,None,istate
             | Some (IHash _)                            -> action,None,istate
-            | Some (IDefns ([],_))                      -> None  ,None,istate
+            | Some (IDefns ([],_))                      -> None,None,istate
             | Some (IDefns (SynModuleDecl.HashDirective(hash,mh)::defs,m)) -> 
                 Some (IHash(hash,mh)),Some (IDefns(defs,m)),istate
 
@@ -2013,7 +1985,7 @@ type internal FsiInteractionProcessor
                     // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
                     match def with
                     | SynModuleDecl.DoExpr (SequencePointInfoForBinding.SequencePointAtBinding _, _, _)
-                    | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, _ ,_ ,_ ,_ , SequencePointInfoForBinding.SequencePointAtBinding _) :: _, _) -> true
+                    | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, _,_,_,_, SequencePointInfoForBinding.SequencePointAtBinding _) :: _, _) -> true
                     | _ -> false
                 let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
                 let defsB = Seq.skipWhile (isDefHash >> not) defs |> Seq.toList
@@ -2350,7 +2322,7 @@ type internal FsiInteractionProcessor
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
-        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, text)
+        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
 
 //----------------------------------------------------------------------------
@@ -2410,9 +2382,7 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
 /// text input, writing to the given text output and error writers.
 type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) = 
 
-#if !FX_NO_HEAPTERMINATION
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
-#endif
 
     // Explanation: When FsiEvaluationSession.Create is called we do a bunch of processing. For fsi.exe
     // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the
@@ -2424,7 +2394,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let timeReporter = FsiTimeReporter(outWriter)
 
-#if !FX_REDUCED_CONSOLE
     //----------------------------------------------------------------------------
     // Console coloring
     //----------------------------------------------------------------------------
@@ -2432,7 +2401,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // Testing shows "console coloring" is broken on some Mono configurations (e.g. Mono 2.4 Suse LiveCD).
     // To support fsi usage, the console coloring is switched off by default on Mono.
     do if runningOnMono then enableConsoleColoring <- false 
-#endif
 
 
     //----------------------------------------------------------------------------
@@ -2463,7 +2431,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
@@ -2473,7 +2441,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On
     do SetTailcallSwitch tcConfigB OptionSwitch.On    
 
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
@@ -2593,7 +2561,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             | Choice2Of2 None -> Choice2Of2 (System.Exception "Operation could not be completed due to earlier error")
             | Choice2Of2 (Some userExn) -> Choice2Of2 userExn
 
-        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs)
+        // 'true' is passed for "suggestNames" because we want the FSI session to suggest names for misspellings and it won't affect IDE perf much
+        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs, true)
 
     let dummyScriptFileName = "input.fsx"
 

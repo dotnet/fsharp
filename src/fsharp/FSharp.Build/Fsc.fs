@@ -11,10 +11,6 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 //There are a lot of flags on fsc.exe.
 //For now, not all of them are represented in the "Fsc class" object model.
 //The goal is to have the most common/important flags available via the Fsc class, and the
@@ -144,8 +140,8 @@ type public Fsc () as this =
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
                 | "ANYCPU",  _, _  -> "anycpu"
-                | "X86"   ,  _, _  -> "x86"
-                | "X64"   ,  _, _  -> "x64"
+                | "X86",  _, _  -> "x86"
+                | "X64",  _, _  -> "x64"
                 | _ -> null)
         // Resources
         if resources <> null then 

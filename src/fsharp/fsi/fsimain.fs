@@ -28,21 +28,13 @@ open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Interactive
 open FSharp.Compiler.Interactive.Shell.Settings
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 #nowarn "55"
 #nowarn "40" // let rec on value 'fsiConfig'
 
 
-
 // Hardbinding dependencies should we NGEN fsi.exe
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
 [<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
-#endif
-
 // Standard attributes
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]  
@@ -164,16 +156,12 @@ let evaluateSession(argv: string[]) =
         Console.ReadKey() |> ignore
 #endif
 
-#if !FX_REDUCED_CONSOLE
     // When VFSI is running, set the input/output encoding to UTF8.
     // Otherwise, unicode gets lost during redirection.
     // It is required only under Net4.5 or above (with unicode console feature).
     if argv |> Array.exists (fun x -> x.Contains "fsi-server") then
         Console.InputEncoding <- System.Text.Encoding.UTF8 
         Console.OutputEncoding <- System.Text.Encoding.UTF8
-#else
-    ignore argv
-#endif
 
     try
         // Create the console reader
@@ -202,7 +190,7 @@ let evaluateSession(argv: string[]) =
 //#if USE_FSharp_Compiler_Interactive_Settings
         let fsiObjOpt = 
             let defaultFSharpBinariesDir =
-#if FX_RESHAPED_REFLECTION
+#if FX_NO_APP_DOMAINS
                 System.AppContext.BaseDirectory
 #else
                 System.AppDomain.CurrentDomain.BaseDirectory
@@ -324,9 +312,7 @@ let evaluateSession(argv: string[]) =
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
 [<STAThread()>]    
-#if !FX_NO_LOADER_OPTIMIZATION
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
-#endif
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()

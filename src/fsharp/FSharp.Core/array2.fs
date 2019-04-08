@@ -53,7 +53,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ZeroCreateBased")>]
         let zeroCreateBased (base1:int) (base2:int) (length1:int) (length2:int) = 
             if (base1 = 0 && base2 = 0) then 
-#if NETSTANDARD1_6
+#if NETSTANDARD
                 zeroCreate length1 length2
 #else                
                 // Note: this overload is available on Compact Framework and Silverlight, but not Portable
@@ -139,9 +139,9 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             checkNonNull "target" target
 
-            let sourceX0, sourceY0 = source.GetLowerBound 0     , source.GetLowerBound 1
+            let sourceX0, sourceY0 = source.GetLowerBound 0, source.GetLowerBound 1
             let sourceXN, sourceYN = (length1 source) + sourceX0, (length2 source) + sourceY0  
-            let targetX0, targetY0 = target.GetLowerBound 0     , target.GetLowerBound 1
+            let targetX0, targetY0 = target.GetLowerBound 0, target.GetLowerBound 1
             let targetXN, targetYN = (length1 target) + targetX0, (length2 target) + targetY0  
 
             if sourceIndex1 < sourceX0 then invalidArgOutOfRange "sourceIndex1" sourceIndex1 "source axis-0 lower bound" sourceX0

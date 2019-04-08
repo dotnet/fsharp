@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -454,6 +454,9 @@
     </Compile>
 
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
+    <Compile Include="..\..\fsharp\DotNetFrameworkDependencies.fs">
+      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
     <Compile Include="..\..\fsharp\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>

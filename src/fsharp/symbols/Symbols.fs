@@ -86,7 +86,7 @@ module Impl =
     let entityIsUnresolved(entity:EntityRef) = 
         match entity with
         | ERefNonLocal(NonLocalEntityRef(ccu, _)) -> 
-            ccu.IsUnresolvedReference && ValueOptionInternal.isNone entity.TryDeref
+            ccu.IsUnresolvedReference && entity.TryDeref.IsNone
         | _ -> false
 
     let checkEntityIsResolved(entity:EntityRef) = 
@@ -320,7 +320,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
-                              checkEntityIsResolved(entity); 
+                              checkEntityIsResolved(entity)
                               if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
@@ -759,11 +759,11 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
 
 
     let isUnresolved() =
-        entityIsUnresolved v.TyconRef || ValueOptionInternal.isNone v.TryUnionCase 
+        entityIsUnresolved v.TyconRef || v.TryUnionCase.IsNone 
         
     let checkIsResolved() = 
         checkEntityIsResolved v.TyconRef
-        if ValueOptionInternal.isNone v.TryUnionCase then 
+        if v.TryUnionCase.IsNone then 
             invalidOp (sprintf "The union case '%s' could not be found in the target type" v.CaseName)
 
     member __.IsUnresolved = 
@@ -878,8 +878,8 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         d.TryDeclaringTyconRef |> Option.exists entityIsUnresolved ||
         match d with
         | AnonField _ -> false
-        | RecdOrClass v -> ValueOptionInternal.isNone v.TryRecdField 
-        | Union (v, _) -> ValueOptionInternal.isNone v.TryUnionCase 
+        | RecdOrClass v -> v.TryRecdField.IsNone 
+        | Union (v, _) -> v.TryUnionCase.IsNone 
         | ILField _ -> false
 
     let checkIsResolved() = 
@@ -887,10 +887,10 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         match d with 
         | AnonField _ -> ()
         | RecdOrClass v -> 
-            if ValueOptionInternal.isNone v.TryRecdField then 
+            if v.TryRecdField.IsNone then 
                 invalidOp (sprintf "The record field '%s' could not be found in the target type" v.FieldName)
         | Union (v, _) -> 
-            if ValueOptionInternal.isNone v.TryUnionCase then 
+            if v.TryUnionCase.IsNone then 
                 invalidOp (sprintf "The union case '%s' could not be found in the target type" v.CaseName)
         | ILField _ -> ()
 
@@ -1051,7 +1051,7 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             match d, uc.V with 
             | RecdOrClass r1, RecdOrClass r2 -> recdFieldRefOrder.Compare(r1, r2) = 0
             | Union (u1, n1), Union (u2, n2) -> cenv.g.unionCaseRefEq u1 u2 && n1 = n2
-            | AnonField (anonInfo1, _, _, _) , AnonField (anonInfo2, _, _, _) -> x.Name = uc.Name && anonInfoEquiv anonInfo1 anonInfo2
+            | AnonField (anonInfo1, _, _, _), AnonField (anonInfo2, _, _, _) -> x.Name = uc.Name && anonInfoEquiv anonInfo1 anonInfo2
             | _ -> false
         |   _ -> false
 
@@ -1382,7 +1382,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     let isUnresolved() = 
         match fsharpInfo() with 
         | None -> false
-        | Some v -> ValueOptionInternal.isNone v.TryDeref
+        | Some v -> v.TryDeref.IsNone
 
     let checkIsResolved() = 
         if isUnresolved() then 
@@ -1983,7 +1983,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member x.IsValCompiledAsMethod =
         match d with
-        | V valRef -> IlxGen.IsValCompiledAsMethod cenv.g valRef.Deref
+        | V valRef -> IlxGen.IsFSharpValCompiledAsMethod cenv.g valRef.Deref
         | _ -> false
 
     member x.IsValue =
@@ -2310,7 +2310,7 @@ and FSharpStaticParameter(cenv, sp: Tainted< ExtensionTyping.ProvidedParameterIn
     override x.Equals(other: obj) =
         box x === other || 
         match other with
-        |   :? FSharpStaticParameter as p -> x.Name = p.Name && x.DeclarationLocation = p.DeclarationLocation
+        |   :? FSharpStaticParameter as p -> x.Name = p.Name && Range.equals x.DeclarationLocation p.DeclarationLocation
         |   _ -> false
 
     override x.GetHashCode() = hash x.Name
@@ -2355,7 +2355,7 @@ and FSharpParameter(cenv, paramTy:TType, topArgInfo:ArgReprInfo, mOpt, isParamAr
     override x.Equals(other: obj) =
         box x === other || 
         match other with
-        |   :? FSharpParameter as p -> x.Name = p.Name && x.DeclarationLocation = p.DeclarationLocation
+        |   :? FSharpParameter as p -> x.Name = p.Name && Range.equals x.DeclarationLocation p.DeclarationLocation
         |   _ -> false
 
     override x.GetHashCode() = hash (box topArgInfo)
