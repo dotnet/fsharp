@@ -14,28 +14,29 @@
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <FSCoreMajorVersion>4.6</FSCoreMajorVersion>
     <FSCorePackageVersion>$(FSCoreMajorVersion).2</FSCorePackageVersion>
-    <FSCoreVersion>$(FSCoreMajorVersion).0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(OfficialBuildId)' == ''">$(FSCoreVersion).0</FSCoreVersion>
-    <!-- PR builds should specify a 4-part version number -->
+    <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
+    <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
+  </PropertyGroup>
+  <PropertyGroup>
     <FSPackageMajorVersion>10.4</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).2</FSPackageVersion>
-    <FSProductVersion>$(FSPackageVersion)</FSProductVersion>
-    <FSProductVersion Condition="'$(OfficialBuildId)' == ''">$(FSProductVersion).0</FSProductVersion>
-    <!-- PR builds should specify a 4-part version number -->
+    <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
+    <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
+  </PropertyGroup>
+  <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
     <VSMinorVersion>1</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
-    <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersion>
-    <VSAssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VSAssemblyVersion).0</VSAssemblyVersion>
-    <!-- PR builds should specify a 4-part version number -->
+    <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
+    <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
   </PropertyGroup>
   <!-- version number assignment -->
   <PropertyGroup>
-    <VersionPrefix>$(FSCoreVersion)</VersionPrefix>
+    <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpPackageVersion)' == 'true'">$(FSCorePackageVersion)</VersionPrefix>
-    <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersion)</VersionPrefix>
-    <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersion)</VersionPrefix>
-    <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix)</AssemblyVersion>
+    <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersionPrefix)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersionPrefix)</VersionPrefix>
+    <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix).0</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
   <PropertyGroup>
