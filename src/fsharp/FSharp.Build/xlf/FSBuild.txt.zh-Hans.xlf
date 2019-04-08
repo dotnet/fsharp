@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="toolpathUnknown">
         <source>ToolPath is unknown; specify the path to the tool.</source>
-        <target state="needs translation">ToolPath is unknown; specify the path to the tool.</target>
+        <target state="translated">ToolPath 未知；请指定工具的路径。</target>
         <note />
       </trans-unit>
     </body>

@@ -540,6 +540,7 @@ but here has type
         Assert.IsTrue(errorList.IsEmpty)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``UnicodeCharactors``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

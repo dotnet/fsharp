@@ -49,7 +49,7 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
                         | _ -> context.Span,sourceText.GetSubText(context.Span).ToString()
 
                     let codefix = 
-                        createTextChangeCodeFix(
+                        CodeFixHelpers.createTextChangeCodeFix(
                             FSComp.SR.addIndexerDot(), 
                             context,
                             (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |]))

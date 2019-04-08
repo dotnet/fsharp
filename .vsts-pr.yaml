@@ -90,7 +90,7 @@ jobs:
 
 - job: Windows
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   timeoutInMinutes: 120
   strategy:
     maxParallel: 4
@@ -128,7 +128,7 @@ jobs:
 
 - job: Windows_FCS
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   timeoutInMinutes: 120
   steps:
   - script: fcs\build.cmd TestAndNuget
