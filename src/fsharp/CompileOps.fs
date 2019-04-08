@@ -4154,7 +4154,26 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
             // Add the invalidation signal handlers to each provider
             for provider in providers do 
                 provider.PUntaint((fun tp -> 
-                    let handler = tp.Invalidate.Subscribe(fun _ -> invalidateCcu.Trigger ("The provider '" + fileNameOfRuntimeAssembly + "' reported a change"))  
+
+                    // Register the type provider invalidation handler.
+                    //
+                    // We are explicit about what the handler closure captures to help reason about the
+                    // lifetime of captured objects, especially in case the type provider instance gets leaked
+                    // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
+                    //
+                    // The closure captures 
+                    //   1. an Event value, ultimately this is made available in all CCus as ccu.InvalidateEvent
+                    //   2. any handlers registered to ccu.InvalidateEvent 
+                    //   3. a message string
+                    //
+                    // Note that the invalidation handler does not explicitly capture the TcImports. 
+                    // The only place where handlers are registered is to ccu.InvalidateEvent is in IncrementalBuilder.fs.
+
+                    let capturedInvalidateCcu = invalidateCcu
+                    let capturedMessage = "The provider '" + fileNameOfRuntimeAssembly + "' reported a change"
+                    let handler = tp.Invalidate.Subscribe(fun _ -> capturedInvalidateCcu.Trigger (capturedMessage))  
+
+                    // When the TcImports is disposed we detach the invalidation callback
                     tcImports.AttachDisposeAction(fun () -> try handler.Dispose() with _ -> ())), m)  
                 
             match providers with
