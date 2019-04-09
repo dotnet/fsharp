@@ -1,3 +1,4 @@
+.paket/
 FSharp.Compiler.Service.Tests/TestResults/*
 FSharp.Compiler.Service.netstandard/illex.fs
 FSharp.Compiler.Service.netstandard/ilpars.fs
