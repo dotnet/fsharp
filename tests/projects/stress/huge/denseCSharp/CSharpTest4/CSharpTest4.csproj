@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{05266910-54E0-455C-9314-5AB5256361F3}</ProjectGuid>
+    <ProjectGuid>{54CAAEE7-CB4A-4020-9E2C-F038C8718A38}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CSharpTest4</RootNamespace>
     <AssemblyName>CSharpTest4</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -45,15 +45,15 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CSharpTest1\CSharpTest1.csproj">
-      <Project>{c5b6d885-aef3-4fb7-b6c2-82a7be9ec2e7}</Project>
+      <Project>{c7de0031-dd3c-4ad8-b601-b18a81260e61}</Project>
       <Name>CSharpTest1</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest2\CSharpTest2.csproj">
-      <Project>{b76cf45b-f520-4f5b-b7b2-de614a54df49}</Project>
+      <Project>{83415823-6104-4ea9-b9cf-1cdb6a6de481}</Project>
       <Name>CSharpTest2</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest3\CSharpTest3.csproj">
-      <Project>{6ba08b63-6172-489c-9480-73e494fba22a}</Project>
+      <Project>{adfb2484-a994-494e-a296-6b1907f8b776}</Project>
       <Name>CSharpTest3</Name>
     </ProjectReference>
   </ItemGroup>
