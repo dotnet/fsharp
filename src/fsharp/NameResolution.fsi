@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.NameResolution
 
-open FSharp.Compiler 
+open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Infos
@@ -14,6 +14,7 @@ open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Text
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =
@@ -347,7 +348,7 @@ type internal OpenDeclaration =
 /// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
     { /// Source text
-      Source: string
+      SourceText: ISourceText
       /// Array of line start positions
       LineStartPositions: int[] }
 
@@ -370,7 +371,7 @@ type ITypecheckResultsSink =
     abstract NotifyOpenDeclaration : OpenDeclaration -> unit
 
     /// Get the current source
-    abstract CurrentSource : string option
+    abstract CurrentSourceText : ISourceText option
 
     /// Cached line-end normalized source text and an array of line end positions, used for format string parsing
     abstract FormatStringCheckContext : FormatStringCheckContext option
@@ -379,7 +380,7 @@ type ITypecheckResultsSink =
 type internal TcResultsSinkImpl =
 
     /// Create a TcResultsSinkImpl
-    new : tcGlobals : TcGlobals * ?source:string -> TcResultsSinkImpl
+    new : tcGlobals : TcGlobals * ?sourceText: ISourceText -> TcResultsSinkImpl
 
     /// Get all the resolutions reported to the sink
     member GetResolutions : unit -> TcResolutions

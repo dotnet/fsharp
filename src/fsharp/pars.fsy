@@ -3834,7 +3834,7 @@ parenExpr:
 
   | LPAREN parenExprBody ends_other_than_rparen_coming_soon_or_recover
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
-        let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 3).Start
+        let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 2).End
         SynExpr.Paren (exprFromParseError ($2 lhsm), rhs parseState 1, None, lhsm) }
 
   | LPAREN error rparen 
@@ -3857,9 +3857,9 @@ parenExpr:
         arbExpr("parenExpr2rbcs", lhsm) }
 
   | LPAREN OBLOCKEND_COMING_SOON 
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
-        let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 2).Start
-        arbExpr("parenExpr2obecs", lhsm) }
+      { let lparenRange = (rhs parseState 1)
+        reportParseErrorAt lparenRange (FSComp.SR.parsUnmatchedParen())
+        SynExpr.Paren(arbExpr("parenExpr2obecs", lparenRange.EndRange), lparenRange, None, lparenRange) }
 
   | LPAREN recover %prec prec_atomexpr_lparen_error 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 

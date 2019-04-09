@@ -87,16 +87,16 @@ type ByteBuffer with
             buf.EmitByte 0x0uy
 
     // Emit compressed untagged integer
-    member buf.EmitZUntaggedIndex nm sz big idx = 
+    member buf.EmitZUntaggedIndex big idx = 
         if big then buf.EmitInt32 idx
-        elif idx > 0xffff then 
-#if NETSTANDARD1_6
-            let trace = "no stack trace on.NET Standard 1.6"
-#else
-            let trace = (new System.Diagnostics.StackTrace()).ToString()
-#endif
-            failwithf "EmitZUntaggedIndex: index into table '%d' is too big for small address or simple index, idx = %d, big = %A, size of table = %d, stack = %s" nm idx big sz trace
-        else buf.EmitInt32AsUInt16 idx
+        else
+            // Note, we can have idx=0x10000 generated for method table idx + 1 for just beyond last index of method table.
+            // This indicates that a MethodList, FieldList, PropertyList or EventList has zero entries
+            // For this case, the EmitInt32AsUInt16 writes a 0 (null) into the field.  Binary readers respect this as an empty
+            // list of methods/fields/properties/events.
+            if idx > 0x10000 then 
+                System.Diagnostics.Debug.Assert (false, "EmitZUntaggedIndex: too big for small address or simple index")
+            buf.EmitInt32AsUInt16 idx
 
     // Emit compressed tagged integer
     member buf.EmitZTaggedIndex tag nbits big idx =
@@ -3203,10 +3203,8 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let codedTables = 
           
-        let sizesTable = Array.map Array.length sortedTables
         let bignessTable = Array.map (fun rows -> Array.length rows >= 0x10000) sortedTables
         let bigness (tab: int32) = bignessTable.[tab]
-        let size (tab: int32) = sizesTable.[tab]
         
         let codedBigness nbits tab =
           (tableSize tab) >= (0x10000 >>> nbits)
@@ -3330,12 +3328,10 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
                     | _ when t = RowElementTags.ULong -> tablesBuf.EmitInt32 n
                     | _ when t = RowElementTags.Data -> recordRequiredDataFixup requiredDataFixups tablesBuf (tablesStreamStart + tablesBuf.Position) (n, false)
                     | _ when t = RowElementTags.DataResources -> recordRequiredDataFixup requiredDataFixups tablesBuf (tablesStreamStart + tablesBuf.Position) (n, true)
-                    | _ when t = RowElementTags.Guid -> tablesBuf.EmitZUntaggedIndex -3 guidsStreamPaddedSize guidsBig (guidAddress n)
-                    | _ when t = RowElementTags.Blob -> tablesBuf.EmitZUntaggedIndex -2 blobsStreamPaddedSize blobsBig (blobAddress n)
-                    | _ when t = RowElementTags.String -> tablesBuf.EmitZUntaggedIndex -1 stringsStreamPaddedSize stringsBig (stringAddress n)
-                    | _ when t <= RowElementTags.SimpleIndexMax -> 
-                        let tnum = t - RowElementTags.SimpleIndexMin
-                        tablesBuf.EmitZUntaggedIndex tnum (size tnum) (bigness tnum) n
+                    | _ when t = RowElementTags.Guid -> tablesBuf.EmitZUntaggedIndex guidsBig (guidAddress n)
+                    | _ when t = RowElementTags.Blob -> tablesBuf.EmitZUntaggedIndex blobsBig (blobAddress n)
+                    | _ when t = RowElementTags.String -> tablesBuf.EmitZUntaggedIndex stringsBig (stringAddress n)
+                    | _ when t <= RowElementTags.SimpleIndexMax -> tablesBuf.EmitZUntaggedIndex (bigness (t - RowElementTags.SimpleIndexMin)) n
                     | _ when t <= RowElementTags.TypeDefOrRefOrSpecMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.TypeDefOrRefOrSpecMin) 2 tdorBigness n
                     | _ when t <= RowElementTags.TypeOrMethodDefMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.TypeOrMethodDefMin) 1 tomdBigness n
                     | _ when t <= RowElementTags.HasConstantMax -> tablesBuf.EmitZTaggedIndex (t - RowElementTags.HasConstantMin) 2 hcBigness n

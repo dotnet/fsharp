@@ -1326,7 +1326,23 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 
                     // When a CCU reports an invalidation, merge them together and just report a 
                     // general "imports invalidated". This triggers a rebuild.
-                    ccu.Deref.InvalidateEvent.Add(fun msg -> importsInvalidated.Trigger msg))
+                    //
+                    // We are explicit about what the handler closure captures to help reason about the
+                    // lifetime of captured objects, especially in case the type provider instance gets leaked
+                    // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
+                    //
+                    // The handler only captures
+                    //    1. a weak reference to the importsInvalidated event.  
+                    //
+                    // The IncrementalBuilder holds the strong reference the importsInvalidated event.
+                    //
+                    // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to 
+                    // be collected if, for some reason, a TP instance is not disposed or not GC'd.
+                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidated)
+                    ccu.Deref.InvalidateEvent.Add(fun msg -> 
+                        match capturedImportsInvalidated.TryGetTarget() with 
+                        | true, tg -> tg.Trigger msg
+                        | _ -> ()))
 #endif
                     
                     
@@ -1730,17 +1746,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions 
-                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-                       frameworkTcImportsCache: FrameworkImportsCache, 
-                       loadClosureOpt: LoadClosure option, 
-                       sourceFiles: string list, 
-                       commandLineArgs: string list, 
-                       projectReferences, projectDirectory, 
-                       useScriptResolutionRules, keepAssemblyContents, 
-                       keepAllBackgroundResolutions, maxTimeShareMilliseconds, 
-                       tryGetMetadataSnapshot) =
-
+    static member TryCreateBackgroundBuilderForProjectOptions
+                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                       frameworkTcImportsCache: FrameworkImportsCache,
+                       loadClosureOpt: LoadClosure option,
+                       sourceFiles: string list,
+                       commandLineArgs: string list,
+                       projectReferences, projectDirectory,
+                       useScriptResolutionRules, keepAssemblyContents,
+                       keepAllBackgroundResolutions, maxTimeShareMilliseconds,
+                       tryGetMetadataSnapshot, suggestNamesForErrors) =
       let useSimpleResolutionSwitch = "--simpleresolution"
 
       cancellable {
@@ -1868,7 +1883,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpErrorSeverity.Error)
             | _ ->
                 Array.ofList delayedLogger.Diagnostics
-            |> Array.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero))
+            |> Array.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero, suggestNamesForErrors))
 
         return builderOpt, diagnostics
       }
