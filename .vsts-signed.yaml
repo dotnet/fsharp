@@ -89,14 +89,6 @@ jobs:
       ArtifactName: 'Nightly'
     condition: succeeded()
 
-  # Publish nightly package to MyGet
-  - task: PowerShell@1
-    displayName: Publish nightly package to MyGet
-    inputs:
-      scriptName: 'setup\publish-assets.ps1'
-      arguments: '-artifactsPath artifacts -configuration $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
-    condition: succeeded()
-
   # Package publish
   - task: PublishBuildArtifacts@1
     displayName: Push Asset Manifests
