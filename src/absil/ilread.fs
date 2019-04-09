@@ -4017,7 +4017,9 @@ let OpenILModuleReaderFromBytes fileName bytes opts =
     let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
     new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
 
-let ClearAllILModuleReaderCache() = ilModuleReaderCache.Clear(ILModuleReaderCacheLockToken())
+let ClearAllILModuleReaderCache() =
+    ilModuleReaderCache1.Clear(ILModuleReaderCache1LockToken())
+    ilModuleReaderCache2.Clear()
 
 let OpenILModuleReader fileName opts = 
     // Pseudo-normalize the paths.
