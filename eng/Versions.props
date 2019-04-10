@@ -109,7 +109,7 @@
     <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>$(RoslynPackageVersion)</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>15.8.166</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>16.0.461</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkPackageVersion>
     <MicrosoftBuildTasksCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCorePackageVersion>

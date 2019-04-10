@@ -62,15 +62,16 @@ type ProjectConfiguration = {
 
 let replaceTokens tag (replacement:string) (template:string) = template.Replace(tag, replacement)
 
-let generateProps testCompilerVersion =
+let generateProps testCompilerVersion configuration =
     let template = @"<Project>
   <PropertyGroup>
-    <Configuration Condition=""'$(Configuration)' == ''"">Release</Configuration>
+    <Configuration Condition=""'$(Configuration)' == ''"">$(TESTCONFIGURATION)</Configuration>
     <FSharpTestCompilerVersion>$(TESTCOMPILERVERSION)</FSharpTestCompilerVersion>
   </PropertyGroup>
   <Import Project=""$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(PROJECTDIRECTORY)'))"" />
 </Project>"
     template
+    |> replaceTokens "$(TESTCONFIGURATION)" configuration
     |> replaceTokens "$(PROJECTDIRECTORY)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
     |> replaceTokens "$(TESTCOMPILERVERSION)" testCompilerVersion
 
@@ -216,7 +217,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
             emitFile overridesFileName overridesBody
             if outputType = OutputType.Exe then
                 let executeFsc testCompilerVersion targetFramework =
-                    let propsBody = generateProps testCompilerVersion
+                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
                     emitFile propsFileName propsBody
                     let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
@@ -226,7 +227,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                 executeFsc compilerType targetFramework
             else
                 let executeFsi testCompilerVersion targetFramework =
-                    let propsBody = generateProps testCompilerVersion
+                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
                     emitFile propsFileName propsBody
                     let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
