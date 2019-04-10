@@ -7133,25 +7133,24 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedArgs
 
  
 and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWholeExpr, spForLoop) =
-    let tryGetOptimizeReadOnlySpanMethods g m ty =
-        match tryDestReadOnlySpanTy g m ty with
+    let tryGetOptimizeSpanMethodsAux g m ty isReadOnlySpan =
+        match (if isReadOnlySpan then tryDestReadOnlySpanTy g m ty else tryDestSpanTy g m ty) with
         | ValueSome(struct(_, destTy)) ->
-            match TryFindFSharpSignatureInstanceGetterProperty cenv env m "Item" ty [ g.int32_ty; mkInByrefTy g destTy ], 
+            match TryFindFSharpSignatureInstanceGetterProperty cenv env m "Item" ty [ g.int32_ty; (if isReadOnlySpan then mkInByrefTy g destTy else mkByrefTy g destTy) ], 
                   TryFindFSharpSignatureInstanceGetterProperty cenv env m "Length" ty [ g.int32_ty ] with
-            | Some(itemPropInfo), Some(lengthPropInfo) when itemPropInfo.HasGetter && lengthPropInfo.HasGetter -> ValueSome(struct(itemPropInfo.GetterMethod, lengthPropInfo.GetterMethod, true))
-            | _ -> ValueNone
+            | Some(itemPropInfo), Some(lengthPropInfo) when itemPropInfo.HasGetter && lengthPropInfo.HasGetter -> 
+                ValueSome(struct(itemPropInfo.GetterMethod, lengthPropInfo.GetterMethod, isReadOnlySpan))
+            | _ -> 
+                ValueNone
         | _ ->
             ValueNone
 
-    let tryGetOptimizeAnySpanMethods g m ty =
-        match tryDestSpanTy g m ty with
-        | ValueSome(struct(_, destTy)) ->
-            match TryFindFSharpSignatureInstanceGetterProperty cenv env m "Item" ty [ g.int32_ty; mkByrefTy g destTy ], 
-                  TryFindFSharpSignatureInstanceGetterProperty cenv env m "Length" ty [ g.int32_ty ] with
-            | Some(itemPropInfo), Some(lengthPropInfo) when itemPropInfo.HasGetter && lengthPropInfo.HasGetter -> ValueSome(struct(itemPropInfo.GetterMethod, lengthPropInfo.GetterMethod, false))
-            | _ -> ValueNone
-        | _ ->
-            tryGetOptimizeReadOnlySpanMethods g m ty
+    let tryGetOptimizeSpanMethods g m ty =
+        let result = tryGetOptimizeSpanMethodsAux g m ty false
+        if result.IsSome then
+            result
+        else
+            tryGetOptimizeSpanMethodsAux g m ty true
 
     UnifyTypes cenv env mWholeExpr overallTy cenv.g.unit_ty
 
@@ -7189,7 +7188,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
         
         | _ -> 
             // try optimize 'for i in span do' for span or readonlyspan
-            match tryGetOptimizeAnySpanMethods cenv.g mWholeExpr enumExprTy with
+            match tryGetOptimizeSpanMethods cenv.g mWholeExpr enumExprTy with
             | ValueSome(struct(getItemMethInfo, getLengthMethInfo, isReadOnlySpan)) ->
                 let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
                 let spanVar, spanExpr = mkCompGenLocal mEnumExpr "span" enumExprTy
