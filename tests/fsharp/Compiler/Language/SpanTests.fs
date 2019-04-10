@@ -28,4 +28,24 @@ test ()
             """
         
         CompilerAssert.RunScript script
+
+    [<Test>]
+    let Script_ReadOnlySpanForInDo() =
+        let script = 
+            """
+open System
+
+let test () : unit =
+    let span = ReadOnlySpan([|1;2;3;4|])
+    let result = ResizeArray()
+    for item in span do
+        result.Add(item)
+
+    if result.[0] <> 1 || result.[1] <> 2 || result.[2] <> 3 || result.[3] <> 4 then
+        failwith "ReadOnlySpanForInDo didn't work properly"
+
+test ()
+            """
+    
+        CompilerAssert.RunScript script
 #endif

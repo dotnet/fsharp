@@ -170,10 +170,6 @@ let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 let tname_AsyncCallback = "System.AsyncCallback"
 [<Literal>]
 let tname_IAsyncResult = "System.IAsyncResult"
-[<Literal>]
-let tname_Span = "System.Span`1"
-[<Literal>]
-let tname_ReadOnlySpan = "System.ReadOnlySpan`1"
 
 //-------------------------------------------------------------------------
 // Table of all these "globals"
@@ -463,8 +459,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_struct_tuple6_tcr      = findSysTyconRef sys "ValueTuple`6" 
   let v_struct_tuple7_tcr      = findSysTyconRef sys "ValueTuple`7" 
   let v_struct_tuple8_tcr      = findSysTyconRef sys "ValueTuple`8"
-  let v_span_tcr            = findSysTyconRef sys tname_Span
-  let v_readonlyspan_tcr    = findSysTyconRef sys tname_ReadOnlySpan 
   
   let v_choice2_tcr     = mk_MFCore_tcref fslibCcu "Choice`2" 
   let v_choice3_tcr     = mk_MFCore_tcref fslibCcu "Choice`3" 
@@ -734,12 +728,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fail_static_init_info      = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "FailStaticInit"                       , None                 , None                          , [],      ([[v_unit_ty]], v_unit_ty))
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
-    
-  let v_span_ilty =
-    mkILValueTy (findSysILTypeRef tname_Span) [ mkILTyvarTy 0us ]
-
-  let v_read_only_span_ilty =
-    mkILValueTy (findSysILTypeRef tname_ReadOnlySpan) [ mkILTyvarTy 0us ]
 
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
@@ -995,8 +983,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.struct_tuple6_tcr     = v_struct_tuple6_tcr
   member __.struct_tuple7_tcr     = v_struct_tuple7_tcr
   member __.struct_tuple8_tcr     = v_struct_tuple8_tcr
-  member __.span_tcr         = v_span_tcr
-  member __.readonlyspan_tcr = v_readonlyspan_tcr
   member __.choice2_tcr    = v_choice2_tcr
   member __.choice3_tcr    = v_choice3_tcr
   member __.choice4_tcr    = v_choice4_tcr
@@ -1451,9 +1437,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member __.cons_ucref = v_cons_ucref
   member __.nil_ucref = v_nil_ucref
-
-  member __.span_ilty = v_span_ilty
-  member __.read_only_span_ilty = v_read_only_span_ilty
     
     // A list of types that are explicitly suppressed from the F# intellisense 
     // Note that the suppression checks for the precise name of the type

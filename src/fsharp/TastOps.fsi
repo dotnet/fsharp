@@ -1965,13 +1965,13 @@ val mkStaticCall_String_Concat4 : TcGlobals -> range -> Expr -> Expr -> Expr -> 
 
 val mkStaticCall_String_Concat_Array : TcGlobals -> range -> Expr -> Expr
 
-val mkCall_Span_Item : TcGlobals -> range -> TType -> receiver: Expr -> arg: Expr -> Expr
+val mkCall_Span__get_Item : TcGlobals -> range -> receiver: Expr -> arg: Expr -> Expr
 
-val mkCall_Span_Length : TcGlobals -> range -> TType -> receiver: Expr -> Expr
+val mkCall_Span__get_Length : TcGlobals -> range -> receiver: Expr -> Expr
 
-val mkCall_ReadOnlySpan_Item : TcGlobals -> range -> TType -> receiver: Expr -> arg: Expr -> Expr
+val mkCall_ReadOnlySpan__get_Item : TcGlobals -> range -> receiver: Expr -> arg: Expr -> Expr
 
-val mkCall_ReadOnlySpan_Length : TcGlobals -> range -> TType -> receiver: Expr -> Expr
+val mkCall_ReadOnlySpan__get_Length : TcGlobals -> range -> receiver: Expr -> Expr
 
 //-------------------------------------------------------------------------
 // operations primarily associated with the optimization to fix
@@ -2026,6 +2026,10 @@ val TryFindTyconRefBoolAttribute : TcGlobals -> range -> BuiltinAttribInfo -> Ty
 
 /// Try to find a specific attribute on a type definition
 val TyconRefHasAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool
+
+/// Check if a IL tycon ref has the given IL property method signature. 
+/// Expensive check, so call this in uncommon cases. 
+val HasILPropertyMethodSignatureForILTyconRef : TyconRef -> ILCallingConv -> string -> ILType list -> bool
 
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool option
@@ -2086,13 +2090,17 @@ val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 /// Check if the type is a byref-like but not a byref.
 val isSpanLikeTy : TcGlobals -> range -> TType -> bool
 
-val isSpanTy : TcGlobals -> TType -> bool
+val isSpanTy : TcGlobals -> range -> TType -> bool
 
-val destSpanTy : TcGlobals -> TType -> TType
+val tryDestSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
 
-val isReadOnlySpanTy : TcGlobals -> TType -> bool
+val destSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
 
-val destReadOnlySpanTy : TcGlobals -> TType -> TType
+val isReadOnlySpanTy : TcGlobals -> range -> TType -> bool
+
+val tryDestReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
+
+val destReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
