@@ -109,7 +109,7 @@ let test () =
 
     IL_0016:  ldloca.s   V_0
     IL_0018:  ldloc.2
-    IL_0019:  call       instance !0 modreq([mscorlib]System.Runtime.InteropServices.InAttribute) valuetype [System.Memory]System.ReadOnlySpan`1<object>::get_Item(int32)
+    IL_0019:  call       instance !0& modreq([netstandard]System.Runtime.InteropServices.InAttribute) valuetype [System.Memory]System.ReadOnlySpan`1<object>::get_Item(int32)
     IL_001e:  stloc.3
     IL_001f:  ldloc.3
     IL_0020:  ldobj      [mscorlib]System.Object

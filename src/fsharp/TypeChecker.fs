@@ -3043,6 +3043,27 @@ let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseF
 let TryFindIntrinsicOrExtensionMethInfo (cenv: cenv) (env: TcEnv) m ad nm ty = 
     AllMethInfosOfTypeInScope cenv.infoReader env.NameEnv (Some(nm), ad) IgnoreOverrides m ty
 
+let TryFindFSharpSignatureInstanceGetterProperty (cenv: cenv) (env: TcEnv) m nm ty (sigTys: TType list) =
+    match TryFindPropInfo cenv.infoReader m env.AccessRights nm ty with
+    | [] -> None
+    | propInfos ->
+        propInfos
+        |> List.tryFind (fun propInfo ->
+            not propInfo.IsStatic && propInfo.HasGetter &&
+            (
+                match propInfo.GetterMethod.GetParamTypes(cenv.amap, m, []) with
+                | [] -> false
+                | argTysList ->
+ 
+                    let argTys = (argTysList |> List.reduce (@)) @ [ propInfo.GetterMethod.GetFSharpReturnTy(cenv.amap, m, []) ] in
+                    if argTys.Length <> sigTys.Length then 
+                        false 
+                    else
+                        (argTys, sigTys)
+                        ||> List.forall2 (typeEquiv cenv.g)
+            )
+        )
+
 /// Build the 'test and dispose' part of a 'use' statement 
 let BuildDisposableCleanup cenv env m (v: Val) = 
     v.SetHasBeenReferenced() 
@@ -7112,21 +7133,25 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedArgs
 
  
 and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWholeExpr, spForLoop) =
-    let canOptimizeSpan g m ty =
-        match tryDestSpanTy g m ty with
-        | ValueSome(tcref, _) ->
-            HasILPropertyMethodSignatureForILTyconRef tcref ILCallingConv.Instance "get_Item" [ g.ilg.typ_Int32; (ILType.Byref(mkILTyvarTy 0us)) ] &&
-            HasILPropertyMethodSignatureForILTyconRef tcref ILCallingConv.Instance "get_Length" [ g.ilg.typ_Int32 ]
-        | _ -> 
-            false
-
-    let canOptimizeReadOnlySpan g m ty =
+    let tryGetOptimizeReadOnlySpanMethods g m ty =
         match tryDestReadOnlySpanTy g m ty with
-        | ValueSome(tcref, _) ->
-            HasILPropertyMethodSignatureForILTyconRef tcref ILCallingConv.Instance "get_Item" [ g.ilg.typ_Int32; (ILType.Modified(true, g.attrib_InAttribute.TypeRef, (ILType.Byref(mkILTyvarTy 0us)))) ] &&
-            HasILPropertyMethodSignatureForILTyconRef tcref ILCallingConv.Instance "get_Length" [ g.ilg.typ_Int32 ]
-        | _ -> 
-            false
+        | ValueSome(struct(_, destTy)) ->
+            match TryFindFSharpSignatureInstanceGetterProperty cenv env m "Item" ty [ g.int32_ty; mkInByrefTy g destTy ], 
+                  TryFindFSharpSignatureInstanceGetterProperty cenv env m "Length" ty [ g.int32_ty ] with
+            | Some(itemPropInfo), Some(lengthPropInfo) when itemPropInfo.HasGetter && lengthPropInfo.HasGetter -> ValueSome(struct(itemPropInfo.GetterMethod, lengthPropInfo.GetterMethod, true))
+            | _ -> ValueNone
+        | _ ->
+            ValueNone
+
+    let tryGetOptimizeAnySpanMethods g m ty =
+        match tryDestSpanTy g m ty with
+        | ValueSome(struct(_, destTy)) ->
+            match TryFindFSharpSignatureInstanceGetterProperty cenv env m "Item" ty [ g.int32_ty; mkByrefTy g destTy ], 
+                  TryFindFSharpSignatureInstanceGetterProperty cenv env m "Length" ty [ g.int32_ty ] with
+            | Some(itemPropInfo), Some(lengthPropInfo) when itemPropInfo.HasGetter && lengthPropInfo.HasGetter -> ValueSome(struct(itemPropInfo.GetterMethod, lengthPropInfo.GetterMethod, false))
+            | _ -> ValueNone
+        | _ ->
+            tryGetOptimizeReadOnlySpanMethods g m ty
 
     UnifyTypes cenv env mWholeExpr overallTy cenv.g.unit_ty
 
@@ -7161,55 +7186,37 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
 
             // Ask for a loop over integers for the given range
             (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart (mkLdlen cenv.g mForLoopStart arrExpr)))
-
-        // optimize 'for i in span do' 
-        | _ when canOptimizeSpan cenv.g mWholeExpr enumExprTy -> 
-            let spanVar, spanExpr = mkCompGenLocal mEnumExpr "span" enumExprTy
-            let idxVar, idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
-            let struct(_, elemTy) = destSpanTy cenv.g mWholeExpr enumExprTy
-            let elemAddrTy = mkByrefTy cenv.g elemTy
-
-            // Evaluate the span index lookup
-            let bodyExprFixup elemVar bodyExpr = 
-                let elemAddrVar, _ = mkCompGenLocal mForLoopStart "addr" elemAddrTy
-                let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemAddrVar)) bodyExpr
-                mkCompGenLet mForLoopStart elemAddrVar (mkCall_Span__get_Item cenv.g mForLoopStart spanExpr idxExpr) e
-
-            // Evaluate the span expression once and put it in spanVar
-            let overallExprFixup overallExpr = mkCompGenLet mForLoopStart spanVar enumExpr overallExpr
-
-            let lengthExpr = mkCall_Span__get_Length cenv.g mForLoopStart spanExpr
-    
-            // Ask for a loop over integers for the given range
-            (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart lengthExpr))
-
-        // optimize 'for i in readOnlySpan do' 
-        | _ when canOptimizeReadOnlySpan cenv.g mWholeExpr enumExprTy -> 
-            let spanVar, spanExpr = mkCompGenLocal mEnumExpr "readOnlySpan" enumExprTy
-            let idxVar, idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
-            let struct(_, elemTy) = destReadOnlySpanTy cenv.g mWholeExpr enumExprTy
-            let elemAddrTy = mkInByrefTy cenv.g elemTy
-
-            // Evaluate the read-only span index lookup
-            let bodyExprFixup elemVar bodyExpr = 
-                let elemAddrVar, _ = mkCompGenLocal mForLoopStart "addr" elemAddrTy
-                let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemAddrVar)) bodyExpr
-                mkCompGenLet mForLoopStart elemAddrVar (mkCall_ReadOnlySpan__get_Item cenv.g mForLoopStart spanExpr idxExpr) e
-
-            // Evaluate the read-only span expression once and put it in spanVar
-            let overallExprFixup overallExpr = mkCompGenLet mForLoopStart spanVar enumExpr overallExpr
-
-            let lengthExpr = mkCall_ReadOnlySpan__get_Length cenv.g mForLoopStart spanExpr
-    
-            // Ask for a loop over integers for the given range
-            (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart lengthExpr))
-
+        
         | _ -> 
+            // try optimize 'for i in span do' for span or readonlyspan
+            match tryGetOptimizeAnySpanMethods cenv.g mWholeExpr enumExprTy with
+            | ValueSome(struct(getItemMethInfo, getLengthMethInfo, isReadOnlySpan)) ->
+                let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+                let spanVar, spanExpr = mkCompGenLocal mEnumExpr "span" enumExprTy
+                let idxVar, idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
+                let struct(_, elemTy) = if isReadOnlySpan then destReadOnlySpanTy cenv.g mWholeExpr enumExprTy else destSpanTy cenv.g mWholeExpr enumExprTy
+                let elemAddrTy = if isReadOnlySpan then mkInByrefTy cenv.g elemTy else mkByrefTy cenv.g elemTy
 
-            let enumerableVar, enumerableExprInVar = mkCompGenLocal mEnumExpr "inputSequence" enumExprTy
-            let enumeratorVar, enumeratorExpr, _, enumElemTy, getEnumExpr, getEnumTy, guardExpr, _, currentExpr = 
-                AnalyzeArbitraryExprAsEnumerable cenv env true mEnumExpr enumExprTy enumerableExprInVar
-            (enumElemTy, (fun _ x -> x), id, Choice3Of3(enumerableVar, enumeratorVar, enumeratorExpr, getEnumExpr, getEnumTy, guardExpr, currentExpr))
+                // Evaluate the span index lookup
+                let bodyExprFixup elemVar bodyExpr = 
+                    let elemAddrVar, _ = mkCompGenLocal mForLoopStart "addr" elemAddrTy
+                    let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemAddrVar)) bodyExpr
+                    let getItemCallExpr, _ = BuildMethodCall tcVal cenv.g cenv.amap PossiblyMutates mWholeExpr true getItemMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] [ idxExpr ]
+                    mkCompGenLet mForLoopStart elemAddrVar getItemCallExpr e
+
+                // Evaluate the span expression once and put it in spanVar
+                let overallExprFixup overallExpr = mkCompGenLet mForLoopStart spanVar enumExpr overallExpr
+
+                let getLengthCallExpr, _ = BuildMethodCall tcVal cenv.g cenv.amap PossiblyMutates mWholeExpr true getLengthMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] []
+    
+                // Ask for a loop over integers for the given range
+                (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart getLengthCallExpr))
+
+            | _ ->
+                let enumerableVar, enumerableExprInVar = mkCompGenLocal mEnumExpr "inputSequence" enumExprTy
+                let enumeratorVar, enumeratorExpr, _, enumElemTy, getEnumExpr, getEnumTy, guardExpr, _, currentExpr = 
+                    AnalyzeArbitraryExprAsEnumerable cenv env true mEnumExpr enumExprTy enumerableExprInVar
+                (enumElemTy, (fun _ x -> x), id, Choice3Of3(enumerableVar, enumeratorVar, enumeratorExpr, getEnumExpr, getEnumTy, guardExpr, currentExpr))
             
     let pat, _, vspecs, envinner, tpenv = TcMatchPattern cenv enumElemTy env tpenv (pat, None)
     let elemVar, pat =      

@@ -3000,56 +3000,6 @@ let TyconRefHasAttribute g m attribSpec tcref =
                     (fun _ -> Some ())
         |> Option.isSome
 
-let HasILPropertyMethodSignatureForILTyconRef (tcref: TyconRef) (callingConv: ILCallingConv) (nm: string) (ilTys: ILType list) = 
-    let rec checkILType (typ1: ILType) (typ2: ILType) =
-         match typ1, typ2 with
-         | ILType.Byref(typ1), ILType.Byref(typ2) -> 
-            checkILType typ1 typ2
-         | ILType.Modified(isRequired1, modTypeRef1, typ1), ILType.Modified(isRequired2, modTypeRef2, typ2) ->
-            isRequired1 = isRequired2 && modTypeRef1.BasicQualifiedName = modTypeRef2.BasicQualifiedName && checkILType typ1 typ2
-         | ILType.Ptr(typ1), ILType.Ptr(typ2) ->
-            checkILType typ1 typ2
-         | ILType.Void, ILType.Void -> true
-         | ILType.Array(shape1, typ1), ILType.Array(shape2, typ2) ->
-            shape1 = shape2 && checkILType typ1 typ2
-         | ILType.FunctionPointer(sig1), ILType.FunctionPointer(sig2) ->
-             sig1.CallingConv = sig2.CallingConv && sig1.ArgTypes.Length = sig2.ArgTypes.Length &&
-             (sig1.ArgTypes, sig2.ArgTypes) ||> List.forall2 (checkILType) && checkILType sig1.ReturnType sig2.ReturnType
-         | ILType.TypeVar(i1), ILType.TypeVar(i2) -> i1 = i2
-         | _ ->
-            typ1.BasicQualifiedName = typ2.BasicQualifiedName
-
-    match metadataOfTycon tcref.Deref with 
-    | ILTypeMetadata (TILObjectReprData(_, _, tdef)) ->
-        let isGetter = nm.StartsWith("get_")
-        let isSetter = nm.StartsWith("set_")
-        if isGetter || isSetter then
-            let nm =
-                if isGetter then
-                    nm.Remove(0, "get_".Length)
-                else
-                    nm.Remove(0, "set_".Length)
-
-            match tdef.Properties.LookupByName nm with
-            | [] -> false
-            | ilPropDefs ->
-                ilPropDefs
-                |> List.exists (fun ilPropDef ->
-                    let ilMethRef =
-                        match ilPropDef.GetMethod, ilPropDef.SetMethod with
-                        | Some(ilMethRef), _ when isGetter -> ilMethRef
-                        | _, Some(ilMethRef) -> ilMethRef
-                        | _ -> failwith "HasILMethodSignatureForILTyconRef: should not happen"
-                    
-                    ilMethRef.CallingConv = callingConv &&
-                    (ilTys, ilPropDef.Args @ [ ilPropDef.PropertyType ])
-                    ||> List.forall2 checkILType
-                )
-        else
-            false
-    | _ ->
-        false
-
 let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) = 
     (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref) ||
     (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref) ||
@@ -3098,7 +3048,7 @@ let tryDestSpanTy g m ty =
 
 let destSpanTy g m ty =
     match tryDestSpanTy g m ty with
-    | ValueSome(tcref, ty) -> struct(tcref, ty)
+    | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
     | _ -> failwith "destSpanTy"
 
 let isReadOnlySpanTyconRef g m tcref =
@@ -3115,7 +3065,7 @@ let tryDestReadOnlySpanTy g m ty =
 
 let destReadOnlySpanTy g m ty =
     match tryDestReadOnlySpanTy g m ty with
-    | ValueSome(tcref, ty) -> struct(tcref, ty)
+    | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
     | _ -> failwith "destReadOnlySpanTy"    
 
 //-------------------------------------------------------------------------
@@ -6668,18 +6618,6 @@ let mspec_String_Concat4 (g: TcGlobals) =
 let mspec_String_Concat_Array (g: TcGlobals) = 
     mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ mkILArr1DTy g.ilg.typ_String ], g.ilg.typ_String)
 
-let mspec_Span__get_Item (g: TcGlobals) spanILTy =
-    mkILNonGenericInstanceMethSpecInTy (spanILTy, "get_Item", [ g.ilg.typ_Int32 ], ILType.Byref(spanILTy.TypeSpec.GenericArgs.Head))
-
-let mspec_Span__get_Length (g: TcGlobals) spanILTy =
-    mkILNonGenericInstanceMethSpecInTy (spanILTy, "get_Length", [], g.ilg.typ_Int32)
-
-let mspec_ReadOnlySpan__get_Item (g: TcGlobals) readOnlySpanILTy =
-    mkILNonGenericInstanceMethSpecInTy (readOnlySpanILTy, "get_Item", [ g.ilg.typ_Int32 ], ILType.Modified(true, g.attrib_InAttribute.TypeRef, readOnlySpanILTy.TypeSpec.GenericArgs.Head))
-
-let mspec_ReadOnlySpan__get_Length (g: TcGlobals) readOnlySpanILTy =
-    mkILNonGenericInstanceMethSpecInTy (readOnlySpanILTy, "get_Length", [], g.ilg.typ_Int32)
-
 let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
 
 let mkInitializeArrayMethSpec (g: TcGlobals) = 
@@ -6987,38 +6925,6 @@ let mkStaticCall_String_Concat4 g m arg1 arg2 arg3 arg4 =
 let mkStaticCall_String_Concat_Array g m arg =
     let mspec = mspec_String_Concat_Array g
     Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg], m)
-
-let mkCall_Span__get_Item g m receiver arg =
-    let struct(tcref, ty) = destSpanTy g m (tyOfExpr g receiver)
-    let ilty = mkILValueTy tcref.CompiledRepresentationForNamedType [ mkILTyvarTy 0us ]
-    let mspec = mspec_Span__get_Item g ilty
-    let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
-    Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [mkByrefTy g ty]), [], [addrOfReceiver; arg], m)
-    |> wrap
-
-let mkCall_Span__get_Length g m receiver =
-    let struct(tcref, ty) = destSpanTy g m (tyOfExpr g receiver)
-    let ilty = mkILValueTy tcref.CompiledRepresentationForNamedType [ mkILTyvarTy 0us ]
-    let mspec = mspec_Span__get_Length g ilty
-    let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
-    Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [g.int32_ty]), [], [addrOfReceiver], m)
-    |> wrap
-
-let mkCall_ReadOnlySpan__get_Item g m receiver arg =
-    let struct(tcref, ty) = destReadOnlySpanTy g m (tyOfExpr g receiver)
-    let ilty = mkILValueTy tcref.CompiledRepresentationForNamedType [ mkILTyvarTy 0us ]
-    let mspec = mspec_ReadOnlySpan__get_Item g ilty
-    let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
-    Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [ty]), [], [addrOfReceiver; arg], m)
-    |> wrap
-
-let mkCall_ReadOnlySpan__get_Length g m receiver =
-    let struct(tcref, ty) = destReadOnlySpanTy g m (tyOfExpr g receiver)
-    let ilty = mkILValueTy tcref.CompiledRepresentationForNamedType [ mkILTyvarTy 0us ]
-    let mspec = mspec_ReadOnlySpan__get_Length g ilty
-    let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
-    Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [g.int32_ty]), [], [addrOfReceiver], m)
-    |> wrap
 
 // Quotations can't contain any IL.
 // As a result, we aim to get rid of all IL generation in the typechecker and pattern match
