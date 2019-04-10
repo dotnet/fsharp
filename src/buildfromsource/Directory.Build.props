@@ -1,5 +1,0 @@
-<Project>
-
-  <Import Project="targets\PackageVersions.props" />
-
-</Project>
