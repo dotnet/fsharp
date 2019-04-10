@@ -77,30 +77,38 @@ module CompilerAssert =
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
         )
 
-    let RunScript (source: string) =
+    let RunScript (source: string) (expectedErrorMessages: string list) =
         // Intialize output and input streams
-        let sbOut = new StringBuilder()
-        let sbErr = new StringBuilder()
         use inStream = new StringReader("")
-        use outStream = new StringWriter(sbOut)
-        use errStream = new StringWriter(sbErr)
+        use outStream = new StringWriter()
+        use errStream = new StringWriter()
 
         // Build command line arguments & start FSI session
         let argv = [| "C:\\fsi.exe" |]
-#if NET472
+#if !NETCOREAPP
         let allArgs = Array.append argv [|"--noninteractive"|]
 #else
         let allArgs = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
 #endif
 
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream)
+        use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
         
         let ch, errors = fsiSession.EvalInteractionNonThrowing source
 
-        if errors.Length > 0 then
-            Assert.Fail(sprintf "%A" errors)
+        let errorMessages = ResizeArray()
+        errors
+        |> Seq.iter (fun error -> errorMessages.Add(error.Message))
 
         match ch with
-        | Choice2Of2 ex -> Assert.Fail(ex.Message)
+        | Choice2Of2 ex -> errorMessages.Add(ex.Message)
         | _ -> ()
+
+        if expectedErrorMessages.Length <> errorMessages.Count then
+            Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
+        else
+            (expectedErrorMessages, errorMessages)
+            ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
+                Assert.AreEqual(expectedErrorMessage, errorMessage)
+            )
+        
