@@ -153,7 +153,7 @@ type Span<'T>(arr: 'T []) =
         with get (i: int) = &arr.[0]
 
     member __.Length
-        with get () = &arr.[0]
+        with get () = 0
 
     static member Empty = Span<'T>([||])
 
