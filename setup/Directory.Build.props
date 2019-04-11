@@ -1,7 +1,6 @@
 <Project>
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-  <Import Project="Localization.props" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
     <DisableOutputPathCopying>true</DisableOutputPathCopying>
@@ -13,9 +12,7 @@
     <IntermediateOutputPath>$(ArtifactsDir)\VSSetup.obj\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
     <VsixBuildLocation>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)</VsixBuildLocation>
     <InsertionDir>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)\Insertion</InsertionDir>
-
-    <!-- FSharpPackageVersion should be {VS version}.{today's date}.{build number}. Example: 15.6.20160901.3 -->
-    <FSharpPackageVersion>$(VSMajorVersion).$(VSMinorVersion).$(BUILD_BUILDNUMBER)</FSharpPackageVersion>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
   </PropertyGroup>
 
 </Project>

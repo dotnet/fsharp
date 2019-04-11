@@ -124,7 +124,7 @@ type internal InterfaceData =
                     sprintf "- %s" s
 
             let rec (|TypeIdent|_|) = function
-                | SynType.Var(SynTypar.Typar(s, req , _), _) ->
+                | SynType.Var(SynTypar.Typar(s, req, _), _) ->
                     match req with
                     | NoStaticReq -> 
                         Some ("'" + s.idText)
@@ -240,16 +240,18 @@ module internal InterfaceStubGenerator =
                         name :: acc, allNames) ([], namesWithIndices)
                 List.rev argsSoFar' :: argsSoFar, namesWithIndices) 
                 ([], Map.ofList [ ctx.ObjectIdent, Set.empty ])
-        args
-        |> List.rev
-        |> List.map (function 
-            | [] -> unit 
-            | [arg] when arg = unit -> unit
-            | [arg] when not v.IsMember || isItemIndexer -> arg 
-            | args when isItemIndexer -> String.concat tupSep args
-            | args -> bracket (String.concat tupSep args))
-        |> String.concat argSep
-        , namesWithIndices
+        let argText =
+            args
+            |> List.rev
+            |> List.map (function 
+                | [] -> unit 
+                | [arg] when arg = unit -> unit
+                | [arg] when not v.IsMember || isItemIndexer -> arg 
+                | args when isItemIndexer -> String.concat tupSep args
+                | args -> bracket (String.concat tupSep args))
+            |> String.concat argSep
+
+        argText, namesWithIndices
 
     [<RequireQualifiedAccess; NoComparison>]
     type internal MemberInfo =
@@ -307,11 +309,12 @@ module internal InterfaceStubGenerator =
                     "", Map.ofList [ctx.ObjectIdent, Set.empty]
                 | _  -> formatArgsUsage ctx verboseMode v argInfos
              
-            if String.IsNullOrWhiteSpace(args) then "" 
-            elif args.StartsWithOrdinal("(") then args
-            elif v.CurriedParameterGroups.Count > 1 && (not verboseMode) then " " + args
-            else sprintf "(%s)" args
-            , namesWithIndices
+            let argText = 
+                if String.IsNullOrWhiteSpace(args) then "" 
+                elif args.StartsWithOrdinal("(") then args
+                elif v.CurriedParameterGroups.Count > 1 && (not verboseMode) then " " + args
+                else sprintf "(%s)" args
+            argText, namesWithIndices
 
         let preprocess (ctx: Context) (v: FSharpMemberOrFunctionOrValue) = 
             let buildUsage argInfos = 

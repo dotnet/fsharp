@@ -3,7 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <NGenBinary>true</NGenBinary>
+    <TargetFramework>net472</TargetFramework>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>

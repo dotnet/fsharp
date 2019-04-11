@@ -14,7 +14,6 @@ Imports Microsoft.VisualStudio.Editors
 Imports OLE = Microsoft.VisualStudio.OLE.Interop
 
 Imports Shell = Microsoft.VisualStudio.Shell
-Imports Interop = Microsoft.VisualStudio.OLE.Interop
 Imports Microsoft.VisualStudio.Editors.PropertyPages
 Imports System.Runtime.InteropServices
 Imports System.ComponentModel
@@ -569,8 +568,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         ''' Fill up the allowed values in the target framework listbox
         ''' </summary>
         ''' <remarks></remarks>
-
-        'REVIEW: Are the periods in my version strings culture-safe?
         Private Function ValidateTargetFrameworkMoniker(ByVal moniker As String) As Boolean
             If moniker = "" Or moniker = Nothing Then
                 Return False

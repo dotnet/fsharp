@@ -36,7 +36,7 @@ type internal FSharpSignatureHelpProvider
 
     // Unit-testable core routine
     static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options, userOpName = userOpName)
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName = userOpName)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -168,7 +168,7 @@ type internal FSharpSignatureHelpProvider
                       XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName) 
                       let parts = List()
                       renderL (taggedTextListR (RoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
-                      yield (p.ParameterName, p.IsOptional, doc, parts) 
+                      yield (p.ParameterName, p.IsOptional, p.CanonicalTypeTextForSorting, doc, parts) 
                 |]
 
             let prefixParts = 
@@ -195,7 +195,7 @@ type internal FSharpSignatureHelpProvider
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
               try
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
 
@@ -210,7 +210,7 @@ type internal FSharpSignatureHelpProvider
                     results 
                     |> Array.map (fun (hasParamArrayArg, doc, prefixParts, separatorParts, suffixParts, parameters, descriptionParts) ->
                             let parameters = parameters 
-                                                |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
+                                                |> Array.map (fun (paramName, isOptional, _typeText, paramDoc, displayParts) -> 
                                                 SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
                             SignatureHelpItem(isVariadic=hasParamArrayArg, documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
 

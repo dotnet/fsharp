@@ -48,6 +48,7 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.ReferenceResolver
 
@@ -586,12 +587,9 @@ let internal directoryName (s:string) =
 /// Process the command line options 
 type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: string[], tcConfigB, fsiConsoleOutput: FsiConsoleOutput) = 
     let mutable enableConsoleKeyProcessing = 
-#if FX_REDUCED_CONSOLE
-        false
-#else
        // Mono on Win32 doesn't implement correct console processing
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
-#endif
+
     let mutable gui        = not runningOnMono // override via "--gui", on by default except when on Mono
 #if DEBUG
     let mutable showILCode = false // show modul il code 
@@ -696,8 +694,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                                  Some (FSIstrings.SR.fsiHelp()))
         ]);
        PrivateOptions(
-        [   CompilerOption("?"        , tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
-            CompilerOption("help"     , tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
+        [   CompilerOption("?", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
+            CompilerOption("help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
             CompilerOption("full-help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
@@ -1346,10 +1344,8 @@ module internal NativeMethods =
 
     type ControlEventHandler = delegate of int -> bool
 
-#if !FX_REDUCED_CONSOLE
     [<DllImport("kernel32.dll")>]
     extern bool SetConsoleCtrlHandler(ControlEventHandler _callback,bool _add)
-#endif
 
 // One strange case: when a TAE happens a strange thing 
 // occurs the next read from stdin always returns
@@ -1977,9 +1973,9 @@ type internal FsiInteractionProcessor
     let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: ErrorLogger, lastResult:option<FsiInteractionStepStatus>)  =
         let action,nextAction,istate = 
             match action with
-            | None                                      -> None  ,None,istate
+            | None                                      -> None,None,istate
             | Some (IHash _)                            -> action,None,istate
-            | Some (IDefns ([],_))                      -> None  ,None,istate
+            | Some (IDefns ([],_))                      -> None,None,istate
             | Some (IDefns (SynModuleDecl.HashDirective(hash,mh)::defs,m)) -> 
                 Some (IHash(hash,mh)),Some (IDefns(defs,m)),istate
 
@@ -1989,7 +1985,7 @@ type internal FsiInteractionProcessor
                     // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
                     match def with
                     | SynModuleDecl.DoExpr (SequencePointInfoForBinding.SequencePointAtBinding _, _, _)
-                    | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, _ ,_ ,_ ,_ , SequencePointInfoForBinding.SequencePointAtBinding _) :: _, _) -> true
+                    | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, _,_,_,_, SequencePointInfoForBinding.SequencePointAtBinding _) :: _, _) -> true
                     | _ -> false
                 let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
                 let defsB = Seq.skipWhile (isDefHash >> not) defs |> Seq.toList
@@ -2326,7 +2322,7 @@ type internal FsiInteractionProcessor
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
-        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, text)
+        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
 
 //----------------------------------------------------------------------------
@@ -2398,7 +2394,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let timeReporter = FsiTimeReporter(outWriter)
 
-#if !FX_REDUCED_CONSOLE
     //----------------------------------------------------------------------------
     // Console coloring
     //----------------------------------------------------------------------------
@@ -2406,7 +2401,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // Testing shows "console coloring" is broken on some Mono configurations (e.g. Mono 2.4 Suse LiveCD).
     // To support fsi usage, the console coloring is switched off by default on Mono.
     do if runningOnMono then enableConsoleColoring <- false 
-#endif
 
 
     //----------------------------------------------------------------------------
@@ -2567,7 +2561,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             | Choice2Of2 None -> Choice2Of2 (System.Exception "Operation could not be completed due to earlier error")
             | Choice2Of2 (Some userExn) -> Choice2Of2 userExn
 
-        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs)
+        // 'true' is passed for "suggestNames" because we want the FSI session to suggest names for misspellings and it won't affect IDE perf much
+        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs, true)
 
     let dummyScriptFileName = "input.fsx"
 

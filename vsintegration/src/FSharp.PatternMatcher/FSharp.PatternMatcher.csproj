@@ -5,6 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
   </PropertyGroup>
 
   <ItemGroup>

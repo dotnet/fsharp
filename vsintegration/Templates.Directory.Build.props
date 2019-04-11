@@ -6,18 +6,24 @@
   <PropertyGroup>
     <BaseOutputPath></BaseOutputPath>
     <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
+    <OutputPath></OutputPath>
+    <IntermediateOutputPath></IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <ImportVsSDK>true</ImportVsSDK>
-    <IsPackage>true</IsPackage>
-    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <DebugSymbols>false</DebugSymbols>
+    <PublishOutputToSymStore>true</PublishOutputToSymStore>
+    <UseCommonOutputDirectory Condition="'$(UseCommonOutputDirectory)' == ''">true</UseCommonOutputDirectory>
     <IncludeAssemblyInVSIXContainer>false</IncludeAssemblyInVSIXContainer>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <TargetFramework>net472</TargetFramework>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <IsPackage>true</IsPackage>
+    <CreateVsixContainer>false</CreateVsixContainer>
     <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
     <IncludeDebugSymbolsInLocalVSIXDeployment>false</IncludeDebugSymbolsInLocalVSIXDeployment>
-    <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
     <DeployVSTemplates>false</DeployVSTemplates>
     <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
