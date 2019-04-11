@@ -3017,22 +3017,20 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     | None -> 
        let res = 
            isByrefTyconRef g tcref ||
-           TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref
+           (isStructTyconRef tcref && TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref)
        tcref.SetIsByRefLike res
        res
 
 let isSpanLikeTyconRef g m tcref =
     isByrefLikeTyconRef g m tcref &&
-    not (isByrefTyconRef g tcref) &&
-    isStructTyconRef tcref
+    not (isByrefTyconRef g tcref)
 
 let isByrefLikeTy g m ty = 
     ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref | _ -> false)
 
 let isSpanLikeTy g m ty =
     isByrefLikeTy g m ty && 
-    not (isByrefTy g ty) &&
-    isStructTy g ty
+    not (isByrefTy g ty)
 
 let isSpanTyconRef g m tcref =
     isByrefLikeTyconRef g m tcref &&
@@ -3041,7 +3039,7 @@ let isSpanTyconRef g m tcref =
 let isSpanTy g m ty =
     ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g m tcref | _ -> false)
 
-let tryDestSpanTy g m ty =
+let rec tryDestSpanTy g m ty =
     match tryAppTy g ty with
     | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> ValueSome(struct(tcref, ty))
     | _ -> ValueNone

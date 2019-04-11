@@ -3044,25 +3044,22 @@ let TryFindIntrinsicOrExtensionMethInfo (cenv: cenv) (env: TcEnv) m ad nm ty =
     AllMethInfosOfTypeInScope cenv.infoReader env.NameEnv (Some(nm), ad) IgnoreOverrides m ty
 
 let TryFindFSharpSignatureInstanceGetterProperty (cenv: cenv) (env: TcEnv) m nm ty (sigTys: TType list) =
-    match TryFindPropInfo cenv.infoReader m env.AccessRights nm ty with
-    | [] -> None
-    | propInfos ->
-        propInfos
-        |> List.tryFind (fun propInfo ->
-            not propInfo.IsStatic && propInfo.HasGetter &&
-            (
-                match propInfo.GetterMethod.GetParamTypes(cenv.amap, m, []) with
-                | [] -> false
-                | argTysList ->
+    TryFindPropInfo cenv.infoReader m env.AccessRights nm ty
+    |> List.tryFind (fun propInfo ->
+        not propInfo.IsStatic && propInfo.HasGetter &&
+        (
+            match propInfo.GetterMethod.GetParamTypes(cenv.amap, m, []) with
+            | [] -> false
+            | argTysList ->
  
-                    let argTys = (argTysList |> List.reduce (@)) @ [ propInfo.GetterMethod.GetFSharpReturnTy(cenv.amap, m, []) ] in
-                    if argTys.Length <> sigTys.Length then 
-                        false 
-                    else
-                        (argTys, sigTys)
-                        ||> List.forall2 (typeEquiv cenv.g)
-            )
+                let argTys = (argTysList |> List.reduce (@)) @ [ propInfo.GetterMethod.GetFSharpReturnTy(cenv.amap, m, []) ] in
+                if argTys.Length <> sigTys.Length then 
+                    false 
+                else
+                    (argTys, sigTys)
+                    ||> List.forall2 (typeEquiv cenv.g)
         )
+    )
 
 /// Build the 'test and dispose' part of a 'use' statement 
 let BuildDisposableCleanup cenv env m (v: Val) = 
@@ -7138,7 +7135,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
         | ValueSome(struct(_, destTy)) ->
             match TryFindFSharpSignatureInstanceGetterProperty cenv env m "Item" ty [ g.int32_ty; (if isReadOnlySpan then mkInByrefTy g destTy else mkByrefTy g destTy) ], 
                   TryFindFSharpSignatureInstanceGetterProperty cenv env m "Length" ty [ g.int32_ty ] with
-            | Some(itemPropInfo), Some(lengthPropInfo) when itemPropInfo.HasGetter && lengthPropInfo.HasGetter -> 
+            | Some(itemPropInfo), Some(lengthPropInfo) -> 
                 ValueSome(struct(itemPropInfo.GetterMethod, lengthPropInfo.GetterMethod, isReadOnlySpan))
             | _ -> 
                 ValueNone
