@@ -173,7 +173,7 @@ Fare clic su OK per ignorare e continuare. Fare clic su ANNULLA per selezionare 
       </trans-unit>
       <trans-unit id="PPG_SelectOutputPathTitle">
         <source>Select Output Path</source>
-        <target state="translated">Seleziona percorso di output</target>
+        <target state="translated">Seleziona percorso output</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SelectReferencePath">
@@ -230,7 +230,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_InvalidVersion">
         <source>Invalid version format, expected "[Major]", "[Major].[Minor]", "[Major].[Minor].[Build]" or "[Major].[Minor].[Build].[Revision]"</source>
-        <target state="translated">Formato di versione non valido: previsto [Principale]", "[Principale].[Secondaria]", "[Principale].[Secondaria].[Build]" o "[Principale].[Secondaria].[Build].[Revisione]</target>
+        <target state="translated">Formato di versione non valido. Previsto "[Major]", "[Major].[Minor]", "[Major].[Minor].[Build]" o "[Major].[Minor].[Build].[Revision]"</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_BadWildcard">
@@ -240,7 +240,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
         <source>Each part of the version number for '{0}' must be an integer between 0 and {1}.</source>
-        <target state="translated">Ogni parte del numero di versione per '{0}' deve essere un numero intero compreso tra 0 e {1}.</target>
+        <target state="translated">Ogni parte del numero di versione per '{0}' deve essere un intero compreso tra 0 e {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_DefaultIconText">
@@ -315,7 +315,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">&amp;Form di avvio:</target>
+        <target state="translated">F&amp;orm di avvio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -370,7 +370,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_OptionStrict_Custom">
         <source>(custom)</source>
-        <target state="translated">(personalizzata)</target>
+        <target state="translated">(personalizzato)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42016">
@@ -380,7 +380,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42017_42018_42019">
         <source>Late binding; call could fail at run time</source>
-        <target state="translated">Binding tardivo. La chiamata potrebbe non riuscire in fase di esecuzione</target>
+        <target state="translated">Associazione tardiva. La chiamata potrebbe non riuscire in fase di esecuzione</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42020">
@@ -754,7 +754,7 @@ Errore:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_AllPurposes">
         <source>&lt;All&gt;</source>
-        <target state="translated">&lt;Tutti&gt;</target>
+        <target state="translated">&lt;Tutto&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_PasswordMismatch">
@@ -1697,7 +1697,7 @@ Errore:</target>
       </trans-unit>
       <trans-unit id="RSE_Err_BadIdentifier_2Arg">
         <source>The name of the resource '{0}' cannot be used as a valid identifier, because it contains one or more invalid characters: '{1}'.  Please remove or replace those characters and try again.</source>
-        <target state="translated">Il nome della risorsa '{0}' non può essere usato come identificatore valido perché contiene uno o più caratteri non validi: \'{1\}'. Rimuovere o sostituire tali caratteri e riprovare.</target>
+        <target state="translated">Il nome della risorsa '{0}' non può essere usato come identificatore valido perché contiene uno o più caratteri non validi: '{1}'. Rimuovere o sostituire tali caratteri e riprovare.</target>
         <note>{0} = Resource name</note>
       </trans-unit>
       <trans-unit id="RSE_Err_MaxFilesLimitation">
@@ -1894,52 +1894,52 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_ExistingFile">
         <source>&amp;Existing File...</source>
-        <target state="translated">&amp;File esistente...</target>
+        <target state="translated">File &amp;Esistente...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_String">
         <source>New &amp;String</source>
-        <target state="translated">&amp;Nuova stringa</target>
+        <target state="translated">Nuova &amp;Stringa</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image">
         <source>New &amp;Image</source>
-        <target state="translated">&amp;Nuova immagine</target>
+        <target state="translated">Nuova &amp;immagine</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_PNG">
         <source>&amp;PNG Image...</source>
-        <target state="translated">&amp;Immagine PNG...</target>
+        <target state="translated">Immagine &amp;PNG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_BMP">
         <source>&amp;BMP Image...</source>
-        <target state="translated">&amp;Immagine BMP...</target>
+        <target state="translated">Immagine &amp;BMP...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_GIF">
         <source>&amp;GIF Image...</source>
-        <target state="translated">&amp;Immagine GIF...</target>
+        <target state="translated">Immagine &amp;GIF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_JPEG">
         <source>&amp;JPEG Image...</source>
-        <target state="translated">&amp;Immagine JPEG...</target>
+        <target state="translated">Immagine &amp;JPEG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_TIFF">
         <source>&amp;TIFF Image...</source>
-        <target state="translated">&amp;Immagine TIFF...</target>
+        <target state="translated">Immagine &amp;TIFF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
         <source>New I&amp;con...</source>
-        <target state="translated">&amp;Nuova icona...</target>
+        <target state="translated">Nuova I&amp;cona...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_TextFile">
         <source>New &amp;Text File...</source>
-        <target state="translated">&amp;Nuovo file di testo...</target>
+        <target state="translated">Nuovo file di &amp;testo...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Type_BMP">
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Applicazione</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Applicazione (Web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Utente</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Utente (Web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2522,7 +2512,7 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">
         <source>R&amp;emove Setting</source>
-        <target state="translated">&amp;Rimuovi impostazione</target>
+        <target state="translated">R&amp;imuovi impostazione</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
@@ -2675,7 +2665,7 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_RootNamespaceJSharp">
         <source>Default pac&amp;kage:</source>
-        <target state="translated">&amp;Pacchetto predefinito:</target>
+        <target state="translated">Pacc&amp;hetto predefinito:</target>
         <note>J# Specific String for Root Namespace</note>
       </trans-unit>
       <trans-unit id="RSE_AccessModifier_Custom">
@@ -2730,7 +2720,7 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
         <source>Startup &amp;URI:</source>
-        <target state="translated">&amp;URI di avvio:</target>
+        <target state="translated">&amp;URI di Avvio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">
@@ -2830,22 +2820,22 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">secondi</target>
+        <target state="translated">Secondi</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minuti</target>
+        <target state="translated">Minuti</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">ore</target>
+        <target state="translated">Ore</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">giorni</target>
+        <target state="translated">Giorni</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

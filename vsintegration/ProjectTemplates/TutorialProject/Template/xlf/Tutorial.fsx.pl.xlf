@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">a następnie wybierz opcję „Wykonaj w programie Interactive”. Okno programu F# Interactive można otworzyć z menu „Widok”.</target>
+        <target state="translated">a następnie wybierz opcję „Wykonaj w trybie interaktywnym”. Okno narzędzia F# Interactive można otworzyć z menu „Widok”.</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -1294,7 +1294,7 @@
       </trans-unit>
       <trans-unit id="Option-Line1">
         <source>Option values are any kind of value tagged with either 'Some' or 'None'.</source>
-        <target state="translated">Wartości opcji to dowolne wartości oznaczone jako „Some” lub „None”.</target>
+        <target state="translated">Wartości opcji to dowolne wartości otagowane jako „Some” lub „None”.</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line2">

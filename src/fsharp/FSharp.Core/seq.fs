@@ -852,6 +852,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Truncate")>]
         let truncate count (source: seq<'T>) =
             checkNonNull "source" source
+            if count <= 0 then empty else
             seq { let i = ref 0
                   use ie = source.GetEnumerator()
                   while !i < count && ie.MoveNext() do
@@ -1414,6 +1415,19 @@ namespace Microsoft.FSharp.Collections
                     v
             else
                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        [<CompiledName("TryExactlyOne")>]
+        let tryExactlyOne (source : seq<_>) =
+            checkNonNull "source" source
+            use e = source.GetEnumerator()
+            if e.MoveNext() then
+                let v = e.Current
+                if e.MoveNext() then
+                    None
+                else
+                    Some v
+            else
+                None
 
         [<CompiledName("Reverse")>]
         let rev source =

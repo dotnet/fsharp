@@ -6,14 +6,14 @@ open System
 
 open Microsoft.CodeAnalysis
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.Range
 open Microsoft.VisualStudio.Shell.Interop
 
 type internal QuickInfoNavigation
     (
-        serviceProvider: IServiceProvider,
+        statusBar: StatusBar,
         checker: FSharpChecker,
         projectInfoManager: FSharpProjectOptionsManager,
         initialDoc: Document,
@@ -22,7 +22,6 @@ type internal QuickInfoNavigation
 
     let workspace = initialDoc.Project.Solution.Workspace
     let solution = workspace.CurrentSolution
-    let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
 
     member __.IsTargetValid (range: range) =
         range <> rangeStartup &&

@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">True olarak ayarlanırsa ve geçerli makine 64 bit ise F# Interactive'i 64 bit işlem olarak çalıştırın. (Aksi takdirde F# Interactive 32 bit işlemdir.)</target>
+        <target state="translated">True olarak ayarlanırsa ve geçerli makine 64 bit ise F# Etkileşimli'yi 64 bit işlem olarak çalıştırın. (Aksi takdirde F# Etkileşimli 32 bit işlemdir.)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
-        <target state="translated">F# Interactive seçenekleri</target>
+        <target state="translated">F# Etkileşimli seçenekleri</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">

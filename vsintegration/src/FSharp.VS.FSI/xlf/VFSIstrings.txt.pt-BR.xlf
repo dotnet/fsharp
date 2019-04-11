@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="cannotCreateToolWindow">
         <source>Cannot create window F# Interactive ToolWindow</source>
-        <target state="translated">Não é possível criar a Janela interativa F# ToolWindow</target>
+        <target state="translated">Não é possível criar a Janela F# Interativo ToolWindow</target>
         <note />
       </trans-unit>
       <trans-unit id="exceptionRaisedWhenCreatingRemotingClient">

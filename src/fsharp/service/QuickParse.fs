@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type PartialLongName =
@@ -46,7 +47,8 @@ module QuickParse =
     // Adjusts the token tag for the given identifier
     // - if we're inside active pattern name (at the bar), correct the token TAG to be an identifier
     let CorrectIdentifierToken (tokenText: string) (tokenTag: int) = 
-        if tokenText.EndsWith "|" then Microsoft.FSharp.Compiler.Parser.tagOfToken (Microsoft.FSharp.Compiler.Parser.token.IDENT tokenText)
+        if tokenText.EndsWithOrdinal("|") then
+            FSharp.Compiler.Parser.tagOfToken (FSharp.Compiler.Parser.token.IDENT tokenText)
         else tokenTag
 
     let rec isValidStrippedName (name:string) idx = 
@@ -61,9 +63,7 @@ module QuickParse =
     let private isValidActivePatternName (name: string) = 
 
       // Strip the surrounding bars (e.g. from "|xyz|_|") to get "xyz"
-      match name.StartsWith("|", System.StringComparison.Ordinal), 
-            name.EndsWith("|_|", System.StringComparison.Ordinal), 
-            name.EndsWith("|", System.StringComparison.Ordinal) with
+      match name.StartsWithOrdinal("|"), name.EndsWithOrdinal("|_|"), name.EndsWithOrdinal("|") with
       | true, true, _ when name.Length > 4 -> isValidStrippedName (name.Substring(1, name.Length - 4)) 0
       | true, _, true when name.Length > 2 -> isValidStrippedName (name.Substring(1, name.Length - 2)) 0
       | _ -> false

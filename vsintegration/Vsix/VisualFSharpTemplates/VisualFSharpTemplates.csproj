@@ -3,17 +3,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>VisualFSharpTemplate</AssemblyName>
-    <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharpTemplates</ExtensionInstallationFolder>
-    <DeployExtension>false</DeployExtension>
+    <TargetFramework>net472</TargetFramework>
+    <IsShipping>true</IsShipping>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="$(NuGetPackageRoot)\System.ValueTuple\4.4.0\System.ValueTuple.4.4.0.nupkg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>packages\System.ValueTuple.4.4.0.nupkg</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core.nuget\FSharp.Core.nuget.csproj">
+      <VSIXSubPath>packages</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>PackOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

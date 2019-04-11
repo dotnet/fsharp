@@ -174,7 +174,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="translated">  F# Interactive komut satırı seçenekleri:</target>
+        <target state="translated">  F# Etkileşimli komut satırı seçenekleri:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">

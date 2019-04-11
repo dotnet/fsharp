@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Lexhelp
+module internal FSharp.Compiler.Lexhelp
 
 open System
 open System.Text
@@ -10,22 +10,20 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Text
 open Internal.Utilities.Text.Lexing
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Parser
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Ast
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.Range
+open FSharp.Compiler.Parser
 
-
-
-// The "mock" filename used by fsi.exe when reading from stdin.
-// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
+/// The "mock" filename used by fsi.exe when reading from stdin.
+/// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
 let stdinMockFilename = "stdin" 
 
 /// Lexer args: status of #light processing.  Mutated when a #light
@@ -43,7 +41,7 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager() =
-    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(100)
+    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(1024)
     member x.InternIdentifierToken(s) = 
         let mutable res = Unchecked.defaultof<_> 
         let ok = strings.TryGetValue(s, &res)  
@@ -287,10 +285,10 @@ module Keywords =
       ]
     (*------- reserved keywords which are ml-compatibility ids *) 
     @ List.map (fun s -> (FSHARP,s,RESERVED)) 
-        [ "break"; "checked"; "component"; "constraint"; "continue"; 
-          "fori";  "include";  "mixin"; 
-          "parallel"; "params";  "process"; "protected"; "pure"; 
-          "sealed"; "trait";  "tailcall"; "virtual"; ]
+        [ "break"; "checked"; "component"; "constraint"; "continue"
+          "fori";  "include";  "mixin"
+          "parallel"; "params";  "process"; "protected"; "pure"
+          "sealed"; "trait";  "tailcall"; "virtual" ]
 
     let private unreserveWords = 
         keywordList |> List.choose (function (mode, keyword, _) -> if mode = FSHARP then Some keyword else None) 
@@ -355,7 +353,10 @@ module Keywords =
 
     /// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
     let NormalizeIdentifierBackticks (s : string) : string =
-        let s = if s.StartsWith "``" && s.EndsWith "``" then s.[2..s.Length - 3] else s
+        let s =
+            if s.StartsWithOrdinal("``") && s.EndsWithOrdinal("``") then
+                s.[2..s.Length - 3]
+            else s
         QuoteIdentifierIfNeeded s
 
     /// Keywords paired with their descriptions. Used in completion and quick info.

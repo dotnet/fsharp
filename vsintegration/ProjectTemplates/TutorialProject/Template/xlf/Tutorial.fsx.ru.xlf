@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Чтобы выполнить код в интерактивном режиме F#, выделите фрагмент кода и нажмите ALT+ВВОД или щелкните правой кнопкой мыши</target>
+        <target state="translated">Чтобы выполнить код в F# Interactive, выделите фрагмент кода и нажмите ALT+ВВОД или щелкните правой кнопкой мыши</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">и</target>
+        <target state="translated">И</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">

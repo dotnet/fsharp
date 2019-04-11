@@ -1,6 +1,6 @@
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -10,7 +10,7 @@ module Tests.Service.Symbols
 open FSharp.Compiler.Service.Tests.Common
 open FsUnit
 open NUnit.Framework
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 module ActivePatterns =
 
@@ -100,4 +100,27 @@ module Mod2 =
          mod1val1.XmlDocSig |> shouldEqual "P:Mod1.val1"
          mod2func2.XmlDocSig |> shouldEqual "M:Mod1.Mod2.func2"
 
-                 
+
+module Attributes =
+    [<Test>]
+    let ``Emit conditional attributes`` () =
+        let source = """
+open System
+open System.Diagnostics
+
+[<Conditional("Bar")>]
+type FooAttribute() =
+    inherit Attribute()
+
+[<Foo>]
+let x = 123
+"""
+        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
+        let _, checkResults = parseAndCheckFile fileName source options
+
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+         |> Async.RunSynchronously
+         |> Array.tryFind (fun su -> su.Symbol.DisplayName = "x")
+         |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
+         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)

@@ -152,6 +152,16 @@
         <target state="translated">Avanzate</target>
         <note />
       </trans-unit>
+      <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6014">
+        <source>Formatting</source>
+        <target state="translated">Formattazione</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

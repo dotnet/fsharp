@@ -1,0 +1,28 @@
+<Project>
+
+  <PropertyGroup>
+    <RestoreSources>
+      $(RestoreSources);
+      https://api.nuget.org/v3/index.json;
+      https://dotnet.myget.org/F/fsharp/api/v3/index.json;
+    </RestoreSources>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' == 'Windows_NT'">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' != 'Windows_NT'">$(HOME)/.nuget/packages/</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' == 'Windows_NT'">$(NuGetPackageRoot)\</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' != 'Windows_NT'">$(NuGetPackageRoot)/</NuGetPackageRoot>
+    <ArtifactsDir>$(MSBuildThisFileDirectory)..\artifacts</ArtifactsDir>
+    <ArtifactsBinDir>$(ArtifactsDir)\bin</ArtifactsBinDir>
+    <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
+    <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
+    <DisableCompilerRedirection>true</DisableCompilerRedirection>
+  </PropertyGroup>
+
+  <!-- SDK targets override -->
+  <PropertyGroup>
+    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net46</ProtoOutputPath>
+  </PropertyGroup>
+</Project>

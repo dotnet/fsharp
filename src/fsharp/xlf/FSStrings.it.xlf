@@ -959,7 +959,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COMMENT">
         <source>comment</source>
-        <target state="translated">commento</target>
+        <target state="translated">Commento</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LINE.COMMENT">
@@ -1174,7 +1174,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">parola chiave </target>
+        <target state="translated">Parola chiave</target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
@@ -1344,7 +1344,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">I riferimenti ricorsivi all'oggetto in fase di definizione verranno controllati per verificare la correttezza dell'inizializzazione al runtime tramite l'utilizzo di un riferimento ritardato. Provare a inserire autoriferimenti nei membri o in un'espressione finale nel formato '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
+        <target state="translated">I riferimenti ricorsivi all'oggetto in fase di definizione verranno controllati per verificare la correttezza dell'inizializzazione al runtime tramite l'uso di un riferimento ritardato. Provare a inserire autoriferimenti nei membri o in un'espressione finale nel formato '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1615,6 +1615,16 @@
       <trans-unit id="TargetInvocationExceptionWrapper">
         <source>internal error: {0}</source>
         <target state="translated">errore interno: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="translated">simbolo '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="translated">simbolo '|}'</target>
         <note />
       </trans-unit>
     </body>

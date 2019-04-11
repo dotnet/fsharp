@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">如果設為 true，並且目前電腦為 64 位元，則 F# Interactive 會當做 64 位元處理序來執行 (反之，F# Interactive 則為 32 位元處理序)。</target>
+        <target state="translated">如果設為 true，並且目前電腦為 64 位元，則 F# 互動會當做 64 位元處理序來執行 (反之，F# 互動則為 32 位元處理序)。</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
-        <target state="translated">F# Interactive 選項</target>
+        <target state="translated">F# 互動選項</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">啟用 F# 指令碼偵錯 (可能會影響指令碼效能，必須重設 F# Interactive)</target>
+        <target state="translated">啟用 F# 指令碼偵錯 (可能會影響指令碼效能，必須重設 F# 互動)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">

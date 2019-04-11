@@ -1,8 +1,8 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../bin/v4.5/CSharp_Analysis.dll"
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -16,9 +16,9 @@ open System
 open System.IO
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 open FSharp.Compiler.Service.Tests
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
@@ -67,8 +67,8 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
 let ``Test that csharp references are recognized as such`` () = 
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
-    let ass = table.["CSharp_Analysis"]
-    let search = ass.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") 
+    let assembly = table.["CSharp_Analysis"]
+    let search = assembly.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") 
     Assert.True search.IsSome
     let found = search.Value
     // this is no F# thing
@@ -146,3 +146,53 @@ let _ = CSharpClass(0)
         Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> should be True
     | None -> failwith "Expected Some for DeclaringEntity"
 
+let getEntitiesUses source =
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+    let results, _ = getProjectReferences(source, [csharpAssembly], None, None)
+    results.GetAllUsesOfAllSymbols()
+    |> Async.RunSynchronously
+    |> Seq.choose (fun su ->
+        match su.Symbol with
+        | :? FSharpEntity as entity -> Some entity
+        | _ -> None)
+    |> List.ofSeq
+
+[<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
+let ``Different types with the same short name equality check`` () =
+    let source = """
+module CtorTest
+
+let (s1: System.String) = null
+let (s2: FSharp.Compiler.Service.Tests.String) = null
+"""
+
+    let stringSymbols =
+        getEntitiesUses source
+        |> List.filter (fun entity -> entity.LogicalName = "String")
+
+    match stringSymbols with
+    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> should be False
+    | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
+
+[<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
+let ``Different namespaces with the same short name equality check`` () =
+    let source = """
+module CtorTest
+
+open System.Linq
+open FSharp.Compiler.Service.Tests.Linq
+"""
+
+    let stringSymbols =
+        getEntitiesUses source
+        |> List.filter (fun entity -> entity.LogicalName = "Linq")
+
+    match stringSymbols with
+    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> should be False
+    | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith

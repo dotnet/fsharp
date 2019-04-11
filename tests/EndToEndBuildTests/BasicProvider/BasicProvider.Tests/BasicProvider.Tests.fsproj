@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">netcoreapp2.0</TargetFramework>
@@ -10,15 +11,25 @@
 
   <ItemGroup>
     <Compile Include="BasicProvider.Tests.fs" />
-
     <None Include="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-
+    <Content Include="$(MSBuildProjectDirectory)\**\*.*"
+             Exclude="$(MSBuildProjectDirectory)\bin\**\*.*;$(MSBuildProjectDirectory)\obj\**\*.*;$(MSBuildProjectDirectory)\FSharp.Core\SampleTuples\**\*.*;$(MSBuildProjectDirectory)\Directory.Build.props;$(MSBuildProjectDirectory)\Directory.Build.targets;">
+        <Pack>true</Pack>
+        <PackagePath>content\myfiles\</PackagePath>
+    </Content>
     <PackageReference Include="BasicProvider" Version="1.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170517-02" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
-
   </ItemGroup>
+
+  <Target Name="RemovePackagesFromCache" BeforeTargets="Restore">
+      <ItemGroup>
+          <FoldersToDelete Include="$(NuGetPackageRoot)basicprovider" />
+      </ItemGroup>
+      <RemoveDir Directories="@(FoldersToDelete)" />
+  </Target>
+
 </Project>

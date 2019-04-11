@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
+module internal FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Extensions.ILX
 
 type IlxCallImplementation = 
   | VirtEntriesVirtCode
@@ -22,7 +22,7 @@ let ilxFsharpCoreLibScopeRef () =
     if !ilxCompilingFSharpCoreLib then 
         ILScopeRef.Local 
     else 
-        let assref = 
+        let assemblyRef = 
             match !ilxFsharpCoreLibAssemRef with 
             | Some o -> o
             | None -> 
@@ -34,6 +34,6 @@ let ilxFsharpCoreLibScopeRef () =
                                      Some (PublicKeyToken(Bytes.ofInt32Array [| 0xb0; 0x3f; 0x5f; 0x7f; 0x11; 0xd5; 0x0a; 0x3a |])),
                                      false, 
                                      Some (IL.parseILVersion "0.0.0.0"), None)
-        ILScopeRef.Assembly assref
+        ILScopeRef.Assembly assemblyRef
 
 let ilxNamespace () =  "Microsoft.FSharp.Core"

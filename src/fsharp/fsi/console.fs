@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.Interactive
+namespace FSharp.Compiler.Interactive
 
 open System
 open System.Text
@@ -13,18 +13,9 @@ open Internal.Utilities
 /// Fixes to System.Console.ReadKey may break this code around, hence the option here.
 module internal ConsoleOptions =
 
-#if FX_NO_WIN_REGISTRY
-  let fixupRequired = false
-#else
-  // Bug 4254 was fixed in Dev11 (Net4.5), so this flag tracks making this fix up version specific.
-  let fixupRequired = not FSharpEnvironment.IsRunningOnNetFx45OrAbove
-#endif
-
-  let fixNonUnicodeSystemConsoleReadKey = ref fixupRequired
   let readKeyFixup (c:char) =
 #if FX_NO_SERVERCODEPAGES
 #else
-    if !fixNonUnicodeSystemConsoleReadKey then
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
       // Convert it to a Unicode char through the encoding.
       if 0 <= int c && int c <= 255 then
@@ -36,10 +27,8 @@ module internal ConsoleOptions =
           c // no fix up
       else
         assert("readKeyFixHook: given char is outside the 0..255 byte range" = "")
-        c // no fix up
-    else
 #endif
-      c
+        c
 
 type internal Style = Prompt | Out | Error
 
@@ -96,7 +85,7 @@ module internal Utils =
     let guard(f) = 
         try f() 
         with e -> 
-             Microsoft.FSharp.Compiler.ErrorLogger.warning(Failure(sprintf "Note: an unexpected exception in fsi.exe readline console support. Consider starting fsi.exe with the --no-readline option and report the stack trace below to the .NET or Mono implementors\n%s\n%s\n" e.Message e.StackTrace));
+             FSharp.Compiler.ErrorLogger.warning(Failure(sprintf "Note: an unexpected exception in fsi.exe readline console support. Consider starting fsi.exe with the --no-readline option and report the stack trace below to the .NET or Mono implementors\n%s\n%s\n" e.Message e.StackTrace));
 
     // Quick and dirty dirty method lookup for inlined IL
     // In some situations, we can't use ldtoken to obtain a RuntimeMethodHandle, since the method

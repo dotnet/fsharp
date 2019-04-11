@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Functions to format error message details
-module internal Microsoft.FSharp.Compiler.ErrorResolutionHints
+module internal FSharp.Compiler.ErrorResolutionHints
 
 open Internal.Utilities
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 let maxSuggestions = 5
 let minThresholdForSuggestions = 0.7
@@ -23,35 +24,37 @@ let IsInEditDistanceProximity idText suggestion =
     editDistance <= threshold
 
 /// Filters predictions based on edit distance to the given unknown identifier.
-let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =    
+let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =    
     let uppercaseText = idText.ToUpperInvariant()
     let allSuggestions = suggestionF()
 
     let demangle (nm:string) =
-        if nm.StartsWith "( " && nm.EndsWith " )" then
+        if nm.StartsWithOrdinal("( ") && nm.EndsWithOrdinal(" )") then
             let cleanName = nm.[2..nm.Length - 3]
             cleanName
         else nm
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        if not (name.StartsWith "( " && name.EndsWith " )") then false else
-        let name =  name.[2..name.Length - 3]
-        let res = name |> Seq.forall (fun c -> c <> ' ')
-        res        
+        if not (name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")) then
+            false
+        else
+            let name = name.[2..name.Length - 3]
+            name |> Seq.forall (fun c -> c <> ' ')
 
     if allSuggestions.Contains idText then [] else // some other parsing error occurred
+    let dotIdText = "." + idText
     allSuggestions
     |> Seq.choose (fun suggestion ->
         // Because beginning a name with _ is used both to indicate an unused
         // value as well as to formally squelch the associated compiler
         // error/warning (FS1182), we remove such names from the suggestions,
         // both to prevent accidental usages as well as to encourage good taste
-        if IsOperatorName suggestion || suggestion.StartsWith "_" then None else
+        if IsOperatorName suggestion || suggestion.StartsWithOrdinal("_") then None else
         let suggestion:string = demangle suggestion
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
-        if similarity >= highConfidenceThreshold || suggestion.EndsWith ("." + idText) then
+        if similarity >= highConfidenceThreshold || suggestion.EndsWithOrdinal(dotIdText) then
             Some(similarity, suggestion)
         elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
             None

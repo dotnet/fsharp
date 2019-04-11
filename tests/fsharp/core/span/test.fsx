@@ -1,5 +1,7 @@
-#r @"..\..\..\..\packages\System.Memory.4.5.0-rc1\lib\netstandard2.0\System.Memory.dll"
-#r @"..\..\..\..\packages\NETStandard.Library.NETFramework.2.0.0-preview2-25405-01\build\net461\ref\netstandard.dll"
+#load "refs.generated.fsx"
+
+#nowarn "9"
+#nowarn "51"
 
 namespace System.Runtime.CompilerServices
 
@@ -102,16 +104,16 @@ namespace Tests
         let SafeSum6(bytes: ReadOnlySpan<byte>) =
             let mutable sum = 0
             for i in 0 .. bytes.Length - 1 do 
-                let byteAddr = &bytes.[i]
-                sum <- sum + int byteAddr
+                let byte = bytes.[i]
+                sum <- sum + int byte
             sum
 
         let SafeSum7(bytes: ReadOnlyMemory<byte>) =
             let bytes = bytes.Span
             let mutable sum = 0
             for i in 0 .. bytes.Length - 1 do 
-                let byteAddr = &bytes.[i]
-                sum <- sum + int byteAddr
+                let byte = bytes.[i]
+                sum <- sum + int byte
             sum
 
         let SafeSum8(bytes: ReadOnlyMemory<byte>) =
@@ -295,10 +297,10 @@ namespace Tests
             // this is allowed
             stackReferringBecauseMutable2 <- m1 &stackReferringBecauseMutable2 stackReferringBecauseMutable1
 
-            // this is allowed
+#if NEGATIVE
+            // this is NOT allowed
             stackReferringBecauseMutable2 <- m1 &param1 stackReferringBecauseMutable1
 
-#if NEGATIVE
             // this is NOT allowed
             param1 <- m1 &stackReferringBecauseMutable2 stackReferringBecauseMutable1
 
@@ -340,9 +342,9 @@ namespace Tests
             // this is allowed
             m2(&stackReferring3) <- stackReferringBecauseMutable2
 
-#if NEGATIVE2
+#if NEGATIVE
             // this is NOT allowed
-            m1(&param1) <- stackReferringBecauseMutable2
+            m2(&param1) <- stackReferringBecauseMutable2
 
             // this is NOT allowed
             param1 <- stackReferring3
@@ -380,22 +382,20 @@ namespace Tests
 
 #if NOT_YET
 
+#if NEGATIVE
+
     // Disallow this:
     [<IsReadOnly; Struct>]
     type DisallowedIsReadOnlyStruct  = 
         [<DefaultValue>]
         val mutable X : int
 
-
-    // Allow this:
-    [<IsByRefLike; Struct>]
-    type ByRefLikeStructWithSpanField(count1: Span, count2: int) = 
-        member x.Count1 = count1
-        member x.Count2 = count2
-
-    [<IsByRefLike; Struct>]
-    type ByRefLikeStructWithByrefField(count1: Span<int>, count2: int) = 
-        member x.Count1 = count1
-        member x.Count2 = count2
 #endif
 
+    // Allow this:
+    [<IsReadOnly; IsByRefLike; Struct>]
+    type ByRefLikeStructWithSpanField(count1: Span<int>, count2: int) = 
+        member x.Count1 = count1
+        member x.Count2 = count2
+
+#endif

@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="NameCanBeSimplified">
         <source>Name can be simplified.</source>
-        <target state="translated">可简化名称。</target>
+        <target state="translated">可以简化名称。</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFunctionsOrMethodsClassificationType">
@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="translated">Intellisense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="ExceptionsHeader">
         <source>Exceptions:</source>
-        <target state="translated">异常: </target>
+        <target state="translated">异常:</target>
         <note />
       </trans-unit>
       <trans-unit id="GenericParametersHeader">
@@ -150,6 +150,16 @@
       <trans-unit id="6012">
         <source>Advanced</source>
         <target state="translated">高级</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6014">
+        <source>Formatting</source>
+        <target state="translated">正在格式化</target>
         <note />
       </trans-unit>
     </body>

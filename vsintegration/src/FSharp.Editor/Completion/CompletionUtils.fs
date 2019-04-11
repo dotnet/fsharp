@@ -9,7 +9,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Completion
 open System.Globalization
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 module internal CompletionUtils =
 
@@ -102,10 +102,11 @@ module internal CompletionUtils =
 
     let inline getKindPriority kind =
         match kind with
-        | CompletionItemKind.Property -> 0
-        | CompletionItemKind.Field -> 1
-        | CompletionItemKind.Method (isExtension = false) -> 2
-        | CompletionItemKind.Event -> 3
-        | CompletionItemKind.Argument -> 4
-        | CompletionItemKind.Other -> 5
-        | CompletionItemKind.Method (isExtension = true) -> 6
+        | CompletionItemKind.CustomOperation -> 0
+        | CompletionItemKind.Property -> 1
+        | CompletionItemKind.Field -> 2
+        | CompletionItemKind.Method (isExtension = false) -> 3
+        | CompletionItemKind.Event -> 4
+        | CompletionItemKind.Argument -> 5
+        | CompletionItemKind.Other -> 6
+        | CompletionItemKind.Method (isExtension = true) -> 7

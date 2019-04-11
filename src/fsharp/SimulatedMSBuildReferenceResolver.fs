@@ -3,33 +3,39 @@
 #if INTERACTIVE
 #load "../utils/ResizeArray.fs" "../absil/illib.fs" "../fsharp/ReferenceResolver.fs"
 #else
-module internal Microsoft.FSharp.Compiler.SimulatedMSBuildReferenceResolver 
+module internal FSharp.Compiler.SimulatedMSBuildReferenceResolver
 #endif
 
 open System
 open System.IO
 open System.Reflection
 open Microsoft.Win32
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.ReferenceResolver
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 let internal SimulatedMSBuildResolver =
+    let supportedFrameworks = [|
+        "v4.7.2"
+        "v4.7.1"
+        "v4.7"
+        "v4.6.2"
+        "v4.6.1"
+        "v4.6"
+        "v4.5.1"
+        "v4.5"
+        "v4.0"
+    |]
     { new Resolver with 
-        member x.HighestInstalledNetFrameworkVersion() = 
+        member x.HighestInstalledNetFrameworkVersion() =
+        
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            if Directory.Exists(Path.Combine(root,"v4.7.1")) then "v4.7.2"
-            elif Directory.Exists(Path.Combine(root,"v4.7.1")) then "v4.7.1"
-            elif Directory.Exists(Path.Combine(root,"v4.7")) then "v4.7"
-            elif Directory.Exists(Path.Combine(root,"v4.6.2")) then "v4.6.2"
-            elif Directory.Exists(Path.Combine(root,"v4.6.1")) then "v4.6.1"
-            elif Directory.Exists(Path.Combine(root,"v4.6")) then "v4.6"
-            elif Directory.Exists(Path.Combine(root,"v4.5.1")) then "v4.5.1"
-            elif Directory.Exists(Path.Combine(root,"v4.5")) then "v4.5"
-            elif Directory.Exists(Path.Combine(root,"v4.0")) then "v4.0"
-            else "v4.5"
+            let fwOpt = supportedFrameworks |> Seq.tryFind(fun fw -> Directory.Exists(Path.Combine(root, fw) ))
+            match fwOpt with
+            | Some fw -> fw
+            | None -> "v4.5"
 
-        member __.DotNetFrameworkReferenceAssembliesRootDirectory = 
+        member __.DotNetFrameworkReferenceAssembliesRootDirectory =
 #if !FX_RESHAPED_MSBUILD
             if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then 
                 let PF = 
@@ -41,12 +47,12 @@ let internal SimulatedMSBuildResolver =
 #endif
                 ""
 
-        member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
+        member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,
                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError) =
 
 #if !FX_NO_WIN_REGISTRY
             let registrySearchPaths() = 
-              [ let registryKey = @"Software\Microsoft\.NetFramework";
+              [ let registryKey = @"Software\Microsoft\.NetFramework"
                 use key = Registry.LocalMachine.OpenSubKey(registryKey)
                 match key with 
                 | null -> ()
@@ -103,7 +109,7 @@ let internal SimulatedMSBuildResolver =
 #if !FX_RESHAPED_MSBUILD
                 // For this one we need to get the version search exactly right, without doing a load
                 try 
-                    if not found && r.StartsWith("FSharp.Core, Version=")  && Environment.OSVersion.Platform = PlatformID.Win32NT then 
+                    if not found && r.StartsWithOrdinal("FSharp.Core, Version=") && Environment.OSVersion.Platform = PlatformID.Win32NT then 
                         let n = AssemblyName(r)
                         let fscoreDir0 = 
                             let PF = 
@@ -141,13 +147,14 @@ let internal SimulatedMSBuildResolver =
                         match n.Version, n.GetPublicKeyToken()  with 
                         | null, _ | _,null -> 
                             let options = 
-                                [ for gacdir in Directory.EnumerateDirectories(gac) do 
-                                    let assdir = Path.Combine(gacdir,n.Name)
-                                    if Directory.Exists(assdir) then 
-                                        for tdir in Directory.EnumerateDirectories(assdir) do 
-                                            let trialPath = Path.Combine(tdir,qual)
-                                            if FileSystem.SafeExists(trialPath) then 
-                                                yield trialPath ]
+                                [ if Directory.Exists(gac) then 
+                                    for gacdir in Directory.EnumerateDirectories(gac) do 
+                                        let assemblyDir = Path.Combine(gacdir,n.Name)
+                                        if Directory.Exists(assemblyDir) then 
+                                            for tdir in Directory.EnumerateDirectories(assemblyDir) do 
+                                                let trialPath = Path.Combine(tdir,qual)
+                                                if FileSystem.SafeExists(trialPath) then 
+                                                    yield trialPath ]
                             //printfn "sorting GAC paths: %A" options
                             options 
                             |> List.sort // puts latest version last
@@ -155,21 +162,22 @@ let internal SimulatedMSBuildResolver =
                             |> function None -> () | Some p -> success p
 
                         | v,tok -> 
-                            for gacdir in Directory.EnumerateDirectories(gac) do 
-                                //printfn "searching GAC directory: %s" gacdir
-                                let assdir = Path.Combine(gacdir,n.Name)
-                                if Directory.Exists(assdir) then 
-                                    //printfn "searching GAC directory: %s" assdir
+                            if Directory.Exists(gac) then 
+                                for gacdir in Directory.EnumerateDirectories(gac) do 
+                                    //printfn "searching GAC directory: %s" gacdir
+                                    let assemblyDir = Path.Combine(gacdir,n.Name)
+                                    if Directory.Exists(assemblyDir) then 
+                                        //printfn "searching GAC directory: %s" assemblyDir
 
-                                    let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
-                                    let verdir = Path.Combine(assdir,"v4.0_"+v.ToString()+"__"+tokText)
-                                    //printfn "searching GAC directory: %s" verdir
+                                        let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
+                                        let verdir = Path.Combine(assemblyDir,"v4.0_"+v.ToString()+"__"+tokText)
+                                        //printfn "searching GAC directory: %s" verdir
 
-                                    if Directory.Exists(verdir) then 
-                                        let trialPath = Path.Combine(verdir,qual)
-                                        //printfn "searching GAC: %s" trialPath
-                                        if FileSystem.SafeExists(trialPath) then 
-                                            success trialPath
+                                        if Directory.Exists(verdir) then 
+                                            let trialPath = Path.Combine(verdir,qual)
+                                            //printfn "searching GAC: %s" trialPath
+                                            if FileSystem.SafeExists(trialPath) then 
+                                                success trialPath
                 with e -> logWarningOrError false "SR001" (e.ToString())
 #endif
 
@@ -180,8 +188,8 @@ let internal GetBestAvailableResolver() =
     let tryMSBuild v = 
         // Detect if MSBuild is on the machine, if so use the resolver from there
         let mb = try Assembly.Load(sprintf "Microsoft.Build.Framework, Version=%s.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" v) |> Option.ofObj with _ -> None
-        let ass = mb |> Option.bind (fun _ -> try Assembly.Load(sprintf "FSharp.Compiler.Service.MSBuild.v%s" v) |> Option.ofObj with _ -> None)
-        let ty = ass |> Option.bind (fun ass -> ass.GetType("Microsoft.FSharp.Compiler.MSBuildReferenceResolver") |> Option.ofObj)
+        let assembly = mb |> Option.bind (fun _ -> try Assembly.Load(sprintf "FSharp.Compiler.Service.MSBuild.v%s" v) |> Option.ofObj with _ -> None)
+        let ty = assembly |> Option.bind (fun a -> a.GetType("FSharp.Compiler.MSBuildReferenceResolver") |> Option.ofObj)
         let obj = ty |> Option.bind (fun ty -> ty.InvokeMember("get_Resolver",BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.InvokeMethod ||| BindingFlags.NonPublic, null, null, [| |]) |> Option.ofObj)
         let resolver = obj |> Option.bind (fun obj -> match obj with :? Resolver as r -> Some r | _ -> None)
         resolver
@@ -208,7 +216,10 @@ let fscoreDir =
         System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
 let resolve s = 
-    SimulatedMSBuildResolver.Resolve(ResolutionEnvironment.EditingOrCompilation,[| for a in s -> (a, "") |],"v4.5.1", [SimulatedMSBuildResolver.DotNetFrameworkReferenceAssembliesRootDirectory + @"\v4.5.1" ],"", "", fscoreDir,[],__SOURCE_DIRECTORY__,ignore, (fun _ _ -> ()), (fun _ _-> ()))
+    SimulatedMSBuildResolver.Resolve
+       (ResolutionEnvironment.EditingOrCompilation,[| for a in s -> (a, "") |],"v4.5.1", 
+        [SimulatedMSBuildResolver.DotNetFrameworkReferenceAssembliesRootDirectory + @"\v4.5.1" ],"", "", 
+        fscoreDir,[],__SOURCE_DIRECTORY__,ignore, (fun _ _ -> ()), (fun _ _-> ()))
 
 // Resolve partial name to something on search path
 resolve ["FSharp.Core" ]

@@ -3,6 +3,7 @@
 namespace UnitTests.TestLib.LanguageService
 
 open System
+open System.Reflection
 open NUnit.Framework
 open System.Diagnostics
 open System.IO
@@ -11,14 +12,17 @@ open Salsa.VsOpsUtils
 open Salsa.VsMocks
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 open System.Text.RegularExpressions 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp
+
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
 [<AutoOpen>]
-module internal Globals = 
-    let checker = FSharpChecker.Create(legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+module internal Globals =
+    let checker = FSharpChecker.Create(legacyReferenceResolver=FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+
 
 //open Internal.Utilities
 type internal TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan
@@ -242,11 +246,14 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
 /// various functions that abstract actions over vs.
 type LanguageServiceBaseTests() =  
 
+    let _resolver = AssemblyResolver.addResolver ()
+
     let mutable defaultSolution : OpenSolution = Unchecked.defaultof<_>
     let cache = System.Collections.Generic.Dictionary()
 
     let mutable defaultVS : VisualStudio = Unchecked.defaultof<_>
     let mutable currentVS : VisualStudio = Unchecked.defaultof<_>
+
     (* VsOps is internal, but this type needs to be public *)
     let mutable ops = BuiltMSBuildTestFlavour()
     let testStopwatch = new Stopwatch()
@@ -384,8 +391,7 @@ type LanguageServiceBaseTests() =
         AppDomain.CurrentDomain.AssemblyLoad.Add AssertNotBackVersionAssembly
 
         UIStuff.SetupSynchronizationContext()
-        new Microsoft.VisualStudio.FSharp.Editor.FSharpPackage() |> ignore  // will force us to capture the dummy context we just set up
-            
+
         defaultVS <- ops.CreateVisualStudio()
         currentVS <- defaultVS
         

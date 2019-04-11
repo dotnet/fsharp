@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.IlxGen
+module internal FSharp.Compiler.IlxGen
 
 open System
 open System.IO
 open System.Reflection
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
 
 /// Indicates how the generated IL code is ultimately emitted 
 type IlxGenBackend =
@@ -62,6 +62,10 @@ type public IlxGenResults =
       ilAssemAttrs           : ILAttribute list
       /// The generated IL/ILX .NET module attributes
       ilNetModuleAttrs       : ILAttribute list
+      /// The attributes for the assembly in F# form
+      topAssemblyAttrs : Attribs
+      /// The security attributes to attach to the assembly
+      permissionSets : ILSecurityDecl list
       /// The generated IL/ILX resources associated with F# quotations
       quotationResourceInfo : (ILTypeRef list * byte[])  list }
 
@@ -88,9 +92,6 @@ type public IlxAssemblyGenerator =
     /// Generate ILX code for an assembly fragment
     member GenerateCode : IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults
 
-    /// Create the CAS permission sets for an assembly fragment
-    member CreatePermissionSets : Attrib list ->  ILSecurityDecl list
-
     /// Invert the compilation of the given value and clear the storage of the value
     member ClearGeneratedValue : ExecutionContext * Val -> unit
 
@@ -99,4 +100,6 @@ type public IlxAssemblyGenerator =
 
 
 val ReportStatistics : TextWriter -> unit
-val IsValCompiledAsMethod : TcGlobals -> Val -> bool
+
+/// Determine if an F#-declared value, method or function is compiled as a method.
+val IsFSharpValCompiledAsMethod : TcGlobals -> Val -> bool

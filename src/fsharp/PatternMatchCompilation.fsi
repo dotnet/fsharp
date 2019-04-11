@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
+module internal FSharp.Compiler.PatternMatchCompilation
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Range
 
 
 /// What should the decision tree contain for any incomplete match? 
@@ -42,6 +43,8 @@ and PatternValBinding =
 and TypedMatchClause =  
     | TClause of Pattern * Expr option * DecisionTreeTarget * range
 
+val ilFieldToTastConst : ILFieldInit -> Tast.Const
+
 /// Compile a pattern into a decision tree and a set of targets.
 val internal CompilePattern : 
     TcGlobals ->
@@ -54,8 +57,9 @@ val internal CompilePattern :
     // warn on unused? 
     bool ->   
     ActionOnFailure -> 
-    // the value being matched against, perhaps polymorphic 
-    Val * Typars -> 
+    // the value being matched against, perhaps polymorphic. Optionally includes the
+    // input expression, only for the case of immediate matching on a byref pointer
+    Val * Typars * Expr option -> 
     // input type-checked syntax of pattern matching
     TypedMatchClause list ->
     // input type 

@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="LearnMoreAbout">
         <source>To learn more about applied F# programming, use</source>
-        <target state="translated">Uygulamalı #F programlama hakkında daha fazla bilgi edinmek için şunu kullanın:</target>
+        <target state="translated">Uygulamalı F# programlama hakkında daha fazla bilgi edinmek için şunu kullanın:</target>
         <note />
       </trans-unit>
       <trans-unit id="ToInstall-Line1">
@@ -899,7 +899,7 @@
       </trans-unit>
       <trans-unit id="Records-Line1">
         <source>Records are an aggregate of named values, with optional members (such as methods).</source>
-        <target state="translated">Kayıtlar, isteğe bağlı üyeleri (örneğin, metotlar) içeren adlandırılmış değerlerin toplamıdır.</target>
+        <target state="translated">Kayıtlar, isteğe bağlı üyeleri (örneğin, metotlar) içeren adlandırılmış değerlerin kümesidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="Records-Line2">

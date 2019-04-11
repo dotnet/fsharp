@@ -84,12 +84,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|ButtonText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">发送到 F# 交互(&amp;S)</target>
+        <target state="translated">发送到 F# 交互窗口(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|MenuText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">发送到 F# 交互(&amp;S)</target>
+        <target state="translated">发送到 F# 交互窗口(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|CommandName">
@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">将引用发送到 F# 交互(&amp;S)</target>
+        <target state="translated">将引用发送到 F# 交互窗口(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">将引用发送到 F# 交互(&amp;S)</target>
+        <target state="translated">将引用发送到 F# 交互窗口(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">

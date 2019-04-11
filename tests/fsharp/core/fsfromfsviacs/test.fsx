@@ -166,12 +166,18 @@ module TestExtensions =
     check "dfeweeon1" (System.DateTime.Now.ExtendCSharpTypeWithInRefReturnExtension()).Date  x.Date
     check "dfeweeon2" (x.ExtendCSharpTypeWithInRefReturnExtension()).Date x.Date
 
-    check "dfeweeon3" (x.ExtendCSharpTypeWithRefReturnExtension()).Date x.Date
-
     let mutable mx = x
     check "dfeweeon4" (mx.ExtendCSharpTypeWithOutRefExtension(); mx) x.Date
 
-    check "dfeweeon5" (x.ExtendCSharpTypeWithInRefExtension()) x.Year
+    check "dfeweeon5" (mx.ExtendCSharpTypeWithInRefExtension()) x.Year
+
+
+let ToFSharpFunc() = 
+    test "vkejhwew901" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f1)(3)  =  FSharpFuncTests.ApiWrapper.f1.Invoke(3))
+    test "vkejhwew902" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f2)(3)("a")  =  FSharpFuncTests.ApiWrapper.f2.Invoke(3, "a"))
+    test "vkejhwew903" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f3)(3)("a")(6uy)  =  FSharpFuncTests.ApiWrapper.f3.Invoke(3, "a", 6uy))
+    test "vkejhwew904" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f4)(3)("a")(6uy)(7y)  =  FSharpFuncTests.ApiWrapper.f4.Invoke(3, "a", 6uy, 7y))
+    test "vkejhwew905" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f5)(3)("a")(6uy)(7y)(7s)  =  FSharpFuncTests.ApiWrapper.f5.Invoke(3, "a", 6uy, 7y, 7s))
 
 #endif
 

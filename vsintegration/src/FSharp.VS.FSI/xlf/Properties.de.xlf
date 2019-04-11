@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="translated">64-Bit-F# Interactive</target>
+        <target state="translated">64-Bit-Version von F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="translated">Sonstiges</target>
+        <target state="translated">Verschiedenes</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">

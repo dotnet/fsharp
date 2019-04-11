@@ -514,7 +514,7 @@
       </trans-unit>
       <trans-unit id="QunionNeedsDiffNumArgs">
         <source>F# union type requires different number of arguments</source>
-        <target state="translated">К# типу объединения требуется другое количество аргументов</target>
+        <target state="translated">Типу объединения F# требуется другое количество аргументов</target>
         <note />
       </trans-unit>
       <trans-unit id="QwritingGetOnly">

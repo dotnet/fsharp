@@ -1,8 +1,8 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.ProjectCracker.dll"
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.ProjectCracker.dll"
+#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -15,8 +15,8 @@ open FsUnit
 open System
 open System.IO
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service
 open FSharp.Compiler.Service.Tests.Common
 
@@ -49,10 +49,14 @@ module internal Utils =
         | BasicPatterns.NewRecord(v,args) -> 
             let fields = v.TypeDefinition.FSharpFields
             "{" + ((fields, args) ||> Seq.map2 (fun f a -> f.Name + " = " + printExpr 0 a) |> String.concat "; ") + "}" 
+        | BasicPatterns.NewAnonRecord(v,args) -> 
+            let fields = v.AnonRecordTypeDetails.SortedFieldNames 
+            "{" + ((fields, args) ||> Seq.map2 (fun f a -> f+ " = " + printExpr 0 a) |> String.concat "; ") + "}" 
         | BasicPatterns.NewTuple(v,args) -> printTupledArgs args 
         | BasicPatterns.NewUnionCase(ty,uc,args) -> uc.CompiledName + printTupledArgs args 
         | BasicPatterns.Quote(e1) -> "quote" + printTupledArgs [e1]
         | BasicPatterns.FSharpFieldGet(obj, ty,f) -> printObjOpt obj + f.Name 
+        | BasicPatterns.AnonRecordGet(obj, ty, n) -> printExpr 0 obj + "." + ty.AnonRecordTypeDetails.SortedFieldNames.[n]
         | BasicPatterns.FSharpFieldSet(obj, ty,f,arg) -> printObjOpt obj + f.Name + " <- " + printExpr 0 arg
         | BasicPatterns.Sequential(e1,e2) -> "(" + printExpr 0 e1 + "; " + printExpr 0 e2 + ")"
         | BasicPatterns.ThisValue _ -> "this"
@@ -183,7 +187,7 @@ module internal Utils =
 
     let printGenericParameter (p: FSharpGenericParameter) =
         let name = 
-            if p.Name.StartsWith "?" then "_"
+            if p.Name.StartsWith("?", StringComparison.Ordinal) then "_"
             elif p.IsSolveAtCompileTime then "^" + p.Name 
             else "'" + p.Name
         let constraints =
@@ -535,6 +539,8 @@ module LetLambda =
 
 let letLambdaRes = [ 1, 2 ] |> List.map (fun (a, b) -> LetLambda.f a b) 
 
+let anonRecd = {| X = 1; Y = 2 |}
+let anonRecdGet = (anonRecd.X, anonRecd.Y)
 
     """
     File.WriteAllText(fileName1, fileSource1)
@@ -557,6 +563,17 @@ let testHashUIntPtr (x:unativeint) = hash x
 let testHashString (x:string) = hash x
 let testTypeOf (x:'T) = typeof<'T>
 
+let inline mutableVar x =
+    if x > 0 then
+        let mutable acc = x
+        acc <- x
+
+let inline mutableConst () =
+    let mutable acc = ()
+    acc <- ()
+
+let testMutableVar = mutableVar 1
+let testMutableConst = mutableConst ()
     """
 
     File.WriteAllText(fileName2, fileSource2)
@@ -732,6 +749,8 @@ let ``Test Unoptimized Declarations Project1`` () =
         "type LetLambda";
         "let f = ((); fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b)) @ (246,8--247,24)";
         "let letLambdaRes = Operators.op_PipeRight<(Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int) Microsoft.FSharp.Collections.list,Microsoft.FSharp.Core.int Microsoft.FSharp.Collections.list> (Cons((1,2),Empty()),let mapping: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int = fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b in fun list -> ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (mapping,list)) @ (249,19--249,71)";
+        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)"
+        "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"
       ]
 
     let expected2 = [
@@ -745,6 +764,10 @@ let ``Test Unoptimized Declarations Project1`` () =
         "let testHashUIntPtr(x) = Operators.Hash<Microsoft.FSharp.Core.unativeint> (x) @ (14,37--14,43)";
         "let testHashString(x) = Operators.Hash<Microsoft.FSharp.Core.string> (x) @ (16,32--16,38)";
         "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
+        "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
+        "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
+        "let testMutableVar = N.mutableVar (1) @ (28,21--28,33)";
+        "let testMutableConst = N.mutableConst (()) @ (29,23--29,38)";
       ]
 
     printDeclarations None (List.ofSeq file1.Declarations) 
@@ -870,6 +893,8 @@ let ``Test Optimized Declarations Project1`` () =
         "type LetLambda";
         "let f = fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b) @ (247,8--247,24)";
         "let letLambdaRes = ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Cons((1,2),Empty())) @ (249,19--249,71)";
+        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)"
+        "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"
       ]
 
     let expected2 = [
@@ -883,6 +908,10 @@ let ``Test Optimized Declarations Project1`` () =
         "let testHashUIntPtr(x) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (x)),2147483647) @ (14,37--14,43)";
         "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else Operators.Hash<Microsoft.FSharp.Core.string> (x)) @ (16,32--16,38)";
         "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
+        "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
+        "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
+        "let testMutableVar = let x: Microsoft.FSharp.Core.int = 1 in (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (28,21--28,33)";
+        "let testMutableConst = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (29,23--29,38)";
       ]
 
     // printFSharpDecls "" file2.Declarations |> Seq.iter (printfn "%s")

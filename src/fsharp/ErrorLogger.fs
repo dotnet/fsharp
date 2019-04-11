@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public Microsoft.FSharp.Compiler.ErrorLogger
+module public FSharp.Compiler.ErrorLogger
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler 
+open FSharp.Compiler.Range
 open System
 
 //------------------------------------------------------------------------
@@ -125,7 +125,7 @@ let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f  =
 
 // Attach a range if this is a range dual exception.
 let rec AttachRange m (exn:exn) = 
-    if m = range0 then exn
+    if Range.equals m range0 then exn
     else 
         match exn with
         // Strip TargetInvocationException wrappers
@@ -330,16 +330,24 @@ type internal CompileThreadStatic =
 module ErrorLoggerExtensions = 
     open System.Reflection
 
+    // Dev15.0 shipped with a bug in diasymreader in the portable pdb symbol reader which causes an AV
+    // This uses a simple heuristic to detect it (the vsversion is < 16.0)
+    let tryAndDetectDev15 =
+        let vsVersion = Environment.GetEnvironmentVariable("VisualStudioVersion")
+        match Double.TryParse(vsVersion) with
+        | true, v -> v < 16.0
+        | _ -> false
+
     /// Instruct the exception not to reset itself when thrown again.
     let PreserveStackTrace(exn) =
-        try 
-            let preserveStackTrace = typeof<System.Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
-            preserveStackTrace.Invoke(exn, null) |> ignore
+        try
+            if not(tryAndDetectDev15) then
+                let preserveStackTrace = typeof<System.Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                preserveStackTrace.Invoke(exn, null) |> ignore
         with _ ->
            // This is probably only the mono case.
            System.Diagnostics.Debug.Assert(false, "Could not preserve stack trace for watson exception.")
            ()
-
 
     /// Reraise an exception if it is one we want to report to Watson.
     let ReraiseIfWatsonable(exn:exn) =
@@ -570,8 +578,11 @@ type TrackErrorsBuilder() =
     member x.Return res = ResultD res
     member x.ReturnFrom res = res
     member x.For(seq, k) = IterateD k seq
+    member x.Combine(expr1, expr2) = expr1 ++ expr2
     member x.While(gd, k) = WhileD gd k
     member x.Zero()  = CompleteD
+    member x.Delay(fn) = fun () -> fn ()
+    member x.Run(fn) = fn ()
 
 let trackErrors = TrackErrorsBuilder()
     
@@ -593,14 +604,26 @@ let rec Iterate2D f xs ys =
     | h1 :: t1, h2::t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2) 
     | _ -> failwith "Iterate2D"
 
+/// Keep the warnings, propagate the error to the exception continuation.
 let TryD f g = 
     match f() with
-    | ErrorResult(warns, err) ->  (OkResult(warns, ())) ++ (fun () -> g err)
+    | ErrorResult(warns, err) ->
+        trackErrors {
+            do! OkResult(warns, ())
+            return! g err
+        }
     | res -> res
 
 let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
 let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
 
+
+[<RequireQualifiedAccess>]
+module OperationResult =
+    let inline ignore (res: OperationResult<'a>) =
+        match res with
+        | OkResult(warnings, _) -> OkResult(warnings, ())
+        | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
 
 // Code below is for --flaterrors flag that is only used by the IDE
 

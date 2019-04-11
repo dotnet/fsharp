@@ -267,7 +267,7 @@
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">標準</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -667,7 +667,7 @@
       </trans-unit>
       <trans-unit id="SpecificVersionDescription">
         <source>Indicates whether this reference is to a specific version of an assembly.</source>
-        <target state="translated">指出這個參考是否為某一組件的特定版本。</target>
+        <target state="translated">指出這個參考是否指向某一組件的特定版本。</target>
         <note />
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">

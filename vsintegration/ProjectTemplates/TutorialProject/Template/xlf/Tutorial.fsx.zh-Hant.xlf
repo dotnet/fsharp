@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">若要執行 F# Interactive 中的程式碼，請反白顯示某個程式碼區段並按下 Alt-Enter，或者以滑鼠右鍵按一下</target>
+        <target state="translated">若要執行 F# 互動中的程式碼，請反白顯示某個程式碼區段並按下 Alt-Enter，或者以滑鼠右鍵按一下</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">和</target>
+        <target state="translated">及</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">

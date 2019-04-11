@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Generate the hash/compare functions we add to user-defined types by default.
-module internal Microsoft.FSharp.Compiler.AugmentWithHashCompare 
+module internal FSharp.Compiler.AugmentWithHashCompare 
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
 
 val CheckAugmentationAttribs : bool -> TcGlobals -> Import.ImportMap -> Tycon -> unit
 val TyconIsCandidateForAugmentationWithCompare  : TcGlobals -> Tycon -> bool

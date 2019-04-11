@@ -3,7 +3,7 @@
 module internal FsLexYacc.FsLex.AST
 
 open System.Collections.Generic
-open Microsoft.FSharp.Text
+open FSharp.Text
 open Microsoft.FSharp.Collections
 open Internal.Utilities
 open Internal.Utilities.Text.Lexing

@@ -149,7 +149,17 @@
       </trans-unit>
       <trans-unit id="6012">
         <source>Advanced</source>
-        <target state="translated">Avanzadas</target>
+        <target state="translated">Opciones avanzadas</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6014">
+        <source>Formatting</source>
+        <target state="translated">Formato</target>
         <note />
       </trans-unit>
     </body>

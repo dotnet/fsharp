@@ -1,18 +1,18 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
-module internal Microsoft.FSharp.Compiler.AccessibilityLogic
+module internal FSharp.Compiler.AccessibilityLogic
 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler 
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
 
 /// Represents the 'keys' a particular piece of code can use to access other constructs?.
@@ -194,9 +194,10 @@ let CheckTyconReprAccessible amap m ad tcref =
             
 /// Indicates if a type is accessible (both definition and instantiation)
 let rec IsTypeAccessible g amap m ad ty = 
-    not (isAppTy g ty) ||
-    let tcref, tinst = destAppTy g ty
-    IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
+    match tryAppTy g ty with
+    | ValueNone -> true
+    | ValueSome(tcref, tinst) ->
+        IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
 
 and IsTypeInstAccessible g amap m ad tinst = 
     match tinst with 
@@ -210,7 +211,7 @@ let IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access =
     if not isTyAccessible then false
     else
         not (isAppTy g ty) ||
-        let tcrefOfViewedItem, _ = destAppTy g ty
+        let tcrefOfViewedItem = tcrefOfAppTy g ty
         IsILMemberAccessible g amap m tcrefOfViewedItem ad access
 
 /// Compute the accessibility of a provided member

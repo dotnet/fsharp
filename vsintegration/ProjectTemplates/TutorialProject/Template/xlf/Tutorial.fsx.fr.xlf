@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="ValuesImmutable-Line1">
         <source>Values in F# are immutable by default.  They cannot be changed</source>
-        <target state="translated">Les valeurs dans F# sont immuables par défaut. Elles ne peuvent pas être changées</target>
+        <target state="translated">Les valeurs en F# sont immuables par défaut. Elles ne peuvent pas être changées</target>
         <note />
       </trans-unit>
       <trans-unit id="ValuesImmutable-Line2">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">et</target>
+        <target state="translated">Et</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">

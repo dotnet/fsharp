@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Diagnostics
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal.Library 
         
 #if !FX_NO_INDENTED_TEXT_WRITER
 [<AutoOpen>]
@@ -124,7 +124,7 @@ type internal InterfaceData =
                     sprintf "- %s" s
 
             let rec (|TypeIdent|_|) = function
-                | SynType.Var(SynTypar.Typar(s, req , _), _) ->
+                | SynType.Var(SynTypar.Typar(s, req, _), _) ->
                     match req with
                     | NoStaticReq -> 
                         Some ("'" + s.idText)
@@ -151,8 +151,8 @@ type internal InterfaceData =
                         None
                 | SynType.Anon _ -> 
                     Some "_"
-                | SynType.Tuple(ts, _) ->
-                    Some (ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat " * ")
+                | SynType.AnonRecd (_, ts, _)  -> 
+                    Some (ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array(dimension, TypeIdent typeName, _) ->
                     Some (sprintf "%s [%s]" typeName (new String(',', dimension-1)))
                 | SynType.MeasurePower(TypeIdent typeName, RationalConst power, _) ->
@@ -240,16 +240,18 @@ module internal InterfaceStubGenerator =
                         name :: acc, allNames) ([], namesWithIndices)
                 List.rev argsSoFar' :: argsSoFar, namesWithIndices) 
                 ([], Map.ofList [ ctx.ObjectIdent, Set.empty ])
-        args
-        |> List.rev
-        |> List.map (function 
-            | [] -> unit 
-            | [arg] when arg = unit -> unit
-            | [arg] when not v.IsMember || isItemIndexer -> arg 
-            | args when isItemIndexer -> String.concat tupSep args
-            | args -> bracket (String.concat tupSep args))
-        |> String.concat argSep
-        , namesWithIndices
+        let argText =
+            args
+            |> List.rev
+            |> List.map (function 
+                | [] -> unit 
+                | [arg] when arg = unit -> unit
+                | [arg] when not v.IsMember || isItemIndexer -> arg 
+                | args when isItemIndexer -> String.concat tupSep args
+                | args -> bracket (String.concat tupSep args))
+            |> String.concat argSep
+
+        argText, namesWithIndices
 
     [<RequireQualifiedAccess; NoComparison>]
     type internal MemberInfo =
@@ -289,8 +291,8 @@ module internal InterfaceStubGenerator =
     /// Convert a getter/setter to its canonical form
     let internal normalizePropertyName (v: FSharpMemberOrFunctionOrValue) =
         let displayName = v.DisplayName
-        if (v.IsPropertyGetterMethod && displayName.StartsWith("get_")) || 
-            (v.IsPropertySetterMethod && displayName.StartsWith("set_")) then
+        if (v.IsPropertyGetterMethod && displayName.StartsWithOrdinal("get_")) || 
+            (v.IsPropertySetterMethod && displayName.StartsWithOrdinal("set_")) then
             displayName.[4..]
         else displayName
 
@@ -307,11 +309,12 @@ module internal InterfaceStubGenerator =
                     "", Map.ofList [ctx.ObjectIdent, Set.empty]
                 | _  -> formatArgsUsage ctx verboseMode v argInfos
              
-            if String.IsNullOrWhiteSpace(args) then "" 
-            elif args.StartsWith("(") then args
-            elif v.CurriedParameterGroups.Count > 1 && (not verboseMode) then " " + args
-            else sprintf "(%s)" args
-            , namesWithIndices
+            let argText = 
+                if String.IsNullOrWhiteSpace(args) then "" 
+                elif args.StartsWithOrdinal("(") then args
+                elif v.CurriedParameterGroups.Count > 1 && (not verboseMode) then " " + args
+                else sprintf "(%s)" args
+            argText, namesWithIndices
 
         let preprocess (ctx: Context) (v: FSharpMemberOrFunctionOrValue) = 
             let buildUsage argInfos = 
@@ -321,7 +324,7 @@ module internal InterfaceStubGenerator =
                 | _, _, ".ctor", _ -> "new" + parArgs
                 // Properties (skipping arguments)
                 | _, true, _, name when v.IsPropertyGetterMethod || v.IsPropertySetterMethod -> 
-                    if name.StartsWith("get_") || name.StartsWith("set_") then name.[4..] else name
+                    if name.StartsWithOrdinal("get_") || name.StartsWithOrdinal("set_") then name.[4..] else name
                 // Ordinary instance members
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
@@ -509,10 +512,10 @@ module internal InterfaceStubGenerator =
     let internal (|MemberNameAndRange|_|) = function
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertyGet ->
-            if name.StartsWith("get_") then Some(name, range) else Some("get_" + name, range)
+            if name.StartsWithOrdinal("get_") then Some(name, range) else Some("get_" + name, range)
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertySet ->
-            if name.StartsWith("set_") then Some(name, range) else Some("set_" + name, range)
+            if name.StartsWithOrdinal("set_") then Some(name, range) else Some("set_" + name, range)
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) ->
             Some(name, range)
@@ -535,8 +538,8 @@ module internal InterfaceStubGenerator =
 
     let internal normalizeEventName (m: FSharpMemberOrFunctionOrValue) =
         let name = m.DisplayName
-        if name.StartsWith("add_") then name.[4..]
-        elif name.StartsWith("remove_")  then name.[7..]
+        if name.StartsWithOrdinal("add_") then name.[4..]
+        elif name.StartsWithOrdinal("remove_")  then name.[7..]
         else name
 
     /// Ideally this info should be returned in error symbols from FCS. 
@@ -761,7 +764,7 @@ module internal InterfaceStubGenerator =
                 | SynExpr.Typed(synExpr, _synType, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.Tuple(synExprList, _, _range)
+                | SynExpr.Tuple(_, synExprList, _, _range)
                 | SynExpr.ArrayOrList(_, synExprList, _range) ->
                     List.tryPick walkExpr synExprList
 
@@ -802,7 +805,7 @@ module internal InterfaceStubGenerator =
 
                 | SynExpr.MatchLambda(_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
                     synMatchClauseList |> List.tryPick (fun (Clause(_, _, e, _, _)) -> walkExpr e)
-                | SynExpr.Match(_sequencePointInfoForBinding, synExpr, synMatchClauseList, _, _range) ->
+                | SynExpr.Match(_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) ->
                     walkExpr synExpr
                     |> Option.orElse (synMatchClauseList |> List.tryPick (fun (Clause(_, _, e, _, _)) -> walkExpr e))
 

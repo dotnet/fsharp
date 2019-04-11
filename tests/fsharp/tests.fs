@@ -1,4 +1,4 @@
-﻿// vvvvvvvvvvvvv To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test vvvvvvvvvvvvvvvv
+﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test vvvvvvvvvvvvvvvv
 #if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx" 
@@ -31,7 +31,7 @@ module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
-// All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
+
     [<Test>]
     let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
 
@@ -75,7 +75,7 @@ module CoreTests =
     let namespaceAttributes () = singleTestBuildAndRun "core/namespaces" FSC_BASIC
 
     [<Test>]
-    let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_BASIC
+    let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_BASIC // TODO: fails on coreclr
 
     [<Test>]
     let ``unicode2-FSI_BASIC`` () = singleTestBuildAndRun "core/unicode" FSI_BASIC
@@ -164,7 +164,7 @@ module CoreTests =
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
-    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
+    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC // TODO: fails on coreclr
 
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
@@ -182,23 +182,35 @@ module CoreTests =
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
+            singleNegTest cfg "test"
+
             exec cfg ("." ++ "test.exe") ""
 
             testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
-            fsi cfg "" ["test.fsx"]
+            use testOkFile = fileguard cfg "test2.ok"
+
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            singleNegTest { cfg with fsc_flags = sprintf "%s --warnaserror-" cfg.fsc_flags } "test2"
+
+            exec cfg ("." ++ "test2.exe") ""
 
             testOkFile.CheckExists()
         end
 
         begin
+            csc cfg """/langversion:7.2 /nologo /target:library /out:cslib3.dll""" ["cslib3.cs"]
 
-            use testOkFile = fileguard cfg "test.ok"
+            use testOkFile = fileguard cfg "test3.ok"
 
-            fsiAnyCpu cfg "" ["test.fsx"]
+            fsc cfg "%s -r:cslib3.dll -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
+
+            singleNegTest { cfg with fsc_flags = sprintf "%s -r:cslib3.dll" cfg.fsc_flags } "test3"
+
+            exec cfg ("." ++ "test3.exe") ""
 
             testOkFile.CheckExists()
         end
@@ -208,8 +220,12 @@ module CoreTests =
 
         let cfg = testConfig "core/span"
 
+        let cfg = { cfg with fsc_flags = sprintf "%s --test:StackSpan" cfg.fsc_flags}
+
         begin
             use testOkFile = fileguard cfg "test.ok"
+
+            singleNegTest cfg "test"
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
@@ -219,19 +235,31 @@ module CoreTests =
             //testOkFile.CheckExists()
         end
 
-        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-        //begin
-        //    use testOkFile = fileguard cfg "test.ok"
-        //    fsi cfg "" ["test.fsx"]
-        //    testOkFile.CheckExists()
-        //end
+        begin
+            use testOkFile = fileguard cfg "test2.ok"
 
-        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-        //begin
-        //    use testOkFile = fileguard cfg "test.ok"
-        //    fsiAnyCpu cfg "" ["test.fsx"]
-        //    testOkFile.CheckExists()
-        //end
+            singleNegTest cfg "test2"
+
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
+
+        begin
+            use testOkFile = fileguard cfg "test3.ok"
+
+            singleNegTest cfg "test3"
+
+            fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
 
     [<Test>]
     let asyncStackTraces () = 
@@ -243,6 +271,94 @@ module CoreTests =
 
         exec cfg ("." ++ "test.exe") ""
 
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-conditionals``() = 
+        let cfg = testConfig "core/large/conditionals"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-200.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-conditionals-maxtested``() = 
+        let cfg = testConfig "core/large/conditionals"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-lets``() = 
+        let cfg = testConfig "core/large/lets"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-500.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-lets-maxtested``() = 
+        let cfg = testConfig "core/large/lets"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-lists``() = 
+        let cfg = testConfig "core/large/lists"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test-500.exe " cfg.fsc_flags ["LargeList-500.fs"]
+        exec cfg ("." ++ "test-500.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-matches``() = 
+        let cfg = testConfig "core/large/matches"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-200.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-matches-maxtested``() = 
+        let cfg = testConfig "core/large/matches"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-sequential-and-let``() = 
+        let cfg = testConfig "core/large/mixed"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-500.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-sequential-and-let-maxtested``() = 
+        let cfg = testConfig "core/large/mixed"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-sequential``() = 
+        let cfg = testConfig "core/large/sequential"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-500.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-sequential-maxtested``() = 
+        let cfg = testConfig "core/large/sequential"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
         testOkFile.CheckExists()
 
 #endif
@@ -286,11 +402,39 @@ module CoreTests =
     [<Test>]
     let fscenum () = singleTestBuildAndRun "core/enum" FSC_BASIC
 
-    [<Test>]
-    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
-
+//    [<Test>]
+//    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
+    // These tests are enabled for .NET Framework and .NET Core
+    [<Test>]
+    let ``anon-FSC_BASIC``() = 
+        let cfg = testConfig "core/anon"
+
+        fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
+
+        peverify cfg "lib.dll"
+
+        fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        begin 
+            use testOkFile = fileguard cfg "test.ok"
+
+            exec cfg ("." ++ "test.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
+        begin 
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsi cfg "-r:lib.dll" ["test.fsx"]
+
+            testOkFile.CheckExists()
+        end
 
     [<Test>]
     let events () = 
@@ -421,8 +565,6 @@ module CoreTests =
         let cfg = testConfig "core/fsfromfsviacs"
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
-
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "lib.dll"
 
@@ -728,11 +870,10 @@ module CoreTests =
     let quotes () = 
         let cfg = testConfig "core/quotes"
 
+
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
-
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "test.exe"
 
@@ -908,7 +1049,7 @@ module CoreTests =
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
-    let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
+    let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_BASIC
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
@@ -1015,7 +1156,7 @@ module CoreTests =
 
         echo "Test 6================================================="
 
-        fscAppend cfg stdoutPath stderrPath "--nologo -r FSharp.Compiler.Interactive.Settings" ["usesfsi.fsx"]
+        fscAppend cfg stdoutPath stderrPath "--nologo -r \"%s\"" cfg.FSharpCompilerInteractiveSettings ["usesfsi.fsx"]
 
         echo "Test 7================================================="
 
@@ -1575,13 +1716,13 @@ module CoreTests =
     let verify () = 
         let cfg = testConfig "core/verify"
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Build.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.FSharpBuild)
 
-       // peverifyWithArgs cfg "/nologo /MD" (cfg.FSCBinPath ++ "FSharp.Compiler.dll")
+       // peverifyWithArgs cfg "/nologo /MD" (getDirectoryName(cfg.FSC) ++ "FSharp.Compiler.dll")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "fsi.exe")
+        peverifyWithArgs cfg "/nologo" (cfg.FSI)
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.FSharpCompilerInteractiveSettings)
 
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
@@ -1618,7 +1759,6 @@ module ToolsTests =
     let eval () = singleTestBuildAndRun "tools/eval" FSC_BASIC
 #endif
 
-
 module RegressionTests = 
 
     [<Test>]
@@ -1628,10 +1768,45 @@ module RegressionTests =
     let ``literal-value-bug-2-FSI_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_BASIC
 
     [<Test>]
+    let ``OverloadResolution-bug-FSC_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_BASIC
+
+    [<Test>]
+    let ``OverloadResolution-bug-FSI_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_BASIC
+
+    [<Test>]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
 
     [<Test >]
-    let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
+    let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS 
+    [<Test>]
+    let ``SRTP doesn't handle calling member hiding hinherited members`` () =
+        let cfg = testConfig "regression/5531" 
+
+        let outFile = "compilation.output.test.txt" 
+        let expectedFile = "compilation.output.test.bsl" 
+
+        fscBothToOut cfg outFile "%s --nologo -O" cfg.fsc_flags ["test.fs"] 
+
+        let diff = fsdiff cfg outFile expectedFile 
+
+        match diff with 
+        | "" -> () 
+        | _ -> 
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff) 
+
+        let outFile2 = "output.test.txt" 
+        let expectedFile2 = "output.test.bsl" 
+
+        execBothToOut cfg (cfg.Directory) outFile2 (cfg.Directory ++ "test.exe") "" 
+
+        let diff2 = fsdiff cfg outFile2 expectedFile2 
+        match diff2 with 
+        | "" -> () 
+        | _ -> 
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile2) (getfullpath cfg expectedFile2) diff2) 
+#endif
 
     [<Test>]
     let ``26`` () = singleTestBuildAndRun "regression/26" FSC_BASIC
@@ -1673,7 +1848,7 @@ module RegressionTests =
     // Requires WinForms
     [<Test>]
     let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
-#endif
+
     [<Test >]
     let ``84`` () = singleTestBuildAndRun "regression/84" FSC_BASIC
 
@@ -1684,6 +1859,7 @@ module RegressionTests =
         fsc cfg "%s -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
 
         peverify cfg "petshop.dll"
+#endif
 
     [<Test >]
     let ``86`` () = singleTestBuildAndRun "regression/86" FSC_BASIC
@@ -1810,7 +1986,7 @@ module OptimizationTests =
             |> Seq.filter (fun line -> line.Contains(".locals init"))
             |> Seq.length
 
-        log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim 
+        log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim
 
     [<Test>]
     let stats () = 
@@ -1865,7 +2041,6 @@ module TypecheckTests =
     let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "pos27.exe"
 
     [<Test>]
@@ -1891,6 +2066,18 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
         peverify cfg "pos24.exe"
+
+    [<Test>]
+    let ``sigs pos31`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fsi"; "pos31.fs"]
+        peverify cfg "pos31.exe"
+
+    [<Test>]
+    let ``sigs pos32`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos32.dll --warnaserror" cfg.fsc_flags ["pos32.fs"]
+        peverify cfg "pos32.dll"
 
     [<Test>]
     let ``sigs pos23`` () = 
@@ -2348,16 +2535,43 @@ module TypecheckTests =
     let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
 
     [<Test>]
+    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
+
+    [<Test>]
+    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
+
+    [<Test>]
     let ``type check neg106`` () = singleNegTest (testConfig "typecheck/sigs") "neg106"
 
     [<Test>]
     let ``type check neg107`` () = singleNegTest (testConfig "typecheck/sigs") "neg107"
 
     [<Test>]
-    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
+    let ``type check neg108`` () = singleNegTest (testConfig "typecheck/sigs") "neg108"
 
     [<Test>]
-    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
+    let ``type check neg109`` () = singleNegTest (testConfig "typecheck/sigs") "neg109"
+
+    [<Test>]
+    let ``type check neg110`` () = singleNegTest (testConfig "typecheck/sigs") "neg110"
+
+    [<Test>]
+    let ``type check neg111`` () = singleNegTest (testConfig "typecheck/sigs") "neg111"
+
+    [<Test>] 
+    let ``type check neg113`` () = singleNegTest (testConfig "typecheck/sigs") "neg113"
+
+    [<Test>] 
+    let ``type check neg114`` () = singleNegTest (testConfig "typecheck/sigs") "neg114"
+
+    [<Test>] 
+    let ``type check neg115`` () = singleNegTest (testConfig "typecheck/sigs") "neg115"
+
+    [<Test>] 
+    let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
+
+    [<Test>] 
+    let ``type check neg_anon_2`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_2"
 
     [<Test>] 
     let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"
@@ -2497,7 +2711,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if !NETSTANDARD1_6
+#if NET472
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName

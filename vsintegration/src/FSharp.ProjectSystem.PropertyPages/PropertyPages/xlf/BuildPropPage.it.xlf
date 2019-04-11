@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
-        <target state="translated">&amp;Nessuno</target>
+        <target state="translated">&amp;Nessuna</target>
         <note />
       </trans-unit>
       <trans-unit id="lblSupressWarnings.Text">

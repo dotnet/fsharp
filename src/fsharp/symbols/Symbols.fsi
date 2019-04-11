@@ -1,18 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.Import
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.NameResolution
+open FSharp.Compiler
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Import
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.NameResolution
 
 // Implementation details used by other code in the compiler    
 type internal SymbolEnv = 
@@ -401,7 +401,20 @@ and [<Class>] public FSharpUnionCase =
     /// Indicates if the union case is for a type in an unresolved assembly 
     member IsUnresolved : bool
 
+/// A subtype of FSharpSymbol that represents a record or union case field as seen by the F# language
+and [<Class>] public FSharpAnonRecordTypeDetails =
+    
+    /// The assembly where the compiled form of the anonymous type is defined
+    member Assembly : FSharpAssembly
 
+    /// Names of any enclosing types of the compiled form of the anonymous type (if the anonymous type was defined as a nested type)
+    member EnclosingCompiledTypeNames : string list
+
+    /// The name of the compiled form of the anonymous type
+    member CompiledName : string 
+
+    /// The sorted labels of the anonymous type
+    member SortedFieldNames : string[]
 
 /// A subtype of FSharpSymbol that represents a record or union case field as seen by the F# language
 and [<Class>] public FSharpField =
@@ -410,8 +423,14 @@ and [<Class>] public FSharpField =
     internal new : SymbolEnv * RecdFieldRef -> FSharpField
     internal new : SymbolEnv * UnionCaseRef * int -> FSharpField
 
-    /// Get the declaring entity of this field
-    member DeclaringEntity: FSharpEntity
+    /// Get the declaring entity of this field, if any. Fields from anonymous types do not have a declaring entity
+    member DeclaringEntity: FSharpEntity option
+
+    /// Is this a field from an anonymous record type?
+    member IsAnonRecordField: bool
+
+    /// If the field is from an anonymous record type then get the details of the field including the index in the sorted array of fields
+    member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType[] * int
 
     /// Indicates if the field is declared 'static'
     member IsMutable: bool
@@ -825,6 +844,9 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
 
     /// Indicates if this is a constructor.
     member IsConstructor : bool
+    
+    /// Format the type using the rules of the given display context
+    member FormatLayout : context: FSharpDisplayContext -> Layout
 
 
 /// A subtype of FSharpSymbol that represents a parameter 
@@ -931,6 +953,12 @@ and [<Class>] public FSharpType =
     /// Indicates if the type is a function type. The GenericArguments property returns the domain and range of the function type.
     member IsFunctionType : bool
 
+    /// Indicates if the type is an anonymous record type. The GenericArguments property returns the type instantiation of the anonymous record type
+    member IsAnonRecordType: bool
+
+    /// Get the details of the anonymous record type.
+    member AnonRecordTypeDetails: FSharpAnonRecordTypeDetails
+
     /// Indicates if the type is a variable type, whether declared, generalized or an inference type parameter  
     member IsGenericParameter : bool
 
@@ -939,6 +967,9 @@ and [<Class>] public FSharpType =
 
     /// Format the type using the rules of the given display context
     member Format : context: FSharpDisplayContext -> string
+
+    /// Format the type using the rules of the given display context
+    member FormatLayout : context: FSharpDisplayContext -> Layout
 
     /// Instantiate generic type parameters in a type
     member Instantiate : (FSharpGenericParameter * FSharpType) list -> FSharpType

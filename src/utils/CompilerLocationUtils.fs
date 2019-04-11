@@ -12,7 +12,7 @@ open System.Runtime.InteropServices
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-    let FSharpBannerVersion = "10.1.0 for F# 4.1"
+    let FSharpBannerVersion = "10.4.0 for F# 4.6"
 
     let versionOf<'t> =
 #if FX_RESHAPED_REFLECTION
@@ -36,19 +36,6 @@ module internal FSharpEnvironment =
             | "" -> None
             | s  -> Some(s)
         with _ -> None
-
-
-    // The F# team version number. This version number is used for
-    //     - the F# version number reported by the fsc.exe and fsi.exe banners in the CTP release
-    //     - the F# version number printed in the HTML documentation generator
-    //     - the .NET DLL version number for all VS2008 DLLs
-    //     - the VS2008 registry key, written by the VS2008 installer
-    //         HKEY_LOCAL_MACHINE\Software\Microsoft\.NETFramework\AssemblyFolders\Microsoft.FSharp-" + FSharpTeamVersionNumber
-    // Also
-    //     - for Beta2, the language revision number indicated on the F# language spec
-    //
-    // It is NOT the version number listed on FSharp.Core.dll
-    let FSharpTeamVersionNumber = "2.0.0.0"
 
     // The F# binary format revision number. The first three digits of this form the significant part of the 
     // format revision number for F# binary signature and optimization metadata. The last digit is not significant.
@@ -217,31 +204,13 @@ module internal FSharpEnvironment =
             match probePoint with 
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
             | _ -> 
-
-            // On windows the location of the compiler is via a registry key
-
-            // Note: If the keys below change, be sure to update code in:
-            // Property pages (ApplicationPropPage.vb)
-            let keys = 
-                [| 
-                    @"Software\Microsoft\FSharp\10.1\Runtime\v4.0"; 
-                    @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"; 
-                    @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-                |]
-            let path = keys |> Seq.tryPick(fun k -> tryRegKey k)
-            match path with
-            | Some _ -> path
-            | None ->
-            // On Unix we let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-            let result = 
-                let var = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
-                if String.IsNullOrEmpty(var) then None
-                else Some(var)
-            match result with 
-            | Some _ -> result
-            | None -> 
-            // For the prototype compiler, we can just use the current domain
-            tryCurrentDomain()
+            // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
+            let result = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
+            if not (String.IsNullOrEmpty(result)) then
+                Some result
+            else
+                // For the prototype compiler, we can just use the current domain
+                tryCurrentDomain()
         with e -> 
             System.Diagnostics.Debug.Assert(false, "Error while determining default location of F# compiler")
             None

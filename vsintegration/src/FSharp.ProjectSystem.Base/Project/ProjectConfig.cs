@@ -12,7 +12,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Microsoft.VisualStudio.FSharp.LanguageService;
 using Microsoft.Win32;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
@@ -1936,7 +1935,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (!NotifyBuildBegin()) return;
             try
             {
-                config.ProjectMgr.BuildAsync(options, this.config.ConfigCanonicalName, output, target, (result, projectInstance) =>
+                config.ProjectMgr.Build(options, this.config.ConfigCanonicalName, output, target, (result, projectInstance) =>
                     {
                         this.BuildCoda(new BuildResult(result, projectInstance), output, shouldRepaintReferences);
                     });

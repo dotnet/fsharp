@@ -5,15 +5,15 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL.Internal.Library 
 
 type ShortIdent = string
 type Idents = ShortIdent[]
@@ -66,7 +66,7 @@ module Extensions =
             try x.MembersFunctionsAndValues with _ -> [||] :> _
 
     let isOperator (name: string) =
-        name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
+        name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") && name.Length > 4
             && name.Substring (2, name.Length - 4) 
                |> String.forall (fun c -> c <> ' ' && not (Char.IsLetter c))
 
@@ -491,8 +491,8 @@ type OpenStatementInsertionPoint =
     | Nearest
 
 module ParsedInput =
-    open Microsoft.FSharp.Compiler
-    open Microsoft.FSharp.Compiler.Ast
+    open FSharp.Compiler
+    open FSharp.Compiler.Ast
 
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
@@ -555,7 +555,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) -> List.iter walkType ts; walkMemberSig sign
     
         and walkPat = function
-            | SynPat.Tuple (pats, _)
+            | SynPat.Tuple (_,pats, _)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
             | SynPat.Named (pat, ident, _, _, _) ->
@@ -603,7 +603,7 @@ module ParsedInput =
             | SynType.LongIdent ident -> addLongIdentWithDots ident
             | SynType.App (ty, _, types, _, _, _, _) -> walkType ty; List.iter walkType types
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.iter walkType types
-            | SynType.Tuple (ts, _) -> ts |> List.iter (fun (_, t) -> walkType t)
+            | SynType.Tuple (_, ts, _) -> ts |> List.iter (fun (_, t) -> walkType t)
             | SynType.WithGlobalConstraints (t, typeConstraints, _) ->
                 walkType t; List.iter walkTypeConstraint typeConstraints
             | _ -> ()
@@ -641,7 +641,7 @@ module ParsedInput =
             | SynExpr.TypeTest (e, t, _)
             | SynExpr.Upcast (e, t, _)
             | SynExpr.Downcast (e, t, _) -> walkExpr e; walkType t
-            | SynExpr.Tuple (es, _, _)
+            | SynExpr.Tuple (_, es, _, _)
             | Sequentials es
             | SynExpr.ArrayOrList (_, es, _) -> List.iter walkExpr es
             | SynExpr.App (_, _, e1, e2, _)
@@ -668,7 +668,7 @@ module ParsedInput =
                 List.iter walkExpr [e1; e2]
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) ->
                 List.iter walkClause synMatchClauseList
-            | SynExpr.Match (_, e, synMatchClauseList, _, _) ->
+            | SynExpr.Match (_, e, synMatchClauseList, _) ->
                 walkExpr e
                 List.iter walkClause synMatchClauseList
             | SynExpr.TypeApp (e, _, tys, _, _, _, _) ->
@@ -914,8 +914,9 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
             List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
 
-        and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, isModule, decls, _, _, _, range)) =
+        and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, kind, decls, _, _, _, range)) =
             if range.EndLine >= currentLine then
+                let isModule = kind.IsModule
                 match isModule, parent, ident with
                 | false, _, _ -> ns := Some (longIdentToIdents ident)
                 // top level module with "inlined" namespace like Ns1.Ns2.TopModule
@@ -1007,7 +1008,8 @@ module ParsedInput =
                 if ctx.Pos.Line > 1 then
                     // it's an implicit module without any open declarations    
                     let line = getLineStr (ctx.Pos.Line - 2)
-                    let isImpliciteTopLevelModule = not (line.StartsWith "module" && not (line.EndsWith "="))
+                    let isImpliciteTopLevelModule =
+                        not (line.StartsWithOrdinal("module") && not (line.EndsWithOrdinal("=")))
                     if isImpliciteTopLevelModule then 1 else ctx.Pos.Line
                 else 1
             | ScopeKind.Namespace ->
@@ -1016,7 +1018,7 @@ module ParsedInput =
                     [0..ctx.Pos.Line - 1]
                     |> List.mapi (fun i line -> i, getLineStr line)
                     |> List.tryPick (fun (i, lineStr) -> 
-                        if lineStr.StartsWith "namespace" then Some i
+                        if lineStr.StartsWithOrdinal("namespace") then Some i
                         else None)
                     |> function
                         // move to the next line below "namespace" and convert it to F# 1-based line number

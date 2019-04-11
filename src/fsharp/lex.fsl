@@ -2,7 +2,7 @@
 
 {
 
-module internal Microsoft.FSharp.Compiler.Lexer
+module internal FSharp.Compiler.Lexer
 
 //------------------------------------------------------------------------
 // The Lexer.  Some of the complication arises from the fact it is 
@@ -15,17 +15,17 @@ open System.Globalization
 open System.Text
 open Internal.Utilities
 
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Parser
-open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.Lib
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Parser
+open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.Lib
 open Internal.Utilities.Text.Lexing
 
 let lexeme (lexbuf : UnicodeLexing.Lexbuf) = UnicodeLexing.Lexbuf.LexemeString lexbuf
@@ -155,9 +155,9 @@ let evalIfDefExpression startPos args (lookup:string->bool) (lexed:string) =
     let lexbuf          = LexBuffer<char>.FromChars (lexed.ToCharArray ())
     lexbuf.StartPos     <- startPos
     lexbuf.EndPos       <- startPos
-    let tokenStream     = Microsoft.FSharp.Compiler.PPLexer.tokenstream args
+    let tokenStream     = FSharp.Compiler.PPLexer.tokenstream args
 
-    let expr            = Microsoft.FSharp.Compiler.PPParser.start tokenStream lexbuf
+    let expr            = FSharp.Compiler.PPParser.start tokenStream lexbuf
 
     LexerIfdefEval lookup expr
 
@@ -562,11 +562,13 @@ rule token args skip = parse
  | "=" { EQUALS }
  | "[" { LBRACK }
  | "[|" { LBRACK_BAR }
+ | "{|" { LBRACE_BAR }
  | "<" { LESS false }
  | ">" { GREATER false }
  | "[<" { LBRACK_LESS }
  | "]" { RBRACK }
  | "|]" { BAR_RBRACK }
+ | "|}" { BAR_RBRACE }
  | ">]" { GREATER_RBRACK }
  | "{" { LBRACE }
  | "|" { BAR }

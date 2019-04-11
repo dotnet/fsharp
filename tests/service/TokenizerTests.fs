@@ -1,16 +1,16 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
 module FSharp.Compiler.Service.Tests.TokenizerTests
 #endif
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Interactive.Shell
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
 open FsUnit
@@ -20,7 +20,7 @@ open System.IO
 
 let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")
 
-let rec parseLine(line: string, state: int64 ref, tokenizer: FSharpLineTokenizer) = seq {
+let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: FSharpLineTokenizer) = seq {
   match tokenizer.ScanToken(!state) with
   | Some(tok), nstate ->
       let str = line.Substring(tok.LeftColumn, tok.RightColumn - tok.LeftColumn + 1)
@@ -31,7 +31,7 @@ let rec parseLine(line: string, state: int64 ref, tokenizer: FSharpLineTokenizer
       state := nstate }
 
 let tokenizeLines (lines:string[]) =
-  [ let state = ref 0L
+  [ let state = ref FSharpTokenizerLexState.Initial
     for n, line in lines |> Seq.zip [ 0 .. lines.Length-1 ] do
       let tokenizer = sourceTok.CreateLineTokenizer(line)
       yield n, parseLine(line, state, tokenizer) |> List.ofSeq ]

@@ -1550,7 +1550,7 @@ module internal VsMocks =
                 0
         }
         
-    let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() = 
+    let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() =
         let vsSolutionBuildManager, configChangeNotifier = MakeVsSolutionBuildManagerAndConfigChangeNotifier()
         let sp = new OleServiceProvider()
 
@@ -1630,45 +1630,68 @@ module internal VsActual =
     // Since the editor exports MEF components, we can use those components directly from unit tests without having to load too many heavy
     // VS assemblies.  Use editor MEF components directly from the VS product.
 
+    open System.Reflection
     open System.IO
     open System.ComponentModel.Composition.Hosting
     open System.ComponentModel.Composition.Primitives
     open Microsoft.VisualStudio.Text
+    open Microsoft.VisualStudio.Threading
+
+    type TestExportJoinableTaskContext () =
+
+        static let jtc = new JoinableTaskContext()
+
+        [<System.ComponentModel.Composition.Export(typeof<JoinableTaskContext>)>]
+        member public __.JoinableTaskContext : JoinableTaskContext = jtc
 
     let vsInstallDir =
         // use the environment variable to find the VS installdir
-        let vsvar = System.Environment.GetEnvironmentVariable("VS150COMNTOOLS")
-        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS environment variable was not found."
+        let vsvar =
+            let var = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
+            if String.IsNullOrEmpty var then
+                Environment.GetEnvironmentVariable("VSAPPIDDIR")
+            else
+                var
+        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =
-        let root = Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
-        let CreateAssemblyCatalog(root, file) =
-            let fullPath = System.IO.Path.Combine(root, file)
-            if System.IO.File.Exists(fullPath) then
+        let thisAssembly = Assembly.GetExecutingAssembly().Location
+        let editorAssemblyDir = Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
+        let privateAssemblyDir = Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies")
+        let publicAssemblyDir = Path.Combine(vsInstallDir, @"IDE\PublicAssemblies")
+
+        let CreateAssemblyCatalog(path, file) =
+            let fullPath = Path.GetFullPath(Path.Combine(path, file))
+            if File.Exists(fullPath) then
                 new AssemblyCatalog(fullPath)
             else
                 failwith("could not find " + fullPath)
 
         let list = new ResizeArray<ComposablePartCatalog>()
-        list.Add(CreateAssemblyCatalog(root, "Microsoft.VisualStudio.Platform.VSEditor.dll"))
 
-        // Must include this because several editor options are actually stored as exported information 
-        // on this DLL.  Including most importantly, the tab size information
-        list.Add(CreateAssemblyCatalog(root, "Microsoft.VisualStudio.Text.Logic.dll"))
+        let addMovedFile originalDir alternateDir file =
+            let path = Path.Combine(originalDir, file)
+            if File.Exists(path) then
+                list.Add(CreateAssemblyCatalog(originalDir,  file))
+            else
+                list.Add(CreateAssemblyCatalog(alternateDir,  file))
 
-        // Include this DLL to get several more EditorOptions including WordWrapStyle
-        list.Add(CreateAssemblyCatalog(root, "Microsoft.VisualStudio.Text.UI.dll"))
+        list.Add(new AssemblyCatalog(thisAssembly))
+        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.Data.dll"))
+        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.Logic.dll"))
 
-        // Include this DLL to get more EditorOptions values
-        list.Add(CreateAssemblyCatalog(root, "Microsoft.VisualStudio.Text.UI.Wpf.dll"))
+        // "Microsoft.VisualStudio.Text.Internal.dll" moved locations between dev15 and 16
+        // This ensures we can run in both Devs 15 and 16
+        addMovedFile privateAssemblyDir editorAssemblyDir "Microsoft.VisualStudio.Text.Internal.dll"
 
-        // Include this DLL to get more undo operations
-        //list.Add(CreateAssemblyCatalog(root, "StandaloneUndo.dll"))
-        //list.Add(CreateAssemblyCatalog(root, "Microsoft.VisualStudio.Language.StandardClassification.dll"))
-
-        // list.Add(CreateAssemblyCatalog(root, "Microsoft.VisualStudio.Text.Internal.dll"))
-
+        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.UI.dll"))
+        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.UI.Wpf.dll"))
+        list.Add(CreateAssemblyCatalog(privateAssemblyDir, "Microsoft.VisualStudio.Threading.dll"))
+        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Platform.VSEditor.dll"))
+        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Editor.Implementation.dll"))
+        list.Add(CreateAssemblyCatalog(publicAssemblyDir,  "Microsoft.VisualStudio.ComponentModelHost.dll"))
+        list.Add(CreateAssemblyCatalog(publicAssemblyDir,  "Microsoft.VisualStudio.Shell.15.0.dll"))
         new AggregateCatalog(list)
 
     let exportProvider = new CompositionContainer(new AggregateCatalog(CreateEditorCatalog()), true, null)

@@ -35,7 +35,7 @@ module Scripting =
             0
 
 #if INTERACTIVE
-    let argv = Microsoft.FSharp.Compiler.Interactive.Settings.fsi.CommandLineArgs |> Seq.skip 1 |> Seq.toArray
+    let argv = FSharp.Compiler.Interactive.Settings.fsi.CommandLineArgs |> Seq.skip 1 |> Seq.toArray
 
     let getCmdLineArgOptional (switchName: string) =
         argv |> Array.filter(fun t -> t.StartsWith(switchName)) |> Array.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Array.tryHead 
@@ -60,15 +60,15 @@ module Scripting =
 
     let (++) a b = Path.Combine(a,b)
 
-    let getBasename a = Path.GetFileNameWithoutExtension a
-    let getFullPath a = Path.GetFullPath a
-    let getFilename a = Path.GetFileName a
-    let getDirectoryName a = Path.GetDirectoryName a
+    let getBasename (a:string) = Path.GetFileNameWithoutExtension a
+    let getFullPath (a:string) = Path.GetFullPath a
+    let getFilename (a:string) = Path.GetFileName a
+    let getDirectoryName (a:string) = Path.GetDirectoryName a
 
-    let copyFile source dir =
+    let copyFile (source:string) dir =
         let dest = 
             if not (Directory.Exists dir) then Directory.CreateDirectory dir |>ignore
-            let result = Path.Combine(dir, Path.GetFileName source)
+            let result = Path.Combine(dir, getFilename source)
             result
         //printfn "Copy %s --> %s" source dest
         File.Copy(source, dest, true)
@@ -93,10 +93,10 @@ module Scripting =
 
     module Process =
 
-        let processExePath baseDir exe =
+        let processExePath baseDir (exe:string) =
             if Path.IsPathRooted(exe) then exe
             else 
-                match Path.GetDirectoryName(exe) with
+                match getDirectoryName exe with
                 | "" -> exe
                 | _ -> Path.Combine(baseDir,exe) |> Path.GetFullPath
 
@@ -108,7 +108,7 @@ module Scripting =
             processInfo.UseShellExecute <- false
             processInfo.WorkingDirectory <- workDir
 
-#if NETSTANDARD1_6
+#if !NET46
             ignore envs  // work out what to do about this
 #else
             envs
@@ -159,9 +159,9 @@ module Scripting =
 
             match p.ExitCode with
             | 0 -> Success
-            | err -> 
+            | errCode -> 
                 let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'.\n---- stdout below --- \n%s\n---- stderr below --- \n%s " exePath arguments workDir (out.ToString()) (err.ToString())
-                ErrorLevel (msg, err)
+                ErrorLevel (msg, errCode)
 
     type OutPipe (writer: TextWriter) =
         member x.Post (msg:string) = lock writer (fun () -> writer.WriteLine(msg))

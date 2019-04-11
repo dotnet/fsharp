@@ -6,22 +6,22 @@
 /// into the compiler.  This lets the compiler perform particular optimizations
 /// for these types and values, for example emitting optimized calls for
 /// comparison and hashing functions.  
-module internal Microsoft.FSharp.Compiler.TcGlobals
+module internal FSharp.Compiler.TcGlobals
 
 open System.Collections.Generic
 open System.Diagnostics
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Extensions.ILX 
+open FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
 
 open Internal.Utilities
 
@@ -255,7 +255,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let path, typeName = splitILTypeName nm
       let scoref = 
           match tryFindSysTypeCcu path typeName with 
-          | None -> ILScopeRef.Assembly (mkSimpleAssRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName))
+          | None -> ILScopeRef.Assembly (mkSimpleAssemblyRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName))
           | Some ccu -> ccu.ILScopeRef
       mkILTyRef (scoref, nm)
 
