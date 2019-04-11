@@ -41,7 +41,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <!-- default package sources -->
-    <RestoreSources>
+    <RestoreSources Condition="'$(DotNetBuildOffline)' != 'true'">
       $(RestoreSources);
       https://www.myget.org/F/fsharp-daily/api/v3/index.json;
       https://dotnet.myget.org/F/roslyn-master-nightly/api/v3/index.json;
@@ -69,7 +69,7 @@
     <SystemIoCompressionPackageVersion>4.3.0</SystemIoCompressionPackageVersion>
     <SystemLinqExpressionsPackageVersion>4.3.0</SystemLinqExpressionsPackageVersion>
     <SystemLinqQueryablePackageVersion>4.3.0</SystemLinqQueryablePackageVersion>
-    <SystemMemoryPackageVersion>4.5.0</SystemMemoryPackageVersion>
+    <SystemMemoryPackageVersion>4.5.2</SystemMemoryPackageVersion>
     <SystemNetRequestsPackageVersion>4.3.0</SystemNetRequestsPackageVersion>
     <SystemNetSecurityPackageVersion>4.3.0</SystemNetSecurityPackageVersion>
     <SystemReflectionEmitPackageVersion>4.3.0</SystemReflectionEmitPackageVersion>
@@ -94,7 +94,7 @@
     <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>$(RoslynPackageVersion)</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>15.8.166</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>16.0.461</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkPackageVersion>
     <MicrosoftBuildTasksCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCorePackageVersion>
