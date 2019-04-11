@@ -475,7 +475,7 @@ module DispatchSlotChecking =
                       
                       // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
                       // So here we get and yield all of those.
-                      for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes) IgnoreOverrides reqdTyRange do
+                      for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange do
                          if minfo.IsDispatchSlot then
                              yield RequiredSlot(minfo, (*isOptional=*) not minfo.IsAbstract) ]
                 
@@ -510,7 +510,7 @@ module DispatchSlotChecking =
                 isImpliedInterfaceType x.ApparentEnclosingType
                 
             let reqdProperties = 
-                GetIntrinsicPropInfosOfType infoReader (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes) IgnoreOverrides reqdTyRange reqdTy 
+                GetIntrinsicPropInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
                 |> List.filter isRelevantRequiredProperty
                 
             let dispatchSlotsKeyed = dispatchSlots |> NameMultiMap.initBy (fun (RequiredSlot(v, _)) -> v.LogicalName) 
@@ -708,7 +708,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
         | _, Some(SlotImplSet(_, dispatchSlotsKeyed, _, _)) -> 
             NameMultiMap.find  memberName.idText dispatchSlotsKeyed |> List.map (fun (RequiredSlot(dispatchSlot, _)) -> dispatchSlot)
         | ty, None -> 
-            GetIntrinsicMethInfosOfType infoReader (Some(memberName.idText), ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides bindm ty
+            GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
     let topValSynArities = SynInfo.AritiesOfArgs valSynData
     let topValSynArities = if List.isEmpty topValSynArities then topValSynArities else topValSynArities.Tail
@@ -723,7 +723,7 @@ let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberNam
         | _, Some(SlotImplSet(_, _, _, reqdProps)) -> 
             reqdProps |> List.filter (fun pinfo -> pinfo.PropertyName = memberName.idText) 
         | ty, None -> 
-            GetIntrinsicPropInfosOfType infoReader (Some(memberName.idText), ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides bindm ty
+            GetIntrinsicPropInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
         
     let dispatchSlots = pinfos |> List.filter (fun pinfo -> pinfo.IsVirtualProperty)
     dispatchSlots
