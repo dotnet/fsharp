@@ -23,7 +23,7 @@ let test () =
             """
 
         ILChecker.checkWithDlls 
-            (ILChecker.getPackageDlls "System.Memory" "4.5.0" "netstandard2.0" [ "System.Memory.dll" ]) 
+            (ILChecker.getPackageDlls "System.Memory" "4.5.2" "netstandard2.0" [ "System.Memory.dll" ]) 
             source
             [
             """.method public static void  test() cil managed
@@ -83,7 +83,7 @@ let test () =
             """
 
         ILChecker.checkWithDlls 
-            (ILChecker.getPackageDlls "System.Memory" "4.5.0" "netstandard2.0" [ "System.Memory.dll" ]) 
+            (ILChecker.getPackageDlls "System.Memory" "4.5.2" "netstandard2.0" [ "System.Memory.dll" ]) 
             source
             [
             """.method public static void  test() cil managed
@@ -171,7 +171,7 @@ module Test =
 
         // The current behavior doesn't optimize, but it could in the future. Making a test to catch if it ever does.
         ILChecker.checkWithDlls 
-            (ILChecker.getPackageDlls "System.Memory" "4.5.0" "netstandard2.0" [ "System.Memory.dll" ]) 
+            (ILChecker.getPackageDlls "System.Memory" "4.5.2" "netstandard2.0" [ "System.Memory.dll" ]) 
             source
             [
             """.method public static void  test() cil managed
