@@ -17,8 +17,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debuggin
 
 open FSharp.Compiler
 
-[<Shared>]
-[<ExportLanguageService(typeof<IFSharpLanguageDebugInfoService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpLanguageDebugInfoService>)>]
 type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInfoManager: FSharpProjectOptionsManager) =
 
     static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
