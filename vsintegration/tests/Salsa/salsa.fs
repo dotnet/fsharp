@@ -637,7 +637,7 @@ module internal Salsa =
 //                Append(sprintf "       <AllowCrossTargeting>true</AllowCrossTargeting>")
 //                Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" targetFrameworkVersion)
 //            else
-            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.6.1")
+            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.7.2")
             Append "        <NoWarn>"
             for disabledWarning in disabledWarnings do
                 Append (sprintf "            %s;" disabledWarning)                            
@@ -1101,7 +1101,7 @@ module internal Salsa =
             
             member file.GetFileName() = filename
             member file.GetProjectOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, file.CombinedLines, System.DateTime(2000,1,1), [| |]) 
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, System.DateTime(2000,1,1), [| |]) 
                 |> Async.RunSynchronously
                 |> fst // drop diagnostics
                  
@@ -1113,7 +1113,7 @@ module internal Salsa =
             member file.OnIdle() =
                 while file.Source.NeedsVisualRefresh do
                     file.OnIdleTypeCheck()
-            member file.CombinedLines =
+            member file.CombinedLines : string =
                 if combinedLines = null then 
                     combinedLines<-String.Join("\n",lines)
                 combinedLines   

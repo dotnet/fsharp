@@ -25,7 +25,6 @@ open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.Editor.SiteProvider
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -145,24 +144,51 @@ type internal FSharpPackage() as this =
         vfsiToolWindow :> Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI
 
     // FSI-LINKAGE-POINT: unsited init
-    do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
+    do 
+        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    override this.Initialize() =
-        base.Initialize()
+    override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
+        // `base.` methods can't be called in the `async` builder, so we have to cache it
+        let baseInitializeAsync = base.InitializeAsync(cancellationToken, progress)
+        let task =
+            async {
+                do! baseInitializeAsync |> Async.AwaitTask
 
-        // FSI-LINKAGE-POINT: sited init
-        let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
-        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
-        // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-        let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>) |> Async.AwaitTask // FSI-LINKAGE-POINT
+                let commandService = commandService :?> OleMenuCommandService
+                let packageInit () =
+                    // FSI-LINKAGE-POINT: sited init
+                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
 
-        ()
+                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+                    let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                    let projectInfoManager = this.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
+                    let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
+                    let solution = solution :?> IVsSolution
+                    let rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>).Result
+                    let rdt = rdt :?> IVsRunningDocumentTable
+
+                    let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+                    let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
+                    let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
+                    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectInfoManager, projectContextFactory, rdt)
+                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
+                    ()
+                let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
+                if awaiter.IsCompleted then
+                    packageInit() // already on the UI thread
+                else
+                    awaiter.OnCompleted(fun () -> packageInit())
+
+            } |> Async.StartAsTask
+        upcast task // convert Task<unit> to Task
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-    override this.CreateLanguageService() = FSharpLanguageService(this, this.GetService(typeof<SVsSolution>) :?> IVsSolution)
+    override this.CreateLanguageService() = FSharpLanguageService(this)
     override this.CreateEditorFactories() = seq { yield FSharpEditorFactory(this) :> IVsEditorFactory }
-    override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
+    override this.RegisterMiscellaneousFilesWorkspaceInformation(miscFilesWorkspace) =
+        miscFilesWorkspace.RegisterLanguage(Guid(FSharpConstants.languageServiceGuidString), FSharpConstants.FSharpLanguageName, ".fsx")
 
     interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
         member this.SendTextInteraction(s:string) =
@@ -171,29 +197,8 @@ type internal FSharpPackage() as this =
             GetToolWindowAsITestVFSI().GetMostRecentLines(n)
 
 [<Guid(FSharpConstants.languageServiceGuidString)>]
-type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSolution) =
+type internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
-
-    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
-
-    let projectDisplayNameOf projectFileName =
-        if String.IsNullOrWhiteSpace projectFileName then projectFileName
-        else Path.GetFileNameWithoutExtension projectFileName
-
-    let singleFileProjects = ConcurrentDictionary<_, IWorkspaceProjectContext>()
-
-    let tryRemoveSingleFileProject projectId =
-        match singleFileProjects.TryRemove(projectId) with
-        | true, project ->
-            projectInfoManager.ClearInfoForSingleFileProject(projectId)
-            project.Dispose()
-        | _ -> ()
-
-    let tryGetOrCreateProjectId (workspace: VisualStudioWorkspaceImpl) (projectFileName: string) =
-        let projectDisplayName = projectDisplayNameOf projectFileName
-        Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
-
-    let mutable legacyProjectWorkspaceMap = Unchecked.defaultof<LegacyProjectWorkspaceMap>
 
     override this.Initialize() = 
         base.Initialize()
@@ -201,34 +206,8 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
-        this.Workspace.DocumentClosed.Add <| fun args -> tryRemoveSingleFileProject args.Document.Project.Id
-
-        legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>(), this.SystemServiceProvider)
-        legacyProjectWorkspaceMap.Initialize()
-
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
-
-    member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
-        let loadTime = DateTime.Now
-        let projectFileName = fileName
-        let projectDisplayName = projectDisplayNameOf projectFileName
-
-        let mutable projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-
-        if isNull (workspace.ProjectTracker.GetProject projectId) then
-            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
-
-            let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null)
-            
-            projectId <- workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-
-            projectContext.AddSourceFile(fileName)
-            
-            singleFileProjects.[projectId] <- projectContext
-
-        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents) |> Async.RunSynchronously
-        projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
 
     override this.ContentTypeName = FSharpConstants.FSharpContentTypeName
     override this.LanguageName = FSharpConstants.FSharpLanguageName
@@ -242,8 +221,6 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
 
-        let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-
         // Toggles outlining (or code folding) based on settings
         let outliningManagerService = this.Package.ComponentModel.GetService<IOutliningManagerService>()
         let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
@@ -251,43 +228,3 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         if not (isNull outliningManager) then
             let settings = this.Workspace.Services.GetService<EditorOptions>()
             outliningManager.Enabled <- settings.Advanced.IsOutliningEnabled
-
-        match textView.GetBuffer() with
-        | (VSConstants.S_OK, textLines) ->
-            let filename = VsTextLines.GetFilename textLines
-
-            match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
-            | Some (hier, _) ->
-
-
-                // Check if the file is in a CPS project or not.
-                // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
-                // Simple explanation:
-                //    Legacy projects have IVSHierarchy and IProjectSite
-                //    CPS Projects, out-of-project file and script files don't
-
-                match hier with
-                | :? IProvideProjectSite as _siteProvider when not (IsScript(filename)) ->
-
-                    // This is the path for .fs/.fsi files in legacy projects
-                    ()
-                | NotNull hier when not (IsScript(filename)) ->
-                    let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
-                    match docId with
-                    | null ->
-                        if not (hier.IsCapabilityMatch("CPS")) then
-
-                            // This is the path when opening out-of-project .fs/.fsi files in CPS projects
-
-                            let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                            this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-                    | _ -> ()
-                | NotNull hier ->
-
-                    // This is the path for both in-project and out-of-project .fsx files
-
-                    let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                    this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-                | _ -> ()
-            | _ -> ()
-        | _ -> ()
