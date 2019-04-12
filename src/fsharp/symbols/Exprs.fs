@@ -852,15 +852,15 @@ module FSharpExprConvert =
             None, env.BindIsInstVal bind.Var (ty, e)
     
         // Remove let <compilerGeneratedVar> = <var> from quotation tree
-        | Expr.Val _ when bind.Var.IsCompilerGenerated -> 
+        | Expr.Val _ when bind.Var.IsCompilerGenerated && (not bind.Var.IsMutable) -> 
             None, env.BindSubstVal bind.Var bind.Expr
 
         // Remove let <compilerGeneratedVar> = () from quotation tree
-        | Expr.Const(Const.Unit, _, _) when bind.Var.IsCompilerGenerated -> 
+        | Expr.Const(Const.Unit, _, _) when bind.Var.IsCompilerGenerated && (not bind.Var.IsMutable) -> 
             None, env.BindSubstVal bind.Var bind.Expr
 
         // Remove let unionCase = ... from quotation tree
-        | Expr.Op(TOp.UnionCaseProof _, _, [e], _) -> 
+        | Expr.Op(TOp.UnionCaseProof _, _, [e], _) when (not bind.Var.IsMutable) -> 
             None, env.BindSubstVal bind.Var e
 
         | _ ->
