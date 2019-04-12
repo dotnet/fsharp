@@ -574,9 +574,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SumBy")>]
         let inline sumBy (projection: 'T -> 'U) (list:list<'T>) =
             match list with
-            | [] -> LanguagePrimitives.GenericZero< 'U >
+            | [] -> LanguagePrimitives.GenericZero<'U>
             | t ->
-                let mutable acc = LanguagePrimitives.GenericZero< 'U >
+                let mutable acc = LanguagePrimitives.GenericZero<'U>
                 for x in t do
                     acc <- Checked.(+) acc (projection x)
                 acc
@@ -648,7 +648,7 @@ namespace Microsoft.FSharp.Collections
             match list with
             | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | xs ->
-                let mutable sum = LanguagePrimitives.GenericZero< 'U >
+                let mutable sum = LanguagePrimitives.GenericZero<'U>
                 let mutable count = 0
                 for x in xs do
                     sum <- Checked.(+) sum (projection x)
