@@ -400,6 +400,13 @@ type TcResultsSink =
     static member NoSink : TcResultsSink
     static member WithSink : ITypecheckResultsSink -> TcResultsSink
 
+
+/// Indicates if we only need one result or all possible results from a resolution.
+[<RequireQualifiedAccess>]
+type ResultCollectionSettings =
+    | AllResults
+    | AtMostOneResult
+
 /// Temporarily redirect reporting of name resolution and type checking results
 val internal WithNewTypecheckResultsSink : ITypecheckResultsSink * TcResultsSink -> System.IDisposable
 
@@ -422,13 +429,13 @@ val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutio
 val internal CallOpenDeclarationSink    : TcResultsSink -> OpenDeclaration -> unit
 
 /// Get all the available properties of a type (both intrinsic and extension)
-val internal AllPropInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain -> FindMemberFlag -> range -> TType -> PropInfo list
+val internal AllPropInfosOfTypeInScope : ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> AccessorDomain -> FindMemberFlag -> range -> TType -> PropInfo list
 
 /// Get all the available properties of a type (only extension)
-val internal ExtensionPropInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain  -> range -> TType -> PropInfo list
+val internal ExtensionPropInfosOfTypeInScope : ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> AccessorDomain -> range -> TType -> PropInfo list
 
 /// Get the available methods of a type (both declared and inherited)
-val internal AllMethInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain -> FindMemberFlag -> range -> TType -> MethInfo list
+val internal AllMethInfosOfTypeInScope : ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> AccessorDomain -> FindMemberFlag -> range -> TType -> MethInfo list
 
 /// Used to report an error condition where name resolution failed due to an indeterminate type
 exception internal IndeterminateType of range
@@ -460,12 +467,6 @@ type WarnOnUpperFlag =
 type PermitDirectReferenceToGeneratedType = 
     | Yes 
     | No
-
-/// Indicates if we only need one result or all possible results from a resolution.
-[<RequireQualifiedAccess>]
-type ResultCollectionSettings =
-| AllResults
-| AtMostOneResult
 
 /// Resolve a long identifier to a namespace or module.
 val internal ResolveLongIndentAsModuleOrNamespace   : TcResultsSink -> ResultCollectionSettings -> Import.ImportMap -> range -> bool -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident -> Ident list -> isOpenDecl: bool -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
