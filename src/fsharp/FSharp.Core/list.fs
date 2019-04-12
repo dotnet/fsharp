@@ -18,9 +18,8 @@ namespace Microsoft.FSharp.Collections
     module List =
 
         let inline checkNonNull argName arg =
-            match box arg with
-            | null -> nullArg argName
-            | _ -> ()
+            if isNull arg then
+                nullArg argName
 
         let inline indexNotFound() = raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
@@ -386,10 +385,16 @@ namespace Microsoft.FSharp.Collections
                 exists2aux f list1 list2
 
         [<CompiledName("Find")>]
-        let rec find predicate list = match list with [] -> indexNotFound()  | h :: t -> if predicate h then h else find predicate t
+        let rec find predicate list = 
+            match list with
+            | [] -> indexNotFound()
+            | h :: t -> if predicate h then h else find predicate t
 
         [<CompiledName("TryFind")>]
-        let rec tryFind predicate list = match list with [] -> None | h :: t -> if predicate h then Some h else tryFind predicate t
+        let rec tryFind predicate list =
+            match list with
+            | [] -> None 
+            | h :: t -> if predicate h then Some h else tryFind predicate t
 
         [<CompiledName("FindBack")>]
         let findBack predicate list = list |> toArray |> Microsoft.FSharp.Primitives.Basics.Array.findBack predicate
@@ -534,12 +539,20 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("FindIndex")>]
         let findIndex predicate list =
-            let rec loop n = function[] -> indexNotFound()  | h :: t -> if predicate h then n else loop (n+1) t
+            let rec loop n list = 
+                match list with 
+                | [] -> indexNotFound()
+                | h :: t -> if predicate h then n else loop (n + 1) t
+
             loop 0 list
 
         [<CompiledName("TryFindIndex")>]
         let tryFindIndex predicate list =
-            let rec loop n = function[] -> None | h :: t -> if predicate h then Some n else loop (n+1) t
+            let rec loop n list = 
+                match list with
+                | [] -> None
+                | h :: t -> if predicate h then Some n else loop (n + 1) t
+
             loop 0 list
 
         [<CompiledName("FindIndexBack")>]
@@ -549,9 +562,9 @@ namespace Microsoft.FSharp.Collections
         let tryFindIndexBack predicate list = list |> toArray |> Microsoft.FSharp.Primitives.Basics.Array.tryFindIndexBack predicate
 
         [<CompiledName("Sum")>]
-        let inline sum          (list:list<'T>) =
+        let inline sum (list:list<'T>) =
             match list with
-            | [] ->  LanguagePrimitives.GenericZero< 'T >
+            | [] -> LanguagePrimitives.GenericZero< 'T >
             | t ->
                 let mutable acc = LanguagePrimitives.GenericZero< 'T >
                 for x in t do
@@ -559,9 +572,9 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy (projection: 'T -> 'U)     (list:list<'T>) =
+        let inline sumBy (projection: 'T -> 'U) (list:list<'T>) =
             match list with
-            | [] ->  LanguagePrimitives.GenericZero< 'U >
+            | [] -> LanguagePrimitives.GenericZero< 'U >
             | t ->
                 let mutable acc = LanguagePrimitives.GenericZero< 'U >
                 for x in t do
@@ -569,7 +582,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Max")>]
-        let inline max          (list:list<_>) =
+        let inline max (list:list<_>) =
             match list with
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | h :: t ->
@@ -594,7 +607,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Min")>]
-        let inline min          (list:list<_>) =
+        let inline min (list:list<_>) =
             match list with
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | h :: t ->
@@ -619,7 +632,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Average")>]
-        let inline average      (list:list<'T>) =
+        let inline average (list:list<'T>) =
             match list with
             | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | xs ->
