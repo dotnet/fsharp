@@ -23,7 +23,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
     (
-        analyzerService: IDiagnosticAnalyzerService,
+        analyzerService: IFSharpDiagnosticAnalyzerService,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
         settings: EditorOptions
     ) =
