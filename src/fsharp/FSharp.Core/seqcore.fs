@@ -50,7 +50,7 @@ namespace Microsoft.FSharp.Collections
               member __.MoveNext() =
                   if not started then started <- true
                   false
-              member __x.Reset() = noReset()
+              member __.Reset() = noReset()
           interface System.IDisposable with
                 member __.Dispose() = ()
                 
