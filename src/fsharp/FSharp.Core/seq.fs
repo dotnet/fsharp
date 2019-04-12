@@ -1197,7 +1197,7 @@ namespace Microsoft.FSharp.Collections
             LanguagePrimitives.DivideByInt< ^a> acc count
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy (projection : 'T -> ^U) (source: seq< 'T >) : ^U =
+        let inline averageBy (projection : 'T -> ^U) (source: seq<'T>) : ^U =
             checkNonNull "source" source
             use e = source.GetEnumerator()
             let mutable acc = LanguagePrimitives.GenericZero< ^U>
