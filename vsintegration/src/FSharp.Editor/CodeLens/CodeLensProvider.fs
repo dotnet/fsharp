@@ -33,7 +33,7 @@ type internal CodeLensProvider
         textDocumentFactory: ITextDocumentFactoryService,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        typeMap : ClassificationTypeMap Lazy,
+        typeMap : FSharpClassificationTypeMap Lazy,
         settings: EditorOptions
     ) =
 

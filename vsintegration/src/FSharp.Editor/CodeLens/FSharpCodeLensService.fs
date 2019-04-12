@@ -49,7 +49,7 @@ type internal FSharpCodeLensService
         checker: FSharpChecker,
         projectInfoManager: FSharpProjectOptionsManager,
         classificationFormatMapService: IClassificationFormatMapService,
-        typeMap: Lazy<ClassificationTypeMap>,
+        typeMap: Lazy<FSharpClassificationTypeMap>,
         codeLens : CodeLensDisplayService,
         settings: EditorOptions
     ) as self =
