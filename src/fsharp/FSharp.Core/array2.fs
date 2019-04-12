@@ -15,9 +15,8 @@ namespace Microsoft.FSharp.Collections
     module Array2D =
 
         let inline checkNonNull argName arg = 
-            match box arg with 
-            | null -> nullArg argName 
-            | _ -> ()
+            if isNull arg then
+                nullArg argName
 
         // Define the primitive operations. 
         // Note: the "type" syntax is for the type parameter for inline 
@@ -64,9 +63,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("CreateBased")>]
         let createBased base1 base2 length1 length2 (initial:'T) = 
-            let array = (zeroCreateBased base1 base2 length1 length2 : 'T[,])  
-            for i = base1 to base1+length1 - 1 do 
-              for j = base2 to base2+length2 - 1 do 
+            let array = (zeroCreateBased base1 base2 length1 length2 : 'T[,])
+            for i = base1 to base1 + length1 - 1 do 
+              for j = base2 to base2 + length2 - 1 do 
                 array.[i,j] <- initial
             array
 
@@ -78,7 +77,6 @@ namespace Microsoft.FSharp.Collections
               for j = base2 to base2+length2 - 1 do 
                 array.[i,j] <- f.Invoke(i, j)
             array
-
 
         [<CompiledName("Create")>]
         let create length1 length2 (value:'T) = 
@@ -95,20 +93,20 @@ namespace Microsoft.FSharp.Collections
             let count2 = length2 array 
             let b1 = base1 array 
             let b2 = base2 array 
-            for i = b1 to b1+count1 - 1 do 
-              for j = b2 to b2+count2 - 1 do 
+            for i = b1 to b1 + count1 - 1 do 
+              for j = b2 to b2 + count2 - 1 do 
                 action array.[i,j]
 
         [<CompiledName("IterateIndexed")>]
         let iteri (action : int -> int -> 'T -> unit) (array:'T[,]) =
             checkNonNull "array" array
-            let count1 = length1 array 
-            let count2 = length2 array 
-            let b1 = base1 array 
-            let b2 = base2 array 
+            let count1 = length1 array
+            let count2 = length2 array
+            let b1 = base1 array
+            let b2 = base2 array
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(action)
-            for i = b1 to b1+count1 - 1 do 
-              for j = b2 to b2+count2 - 1 do 
+            for i = b1 to b1+count1 - 1 do
+              for j = b2 to b2+count2 - 1 do
                 f.Invoke(i, j, array.[i,j])
 
         [<CompiledName("Map")>]
@@ -160,5 +158,3 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to count1 - 1 do
                 for j = 0 to count2 - 1 do
                     target.[targetIndex1+i,targetIndex2+j] <- source.[sourceIndex1+i,sourceIndex2+j]
-
-        
