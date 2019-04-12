@@ -30,7 +30,7 @@ type internal FSharpCheckerProvider
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
         try
-            let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.VisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
+            let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
             let amd = (md :?> AssemblyMetadata)
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()

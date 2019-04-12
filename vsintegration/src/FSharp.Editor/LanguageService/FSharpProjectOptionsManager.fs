@@ -388,10 +388,10 @@ type internal FSharpProjectOptionsManager
         use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
         let projectId =
-            match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.VisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
+            match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
             | true, projectId -> projectId
-            | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.VisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
-        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.VisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId);
+            | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
+        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId);
         let fullPath p =
             if Path.IsPathRooted(p) || path = null then p
             else Path.Combine(Path.GetDirectoryName(path), p)

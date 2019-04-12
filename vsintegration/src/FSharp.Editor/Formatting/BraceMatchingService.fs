@@ -42,7 +42,7 @@ type internal FSharpBraceMatchingService
                 let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, parsingOptions, position, defaultUserOpName)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)
-                return BraceMatchingResult(leftSpan, rightSpan)
+                return FSharpBraceMatchingResult(leftSpan, rightSpan)
             } 
             |> Async.map Option.toNullable
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

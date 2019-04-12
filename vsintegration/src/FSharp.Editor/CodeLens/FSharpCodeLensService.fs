@@ -81,7 +81,7 @@ type internal FSharpCodeLensService
     let layoutTagToFormatting (layoutTag: LayoutTag) =
         layoutTag
         |> RoslynHelpers.roslynTag
-        |> ClassificationTags.GetClassificationTypeName
+        |> FSharpClassificationTags.GetClassificationTypeName
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties   
 

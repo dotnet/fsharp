@@ -93,7 +93,7 @@ type internal FSharpIndentationService
         }
 
     interface IFSharpSynchronousIndentationService with
-        member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
+        member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<FSharpIndentationResult> =
             async {
                 let! cancellationToken = Async.CancellationToken
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
@@ -105,5 +105,5 @@ type internal FSharpIndentationService
                 return
                     match indent with
                     | None -> Nullable()
-                    | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
+                    | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
             } |> (fun c -> Async.RunSynchronously(c,cancellationToken=cancellationToken))

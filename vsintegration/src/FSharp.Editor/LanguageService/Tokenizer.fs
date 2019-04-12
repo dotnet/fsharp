@@ -22,6 +22,9 @@ open Microsoft.VisualStudio.Imaging
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 
+type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
+
 [<RequireQualifiedAccess>]
 type internal LexerSymbolKind = 
     | Ident = 0

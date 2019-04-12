@@ -39,7 +39,7 @@ type internal FSharpFindUsagesService
                             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
                                 let span = Tokenizer.fixupSpan(sourceText, span)
-                                return Some (DocumentSpan(doc, span))
+                                return Some (FSharpDocumentSpan(doc, span))
                             | None -> return None
                         })
                     |> Async.Parallel
@@ -76,14 +76,14 @@ type internal FSharpFindUsagesService
                     return 
                         match declarationSpans with 
                         | [] -> 
-                            [ DefinitionItem.CreateNonNavigableItem(
+                            [ FSharpDefinitionItem.CreateNonNavigableItem(
                                 tags,
                                 ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)),
                                 ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
                         | _ ->
                             declarationSpans
                             |> List.map (fun span ->
-                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
+                                FSharpDefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
                 } |> liftAsync
             
             for definitionItem in definitionItems do
@@ -120,7 +120,7 @@ type internal FSharpFindUsagesService
                         | _ ->
                             for referenceDocSpan in referenceDocSpans do
                                 for definitionItem in definitionItems do
-                                    let referenceItem = SourceReferenceItem(definitionItem, referenceDocSpan)
+                                    let referenceItem = FSharpSourceReferenceItem(definitionItem, referenceDocSpan)
                                     do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask |> liftAsync
             
             ()

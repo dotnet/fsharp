@@ -42,17 +42,17 @@ type internal FSharpBreakpointResolutionService
         }
 
     interface IFSharpBreakpointResolutionService with
-        member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<BreakpointResolutionResult> =
+        member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<FSharpBreakpointResolutionResult> =
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, sourceText, document.Name, textSpan, parsingOptions)
                 let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
-                return BreakpointResolutionResult.CreateSpanResult(document, span)
+                return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
             } 
             |> Async.map Option.toObj 
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
             
         // FSROSLYNTODO: enable placing breakpoints by when user supplies fully-qualified function names
-        member this.ResolveBreakpointsAsync(_, _, _): Task<IEnumerable<BreakpointResolutionResult>> =
-            Task.FromResult(Enumerable.Empty<BreakpointResolutionResult>())
+        member this.ResolveBreakpointsAsync(_, _, _): Task<IEnumerable<FSharpBreakpointResolutionResult>> =
+            Task.FromResult(Enumerable.Empty<FSharpBreakpointResolutionResult>())
