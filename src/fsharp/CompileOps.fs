@@ -5112,6 +5112,7 @@ module private ScriptPreprocessClosure =
             lexResourceManager: Lexhelp.LexResourceManager,
             applyCommmandLineArgs, assumeDotNetFramework,
             tryGetMetadataSnapshot, reduceMemoryUsage) =
+
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created

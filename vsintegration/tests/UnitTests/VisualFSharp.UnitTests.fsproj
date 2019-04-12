@@ -165,6 +165,8 @@
     <Compile Include="DocumentHighlightsServiceTests.fs">
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
+    <None Include="App.config" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="app.runsettings" />
     <None Include="App.config" />
     <None Include="app.runsettings">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
