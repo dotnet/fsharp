@@ -105,8 +105,8 @@ namespace Microsoft.FSharp.Collections
             let b1 = base1 array
             let b2 = base2 array
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(action)
-            for i = b1 to b1+count1 - 1 do
-              for j = b2 to b2+count2 - 1 do
+            for i = b1 to b1 + count1 - 1 do
+              for j = b2 to b2 + count2 - 1 do
                 f.Invoke(i, j, array.[i,j])
 
         [<CompiledName("Map")>]
