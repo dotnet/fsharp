@@ -50,7 +50,7 @@ namespace Microsoft.FSharp.Collections
             f:(unit -> unit) ->
             e:System.Collections.Generic.IEnumerator<'T> ->
                 System.Collections.Generic.IEnumerator<'T>
-        val inline checkNonNull : argName:string -> arg:'a -> unit
+        val inline checkNonNull : argName:string -> arg:'a -> unit when 'a : null
         val mkSeq :
             f:(unit -> System.Collections.Generic.IEnumerator<'U>) ->
             System.Collections.Generic.IEnumerable<'U>
