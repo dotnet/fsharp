@@ -47,13 +47,14 @@ These are the branches in use:
   - Gets integrated into https://github.com/fsharp/fsharp to form the basis of Mono releases
   - Gets integrated into https://github.com/fsharp/FSharp.Compiler.Service to form the basis of FSharp.Compiler.Service releases
 
-* `dev15.x`
+* `dev15.9`
+  - Servicing branch for VS 2019 update 15.9. We do not expect to service that release, but if we do, that's where the changes would go.
+  
+* `dev16.x`
   - Latest release branch for the particular point release of Visual Studio.
   - Incorporates features and fixes from master up to a particular branch point, then selective cherry-picks.
-  - May contain new features that depend on new things or fixes in the corresponding Visual Studio release.
+  - May contain new features that depend on new things or fixes in the corresponding forthcoming Visual Studio release.
   - Gets integrated back into master once the corresponding Visual Studio release is made.
-  - Used to build Visual F# Tool updates
-
 
 ### Technical Documentation
 
