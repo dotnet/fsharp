@@ -574,6 +574,15 @@ let inline mutableConst () =
 
 let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
+
+let mutable pos = 0
+let side_effect () = pos <- pos + 1; pos
+
+let testMutableMatch () =
+    match side_effect () with
+    | 0 -> pos
+    | 1 -> pos
+    | _ -> pos
     """
 
     File.WriteAllText(fileName2, fileSource2)
@@ -768,6 +777,9 @@ let ``Test Unoptimized Declarations Project1`` () =
         "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
         "let testMutableVar = N.mutableVar (1) @ (28,21--28,33)";
         "let testMutableConst = N.mutableConst (()) @ (29,23--29,38)";
+        "let pos = 0 @ (31,18--31,19)";
+        "let side_effect(unitVar0) = (pos <- Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (N.pos (),1); N.pos ()) @ (32,21--32,40)";
+        "let testMutableMatch(unitVar0) = let matchValue: Microsoft.FSharp.Core.int = N.side_effect (()) in match (if Operators.op_Equality<Microsoft.FSharp.Core.int> (matchValue,0) then $0 else (if Operators.op_Equality<Microsoft.FSharp.Core.int> (matchValue,1) then $1 else $2)) targets ... @ (35,10--35,24)";
       ]
 
     printDeclarations None (List.ofSeq file1.Declarations) 
@@ -912,6 +924,9 @@ let ``Test Optimized Declarations Project1`` () =
         "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
         "let testMutableVar = let x: Microsoft.FSharp.Core.int = 1 in (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (28,21--28,33)";
         "let testMutableConst = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (29,23--29,38)";
+        "let pos = 0 @ (31,18--31,19)";
+        "let side_effect(unitVar0) = (pos <- Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (N.pos (),1); N.pos ()) @ (32,21--32,40)";
+        "let testMutableMatch(unitVar0) = let matchValue: Microsoft.FSharp.Core.int = N.side_effect (()) in match (if Operators.op_Equality<Microsoft.FSharp.Core.int> (matchValue,0) then $0 else (if Operators.op_Equality<Microsoft.FSharp.Core.int> (matchValue,1) then $1 else $2)) targets ... @ (35,10--35,24)";
       ]
 
     // printFSharpDecls "" file2.Declarations |> Seq.iter (printfn "%s")

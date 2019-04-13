@@ -1418,7 +1418,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
 
          // Immediate consumption of value by a pattern match 'let x = e in match x with ...'
          | Expr.Match (spMatch, _exprm, TDSwitch(Expr.Val (VRefLocal vspec2, _, _), cases, dflt, _), targets, m, ty2)
-             when (valEq vspec1 vspec2 && 
+             when (valEq vspec1 vspec2 && not (ExprHasEffect cenv.g e1) &&
                    let fvs = accFreeInTargets CollectLocals targets (accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars)
                    not (Zset.contains vspec1 fvs.FreeLocals)) -> 
 
