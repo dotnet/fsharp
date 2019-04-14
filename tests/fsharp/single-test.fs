@@ -215,33 +215,26 @@ let singleTestBuildAndRunCore cfg copyFiles p =
             try File.Delete(Path.Combine(directory, "FSharp.Core.dll")) with _ -> ()
             emitFile targetsFileName targetsBody
             emitFile overridesFileName overridesBody
+            let propsBody = generateProps compilerType cfg.BUILD_CONFIG
+            emitFile propsFileName propsBody
+            let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
+            emitFile projectFileName projectBody
+            printfn "------ Overrides file: %s" overridesFileName
+            printfn "%s" overridesBody
+            printfn "------ Targets file: %s" targetsFileName
+            printfn "%s" targetsBody
+            printfn "------ Props file: %s" propsFileName
+            printfn "%s" propsBody
+            printfn "------ Project file: %s" projectFileName
+            printfn "%s" projectBody
+            printfn "------ Execute:"
+            use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
             if outputType = OutputType.Exe then
-                let propsBody = generateProps compilerType cfg.BUILD_CONFIG
-                emitFile propsFileName propsBody
-                let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
-                emitFile projectFileName projectBody
-                use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
-                printfn "------ Overrides file: %s" overridesFileName
-                printfn "%s" overridesBody
-                printfn "------ Targets file: %s" targetsFileName
-                printfn "%s" targetsBody
-                printfn "------ Props file: %s" propsFileName
-                printfn "%s" propsBody
-                printfn "------ Project file: %s" projectFileName
-                printfn "%s" projectBody
-                printfn "------ Execute:"
                 exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s -v:n" targetFramework)
-                testOkFile.CheckExists()
-                result <- true
             else
-                let propsBody = generateProps compilerType cfg.BUILD_CONFIG
-                emitFile propsFileName propsBody
-                let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
-                emitFile projectFileName projectBody
-                use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                 exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript -v:n"
-                testOkFile.CheckExists()
-                result <- true
+            testOkFile.CheckExists()
+            result <- true
         finally
             if result then
                 Directory.Delete(directory, true)
