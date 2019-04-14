@@ -222,7 +222,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                     let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
-                    exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s" targetFramework)
+                    exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s -v:n" targetFramework)
                     testOkFile.CheckExists()
                 executeFsc compilerType targetFramework
             else
@@ -232,7 +232,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                     let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
-                    exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript"
+                    exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript -v:n"
                     testOkFile.CheckExists()
                 executeFsi compilerType targetFramework
                 result <- true
