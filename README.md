@@ -48,7 +48,7 @@ These are the branches in use:
   - Gets integrated into https://github.com/fsharp/FSharp.Compiler.Service to form the basis of FSharp.Compiler.Service releases
 
 * `dev15.9`
-  - Servicing branch for VS 2019 update 15.9. We do not expect to service that release, but if we do, that's where the changes would go.
+  - Servicing branch for VS 2017 update 15.9. We do not expect to service that release, but if we do, that's where the changes would go.
   
 * `dev16.x`
   - Latest release branch for the particular point release of Visual Studio.
