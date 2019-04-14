@@ -13,7 +13,9 @@
     </SwrProperty>
   </ItemDefinitionGroup>
 
-  <Target Name="Build" DependsOnTargets="ResolveProjectReferences">
+  <Target Name="Build"
+          DependsOnTargets="ResolveProjectReferences"
+          Condition="'$(DotNetBuildFromSource)' != 'true'">
     <MakeDir Directories="$(IntermediateOutputPath)" ContinueOnError="True"/>
   </Target>
 

@@ -34,8 +34,6 @@ let mkFlexibleDecimalFormatTypar (g: TcGlobals) m =
 let mkFlexibleFloatFormatTypar (g: TcGlobals) m = 
     mkFlexibleFormatTypar m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
 
-let isDigit c = ('0' <= c && c <= '9')
-
 type FormatInfoRegister = 
   { mutable leftJustify    : bool 
     mutable numPrefixIfPos : char option
@@ -54,15 +52,17 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
     let (offset, fmt) = 
         match context with
         | Some context ->
-            let length = context.Source.Length
-            if m.EndLine < context.LineStartPositions.Length then
-                let startIndex = context.LineStartPositions.[m.StartLine-1] + m.StartColumn
-                let endIndex = context.LineStartPositions.[m.EndLine-1] + m.EndColumn - 1
-                if startIndex < length-3 && context.Source.[startIndex..startIndex+2] = "\"\"\"" then
-                    (3, context.Source.[startIndex+3..endIndex-3])
-                elif startIndex < length-2 && context.Source.[startIndex..startIndex+1] = "@\"" then
-                    (2, context.Source.[startIndex+2..endIndex-1])
-                else (1, context.Source.[startIndex+1..endIndex-1])
+            let sourceText = context.SourceText
+            let lineStartPositions = context.LineStartPositions
+            let length = sourceText.Length
+            if m.EndLine < lineStartPositions.Length then
+                let startIndex = lineStartPositions.[m.StartLine-1] + m.StartColumn
+                let endIndex = lineStartPositions.[m.EndLine-1] + m.EndColumn - 1
+                if startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
+                    (3, sourceText.GetSubTextString(startIndex + 3, endIndex - startIndex))
+                elif startIndex < length-2 && sourceText.SubTextEquals("@\"", startIndex) then
+                    (2, sourceText.GetSubTextString(startIndex + 2, endIndex + 1 - startIndex))
+                else (1, sourceText.GetSubTextString(startIndex + 1, endIndex - startIndex))
             else (1, fmt)
         | None -> (1, fmt)
 
@@ -115,13 +115,13 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
               let rec digitsPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> digitsPrecision (i+1)
+                | c when System.Char.IsDigit c -> digitsPrecision (i+1)
                 | _ -> i 
 
               let precision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadWidth()
                 match fmt.[i] with
-                | c when isDigit c -> info.precision <- true; false,digitsPrecision (i+1)
+                | c when System.Char.IsDigit c -> info.precision <- true; false,digitsPrecision (i+1)
                 | '*' -> info.precision <- true; true,(i+1)
                 | _ -> failwithf "%s" <| FSComp.SR.forPrecisionMissingAfterDot()
 
@@ -134,20 +134,20 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
               let rec digitsWidthAndPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> digitsWidthAndPrecision (i+1)
+                | c when System.Char.IsDigit c -> digitsWidthAndPrecision (i+1)
                 | _ -> optionalDotAndPrecision i
 
               let widthAndPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> false,digitsWidthAndPrecision i
+                | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision i
                 | '*' -> true,optionalDotAndPrecision (i+1)
                 | _ -> false,optionalDotAndPrecision i
 
               let rec digitsPosition n i =
                   if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                   match fmt.[i] with
-                  | c when isDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
+                  | c when System.Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
                   | '$' -> Some n, i+1
                   | _ -> None, i
 

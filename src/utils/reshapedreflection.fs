@@ -360,7 +360,7 @@ module internal ReflectionAdapters =
             this.GetType().GetMethod(methodName, argTypes, BindingFlags.Public)
 
     type System.Char with
-        static member GetUnicodeCategory(c) = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c)
+        static member GetUnicodeCategory(c: char) = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c)
 
     type System.Reflection.Module with
         member this.MetadataToken =

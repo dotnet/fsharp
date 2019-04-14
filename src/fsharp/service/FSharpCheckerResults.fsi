@@ -301,7 +301,7 @@ type public FSharpCheckFileResults =
     /// Internal constructor - check a file and collect errors
     static member internal CheckOneFile: 
          parseResults: FSharpParseFileResults *
-         source: string *
+         sourceText: ISourceText *
          mainInputFileName: string *
          projectFileName: string *
          tcConfig: TcConfig *
@@ -377,14 +377,14 @@ type public FSharpCheckProjectResults =
 module internal ParseAndCheckFile = 
 
     val parseFile: 
-        source: string * 
+        sourceText: ISourceText * 
         fileName: string * 
         options: FSharpParsingOptions * 
         userOpName: string 
           -> FSharpErrorInfo[] * ParsedInput option * bool
 
     val matchBraces: 
-        source: string *
+        sourceText: ISourceText *
         fileName: string *
         options: FSharpParsingOptions *
         userOpName: string 
@@ -404,7 +404,7 @@ type internal FsiInteractiveChecker =
 
     member internal ParseAndCheckInteraction : 
         ctok: CompilationThreadToken * 
-        source:string * 
+        sourceText:ISourceText * 
         ?userOpName: string 
           -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
 

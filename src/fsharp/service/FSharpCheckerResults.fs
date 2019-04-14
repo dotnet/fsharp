@@ -2218,13 +2218,13 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
     let keepAssemblyContents = false
 
-    member __.ParseAndCheckInteraction (ctok, source, ?userOpName: string) =
+    member __.ParseAndCheckInteraction (ctok, sourceText: ISourceText, ?userOpName: string) =
         async {
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
             let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true)
-            let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (source, filename, parsingOptions, userOpName)
+            let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName)
             let dependencyFiles = [| |] // interactions have no dependencies
             let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
             
