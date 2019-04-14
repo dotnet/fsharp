@@ -8,7 +8,7 @@ variables:
 jobs:
 - job: Full_Signed
   pool:
-    name: VSEng-MicroBuildVS2017
+    name: VSEng-MicroBuildVS2019
   timeoutInMinutes: 300
   variables:
     BuildConfiguration: 'Release'
@@ -73,7 +73,7 @@ jobs:
       ArtifactName: 'VSSetup'
     condition: succeeded()
 
-    # Archive NuGet packages to DevOps.
+  # Archive NuGet packages to DevOps.
   - task: PublishBuildArtifacts@1
     displayName: Publish Artifact Packages
     inputs:
@@ -81,12 +81,12 @@ jobs:
       ArtifactName: 'Packages'
     condition: succeeded()
 
-  # Publish nightly package to MyGet
-  - task: PowerShell@1
-    displayName: Publish nightly package to MyGet
+  # Publish nightly package to ADO
+  - task: PublishBuildArtifacts@1
+    displayName: Publish Artifact Nightly
     inputs:
-      scriptName: 'setup\publish-assets.ps1'
-      arguments: '-artifactsPath artifacts -configuration $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
+      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\VisualFSharpFull.vsix'
+      ArtifactName: 'Nightly'
     condition: succeeded()
 
   # Package publish
@@ -108,5 +108,5 @@ jobs:
     dependsOn:
     - Full_Signed
     pool:
-      vmImage: vs2017-win2016
+      vmImage: windows-2019
     enablePublishBuildArtifacts: true

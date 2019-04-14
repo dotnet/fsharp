@@ -8,7 +8,5 @@ open System.Runtime.InteropServices
 open Microsoft.VisualStudio.Shell
 
 [<assembly: AssemblyCulture("")>]
-[<assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.VS.FSI.dll")>]
 
 do()
-

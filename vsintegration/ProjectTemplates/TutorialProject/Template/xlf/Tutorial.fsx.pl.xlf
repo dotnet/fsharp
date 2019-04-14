@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../Tutorial.fsx">
     <body>
@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Aby wykonać kod w narzędziu F# Interactive, zaznacz sekcję kodu i naciśnij kombinację klawiszy Alt-Enter lub kliknij prawym przyciskiem myszy,</target>
+        <target state="translated">Aby wykonać kod w programie F# Interactive, zaznacz sekcję kodu i naciśnij kombinację klawiszy Alt-Enter lub kliknij prawym przyciskiem myszy,</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -1294,7 +1294,7 @@
       </trans-unit>
       <trans-unit id="Option-Line1">
         <source>Option values are any kind of value tagged with either 'Some' or 'None'.</source>
-        <target state="translated">Wartości opcji to dowolne wartości oznaczone jako „Some” lub „None”.</target>
+        <target state="translated">Wartości opcji to dowolne wartości otagowane jako „Some” lub „None”.</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line2">
