@@ -271,6 +271,9 @@ type range(code1:int64, code2: int64) =
 
 let mkRange filePath startPos endPos = range (fileIndexOfFileAux true filePath, startPos, endPos)
 
+let equals (r1: range) (r2: range) =
+    r1.Code1 = r2.Code1 && r1.Code2 = r2.Code2
+
 let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
 let posOrder   = Order.orderOn (fun (p:pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))

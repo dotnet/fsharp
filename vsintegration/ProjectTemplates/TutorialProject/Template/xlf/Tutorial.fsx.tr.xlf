@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../Tutorial.fsx">
     <body>
@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Kodu F# Etkileşimli'de yürütmek için kodun bir bölümünü vurgulayın ve Alt-Enter'a basın veya sağ tıklatın</target>
+        <target state="translated">Kodu Etkileşimli F#'da yürütmek için kodun bir bölümünü vurgulayın ve Alt-Enter'a basın veya sağ tıklatın</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="LearnMoreAbout">
         <source>To learn more about applied F# programming, use</source>
-        <target state="translated">Uygulamalı #F programlama hakkında daha fazla bilgi edinmek için şunu kullanın:</target>
+        <target state="translated">Uygulamalı F# programlama hakkında daha fazla bilgi edinmek için şunu kullanın:</target>
         <note />
       </trans-unit>
       <trans-unit id="ToInstall-Line1">
@@ -899,7 +899,7 @@
       </trans-unit>
       <trans-unit id="Records-Line1">
         <source>Records are an aggregate of named values, with optional members (such as methods).</source>
-        <target state="translated">Kayıtlar, isteğe bağlı üyeleri (örneğin, metotlar) içeren adlandırılmış değerlerin toplamıdır.</target>
+        <target state="translated">Kayıtlar, isteğe bağlı üyeleri (örneğin, metotlar) içeren adlandırılmış değerlerin kümesidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="Records-Line2">

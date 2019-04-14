@@ -23,7 +23,7 @@ namespace Microsoft.FSharp.Collections
                   member __.Equals(x,y) = LanguagePrimitives.PhysicalEquality x y }
 
         let inline NonStructural< 'T when 'T : equality and 'T  : (static member ( = ) : 'T * 'T    -> bool) > = 
-            { new IEqualityComparer< 'T > with
+            { new IEqualityComparer<'T> with
                   member __.GetHashCode(x) = NonStructuralComparison.hash x 
                   member __.Equals(x, y) = NonStructuralComparison.(=) x y  }
 
@@ -39,7 +39,7 @@ namespace Microsoft.FSharp.Collections
         let inline Structural<'T when 'T : comparison > : IComparer<'T> = 
             LanguagePrimitives.FastGenericComparer<'T>
 
-        let inline NonStructural< 'T when 'T : (static member ( < ) : 'T * 'T    -> bool) and 'T : (static member ( > ) : 'T * 'T    -> bool) > : IComparer< 'T > = 
+        let inline NonStructural< 'T when 'T : (static member ( < ) : 'T * 'T    -> bool) and 'T : (static member ( > ) : 'T * 'T    -> bool) > : IComparer<'T> = 
             { new IComparer<'T> with
                   member __.Compare(x,y) = NonStructuralComparison.compare x y } 
 
