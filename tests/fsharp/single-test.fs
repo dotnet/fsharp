@@ -221,11 +221,14 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                 let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                 emitFile projectFileName projectBody
                 use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
+                printfn "------ Overrides file: %s" overridesFileName
+                printfn "%s" overridesFileName
+                printfn "------ Targets file: %s" targetsFileName
+                printfn "%s" targetsBody
                 printfn "------ Props file: %s" propsFileName
                 printfn "%s" propsBody
                 printfn "------ Project file: %s" projectFileName
                 printfn "%s" projectBody
-                printfn "------ Project file: %s" projectFileName
                 printfn "------ Execute:"
                 exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s -v:n" targetFramework)
                 testOkFile.CheckExists()
