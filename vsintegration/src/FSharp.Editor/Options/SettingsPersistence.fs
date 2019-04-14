@@ -82,5 +82,3 @@ type SettingsStore(serviceProvider: IServiceProvider) =
             (getCached(): 'options) |> updateFromStore |> keepInCache
             System.Threading.Tasks.Task.CompletedTask )
         |> subset.add_SettingChangedAsync
-
-         

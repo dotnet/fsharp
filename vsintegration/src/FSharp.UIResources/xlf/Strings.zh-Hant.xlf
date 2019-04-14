@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Strings.resx">
     <body>
@@ -164,27 +164,32 @@
       </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
-        <target state="new">Always add new line on enter</target>
+        <target state="translated">一律在按 ENTER 時新增新行</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_never">
         <source>Never add new line on enter</source>
-        <target state="new">Never add new line on enter</target>
+        <target state="translated">一律不在按 ENTER 時新增新行</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_only">
         <source>Only add new line on enter after end of fully typed word</source>
-        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <target state="translated">只在完整鍵入字的結尾處按 ENTER 來新增新行</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_Key_Rule">
         <source>Enter key behavior</source>
-        <target state="new">Enter key behavior</target>
+        <target state="translated">ENTER 鍵行為</target>
         <note />
       </trans-unit>
       <trans-unit id="Format_on_paste">
         <source>Re-format indentation on paste</source>
-        <target state="new">Re-format indentation on paste</target>
+        <target state="translated">在貼上時重設縮排格式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">為未解析的識別碼建議名稱</target>
         <note />
       </trans-unit>
     </body>

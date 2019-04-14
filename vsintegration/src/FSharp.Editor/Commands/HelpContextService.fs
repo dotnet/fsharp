@@ -25,7 +25,7 @@ type internal FSharpHelpContextService
     static let userOpName = "ImplementInterfaceCodeFix"
     static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion, perfOptions) : Async<string option> = 
         asyncMaybe {
-            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, perfOptions, userOpName = userOpName)
+            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText, options, perfOptions, userOpName = userOpName)
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -34,12 +34,11 @@ type internal FSharpHelpContextService
             let caretColumn = textLines.GetLinePosition(span.Start).Character
 
             let shouldTryToFindSurroundingIdent (token : ClassifiedSpan) =
-                let span = token.TextSpan
-                let content = sourceText.ToString().Substring(span.Start, span.End - span.Start)
+                let content = sourceText.GetSubText(token.TextSpan)
                 match token.ClassificationType with
                 | ClassificationTypeNames.Text
                 | ClassificationTypeNames.WhiteSpace -> true
-                | (ClassificationTypeNames.Operator|ClassificationTypeNames.Punctuation)when content = "." -> true
+                | (ClassificationTypeNames.Operator|ClassificationTypeNames.Punctuation)when content.Length > 0 && content.[0] = '.' -> true
                 | _ -> false
           
             let tokenInformation, col =
@@ -99,7 +98,7 @@ type internal FSharpHelpContextService
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
             asyncMaybe {
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
