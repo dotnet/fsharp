@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\fcs.props" />
+  <Import Project="..\..\" />
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>$(FcsTargetNetFxFramework)</TargetFrameworks>
