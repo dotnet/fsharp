@@ -9,13 +9,11 @@ namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Text
 
 /// <summary>Unused in this API</summary>
 type public UnresolvedReferencesSet 

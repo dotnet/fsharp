@@ -22,6 +22,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.Text
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -399,7 +400,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     static let mutable foregroundTypeCheckCount = 0
 
-    member __.RecordTypeCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,source) =        
+    member __.RecordTypeCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,sourceText) =        
         match checkAnswer with 
         | None
         | Some FSharpCheckFileAnswer.Aborted -> ()
@@ -407,7 +408,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             foregroundTypeCheckCount <- foregroundTypeCheckCount + 1
             parseCacheLock.AcquireLock (fun ltok -> 
                 checkFileInProjectCachePossiblyStale.Set(ltok, (filename,options),(parseResults,typedResults,fileVersion))  
-                checkFileInProjectCache.Set(ltok, (filename,sourceText,options),(parseResults,typedResults,fileVersion,priorTimeStamp))
+                checkFileInProjectCache.Set(ltok, (filename, sourceText, options),(parseResults,typedResults,fileVersion,priorTimeStamp))
                 parseFileCache.Set(ltok, (filename, sourceText, parsingOptions), parseResults))
 
     member bc.ImplicitlyStartCheckProjectInBackground(options, userOpName) =        
@@ -511,9 +512,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                          Array.ofList tcPrior.TcDependencyFiles, 
                                          creationErrors, 
                                          parseResults.Errors, 
-                                         keepAssemblyContents)
+                                         keepAssemblyContents,
+                                         suggestNamesForErrors)
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
-                                bc.RecordTypeCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, source) 
+                                bc.RecordTypeCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, sourceText.GetHashCode()) 
                                 return checkAnswer
                             finally
                                 let dummy = ref ()
@@ -633,7 +635,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     
                         // Do the parsing.
                         let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
-                        let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName)
+                        let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
                         let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
 
@@ -949,7 +951,7 @@ type FSharpChecker(legacyReferenceResolver,
             match braceMatchCache.TryGet(AssumeAnyCallerThreadWithoutEvidence(), (filename, hash, options)) with
             | Some res -> return res
             | None ->
-                let res = ParseAndCheckFile.matchBraces(source, filename, options, userOpName, suggestNamesForErrors)
+                let res = ParseAndCheckFile.matchBraces(sourceText, filename, options, userOpName, suggestNamesForErrors)
                 braceMatchCache.Set(AssumeAnyCallerThreadWithoutEvidence(), (filename, hash, options), res)
                 return res
         }

@@ -30,6 +30,7 @@ open FSharp.Compiler.Layout
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.Text
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
@@ -1462,13 +1463,13 @@ module internal ParseAndCheckFile =
         lastLine, lastLineLength
 
     /// Error handler for parsing & type checking while processing a single file
-    type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpErrorSeverityOptions, source) =
+    type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpErrorSeverityOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
         let mutable options = errorSeverityOptions
         let errorsAndWarningsCollector = new ResizeArray<_>()
         let mutable errorCount = 0
 
         // We'll need number of lines for adjusting error messages at EOF
-        let fileInfo = GetFileInfoForLastLineErrors source
+        let fileInfo = sourceText.GetLastCharacterPosition()
 
         // This function gets called whenever an error happens during parsing or checking
         let diagnosticSink sev (exn: PhasedDiagnostic) =
@@ -1482,7 +1483,7 @@ module internal ParseAndCheckFile =
                 else exn
             if reportErrors then
                 let report exn =
-                    for ei in ErrorHelpers.ReportError (options, false, mainInputFileName, fileInfo, (exn, sev)) do
+                    for ei in ErrorHelpers.ReportError (options, false, mainInputFileName, fileInfo, (exn, sev), suggestNamesForErrors) do
                         errorsAndWarningsCollector.Add ei
                         if sev = FSharpErrorSeverity.Error then
                             errorCount <- errorCount + 1
@@ -1537,21 +1538,24 @@ module internal ParseAndCheckFile =
     let addNewLine (source: string) =
         if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
 
-    let matchBraces(source, fileName, options: FSharpParsingOptions, userOpName: string) =
+    let createLexbuf sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(sourceText)
+
+    let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "matchBraces", fileName)
-
+        
         // Make sure there is an ErrorLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
         let delayedLogger = CapturingErrorLogger("matchBraces")
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         
         let matchingBraces = new ResizeArray<_>()
-        Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(addNewLine source), fileName) (fun lexbuf ->
-            let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, source)
+        Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+            let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
                 match t1, t2 with
@@ -1579,14 +1583,14 @@ module internal ParseAndCheckFile =
             matchBraces [])
         matchingBraces.ToArray()
 
-    let parseFile(source, fileName, options: FSharpParsingOptions, userOpName: string) =
+    let parseFile(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
-        let errHandler = new ErrorHandler(true, fileName, options.ErrorSeverityOptions, source)
+        let errHandler = new ErrorHandler(true, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(addNewLine source), fileName) (fun lexbuf ->
+            Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
@@ -1660,7 +1664,7 @@ module internal ParseAndCheckFile =
     // Type check a single file against an initial context, gleaning both errors and intellisense information.
     let CheckOneFile
           (parseResults: FSharpParseFileResults,
-           source: string,
+           sourceText: ISourceText,
            mainInputFileName: string,
            projectFileName: string,
            tcConfig: TcConfig,
@@ -1675,7 +1679,8 @@ module internal ParseAndCheckFile =
            // Used by 'FSharpDeclarationListInfo' to check the IncrementalBuilder is still alive.
            checkAlive : (unit -> bool),
            textSnapshotInfo : obj option,
-           userOpName: string) = async {
+           userOpName: string,
+           suggestNamesForErrors: bool) = async {
 
         use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
 
@@ -1687,7 +1692,7 @@ module internal ParseAndCheckFile =
         | Some parsedMainInput ->
 
         // Initialize the error handler 
-        let errHandler = new ErrorHandler(true, mainInputFileName, tcConfig.errorSeverityOptions, source)
+        let errHandler = new ErrorHandler(true, mainInputFileName, tcConfig.errorSeverityOptions, sourceText, suggestNamesForErrors)
                 
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
@@ -1711,7 +1716,7 @@ module internal ParseAndCheckFile =
         tcState.NiceNameGenerator.Reset()
                 
         // Typecheck the real input.  
-        let sink = TcResultsSinkImpl(tcGlobals, source = source)
+        let sink = TcResultsSinkImpl(tcGlobals, sourceText)
         let! ct = Async.CancellationToken
             
         let! resOpt =
@@ -2060,7 +2065,7 @@ type FSharpCheckFileResults
 
     static member CheckOneFile
         (parseResults: FSharpParseFileResults,
-         source: string,
+         sourceText: ISourceText,
          mainInputFileName: string,
          projectFileName: string,
          tcConfig: TcConfig,
@@ -2078,13 +2083,14 @@ type FSharpCheckFileResults
          dependencyFiles: string[], 
          creationErrors: FSharpErrorInfo[], 
          parseErrors: FSharpErrorInfo[], 
-         keepAssemblyContents: bool) = 
+         keepAssemblyContents: bool,
+         suggestNamesForErrors: bool) = 
         async {
             let! tcErrors, tcFileInfo = 
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, source, mainInputFileName, projectFileName, tcConfig, tcGlobals, tcImports, 
+                    (parseResults, sourceText, mainInputFileName, projectFileName, tcConfig, tcGlobals, tcImports, 
                      tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
-                     (fun () -> builder.IsAlive), textSnapshotInfo, userOpName)
+                     (fun () -> builder.IsAlive), textSnapshotInfo, userOpName, suggestNamesForErrors)
             match tcFileInfo with 
             | Result.Error ()  ->  
                 return FSharpCheckFileAnswer.Aborted                
@@ -2222,9 +2228,10 @@ type FsiInteractiveChecker(legacyReferenceResolver,
         async {
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
+            let suggestNamesForErrors = true // Will always be true, this is just for readability
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
             let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true)
-            let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName)
+            let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
             let dependencyFiles = [| |] // interactions have no dependencies
             let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
             
@@ -2236,11 +2243,11 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
-            let loadClosure = LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
+            let loadClosure = LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, source, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, 
-                     Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName)
+                    (parseResults, sourceText, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, 
+                     Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName, suggestNamesForErrors)
 
             return
                 match tcFileInfo with 

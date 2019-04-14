@@ -7,13 +7,14 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.NameResolution
 open FSharp.Compiler.CompileOps
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypeChecker
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
@@ -319,7 +320,8 @@ type public FSharpCheckFileResults =
          dependencyFiles: string[] * 
          creationErrors:FSharpErrorInfo[] * 
          parseErrors:FSharpErrorInfo[] * 
-         keepAssemblyContents: bool
+         keepAssemblyContents: bool *
+         suggestNamesForErrors: bool
           ->  Async<FSharpCheckFileAnswer>
 
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
@@ -380,14 +382,16 @@ module internal ParseAndCheckFile =
         sourceText: ISourceText * 
         fileName: string * 
         options: FSharpParsingOptions * 
-        userOpName: string 
+        userOpName: string *
+        suggestNamesForErrors: bool
           -> FSharpErrorInfo[] * ParsedInput option * bool
 
     val matchBraces: 
         sourceText: ISourceText *
         fileName: string *
         options: FSharpParsingOptions *
-        userOpName: string 
+        userOpName: string *
+        suggestNamesForErrors: bool
           -> (range * range)[]
 
 // An object to typecheck source in a given typechecking environment.
