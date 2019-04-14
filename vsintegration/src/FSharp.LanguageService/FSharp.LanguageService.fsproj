@@ -3,14 +3,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);75</NoWarn>
+    <NoWarn>$(NoWarn);44</NoWarn><!-- warning about Roslyn API only for F# and TypeScript -->
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
@@ -33,7 +32,6 @@
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.LanguageService.Strings</GeneratedModuleName>
     </EmbeddedResource>
-    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="LanguageServiceConstants.fs" />
     <Compile Include="Error.fs" />
     <Compile Include="Vs.fs" />
@@ -83,6 +81,14 @@
     <PackageReference Include="System.ValueTuple" Version="$(SystemValueTuplePackageVersion)" />
     <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
+      <AssemblyName>FSharp.LanguageService</AssemblyName>
+      <Version>$(VSAssemblyVersion)</Version>
+      <CodeBase>$PackageFolder$\FSharp.LanguageService.dll</CodeBase>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>

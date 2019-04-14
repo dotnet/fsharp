@@ -10,6 +10,7 @@ module FSharp.Compiler.AbstractIL.ILBinaryReader
 #nowarn "42" // This construct is deprecated: it is only for use in the F# library
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -1667,7 +1668,7 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
       AuxModuleHashAlgorithm=hash
       SecurityDeclsStored= ctxt.securityDeclsReader_Assembly
       PublicKey= pubkey  
-      Version= Some (v1, v2, v3, v4)
+      Version= Some (ILVersionInfo (v1, v2, v3, v4))
       Locale= readStringHeapOption ctxt localeIdx
       CustomAttrsStored = ctxt.customAttrsReader_Assembly
       MetadataIndex = idx
@@ -1700,12 +1701,12 @@ and seekReadAssemblyRefUncached ctxtH idx =
           | Some blob -> Some (if (flags &&& 0x0001) <> 0x0 then PublicKey blob else PublicKeyToken blob)
           
     ILAssemblyRef.Create
-        (name=nm, 
-         hash=readBlobHeapOption ctxt hashValueIdx, 
-         publicKey=publicKey, 
-         retargetable=((flags &&& 0x0100) <> 0x0), 
-         version=Some(v1, v2, v3, v4), 
-         locale=readStringHeapOption ctxt localeIdx)
+        (name = nm, 
+         hash = readBlobHeapOption ctxt hashValueIdx, 
+         publicKey = publicKey, 
+         retargetable = ((flags &&& 0x0100) <> 0x0), 
+         version = Some (ILVersionInfo (v1, v2, v3, v4)), 
+         locale = readStringHeapOption ctxt localeIdx)
 
 and seekReadModuleRef (ctxt: ILMetadataReader) mdv idx =
     let (nameIdx) = seekReadModuleRefRow ctxt mdv idx
@@ -2027,14 +2028,16 @@ and seekReadFields (ctxt: ILMetadataReader) (numtypars, hasLayout) fidx1 fidx2 =
     mkILFieldsLazy 
        (lazy
            let mdv = ctxt.mdfile.GetView()
-           [ for i = fidx1 to fidx2 - 1 do
-               yield seekReadField ctxt mdv (numtypars, hasLayout) i ])
+           [ if fidx1 > 0 then 
+               for i = fidx1 to fidx2 - 1 do
+                   yield seekReadField ctxt mdv (numtypars, hasLayout) i ])
 
 and seekReadMethods (ctxt: ILMetadataReader) numtypars midx1 midx2 =
     mkILMethodsComputed (fun () -> 
            let mdv = ctxt.mdfile.GetView()
-           [| for i = midx1 to midx2 - 1 do
-                 yield seekReadMethod ctxt mdv numtypars i |])
+           [| if midx1 > 0 then 
+                 for i = midx1 to midx2 - 1 do
+                     yield seekReadMethod ctxt mdv numtypars i |])
 
 and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr = 
     let n, sigptr = sigptrGetZInt32 bytes sigptr
@@ -2506,8 +2509,9 @@ and seekReadEvents (ctxt: ILMetadataReader) numtypars tidx =
                        let (_, endEventIdx) = seekReadEventMapRow ctxt mdv (rowNum + 1)
                        endEventIdx
 
-               [ for i in beginEventIdx .. endEventIdx - 1 do
-                   yield seekReadEvent ctxt mdv numtypars i ])
+               [ if beginEventIdx > 0 then 
+                   for i in beginEventIdx .. endEventIdx - 1 do
+                     yield seekReadEvent ctxt mdv numtypars i ])
 
 and seekReadProperty ctxt mdv numtypars idx =
    let (flags, nameIdx, typIdx) = seekReadPropertyRow ctxt mdv idx
@@ -2548,8 +2552,9 @@ and seekReadProperties (ctxt: ILMetadataReader) numtypars tidx =
                    else
                        let (_, endPropIdx) = seekReadPropertyMapRow ctxt mdv (rowNum + 1)
                        endPropIdx
-               [ for i in beginPropIdx .. endPropIdx - 1 do
-                   yield seekReadProperty ctxt mdv numtypars i ])
+               [ if beginPropIdx > 0 then 
+                   for i in beginPropIdx .. endPropIdx - 1 do
+                     yield seekReadProperty ctxt mdv numtypars i ])
 
 
 and customAttrsReader ctxtH tag: ILAttributesStored = 
@@ -3601,11 +3606,11 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
     let inbase = Filename.fileNameOfPath fileName + ": "
 
     // All the caches. The sizes are guesstimates for the rough sharing-density of the assembly 
-    let cacheAssemblyRef = mkCacheInt32 reduceMemoryUsage inbase "ILAssemblyRef" (getNumRows TableNames.AssemblyRef)
+    let cacheAssemblyRef = mkCacheInt32 false inbase "ILAssemblyRef" (getNumRows TableNames.AssemblyRef)
     let cacheMethodSpecAsMethodData = mkCacheGeneric reduceMemoryUsage inbase "MethodSpecAsMethodData" (getNumRows TableNames.MethodSpec / 20 + 1)
     let cacheMemberRefAsMemberData = mkCacheGeneric reduceMemoryUsage inbase "MemberRefAsMemberData" (getNumRows TableNames.MemberRef / 20 + 1)
     let cacheCustomAttr = mkCacheGeneric reduceMemoryUsage inbase "CustomAttr" (getNumRows TableNames.CustomAttribute / 50 + 1)
-    let cacheTypeRef = mkCacheInt32 reduceMemoryUsage inbase "ILTypeRef" (getNumRows TableNames.TypeRef / 20 + 1)
+    let cacheTypeRef = mkCacheInt32 false inbase "ILTypeRef" (getNumRows TableNames.TypeRef / 20 + 1)
     let cacheTypeRefAsType = mkCacheGeneric reduceMemoryUsage inbase "TypeRefAsType" (getNumRows TableNames.TypeRef / 20 + 1)
     let cacheBlobHeapAsPropertySig = mkCacheGeneric reduceMemoryUsage inbase "BlobHeapAsPropertySig" (getNumRows TableNames.Property / 20 + 1)
     let cacheBlobHeapAsFieldSig = mkCacheGeneric reduceMemoryUsage inbase "BlobHeapAsFieldSig" (getNumRows TableNames.Field / 20 + 1)
@@ -3964,10 +3969,19 @@ type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRe
         member x.Dispose() = dispose()
     
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
-type ILModuleReaderCacheLockToken() = interface LockToken
 type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag
-let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, ILModuleReaderCacheKey, ILModuleReader>(stronglyHeldReaderCacheSize, areSimilar=(fun (x, y) -> x = y))
-let ilModuleReaderCacheLock = Lock()
+
+// Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
+type ILModuleReaderCache1LockToken() = interface LockToken
+let ilModuleReaderCache1 =
+    new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
+           (stronglyHeldReaderCacheSize, 
+            keepMax=stronglyHeldReaderCacheSize, // only strong entries
+            areSimilar=(fun (x, y) -> x = y))
+let ilModuleReaderCache1Lock = Lock()
+
+// // Cache to reuse readers that have already been created and are not yet GC'd
+let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
 
 let stableFileHeuristicApplies fileName = 
     not noStableFileHeuristic && try FileSystem.IsStableFileHeuristic fileName with _ -> false
@@ -4003,6 +4017,10 @@ let OpenILModuleReaderFromBytes fileName bytes opts =
     let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
     new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
 
+let ClearAllILModuleReaderCache() =
+    ilModuleReaderCache1.Clear(ILModuleReaderCache1LockToken())
+    ilModuleReaderCache2.Clear()
+
 let OpenILModuleReader fileName opts = 
     // Pseudo-normalize the paths.
     let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_,_) as key), keyOk = 
@@ -4016,16 +4034,28 @@ let OpenILModuleReader fileName opts =
             let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
             fakeKey, false
 
-    let cacheResult = 
-        if keyOk then 
-            if opts.pdbDirPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
-            else ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.TryGet(ltok, key))
+    let cacheResult1 = 
+        // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+        if keyOk && opts.pdbDirPath.IsNone then 
+            ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.TryGet(ltok, key))
         else 
             None
-
-    match cacheResult with 
+    
+    match cacheResult1 with 
     | Some ilModuleReader -> ilModuleReader
     | None -> 
+
+    let cacheResult2 = 
+        // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+        if keyOk && opts.pdbDirPath.IsNone then 
+            ilModuleReaderCache2.TryGetValue(key)
+        else 
+            false, Unchecked.defaultof<_>
+
+    let mutable res = Unchecked.defaultof<_> 
+    match cacheResult2 with 
+    | true, weak when weak.TryGetTarget(&res) -> res
+    | _ -> 
 
     let reduceMemoryUsage = (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes)
     let metadataOnly = (opts.metadataOnly = MetadataOnlyFlag.Yes) 
@@ -4065,10 +4095,12 @@ let OpenILModuleReader fileName opts =
                 let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, opts.ilGlobals, false) 
                 new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
 
+        let ilModuleReader = ilModuleReader :> ILModuleReader 
         if keyOk then 
-            ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
-
-        ilModuleReader :> ILModuleReader
+            ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
+            ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
+        ilModuleReader
+        
                 
     else
         // This case is primarily used in fsc.exe. 
@@ -4092,11 +4124,14 @@ let OpenILModuleReader fileName opts =
         let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, opts.ilGlobals, false)
         let ilModuleReader = new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
+        let ilModuleReader = ilModuleReader :> ILModuleReader 
+
         // Readers with PDB reader disposal logic don't go in the cache. Note the PDB reader is only used in static linking.
         if keyOk && opts.pdbDirPath.IsNone then 
-            ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
+            ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
+            ilModuleReaderCache2.[key] <- WeakReference<_>(ilModuleReader)
 
-        ilModuleReader :> ILModuleReader
+        ilModuleReader
 
 [<AutoOpen>]
 module Shim =

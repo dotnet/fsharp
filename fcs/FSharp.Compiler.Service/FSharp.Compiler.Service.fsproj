@@ -483,6 +483,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/IlxGen.fs">
       <Link>CodeGen/IlxGen.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/DotNetFrameworkDependencies.fs">
+      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompileOps.fsi">
       <Link>Driver/CompileOps.fsi</Link>
     </Compile>
@@ -636,6 +639,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="4.6.2" />
+   <PackageReference Include="FSharp.Core" Version="4.5.2" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
   </ItemGroup>

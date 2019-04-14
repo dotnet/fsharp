@@ -26,6 +26,7 @@ param (
     [switch][Alias('b')]$build,
     [switch]$rebuild,
     [switch]$sign,
+    [switch]$noSign,
     [switch]$pack,
     [switch]$publish,
     [switch]$launch,
@@ -34,7 +35,7 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net46",
+    [string]$bootstrapTfm = "net472",
     [switch][Alias('bl')]$binaryLog,
     [switch]$ci,
     [switch]$official,
@@ -112,6 +113,10 @@ function Process-Arguments() {
         $script:restore = $False;
     }
 
+    if ($noSign) {
+        $script:sign = $False;
+    }
+
     foreach ($property in $properties) {
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
@@ -185,12 +190,12 @@ function UpdatePath() {
     }
     TestAndAddToPath $subdir
 
-    TestAndAddToPath "$ArtifactsDir\bin\fsc\$configuration\net46"
-    TestAndAddToPath "$ArtifactsDir\bin\fsiAnyCpu\$configuration\net46"
+    TestAndAddToPath "$ArtifactsDir\bin\fsc\$configuration\net472"
+    TestAndAddToPath "$ArtifactsDir\bin\fsiAnyCpu\$configuration\net472"
 }
 
 function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net46\fsi.exe"
+    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\fsi.exe"
 
     # Only verify versions on CI or official build
     if ($ci -or $official) {
@@ -239,8 +244,8 @@ try {
         VerifyAssemblyVersions
     }
 
-    $desktopTargetFramework = "net46"
-    $coreclrTargetFramework = "netcoreapp2.0"
+    $desktopTargetFramework = "net472"
+    $coreclrTargetFramework = "netcoreapp2.1"
 
     if ($testDesktop) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
@@ -267,7 +272,7 @@ try {
         UpdatePath
         $env:HOSTED_COMPILER = 1
         $env:CSC_PIPE = "$env:USERPROFILE\.nuget\packages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
-        $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net46\FSharp.Core.dll"
+        $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
         Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"

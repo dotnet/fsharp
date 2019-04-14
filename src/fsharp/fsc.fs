@@ -142,11 +142,12 @@ type InProcErrorLoggerProvider() =
 
                     member this.HandleTooManyErrors(text) = warnings.Add(Diagnostic.Short(false, text))
 
-                    member this.HandleIssue(tcConfigBuilder, err, isError) = 
-                        let errs = 
+                    member this.HandleIssue(tcConfigBuilder, err, isError) =
+                        // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
+                        let errs =
                             CollectDiagnostic
-                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, 
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err)
+                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
+                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err, true)
                         let container = if isError then errors else warnings 
                         container.AddRange(errs) } 
                 :> ErrorLogger }
@@ -227,10 +228,10 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
 
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
-            let references = 
-                closure.References 
-                |> List.collect snd 
-                |> List.filter (fun r -> r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
+            let references =
+                closure.References
+                |> List.collect snd
+                |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
 
             references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
@@ -533,18 +534,18 @@ module VersionResourceFormat =
                for child in children do 
                    yield! child  |]
 
-    let Version((v1, v2, v3, v4):ILVersionInfo) = 
+    let Version(version: ILVersionInfo) = 
         [| // DWORD dwFileVersionMS
            // Specifies the most significant 32 bits of the file's binary 
            // version number. This member is used with dwFileVersionLS to form a 64-bit value used 
            // for numeric comparisons. 
-           yield! i32 (int32 v1 <<< 16 ||| int32 v2) 
+           yield! i32 (int32 version.Major <<< 16 ||| int32 version.Minor) 
            
            // DWORD dwFileVersionLS 
            // Specifies the least significant 32 bits of the file's binary 
            // version number. This member is used with dwFileVersionMS to form a 64-bit value used 
            // for numeric comparisons. 
-           yield! i32 (int32 v3 <<< 16 ||| int32 v4) 
+           yield! i32 (int32 version.Build <<< 16 ||| int32 version.Revision) 
         |]
 
     let String(string, value) = 
@@ -824,7 +825,7 @@ module MainModuleBuilder =
 
     let productVersion findStringAttr (fileVersion: ILVersionInfo) =
         let attrName = "System.Reflection.AssemblyInformationalVersionAttribute"
-        let toDotted (v1, v2, v3, v4) = sprintf "%d.%d.%d.%d" v1 v2 v3 v4
+        let toDotted (version: ILVersionInfo) = sprintf "%d.%d.%d.%d" version.Major version.Minor version.Build version.Revision
         match findStringAttr attrName with
         | None | Some "" -> fileVersion |> toDotted
         | Some (AttributeHelpers.ILVersion(v)) -> v |> toDotted
@@ -840,7 +841,7 @@ module MainModuleBuilder =
             |> Seq.takeWhile ((<>) 0us) 
             |> Seq.toList
         match validParts @ [0us; 0us; 0us; 0us] with
-        | major :: minor :: build :: rev :: _ -> (major, minor, build, rev)
+        | major :: minor :: build :: rev :: _ -> ILVersionInfo(major, minor, build, rev)
         | x -> failwithf "error converting product version '%s' to binary, tried '%A' " version x
 
 
@@ -986,8 +987,8 @@ module MainModuleBuilder =
                      // specify the major language, and the high-order 6 bits specify the sublanguage. 
                      // For a table of valid identifiers see Language Identifiers.                                           //
                      // see e.g. http://msdn.microsoft.com/en-us/library/aa912040.aspx 0000 is neutral and 04b0(hex)=1252(dec) is the code page.
-                      [ ("000004b0", [ yield ("Assembly Version", (let v1, v2, v3, v4 = assemblyVersion in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
-                                       yield ("FileVersion", (let v1, v2, v3, v4 = fileVersionInfo in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
+                      [ ("000004b0", [ yield ("Assembly Version", (sprintf "%d.%d.%d.%d" assemblyVersion.Major assemblyVersion.Minor assemblyVersion.Build assemblyVersion.Revision))
+                                       yield ("FileVersion", (sprintf "%d.%d.%d.%d" fileVersionInfo.Major fileVersionInfo.Minor fileVersionInfo.Build fileVersionInfo.Revision))
                                        yield ("ProductVersion", productVersionString)
                                        match tcConfig.outputFile with
                                        | Some f -> yield ("OriginalFilename", Path.GetFileName(f))
