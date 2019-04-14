@@ -103,11 +103,9 @@ module internal PrintfImpl =
     /// Set of helpers to parse format string
     module private FormatString =
 
-        let inline isDigit c = c >= '0' && c <= '9'
-
-        let intFromString (s: string) pos = 
+        let intFromString (s: string) pos =
             let rec go acc i =
-                if isDigit s.[i] then 
+                if Char.IsDigit s.[i] then 
                     let n = int s.[i] - int '0'
                     go (acc * 10 + n) (i + 1)
                 else acc, i
@@ -125,13 +123,13 @@ module internal PrintfImpl =
 
         let parseWidth (s: string) i = 
             if s.[i] = '*' then StarValue, (i + 1)
-            elif isDigit (s.[i]) then intFromString s i
+            elif Char.IsDigit s.[i] then intFromString s i
             else NotSpecifiedValue, i
 
         let parsePrecision (s: string) i = 
             if s.[i] = '.' then
                 if s.[i + 1] = '*' then StarValue, i + 2
-                elif isDigit (s.[i + 1]) then intFromString s (i + 1)
+                elif Char.IsDigit s.[i + 1] then intFromString s (i + 1)
                 else raise (ArgumentException("invalid precision value"))
             else NotSpecifiedValue, i
         
