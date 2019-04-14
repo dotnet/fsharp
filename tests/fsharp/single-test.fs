@@ -222,7 +222,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                 emitFile projectFileName projectBody
                 use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                 printfn "------ Overrides file: %s" overridesFileName
-                printfn "%s" overridesFileName
+                printfn "%s" overridesBody
                 printfn "------ Targets file: %s" targetsFileName
                 printfn "%s" targetsBody
                 printfn "------ Props file: %s" propsFileName
