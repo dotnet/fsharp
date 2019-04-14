@@ -3379,8 +3379,8 @@ namespace Microsoft.FSharp.Core
             | _ -> None
 
         [<CompiledName("IsNull")>]
-        let inline isNull (value : 'T when 'T : not struct and 'T : null) = 
-            match value with 
+        let inline isNull (value : 'T when 'T : null) = 
+            match box value with 
             | null -> true 
             | _ -> false
 

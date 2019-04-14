@@ -2280,8 +2280,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNull")>]
-        // TODO NULLNESS: assess this change - is it a breaking change?
-        val inline isNull : value: 'T -> bool when 'T : not struct and 'T : null
+        val inline isNull : value: 'T -> bool when 'T : null
         
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
         /// <summary>Determines whether the given value is null.</summary>
