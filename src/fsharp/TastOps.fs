@@ -3106,6 +3106,10 @@ let destLinqExpressionTy g ty =
 let mkNoneCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "None"
 let mkSomeCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "Some"
 
+let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
+
+let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
+
 type ValRef with 
     member vref.IsDispatchSlot = 
         match vref.MemberInfo with 
