@@ -417,6 +417,12 @@ type NameResolutionEnv =
 // Helpers to do with extension members
 //-------------------------------------------------------------------------
 
+/// Indicates if we only need one result or all possible results from a resolution.
+[<RequireQualifiedAccess>]
+type ResultCollectionSettings =
+| AllResults
+| AtMostOneResult
+
 /// Allocate the next extension method priority. This is an incrementing sequence of integers
 /// during type checking.
 let NextExtensionMethodPriority() = uint64 (newStamp())
@@ -754,7 +760,7 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
     let infoReader = InfoReader(g,amap)
     let items =
         [| let methGroups = 
-               AllMethInfosOfTypeInScope infoReader nenv (None, AccessorDomain.AccessibleFromSomeFSharpCode) PreferOverrides m ty
+               AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
                |> List.groupBy (fun m -> m.LogicalName)
 
            for (methName, methGroup) in methGroups do
@@ -763,7 +769,7 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
                    yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
            
            let propInfos = 
-               AllPropInfosOfTypeInScope infoReader nenv (None, AccessorDomain.AccessibleFromSomeFSharpCode) PreferOverrides m ty
+               AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
                |> List.groupBy (fun m -> m.PropertyName)
                
            for (propName, propInfos) in propInfos do
@@ -1073,12 +1079,6 @@ let AddResults res1 res2 =
     | Exception e1, Exception _ -> Exception e1
 
 let NoResultsOrUsefulErrors = Result []
-
-/// Indicates if we only need one result or all possible results from a resolution.
-[<RequireQualifiedAccess>]
-type ResultCollectionSettings =
-| AllResults
-| AtMostOneResult
 
 let rec CollectResults f = function
     | [] -> NoResultsOrUsefulErrors
