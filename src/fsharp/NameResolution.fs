@@ -1945,15 +1945,15 @@ let ResolveObjectConstructor (ncenv: NameResolver) edenv m ad ty =
 //-------------------------------------------------------------------------
 
 /// Query the declared properties of a type (including inherited properties)
-let IntrinsicPropInfosOfTypeInScope (infoReader: InfoReader) (optFilter, ad) findFlag m ty =
+let IntrinsicPropInfosOfTypeInScope (infoReader:InfoReader) optFilter ad findFlag m ty =
     let g = infoReader.g
     let amap = infoReader.amap
-    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (optFilter, ad, AllowMultiIntfInstantiations.Yes) findFlag m ty
+    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader optFilter ad AllowMultiIntfInstantiations.Yes findFlag m ty
     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g amap m
     pinfos
 
 /// Select from a list of extension properties
-let SelectPropInfosFromExtMembers (infoReader: InfoReader, ad, optFilter) declaringTy m extMemInfos =
+let SelectPropInfosFromExtMembers (infoReader:InfoReader) ad optFilter declaringTy m extMemInfos =
     let g = infoReader.g
     let amap = infoReader.amap
     // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers, hence setify.
@@ -1972,31 +1972,35 @@ let SelectPropInfosFromExtMembers (infoReader: InfoReader, ad, optFilter) declar
     propCollector.Close()
 
 /// Query the available extension properties of a type (including extension properties for inherited types)
-let ExtensionPropInfosOfTypeInScope (infoReader: InfoReader) (nenv: NameResolutionEnv) (optFilter, ad) m ty =
+let ExtensionPropInfosOfTypeInScope collectionSettings (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter ad m ty =
     let g = infoReader.g
 
-    let extMemsFromHierarchy =
-        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty) |> List.collect (fun ty ->
-             if isAppTy g ty then
-                let tcref = tcrefOfAppTy g ty
-                let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
-                SelectPropInfosFromExtMembers (infoReader, ad, optFilter) ty m extMemInfos
-             else [])
+    let extMemsDangling = SelectPropInfosFromExtMembers infoReader ad optFilter ty m nenv.eUnindexedExtensionMembers 
 
-    let extMemsDangling = SelectPropInfosFromExtMembers  (infoReader, ad, optFilter) ty m nenv.eUnindexedExtensionMembers
-    extMemsDangling @ extMemsFromHierarchy
+    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
+        extMemsDangling 
+    else
+        let extMemsFromHierarchy =
+            infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,ty)
+            |> List.collect (fun ty ->
+                 if isAppTy g ty then
+                    let tcref = tcrefOfAppTy g ty
+                    let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
+                    SelectPropInfosFromExtMembers infoReader ad optFilter ty m extMemInfos
+                 else [])
 
+        extMemsDangling @ extMemsFromHierarchy
 
 /// Get all the available properties of a type (both intrinsic and extension)
-let AllPropInfosOfTypeInScope infoReader nenv (optFilter, ad) findFlag m ty =
-    IntrinsicPropInfosOfTypeInScope infoReader (optFilter, ad) findFlag m ty
-    @ ExtensionPropInfosOfTypeInScope infoReader nenv (optFilter, ad) m ty
+let AllPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad findFlag m ty =
+    IntrinsicPropInfosOfTypeInScope infoReader optFilter ad findFlag m ty
+    @ ExtensionPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad m ty
 
 /// Get the available methods of a type (both declared and inherited)
-let IntrinsicMethInfosOfType (infoReader: InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty =
+let IntrinsicMethInfosOfType (infoReader:InfoReader) optFilter ad allowMultiIntfInst findFlag m ty =
     let g = infoReader.g
     let amap = infoReader.amap
-    let minfos = GetIntrinsicMethInfoSetsOfType infoReader (optFilter, ad, allowMultiIntfInst) findFlag m ty
+    let minfos = GetIntrinsicMethInfoSetsOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty
     let minfos = minfos |> ExcludeHiddenOfMethInfos g amap m
     minfos
 
@@ -2035,22 +2039,29 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
     ]
 
 /// Query the available extension properties of a methods (including extension methods for inherited types)
-let ExtensionMethInfosOfTypeInScope (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
-    let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
-    let extMemsFromHierarchy =
-        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty) |> List.collect (fun ty ->
-            let g = infoReader.g
-            if isAppTy g ty then
-                let tcref = tcrefOfAppTy g ty
-                let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
-                SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
-            else [])
-    extMemsDangling @ extMemsFromHierarchy
+let ExtensionMethInfosOfTypeInScope (collectionSettings:ResultCollectionSettings) (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+    let extMemsDangling = SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
+    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
+        extMemsDangling
+    else
+        let extMemsFromHierarchy =
+            infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,ty)
+            |> List.collect (fun ty ->
+                let g = infoReader.g
+                if isAppTy g ty then
+                    let tcref = tcrefOfAppTy g ty
+                    let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
+                    SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
+                else [])
+        extMemsDangling @ extMemsFromHierarchy
 
 /// Get all the available methods of a type (both intrinsic and extension)
-let AllMethInfosOfTypeInScope infoReader nenv (optFilter, ad) findFlag m ty =
-    IntrinsicMethInfosOfType infoReader (optFilter, ad, AllowMultiIntfInstantiations.Yes) findFlag m ty
-    @ ExtensionMethInfosOfTypeInScope infoReader nenv optFilter m ty
+let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad findFlag m ty =
+    let intrinsic = IntrinsicMethInfosOfType infoReader optFilter ad AllowMultiIntfInstantiations.Yes findFlag m ty
+    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil intrinsic) then 
+        intrinsic
+    else
+        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter m ty
 
 
 /// Used to report an error condition where name resolution failed due to an indeterminate type
@@ -2156,7 +2167,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
 
                 // fold the available extension members into the overload resolution
-                let extensionPropInfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m ty
+                let extensionPropInfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter ad m ty
 
                 // make sure to keep the intrinsic pinfos before the extension pinfos in the list,
                 // since later on this logic is used when giving preference to intrinsic definitions
@@ -2168,7 +2179,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
 
                 // fold the available extension members into the overload resolution
-                let extensionMethInfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m ty
+                let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter m ty
 
                 success [resInfo, Item.MakeMethGroup (nm, minfos@extensionMethInfos), rest]
             | Some (ILFieldItem (finfo:: _))  when (match lookupKind with LookupKind.Expr | LookupKind.Pattern -> true | _ -> false) ->
@@ -2182,9 +2193,9 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
             | _ ->
 
-            let pinfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m ty
+            let pinfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter ad m ty
             if not (isNil pinfos) && isLookUpExpr then OneResult(success (resInfo, Item.Property (nm, pinfos), rest)) else
-            let minfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m ty
+            let minfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter m ty
 
             if not (isNil minfos) && isLookUpExpr then
                 success [resInfo, Item.MakeMethGroup (nm, minfos), rest]
@@ -2219,19 +2230,19 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
     | _ ->
         let suggestMembers() =
             let suggestions1 =
-                ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) m ty
+                ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad m ty
                 |> List.map (fun p -> p.PropertyName)
 
             let suggestions2 =
-                ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv None m ty
+                ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None m ty
                 |> List.map (fun m -> m.DisplayName)
 
             let suggestions3 =
-                GetIntrinsicPropInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m ty
+                GetIntrinsicPropInfosOfType ncenv.InfoReader None ad AllowMultiIntfInstantiations.No findFlag m ty
                 |> List.map (fun p -> p.PropertyName)
 
             let suggestions4 =
-                GetIntrinsicMethInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m ty
+                GetIntrinsicMethInfosOfType ncenv.InfoReader None ad AllowMultiIntfInstantiations.No findFlag m ty
                 |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
                 |> List.map (fun m -> m.DisplayName)
 
@@ -3533,7 +3544,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             IsILFieldInfoAccessible g amap m ad x)
 
     let pinfosIncludingUnseen =
-        AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) PreferOverrides m ty
+        AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad PreferOverrides m ty
         |> List.filter (fun x ->
             x.IsStatic = statics &&
             IsPropInfoAccessible g amap m ad x)
@@ -3624,7 +3635,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     // REVIEW: add a name filter here in the common cases?
     let minfos =
         if completionTargets.ResolveAll then
-            let minfos = AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) PreferOverrides m ty
+            let minfos = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad PreferOverrides m ty
             if isNil minfos then
                 []
             else
@@ -3729,7 +3740,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
           rty
 
       (ty
-         |> AllPropInfosOfTypeInScope ncenv.InfoReader nenv (Some id, ad) IgnoreOverrides m
+         |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
          |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
          |> List.collect (fun pinfo -> (FullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
@@ -4244,7 +4255,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                 | _ -> ()
 
             let pinfosIncludingUnseen =
-                AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) PreferOverrides m ty
+                AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad PreferOverrides m ty
                 |> List.filter (fun x ->
                     x.IsStatic = statics &&
                     IsPropInfoAccessible g amap m ad x)
@@ -4330,7 +4341,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
             | Item.MethodGroup _ ->
                 // REVIEW: add a name filter here in the common cases?
                 let minfos =
-                    let minfos = AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) PreferOverrides m ty
+                    let minfos = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad PreferOverrides m ty
                     if isNil minfos then [] else
 
                     let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
@@ -4417,7 +4428,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
           
           let pinfos =
               ty
-              |> AllPropInfosOfTypeInScope ncenv.InfoReader nenv (Some id, ad) IgnoreOverrides m
+              |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
               |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
 
           for pinfo in pinfos do

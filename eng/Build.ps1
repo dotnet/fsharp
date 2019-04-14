@@ -26,6 +26,7 @@ param (
     [switch][Alias('b')]$build,
     [switch]$rebuild,
     [switch]$sign,
+    [switch]$noSign,
     [switch]$pack,
     [switch]$publish,
     [switch]$launch,
@@ -110,6 +111,10 @@ function Process-Arguments() {
 
     if ($noRestore) {
         $script:restore = $False;
+    }
+
+    if ($noSign) {
+        $script:sign = $False;
     }
 
     foreach ($property in $properties) {

@@ -1932,7 +1932,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
         let allVirtualMethsInParent = 
             match GetSuperTypeOfType g cenv.amap m ty with 
             | Some super -> 
-                GetIntrinsicMethInfosOfType cenv.infoReader (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes)  IgnoreOverrides m super
+                GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m super
                 |> List.filter (fun minfo -> minfo.IsVirtual)
             | None -> []
 
