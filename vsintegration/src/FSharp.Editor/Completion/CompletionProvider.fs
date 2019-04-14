@@ -156,7 +156,7 @@ type internal FSharpCompletionProvider
                     | _, idents -> Array.last idents
 
                 let completionItem = 
-                    CommonCompletionItem.Create(name, null, glyph = Nullable glyph, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, filterText = filterText)
+                    CommonCompletionItem.Create(name, displayTextSuffix = null, glyph = Nullable glyph, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, filterText = filterText)
                                         .AddProperty(FullNamePropName, declarationItem.FullName)
                         
                 let completionItem =

@@ -3,15 +3,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
-    <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
-    <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
-    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls</OtherFlags>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
     <NGenBinary>true</NGenBinary>
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
