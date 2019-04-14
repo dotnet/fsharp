@@ -216,28 +216,31 @@ let singleTestBuildAndRunCore cfg copyFiles p =
             emitFile targetsFileName targetsBody
             emitFile overridesFileName overridesBody
             if outputType = OutputType.Exe then
-                let executeFsc testCompilerVersion targetFramework =
-                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
-                    emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
-                    emitFile projectFileName projectBody
-                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
-                    exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s -v:n" targetFramework)
-                    testOkFile.CheckExists()
-                executeFsc compilerType targetFramework
+                let propsBody = generateProps compilerType cfg.BUILD_CONFIG
+                emitFile propsFileName propsBody
+                let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
+                emitFile projectFileName projectBody
+                use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
+                printfn "------ Props file: %s" propsFileName
+                printfn "%s" propsBody
+                printfn "------ Project file: %s" projectFileName
+                printfn "%s" projectBody
+                printfn "------ Project file: %s" projectFileName
+                printfn "------ Execute:"
+                exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s -v:n" targetFramework)
+                testOkFile.CheckExists()
+                result <- true
             else
-                let executeFsi testCompilerVersion targetFramework =
-                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
-                    emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
-                    emitFile projectFileName projectBody
-                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
-                    exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript -v:n"
-                    testOkFile.CheckExists()
-                executeFsi compilerType targetFramework
+                let propsBody = generateProps compilerType cfg.BUILD_CONFIG
+                emitFile propsFileName propsBody
+                let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
+                emitFile projectFileName projectBody
+                use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
+                exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript -v:n"
+                testOkFile.CheckExists()
                 result <- true
         finally
-            if result <> false then
+            if result then
                 Directory.Delete(directory, true)
             else
                 printfn "Configuration: %s" cfg.Directory
