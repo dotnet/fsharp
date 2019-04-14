@@ -65,6 +65,7 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Actions:"
     Write-Host "  -restore                  Restore packages (short: -r)"
+    Write-Host "  -norestore                Don't restore packages"
     Write-Host "  -build                    Build main solution (short: -b)"
     Write-Host "  -rebuild                  Rebuild main solution"
     Write-Host "  -pack                     Build NuGet packages, VS insertion manifests and installer"
