@@ -223,7 +223,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     printfn "executeFsc: cfg.DotNetExe = %s" cfg.DotNetExe
-                    exec { cfg with Directory = directory }  cfg.DotNetExe "run" // (sprintf "run -f %s" targetFramework)
+                    exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s" targetFramework)
                     testOkFile.CheckExists()
                 executeFsc compilerType targetFramework
             else
