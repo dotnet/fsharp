@@ -1530,7 +1530,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) permitWeakResolution
                 | MemberKind.Constructor ->
                     tys |> List.map (GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m)
                 | _ ->
-                    tys |> List.map (GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm, AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m) 
+                    tys |> List.map (GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm) AccessibleFromSomeFSharpCode AllowMultiIntfInstantiations.Yes IgnoreOverrides m)
 
             // Merge the sets so we don't get the same minfo from each side 
             // We merge based on whether minfos use identical metadata or not. 
@@ -1970,7 +1970,7 @@ and SolveTypeIsNonNullableValueType (csenv: ConstraintSolverEnv) ndeep m2 trace 
         | _ ->
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             if isStructTy g underlyingTy then
-                if tyconRefEq g g.system_Nullable_tcref (tcrefOfAppTy g underlyingTy) then
+                if isAppTy g underlyingTy && tyconRefEq g g.system_Nullable_tcref (tcrefOfAppTy g underlyingTy) then
                     return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeParameterCannotBeNullable(), m, m))
             else
                 return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructType(NicePrint.minimalStringOfType denv ty), m, m2))
@@ -2081,8 +2081,8 @@ and CanMemberSigsMatchUpToCheck
                     // Check all the argument types. 
 
                     if calledObjArgTys.Length <> callerObjArgTys.Length then 
-                        if (calledObjArgTys.Length <> 0) then
-                           return!  ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName), m))
+                        if calledObjArgTys.Length <> 0 then
+                            return! ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName), m))
                         else
                             return! ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
                     else

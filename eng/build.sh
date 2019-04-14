@@ -214,8 +214,8 @@ function BuildSolution {
 
   bootstrap_dir=$artifacts_dir/Bootstrap
   mkdir -p "$bootstrap_dir"
-  cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
+  cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
 
   # do real build
   MSBuild $toolset_build_proj \
@@ -240,9 +240,10 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework netcoreapp2.0
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework netcoreapp2.0
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework netcoreapp2.0
+  coreclrtestframework=netcoreapp2.1
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
 fi
 
 ExitWithExitCode 0

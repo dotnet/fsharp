@@ -1797,7 +1797,8 @@ let isRefTy g ty =
         isFunTy g ty || 
         isReprHiddenTy g ty || 
         isFSharpObjModelRefTy g ty || 
-        isUnitTy g ty
+        isUnitTy g ty ||
+        (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty))
     )
 
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
