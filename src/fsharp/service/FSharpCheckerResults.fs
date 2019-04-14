@@ -1014,7 +1014,7 @@ type internal TypeCheckInfo
         let pos = mkPos line col
         let isPosMatch(pos, ar:AssemblyReference) : bool = 
             let isRangeMatch = (Range.rangeContainsPos ar.Range pos) 
-            let isNotSpecialRange = (ar.Range <> rangeStartup) && (ar.Range <> range0) && (ar.Range <> rangeCmdArgs)
+            let isNotSpecialRange = not (Range.equals ar.Range rangeStartup) && not (Range.equals ar.Range range0) && not (Range.equals ar.Range rangeCmdArgs)
             let isMatch = isRangeMatch && isNotSpecialRange
             isMatch      
         
@@ -1454,14 +1454,6 @@ type FSharpParsingOptions =
 
 module internal ParseAndCheckFile = 
 
-        // We'll need number of lines for adjusting error messages at EOF
-    let GetFileInfoForLastLineErrors (source: string) = 
-        // number of lines in the source file
-        let lastLine = (source |> Seq.sumBy (fun c -> if c = '\n' then 1 else 0)) + 1
-        // length of the last line
-        let lastLineLength = source.Length - source.LastIndexOf("\n",StringComparison.Ordinal) - 1
-        lastLine, lastLineLength
-
     /// Error handler for parsing & type checking while processing a single file
     type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpErrorSeverityOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
         let mutable options = errorSeverityOptions
@@ -1532,11 +1524,6 @@ module internal ParseAndCheckFile =
 
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
-
-    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-    // Todo: fix tests
-    let addNewLine (source: string) =
-        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
 
     let createLexbuf sourceText =
         UnicodeLexing.SourceTextAsLexbuf(sourceText)
@@ -1716,7 +1703,8 @@ module internal ParseAndCheckFile =
         tcState.NiceNameGenerator.Reset()
                 
         // Typecheck the real input.  
-        let sink = TcResultsSinkImpl(tcGlobals, sourceText)
+        let sink = TcResultsSinkImpl(tcGlobals, sourceText = sourceText)
+
         let! ct = Async.CancellationToken
             
         let! resOpt =
