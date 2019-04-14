@@ -662,22 +662,22 @@ let ExcludeHiddenOfPropInfos g amap m pinfos =
     |> List.concat
 
 /// Get the sets of intrinsic methods in the hierarchy (not including extension methods)
-let GetIntrinsicMethInfoSetsOfType (infoReader: InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty = 
+let GetIntrinsicMethInfoSetsOfType (infoReader:InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
     infoReader.GetRawIntrinsicMethodSetsOfType(optFilter, ad, allowMultiIntfInst, m, ty)
     |> FilterOverridesOfMethInfos findFlag infoReader.g infoReader.amap m
   
 /// Get the sets intrinsic properties in the hierarchy (not including extension properties)
-let GetIntrinsicPropInfoSetsOfType (infoReader: InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty = 
+let GetIntrinsicPropInfoSetsOfType (infoReader:InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
     infoReader.GetRawIntrinsicPropertySetsOfType(optFilter, ad, allowMultiIntfInst, m, ty) 
     |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m
 
 /// Get the flattened list of intrinsic methods in the hierarchy
-let GetIntrinsicMethInfosOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty = 
-    GetIntrinsicMethInfoSetsOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty |> List.concat
+let GetIntrinsicMethInfosOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty = 
+    GetIntrinsicMethInfoSetsOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty |> List.concat
   
 /// Get the flattened list of intrinsic properties in the hierarchy
-let GetIntrinsicPropInfosOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty = 
-    GetIntrinsicPropInfoSetsOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty  |> List.concat
+let GetIntrinsicPropInfosOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty = 
+    GetIntrinsicPropInfoSetsOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty  |> List.concat
 
 /// Perform type-directed name resolution of a particular named member in an F# type
 let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad) findFlag m ty = 
@@ -695,12 +695,12 @@ let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad) findFlag m
 ///     -- getting the Dispose method when resolving the 'use' construct 
 ///     -- getting the various methods used to desugar the computation expression syntax 
 let TryFindIntrinsicMethInfo infoReader m ad nm ty = 
-    GetIntrinsicMethInfosOfType infoReader (Some nm, ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m ty 
+    GetIntrinsicMethInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
 
 /// Try to find a particular named property on a type. Only used to ensure that local 'let' definitions and property names
 /// are distinct, a somewhat adhoc check in tc.fs.
 let TryFindPropInfo infoReader m ad nm ty = 
-    GetIntrinsicPropInfosOfType infoReader (Some nm, ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m ty 
+    GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file
@@ -717,7 +717,7 @@ let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
     let g = infoReader.g
     let amap = infoReader.amap
     let invokeMethInfo = 
-        match GetIntrinsicMethInfosOfType infoReader (Some "Invoke", ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m delty with 
+        match GetIntrinsicMethInfosOfType infoReader (Some "Invoke") ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m delty with 
         | [h] -> h
         | [] -> error(Error(FSComp.SR.noInvokeMethodsFound (), m))
         | h :: _ -> warning(InternalError(FSComp.SR.moreThanOneInvokeMethodFound (), m)); h

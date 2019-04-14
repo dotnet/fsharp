@@ -66,7 +66,7 @@ Running tests:
 
 To build and test Visual F# IDE Tools, install these requirements:
 
-- Download [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+- Download [Visual Studio 2019](https://www.visualstudio.com/downloads/)
 - Launch the Visual Studio Installer
   - Under the **"Windows"** workload, select **".NET desktop development"**
     - Select the optional component **"F# desktop language support"**
@@ -78,11 +78,11 @@ Steps to build:
 
     Build.cmd                             -- build all F# components under the default configuration (Debug)
     Build.cmd -configuration Release      -- build all F# components as Release
-    Build.cmd -testDesktop                -- build and test all net46 tests
+    Build.cmd -testDesktop                -- build and test all net472 tests
 
 All test options:
 
-    -testDesktop                          -- test all net46 target frameworks
+    -testDesktop                          -- test all net472 target frameworks
     -testCoreClr                          -- test all netstandard and netcoreapp target frameworks
     -testFSharpQA                         -- test all F# Cambridge tests
     -testVs                               -- test all VS integration points
@@ -95,18 +95,18 @@ Note on Debug vs Release: ``Release`` Configuration has a degraded debugging exp
 
 Note ([#2351](https://github.com/Microsoft/visualfsharp/issues/2351)): if you face this error:
 
-> error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe".
+> error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe".
 
 Or hard crash on launch ("Unknown Error"), delete these folders:
 
-- `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)RoslynDev`
-- `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)`
+- `%localappdata%\Microsoft\VisualStudio\16.0_(some number here)RoslynDev`
+- `%localappdata%\Microsoft\VisualStudio\16.0_(some number here)`
 
 #### [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
 
-You can install Visual Studio 2017 from https://www.visualstudio.com/downloads/.
+You can install Visual Studio 2019 from https://www.visualstudio.com/downloads/.
 
 **Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
 components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
@@ -135,15 +135,15 @@ Because this uses the "RoslynDev" hive you can simultaneously test changes to an
 
 #### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
 
-For the brave, you can rapidly deploy incrementally updated versions of Visual F# IDE Tool components such as ``FSHarp.Editor.dll`` by copying them directly into the extension directory in your user AppData folder:
+For the brave, you can rapidly deploy incrementally updated versions of Visual F# IDE Tool components such as ``FSharp.Editor.dll`` by copying them directly into the extension directory in your user AppData folder:
 
-    xcopy /y debug\net40\bin\FSharp.* "%USERPROFILE%\AppData\Local\Microsoft\VisualStudio\15.0_7c5620b7FSharpDev\Extensions\Microsoft.VisualFSharpTools\Visual F# Tools\15.4.1.9055"
+    xcopy /y debug\net40\bin\FSharp.* "%USERPROFILE%\AppData\Local\Microsoft\VisualStudio\16.0_7c5620b7FSharpDev\Extensions\Microsoft.VisualFSharpTools\Visual F# Tools\16.4.1.9055"
 
 This gives a much tighter inner development loop than uninstalling/reinstalling the VSIX, as you do not have to restart VIsual Studio. Caveat emptor.
 
 #### [Optional] Clobber the F# SDK on the machine
 
-**Note:** The step below will try to clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsc.exe`` used by the standard install location or ``Microsoft.FSharp.Targets``.  **Repairing Visual Studio 15 is currently the only way to revert this step.**
+**Note:** The step below will try to clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsc.exe`` used by the standard install location or ``Microsoft.FSharp.Targets``.  **Repairing Visual Studio 16 is currently the only way to revert this step.**
 
 For **Debug**:
 
@@ -184,7 +184,7 @@ If you change error messages you may need to update FSComp.fs in `src\buildfroms
 To do this, build the non-buildfromsource version of FSharp.Compiler.Private (src\fsharp\FSharp.Compiler.Private) then check its obj\ directory for `FSComp.fs` and manually copy that into the buildfromsource directory.
 
     .\build net40
-    copy /y artifacts\obj\FSharp.Compiler.Private\Release\net46\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
+    copy /y artifacts\obj\FSharp.Compiler.Private\Release\net472\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
 
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
