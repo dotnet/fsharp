@@ -15,6 +15,7 @@ usage()
   echo "Actions:"
   echo "  --bootstrap                Force the build of the bootstrap compiler"
   echo "  --restore                  Restore projects required to build (short: -r)"
+  echo "  --norestore                Don't restore projects required to build (short: -r)"
   echo "  --build                    Build all projects (short: -b)"
   echo "  --rebuild                  Rebuild all projects"
   echo "  --pack                     Build nuget packages"
@@ -45,7 +46,7 @@ while [[ -h "$source" ]]; do
 done
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
 
-restore=true
+restore=false
 build=false
 rebuild=false
 pack=false
