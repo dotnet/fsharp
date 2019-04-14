@@ -92,6 +92,7 @@
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <FSharpCoreProtoVersion>4.6.2</FSharpCoreProtoVersion>
   </PropertyGroup>
 
   <!-- SDK targets override -->
