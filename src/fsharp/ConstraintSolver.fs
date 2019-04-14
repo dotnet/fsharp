@@ -1509,7 +1509,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) permitWeakResolution
                 | MemberKind.Constructor ->
                     tys |> List.map (GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m)
                 | _ ->
-                    tys |> List.map (GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm, AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m) 
+                    tys |> List.map (GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm) AccessibleFromSomeFSharpCode AllowMultiIntfInstantiations.Yes IgnoreOverrides m)
 
             // Merge the sets so we don't get the same minfo from each side 
             // We merge based on whether minfos use identical metadata or not. 
@@ -2042,8 +2042,8 @@ and CanMemberSigsMatchUpToCheck
                     // Check all the argument types. 
 
                     if calledObjArgTys.Length <> callerObjArgTys.Length then 
-                        if (calledObjArgTys.Length <> 0) then
-                           return!  ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName), m))
+                        if calledObjArgTys.Length <> 0 then
+                            return! ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName), m))
                         else
                             return! ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
                     else

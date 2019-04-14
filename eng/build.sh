@@ -214,8 +214,8 @@ function BuildSolution {
 
   bootstrap_dir=$artifacts_dir/Bootstrap
   mkdir -p "$bootstrap_dir"
-  cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
+  cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
 
   # do real build
   MSBuild $toolset_build_proj \

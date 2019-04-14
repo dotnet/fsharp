@@ -12,6 +12,7 @@
     <OtherFlags>$(OtherFlags)  --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
     <NGenBinary>true</NGenBinary>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
   </PropertyGroup>
 
   <PropertyGroup>
