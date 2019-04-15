@@ -12,8 +12,7 @@ type Permutation =
     | FSI_CORECLR_SCRIPT
 #if INCLUDE_NETFX_TESTS
     | FSI_NETFX_SCRIPT
-    | FSI_NETFX_STDIN
-    | FSC_NETFX_GENERATED_SIGNATURE
+    | FSI_NETFX_SCRIPT_STDIN
     | FSC_NETFX_DEBUG
     | FSC_NETFX
     | FSC_NETFX_AS_DLL
@@ -32,6 +31,8 @@ let cleanUpFSharpCore cfg =
 let emitFile filename (body:string) =
     try
         // Create a file to write to
+        printfn "------ %s: --------" filename
+        printfn "%s" body
         use sw = File.CreateText(filename)
         sw.WriteLine(body)
     with | _ -> ()
@@ -218,7 +219,7 @@ let executeSingleTestBuildAndRun cfg outputType testCompilerVersion targetFramew
         emitFile projectFileName projectBody
         use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
         if outputType = OutputType.Exe then
-            exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s" targetFramework)
+            exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s -v:n" targetFramework)
         else
             exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript"
         testOkFile.CheckExists()
@@ -241,7 +242,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
     | FSC_NETFX_DEBUG -> executeSingleTestBuildAndRun cfg OutputType.Exe "netfx" "net472" false copyFiles
     | FSI_NETFX_SCRIPT -> executeSingleTestBuildAndRun cfg OutputType.Script "netfx" "net472" true copyFiles
 
-    | FSI_NETFX_STDIN -> 
+    | FSI_NETFX_SCRIPT_STDIN -> 
         use cleanup = cleanUpFSharpCore cfg
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         let sources = extraSources |> List.filter (fileExists cfg)
@@ -249,27 +250,6 @@ let singleTestBuildAndRunCore cfg copyFiles p =
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
         testOkFile.CheckExists()
-
-    | FSC_NETFX_GENERATED_SIGNATURE -> 
-        use cleanup = cleanUpFSharpCore cfg
-
-        let source1 = 
-            ["test.ml"; "test.fs"; "test.fsx"] 
-            |> List.rev
-            |> List.tryFind (fileExists cfg)
-
-        source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
-
-        log "Generated signature file..."
-        fsc cfg "%s --sig:tmptest.fsi" cfg.fsc_flags ["tmptest.fs"]
-        if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build"
-
-        log "Compiling against generated signature file..."
-        fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
-        if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build"
-
-        log "Verifying built .exe..."
-        peverify cfg "tmptest1.exe"
 
     | FSC_NETFX_AS_DLL -> 
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL

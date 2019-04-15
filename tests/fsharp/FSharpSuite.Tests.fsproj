@@ -12,7 +12,7 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <UnitTestType>nunit</UnitTestType>
-<!--    <DefineConstants Condition="'$(OS)' != 'Unix'">$(DefineConstants); INCLUDE_NETFX_TESTS</DefineConstants> -->
+    <DefineConstants Condition="'$(OS)' != 'Unix'">$(DefineConstants); INCLUDE_NETFX_TESTS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,7 +24,6 @@
       <Link>NunitHelpers.fs</Link>
     </Compile>
     <Compile Include="single-test.fs" />
-    <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />

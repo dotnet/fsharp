@@ -142,7 +142,6 @@ function BuildSolution() {
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp2.1" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -163,7 +162,6 @@ function BuildSolution() {
         /p:BootstrapBuildPath=$bootstrapDir `
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
-        /p:TestTargetFrameworks=$testTargetFrameworks `
         $suppressExtensionDeployment `
         @properties
 }
@@ -263,9 +261,9 @@ try {
     if ($testFSharpQA) {
         Push-Location "$RepoRoot\tests\fsharpqa\source"
         $resultsRoot = "$ArtifactsDir\TestResults\$configuration"
-        $resultsLog = "test-net40-fsharpqa-results.log"
-        $errorLog = "test-net40-fsharpqa-errors.log"
-        $failLog = "test-net40-fsharpqa-errors"
+        $resultsLog = "test-netfx-fsharpqa-results.log"
+        $errorLog = "test-netfx-fsharpqa-errors.log"
+        $failLog = "test-netfx-fsharpqa-errors"
         $perlExe = "$env:USERPROFILE\.nuget\packages\StrawberryPerl64\5.22.2.1\Tools\perl\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath

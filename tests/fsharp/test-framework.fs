@@ -71,12 +71,12 @@ module Commands =
         ignore workDir 
         printfn "fscExe: %A" fscExe
         printfn "args: %A" args
-#if !NETCOREAPP
+//#if !NETCOREAPP
         ignore dotNetExe
         exec fscExe args
-#else
-        exec dotNetExe (fscExe + " " + args)
-#endif
+//#else
+//        exec dotNetExe (fscExe + " " + args)
+//#endif
 
     let csc exec cscExe flags srcFiles =
         exec cscExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
@@ -105,7 +105,7 @@ type TestConfig =
     { EnvironmentVariables : Map<string, string>
       BUILD_CONFIG : string
       ILDASM : string
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
       FSC : string
       fsc_flags : string
       CSC : string
@@ -160,7 +160,7 @@ let config configurationName envVars =
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
     let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
     let artifactsPath = repoRoot ++ "artifacts"
     let artifactsBinPath = artifactsPath ++ "bin"
     let csc_flags = "/nologo" 
@@ -180,7 +180,7 @@ let config configurationName envVars =
     // ildasm requires coreclr.dll to run which has already been restored to the packages directory
     File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
     let FSI = requireFile FSI_FOR_SCRIPTS
     let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ fsiArchitecture ++ "fsiAnyCpu.exe")
 //#else
@@ -202,7 +202,7 @@ let config configurationName envVars =
       Directory="" 
       DotNetExe = dotNetExe
       DefaultPlatform = defaultPlatform 
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
       FSCOREDLLPATH = FSCOREDLLPATH
       PEVERIFY = PEVERIFY
       CSC = CSC 
@@ -224,7 +224,7 @@ let logConfig (cfg: TestConfig) =
     log ""
     log "BUILD_CONFIG        =%s" cfg.BUILD_CONFIG
     log "ILDASM              =%s" cfg.ILDASM
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
     log "CSC                 =%s" cfg.CSC
     log "csc_flags           =%s" cfg.csc_flags
     log "FSC                 =%s" cfg.FSC
@@ -265,7 +265,7 @@ let initializeSuite () =
 
     let cfg =
         let c = config configurationName env
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
         let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC             
         { c with EnvironmentVariables = usedEnvVars }
 #else
@@ -434,7 +434,7 @@ let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cf
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
 let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
 let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(stdinPath)) } p >> alwaysSuccess
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
 let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.DotNetExe cfg.FSC) arg
 let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.DotNetExe  cfg.FSC) arg
 let fscAppend cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppend cfg stdoutPath stderrPath) cfg.DotNetExe  cfg.FSC) arg
@@ -444,7 +444,7 @@ let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.D
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 #endif
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
@@ -456,7 +456,7 @@ let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Command
 let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
 let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
 #endif
@@ -464,7 +464,7 @@ let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
-#if INCLDUE_NETFX_TESTS
+#if INCLUDE_NETFX_TESTS
 let copySystemValueTuple cfg = copy_y cfg (getDirectoryName(cfg.FSC) ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 #endif
 

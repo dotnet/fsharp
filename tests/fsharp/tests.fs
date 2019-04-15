@@ -5,7 +5,7 @@
 #load "test-framework.fs" 
 #load "single-test.fs"
 #else
-module ``FSharp-Tests-Core``
+module ``FSharp-Tests``
 #endif
 
 open System
@@ -18,420 +18,406 @@ open Scripting
 open SingleTest
 
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
+//
+// To run using command line use
+//   msbuild tests/fsharp/FSharpSuite.Tests.fsproj
+//   dotnet test tests/fsharp/FSharpSuite.Tests.fsproj --no-build -v:n
 
+[<Category("coreclr")>]
 module CoreTests = 
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
-    let ``access-FSC_CORECLR``() = singleTestBuildAndRun "core/access" FSC_CORECLR
+    let ``access-coreclr``() = singleTestBuildAndRun "core/access" FSC_CORECLR
 
     [<Test>]
-    let ``access-FSI_CORECLR_SCRIPT``() = singleTestBuildAndRun "core/access" FSI_CORECLR_SCRIPT
+    let ``access-coreclr-script``() = singleTestBuildAndRun "core/access" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``apporder-FSC_CORECLR`` () = singleTestBuildAndRun "core/apporder" FSC_CORECLR
+    let ``apporder-coreclr`` () = singleTestBuildAndRun "core/apporder" FSC_CORECLR
 
     [<Test>]
-    let ``apporder-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/apporder" FSI_CORECLR_SCRIPT
+    let ``apporder-coreclr-script`` () = singleTestBuildAndRun "core/apporder" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``array-FSC_CORECLR`` () = singleTestBuildAndRun "core/array" FSC_CORECLR
+    let ``array-coreclr`` () = singleTestBuildAndRun "core/array" FSC_CORECLR
 
     [<Test>]
-    let ``array-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/array" FSI_CORECLR_SCRIPT
+    let ``array-coreclr-script`` () = singleTestBuildAndRun "core/array" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``comprehensions-FSC_CORECLR`` () = singleTestBuildAndRun "core/comprehensions" FSC_CORECLR
+    let ``comprehensions-coreclr`` () = singleTestBuildAndRun "core/comprehensions" FSC_CORECLR
 
     [<Test>]
-    let ``comprehensions-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/comprehensions" FSI_CORECLR_SCRIPT
+    let ``comprehensions-coreclr-script`` () = singleTestBuildAndRun "core/comprehensions" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``comprehensionshw-FSC_CORECLR`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_CORECLR
+    let ``comprehensionshw-coreclr`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_CORECLR
 
     [<Test>]
-    let ``comprehensionshw-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_CORECLR_SCRIPT
+    let ``comprehensionshw-coreclr-script`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``genericmeasures-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/genericmeasures" FSI_CORECLR_SCRIPT
+    let ``genericmeasures-coreclr-script`` () = singleTestBuildAndRun "core/genericmeasures" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``genericmeasures-FSC_CORECLR`` () = singleTestBuildAndRun "core/genericmeasures" FSC_CORECLR
+    let ``genericmeasures-coreclr`` () = singleTestBuildAndRun "core/genericmeasures" FSC_CORECLR
 
     [<Test>]
-    let ``innerpoly-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/innerpoly" FSI_CORECLR_SCRIPT
+    let ``innerpoly-coreclr-script`` () = singleTestBuildAndRun "core/innerpoly" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``innerpoly-FSC_CORECLR`` () = singleTestBuildAndRun "core/innerpoly" FSC_CORECLR
+    let ``innerpoly-coreclr`` () = singleTestBuildAndRun "core/innerpoly" FSC_CORECLR
 
     [<Test>]
-    let ``namespaceAttributes-FSC_CORECLR`` () = singleTestBuildAndRun "core/namespaces" FSC_CORECLR
+    let ``namespaceAttributes-coreclr`` () = singleTestBuildAndRun "core/namespaces" FSC_CORECLR
 
     [<Test>]
-    let ``lazy test-FSC_CORECLR`` () = singleTestBuildAndRun "core/lazy" FSC_CORECLR
+    let ``lazy test-coreclr`` () = singleTestBuildAndRun "core/lazy" FSC_CORECLR
 
     [<Test>]
-    let ``lazy test-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/lazy" FSI_CORECLR_SCRIPT
+    let ``lazy test-coreclr-script`` () = singleTestBuildAndRun "core/lazy" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``letrec-FSC_CORECLR`` () = singleTestBuildAndRun "core/letrec" FSC_CORECLR
+    let ``letrec-coreclr`` () = singleTestBuildAndRun "core/letrec" FSC_CORECLR
 
     [<Test>]
-    let ``letrec-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/letrec" FSI_CORECLR_SCRIPT
+    let ``letrec-coreclr-script`` () = singleTestBuildAndRun "core/letrec" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``letrec (mutrec variations part one) FSC_CORECLR`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_CORECLR
+    let ``letrec (mutrec variations part one) coreclr`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_CORECLR
 
     [<Test>]
     let ``letrec (mutrec variations part one) FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``libtest-FSC_CORECLR`` () = singleTestBuildAndRun "core/libtest" FSC_CORECLR
+    let ``libtest-coreclr`` () = singleTestBuildAndRun "core/libtest" FSC_CORECLR
 
     [<Test>]
-    let ``lift-FSC_CORECLR`` () = singleTestBuildAndRun "core/lift" FSC_CORECLR
+    let ``lift-coreclr`` () = singleTestBuildAndRun "core/lift" FSC_CORECLR
 
     [<Test>]
-    let ``map-FSC_CORECLR`` () = singleTestBuildAndRun "core/map" FSC_CORECLR
+    let ``map-coreclr`` () = singleTestBuildAndRun "core/map" FSC_CORECLR
 
     [<Test>]
-    let ``measures-FSI_CORECLR_SCRIPT`` () = singleTestBuildAndRun "core/measures" FSI_CORECLR_SCRIPT
+    let ``measures-coreclr-script`` () = singleTestBuildAndRun "core/measures" FSI_CORECLR_SCRIPT
 
     [<Test>]
-    let ``measures-FSC_CORECLR`` () = singleTestBuildAndRun "core/measures" FSC_CORECLR
+    let ``measures-coreclr`` () = singleTestBuildAndRun "core/measures" FSC_CORECLR
 
     [<Test>]
-    let ``nested-FSC_CORECLR`` () = singleTestBuildAndRun "core/nested" FSC_CORECLR
+    let ``nested-coreclr`` () = singleTestBuildAndRun "core/nested" FSC_CORECLR
 
     [<Test>]
-    let ``members-ops-FSC_CORECLR`` () = singleTestBuildAndRun "core/members/ops" FSC_CORECLR
+    let ``members-ops-coreclr`` () = singleTestBuildAndRun "core/members/ops" FSC_CORECLR
 
     [<Test>]
-    let ``members-ops-mutrec-FSC_CORECLR`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_CORECLR
+    let ``members-ops-mutrec-coreclr`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_CORECLR
 
     [<Test>]
-    let ``seq-FSC_CORECLR`` () = singleTestBuildAndRun "core/seq" FSC_CORECLR
+    let ``seq-coreclr`` () = singleTestBuildAndRun "core/seq" FSC_CORECLR
 
     [<Test>]
-    let ``math-numbers-FSC_CORECLR`` () = singleTestBuildAndRun "core/math/numbers" FSC_CORECLR
+    let ``math-numbers-coreclr`` () = singleTestBuildAndRun "core/math/numbers" FSC_CORECLR
 
     [<Test>]
-    let ``members-ctree-FSC_CORECLR`` () = singleTestBuildAndRun "core/members/ctree" FSC_CORECLR
+    let ``members-ctree-coreclr`` () = singleTestBuildAndRun "core/members/ctree" FSC_CORECLR
 
     [<Test>]
-    let ``members-factors-FSC_CORECLR`` () = singleTestBuildAndRun "core/members/factors" FSC_CORECLR
+    let ``members-factors-coreclr`` () = singleTestBuildAndRun "core/members/factors" FSC_CORECLR
 
     [<Test>]
-    let ``members-factors-mutrec-FSC_CORECLR`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_CORECLR
+    let ``members-factors-mutrec-coreclr`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_CORECLR
 
     [<Test>]
-    let ``graph-FSC_CORECLR`` () = singleTestBuildAndRun "perf/graph" FSC_CORECLR
+    let ``graph-coreclr`` () = singleTestBuildAndRun "perf/graph" FSC_CORECLR
 
     [<Test>]
-    let ``nbody-FSC_CORECLR`` () = singleTestBuildAndRun "perf/nbody" FSC_CORECLR
+    let ``nbody-coreclr`` () = singleTestBuildAndRun "perf/nbody" FSC_CORECLR
 
     [<Test>]
-    let ``letrec (mutrec variations part two) FSC_CORECLR`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_CORECLR
+    let ``letrec-mutrec2-coreclr`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_CORECLR
 
     [<Test>]
-    let ``printf-FSC_CORECLR`` () = singleTestBuildAndRun "core/printf" FSC_CORECLR
+    let ``printf-coreclr`` () = singleTestBuildAndRun "core/printf" FSC_CORECLR
 
     [<Test>]
-    let ``tlr-FSC_CORECLR`` () = singleTestBuildAndRun "core/tlr" FSC_CORECLR
+    let ``tlr-coreclr`` () = singleTestBuildAndRun "core/tlr" FSC_CORECLR
 
     [<Test>]
-    let ``subtype-FSC_CORECLR`` () = singleTestBuildAndRun "core/subtype" FSC_CORECLR
+    let ``subtype-coreclr`` () = singleTestBuildAndRun "core/subtype" FSC_CORECLR
 
     [<Test>]
-    let ``syntax-FSC_CORECLR`` () = singleTestBuildAndRun "core/syntax" FSC_CORECLR
+    let ``syntax-coreclr`` () = singleTestBuildAndRun "core/syntax" FSC_CORECLR
 
     [<Test>]
-    let ``test int32-FSC_CORECLR`` () = singleTestBuildAndRun "core/int32" FSC_CORECLR
+    let ``test int32-coreclr`` () = singleTestBuildAndRun "core/int32" FSC_CORECLR
 
     [<Test>]
-    let ``control-FSC_CORECLR`` () = singleTestBuildAndRun "core/control" FSC_CORECLR
+    let ``control-coreclr`` () = singleTestBuildAndRun "core/control" FSC_CORECLR
 
     [<Test>]
-    let ``controlChamenos-FSC_CORECLR`` () = singleTestBuildAndRun "core/controlChamenos" FSC_CORECLR
+    let ``controlChamenos-coreclr`` () = singleTestBuildAndRun "core/controlChamenos" FSC_CORECLR
 
     [<Test>]
-    let ``controlMailbox-FSC_CORECLR`` () = singleTestBuildAndRun "core/controlMailbox" FSC_CORECLR
+    let ``controlMailbox-coreclr`` () = singleTestBuildAndRun "core/controlMailbox" FSC_CORECLR
 
     [<Test>]
-    let ``csext-FSC_CORECLR`` () = singleTestBuildAndRun "core/csext" FSC_CORECLR
+    let ``csext-coreclr`` () = singleTestBuildAndRun "core/csext" FSC_CORECLR
 
     [<Test>]
-    let ``fscenum-FSC_CORECLR`` () = singleTestBuildAndRun "core/enum" FSC_CORECLR
-
-//    [<Test>]
-//    let fsienum () = singleTestBuildAndRun "core/enum" FSI_NETFX_SCRIPT
+    let ``fscenum-coreclr`` () = singleTestBuildAndRun "core/enum" FSC_CORECLR
 
     [<Test>]
-    let ``longnames-FSC_CORECLR`` () = singleTestBuildAndRun "core/longnames" FSC_CORECLR
+    let ``longnames-coreclr`` () = singleTestBuildAndRun "core/longnames" FSC_CORECLR
 
     [<Test>]
-    let ``math-numbersVS2008-FSC_CORECLR`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_CORECLR
+    let ``math-numbersVS2008-coreclr`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_CORECLR
 
     [<Test>]
-    let ``patterns-FSC_CORECLR`` () = singleTestBuildAndRun "core/patterns" FSC_CORECLR
+    let ``patterns-coreclr`` () = singleTestBuildAndRun "core/patterns" FSC_CORECLR
 
     [<Test>]
-    let ``reflect-FSC_CORECLR`` () = singleTestBuildAndRun "core/reflect" FSC_CORECLR
+    let ``reflect-coreclr`` () = singleTestBuildAndRun "core/reflect" FSC_CORECLR
 
+[<Category("coreclr")>]
 module RegressionTests = 
 
     [<Test>]
-    let ``literal-value-bug-2-FSC_CORECLR`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_CORECLR
+    let ``literal-value-bug-2-coreclr`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_CORECLR
 
     [<Test>]
-    let ``OverloadResolution-bug-FSC_CORECLR`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_CORECLR
+    let ``OverloadResolution-bug-coreclr`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_CORECLR
 
     [<Test>]
-    let ``struct-tuple-bug-1-FSC_CORECLR`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_CORECLR
+    let ``struct-tuple-bug-1-coreclr`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_CORECLR
 
     [<Test >]
-    let ``tuple-bug-1-FSC_CORECLR`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_CORECLR
+    let ``tuple-bug-1-coreclr`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_CORECLR
 
     [<Test>]
-    let ``26`` () = singleTestBuildAndRun "regression/26" FSC_CORECLR
+    let ``regression-26-coreclr`` () = singleTestBuildAndRun "regression/26" FSC_CORECLR
 
     [<Test >]
-    let ``321`` () = singleTestBuildAndRun "regression/321" FSC_CORECLR
+    let ``regression-321-coreclr`` () = singleTestBuildAndRun "regression/321" FSC_CORECLR
 
     [<Test >]
-    let ``86`` () = singleTestBuildAndRun "regression/86" FSC_CORECLR
+    let ``regression-86-coreclr`` () = singleTestBuildAndRun "regression/86" FSC_CORECLR
 
 #if INCLUDE_NETFX_TESTS
+[<Category("netfx")>]
 module NetFxTests =
     [<Test>]
-    let ``literal-value-bug-2-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_NETFX_SCRIPT
+    let ``literal-value-bug-2-netfx-script`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``OverloadResolution-bug-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_NETFX_SCRIPT
+    let ``OverloadResolution-bug-netfx-script`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_NETFX_SCRIPT
 
     [<Test >]
-    let ``struct-tuple-bug-1-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_NETFX_SCRIPT
+    let ``struct-tuple-bug-1-netfx-script`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``access-FSC_NETFX``() = singleTestBuildAndRun "core/access" FSC_NETFX
+    let ``access-netfx``() = singleTestBuildAndRun "core/access" FSC_NETFX
 
     [<Test>]
-    let ``access-FSI_NETFX_SCRIPT``() = singleTestBuildAndRun "core/access" FSI_NETFX_SCRIPT
+    let ``access-netfx-script``() = singleTestBuildAndRun "core/access" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``apporder-FSC_NETFX`` () = singleTestBuildAndRun "core/apporder" FSC_NETFX
+    let ``apporder-netfx`` () = singleTestBuildAndRun "core/apporder" FSC_NETFX
 
     [<Test>]
-    let ``array-FSC_NETFX`` () = singleTestBuildAndRun "core/array" FSC_NETFX
+    let ``array-netfx`` () = singleTestBuildAndRun "core/array" FSC_NETFX
 
     [<Test>]
-    let ``array-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/array" FSI_NETFX_SCRIPT
+    let ``array-netfx-script`` () = singleTestBuildAndRun "core/array" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``comprehensions-FSC_NETFX`` () = singleTestBuildAndRun "core/comprehensions" FSC_NETFX
+    let ``comprehensions-netfx`` () = singleTestBuildAndRun "core/comprehensions" FSC_NETFX
 
     [<Test>]
-    let ``apporder-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/apporder" FSI_NETFX_SCRIPT
+    let ``apporder-netfx-script`` () = singleTestBuildAndRun "core/apporder" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``comprehensions-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/comprehensions" FSI_NETFX_SCRIPT
+    let ``comprehensions-netfx-script`` () = singleTestBuildAndRun "core/comprehensions" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``comprehensionshw-FSC_NETFX`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_NETFX
+    let ``comprehensionshw-netfx`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_NETFX
 
     [<Test>]
-    let ``comprehensionshw-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_NETFX_SCRIPT
+    let ``comprehensionshw-netfx-script`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``genericmeasures-FSC_NETFX`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX
+    let ``genericmeasures-netfx`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX
 
     [<Test>]
-    let ``genericmeasures-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/genericmeasures" FSI_NETFX_SCRIPT
+    let ``genericmeasures-netfx-script`` () = singleTestBuildAndRun "core/genericmeasures" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``innerpoly-FSC_NETFX`` () = singleTestBuildAndRun "core/innerpoly" FSC_NETFX
+    let ``innerpoly-netfx`` () = singleTestBuildAndRun "core/innerpoly" FSC_NETFX
 
     [<Test>]
-    let ``namespaceAttributes-FSC_NETFX`` () = singleTestBuildAndRun "core/namespaces" FSC_NETFX
+    let ``namespaceAttributes-netfx`` () = singleTestBuildAndRun "core/namespaces" FSC_NETFX
 
     [<Test>]
-    let ``unicode2-FSC_NETFX`` () = singleTestBuildAndRun "core/unicode" FSC_NETFX // TODO: fails on coreclr
+    let ``unicode2-netfx`` () = singleTestBuildAndRun "core/unicode" FSC_NETFX // TODO: fails on coreclr
 
     [<Test>]
-    let ``unicode2-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/unicode" FSI_NETFX_SCRIPT
+    let ``unicode2-netfx-script`` () = singleTestBuildAndRun "core/unicode" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``lazy test-FSC_NETFX`` () = singleTestBuildAndRun "core/lazy" FSC_NETFX
+    let ``lazy test-netfx`` () = singleTestBuildAndRun "core/lazy" FSC_NETFX
 
     [<Test>]
-    let ``lazy test-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/lazy" FSI_NETFX_SCRIPT
+    let ``lazy test-netfx-script`` () = singleTestBuildAndRun "core/lazy" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``letrec-FSC_NETFX`` () = singleTestBuildAndRun "core/letrec" FSC_NETFX
+    let ``letrec-netfx`` () = singleTestBuildAndRun "core/letrec" FSC_NETFX
 
     [<Test>]
-    let ``letrec-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/letrec" FSI_NETFX_SCRIPT
+    let ``letrec-netfx-script`` () = singleTestBuildAndRun "core/letrec" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``letrec (mutrec variations part one) FSC_NETFX`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_NETFX
+    let ``letrec (mutrec variations part one)-netfx`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_NETFX
 
     [<Test>]
-    let ``letrec (mutrec variations part one) FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_NETFX_SCRIPT
+    let ``letrec (mutrec variations part one)-netfx-script`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``innerpoly-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/innerpoly" FSI_NETFX_SCRIPT
+    let ``innerpoly-netfx-script`` () = singleTestBuildAndRun "core/innerpoly" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``measures-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/measures" FSI_NETFX_SCRIPT
+    let ``measures-netfx-script`` () = singleTestBuildAndRun "core/measures" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``members-ops-FSC_NETFX`` () = singleTestBuildAndRun "core/members/ops" FSC_NETFX
+    let ``members-ops-netfx`` () = singleTestBuildAndRun "core/members/ops" FSC_NETFX
 
     [<Test>]
-    let ``members-ops-mutrec-FSC_NETFX`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_NETFX
+    let ``members-ops-mutrec-netfx`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_NETFX
 
     [<Test>]
-    let ``libtest-FSC_NETFX`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX
+    let ``libtest-netfx`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX
 
     [<Test>]
-    let ``lift-FSC_NETFX`` () = singleTestBuildAndRun "core/lift" FSC_NETFX
+    let ``lift-netfx`` () = singleTestBuildAndRun "core/lift" FSC_NETFX
 
     [<Test>]
-    let ``map-FSC_NETFX`` () = singleTestBuildAndRun "core/map" FSC_NETFX
+    let ``map-netfx`` () = singleTestBuildAndRun "core/map" FSC_NETFX
 
     [<Test>]
-    let ``measures-FSC_NETFX`` () = singleTestBuildAndRun "core/measures" FSC_NETFX
+    let ``measures-netfx`` () = singleTestBuildAndRun "core/measures" FSC_NETFX
 
     [<Test>]
-    let ``nested-FSC_NETFX`` () = singleTestBuildAndRun "core/nested" FSC_NETFX
+    let ``nested-netfx`` () = singleTestBuildAndRun "core/nested" FSC_NETFX
 
     [<Test>]
-    let ``seq-FSC_NETFX`` () = singleTestBuildAndRun "core/seq" FSC_NETFX
+    let ``seq-netfx`` () = singleTestBuildAndRun "core/seq" FSC_NETFX
 
     [<Test>]
-    let ``math-numbers-FSC_NETFX`` () = singleTestBuildAndRun "core/math/numbers" FSC_NETFX
+    let ``math-numbers-netfx`` () = singleTestBuildAndRun "core/math/numbers" FSC_NETFX
 
     [<Test>]
-    let ``members-ctree-FSC_NETFX`` () = singleTestBuildAndRun "core/members/ctree" FSC_NETFX
+    let ``members-ctree-netfx`` () = singleTestBuildAndRun "core/members/ctree" FSC_NETFX
 
     [<Test>]
-    let ``members-factors-FSC_NETFX`` () = singleTestBuildAndRun "core/members/factors" FSC_NETFX
+    let ``members-factors-netfx`` () = singleTestBuildAndRun "core/members/factors" FSC_NETFX
 
     [<Test>]
-    let ``members-factors-mutrec-FSC_NETFX`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_NETFX
+    let ``members-factors-mutrec-netfx`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_NETFX
 
     [<Test>]
-    let ``graph-FSC_NETFX`` () = singleTestBuildAndRun "perf/graph" FSC_NETFX
+    let ``graph-netfx`` () = singleTestBuildAndRun "perf/graph" FSC_NETFX
 
     [<Test>]
-    let ``nbody-FSC_NETFX`` () = singleTestBuildAndRun "perf/nbody" FSC_NETFX
+    let ``nbody-netfx`` () = singleTestBuildAndRun "perf/nbody" FSC_NETFX
 
     [<Test>]
-    let ``letrec (mutrec variations part two) FSC_NETFX`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_NETFX
+    let ``letrec-mutrec2-netfx`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_NETFX
 
     [<Test>]
-    let ``printf-FSC_NETFX`` () = singleTestBuildAndRun "core/printf" FSC_NETFX
+    let ``printf-netfx`` () = singleTestBuildAndRun "core/printf" FSC_NETFX
 
     [<Test>]
-    let ``tlr-FSC_NETFX`` () = singleTestBuildAndRun "core/tlr" FSC_NETFX
+    let ``tlr-netfx`` () = singleTestBuildAndRun "core/tlr" FSC_NETFX
 
     [<Test>]
-    let ``subtype-FSC_NETFX`` () = singleTestBuildAndRun "core/subtype" FSC_NETFX
+    let ``subtype-netfx`` () = singleTestBuildAndRun "core/subtype" FSC_NETFX
 
     [<Test>]
-    let ``syntax-FSC_NETFX`` () = singleTestBuildAndRun "core/syntax" FSC_NETFX
+    let ``syntax-netfx`` () = singleTestBuildAndRun "core/syntax" FSC_NETFX
 
     [<Test>]
-    let ``test int32-FSC_NETFX`` () = singleTestBuildAndRun "core/int32" FSC_NETFX
+    let ``test int32-netfx`` () = singleTestBuildAndRun "core/int32" FSC_NETFX
 
     [<Test>]
-    let ``quotes-FSC_NETFX`` () = singleTestBuildAndRun "core/quotes" FSC_NETFX // TODO: fails on coreclr
+    let ``quotes-netfx`` () = singleTestBuildAndRun "core/quotes" FSC_NETFX // TODO: fails on coreclr
 
     [<Test>]
-    let ``attributes-FSC_NETFX`` () = singleTestBuildAndRun "core/attributes" FSC_NETFX
+    let ``attributes-netfx`` () = singleTestBuildAndRun "core/attributes" FSC_NETFX
 
     [<Test>]
-    let ``attributes-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/attributes" FSI_NETFX_SCRIPT
+    let ``attributes-netfx-script`` () = singleTestBuildAndRun "core/attributes" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let control () = singleTestBuildAndRun "core/control" FSC_NETFX
+    let ``control-netfx`` () = singleTestBuildAndRun "core/control" FSC_NETFX
 
     [<Test>]
-    let ``control --tailcalls`` () = 
-        let cfg = testConfig "core/control"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_NETFX
-
+    let ``controlChamenos-netfx`` () =  singleTestBuildAndRun "core/controlChamenos" FSC_NETFX
 
     [<Test>]
-    let controlChamenos () = 
-        let cfg = testConfig "core/controlChamenos"
-        
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_NETFX
-
+    let ``controlMailbox-netfx`` () = singleTestBuildAndRun "core/controlMailbox" FSC_NETFX
 
     [<Test>]
-    let controlMailbox () = singleTestBuildAndRun "core/controlMailbox" FSC_NETFX
+    let ``csext-netfx`` () = singleTestBuildAndRun "core/csext" FSC_NETFX
 
     [<Test>]
-    let ``controlMailbox --tailcalls`` () = 
-        let cfg = testConfig "core/controlMailbox"
-        
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_NETFX
-
-    [<Test>]
-    let csext () = singleTestBuildAndRun "core/csext" FSC_NETFX
-
-
-    [<Test>]
-    let fscenum () = singleTestBuildAndRun "core/enum" FSC_NETFX
+    let ``fscenum-netfx`` () = singleTestBuildAndRun "core/enum" FSC_NETFX
 
 //    [<Test>]
 //    let fsienum () = singleTestBuildAndRun "core/enum" FSI_NETFX_SCRIPT
-    [<Test>]
-    let longnames () = singleTestBuildAndRun "core/longnames" FSC_NETFX
 
     [<Test>]
-    let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_NETFX
+    let ``longnames-netfx`` () = singleTestBuildAndRun "core/longnames" FSC_NETFX
 
     [<Test>]
-    let patterns () = singleTestBuildAndRun "core/patterns" FSC_NETFX
+    let ``math-numbersVS2008-netfx`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_NETFX
 
     [<Test>]
-    let reflect () = singleTestBuildAndRun "core/reflect" FSC_NETFX
-
-module RegressionTests = 
+    let ``patterns-netfx`` () = singleTestBuildAndRun "core/patterns" FSC_NETFX
 
     [<Test>]
-    let ``literal-value-bug-2-FSC_NETFX`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_NETFX
+    let ``reflect-netfx`` () = singleTestBuildAndRun "core/reflect" FSC_NETFX
 
     [<Test>]
-    let ``literal-value-bug-2-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_NETFX_SCRIPT
+    let ``regression-literal-value-bug-2-netfx`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_NETFX
 
     [<Test>]
-    let ``OverloadResolution-bug-FSC_NETFX`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_NETFX
+    let ``regression-literal-value-bug-2-netfx-script`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``OverloadResolution-bug-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_NETFX_SCRIPT
+    let ``regression-OverloadResolution-bug-netfx`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_NETFX
 
     [<Test>]
-    let ``struct-tuple-bug-1-FSC_NETFX`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_NETFX
+    let ``regression-OverloadResolution-bug-netfx-script`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_NETFX_SCRIPT
+
+    [<Test>]
+    let ``regression-struct-tuple-bug-1-netfx`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_NETFX
 
     [<Test >]
-    let ``tuple-bug-1-FSC_NETFX`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_NETFX
+    let ``regression-tuple-bug-1-netfx`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_NETFX
 
     [<Test>]
-    let ``regression-26`` () = singleTestBuildAndRun "regression/26" FSC_NETFX
+    let ``regression-26-netfx`` () = singleTestBuildAndRun "regression/26" FSC_NETFX
 
     [<Test >]
-    let ``regression-321`` () = singleTestBuildAndRun "regression/321" FSC_NETFX
+    let ``regression-321-netfx`` () = singleTestBuildAndRun "regression/321" FSC_NETFX
 
     [<Test >]
-    let ``regression-86`` () = singleTestBuildAndRun "regression/86" FSC_NETFX
+    let ``regression-86-netfx`` () = singleTestBuildAndRun "regression/86" FSC_NETFX
 
     [<Test >]
-    let ``struct-tuple-bug-1-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_NETFX_SCRIPT
+    let ``regression-struct-tuple-bug-1-netfx-script`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let byrefs () = 
+    let ``byrefs-netfx`` () = 
 
         let cfg = testConfig "core/byrefs"
 
@@ -474,7 +460,7 @@ module RegressionTests =
         end
 
     [<Test>]
-    let span () = 
+    let ``span-netfx`` () = 
 
         let cfg = testConfig "core/span"
 
@@ -488,9 +474,9 @@ module RegressionTests =
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-            //exec cfg ("." ++ "test.exe") ""
+            exec cfg ("." ++ "test.exe") ""
 
-            //testOkFile.CheckExists()
+            testOkFile.CheckExists()
         end
 
         begin
@@ -501,9 +487,9 @@ module RegressionTests =
             fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-            //exec cfg ("." ++ "test.exe") ""
+            exec cfg ("." ++ "test.exe") ""
 
-            //testOkFile.CheckExists()
+            testOkFile.CheckExists()
         end
 
         begin
@@ -514,13 +500,13 @@ module RegressionTests =
             fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-            //exec cfg ("." ++ "test.exe") ""
+            exec cfg ("." ++ "test.exe") ""
 
-            //testOkFile.CheckExists()
+            testOkFile.CheckExists()
         end
 
     [<Test>]
-    let asyncStackTraces () = 
+    let ``asyncStackTraces-netfx`` () = 
         let cfg = testConfig "core/asyncStackTraces"
 
         use testOkFile = fileguard cfg "test.ok"
@@ -532,7 +518,7 @@ module RegressionTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-conditionals``() = 
+    let ``lots-of-conditionals-netfx``() = 
         let cfg = testConfig "core/large/conditionals"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-200.fs"]
@@ -540,7 +526,7 @@ module RegressionTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-conditionals-maxtested``() = 
+    let ``lots-of-conditionals-maxtested-netfx``() = 
         let cfg = testConfig "core/large/conditionals"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-maxtested.fs"]
@@ -548,7 +534,7 @@ module RegressionTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-lets``() = 
+    let ``lots-of-lets-netfx``() = 
         let cfg = testConfig "core/large/lets"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-500.fs"]
@@ -556,7 +542,7 @@ module RegressionTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-lets-maxtested``() = 
+    let ``lots-of-lets-maxtested-netfx``() = 
         let cfg = testConfig "core/large/lets"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-maxtested.fs"]
@@ -626,7 +612,7 @@ module RegressionTests =
 
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
-    let ``anon-FSC_NETFX``() = 
+    let ``anon-netfx``() = 
         let cfg = testConfig "core/anon"
 
         fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
@@ -731,7 +717,7 @@ module RegressionTests =
         mkdir cfg "orig"
         mkdir cfg "split"
 
-        csc cfg """/nologo  /target:library /out:orig\a.dll /define:PART1;PART2""" ["a.cs"]
+        csc cfg """/nologo  /target:library /out:orig\sa.dll /define:PART1;PART2""" ["a.cs"]
 
         csc cfg """/nologo  /target:library /out:orig\b.dll /r:orig\a.dll""" ["b.cs"]
 
@@ -866,7 +852,7 @@ module RegressionTests =
 
 
     [<Test>]
-    let ``genericmeasures-FSC_NETFX_AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_AS_DLL
+    let ``genericmeasures-netfx-dll`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_AS_DLL
 
 
     [<Test>]
@@ -886,7 +872,7 @@ module RegressionTests =
         peverify cfg "client.exe"
 
     [<Test>]
-    let ``innerpoly-FSC_NETFX_AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  FSC_NETFX_AS_DLL       
+    let ``innerpoly-netfx-dll`` () = singleTestBuildAndRun "core/innerpoly"  FSC_NETFX_AS_DLL       
 
     [<Test>]
     let queriesCustomQueryOps () = 
@@ -953,7 +939,7 @@ module RegressionTests =
         ``fsi <a >b 2>c`` "%s --nologo %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         // REM REVIEW: want to normalise CWD paths, not suppress them.
-        let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
+        let ``findstr /v`` (text: string) = Seq.filter (fun (s: string) -> not <| s.Contains(text))
         let removeCDandHelp from' to' =
             File.ReadLines from' |> (``findstr /v`` cfg.Directory) |> (``findstr /v`` "--help' for options") |> (fun lines -> File.WriteAllLines(getfullpath cfg to', lines))
 
@@ -976,23 +962,23 @@ module RegressionTests =
         | diffs -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs)
 
     [<Test>]
-    let ``printing-1`` () = 
+    let ``printing-1-netfx`` () = 
          printing "" "z.output.test.default.stdout.txt" "z.output.test.default.stdout.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
     [<Test>]
-    let ``printing-2`` () = 
+    let ``printing-2-netfx`` () = 
          printing "--use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.txt" "z.output.test.1000.stdout.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
 
     [<Test>]
-    let ``printing-3`` () = 
+    let ``printing-3-netfx`` () = 
          printing "--use:preludePrintSize200.fsx" "z.output.test.200.stdout.txt" "z.output.test.200.stdout.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
 
     [<Test>]
-    let ``printing-4`` () = 
+    let ``printing-4-netfx`` () = 
          printing "--use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.txt" "z.output.test.off.stdout.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
-    let ``printing-5`` () = 
+    let ``printing-5-netfx`` () = 
          printing "--quiet" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
 
     type SigningType =
@@ -1025,61 +1011,61 @@ module RegressionTests =
         Assert.AreEqual(expectedSigning, actualSigning)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-1`` () = signedtest("test-unsigned", "", SigningType.NotSigned)
+    let ``signedtest-1-netfx`` () = signedtest("test-unsigned", "", SigningType.NotSigned)
 
     [<Test; Category("signedtest")>]
     let ``signedtest-2`` () = signedtest("test-sha1-full-cl", "--keyfile:sha1full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-3`` () = signedtest("test-sha256-full-cl", "--keyfile:sha256full.snk", SigningType.PublicSigned)
+    let ``signedtest-3-netfx`` () = signedtest("test-sha256-full-cl", "--keyfile:sha256full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-4`` () = signedtest("test-sha512-full-cl", "--keyfile:sha512full.snk", SigningType.PublicSigned)
+    let ``signedtest-4-netfx`` () = signedtest("test-sha512-full-cl", "--keyfile:sha512full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-5`` () = signedtest("test-sha1024-full-cl", "--keyfile:sha1024full.snk", SigningType.PublicSigned)
+    let ``signedtest-5-netfx`` () = signedtest("test-sha1024-full-cl", "--keyfile:sha1024full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-6`` () = signedtest("test-sha1-delay-cl", "--keyfile:sha1delay.snk --delaysign", SigningType.DelaySigned)
+    let ``signedtest-6-netfx`` () = signedtest("test-sha1-delay-cl", "--keyfile:sha1delay.snk --delaysign", SigningType.DelaySigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-7`` () = signedtest("test-sha256-delay-cl", "--keyfile:sha256delay.snk --delaysign", SigningType.DelaySigned)
+    let ``signedtest-7-netfx`` () = signedtest("test-sha256-delay-cl", "--keyfile:sha256delay.snk --delaysign", SigningType.DelaySigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-8`` () = signedtest("test-sha512-delay-cl", "--keyfile:sha512delay.snk --delaysign", SigningType.DelaySigned)
+    let ``signedtest-8-netfx`` () = signedtest("test-sha512-delay-cl", "--keyfile:sha512delay.snk --delaysign", SigningType.DelaySigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-9`` () = signedtest("test-sha1024-delay-cl", "--keyfile:sha1024delay.snk --delaysign", SigningType.DelaySigned)
+    let ``signedtest-9-netfx`` () = signedtest("test-sha1024-delay-cl", "--keyfile:sha1024delay.snk --delaysign", SigningType.DelaySigned)
 
     // Test SHA1 key full signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-10`` () = signedtest("test-sha1-full-attributes", "--define:SHA1", SigningType.PublicSigned)
+    let ``signedtest-10-netfx`` () = signedtest("test-sha1-full-attributes", "--define:SHA1", SigningType.PublicSigned)
 
     // Test SHA1 key delayl signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-11`` () = signedtest("test-sha1-delay-attributes", "--keyfile:sha1delay.snk --define:SHA1 --define:DELAY", SigningType.DelaySigned)
+    let ``signedtest-11-netfx`` () = signedtest("test-sha1-delay-attributes", "--keyfile:sha1delay.snk --define:SHA1 --define:DELAY", SigningType.DelaySigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-12`` () = signedtest("test-sha256-full-attributes", "--define:SHA256", SigningType.PublicSigned)
+    let ``signedtest-12-netfx`` () = signedtest("test-sha256-full-attributes", "--define:SHA256", SigningType.PublicSigned)
 
     // Test SHA 256 bit key delay signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-13`` () = signedtest("test-sha256-delay-attributes", "--define:SHA256 --define:DELAY", SigningType.DelaySigned)
+    let ``signedtest-13-netfx`` () = signedtest("test-sha256-delay-attributes", "--define:SHA256 --define:DELAY", SigningType.DelaySigned)
 
     // Test SHA 512 bit key fully signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-14`` () = signedtest("test-sha512-full-attributes", "--define:SHA512", SigningType.PublicSigned)
+    let ``signedtest-14-netfx`` () = signedtest("test-sha512-full-attributes", "--define:SHA512", SigningType.PublicSigned)
 
     // Test SHA 512 bit key delay signed Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-15`` () = signedtest("test-sha512-delay-attributes", "--define:SHA512 --define:DELAY", SigningType.DelaySigned)
+    let ``signedtest-15-netfx`` () = signedtest("test-sha512-delay-attributes", "--define:SHA512 --define:DELAY", SigningType.DelaySigned)
 
     // Test SHA 1024 bit key fully signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-16`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
+    let ``signedtest-16-netfx`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
 
     [<Test>]
-    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_NETFX_SCRIPT
+    let ``quotes-FSI-BASIC-netfx`` () = singleTestBuildAndRun "core/quotes" FSI_NETFX_SCRIPT
 
     [<Test>]
     let quotes () = 
@@ -1213,7 +1199,7 @@ module RegressionTests =
 
     // Repro for https://github.com/Microsoft/visualfsharp/issues/2679
     [<Test>]
-    let ``add files with same name from different folders`` () = 
+    let ``add files with same name from different folders-netfx`` () = 
         let cfg = testConfig "core/samename"
 
         log "== Compiling F# Code with files with same name in different folders"
@@ -1224,7 +1210,7 @@ module RegressionTests =
         exec cfg ("." ++ "test.exe") ""
 
     [<Test>]
-    let ``add files with same name from different folders including signature files`` () =
+    let ``add files with same name from different folders including signature files-netfx`` () =
         let cfg = testConfig "core/samename"
 
         log "== Compiling F# Code with files with same name in different folders including signature files"
@@ -1235,7 +1221,7 @@ module RegressionTests =
         exec cfg ("." ++ "test.exe") ""
 
     [<Test>]
-    let ``add files with same name from different folders including signature files that are not synced`` () =
+    let ``add files with same name from different folders including signature files that are not synced-netfx`` () =
         let cfg = testConfig "core/samename"
 
         log "== Compiling F# Code with files with same name in different folders including signature files"
@@ -1246,28 +1232,25 @@ module RegressionTests =
         exec cfg ("." ++ "test.exe") ""
 
     [<Test>]
-    let ``libtest-FSI_NETFX_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_STDIN
-
-    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
-    let ``libtest-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_GENERATED_SIGNATURE
+    let ``libtest-netfx-script-stdin`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_SCRIPT_STDIN
 
     [<Test>]
-    let ``libtest-FSC_NETFX_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_DEBUG
+    let ``libtest-netfx-debug`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_DEBUG
 
     [<Test>]
-    let ``libtest-FSC_NETFX_AS_DLL`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_AS_DLL
+    let ``libtest-netfx-dll`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_AS_DLL
 
     [<Test>]
-    let ``libtest-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_SCRIPT
+    let ``libtest-netfx-scriptnetfx`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``letrec (mutrec variations part two) FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_NETFX_SCRIPT
+    let ``letrec-mutrec2-netfx-script`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_NETFX_SCRIPT
 
     [<Test>]
     let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_NETFX
 
     [<Test>]
-    let ``no-warn-2003-tests`` () =
+    let ``no-warn-2003-tests-netfx`` () =
         // see https://github.com/Microsoft/visualfsharp/issues/3139
         let cfg = testConfig "core/versionAttributes"
         let stdoutPath = "out.stdout.txt" |> getfullpath cfg
@@ -1327,7 +1310,7 @@ module RegressionTests =
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
 
     [<Test>]
-    let ``load-script`` () = 
+    let ``load-script-netfx`` () = 
         let cfg = testConfig "core/load-script"
 
         let stdoutPath = "out.stdout.txt" |> getfullpath cfg
@@ -1456,39 +1439,39 @@ module RegressionTests =
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
 
     [<Test>]
-    let ``measures-FSC_NETFX_AS_DLL`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_AS_DLL
+    let ``measures-netfx-dll`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_AS_DLL
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let ``members-basics-FSI_NETFX_SCRIPT`` () = singleTestBuildAndRun "core/members/basics" FSI_NETFX_SCRIPT
+    let ``members-basics-netfx-script`` () = singleTestBuildAndRun "core/members/basics" FSI_NETFX_SCRIPT
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let ``members-basics-FSC_NETFX`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX
+    let ``members-basics-netfx`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let ``members-basics-FSC_NETFX_AS_DLL`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_AS_DLL
+    let ``members-basics-netfx-dll`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_AS_DLL
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_NETFX
+    let ``members-basics-hw-netfx`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_NETFX
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_NETFX
+    let ``members-basics-hw-mutrec-netfx`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_NETFX
 
     [<Test>]
-    let ``members-incremental`` () = singleTestBuildAndRun "core/members/incremental" FSC_NETFX
+    let ``members-incremental-netfx`` () = singleTestBuildAndRun "core/members/incremental" FSC_NETFX
 
     [<Test>]
-    let ``members-incremental-hw`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_NETFX
+    let ``members-incremental-hw-netfx`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_NETFX
 
     [<Test>]
-    let ``members-incremental-hw-mutrec`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_NETFX
+    let ``members-incremental-hw-mutrec-netfx`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_NETFX
 
     [<Test>]
-    let pinvoke () = 
+    let ``pinvoke-netfx`` () = 
         let cfg = testConfig "core/pinvoke"
 
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -1496,7 +1479,7 @@ module RegressionTests =
         peverifyWithArgs cfg "/nologo /MD" "test.exe"
                 
     [<Test>]
-    let fsi_load () = 
+    let ``fsi_load-netfx`` () = 
         let cfg = testConfig "core/fsi-load"
 
         use testOkFile = fileguard cfg "test.ok"
@@ -1506,7 +1489,7 @@ module RegressionTests =
         testOkFile.CheckExists()
                 
     [<Test>]
-    let queriesLeafExpressionConvert () = 
+    let ``queriesLeafExpressionConvert-netfx`` () = 
         let cfg = testConfig "core/queriesLeafExpressionConvert"
 
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -1537,7 +1520,7 @@ module RegressionTests =
                 
 
     [<Test>]
-    let queriesNullableOperators () = 
+    let ``queriesNullableOperators-netfx`` () = 
         let cfg = testConfig "core/queriesNullableOperators"
 
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -1561,7 +1544,7 @@ module RegressionTests =
         testOkFile3.CheckExists()
                 
     [<Test>]
-    let queriesOverIEnumerable () = 
+    let ``queriesOverIEnumerable-netfx`` () = 
         let cfg = testConfig "core/queriesOverIEnumerable"
 
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -1591,7 +1574,7 @@ module RegressionTests =
         testOkFile3.CheckExists()
                 
     [<Test>]
-    let queriesOverIQueryable () = 
+    let ``queriesOverIQueryable-netfx`` () = 
         let cfg = testConfig "core/queriesOverIQueryable"
 
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -1614,7 +1597,6 @@ module RegressionTests =
 
         testOkFile2.CheckExists()
 
-
         use testOkFile3 = fileguard cfg "test.ok"
         exec cfg ("." ++ "test--optimize.exe") ""
 
@@ -1622,7 +1604,7 @@ module RegressionTests =
 
 
     [<Test>]
-    let quotesDebugInfo () = 
+    let ``quotesDebugInfo-netfx`` () = 
         let cfg = testConfig "core/quotesDebugInfo"
 
         fsc cfg "%s --quotations-debug+ --optimize -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -1653,7 +1635,7 @@ module RegressionTests =
 
 
     [<Test>]
-    let quotesInMultipleModules () = 
+    let ``quotesInMultipleModules-netfx`` () = 
         let cfg = testConfig "core/quotesInMultipleModules"
 
         fsc cfg "%s -o:module1.dll --target:library" cfg.fsc_flags ["module1.fsx"]
@@ -1702,7 +1684,7 @@ module RegressionTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let refnormalization () = 
+    let ``refnormalization-netfx`` () = 
         let cfg = testConfig "core/refnormalization"
 
         // Prepare by building multiple versions of the test assemblies
@@ -1738,7 +1720,7 @@ module RegressionTests =
 
 
     [<Test>]
-    let testResources () = 
+    let ``testResources-netfx`` () = 
         let cfg = testConfig "core/resources"
 
         fsc cfg "%s  --resource:Resources.resources -o:test-embed.exe -g" cfg.fsc_flags ["test.fs"]
@@ -1766,7 +1748,7 @@ module RegressionTests =
         exec cfg ("." ++ "test-embed-named.exe") "ResourceName"
 
     [<Test>]
-    let topinit () = 
+    let ``topinit-netfx`` () = 
         let cfg = testConfig "core/topinit"
 
         fsc cfg "%s --optimize -o both69514.exe -g" cfg.fsc_flags ["lib69514.fs"; "app69514.fs"]
@@ -1894,7 +1876,7 @@ module RegressionTests =
         exec cfg ("." ++ "test_static_init_exe--optimize.exe") ""
                 
     [<Test>]
-    let unitsOfMeasure () = 
+    let ``unitsOfMeasure-netfx`` () = 
         let cfg = testConfig "core/unitsOfMeasure"
 
         fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
@@ -1908,7 +1890,7 @@ module RegressionTests =
         testOkFile.CheckExists()
                 
     [<Test>]
-    let verify () = 
+    let ``verify-netfx`` () = 
         let cfg = testConfig "core/verify"
 
         peverifyWithArgs cfg "/nologo" (cfg.FSharpBuild)
@@ -1923,11 +1905,9 @@ module RegressionTests =
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
 
-module ToolsTests = 
-
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
-    let bundle () = 
+    let ``bundle-netfx`` () = 
         let cfg = testConfig "tools/bundle"
 
         fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
@@ -1947,10 +1927,10 @@ module ToolsTests =
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
 
     [<Test>]
-    let eval () = singleTestBuildAndRun "tools/eval" FSC_NETFX
+    let ``eval-netfx`` () = singleTestBuildAndRun "tools/eval" FSC_NETFX
 
     [<Test>]
-    let ``SRTP doesn't handle calling member hiding hinherited members`` () =
+    let ``SRTP doesn't handle calling member hiding hinherited members-netfx`` () =
         let cfg = testConfig "regression/5531" 
 
         let outFile = "compilation.output.test.txt" 
@@ -1978,7 +1958,7 @@ module ToolsTests =
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
-    let ``655`` () = 
+    let ``regression-655-netfx`` () = 
         let cfg = testConfig "regression/655"
 
         fsc cfg "%s -a -o:pack.dll" cfg.fsc_flags ["xlibC.ml"]
@@ -1997,7 +1977,7 @@ module ToolsTests =
                 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test >]
-    let ``656`` () = 
+    let ``regression-656-netfx`` () = 
         let cfg = testConfig "regression/656"
 
         fsc cfg "%s -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
@@ -2006,13 +1986,13 @@ module ToolsTests =
 
     // Requires WinForms
     [<Test>]
-    let ``83`` () = singleTestBuildAndRun "regression/83" FSC_NETFX
+    let ``regression-83-netfx`` () = singleTestBuildAndRun "regression/83" FSC_NETFX
 
     [<Test >]
-    let ``84`` () = singleTestBuildAndRun "regression/84" FSC_NETFX
+    let ``regressiono-84-netfx`` () = singleTestBuildAndRun "regression/84" FSC_NETFX
 
     [<Test >]
-    let ``85`` () = 
+    let ``regression-85-netfx`` () = 
         let cfg = testConfig "regression/85"
 
         fsc cfg "%s -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
@@ -2021,17 +2001,15 @@ module ToolsTests =
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
-    let ``struct-measure-bug-1`` () = 
+    let ``regression-struct-measure-bug-1-netfx`` () = 
         let cfg = testConfig "regression/struct-measure-bug-1"
 
         fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
 
         peverify cfg "test.exe"
 
-module OptimizationTests =
-
     [<Test>]
-    let functionSizes () = 
+    let ``optimize-functionSizes-netfx`` () = 
         let cfg = testConfig "optimize/analyses"
 
         let outFile = "sizes.FunctionSizes.output.test.txt"
@@ -2049,7 +2027,7 @@ module OptimizationTests =
 
 
     [<Test>]
-    let totalSizes () = 
+    let ``optimize-totalSizes-netfx`` () = 
         let cfg = testConfig "optimize/analyses"
 
         let outFile = "sizes.TotalSizes.output.test.txt"
@@ -2066,7 +2044,7 @@ module OptimizationTests =
 
 
     [<Test>]
-    let hasEffect () = 
+    let ``optimize-hasEffect-netfx`` () = 
         let cfg = testConfig "optimize/analyses"
 
         let outFile = "effects.HasEffect.output.test.txt"
@@ -2083,7 +2061,7 @@ module OptimizationTests =
 
 
     [<Test>]
-    let noNeedToTailcall () = 
+    let ``optimize-noNeedToTailcall-netfx`` () = 
         let cfg = testConfig "optimize/analyses"
 
         let outFile = "tailcalls.NoNeedToTailcall.output.test.txt"
@@ -2100,7 +2078,7 @@ module OptimizationTests =
 
 
     [<Test>]
-    let ``inline`` () = 
+    let ``optimize-inline-netfx`` () = 
         let cfg = testConfig "optimize/inline"
 
         fsc cfg "%s -g --optimize- --target:library -o:lib.dll" cfg.fsc_flags ["lib.fs"; "lib2.fs"]
@@ -2139,14 +2117,14 @@ module OptimizationTests =
         log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim
 
     [<Test>]
-    let stats () = 
+    let ``optimize-stats-netfx`` () = 
         let cfg = testConfig "optimize/stats"
 
         ildasm cfg "/out=FSharp.Core.il" cfg.FSCOREDLLPATH
 
         let fscore = File.ReadLines(getfullpath cfg "FSharp.Core.il") |> Seq.toList
 
-        let contains text (s: string) = if s.Contains(text) then 1 else 0
+        let contains (text: string) (s: string) = if s.Contains(text) then 1 else 0
 
         let typeFunc = fscore |> List.sumBy (contains "extends Microsoft.FSharp.TypeFunc")
         let classes = fscore |> List.sumBy (contains ".class")
@@ -2160,176 +2138,177 @@ module OptimizationTests =
         log "now:"
         log "%s" m
 
+[<Category("netfx")>]
 module TypecheckTests = 
 
     [<Test>]
-    let ``full-rank-arrays`` () = 
+    let ``full-rank-arrays-netfx`` () = 
         let cfg = testConfig "typecheck/full-rank-arrays"
         SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_NETFX
 
     // Converter is not coming back until dotnet standard 2.0
     [<Test>]
-    let misc () = singleTestBuildAndRun "typecheck/misc" FSC_NETFX
+    let ``misc-netfx`` () = singleTestBuildAndRun "typecheck/misc" FSC_NETFX
 
     [<Test>]
-    let ``sigs pos26`` () = 
+    let ``sigs pos26-netfx`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
         peverify cfg "pos26.exe"
 
     [<Test>]
-    let ``sigs pos25`` () = 
+    let ``sigs pos25-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos25.exe" cfg.fsc_flags ["pos25.fs"]
         peverify cfg "pos25.exe"
 
     [<Test>]
-    let ``sigs pos27`` () = 
+    let ``sigs pos27-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
         peverify cfg "pos27.exe"
 
     [<Test>]
-    let ``sigs pos28`` () = 
+    let ``sigs pos28-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos28.exe" cfg.fsc_flags ["pos28.fs"]
         peverify cfg "pos28.exe"
 
     [<Test>]
-    let ``sigs pos29`` () = 
+    let ``sigs pos29-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos29.exe" cfg.fsc_flags ["pos29.fsi"; "pos29.fs"; "pos29.app.fs"]
         peverify cfg "pos29.exe"
 
     [<Test>]
-    let ``sigs pos30`` () = 
+    let ``sigs pos30-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos30.exe --warnaserror+" cfg.fsc_flags ["pos30.fs"]
         peverify cfg "pos30.exe"
 
     [<Test>]
-    let ``sigs pos24`` () = 
+    let ``sigs pos24-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
         peverify cfg "pos24.exe"
 
     [<Test>]
-    let ``sigs pos31`` () = 
+    let ``sigs pos31-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fsi"; "pos31.fs"]
         peverify cfg "pos31.exe"
 
     [<Test>]
-    let ``sigs pos32`` () = 
+    let ``sigs pos32-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos32.dll --warnaserror" cfg.fsc_flags ["pos32.fs"]
         peverify cfg "pos32.dll"
 
     [<Test>]
-    let ``sigs pos23`` () = 
+    let ``sigs pos23-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
         peverify cfg "pos23.exe"
         exec cfg ("." ++ "pos23.exe") ""
 
     [<Test>]
-    let ``sigs pos20`` () = 
+    let ``sigs pos20-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos20.exe" cfg.fsc_flags ["pos20.fs"]
         peverify cfg "pos20.exe"
         exec cfg ("." ++ "pos20.exe") ""
 
     [<Test>]
-    let ``sigs pos19`` () = 
+    let ``sigs pos19-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos19.exe" cfg.fsc_flags ["pos19.fs"]
         peverify cfg "pos19.exe"
         exec cfg ("." ++ "pos19.exe") ""
 
     [<Test>]
-    let ``sigs pos18`` () = 
+    let ``sigs pos18-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos18.exe" cfg.fsc_flags ["pos18.fs"]
         peverify cfg "pos18.exe"
         exec cfg ("." ++ "pos18.exe") ""
 
     [<Test>]
-    let ``sigs pos16`` () = 
+    let ``sigs pos16-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos16.exe" cfg.fsc_flags ["pos16.fs"]
         peverify cfg "pos16.exe"
         exec cfg ("." ++ "pos16.exe") ""
 
     [<Test>]
-    let ``sigs pos17`` () = 
+    let ``sigs pos17-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos17.exe" cfg.fsc_flags ["pos17.fs"]
         peverify cfg "pos17.exe"
         exec cfg ("." ++ "pos17.exe") ""
 
     [<Test>]
-    let ``sigs pos15`` () = 
+    let ``sigs pos15-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos15.exe" cfg.fsc_flags ["pos15.fs"]
         peverify cfg "pos15.exe"
         exec cfg ("." ++ "pos15.exe") ""
 
     [<Test>]
-    let ``sigs pos14`` () = 
+    let ``sigs pos14-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos14.exe" cfg.fsc_flags ["pos14.fs"]
         peverify cfg "pos14.exe"
         exec cfg ("." ++ "pos14.exe") ""
 
     [<Test>]
-    let ``sigs pos13`` () = 
+    let ``sigs pos13-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos13.exe" cfg.fsc_flags ["pos13.fs"]
         peverify cfg "pos13.exe"
         exec cfg ("." ++ "pos13.exe") ""
 
     [<Test>]
-    let ``sigs pos12 `` () = 
+    let ``sigs pos12 -netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos12.dll" cfg.fsc_flags ["pos12.fs"]
 
     [<Test>]
-    let ``sigs pos11`` () = 
+    let ``sigs pos11-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos11.dll" cfg.fsc_flags ["pos11.fs"]
 
     [<Test>]
-    let ``sigs pos10`` () = 
+    let ``sigs pos10-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos10.dll" cfg.fsc_flags ["pos10.fs"]
         peverify cfg "pos10.dll"
 
     [<Test>]
-    let ``sigs pos09`` () = 
+    let ``sigs pos09-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos09.dll" cfg.fsc_flags ["pos09.fs"]
         peverify cfg "pos09.dll"
 
     [<Test>]
-    let ``sigs pos07`` () = 
+    let ``sigs pos07-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos07.dll" cfg.fsc_flags ["pos07.fs"]
         peverify cfg "pos07.dll"
 
     [<Test>]
-    let ``sigs pos08`` () = 
+    let ``sigs pos08-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos08.dll" cfg.fsc_flags ["pos08.fs"]
         peverify cfg "pos08.dll"
 
     [<Test>]
-    let ``sigs pos06`` () = 
+    let ``sigs pos06-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos06.dll" cfg.fsc_flags ["pos06.fs"]
         peverify cfg "pos06.dll"
 
     [<Test>]
-    let ``sigs pos03`` () = 
+    let ``sigs pos03-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos03.dll" cfg.fsc_flags ["pos03.fs"]
         peverify cfg "pos03.dll"
@@ -2337,461 +2316,462 @@ module TypecheckTests =
         peverify cfg "pos03a.dll"
 
     [<Test>]
-    let ``sigs pos01a`` () = 
+    let ``sigs pos01a-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos01a.dll" cfg.fsc_flags ["pos01a.fsi"; "pos01a.fs"]
         peverify cfg "pos01a.dll"
 
     [<Test>]
-    let ``sigs pos02`` () = 
+    let ``sigs pos02-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos02.dll" cfg.fsc_flags ["pos02.fs"]
         peverify cfg "pos02.dll"
 
     [<Test>]
-    let ``sigs pos05`` () = 
+    let ``sigs pos05-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos05.dll" cfg.fsc_flags ["pos05.fs"]
 
     [<Test>] 
-    let ``type check neg01`` () = singleNegTest (testConfig "typecheck/sigs") "neg01"
+    let ``type check neg01-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg01"
 
     [<Test>] 
-    let ``type check neg02`` () = singleNegTest (testConfig "typecheck/sigs") "neg02"
+    let ``type check neg02-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg02"
 
     [<Test>] 
-    let ``type check neg03`` () = singleNegTest (testConfig "typecheck/sigs") "neg03"
+    let ``type check neg03-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg03"
 
     [<Test>] 
-    let ``type check neg04`` () = singleNegTest (testConfig "typecheck/sigs") "neg04"
+    let ``type check neg04-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg04"
 
     [<Test>] 
-    let ``type check neg05`` () = singleNegTest (testConfig "typecheck/sigs") "neg05"
+    let ``type check neg05-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg05"
 
     [<Test>] 
-    let ``type check neg06`` () = singleNegTest (testConfig "typecheck/sigs") "neg06"
+    let ``type check neg06-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg06"
 
     [<Test>] 
-    let ``type check neg06_a`` () = singleNegTest (testConfig "typecheck/sigs") "neg06_a"
+    let ``type check neg06_a-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg06_a"
 
     [<Test>] 
-    let ``type check neg06_b`` () = singleNegTest (testConfig "typecheck/sigs") "neg06_b"
+    let ``type check neg06_b-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg06_b"
 
     [<Test>] 
-    let ``type check neg07`` () = singleNegTest (testConfig "typecheck/sigs") "neg07"
+    let ``type check neg07-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg07"
 
     [<Test>] 
-    let ``type check neg08`` () = singleNegTest (testConfig "typecheck/sigs") "neg08"
+    let ``type check neg08-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg08"
 
     [<Test>] 
-    let ``type check neg09`` () = singleNegTest (testConfig "typecheck/sigs") "neg09"
+    let ``type check neg09-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg09"
 
     [<Test>] 
-    let ``type check neg10`` () = singleNegTest (testConfig "typecheck/sigs") "neg10"
+    let ``type check neg10-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg10"
 
     [<Test>] 
-    let ``type check neg10_a`` () = singleNegTest (testConfig "typecheck/sigs") "neg10_a"
+    let ``type check neg10_a-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg10_a"
 
     [<Test>] 
-    let ``type check neg11`` () = singleNegTest (testConfig "typecheck/sigs") "neg11"
+    let ``type check neg11-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg11"
 
     [<Test>] 
-    let ``type check neg12`` () = singleNegTest (testConfig "typecheck/sigs") "neg12"
+    let ``type check neg12-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg12"
 
     [<Test>] 
-    let ``type check neg13`` () = singleNegTest (testConfig "typecheck/sigs") "neg13"
+    let ``type check neg13-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg13"
 
     [<Test>] 
-    let ``type check neg14`` () = singleNegTest (testConfig "typecheck/sigs") "neg14"
+    let ``type check neg14-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg14"
 
     [<Test>] 
-    let ``type check neg15`` () = singleNegTest (testConfig "typecheck/sigs") "neg15"
+    let ``type check neg15-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg15"
 
     [<Test>] 
-    let ``type check neg16`` () = singleNegTest (testConfig "typecheck/sigs") "neg16"
+    let ``type check neg16-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg16"
 
     [<Test>] 
-    let ``type check neg17`` () = singleNegTest (testConfig "typecheck/sigs") "neg17"
+    let ``type check neg17-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg17"
 
     [<Test>] 
-    let ``type check neg18`` () = singleNegTest (testConfig "typecheck/sigs") "neg18"
+    let ``type check neg18-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg18"
 
     [<Test>] 
-    let ``type check neg19`` () = singleNegTest (testConfig "typecheck/sigs") "neg19"
+    let ``type check neg19-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg19"
 
     [<Test>] 
-    let ``type check neg20`` () = singleNegTest (testConfig "typecheck/sigs") "neg20"
+    let ``type check neg20-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg20"
 
     [<Test>] 
-    let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
+    let ``type check neg21-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg21"
 
     [<Test>] 
-    let ``type check neg22`` () = singleNegTest (testConfig "typecheck/sigs") "neg22"
+    let ``type check neg22-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg22"
 
     [<Test>] 
-    let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
+    let ``type check neg23-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg23"
 
     [<Test>] 
-    let ``type check neg24`` () = singleNegTest (testConfig "typecheck/sigs") "neg24"
+    let ``type check neg24-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg24"
 
     [<Test>] 
-    let ``type check neg25`` () = singleNegTest (testConfig "typecheck/sigs") "neg25"
+    let ``type check neg25-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg25"
 
     [<Test>] 
-    let ``type check neg26`` () = singleNegTest (testConfig "typecheck/sigs") "neg26"
+    let ``type check neg26-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg26"
 
     [<Test>] 
-    let ``type check neg27`` () = singleNegTest (testConfig "typecheck/sigs") "neg27"
+    let ``type check neg27-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg27"
 
     [<Test>] 
-    let ``type check neg28`` () = singleNegTest (testConfig "typecheck/sigs") "neg28"
+    let ``type check neg28-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg28"
 
     [<Test>] 
-    let ``type check neg29`` () = singleNegTest (testConfig "typecheck/sigs") "neg29"
+    let ``type check neg29-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg29"
 
     [<Test>] 
-    let ``type check neg30`` () = singleNegTest (testConfig "typecheck/sigs") "neg30"
+    let ``type check neg30-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg30"
 
     [<Test>] 
-    let ``type check neg31`` () = singleNegTest (testConfig "typecheck/sigs") "neg31"
+    let ``type check neg31-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg31"
 
     [<Test>] 
-    let ``type check neg32`` () = singleNegTest (testConfig "typecheck/sigs") "neg32"
+    let ``type check neg32-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg32"
 
     [<Test>] 
-    let ``type check neg33`` () = singleNegTest (testConfig "typecheck/sigs") "neg33"
+    let ``type check neg33-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg33"
 
     [<Test>] 
-    let ``type check neg34`` () = singleNegTest (testConfig "typecheck/sigs") "neg34"
+    let ``type check neg34-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg34"
 
     [<Test>] 
-    let ``type check neg35`` () = singleNegTest (testConfig "typecheck/sigs") "neg35"
+    let ``type check neg35-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg35"
 
     [<Test>] 
-    let ``type check neg36`` () = singleNegTest (testConfig "typecheck/sigs") "neg36"
+    let ``type check neg36-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg36"
 
     [<Test>] 
-    let ``type check neg37`` () = singleNegTest (testConfig "typecheck/sigs") "neg37"
+    let ``type check neg37-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg37"
 
     [<Test>] 
-    let ``type check neg37_a`` () = singleNegTest (testConfig "typecheck/sigs") "neg37_a"
+    let ``type check neg37_a-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg37_a"
 
     [<Test>] 
-    let ``type check neg38`` () = singleNegTest (testConfig "typecheck/sigs") "neg38"
+    let ``type check neg38-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg38"
 
     [<Test>] 
-    let ``type check neg39`` () = singleNegTest (testConfig "typecheck/sigs") "neg39"
+    let ``type check neg39-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg39"
 
     [<Test>] 
-    let ``type check neg40`` () = singleNegTest (testConfig "typecheck/sigs") "neg40"
+    let ``type check neg40-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg40"
 
     [<Test>] 
-    let ``type check neg41`` () = singleNegTest (testConfig "typecheck/sigs") "neg41"
+    let ``type check neg41-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg41"
 
     [<Test>] 
-    let ``type check neg42`` () = singleNegTest (testConfig "typecheck/sigs") "neg42"
+    let ``type check neg42-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg42"
 
     [<Test>] 
-    let ``type check neg43`` () = singleNegTest (testConfig "typecheck/sigs") "neg43"
+    let ``type check neg43-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg43"
 
     [<Test>] 
-    let ``type check neg44`` () = singleNegTest (testConfig "typecheck/sigs") "neg44"
+    let ``type check neg44-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg44"
 
     [<Test>] 
-    let ``type check neg45`` () = singleNegTest (testConfig "typecheck/sigs") "neg45"
+    let ``type check neg45-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg45"
 
     [<Test>] 
-    let ``type check neg46`` () = singleNegTest (testConfig "typecheck/sigs") "neg46"
+    let ``type check neg46-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg46"
 
     [<Test>] 
-    let ``type check neg47`` () = singleNegTest (testConfig "typecheck/sigs") "neg47"
+    let ``type check neg47-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg47"
 
     [<Test>] 
-    let ``type check neg48`` () = singleNegTest (testConfig "typecheck/sigs") "neg48"
+    let ``type check neg48-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg48"
 
     [<Test>] 
-    let ``type check neg49`` () = singleNegTest (testConfig "typecheck/sigs") "neg49"
+    let ``type check neg49-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg49"
 
     [<Test>] 
-    let ``type check neg50`` () = singleNegTest (testConfig "typecheck/sigs") "neg50"
+    let ``type check neg50-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg50"
 
     [<Test>] 
-    let ``type check neg51`` () = singleNegTest (testConfig "typecheck/sigs") "neg51"
+    let ``type check neg51-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg51"
 
     [<Test>] 
-    let ``type check neg52`` () = singleNegTest (testConfig "typecheck/sigs") "neg52"
+    let ``type check neg52-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg52"
 
     [<Test>] 
-    let ``type check neg53`` () = singleNegTest (testConfig "typecheck/sigs") "neg53"
+    let ``type check neg53-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg53"
 
     [<Test>] 
-    let ``type check neg54`` () = singleNegTest (testConfig "typecheck/sigs") "neg54"
+    let ``type check neg54-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg54"
 
     [<Test>] 
-    let ``type check neg55`` () = singleNegTest (testConfig "typecheck/sigs") "neg55"
+    let ``type check neg55-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg55"
 
     [<Test>] 
-    let ``type check neg56`` () = singleNegTest (testConfig "typecheck/sigs") "neg56"
+    let ``type check neg56-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg56"
 
     [<Test>] 
-    let ``type check neg56_a`` () = singleNegTest (testConfig "typecheck/sigs") "neg56_a"
+    let ``type check neg56_a-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg56_a"
 
     [<Test>] 
-    let ``type check neg56_b`` () = singleNegTest (testConfig "typecheck/sigs") "neg56_b"
+    let ``type check neg56_b-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg56_b"
 
     [<Test>] 
-    let ``type check neg57`` () = singleNegTest (testConfig "typecheck/sigs") "neg57"
+    let ``type check neg57-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg57"
 
     [<Test>] 
-    let ``type check neg58`` () = singleNegTest (testConfig "typecheck/sigs") "neg58"
+    let ``type check neg58-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg58"
 
     [<Test>] 
-    let ``type check neg59`` () = singleNegTest (testConfig "typecheck/sigs") "neg59"
+    let ``type check neg59-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg59"
 
     [<Test>] 
-    let ``type check neg60`` () = singleNegTest (testConfig "typecheck/sigs") "neg60"
+    let ``type check neg60-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg60"
 
     [<Test>] 
-    let ``type check neg61`` () = singleNegTest (testConfig "typecheck/sigs") "neg61"
+    let ``type check neg61-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg61"
 
     [<Test>] 
-    let ``type check neg62`` () = singleNegTest (testConfig "typecheck/sigs") "neg62"
+    let ``type check neg62-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg62"
 
     [<Test>] 
-    let ``type check neg63`` () = singleNegTest (testConfig "typecheck/sigs") "neg63"
+    let ``type check neg63-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg63"
 
     [<Test>] 
-    let ``type check neg64`` () = singleNegTest (testConfig "typecheck/sigs") "neg64"
+    let ``type check neg64-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg64"
 
     [<Test>] 
-    let ``type check neg65`` () = singleNegTest (testConfig "typecheck/sigs") "neg65"
+    let ``type check neg65-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg65"
 
     [<Test>] 
-    let ``type check neg66`` () = singleNegTest (testConfig "typecheck/sigs") "neg66"
+    let ``type check neg66-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg66"
 
     [<Test>] 
-    let ``type check neg67`` () = singleNegTest (testConfig "typecheck/sigs") "neg67"
+    let ``type check neg67-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg67"
 
     [<Test>] 
-    let ``type check neg68`` () = singleNegTest (testConfig "typecheck/sigs") "neg68"
+    let ``type check neg68-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg68"
 
     [<Test>] 
-    let ``type check neg69`` () = singleNegTest (testConfig "typecheck/sigs") "neg69"
+    let ``type check neg69-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg69"
 
     [<Test>] 
-    let ``type check neg70`` () = singleNegTest (testConfig "typecheck/sigs") "neg70"
+    let ``type check neg70-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg70"
 
     [<Test>] 
-    let ``type check neg71`` () = singleNegTest (testConfig "typecheck/sigs") "neg71"
+    let ``type check neg71-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg71"
 
     [<Test>] 
-    let ``type check neg72`` () = singleNegTest (testConfig "typecheck/sigs") "neg72"
+    let ``type check neg72-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg72"
 
     [<Test>] 
-    let ``type check neg73`` () = singleNegTest (testConfig "typecheck/sigs") "neg73"
+    let ``type check neg73-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg73"
 
     [<Test>] 
-    let ``type check neg74`` () = singleNegTest (testConfig "typecheck/sigs") "neg74"
+    let ``type check neg74-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg74"
 
     [<Test>] 
-    let ``type check neg75`` () = singleNegTest (testConfig "typecheck/sigs") "neg75"
+    let ``type check neg75-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg75"
 
     [<Test>] 
-    let ``type check neg76`` () = singleNegTest (testConfig "typecheck/sigs") "neg76"
+    let ``type check neg76-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg76"
 
     [<Test>] 
-    let ``type check neg77`` () = singleNegTest (testConfig "typecheck/sigs") "neg77"
+    let ``type check neg77-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg77"
 
     [<Test>] 
-    let ``type check neg78`` () = singleNegTest (testConfig "typecheck/sigs") "neg78"
+    let ``type check neg78-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg78"
 
     [<Test>] 
-    let ``type check neg79`` () = singleNegTest (testConfig "typecheck/sigs") "neg79"
+    let ``type check neg79-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg79"
 
     [<Test>] 
-    let ``type check neg80`` () = singleNegTest (testConfig "typecheck/sigs") "neg80"
+    let ``type check neg80-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg80"
 
     [<Test>] 
-    let ``type check neg81`` () = singleNegTest (testConfig "typecheck/sigs") "neg81"
+    let ``type check neg81-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg81"
 
     [<Test>] 
-    let ``type check neg82`` () = singleNegTest (testConfig "typecheck/sigs") "neg82"
+    let ``type check neg82-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg82"
 
     [<Test>] 
-    let ``type check neg83`` () = singleNegTest (testConfig "typecheck/sigs") "neg83"
+    let ``type check neg83-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg83"
 
     [<Test>] 
-    let ``type check neg84`` () = singleNegTest (testConfig "typecheck/sigs") "neg84"
+    let ``type check neg84-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg84"
 
     [<Test>] 
-    let ``type check neg85`` () = singleNegTest (testConfig "typecheck/sigs") "neg85"
+    let ``type check neg85-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg85"
 
     [<Test>] 
-    let ``type check neg86`` () = singleNegTest (testConfig "typecheck/sigs") "neg86"
+    let ``type check neg86-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg86"
 
     [<Test>] 
-    let ``type check neg87`` () = singleNegTest (testConfig "typecheck/sigs") "neg87"
+    let ``type check neg87-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg87"
 
     [<Test>] 
-    let ``type check neg88`` () = singleNegTest (testConfig "typecheck/sigs") "neg88"
+    let ``type check neg88-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg88"
 
     [<Test>] 
-    let ``type check neg89`` () = singleNegTest (testConfig "typecheck/sigs") "neg89"
+    let ``type check neg89-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg89"
 
     [<Test>] 
-    let ``type check neg90`` () = singleNegTest (testConfig "typecheck/sigs") "neg90"
+    let ``type check neg90-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg90"
 
     [<Test>] 
-    let ``type check neg91`` () = singleNegTest (testConfig "typecheck/sigs") "neg91"
+    let ``type check neg91-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg91"
 
     [<Test>] 
-    let ``type check neg92`` () = singleNegTest (testConfig "typecheck/sigs") "neg92"
+    let ``type check neg92-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg92"
 
     [<Test>] 
-    let ``type check neg93`` () = singleNegTest (testConfig "typecheck/sigs") "neg93"
+    let ``type check neg93-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg93"
 
     [<Test>] 
-    let ``type check neg94`` () = singleNegTest (testConfig "typecheck/sigs") "neg94"
+    let ``type check neg94-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg94"
 
     [<Test>] 
-    let ``type check neg95`` () = singleNegTest (testConfig "typecheck/sigs") "neg95"
+    let ``type check neg95-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg95"
 
     [<Test>] 
-    let ``type check neg96`` () = singleNegTest (testConfig "typecheck/sigs") "neg96"
+    let ``type check neg96-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg96"
 
     [<Test>] 
-    let ``type check neg97`` () = singleNegTest (testConfig "typecheck/sigs") "neg97"
+    let ``type check neg97-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg97"
 
     [<Test>] 
-    let ``type check neg98`` () = singleNegTest (testConfig "typecheck/sigs") "neg98"
+    let ``type check neg98-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg98"
 
     [<Test>] 
-    let ``type check neg99`` () = singleNegTest (testConfig "typecheck/sigs") "neg99"
+    let ``type check neg99-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg99"
 
     [<Test>] 
-    let ``type check neg100`` () = 
+    let ``type check neg100-netfx``() = 
         let cfg = testConfig "typecheck/sigs"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3218" }
         singleNegTest cfg "neg100"
 
     [<Test>] 
-    let ``type check neg101`` () = singleNegTest (testConfig "typecheck/sigs") "neg101"
+    let ``type check neg101-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg101"
 
     [<Test>]
-    let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
+    let ``type check neg102-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg102"
 
     [<Test>]
-    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
+    let ``type check neg103-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg103"
 
     [<Test>]
-    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
+    let ``type check neg104-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg104"
 
     [<Test>]
-    let ``type check neg106`` () = singleNegTest (testConfig "typecheck/sigs") "neg106"
+    let ``type check neg106-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg106"
 
     [<Test>]
-    let ``type check neg107`` () = singleNegTest (testConfig "typecheck/sigs") "neg107"
+    let ``type check neg107-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg107"
 
     [<Test>]
-    let ``type check neg108`` () = singleNegTest (testConfig "typecheck/sigs") "neg108"
+    let ``type check neg108-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg108"
 
     [<Test>]
-    let ``type check neg109`` () = singleNegTest (testConfig "typecheck/sigs") "neg109"
+    let ``type check neg109-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg109"
 
     [<Test>]
-    let ``type check neg110`` () = singleNegTest (testConfig "typecheck/sigs") "neg110"
+    let ``type check neg110-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg110"
 
     [<Test>]
-    let ``type check neg111`` () = singleNegTest (testConfig "typecheck/sigs") "neg111"
+    let ``type check neg111-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg111"
 
     [<Test>] 
-    let ``type check neg113`` () = singleNegTest (testConfig "typecheck/sigs") "neg113"
+    let ``type check neg113-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg113"
 
     [<Test>] 
-    let ``type check neg114`` () = singleNegTest (testConfig "typecheck/sigs") "neg114"
+    let ``type check neg114-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg114"
 
     [<Test>] 
-    let ``type check neg115`` () = singleNegTest (testConfig "typecheck/sigs") "neg115"
+    let ``type check neg115-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg115"
 
     [<Test>] 
-    let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
+    let ``type check neg_anon_1-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
 
     [<Test>] 
-    let ``type check neg_anon_2`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_2"
+    let ``type check neg_anon_2-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_anon_2"
 
     [<Test>] 
-    let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"
+    let ``type check neg_issue_3752-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"
 
     [<Test>] 
-    let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
+    let ``type check neg_byref_1-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
 
     [<Test>] 
-    let ``type check neg_byref_2`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_2"
+    let ``type check neg_byref_2-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_2"
 
     [<Test>] 
-    let ``type check neg_byref_3`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_3"
+    let ``type check neg_byref_3-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_3"
 
     [<Test>] 
-    let ``type check neg_byref_4`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_4"
+    let ``type check neg_byref_4-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_4"
 
     [<Test>] 
-    let ``type check neg_byref_5`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_5"
+    let ``type check neg_byref_5-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_5"
 
     [<Test>] 
-    let ``type check neg_byref_6`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_6"
+    let ``type check neg_byref_6-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_6"
 
     [<Test>] 
-    let ``type check neg_byref_7`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_7"
+    let ``type check neg_byref_7-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_7"
 
     [<Test>] 
-    let ``type check neg_byref_8`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_8"
+    let ``type check neg_byref_8-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_8"
 
     [<Test>] 
-    let ``type check neg_byref_10`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_10"
+    let ``type check neg_byref_10-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_10"
 
     [<Test>] 
-    let ``type check neg_byref_11`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_11"
+    let ``type check neg_byref_11-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_11"
 
     [<Test>] 
-    let ``type check neg_byref_12`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_12"
+    let ``type check neg_byref_12-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_12"
 
     [<Test>] 
-    let ``type check neg_byref_13`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_13"
+    let ``type check neg_byref_13-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_13"
 
     [<Test>] 
-    let ``type check neg_byref_14`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_14"
+    let ``type check neg_byref_14-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_14"
 
     [<Test>] 
-    let ``type check neg_byref_15`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_15"
+    let ``type check neg_byref_15-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_15"
 
     [<Test>] 
-    let ``type check neg_byref_16`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_16"
+    let ``type check neg_byref_16-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_16"
 
     [<Test>] 
-    let ``type check neg_byref_17`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_17"
+    let ``type check neg_byref_17-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_17"
 
     [<Test>] 
-    let ``type check neg_byref_18`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_18"
+    let ``type check neg_byref_18-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_18"
 
     [<Test>] 
-    let ``type check neg_byref_19`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_19"
+    let ``type check neg_byref_19-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_19"
 
     [<Test>] 
-    let ``type check neg_byref_20`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_20"
+    let ``type check neg_byref_20-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_20"
 
     [<Test>] 
-    let ``type check neg_byref_21`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_21"
+    let ``type check neg_byref_21-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_21"
 
     [<Test>] 
-    let ``type check neg_byref_22`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_22"
+    let ``type check neg_byref_22-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_22"
 
     [<Test>] 
-    let ``type check neg_byref_23`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_23"
+    let ``type check neg_byref_23-netfx``() = singleNegTest (testConfig "typecheck/sigs") "neg_byref_23"
 
 
+[<Category("netfx")>]
 module FscTests =                 
     [<Test>]
-    let ``should be raised if AssemblyInformationalVersion has invalid version`` () = 
+    let ``should be raised if AssemblyInformationalVersion has invalid version-netfx``() = 
         let cfg = testConfig (Commands.createTempDir())
 
         let code  =
@@ -2816,7 +2796,7 @@ open System.Reflection
 
 
     [<Test>]
-    let ``should set file version info on generated file`` () = 
+    let ``should set file version info on generated file-netfx``() = 
         let cfg = testConfig (Commands.createTempDir())
 
         let code =
@@ -2856,6 +2836,7 @@ open System.Runtime.InteropServices
         fv.LegalCopyright |> Assert.areEqual "Copyright \u00A9 Compressed Space Transport 2380"
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 
+[<Category("netfx")>]
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName
@@ -2871,7 +2852,7 @@ module ProductVersionTest =
         |> List.map (fun (a,f,i,e) -> (a, f, i, e))
 
     [<Test>]
-    let ``should use correct fallback``() =
+    let ``should use correct fallback-netfx``() =
       
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
         let cfg = testConfig (Commands.createTempDir())
@@ -2903,22 +2884,432 @@ namespace CST.RI.Anshun
 
         fileVersionInfo.ProductVersion |> Assert.areEqual expected
 
+[<Category("netfx")>]
 module GeneratedSignatureTests =
-    [<Test>]
-    let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_GENERATED_SIGNATURE
 
-    [<Test; Ignore("Flaky w.r.t. PEVerify.  https://github.com/Microsoft/visualfsharp/issues/2616")>]
-    let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" FSC_NETFX_GENERATED_SIGNATURE
+    let generatedSignatureTest dir =
+        let cfg = testConfig dir
+        use cleanup = cleanUpFSharpCore cfg
 
-    [<Test>]
-    let ``array-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" FSC_NETFX_GENERATED_SIGNATURE
+        let source1 = 
+            ["test.ml"; "test.fs"; "test.fsx"] 
+            |> List.rev
+            |> List.tryFind (fileExists cfg)
+
+        source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
+
+        log "Generated signature file..."
+        fsc cfg "%s --sig:tmptest.fsi" cfg.fsc_flags ["tmptest.fs"]
+        if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build"
+
+        log "Compiling against generated signature file..."
+        fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
+        if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build"
+
+        log "Verifying built .exe..."
+        peverify cfg "tmptest1.exe"
 
     [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
-    let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_GENERATED_SIGNATURE
+    let ``libtest-GENERATED_SIGNATURE`` () = generatedSignatureTest "core/libtest"
 
     [<Test>]
-    let ``innerpoly-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" FSC_NETFX_GENERATED_SIGNATURE
+    let ``members-basics-GENERATED_SIGNATURE-netfx``() = generatedSignatureTest "core/members/basics"
+
+    [<Test; Ignore("Flaky w.r.t. PEVerify.  https://github.com/Microsoft/visualfsharp/issues/2616")>]
+    let ``access-GENERATED_SIGNATURE-netfx``() = generatedSignatureTest "core/access"
 
     [<Test>]
-    let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_GENERATED_SIGNATURE
+    let ``array-GENERATED_SIGNATURE-netfx``() = generatedSignatureTest "core/array"
+
+    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
+    let ``genericmeasures-GENERATED_SIGNATURE-netfx``() = generatedSignatureTest "core/genericmeasures"
+
+    [<Test>]
+    let ``innerpoly-GENERATED_SIGNATURE-netfx``() = generatedSignatureTest "core/innerpoly"
+
+    [<Test>]
+    let ``measures-GENERATED_SIGNATURE-netfx``() = generatedSignatureTest "core/measures"
+
+[<Category("netfx")>]
+module TypeProviderTests = 
+    [<Test>]
+    let ``diamondAssembly-netfx`` () = 
+        let cfg = testConfig "typeProviders/diamondAssembly"
+
+        rm cfg "provider.dll"
+
+        // Add a version flag to make this generate native resources. The native resources aren't important and 
+        // can be dropped when the provided.dll is linked but we need to tolerate generated DLLs that have them
+        fsc cfg "%s" "--out:provided.dll -a --version:0.0.0.1" [".." ++ "helloWorld" ++ "provided.fs"]
+
+        fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test1.dll -a" cfg.fsc_flags ["test1.fsx"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a -r:test1.dll" cfg.fsc_flags ["test2a.fsx"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b.dll -a -r:test1.dll" cfg.fsc_flags ["test2b.fsx"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3.exe -r:test1.dll -r:test2a.dll -r:test2b.dll" cfg.fsc_flags ["test3.fsx"]
+
+        peverify cfg "test1.dll"
+
+        peverify cfg "test2a.dll"
+
+        peverify cfg "test2b.dll"
+
+        peverify cfg "test3.exe"
+
+        exec cfg ("." ++ "test3.exe") ""
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsi cfg "%s" cfg.fsi_flags ["test3.fsx"]
+
+        testOkFile.CheckExists()
+                
+    [<Test>]
+    let ``globalNamespace-netfx`` () = 
+        let cfg = testConfig "typeProviders/globalNamespace"
+
+        csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
+
+        fsc cfg "%s /debug+ /r:globalNamespaceTP.dll /optimize-" cfg.fsc_flags ["test.fsx"]
+                
+    let helloWorld p = 
+        let cfg = testConfig "typeProviders/helloWorld"
+
+        fsc cfg "%s" "--out:provided1.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
+
+        fsc cfg "%s" "--out:provided2.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
+
+        fsc cfg "%s" "--out:provided3.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
+
+        fsc cfg "%s" "--out:provided4.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
+
+        fsc cfg "%s" "--out:providedJ.dll -g -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
+
+        fsc cfg "%s" "--out:providedK.dll -g -a" [".." ++ "helloWorld" ++ "providedK.fs"]
+
+        fsc cfg "%s" "--out:providedNullAssemblyName.dll -g -a" [".." ++ "helloWorld" ++ "providedNullAssemblyName.fsx"]
+
+        fsc cfg "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
+
+        fsc cfg "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
+
+        fsc cfg "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
+
+        fsc cfg "--out:provider.dll -a" ["provider.fsx"]
+
+        SingleTest.singleTestBuildAndRunAux cfg p 
+
+
+        rm cfg "provider_with_binary_compat_changes.dll"
+
+        mkdir cfg "bincompat1"
+
+        log "pushd bincompat1"
+        let bincompat1 = getfullpath cfg "bincompat1"
+
+        Directory.EnumerateFiles(bincompat1 ++ "..", "*.dll")
+        |> Seq.iter (fun from -> Commands.copy_y bincompat1 from ("." ++ Path.GetFileName(from)) |> ignore)
+
+        fscIn cfg bincompat1 "%s" "-g -a -o:test_lib.dll -r:provider.dll" [".." ++ "test.fsx"]
+
+        fscIn cfg bincompat1 "%s" "-r:test_lib.dll -r:provider.dll" [".." ++ "testlib_client.fsx"]
+
+        log "popd"
+
+        mkdir cfg "bincompat2"
+        
+        log "pushd bincompat2"
+        let bincompat2 = getfullpath cfg "bincompat2"
+
+        Directory.EnumerateFiles(bincompat2 ++ ".." ++ "bincompat1", "*.dll")
+        |> Seq.iter (fun from -> Commands.copy_y bincompat2 from ("." ++ Path.GetFileName(from)) |> ignore)
+
+        fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a" [".." ++ "provider.fsx"]
+
+        fscIn cfg bincompat2 "-g -a -o:test_lib_recompiled.dll -r:provider.dll" [".." ++ "test.fsx"]
+
+        fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER -r:test_lib.dll -r:provider.dll" [".." ++ "testlib_client.fsx"]
+
+        peverify cfg (bincompat2 ++ "provider.dll")
+
+        peverify cfg (bincompat2 ++ "test_lib.dll")
+
+        peverify cfg (bincompat2 ++ "test_lib_recompiled.dll")
+
+        peverify cfg (bincompat2 ++ "testlib_client.exe")
+
+    [<Test>]
+    let ``helloWorld fsc-netfx`` () = helloWorld FSC_NETFX
+
+    [<Test>]
+    let ``helloWorld fsi-netfx`` () = helloWorld FSI_NETFX_SCRIPT_STDIN
+
+
+    [<Test>]
+    let ``helloWorldCSharp-netfx`` () = 
+        let cfg = testConfig "typeProviders/helloWorldCSharp"
+
+        rm cfg "magic.dll"
+
+        fsc cfg "%s" "--out:magic.dll -a --keyfile:magic.snk" ["magic.fs "]
+
+        rm cfg "provider.dll"
+
+        csc cfg """/out:provider.dll /target:library "/r:%s" /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
+
+        fsc cfg "%s /debug+ /r:provider.dll /optimize-" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "magic.dll"
+
+        peverify cfg "provider.dll"
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+                
+
+    let negTypeProviderTest (name:string) =
+        let cfg = testConfig "typeProviders/negTests"
+        let dir = cfg.Directory
+
+        if requireENCulture () then
+
+            let fileExists = Commands.fileExists dir >> Option.isSome
+
+            rm cfg "provided.dll"
+
+            fsc cfg "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
+
+            rm cfg "providedJ.dll"
+
+            fsc cfg "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
+
+            rm cfg "providedK.dll"
+
+            fsc cfg "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
+
+            rm cfg "provider.dll"
+
+            fsc cfg "--out:provider.dll -a" ["provider.fsx"]
+
+            fsc cfg "--out:provider_providerAttributeErrorConsume.dll -a" ["providerAttributeError.fsx"]
+
+            fsc cfg "--out:provider_ProviderAttribute_EmptyConsume.dll -a" ["providerAttribute_Empty.fsx"]
+
+            rm cfg "helloWorldProvider.dll"
+
+            fsc cfg "--out:helloWorldProvider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
+
+            rm cfg "MostBasicProvider.dll"
+
+            fsc cfg "--out:MostBasicProvider.dll -a" ["MostBasicProvider.fsx"]
+
+            let preprocess name pref = 
+                let dirp = (dir |> Commands.pathAddBackslash)
+                do
+                File.ReadAllText(sprintf "%s%s.%sbslpp" dirp name pref)
+                    .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
+                    .Replace("<URIPATH>",sprintf "file:///%s" dirp)
+                    |> fun txt -> File.WriteAllText(sprintf "%s%s.%sbsl" dirp name pref,txt)
+
+            if name = "ProviderAttribute_EmptyConsume" || name = "providerAttributeErrorConsume" then ()
+            else fsc cfg "--define:%s --out:provider_%s.dll -a" name name ["provider.fsx"]
+
+            if fileExists (sprintf "%s.bslpp" name) then preprocess name "" 
+
+            if fileExists (sprintf "%s.vsbslpp" name) then preprocess name "vs"
+
+            SingleTest.singleNegTest cfg name
+
+    [<Test>]
+    let ``neg-type-provider-test-neg1``() = negTypeProviderTest "neg1"
+
+    [<Test>]
+    let ``neg-type-provider-test-neg2``() = negTypeProviderTest "neg2"
+
+    [<Test>]
+    let ``neg-type-provider-test-neg2c``() = negTypeProviderTest "neg2c"
+
+    [<Test>]
+    let ``neg-type-provider-test-neg2e``() = negTypeProviderTest "neg2e"
+
+    [<Test>]
+    let ``neg-type-provider-test-neg2g``() = negTypeProviderTest "neg2g"
+
+    [<Test>]
+    let ``neg-type-provider-test-neg2h``() = negTypeProviderTest "neg2h"    
+
+    [<Test>]
+    let ``neg-type-provider-test-neg4``() = negTypeProviderTest "neg4"
+
+    [<Test>]
+    let ``neg-type-provider-test-neg6``() = negTypeProviderTest "neg6"
+
+    [<Test>]
+    let ``neg-type-provider-test-InvalidInvokerExpression``() = negTypeProviderTest "InvalidInvokerExpression"
+
+    [<Test>]
+    let ``neg-type-provider-test-providerAttributeErrorConsume``() = negTypeProviderTest "providerAttributeErrorConsume"
+
+    [<Test>]
+    let ``neg-type-provider-test-ProviderAttribute_EmptyConsume``() = negTypeProviderTest "ProviderAttribute_EmptyConsume"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetNestedNamespaces_Exception``() = negTypeProviderTest "EVIL_PROVIDER_GetNestedNamespaces_Exception"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_NamespaceName_Exception``() = negTypeProviderTest "EVIL_PROVIDER_NamespaceName_Exception"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_NamespaceName_Empty``() = negTypeProviderTest "EVIL_PROVIDER_NamespaceName_Empty"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetTypes_Exception``() = negTypeProviderTest "EVIL_PROVIDER_GetTypes_Exception"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_ResolveTypeName_Exception``() = negTypeProviderTest "EVIL_PROVIDER_ResolveTypeName_Exception"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetNamespaces_Exception``() = negTypeProviderTest "EVIL_PROVIDER_GetNamespaces_Exception"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetStaticParameters_Exception``() = negTypeProviderTest "EVIL_PROVIDER_GetStaticParameters_Exception"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetInvokerExpression_Exception``() = negTypeProviderTest "EVIL_PROVIDER_GetInvokerExpression_Exception"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetTypes_Null``() = negTypeProviderTest "EVIL_PROVIDER_GetTypes_Null"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_ResolveTypeName_Null``() = negTypeProviderTest "EVIL_PROVIDER_ResolveTypeName_Null"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetNamespaces_Null``() = negTypeProviderTest "EVIL_PROVIDER_GetNamespaces_Null"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetStaticParameters_Null``() = negTypeProviderTest "EVIL_PROVIDER_GetStaticParameters_Null"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_GetInvokerExpression_Null``() = negTypeProviderTest "EVIL_PROVIDER_GetInvokerExpression_Null"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_DoesNotHaveConstructor``() = negTypeProviderTest "EVIL_PROVIDER_DoesNotHaveConstructor"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_ConstructorThrows``() = negTypeProviderTest "EVIL_PROVIDER_ConstructorThrows"
+
+    [<Test>]
+    let ``neg-type-provider-test-EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments``() = negTypeProviderTest "EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments"
+
+    let splitAssemblyTest subdir project =
+
+        let cfg = testConfig project
+
+        let clean() = 
+            rm cfg "providerDesigner.dll"
+            rmdir cfg "typeproviders"
+            rmdir cfg "tools"
+            rmdir cfg (".." ++ "typeproviders")
+            rmdir cfg (".." ++ "tools")
+
+        clean()
+
+        fsc cfg "--out:provider.dll -a" ["provider.fs"]
+
+        fsc cfg "--out:providerDesigner.dll -a" ["providerDesigner.fsx"]
+
+        SingleTest.singleTestBuildAndRunAux cfg FSC_NETFX
+
+        SingleTest.singleTestBuildAndRunAux cfg FSI_NETFX_SCRIPT
+
+        // Do the same thing with different load locations for the type provider design-time component
+
+        clean()
+
+        // check a few load locations
+        let someLoadPaths = 
+            [ subdir ++ "fsharp41" ++ "net461"
+              subdir ++ "fsharp41" ++ "net45"
+              // include up one directory
+              ".." ++ subdir ++ "fsharp41" ++ "net45"
+              subdir ++ "fsharp41" ++ "netstandard2.0" ]
+
+        for dir in someLoadPaths do
+
+            clean()
+
+            // put providerDesigner.dll into a different place
+            mkdir cfg dir
+            fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
+
+            SingleTest.singleTestBuildAndRunAux cfg FSC_NETFX
+
+        for dir in someLoadPaths do
+
+            clean()
+
+            // put providerDesigner.dll into a different place
+            mkdir cfg dir
+            fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
+
+            SingleTest.singleTestBuildAndRunAux cfg FSI_NETFX_SCRIPT
+
+        clean()
+
+    [<Test>]
+    let splitAssemblyTools () = splitAssemblyTest "tools" "typeProviders/splitAssemblyTools"
+
+    [<Test>]
+    let splitAssemblyTypeProviders () = splitAssemblyTest "typeproviders" "typeProviders/splitAssemblyTypeproviders"
+
+    [<Test>]
+    let wedgeAssembly () = 
+        let cfg = testConfig "typeProviders/wedgeAssembly"
+
+        rm cfg "provider.dll"
+
+        rm cfg "provided.dll"
+
+        fsc cfg "%s" "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
+
+        rm cfg "providedJ.dll"
+
+        fsc cfg "%s" "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
+
+        rm cfg "providedK.dll"
+
+        fsc cfg "%s" "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
+
+        fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a" cfg.fsc_flags ["test2a.fs"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b.dll -a" cfg.fsc_flags ["test2b.fs"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3.exe" cfg.fsc_flags ["test3.fsx"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a-with-sig.dll -a" cfg.fsc_flags ["test2a.fsi"; "test2a.fs"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b-with-sig.dll -a" cfg.fsc_flags ["test2b.fsi"; "test2b.fs"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3-with-sig.exe --define:SIGS" cfg.fsc_flags ["test3.fsx"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a-with-sig-restricted.dll -a" cfg.fsc_flags ["test2a-restricted.fsi"; "test2a.fs"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b-with-sig-restricted.dll -a"cfg.fsc_flags ["test2b-restricted.fsi"; "test2b.fs"]
+
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3-with-sig-restricted.exe --define:SIGS_RESTRICTED" cfg.fsc_flags ["test3.fsx"]
+
+        peverify cfg "test2a.dll"
+
+        peverify cfg "test2b.dll"
+
+        peverify cfg "test3.exe"
+
+        exec cfg ("." ++ "test3.exe") ""
 #endif

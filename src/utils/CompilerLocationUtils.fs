@@ -212,7 +212,7 @@ module internal FSharpEnvironment =
                 // For the prototype compiler, we can just use the current domain
                 tryCurrentDomain()
         with e -> 
-            System.Diagnostics.Debug.Assert(false, "Error while determining default location of F# compiler")
+            System.Diagnostics.Debug.Assert(false, sprintf "Error while determining default location of F# compiler, err = %A" e)
             None
 
 
