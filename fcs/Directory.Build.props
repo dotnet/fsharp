@@ -23,7 +23,7 @@
 
   <!-- SDK targets override -->
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildThisFileDirectory)\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..\src</FSharpSourcesRoot>
     <VersionPrefix>22.0.3</VersionPrefix>
     <OtherFlags>--version:$(VersionPrefix)</OtherFlags>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>    
