@@ -48,20 +48,17 @@ type CompileItem = Reference | Compile | UseSource | LoadSource
 type OutputType = Exe | Script
 
 type ProjectConfiguration = {
-    OutputType:OutputType
-    Framework:string
-    SourceDirectory:string
-    SourceItems:string list
-    ExtraSourceItems:string list
-    UtilitySourceItems:string list
-    ReferenceItems:string list
-    LoadSources:string list
-    UseSources:string list
-    Optimize:bool
+    OutputType: OutputType
+    Framework: string
+    SourceDirectory: string
+    SourceItems: string list
+    UtilitySourceItems: string list
+    ReferenceItems: string list
+    LoadSources: string list
+    UseSources: string list
+    Optimize: bool
 }
 
-
-let replaceTokens tag (replacement:string) (template:string) = template.Replace(tag, replacement)
 
 let generateProps testCompilerVersion configuration =
     let template = @"<Project>
@@ -72,9 +69,9 @@ let generateProps testCompilerVersion configuration =
   <Import Project=""$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(PROJECTDIRECTORY)'))"" />
 </Project>"
     template
-    |> replaceTokens "$(TESTCONFIGURATION)" configuration
-    |> replaceTokens "$(PROJECTDIRECTORY)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
-    |> replaceTokens "$(TESTCOMPILERVERSION)" testCompilerVersion
+      .Replace("$(TESTCONFIGURATION)", configuration)
+      .Replace("$(PROJECTDIRECTORY)", Path.GetFullPath(__SOURCE_DIRECTORY__))
+      .Replace("$(TESTCOMPILERVERSION)", testCompilerVersion)
 
 let targetsBody =
     let template = @"<Project>
@@ -82,7 +79,7 @@ let targetsBody =
   <Import Project=""$(MSBuildThisFileDirectory)Directory.Overrides.targets"" Condition=""'$(OutputType)'=='Script'"" />
 </Project>"
     template
-    |> replaceTokens "$(PROJECTDIRECTORY)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
+     .Replace("$(PROJECTDIRECTORY)", Path.GetFullPath(__SOURCE_DIRECTORY__))
 
 let overridesBody =
     let template = @"<Project>
@@ -91,27 +88,22 @@ let overridesBody =
 </Project>"
     template
 
-let computeInclude pc addDirectory addCondition src compileItem =
-    let fileName = if addDirectory then Path.Combine(pc.SourceDirectory, src) else src
-    let condition = if addCondition then " Condition=\"Exists('" + fileName + "')\"" else ""
-    match compileItem with
-    | CompileItem.Compile ->
-        "\n    <Compile Include='" + fileName + "'" + condition + " />"
-    | CompileItem.Reference ->
-        "\n    <Reference Include='" + fileName + "'" + condition + " />"
-    | CompileItem.UseSource ->
-        "\n    <UseSource Include='" + fileName + "'" + condition + " />"
-    | CompileItem.LoadSource ->
-        "\n    <LoadSource Include='" + fileName + "'" + condition + " />"
-
 let computeSourceItems (pc: ProjectConfiguration) addDirectory addCondition (compileItem: CompileItem) sources =
-    sources
-    |> List.map(fun src -> computeInclude pc addDirectory addCondition src compileItem)
+    [ for src in sources do
+        let fileName = if addDirectory then Path.Combine(pc.SourceDirectory, src) else src
+        let condition = if addCondition then " Condition=\"Exists('" + fileName + "')\"" else ""
+        match compileItem with
+        | CompileItem.Compile ->
+            yield "\n    <Compile Include=\"" + fileName + "\"" + condition + " />"
+        | CompileItem.Reference ->
+            yield "\n    <Reference Include=\"" + fileName + "\"" + condition + " />"
+        | CompileItem.UseSource ->
+            yield "\n    <UseSource Include=\"" + fileName + "\"" + condition + " />"
+        | CompileItem.LoadSource ->
+            yield "\n    <LoadSource Include=\"" + fileName + "\"" + condition + " />" ]
     |> String.concat ""
 
 let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configuration =
-    let replace tag items addDirectory addCondition compileItem (template:string) =
-        template.Replace(tag, computeSourceItems pc addDirectory addCondition compileItem items)
 
     let outputType =
         match pc.OutputType with
@@ -119,8 +111,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
         | OutputType.Exe -> "Exe"
     let optimize = if pc.Optimize then "True" else "False"
     let debug = if pc.Optimize then "True" else "False"
-    let generateProjBody =
-        let template = @"<Project Sdk='Microsoft.NET.Sdk'>
+    let template = @"<Project Sdk='Microsoft.NET.Sdk'>
         
   <PropertyGroup>
     <OutputType>$(OUTPUTTYPE)</OutputType>
@@ -145,10 +136,6 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
   <ItemGroup>$(SOURCEITEMS)
   </ItemGroup>
 
-  <!-- Extra sources -->
-  <ItemGroup>$(EXTRASOURCEITEMS)
-  </ItemGroup>
-
   <!-- References -->
   <ItemGroup>$(REFERENCEITEMS)
     <Reference Condition=""$(TargetFramework.StartsWith('net4'))"" Include=""System.Windows.Forms"" />
@@ -163,38 +150,37 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
   </Target>
 
 </Project>"
+    let projBody = 
         template
-        |> replace "$(UTILITYSOURCEITEMS)" pc.UtilitySourceItems false false CompileItem.Compile
-        |> replace "$(SOURCEITEMS)" pc.SourceItems true false CompileItem.Compile
-        |> replace "$(EXTRASOURCEITEMS)" pc.ExtraSourceItems true true CompileItem.Compile
-        |> replace "$(REFERENCEITEMS)" pc.ReferenceItems true true CompileItem.Reference
-        |> replace "$(LOADSOURCEITEMS)" pc.LoadSources true true CompileItem.LoadSource
-        |> replace "$(USESOURCEITEMS)" pc.UseSources true true CompileItem.UseSource
-        |> replaceTokens "$(DIRECTORYBUILDLOCATION)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
-        |> replaceTokens "$(OUTPUTTYPE)" outputType
-        |> replaceTokens "$(OPTIMIZE)" optimize
-        |> replaceTokens "$(DEBUG)" debug
-        |> replaceTokens "$(TARGETFRAMEWORK)" targetFramework
-        |> replaceTokens "$(RestoreFromArtifactsPath)" (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/packages/" + configuration)
+         .Replace("$(UTILITYSOURCEITEMS)", computeSourceItems pc false false CompileItem.Compile pc.UtilitySourceItems)
+         .Replace("$(SOURCEITEMS)", computeSourceItems pc true true CompileItem.Compile pc.SourceItems)
+         .Replace("$(REFERENCEITEMS)", computeSourceItems pc true true CompileItem.Reference pc.ReferenceItems)
+         .Replace("$(LOADSOURCEITEMS)", computeSourceItems pc true true CompileItem.LoadSource pc.LoadSources)
+         .Replace("$(USESOURCEITEMS)", computeSourceItems pc true true CompileItem.UseSource pc.UseSources)
+         .Replace("$(DIRECTORYBUILDLOCATION)", Path.GetFullPath(__SOURCE_DIRECTORY__))
+         .Replace("$(OUTPUTTYPE)", outputType)
+         .Replace("$(OPTIMIZE)", optimize)
+         .Replace("$(DEBUG)", debug)
+         .Replace("$(TARGETFRAMEWORK)", targetFramework)
+         .Replace("$(RestoreFromArtifactsPath)", Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/packages/" + configuration)
 
-    generateProjBody
+    projBody
 
-let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
+let potentialSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
 
-let executeSingleTestBuildAndRun cfg outputType testCompilerVersion targetFramework optimize copyFiles =
-    let sources = []
+let executeSingleTestBuildAndRun cfg outputType testCompilerVersion targetFramework optimize extraRef =
     let loadSources = []
     let useSources = []
+    let extraSources = potentialSources |> List.filter (fileExists cfg)
     let utilitySources = [__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs"]
-    let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
+    let referenceItems =  if String.IsNullOrEmpty(extraRef) then [] else [extraRef]
     let mutable result = false
     let directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() )
     let pc = {
         OutputType = outputType
         Framework = targetFramework
         SourceDirectory = cfg.Directory
-        SourceItems = sources
-        ExtraSourceItems = extraSources
+        SourceItems = extraSources
         UtilitySourceItems = utilitySources
         ReferenceItems = referenceItems
         LoadSources = loadSources
@@ -232,20 +218,20 @@ let executeSingleTestBuildAndRun cfg outputType testCompilerVersion targetFramew
             printfn "Directory: %s" directory
             printfn "Filename: %s" projectFileName
 
-let singleTestBuildAndRunCore cfg copyFiles p =
+let singleTestBuildAndRunCore cfg extraRef p =
 
     match p with
-    | FSC_CORECLR -> executeSingleTestBuildAndRun cfg OutputType.Exe "coreclr" "netcoreapp2.0" true copyFiles
-    | FSI_CORECLR_SCRIPT -> executeSingleTestBuildAndRun cfg OutputType.Script "coreclr" "netcoreapp2.0" true copyFiles
+    | FSC_CORECLR -> executeSingleTestBuildAndRun cfg OutputType.Exe "coreclr" "netcoreapp2.0" true extraRef
+    | FSI_CORECLR_SCRIPT -> executeSingleTestBuildAndRun cfg OutputType.Script "coreclr" "netcoreapp2.0" true extraRef
 #if INCLUDE_NETFX_TESTS
-    | FSC_NETFX -> executeSingleTestBuildAndRun cfg OutputType.Exe "netfx" "net472" true copyFiles
-    | FSC_NETFX_DEBUG -> executeSingleTestBuildAndRun cfg OutputType.Exe "netfx" "net472" false copyFiles
-    | FSI_NETFX_SCRIPT -> executeSingleTestBuildAndRun cfg OutputType.Script "netfx" "net472" true copyFiles
+    | FSC_NETFX -> executeSingleTestBuildAndRun cfg OutputType.Exe "netfx" "net472" true extraRef
+    | FSC_NETFX_DEBUG -> executeSingleTestBuildAndRun cfg OutputType.Exe "netfx" "net472" false extraRef
+    | FSI_NETFX_SCRIPT -> executeSingleTestBuildAndRun cfg OutputType.Script "netfx" "net472" true extraRef
 
     | FSI_NETFX_SCRIPT_STDIN -> 
         use cleanup = cleanUpFSharpCore cfg
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-        let sources = extraSources |> List.filter (fileExists cfg)
+        let sources = potentialSources |> List.filter (fileExists cfg)
 
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
@@ -258,7 +244,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
         use cleanup = cleanUpFSharpCore cfg
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         
-        let sources = extraSources |> List.filter (fileExists cfg)
+        let sources = potentialSources |> List.filter (fileExists cfg)
 
         fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g" cfg.fsc_flags sources
         fsc cfg "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g" cfg.fsc_flags sources
@@ -274,8 +260,8 @@ let singleTestBuildAndRunCore cfg copyFiles p =
 let singleTestBuildAndRunAux cfg p = 
     singleTestBuildAndRunCore cfg "" p 
 
-let singleTestBuildAndRunWithCopyDlls  cfg copyFiles p = 
-    singleTestBuildAndRunCore cfg copyFiles p
+let singleTestBuildAndRunWithExtraRef  cfg extraRef p = 
+    singleTestBuildAndRunCore cfg extraRef p
 
 let singleTestBuildAndRun dir p = 
     let cfg = testConfig dir

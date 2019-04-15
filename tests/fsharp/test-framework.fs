@@ -105,6 +105,9 @@ type TestConfig =
     { EnvironmentVariables : Map<string, string>
       BUILD_CONFIG : string
       ILDASM : string
+      Directory: string 
+      DotNetExe: string
+      DefaultPlatform: string
 #if INCLUDE_NETFX_TESTS
       FSC : string
       fsc_flags : string
@@ -119,10 +122,7 @@ type TestConfig =
       FSharpBuild : string
       FSCOREDLLPATH : string
 #endif
-      Directory: string 
-      DotNetExe: string
-      DefaultPlatform: string}
-
+    }
 
 module WindowsPlatform = 
     let Is64BitOperatingSystem envVars =

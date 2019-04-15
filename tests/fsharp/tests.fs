@@ -20,8 +20,14 @@ open SingleTest
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 //
 // To run using command line use
-//   msbuild tests/fsharp/FSharpSuite.Tests.fsproj
-//   dotnet test tests/fsharp/FSharpSuite.Tests.fsproj --no-build -v:n
+//   msbuild tests\fsharp\FSharpSuite.Tests.fsproj /p:Configuration=Release
+//   dotnet test tests/fsharp/FSharpSuite.Tests.fsproj --no-build -v:n -c Release
+// To run selective tests:
+//   dotnet test tests/fsharp/FSharpSuite.Tests.fsproj --no-build -v:n -c Release --filter Name=Test1 
+//   dotnet test tests/fsharp/FSharpSuite.Tests.fsproj --no-build -v:n -c Release --filter TestCategory=netfx 
+// etc.
+//
+// NOTE: Some of these tests fail in DEBUG mode (when the Debug configuration of the F# compiler is invoked, e.g. due to stack overflow)
 
 [<Category("coreclr")>]
 module CoreTests = 
@@ -207,19 +213,19 @@ module RegressionTests =
 [<Category("netfx")>]
 module NetFxTests =
     [<Test>]
-    let ``literal-value-bug-2-netfx-script`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_NETFX_SCRIPT
+    let ``literal-value-bug-2-script-netfx`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``OverloadResolution-bug-netfx-script`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_NETFX_SCRIPT
+    let ``OverloadResolution-bug-script-netfx`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_NETFX_SCRIPT
 
     [<Test >]
-    let ``struct-tuple-bug-1-netfx-script`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_NETFX_SCRIPT
+    let ``struct-tuple-bug-1-script-netfx`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``access-netfx``() = singleTestBuildAndRun "core/access" FSC_NETFX
 
     [<Test>]
-    let ``access-netfx-script``() = singleTestBuildAndRun "core/access" FSI_NETFX_SCRIPT
+    let ``access-script-netfx``() = singleTestBuildAndRun "core/access" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``apporder-netfx`` () = singleTestBuildAndRun "core/apporder" FSC_NETFX
@@ -228,28 +234,28 @@ module NetFxTests =
     let ``array-netfx`` () = singleTestBuildAndRun "core/array" FSC_NETFX
 
     [<Test>]
-    let ``array-netfx-script`` () = singleTestBuildAndRun "core/array" FSI_NETFX_SCRIPT
+    let ``array-script-netfx`` () = singleTestBuildAndRun "core/array" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``comprehensions-netfx`` () = singleTestBuildAndRun "core/comprehensions" FSC_NETFX
 
     [<Test>]
-    let ``apporder-netfx-script`` () = singleTestBuildAndRun "core/apporder" FSI_NETFX_SCRIPT
+    let ``apporder-script-netfx`` () = singleTestBuildAndRun "core/apporder" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``comprehensions-netfx-script`` () = singleTestBuildAndRun "core/comprehensions" FSI_NETFX_SCRIPT
+    let ``comprehensions-script-netfx`` () = singleTestBuildAndRun "core/comprehensions" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``comprehensionshw-netfx`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_NETFX
 
     [<Test>]
-    let ``comprehensionshw-netfx-script`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_NETFX_SCRIPT
+    let ``comprehensionshw-script-netfx`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``genericmeasures-netfx`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX
 
     [<Test>]
-    let ``genericmeasures-netfx-script`` () = singleTestBuildAndRun "core/genericmeasures" FSI_NETFX_SCRIPT
+    let ``genericmeasures-script-netfx`` () = singleTestBuildAndRun "core/genericmeasures" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``innerpoly-netfx`` () = singleTestBuildAndRun "core/innerpoly" FSC_NETFX
@@ -261,31 +267,31 @@ module NetFxTests =
     let ``unicode2-netfx`` () = singleTestBuildAndRun "core/unicode" FSC_NETFX // TODO: fails on coreclr
 
     [<Test>]
-    let ``unicode2-netfx-script`` () = singleTestBuildAndRun "core/unicode" FSI_NETFX_SCRIPT
+    let ``unicode2-script-netfx`` () = singleTestBuildAndRun "core/unicode" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``lazy test-netfx`` () = singleTestBuildAndRun "core/lazy" FSC_NETFX
 
     [<Test>]
-    let ``lazy test-netfx-script`` () = singleTestBuildAndRun "core/lazy" FSI_NETFX_SCRIPT
+    let ``lazy test-script-netfx`` () = singleTestBuildAndRun "core/lazy" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``letrec-netfx`` () = singleTestBuildAndRun "core/letrec" FSC_NETFX
 
     [<Test>]
-    let ``letrec-netfx-script`` () = singleTestBuildAndRun "core/letrec" FSI_NETFX_SCRIPT
+    let ``letrec-script-netfx`` () = singleTestBuildAndRun "core/letrec" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``letrec (mutrec variations part one)-netfx`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_NETFX
 
     [<Test>]
-    let ``letrec (mutrec variations part one)-netfx-script`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_NETFX_SCRIPT
+    let ``letrec (mutrec variations part one)-script-netfx`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``innerpoly-netfx-script`` () = singleTestBuildAndRun "core/innerpoly" FSI_NETFX_SCRIPT
+    let ``innerpoly-script-netfx`` () = singleTestBuildAndRun "core/innerpoly" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``measures-netfx-script`` () = singleTestBuildAndRun "core/measures" FSI_NETFX_SCRIPT
+    let ``measures-script-netfx`` () = singleTestBuildAndRun "core/measures" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``members-ops-netfx`` () = singleTestBuildAndRun "core/members/ops" FSC_NETFX
@@ -348,13 +354,10 @@ module NetFxTests =
     let ``test int32-netfx`` () = singleTestBuildAndRun "core/int32" FSC_NETFX
 
     [<Test>]
-    let ``quotes-netfx`` () = singleTestBuildAndRun "core/quotes" FSC_NETFX // TODO: fails on coreclr
-
-    [<Test>]
     let ``attributes-netfx`` () = singleTestBuildAndRun "core/attributes" FSC_NETFX
 
     [<Test>]
-    let ``attributes-netfx-script`` () = singleTestBuildAndRun "core/attributes" FSI_NETFX_SCRIPT
+    let ``attributes-script-netfx`` () = singleTestBuildAndRun "core/attributes" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``control-netfx`` () = singleTestBuildAndRun "core/control" FSC_NETFX
@@ -390,13 +393,13 @@ module NetFxTests =
     let ``regression-literal-value-bug-2-netfx`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_NETFX
 
     [<Test>]
-    let ``regression-literal-value-bug-2-netfx-script`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_NETFX_SCRIPT
+    let ``regression-literal-value-bug-2-script-netfx`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``regression-OverloadResolution-bug-netfx`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_NETFX
 
     [<Test>]
-    let ``regression-OverloadResolution-bug-netfx-script`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_NETFX_SCRIPT
+    let ``regression-OverloadResolution-bug-script-netfx`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``regression-struct-tuple-bug-1-netfx`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_NETFX
@@ -414,7 +417,7 @@ module NetFxTests =
     let ``regression-86-netfx`` () = singleTestBuildAndRun "regression/86" FSC_NETFX
 
     [<Test >]
-    let ``regression-struct-tuple-bug-1-netfx-script`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_NETFX_SCRIPT
+    let ``regression-struct-tuple-bug-1-script-netfx`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_NETFX_SCRIPT
 
     [<Test>]
     let ``byrefs-netfx`` () = 
@@ -473,10 +476,10 @@ module NetFxTests =
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
-            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-            exec cfg ("." ++ "test.exe") ""
-
-            testOkFile.CheckExists()
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine and System.Memory available
+            //exec cfg ("." ++ "test.exe") ""
+            //
+            //testOkFile.CheckExists()
         end
 
         begin
@@ -486,10 +489,10 @@ module NetFxTests =
 
             fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
-            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-            exec cfg ("." ++ "test.exe") ""
-
-            testOkFile.CheckExists()
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine and System.Memory available
+            //exec cfg ("." ++ "test.exe") ""
+            //
+            //testOkFile.CheckExists()
         end
 
         begin
@@ -499,10 +502,10 @@ module NetFxTests =
 
             fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
 
-            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-            exec cfg ("." ++ "test.exe") ""
-
-            testOkFile.CheckExists()
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine and System.Memory available
+            //exec cfg ("." ++ "test.exe") ""
+            //
+            //testOkFile.CheckExists()
         end
 
     [<Test>]
@@ -550,7 +553,7 @@ module NetFxTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-lists``() = 
+    let ``lots-of-lists-netfx``() = 
         let cfg = testConfig "core/large/lists"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test-500.exe " cfg.fsc_flags ["LargeList-500.fs"]
@@ -558,7 +561,7 @@ module NetFxTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-matches``() = 
+    let ``lots-of-matches-netfx``() = 
         let cfg = testConfig "core/large/matches"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-200.fs"]
@@ -566,7 +569,7 @@ module NetFxTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-matches-maxtested``() = 
+    let ``lots-of-matches-maxtested-netfx``() = 
         let cfg = testConfig "core/large/matches"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-maxtested.fs"]
@@ -574,7 +577,7 @@ module NetFxTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-sequential-and-let``() = 
+    let ``lots-of-sequential-and-let-netfx``() = 
         let cfg = testConfig "core/large/mixed"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-500.fs"]
@@ -582,7 +585,7 @@ module NetFxTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-sequential-and-let-maxtested``() = 
+    let ``lots-of-sequential-and-let-maxtested-netfx``() = 
         let cfg = testConfig "core/large/mixed"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-maxtested.fs"]
@@ -590,7 +593,7 @@ module NetFxTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-sequential``() = 
+    let ``lots-of-sequential-netfx``() = 
         let cfg = testConfig "core/large/sequential"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-500.fs"]
@@ -598,7 +601,7 @@ module NetFxTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``lots-of-sequential-maxtested``() = 
+    let ``lots-of-sequential-maxtested-netfx``() = 
         let cfg = testConfig "core/large/sequential"
         use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-maxtested.fs"]
@@ -607,7 +610,7 @@ module NetFxTests =
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_NETFX
+    let ``controlWpf-netfx`` () = singleTestBuildAndRun "core/controlwpf" FSC_NETFX
 
 
     // These tests are enabled for .NET Framework and .NET Core
@@ -640,7 +643,7 @@ module NetFxTests =
         end
 
     [<Test>]
-    let events () = 
+    let ``events-netfx`` () = 
         let cfg = testConfig "core/events"
 
         fsc cfg "%s -a -o:test.dll -g" cfg.fsc_flags ["test.fs"]
@@ -711,13 +714,13 @@ module NetFxTests =
 
 
     [<Test>]
-    let forwarders () = 
+    let ``forwarders-netfx`` () = 
         let cfg = testConfig "core/forwarders"
 
         mkdir cfg "orig"
         mkdir cfg "split"
 
-        csc cfg """/nologo  /target:library /out:orig\sa.dll /define:PART1;PART2""" ["a.cs"]
+        csc cfg """/nologo  /target:library /out:orig\a.dll /define:PART1;PART2""" ["a.cs"]
 
         csc cfg """/nologo  /target:library /out:orig\b.dll /r:orig\a.dll""" ["b.cs"]
 
@@ -744,7 +747,7 @@ module NetFxTests =
         peverify cfg ("split" ++ "c.dll")
 
     [<Test>]
-    let fsfromcs () = 
+    let ``fsfromcs-netfx`` () = 
         let cfg = testConfig "core/fsfromcs"
 
         fsc cfg "%s -a --doc:lib.xml -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
@@ -764,7 +767,7 @@ module NetFxTests =
         exec cfg ("." ++ "test--optimize.exe") ""
                 
     [<Test>]
-    let fsfromfsviacs () = 
+    let ``fsfromfsviacs-netfx`` () = 
         let cfg = testConfig "core/fsfromfsviacs"
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
@@ -796,7 +799,7 @@ module NetFxTests =
         exec cfg ("." ++ "test.exe") ""
 
     [<Test>]
-    let ``fsi-reference`` () = 
+    let ``fsi-reference-netfx`` () = 
 
         let cfg = testConfig "core/fsi-reference"
 
@@ -809,7 +812,7 @@ module NetFxTests =
         end
 
     [<Test>]
-    let ``fsi-reload`` () = 
+    let ``fsi-reload-netfx`` () = 
         let cfg = testConfig "core/fsi-reload"
 
         begin
@@ -836,7 +839,7 @@ module NetFxTests =
 
 
     [<Test>]
-    let fsiAndModifiers () = 
+    let ``fsiAndModifiers-netfx`` () = 
         let cfg = testConfig "core/fsiAndModifiers"
 
         do if fileExists cfg "TestLibrary.dll" then rm cfg "TestLibrary.dll"
@@ -849,14 +852,11 @@ module NetFxTests =
 
         testOkFile.CheckExists()
                 
-
+    [<Test>]
+    let ``genericmeasures-dll-netfx`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_AS_DLL
 
     [<Test>]
-    let ``genericmeasures-netfx-dll`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_AS_DLL
-
-
-    [<Test>]
-    let hiding () = 
+    let ``hiding-netfx`` () = 
         let cfg = testConfig "core/hiding"
 
         fsc cfg "%s -a --optimize -o:lib.dll" cfg.fsc_flags ["lib.mli";"lib.ml";"libv.ml"]
@@ -872,10 +872,10 @@ module NetFxTests =
         peverify cfg "client.exe"
 
     [<Test>]
-    let ``innerpoly-netfx-dll`` () = singleTestBuildAndRun "core/innerpoly"  FSC_NETFX_AS_DLL       
+    let ``innerpoly-dll-netfx`` () = singleTestBuildAndRun "core/innerpoly"  FSC_NETFX_AS_DLL       
 
     [<Test>]
-    let queriesCustomQueryOps () = 
+    let ``queriesCustomQueryOps-netfx`` () = 
         let cfg = testConfig "core/queriesCustomQueryOps"
 
         fsc cfg """%s -o:test.exe -g""" cfg.fsc_flags ["test.fsx"]
@@ -1014,7 +1014,7 @@ module NetFxTests =
     let ``signedtest-1-netfx`` () = signedtest("test-unsigned", "", SigningType.NotSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-2`` () = signedtest("test-sha1-full-cl", "--keyfile:sha1full.snk", SigningType.PublicSigned)
+    let ``signedtest-2-netfx`` () = signedtest("test-sha1-full-cl", "--keyfile:sha1full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
     let ``signedtest-3-netfx`` () = signedtest("test-sha256-full-cl", "--keyfile:sha256full.snk", SigningType.PublicSigned)
@@ -1065,12 +1065,11 @@ module NetFxTests =
     let ``signedtest-16-netfx`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
 
     [<Test>]
-    let ``quotes-FSI-BASIC-netfx`` () = singleTestBuildAndRun "core/quotes" FSI_NETFX_SCRIPT
+    let ``quotes-script-netfx`` () = singleTestBuildAndRun "core/quotes" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let quotes () = 
+    let ``quotes-netfx`` () = 
         let cfg = testConfig "core/quotes"
-
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
@@ -1113,7 +1112,7 @@ module NetFxTests =
         end
 
     [<Test; Category("parsing")>]
-    let parsing () = 
+    let ``parsing-netfx`` () = 
         let cfg = testConfig "core/parsing"
         
         fsc cfg "%s -a -o:crlf.dll -g" cfg.fsc_flags ["crlf.ml"]
@@ -1123,7 +1122,7 @@ module NetFxTests =
         peverify cfg "toplet.exe"
 
     [<Test>]
-    let unicode () = 
+    let ``unicode-netfx`` () = 
         let cfg = testConfig "core/unicode"
 
         fsc cfg "%s -a -o:kanji-unicode-utf8-nosig-codepage-65001.dll -g" cfg.fsc_flags ["kanji-unicode-utf8-nosig-codepage-65001.fs"]
@@ -1148,7 +1147,7 @@ module NetFxTests =
  
 
     [<Test>]
-    let internalsvisible () = 
+    let ``internalsvisible-netfx`` () = 
         let cfg = testConfig "core/internalsvisible"
 
         // Compiling F# Library
@@ -1172,7 +1171,7 @@ module NetFxTests =
 
     // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
     [<Test>]
-    let fileorder () = 
+    let ``fileorder-netfx`` () = 
         let cfg = testConfig "core/fileorder"
 
         log "== Compiling F# Library and Code, when empty file libfile2.fs IS NOT included"
@@ -1232,22 +1231,22 @@ module NetFxTests =
         exec cfg ("." ++ "test.exe") ""
 
     [<Test>]
-    let ``libtest-netfx-script-stdin`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_SCRIPT_STDIN
+    let ``libtest-script-stdin-netfx`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_SCRIPT_STDIN
 
     [<Test>]
-    let ``libtest-netfx-debug`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_DEBUG
+    let ``libtest-debug-netfx`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_DEBUG
 
     [<Test>]
-    let ``libtest-netfx-dll`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_AS_DLL
+    let ``libtest-dll-netfx`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_AS_DLL
 
     [<Test>]
     let ``libtest-netfx-scriptnetfx`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let ``letrec-mutrec2-netfx-script`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_NETFX_SCRIPT
+    let ``letrec-mutrec2-script-netfx`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_NETFX_SCRIPT
 
     [<Test>]
-    let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_NETFX
+    let ``recordResolution-netfx`` () = singleTestBuildAndRun "core/recordResolution" FSC_NETFX
 
     [<Test>]
     let ``no-warn-2003-tests-netfx`` () =
@@ -1439,11 +1438,11 @@ module NetFxTests =
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
 
     [<Test>]
-    let ``measures-netfx-dll`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_AS_DLL
+    let ``measures-dll-netfx`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_AS_DLL
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let ``members-basics-netfx-script`` () = singleTestBuildAndRun "core/members/basics" FSI_NETFX_SCRIPT
+    let ``members-basics-script-netfx`` () = singleTestBuildAndRun "core/members/basics" FSI_NETFX_SCRIPT
 
     // Requires winforms will not run on coreclr
     [<Test>]
@@ -1451,7 +1450,7 @@ module NetFxTests =
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let ``members-basics-netfx-dll`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_AS_DLL
+    let ``members-basics-dll-netfx`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_AS_DLL
 
     // Requires winforms will not run on coreclr
     [<Test>]
@@ -1893,13 +1892,13 @@ module NetFxTests =
     let ``verify-netfx`` () = 
         let cfg = testConfig "core/verify"
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSharpBuild)
+        peverifyWithArgs cfg "/nologo" cfg.FSharpBuild
 
        // peverifyWithArgs cfg "/nologo /MD" (getDirectoryName(cfg.FSC) ++ "FSharp.Compiler.dll")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSI)
+        peverifyWithArgs cfg "/nologo" cfg.FSI
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSharpCompilerInteractiveSettings)
+        peverifyWithArgs cfg "/nologo" cfg.FSharpCompilerInteractiveSettings
 
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
@@ -2144,7 +2143,7 @@ module TypecheckTests =
     [<Test>]
     let ``full-rank-arrays-netfx`` () = 
         let cfg = testConfig "typecheck/full-rank-arrays"
-        SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_NETFX
+        SingleTest.singleTestBuildAndRunWithExtraRef cfg "full-rank-arrays.dll" FSC_NETFX
 
     // Converter is not coming back until dotnet standard 2.0
     [<Test>]
@@ -3223,9 +3222,24 @@ module TypeProviderTests =
 
         fsc cfg "--out:providerDesigner.dll -a" ["providerDesigner.fsx"]
 
-        SingleTest.singleTestBuildAndRunAux cfg FSC_NETFX
+        begin
+            use testOk = fileguard cfg "test.ok"
+            fsc cfg "" ["test.fsx"]
+            exec cfg ("." ++ "test.exe") ""
+            testOk.CheckExists()
+        end
 
-        SingleTest.singleTestBuildAndRunAux cfg FSI_NETFX_SCRIPT
+        begin
+            use testOk = fileguard cfg "test.ok"
+            fsi cfg "" ["test.fsx"]
+            testOk.CheckExists()
+        end
+
+        begin
+            use testOk = fileguard cfg "test.ok"
+            fsiAnyCpu cfg "" ["test.fsx"]
+            testOk.CheckExists()
+        end
 
         // Do the same thing with different load locations for the type provider design-time component
 
@@ -3247,7 +3261,12 @@ module TypeProviderTests =
             mkdir cfg dir
             fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
 
-            SingleTest.singleTestBuildAndRunAux cfg FSC_NETFX
+            begin
+                use testOk = fileguard cfg "test.ok"
+                fsc cfg "" ["test.fsx"]
+                exec cfg ("." ++ "test.exe") ""
+                testOk.CheckExists()
+            end
 
         for dir in someLoadPaths do
 
@@ -3257,7 +3276,11 @@ module TypeProviderTests =
             mkdir cfg dir
             fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
 
-            SingleTest.singleTestBuildAndRunAux cfg FSI_NETFX_SCRIPT
+            begin
+                use testOk = fileguard cfg "test.ok"
+                fsi cfg "" ["test.fsx"]
+                testOk.CheckExists()
+            end
 
         clean()
 
