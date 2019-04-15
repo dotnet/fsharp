@@ -1500,20 +1500,46 @@ let emitParameter cenv emEnv (defineParameter: int * ParameterAttributes * strin
 //----------------------------------------------------------------------------
 // buildMethodPass2
 //----------------------------------------------------------------------------
-  
+
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
+
+let enablePInvoke = true
+
+#else
+
+// We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
+// but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+let definePInvokeMethod =
+    typeof<TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
+        typeof<string>;
+        typeof<string>;
+        typeof<string>;
+        typeof<System.Reflection.MethodAttributes>;
+        typeof<System.Reflection.CallingConventions>;
+        typeof<Type>;
+        typeof<Type[]>;
+        typeof<Type[]>;
+        typeof<Type[]>;
+        typeof<Type[][]>;
+        typeof<Type[][]>;
+        typeof<System.Runtime.InteropServices.CallingConvention>;
+        typeof<System.Runtime.InteropServices.CharSet> |])
+
+let enablePInvoke = definePInvokeMethod <> null
+#endif
+
 let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef) =
     let attrs = mdef.Attributes
     let implflags = mdef.ImplAttributes
     let cconv = convCallConv mdef.CallingConv
-    let mref = mkRefToILMethod (tref, mdef)   
+    let mref = mkRefToILMethod (tref, mdef)
     let emEnv = 
-        if mdef.IsEntryPoint && isNil mdef.ParameterTypes then 
+        if mdef.IsEntryPoint && isNil mdef.ParameterTypes then
             envAddEntryPt emEnv (typB, mdef.Name)
         else
             emEnv
     match mdef.Body.Contents with
-#if !FX_RESHAPED_REFEMIT
-    | MethodBody.PInvoke p -> 
+    | MethodBody.PInvoke p when enablePInvoke ->
         let argtys = convTypesToArray cenv emEnv mdef.ParameterTypes
         let rty = convType cenv emEnv mdef.Return.Type
 
@@ -1535,10 +1561,19 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
 (* p.CharBestFit *)
 (* p.NoMangle *)
 
-        let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs) 
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
+        // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCORE_APP3_0.
+        // It has always been available in the desktop framework
+        let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs)
+#else
+        // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
+        // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+        let methB =
+            System.Diagnostics.Debug.Assert(definePInvokeMethod <> null, "Runtime does not have DefinePInvokeMethod")   // Absolutely can't happen
+            definePInvokeMethod.Invoke(typB,  [| mdef.Name; p.Where.Name; p.Name; attrs; cconv; rty; null; null; argtys; null; null; pcc; pcs |]) :?> MethodBuilder
+#endif
         methB.SetImplementationFlagsAndLog(implflags)
         envBindMethodRef emEnv mref methB
-#endif
 
     | _ -> 
       match mdef.Name with
