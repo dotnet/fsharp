@@ -71,12 +71,8 @@ module Commands =
         ignore workDir 
         printfn "fscExe: %A" fscExe
         printfn "args: %A" args
-//#if !NETCOREAPP
         ignore dotNetExe
         exec fscExe args
-//#else
-//        exec dotNetExe (fscExe + " " + args)
-//#endif
 
     let csc exec cscExe flags srcFiles =
         exec cscExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
@@ -107,7 +103,6 @@ type TestConfig =
       ILDASM : string
       Directory: string 
       DotNetExe: string
-      DefaultPlatform: string
 #if INCLUDE_NETFX_TESTS
       FSC : string
       fsc_flags : string
@@ -142,25 +137,25 @@ let config configurationName envVars =
 
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__
     let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+    let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
+    let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
+    let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
+    let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
+    let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
+    let dotNetExe =
+        // first look for {repoRoot}\.dotnet\dotnet.exe, otherwise fallback to %PATH%
+        let repoLocalDotnetPath = repoRoot ++ ".dotnet" ++ "dotnet.exe"
+        if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
+        else "dotnet.exe"
+    // ildasm requires coreclr.dll to run which has already been restored to the packages directory
+    File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
+
 #if INCLUDE_NETFX_TESTS
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"
     let fsharpCoreArchitecture = "net45"
     let fsharpBuildArchitecture = "net472"
     let fsharpCompilerInteractiveSettingsArchitecture = "net472"
-//#else
-//    let fscArchitecture = "netcoreapp2.1"
-//    let fsiArchitecture = "netcoreapp2.1"
-//    let fsharpCoreArchitecture = "netstandard1.6"
-//    let fsharpBuildArchitecture = "netcoreapp2.1"
-//    let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
-#endif
-    let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
-    let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
-    let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
-    let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
-    let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
-#if INCLUDE_NETFX_TESTS
     let artifactsPath = repoRoot ++ "artifacts"
     let artifactsBinPath = artifactsPath ++ "bin"
     let csc_flags = "/nologo" 
@@ -171,37 +166,17 @@ let config configurationName envVars =
     let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireFile (artifactsBinPath ++ "FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireFile (artifactsBinPath ++ "FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
-#endif
-    let dotNetExe =
-        // first look for {repoRoot}\.dotnet\dotnet.exe, otherwise fallback to %PATH%
-        let repoLocalDotnetPath = repoRoot ++ ".dotnet" ++ "dotnet.exe"
-        if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
-        else "dotnet.exe"
-    // ildasm requires coreclr.dll to run which has already been restored to the packages directory
-    File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
-
-#if INCLUDE_NETFX_TESTS
     let FSI = requireFile FSI_FOR_SCRIPTS
     let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ fsiArchitecture ++ "fsiAnyCpu.exe")
-//#else
-//    let FSIANYCPU = FSI
     let FSC = requireFile (artifactsBinPath ++ "fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
     let FSCOREDLLPATH = requireFile (artifactsBinPath ++ "FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
 #endif
-
-    let defaultPlatform = 
-        match Is64BitOperatingSystem with 
-//        | PlatformID.MacOSX, true -> "osx.10.10-x64"
-//        | PlatformID.Unix,true -> "ubuntu.14.04-x64"
-        | true -> "win7-x64"
-        | false -> "win7-x86"
 
     { EnvironmentVariables = envVars
       ILDASM = ILDASM
       BUILD_CONFIG = configurationName
       Directory="" 
       DotNetExe = dotNetExe
-      DefaultPlatform = defaultPlatform 
 #if INCLUDE_NETFX_TESTS
       FSCOREDLLPATH = FSCOREDLLPATH
       PEVERIFY = PEVERIFY
@@ -434,6 +409,7 @@ let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cf
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
 let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
 let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(stdinPath)) } p >> alwaysSuccess
+let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 #if INCLUDE_NETFX_TESTS
 let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.DotNetExe cfg.FSC) arg
 let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.DotNetExe  cfg.FSC) arg
@@ -442,9 +418,6 @@ let fscAppendIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Com
 let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (execBothToOut cfg cfg.Directory out) cfg.DotNetExe  cfg.FSC) arg
 let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendErrExpectFail cfg errPath) cfg.DotNetExe  cfg.FSC) arg
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
-#endif
-let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
-#if INCLUDE_NETFX_TESTS
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
