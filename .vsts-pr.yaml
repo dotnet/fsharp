@@ -93,7 +93,7 @@ jobs:
     vmImage: windows-2019
   timeoutInMinutes: 120
   strategy:
-    maxParallel: 4
+    maxParallel: 5
     matrix:
       desktop_release:
         _configuration: Release

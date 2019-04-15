@@ -263,7 +263,7 @@ try {
 
     if ($testFSharpSuite) {
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj"
-	}
+    }
 
     if ($testFSharpQA) {
         Push-Location "$RepoRoot\tests\fsharpqa\source"
