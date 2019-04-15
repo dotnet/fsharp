@@ -29,9 +29,6 @@
     <Reference Include="System.Runtime" />
     <Reference Include="System.IO" />
     <PackageReference Include="FSharp.Core" Version="4.6.2" />
-    <PackageReference Include="FSharp.Core" Version="4.5.2" />
-    <PackageReference Include="FSharp.Core" Version="4.1.19" />
-    <PackageReference Include="FSharp.Core" Version="4.1.18" />
     <PackageReference Include="FSharp.Compiler.Service.MSBuild.v12.0" Version="1.0.0" />
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
