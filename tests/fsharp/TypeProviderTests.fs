@@ -1,15 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if INTERACTIVE
-//#r @"../../release/net40/bin/FSharp.Compiler.dll"
-#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
-#load "../../src/scripts/scriptlib.fsx" 
-#load "test-framework.fs" 
-#load "single-test.fs"
-#else
 [<NUnit.Framework.Category "Type Provider">]
 module FSharp.Test.FSharpSuite.TypeProviderTests
-#endif
 
 open System
 open System.IO
@@ -19,17 +11,8 @@ open TestFramework
 open Scripting
 open SingleTest
 
-#if FSHARP_SUITE_DRIVES_CORECLR_TESTS
-// Use these lines if you want to test CoreCLR
-let FSC_BASIC = FSC_CORECLR
-let FSI_BASIC = FSI_CORECLR
-let FSIANYCPU_BASIC = FSI_CORECLR
-#else
-let FSC_BASIC = FSC_OPT_PLUS_DEBUG
-let FSI_BASIC = FSI_FILE
-#endif
+#if INCLUDE_NETFX_TESTS
 
-(*
 [<Test>]
 let diamondAssembly () = 
     let cfg = testConfig "typeProviders/diamondAssembly"
@@ -141,10 +124,10 @@ let helloWorld p =
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
 [<Test>]
-let ``helloWorld fsc`` () = helloWorld FSC_BASIC
+let ``helloWorld fsc`` () = helloWorld FSC_NETFX
 
 [<Test>]
-let ``helloWorld fsi`` () = helloWorld FSI_STDIN
+let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
 
 
 [<Test>]
@@ -267,11 +250,11 @@ let splitAssembly subdir project =
 
     fsc cfg "--out:providerDesigner.dll -a" ["providerDesigner.fsx"]
 
-    SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
+    SingleTest.singleTestBuildAndRunAux cfg FSC_NETFX
 
-    SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
+    SingleTest.singleTestBuildAndRunAux cfg FSI_NETFX_SCRIPT
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     SingleTest.singleTestBuildAndRunAux cfg FSIANYCPU_BASIC
 #endif
 
@@ -295,7 +278,7 @@ let splitAssembly subdir project =
         mkdir cfg dir
         fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
 
-        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
+        SingleTest.singleTestBuildAndRunAux cfg FSC_NETFX
 
     for dir in someLoadPaths do
 
@@ -305,7 +288,7 @@ let splitAssembly subdir project =
         mkdir cfg dir
         fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
 
-        SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
+        SingleTest.singleTestBuildAndRunAux cfg FSI_NETFX_SCRIPT
 
     clean()
 
@@ -360,4 +343,4 @@ let wedgeAssembly () =
     peverify cfg "test3.exe"
 
     exec cfg ("." ++ "test3.exe") ""
-*)
+#endif

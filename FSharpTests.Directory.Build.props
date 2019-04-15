@@ -4,7 +4,7 @@
     <BUILD_IN_FSHARP_REPOSITORY>true</BUILD_IN_FSHARP_REPOSITORY>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'net40'">
+  <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'netfx'">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
 
     <FscToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\net472</FscToolPath>
@@ -32,7 +32,7 @@
 
   <!-- SDK targets override -->
   <PropertyGroup>
-    <_FSharpBuildTargetFramework Condition="'$(FSharpTestCompilerVersion)' == 'net40'">net472</_FSharpBuildTargetFramework>
+    <_FSharpBuildTargetFramework Condition="'$(FSharpTestCompilerVersion)' == 'netfx'">net472</_FSharpBuildTargetFramework>
     <_FSharpBuildTargetFramework Condition="'$(FSharpTestCompilerVersion)' == 'coreclr'">netcoreapp2.1</_FSharpBuildTargetFramework>
     <_FSharpBuildBinPath>$(MSBuildThisFileDirectory)artifacts\bin\FSharp.Build\$(Configuration)\$(_FSharpBuildTargetFramework)</_FSharpBuildBinPath>
 
