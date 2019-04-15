@@ -49,7 +49,7 @@ param (
     [switch]$testFSharpSuite,
     [switch]$testFSharpQA,
     [switch]$testFSharpCore,
-    [switch]$testVS,
+    [switch]$testVs,
     [switch]$testAll,
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
