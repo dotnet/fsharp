@@ -196,7 +196,7 @@ function UpdatePath() {
 }
 
 function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\fsi.exe"
+    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\publish\fsi.exe"
 
     # Only verify versions on CI or official build
     if ($ci -or $official) {
