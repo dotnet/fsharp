@@ -7,11 +7,11 @@
   <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'net40'">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
 
-    <FscToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\net472</FscToolPath>
+    <FscToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\net472\publish</FscToolPath>
     <FscToolExe>fsc.exe</FscToolExe>
     <DotnetFscCompilerPath></DotnetFscCompilerPath>
 
-    <FsiToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\net472</FsiToolPath>
+    <FsiToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\net472\publish</FsiToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <DotnetFsiCompilerPath></DotnetFsiCompilerPath>
   </PropertyGroup>
@@ -22,19 +22,19 @@
     <FscToolPath>$([System.IO.Path]::GetDirectoryName('$(DOTNET_HOST_PATH)'))</FscToolPath>
     <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
     <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
-    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\netcoreapp2.1\fsc.exe</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\netcoreapp2.1\publish\fsc.exe</DotnetFscCompilerPath>
 
     <FsiToolPath>$([System.IO.Path]::GetDirectoryName('$(DOTNET_HOST_PATH)'))</FsiToolPath>
     <FsiToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FsiToolExe>
     <FsiToolExe Condition="'$(OS)' == 'Unix'">dotnet</FsiToolExe>
-    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\netcoreapp2.1\fsi.exe</DotnetFsiCompilerPath>
+    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\netcoreapp2.1\publish\fsi.exe</DotnetFsiCompilerPath>
   </PropertyGroup>
 
   <!-- SDK targets override -->
   <PropertyGroup>
     <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'!='Core'">net472</_FSharpBuildTargetFramework>
     <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'=='Core'">netcoreapp2.1</_FSharpBuildTargetFramework>
-    <_FSharpBuildBinPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\$(_FSharpBuildTargetFramework)</_FSharpBuildBinPath>
+    <_FSharpBuildBinPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\$(_FSharpBuildTargetFramework)\publish</_FSharpBuildBinPath>
 
     <FSharpBuildAssemblyFile>$(_FSharpBuildBinPath)\FSharp.Build.dll</FSharpBuildAssemblyFile>
 
