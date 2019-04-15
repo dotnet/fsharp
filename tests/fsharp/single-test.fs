@@ -10,7 +10,7 @@ open TestFramework
 type Permutation = 
     | FSC_CORECLR
     | FSI_CORECLR_SCRIPT
-#if INCLUDE_NETFX_TESTS
+#if TEST_NETFX_TOOLS
     | FSI_NETFX_SCRIPT
     | FSI_NETFX_SCRIPT_STDIN
     | FSC_NETFX_DEBUG
@@ -223,7 +223,7 @@ let singleTestBuildAndRunCore cfg extraRef p =
     match p with
     | FSC_CORECLR -> executeSingleTestBuildAndRun cfg OutputType.Exe "coreclr" "netcoreapp2.0" true extraRef
     | FSI_CORECLR_SCRIPT -> executeSingleTestBuildAndRun cfg OutputType.Script "coreclr" "netcoreapp2.0" true extraRef
-#if INCLUDE_NETFX_TESTS
+#if TEST_NETFX_TOOLS
     | FSC_NETFX -> executeSingleTestBuildAndRun cfg OutputType.Exe "netfx" "net472" true extraRef
     | FSC_NETFX_DEBUG -> executeSingleTestBuildAndRun cfg OutputType.Exe "netfx" "net472" false extraRef
     | FSI_NETFX_SCRIPT -> executeSingleTestBuildAndRun cfg OutputType.Script "netfx" "net472" true extraRef
@@ -267,7 +267,7 @@ let singleTestBuildAndRun dir p =
     let cfg = testConfig dir
     singleTestBuildAndRunAux cfg p
 
-#if INCLUDE_NETFX_TESTS
+#if TEST_NETFX_TOOLS
 let singleNegTest (cfg: TestConfig) testname = 
 
     let cfg = { cfg with fsc_flags = sprintf "%s --define:NEGATIVE" cfg.fsc_flags }

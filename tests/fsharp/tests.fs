@@ -209,7 +209,7 @@ module RegressionTests =
     [<Test >]
     let ``regression-86-coreclr`` () = singleTestBuildAndRun "regression/86" FSC_CORECLR
 
-#if INCLUDE_NETFX_TESTS
+#if TEST_NETFX_TOOLS
 [<Category("netfx")>]
 module NetFxTests =
     [<Test>]
