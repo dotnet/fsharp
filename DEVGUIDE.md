@@ -84,7 +84,8 @@ All test options:
 
     -testDesktop                          -- test all net472 target frameworks
     -testCoreClr                          -- test all netstandard and netcoreapp target frameworks
-    -testFSharpQA                         -- test all F# Cambridge tests
+    -testFSharpQA                         -- test all tests/fsharpqa tests
+    -testFSharpSuite                      -- test all tests/fsharp suite tests
     -testVs                               -- test all VS integration points
     -testFcs                              -- test F# compiler service components
     -testAll                              -- all of the above

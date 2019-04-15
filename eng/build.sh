@@ -49,7 +49,7 @@ build=false
 rebuild=false
 pack=false
 publish=false
-test_core_clr=false
+test=false
 
 configuration="Debug"
 verbosity='minimal'
@@ -107,7 +107,7 @@ while [[ $# > 0 ]]; do
       publish=true
       ;;
     --testcoreclr|--test|-t)
-      test_core_clr=true
+      test=true
       ;;
     --ci)
       ci=true
@@ -161,15 +161,20 @@ function TestUsingNUnit() {
     shift
   done
 
-  if [[ "$testproject" == "" || "$targetframework" == "" ]]; then
+  if [[ "$testproject" == "" ]]; then
     echo "--testproject and --targetframework must be specified"
+    exit 1
+  fi
+  if [[ "$targetframework" == "" ]]; then
+    underscoretargetframework="_$targetframework"
+    targetframeworkflag="-f $targetframework"
     exit 1
   fi
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
+  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}$underscoretargetframework.xml"
+  args="test \"$testproject\" --no-restore --no-build -c $configuration $targetframeworkflag --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
   "$DOTNET_INSTALL_DIR/dotnet" $args
 }
 
@@ -239,11 +244,13 @@ InitializeDotNetCli $restore
 
 BuildSolution
 
-if [[ "$test_core_clr" == true ]]; then
+if [[ "$test" == true ]]; then
   coreclrtestframework=netcoreapp2.1
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+  # Not yet enabled
+  #TestUsingNUnit --testproject "$repo_root/tests/FSharpSuite.Tests.fsproj"
 fi
 
 ExitWithExitCode 0

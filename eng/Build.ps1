@@ -46,9 +46,10 @@ param (
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
+    [switch]$testFSharpSuite,
     [switch]$testFSharpQA,
     [switch]$testFSharpCore,
-    [switch]$testVs,
+    [switch]$testVS,
     [switch]$testAll,
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
@@ -77,8 +78,9 @@ function Print-Usage() {
     Write-Host "  -testAll                  Run all tests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
-    Write-Host "  -testFSharpQA             Run F# Cambridge tests"
-    Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
+    Write-Host "  -testFSharpSuite          Run tests/fsharp suite tests"
+    Write-Host "  -testFSharpQA             Run tests/fsharpqa tests"
+    Write-Host "  -testFSharpCore           Run FSharp.Core unit tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -105,6 +107,7 @@ function Process-Arguments() {
         $script:testDesktop = $True
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
+        $script:testFSharpSuite = $True
         $script:testVs = $True
     }
 
@@ -204,10 +207,12 @@ function VerifyAssemblyVersions() {
 function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $underscoreTargetFramework = $(if ($targetFramework) { "_" + $targetFramework } else { "" })
+    $targetFrameworkFlag = $(if ($targetFramework) { "-f " + $targetFramework } else { "" })
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
-    $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
-    $args = "test $testProject --no-restore --no-build -c $configuration -f $targetFramework -v n --test-adapter-path . --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}$underscoreTargetFramework.xml"
+    $testBinLogPath = "$LogDir\${projectName}$underscoreTargetFramework.binlog"
+    $args = "test $testProject --no-restore --no-build -c $configuration $targetFrameworkFlag -v n --test-adapter-path . --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     Exec-Console $dotnetExe $args
 }
 
@@ -248,15 +253,17 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
-        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
     }
 
     if ($testCoreClr) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
-        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
     }
+
+    if ($testFSharpSuite) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj"
+	}
 
     if ($testFSharpQA) {
         Push-Location "$RepoRoot\tests\fsharpqa\source"

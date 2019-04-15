@@ -205,7 +205,7 @@ let executeSingleTestBuildAndRun cfg outputType testCompilerVersion targetFramew
         emitFile projectFileName projectBody
         use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
         if outputType = OutputType.Exe then
-            exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s -v:n" targetFramework)
+            exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s" targetFramework)
         else
             exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript"
         testOkFile.CheckExists()

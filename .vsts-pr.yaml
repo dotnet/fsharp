@@ -104,6 +104,9 @@ jobs:
       fsharpqa_release:
         _configuration: Release
         _testKind: testFSharpQA
+      fsharpsuite_release:
+        _configuration: Release
+        _testKind: testFSharpSuite
       vs_release:
         _configuration: Release
         _testKind: testVs
