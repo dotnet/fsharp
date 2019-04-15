@@ -225,20 +225,20 @@ function BuildSolution {
       /restore \
       /v:$verbosity \
       /p:Configuration=$bootstrap_config \
-      /t:Build
+      /t:Publish
 
     mkdir -p "$bootstrap_dir"
-    cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
-    cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fslex
+    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsyacc
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
       /restore \
       /v:$verbosity \
       /p:Configuration=$bootstrap_config \
-      /t:Build
+      /t:Publish
 
-    cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
   fi
 
   # do real build
