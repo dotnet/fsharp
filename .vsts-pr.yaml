@@ -11,7 +11,7 @@ jobs:
         _configuration: Release
         _testKind: testcoreclr
   steps:
-  - script: ./eng/cibuild.sh --configuration $(_configuration) --$(_testKind) --verbosity normal
+  - script: ./eng/cibuild.sh --configuration $(_configuration) --$(_testKind)
   - task: PublishBuildArtifacts@1
     displayName: Publish Build Logs
     inputs:
@@ -55,7 +55,7 @@ jobs:
         _configuration: Release
         _testKind: testcoreclr
   steps:
-  - script: ./eng/cibuild.sh --configuration $(_configuration) --$(_testKind) --verbosity normal
+  - script: ./eng/cibuild.sh --configuration $(_configuration) --$(_testKind)
   - task: PublishBuildArtifacts@1
     displayName: Publish Build Logs
     inputs:
@@ -108,7 +108,7 @@ jobs:
         _configuration: Release
         _testKind: testVs
   steps:
-  - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind) -verbosity normal
+  - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
   - task: PublishBuildArtifacts@1
     displayName: Publish Build Logs
     inputs:

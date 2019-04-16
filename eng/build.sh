@@ -15,6 +15,7 @@ usage()
   echo "Actions:"
   echo "  --bootstrap                Force the build of the bootstrap compiler"
   echo "  --restore                  Restore projects required to build (short: -r)"
+  echo "  --norestore                Don't restore projects required to build"
   echo "  --build                    Build all projects (short: -b)"
   echo "  --rebuild                  Rebuild all projects"
   echo "  --pack                     Build nuget packages"
@@ -45,7 +46,7 @@ while [[ -h "$source" ]]; do
 done
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
 
-restore=true
+restore=false
 build=false
 rebuild=false
 pack=false
@@ -209,7 +210,6 @@ function BuildSolution {
   if [[ "$ci" != true ]]; then
     quiet_restore=true
   fi
-  fslexyacc_target_framework=netcoreapp2.0
 
   # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
   node_reuse=false
@@ -225,20 +225,20 @@ function BuildSolution {
       /restore \
       /v:$verbosity \
       /p:Configuration=$bootstrap_config \
-      /t:Build
+      /t:Publish
 
     mkdir -p "$bootstrap_dir"
-    cp $artifacts_dir/bin/fslex/$bootstrap_config/$fslexyacc_target_framework/* $bootstrap_dir
-    cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$fslexyacc_target_framework/* $bootstrap_dir
+    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fslex
+    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsyacc
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
       /restore \
       /v:$verbosity \
       /p:Configuration=$bootstrap_config \
-      /t:Build
+      /t:Publish
 
-    cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
   fi
 
   # do real build
