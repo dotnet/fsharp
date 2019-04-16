@@ -100,7 +100,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
                 | [h] -> 
                     firstEntries.[y] <- h; 
                     rest.Remove(y) |> ignore
-                | (h::t) -> 
+                | (h :: t) -> 
                     firstEntries.[y] <- h
                     rest.[y] <- t
                 | _ -> 
