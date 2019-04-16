@@ -136,7 +136,7 @@ let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) =
                 match path with
                 | [] -> assert false; true // in this case path should have at least one element
                 | [x] -> IsILTypeDefAccessible amap m ad None x // shortcut for non-nested types
-                | x::xs -> 
+                | x :: xs -> 
                     // check if enclosing type x is accessible.
                     // if yes - create parent tycon for type 'x' and continue with the rest of the path
                     IsILTypeDefAccessible amap m ad None x && 
@@ -148,7 +148,7 @@ let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) =
             | (Some (parentTycon, parentPath)) -> 
                 match path with
                 | [] -> true // end of path is reached - success
-                | x::xs -> 
+                | x :: xs -> 
                     // check if x is accessible from the parent tycon
                     // if yes - create parent tycon for type 'x' and continue with the rest of the path
                     IsILTypeDefAccessible amap m ad (Some parentTycon) x &&
