@@ -2900,7 +2900,8 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
 // Generate calls (try to detect direct calls)
 //--------------------------------------------------------------------------
 
-and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
+and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
+  let g = cenv.g
   match (f, tyargs, curriedArgs) with
   // Look for tailcall to turn into branch 
   | (Expr.Val (v, _, _), _, _) when
@@ -3215,6 +3216,7 @@ and GenCurriedArgsAndIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, 
 
 /// Generate an indirect call, converting to an ILX callfunc instruction
 and GenIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, m) sequel =
+    let g = cenv.g
 
     // Fold in the new types into the environment as we generate the formal types.
     let ilxClosureApps =
@@ -5604,7 +5606,7 @@ and GenParams cenv eenv m (mspec: ILMethodSpec) witnessInfos (argInfos: ArgReprI
                 | None ->
                 match implValOpt with
                 | Some v -> Some v.Id
-               | None -> None
+                | None -> None
 
             let nmOpt, takenNames =
                 match idOpt with
@@ -6168,7 +6170,8 @@ and CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo fetchSequel =
     | _, Some (tyargs, args, m, sequel) ->
         GenCurriedArgsAndIndirectCall cenv cgbuf eenv (ty, tyargs, args, m) sequel
 
-and GenGetStorageAndSequel cenv cgbuf eenv m (ty, ilTy) storage fetchSequel =
+and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage fetchSequel =
+    let g = cenv.g
     match storage with
     | Local (idx, _, localCloInfo) ->
         EmitGetLocal cgbuf ilTy idx
@@ -6851,6 +6854,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
 
 /// Generate a ToString method that calls 'sprintf "%A"'
 and GenToStringMethod cenv eenv ilThisTy m =
+    let g = cenv.g
     [ match (eenv.valsInScope.TryFind cenv.g.sprintf_vref.Deref,
              eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
       | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
