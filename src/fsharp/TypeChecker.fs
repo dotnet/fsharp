@@ -5001,8 +5001,9 @@ and TcProvidedTypeApp cenv env tpenv tcref args m =
 /// In this case, 'args' is only the instantiation of the suffix type arguments, and pathTypeArgs gives
 /// the prefix of type arguments. 
 and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys: SynType list) =
+    let g = cenv.g
     CheckTyconAccessible cenv.amap m env.AccessRights tcref |> ignore
-    CheckEntityAttributes cenv.g tcref m |> CommitOperationResult
+    CheckEntityAttributes g tcref m |> CommitOperationResult
     
 #if !NO_EXTENSIONTYPING
     // Provided types are (currently) always non-generic. Their names may include mangled 
