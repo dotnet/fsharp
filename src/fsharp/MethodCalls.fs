@@ -507,7 +507,7 @@ type ArgumentAnalysis =
 let InferLambdaArgsForLambdaPropagation origRhsExpr = 
     let rec loop e = 
         match e with 
-        | SynExpr.Lambda(_, _, _, rest, _) -> 1 + loop rest
+        | SynExpr.Lambda (_, _, _, rest, _) -> 1 + loop rest
         | SynExpr.MatchLambda _ -> 1
         | _ -> 0
     loop origRhsExpr
@@ -515,7 +515,7 @@ let InferLambdaArgsForLambdaPropagation origRhsExpr =
 let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) (arg: AssignedCalledArg<SynExpr>) =
     let g = infoReader.g
     // Find the explicit lambda arguments of the caller. Ignore parentheses.
-    let argExpr = match arg.CallerArg.Expr with SynExpr.Paren(x, _, _, _) -> x  | x -> x
+    let argExpr = match arg.CallerArg.Expr with SynExpr.Paren (x, _, _, _) -> x  | x -> x
     let countOfCallerLambdaArg = InferLambdaArgsForLambdaPropagation argExpr
     // Adjust for Expression<_>, Func<_, _>, ...
     let adjustedCalledArgTy = AdjustCalledArgType infoReader false arg.CalledArg arg.CallerArg
@@ -547,7 +547,7 @@ let ExamineMethodForLambdaPropagation (x: CalledMeth<SynExpr>) =
 /// Is this a 'base' call (in the sense of C#) 
 let IsBaseCall objArgs = 
     match objArgs with 
-    | [Expr.Val(v, _, _)] when v.BaseOrThisInfo  = BaseVal -> true
+    | [Expr.Val (v, _, _)] when v.BaseOrThisInfo  = BaseVal -> true
     | _ -> false
     
 /// Compute whether we insert a 'coerce' on the 'this' pointer for an object model call 
@@ -635,13 +635,13 @@ let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst di
     let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
     let retTy = if not ctor && ilMethRef.ReturnType = ILType.Void then [] else [exprTy]
     let isDllImport = minfo.IsDllImport g
-    Expr.Op(TOp.ILCall(useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
+    Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
     exprTy
 
 /// Build a call to the System.Object constructor taking no arguments,
 let BuildObjCtorCall (g: TcGlobals) m =
     let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object, [])).MethodRef
-    Expr.Op(TOp.ILCall(false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty]), [], [], m)
+    Expr.Op (TOp.ILCall (false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty]), [], [], m)
 
 
 /// Build a call to an F# method.
@@ -658,7 +658,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
         ((args, vexprty), arities) ||> List.mapFold (fun (args, fty) arity -> 
             match arity, args with 
             | (0|1), [] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
-            | 0, (arg::argst) -> 
+            | 0, (arg :: argst) -> 
                 let msg = Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))
                 warning(InternalError(sprintf "Unexpected zero arity, args = %s" msg, m))
                 arg, (argst, rangeOfFunTy g fty)
@@ -710,7 +710,7 @@ let MakeMethInfoCall amap m minfo minst args =
         let actualMethInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
         let ilReturnTys = Option.toList (minfo.GetCompiledReturnTy(amap, m, []))  // GENERIC TYPE PROVIDERS: for generics, we would have more here
         // REVIEW: Should we allow protected calls?
-        Expr.Op(TOp.ILCall(false, false, valu, isConstructor, valUseFlags, isProp, false, ilMethodRef, actualTypeInst, actualMethInst, ilReturnTys), [], args, m)
+        Expr.Op (TOp.ILCall (false, false, valu, isConstructor, valUseFlags, isProp, false, ilMethodRef, actualTypeInst, actualMethInst, ilReturnTys), [], args, m)
 
 #endif
 
@@ -801,7 +801,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                 let actualMethInst = minst
                 let retTy = if not isCtor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy]
                 let noTailCall = false
-                let expr = Expr.Op(TOp.ILCall(useCallvirt, isProtected, valu, isNewObj, valUseFlags, isProp, noTailCall, ilMethRef, actualTypeInst, actualMethInst, retTy), [], allArgs, m)
+                let expr = Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, isNewObj, valUseFlags, isProp, noTailCall, ilMethRef, actualTypeInst, actualMethInst, retTy), [], allArgs, m)
                 expr, exprTy
 
 #endif
@@ -911,7 +911,7 @@ module ProvidedMethodCalls =
                     | _ when typeEquiv g normTy g.decimal_ty -> Const.Decimal(v :?> decimal)
                     | _ when typeEquiv g normTy g.unit_ty -> Const.Unit
                     | _ -> fail()
-                Expr.Const(c, m, ty)
+                Expr.Const (c, m, ty)
              with _ -> fail()
             ), range=m)
 
@@ -993,7 +993,7 @@ module ProvidedMethodCalls =
                 let (expr, targetTy) = info.PApply2(id, m)
                 let srcExpr = exprToExpr expr
                 let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
-                let sourceTy = Import.ImportProvidedType amap m (expr.PApply((fun e -> e.Type), m)) 
+                let sourceTy = Import.ImportProvidedType amap m (expr.PApply ((fun e -> e.Type), m)) 
                 let te = mkCoerceIfNeeded g targetTy sourceTy srcExpr
                 None, (te, tyOfExpr g te)
             | None -> 
@@ -1037,7 +1037,7 @@ module ProvidedMethodCalls =
                 let tyT = Import.ImportProvidedType amap m ty
                 let elems = elems.PApplyArray(id, "GetInvokerExpresson", m)
                 let elemsT = elems |> Array.map exprToExpr |> Array.toList
-                let exprT = Expr.Op(TOp.Array, [tyT], elemsT, m)
+                let exprT = Expr.Op (TOp.Array, [tyT], elemsT, m)
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
             match ea.PApplyOption((function ProvidedTupleGetExpr x -> Some x | _ -> None), m) with
