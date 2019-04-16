@@ -45,7 +45,7 @@ module Structure =
     let longIdentRange (longId:LongIdent) =
         match longId with 
         | [] -> range0
-        | head::_ -> Range.startToEnd head.idRange (List.last longId).idRange
+        | head :: _ -> Range.startToEnd head.idRange (List.last longId).idRange
 
     /// Caclulate the range of the provided type arguments (<'a, ..., 'z>) 
     /// or return the range `other` when `typeArgs` = []
@@ -220,7 +220,7 @@ module Structure =
             match expression with
             | SynExpr.Upcast (e, _, _)
             | SynExpr.Downcast (e, _, _)
-            | SynExpr.AddressOf(_, e, _, _)
+            | SynExpr.AddressOf (_, e, _, _)
             | SynExpr.InferredDowncast (e, _)
             | SynExpr.InferredUpcast (e, _)
             | SynExpr.DotGet (e, _, _, _)
@@ -548,13 +548,13 @@ module Structure =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
-                    | [], _ -> List.rev (currentBulk::res)
+                    | [], _ -> List.rev (currentBulk :: res)
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ 
                         when r.StartLine = last.EndLine + 1 || 
                              sourceLines.[last.EndLine..r.StartLine - 2] |> Array.forall System.String.IsNullOrWhiteSpace ->
-                        loop rest res (r::currentBulk)
-                    | r :: rest, _ -> loop rest (currentBulk::res) [r]
+                        loop rest res (r :: currentBulk)
+                    | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
             let selectRanges (ranges: range list) =
@@ -776,11 +776,11 @@ module Structure =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
-                    | [], _ -> List.rev (currentBulk::res)
+                    | [], _ -> List.rev (currentBulk :: res)
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ when r.StartLine = last.EndLine + 1 ->
-                        loop rest res (r::currentBulk)
-                    | r :: rest, _ -> loop rest (currentBulk::res) [r]
+                        loop rest res (r :: currentBulk)
+                    | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
             let selectSigRanges (ranges: range list) =
