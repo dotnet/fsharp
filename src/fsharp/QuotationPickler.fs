@@ -142,7 +142,7 @@ let mkLetRecCombRaw args = CombExpr(LetRecCombOp, [], args)
 
 let mkLetRec (ves, body) = 
      let vs, es = List.unzip ves 
-     mkLetRecRaw(mkRLinear mkLambda  (vs, mkLetRecCombRaw (body::es)))
+     mkLetRecRaw(mkRLinear mkLambda  (vs, mkLetRecCombRaw (body :: es)))
       
 let mkRecdMk      (n, tys, args)            = CombExpr(RecdMkOp n, tys, args)  
 

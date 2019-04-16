@@ -201,7 +201,7 @@ let IterativelySubstituteTyparSolutions g tps solutions =
 
 let ChooseTyparSolutionsForFreeChoiceTypars g amap e = 
     match e with 
-    | Expr.TyChoose(tps, e1, _m)  -> 
+    | Expr.TyChoose (tps, e1, _m)  -> 
     
         /// Only make choices for variables that are actually used in the expression 
         let ftvs = (freeInExpr CollectTyparsNoCaching e1).FreeTyvars.FreeTypars
