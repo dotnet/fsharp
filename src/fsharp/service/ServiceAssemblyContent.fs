@@ -496,9 +496,9 @@ module ParsedInput =
 
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
-        | SynExpr.Sequential(_, _, e, Sequentials es, _) ->
-            Some(e::es)
-        | SynExpr.Sequential(_, _, e1, e2, _) ->
+        | SynExpr.Sequential (_, _, e, Sequentials es, _) ->
+            Some(e :: es)
+        | SynExpr.Sequential (_, _, e1, e2, _) ->
             Some [e1; e2]
         | _ -> None
 
@@ -526,7 +526,7 @@ module ParsedInput =
         let addIdent (ident: Ident) =
             identsByEndPos.[ident.idRange.End] <- [ident]
     
-        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) =
+        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
     
         and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, _)) =
@@ -652,7 +652,7 @@ module ParsedInput =
                             addLongIdentWithDots ident
                             e |> Option.iter walkExpr)
             | SynExpr.Ident ident -> addIdent ident
-            | SynExpr.ObjExpr(ty, argOpt, bindings, ifaces, _, _) ->
+            | SynExpr.ObjExpr (ty, argOpt, bindings, ifaces, _, _) ->
                 argOpt |> Option.iter (fun (e, ident) ->
                     walkExpr e
                     ident |> Option.iter addIdent)
@@ -911,7 +911,7 @@ module ParsedInput =
                 |> Option.map (fun r -> r.StartColumn)
 
 
-        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
+        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
 
         and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, kind, decls, _, _, _, range)) =
