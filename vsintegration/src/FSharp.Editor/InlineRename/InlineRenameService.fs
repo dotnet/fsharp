@@ -53,6 +53,11 @@ type internal InlineRenameLocationSet(locations: InlineRenameLocation [], origin
         
             async {
                 let! newSolution = applyChanges originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
+                let replacementText =
+                    match symbolKind with
+                    | LexerSymbolKind.GenericTypeParameter
+                    | LexerSymbolKind.StaticallyResolvedTypeParameter -> replacementText
+                    | _ -> Lexhelp.Keywords.NormalizeIdentifierBackticks replacementText
                 return 
                     { new IInlineRenameReplacementInfo with
                         member __.NewSolution = newSolution
@@ -94,7 +99,7 @@ type internal InlineRenameInfo
         member __.DisplayName = symbolUse.Symbol.DisplayName
         member __.FullDisplayName = try symbolUse.Symbol.FullName with _ -> symbolUse.Symbol.DisplayName
         member __.Glyph = Glyph.MethodPublic
-        member __.GetFinalSymbolName replacementText = Lexhelp.Keywords.NormalizeIdentifierBackticks replacementText
+        member __.GetFinalSymbolName replacementText = replacementText
 
         member __.GetReferenceEditSpan(location, cancellationToken) =
             let text = getDocumentText location.Document cancellationToken
