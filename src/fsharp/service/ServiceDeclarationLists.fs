@@ -228,7 +228,7 @@ module internal DescriptionListsImpl =
                 | [] -> 
                     // handles cases like 'let foo = List.map'
                     getPrettyParamsOfTypes() 
-                | firstCurriedArgInfo::_ ->
+                | firstCurriedArgInfo :: _ ->
                     // result 'paramDatas' collection corresponds to the first argument of curried function
                     // i.e. let func (a : int) (b : int) = a + b
                     // paramDatas will contain information about a and retTy will be: int -> int
@@ -403,7 +403,7 @@ module internal DescriptionListsImpl =
                   if isFunction denv.g vref.Type then FSharpGlyph.Method
                   elif vref.LiteralValue.IsSome then FSharpGlyph.Constant
                   else FSharpGlyph.Variable
-            | Item.Types(_, ty::_) -> typeToGlyph (stripTyEqns denv.g ty)    
+            | Item.Types(_, ty :: _) -> typeToGlyph (stripTyEqns denv.g ty)    
             | Item.UnionCase _
             | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
             | Item.ExnCase _ -> FSharpGlyph.Exception   
@@ -437,7 +437,7 @@ module internal DescriptionListsImpl =
                     elif tydef.IsStruct then FSharpGlyph.Struct
                     else FSharpGlyph.Class
                 else FSharpGlyph.Class
-            | Item.ModuleOrNamespaces(modref::_) -> 
+            | Item.ModuleOrNamespaces(modref :: _) -> 
                   if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
             | Item.ArgName _ -> FSharpGlyph.Variable
             | Item.SetterArg _ -> FSharpGlyph.Variable

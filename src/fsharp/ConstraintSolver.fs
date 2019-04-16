@@ -457,10 +457,10 @@ let FindPreferredTypar vs =
     let rec find vs = 
         match vs with
         | [] -> vs
-        | (v: Typar, e)::vs ->
+        | (v: Typar, e) :: vs ->
             match find vs with
             | [] -> [(v, e)]
-            | (v', e')::vs' -> 
+            | (v', e') :: vs' -> 
                 if PreferUnifyTypar v v'
                 then (v, e) :: vs
                 else (v', e') :: (v, e) :: vs'
@@ -563,7 +563,7 @@ let UnifyMeasureWithOne (csenv: ConstraintSolverEnv) trace ms =
 
     // If there is at least one non-rigid variable v with exponent e, then we can unify 
     match FindPreferredTypar nonRigidVars with
-    | (v, e)::vs ->
+    | (v, e) :: vs ->
         let unexpandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g false ms
         let newms = ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower (Measure.Con c, NegRational (DivRational e' e))) unexpandedCons 
                                 @ List.map (fun (v, e') -> Measure.RationalPower (Measure.Var v, NegRational (DivRational e' e))) (vs @ rigidVars))
@@ -586,7 +586,7 @@ let SimplifyMeasure g vars ms =
         | [] -> 
           (vars, None)
 
-        | (v, e)::vs -> 
+        | (v, e) :: vs -> 
           let newvar = if v.IsCompilerGenerated then NewAnonTypar (TyparKind.Measure, v.Range, TyparRigidity.Flexible, v.StaticReq, v.DynamicReq)
                                                 else NewNamedInferenceMeasureVar (v.Range, TyparRigidity.Flexible, v.StaticReq, v.Id)
           let remainingvars = ListSet.remove typarEq v vars
@@ -596,7 +596,7 @@ let SimplifyMeasure g vars ms =
           SubstMeasure v newms
           match vs with 
           | [] -> (remainingvars, Some newvar) 
-          | _ -> simp (newvar::remainingvars)
+          | _ -> simp (newvar :: remainingvars)
     simp vars
 
 // Normalize a type ty that forms part of a unit-of-measure-polymorphic type scheme. 
@@ -616,12 +616,12 @@ let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as pa
         let generalizable', newlygeneralized = SimplifyMeasure g generalizable unt   
         match newlygeneralized with
         | None -> (generalizable', generalized)
-        | Some v -> (generalizable', v::generalized)
+        | Some v -> (generalizable', v :: generalized)
 
 and SimplifyMeasuresInTypes g param tys = 
     match tys with
     | [] -> param
-    | ty::tys -> 
+    | ty :: tys -> 
         let param' = SimplifyMeasuresInType g false param ty 
         SimplifyMeasuresInTypes g param' tys
 
@@ -636,7 +636,7 @@ let SimplifyMeasuresInConstraint g param c =
 let rec SimplifyMeasuresInConstraints g param cs = 
     match cs with
     | [] -> param
-    | c::cs ->
+    | c :: cs ->
         let param' = SimplifyMeasuresInConstraint g param c
         SimplifyMeasuresInConstraints g param' cs
 
@@ -655,7 +655,7 @@ let rec GetMeasureVarGcdInType v ty =
 and GetMeasureVarGcdInTypes v tys =
     match tys with
     | [] -> ZeroRational
-    | ty::tys -> GcdRational (GetMeasureVarGcdInType v ty) (GetMeasureVarGcdInTypes v tys)
+    | ty :: tys -> GcdRational (GetMeasureVarGcdInType v ty) (GetMeasureVarGcdInTypes v tys)
   
 // Normalize the exponents on generalizable variables in a type
 // by dividing them by their "rational gcd". For example, the type
@@ -706,7 +706,7 @@ let SimplifyMeasuresInTypeScheme g resultFirst (generalizable: Typar list) ty co
  
     match uvars with
     | [] -> generalizable
-    | _::_ ->
+    | _ :: _ ->
     let (_, generalized) = SimplifyMeasuresInType g resultFirst (SimplifyMeasuresInConstraints g (uvars, []) constraints) ty
     let generalized' = NormalizeExponentsInTypeScheme generalized ty 
     vars @ List.rev generalized'
@@ -1031,7 +1031,7 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
        let rec loop l1 l2 = 
            match l1, l2 with 
            | [], [] -> CompleteD 
-           | h1::t1, h2::t2 -> 
+           | h1 :: t1, h2 :: t2 -> 
                SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2 ++ (fun () -> loop t1 t2) 
            | _ -> 
                ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, origl1, origl2, csenv.m, m2)) 
@@ -1665,7 +1665,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         // This is important for calls to operators on generated provided types. There is an (unchecked) condition
         // that generative providers do not re=order arguments or insert any more information into operator calls.
         match callMethInfoOpt, callExpr with 
-        | Some methInfo, Expr.Op(TOp.ILCall(_useCallVirt, _isProtected, _, _isNewObj, NormalValUse, _isProp, _noTailCall, ilMethRef, _actualTypeInst, actualMethInst, _ilReturnTys), [], args, m)
+        | Some methInfo, Expr.Op (TOp.ILCall (_useCallVirt, _isProtected, _, _isNewObj, NormalValUse, _isProp, _noTailCall, ilMethRef, _actualTypeInst, actualMethInst, _ilReturnTys), [], args, m)
              when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val(v, _, _) -> valEq v.Deref b | _ -> false) ->
                 let declaringType = Import.ImportProvidedType amap m (methInfo.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
                 if isILAppTy g declaringType then 
@@ -1970,7 +1970,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
                       | cx :: rest -> 
                           let acc = 
                               if List.exists (fun cx2 -> implies cx2 cx) acc then acc
-                              else (cx::acc)
+                              else (cx :: acc)
                           eliminateRedundant rest acc
                   
                   eliminateRedundant allCxs []
@@ -2486,7 +2486,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
             Error (FSComp.SR.csMemberIsNotAccessible(methodName, (ShowAccessDomain ad)), m)
         else
             Error (FSComp.SR.csMemberIsNotAccessible2(methodName, (ShowAccessDomain ad)), m)
-    | _, ([], (cmeth::_)), _, _, _ ->  
+    | _, ([], (cmeth :: _)), _, _, _ ->  
     
         // Check all the argument types.
         if cmeth.CalledObjArgTys(m).Length <> 0 then
@@ -3122,12 +3122,12 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
                 let receiverArgOpt, argExprs = 
                     if minfo.IsInstance then
                         match argExprs with
-                        | h::t -> Some h, t
+                        | h :: t -> Some h, t
                         | argExprs -> None, argExprs
                     else None, argExprs
                 let convertedArgs = (argExprs, argTypes) ||> List.map2 (fun expr expectedTy -> mkCoerceIfNeeded g expectedTy (tyOfExpr g expr) expr)
                 match receiverArgOpt with
-                | Some r -> r::convertedArgs
+                | Some r -> r :: convertedArgs
                 | None -> convertedArgs
 
             // Fix bug 1281: If we resolve to an instance method on a struct and we haven't yet taken 
@@ -3135,7 +3135,7 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
             if minfo.IsStruct && minfo.IsInstance && (match argExprs with [] -> false | h :: _ -> not (isByrefTy g (tyOfExpr g h))) then 
                 let h, t = List.headAndTail argExprs
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
-                ResultD (Some (wrap (Expr.Op(TOp.TraitCall(traitInfo), [], (h' :: t), m))))
+                ResultD (Some (wrap (Expr.Op (TOp.TraitCall (traitInfo), [], (h' :: t), m))))
             else        
                 ResultD (Some (MakeMethInfoCall amap m minfo methArgTys argExprs ))
 

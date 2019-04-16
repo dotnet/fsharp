@@ -134,7 +134,7 @@ module DispatchSlotChecking =
 
         // Drop 'this'
         match vsl with 
-        | [thisv]::vs -> 
+        | [thisv] :: vs -> 
             // Check for empty variable list from a () arg
             let vs = if vs.Length = 1 && argInfos.IsEmpty then [] else vs
             let implKind = 
