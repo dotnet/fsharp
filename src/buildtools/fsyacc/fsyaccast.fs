@@ -211,7 +211,7 @@ let ProcessWorkList start f =
     let rec loop() = 
         match !work with 
         | [] -> ()
-        | x::t -> 
+        | x :: t -> 
             work := t; 
             f queueWork x;
             loop()
@@ -400,7 +400,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec) =
                         let rhs = Array.toList (prodTab.Symbols prodIdx)
                         let rec place l =
                             match l with
-                            | (yi::t) -> 
+                            | (yi :: t) -> 
                                 res := 
                                    List.choose 
                                      (function None -> None | Some a -> Some (PNonTerminal nonTermX,Some a)) 
@@ -428,7 +428,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec) =
             let rec add l = 
                 match l with 
                 | [] -> acc.Add(term)
-                | sym::moreSyms -> 
+                | sym :: moreSyms -> 
                     let firstSetOfSym = computedFirstTable.[sym]
                     firstSetOfSym |> Set.iter (function None -> () | Some v -> acc.Add(v)) 
                     if firstSetOfSym.Contains(None) then add moreSyms 

@@ -39,7 +39,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
             // This function returns true if two keys are the same according to the predicate
             // function passed in.
             | []->None
-            | (similarKey,value)::t->
+            | (similarKey,value) :: t->
                 if areSimilar(key,similarKey) then Some(similarKey,value) 
                 else Lookup key t      
         Lookup key data    

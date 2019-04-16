@@ -60,7 +60,7 @@ module internal PrintUtilities =
     let shrinkOverloads layoutFunction resultFunction group = 
         match group with 
         | [x] -> [resultFunction x (layoutFunction x)] 
-        | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
+        | (x :: rest) -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
         | _ -> []
     
     let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) = 
@@ -616,7 +616,7 @@ module private PrintTypes =
     /// See also dataExprL - there is overlap between these that should be removed 
     let rec private layoutAttribArg denv arg = 
         match arg with 
-        | Expr.Const(c, _, ty) -> 
+        | Expr.Const (c, _, ty) -> 
             if isEnumTy denv.g ty then 
                 WordL.keywordEnum ^^ angleL (layoutType denv ty) ^^ bracketL (layoutConst denv.g ty c)
             else
@@ -961,7 +961,7 @@ module private PrintTypes =
             match tps with 
             | [] -> tauL
             | [h] -> layoutTyparRefWithInfo denv env h ^^ rightL (tagPunctuation ".") --- tauL
-            | (h::t) -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h::t)) ^^ rightL (tagPunctuation ".") --- tauL
+            | (h :: t) -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h :: t)) ^^ rightL (tagPunctuation ".") --- tauL
 
         // Layout a function type. 
         | TType_fun _ ->
@@ -1047,7 +1047,7 @@ module private PrintTypes =
 
     let layoutTyparConstraint denv (tp, tpc) = 
         match layoutConstraintWithInfo denv SimplifyTypes.typeSimplificationInfo0 (tp, tpc) with 
-        | h::_ -> h 
+        | h :: _ -> h 
         | [] -> emptyL
 
     let prettyLayoutOfInstAndSig denv (typarInst, tys, retTy) =
@@ -1836,7 +1836,7 @@ module private TastDefinitionPrinting =
         | h :: t -> 
             let x = layoutTycon denv infoReader ad m false WordL.keywordType h
             let xs = List.map (layoutTycon denv infoReader ad m false (wordL (tagKeyword "and"))) t
-            aboveListL (x::xs)
+            aboveListL (x :: xs)
 
 
 //--------------------------------------------------------------------------
@@ -1961,17 +1961,17 @@ module private PrintData =
 
         | Expr.Val (v, _, _) -> wordL (tagLocal v.DisplayName)
         | Expr.Link rX -> dataExprWrapL denv isAtomic (!rX)
-        | Expr.Op (TOp.UnionCase(c), _, args, _) -> 
+        | Expr.Op (TOp.UnionCase (c), _, args, _) -> 
             if denv.g.unionCaseRefEq c denv.g.nil_ucref then wordL (tagPunctuation "[]")
             elif denv.g.unionCaseRefEq c denv.g.cons_ucref then 
-                let rec strip = function (Expr.Op (TOp.UnionCase _, _, [h;t], _)) -> h::strip t | _ -> []
+                let rec strip = function (Expr.Op (TOp.UnionCase _, _, [h;t], _)) -> h :: strip t | _ -> []
                 listL (dataExprL denv) (strip expr)
             elif isNil args then 
                 wordL (tagUnionCase c.CaseName)
             else 
                 (wordL (tagUnionCase c.CaseName) ++ bracketL (commaListL (dataExprsL denv args)))
             
-        | Expr.Op (TOp.ExnConstr(c), _, args, _) -> (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
+        | Expr.Op (TOp.ExnConstr (c), _, args, _) -> (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
         | Expr.Op (TOp.Tuple _, _, xs, _) -> tupleL (dataExprsL denv xs)
         | Expr.Op (TOp.Recd (_, tc), _, xs, _) -> 
             let fields = tc.TrueInstanceFieldsAsList

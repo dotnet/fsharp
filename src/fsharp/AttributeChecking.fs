@@ -52,7 +52,7 @@ let rec private evalILAttribElem e =
 
 let rec private evalFSharpAttribArg g e = 
     match e with
-    | Expr.Const(c, _, _) -> 
+    | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b
         | Const.SByte i  -> box i
