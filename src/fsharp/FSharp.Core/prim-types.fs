@@ -1831,7 +1831,7 @@ namespace Microsoft.FSharp.Core
             let inline HashString (s:string) = 
                  match s with 
                  | null -> 0 
-                 | _ -> (# "call instance int32 [mscorlib]System.String::GetHashCode()" s : int #)
+                 | _ -> (# "call instance int32 [mscorlib]System.String :: GetHashCode()" s : int #)
                     
             // from mscorlib v4.0.30319
             let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
@@ -3644,7 +3644,7 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("FSharpList`1")>]
     type List<'T> = 
        | ([])  :                  'T list
-       | (::)  : Head: 'T * Tail: 'T list -> 'T list
+       | ( :: )  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
        interface System.Collections.Generic.IReadOnlyCollection<'T>
@@ -3664,14 +3664,14 @@ namespace Microsoft.FSharp.Collections
            let rec count l n max =
                match l with
                | [] -> n
-               | _::t -> if n > max then n else count t (n+1) max
+               | _ :: t -> if n > max then n else count t (n+1) max
 
            let items length =
                let items = zeroCreate length
                let rec copy (items: 'T[]) l i = 
                    match l with
                    | [] -> () 
-                   | h::t -> 
+                   | h :: t -> 
                        if i < length then 
                            SetArray items i h
                            copy items t (i+1)
@@ -3696,14 +3696,14 @@ namespace Microsoft.FSharp.Collections
         let nonempty x = match x with [] -> false | _ -> true
         // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
         // tail cons cells is permitted in carefully written library code.
-        let inline setFreshConsTail cons t = cons.(::).1 <- t
+        let inline setFreshConsTail cons t = cons.( :: ).1 <- t
         let inline freshConsNoTail h = h :: (# "ldnull" : 'T list #)
 
         // Return the last cons it the chain
         let rec appendToFreshConsTail cons xs = 
             match xs with 
             | [] -> cons
-            | h::t -> 
+            | h :: t -> 
                 let cons2 = [h]
                 setFreshConsTail cons cons2
                 appendToFreshConsTail cons2 t
@@ -3751,7 +3751,7 @@ namespace Microsoft.FSharp.Collections
         let rec nth l n = 
             match l with 
             | [] -> raise (new System.ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
-            | h::t -> 
+            | h :: t -> 
                if n < 0 then raise (new System.ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
                elif n = 0 then h
                else nth t (n - 1)
@@ -3761,7 +3761,7 @@ namespace Microsoft.FSharp.Collections
             if n = 0 then setFreshConsTail cons [] else
             match l with
             | [] -> outOfRange()
-            | x::xs ->
+            | x :: xs ->
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
                 sliceFreshConsTail cons2 (n - 1) xs
@@ -3772,7 +3772,7 @@ namespace Microsoft.FSharp.Collections
             if n < 0 then [] else
             match l with
             | [] -> outOfRange()
-            | x::xs ->
+            | x :: xs ->
                 let cons = freshConsNoTail x
                 sliceFreshConsTail cons n xs
                 cons
@@ -3783,7 +3783,7 @@ namespace Microsoft.FSharp.Collections
             let rec loop i lst =
                 match lst with
                 | _ when i = 0 -> lst
-                | _::t -> loop (i-1) t
+                | _ :: t -> loop (i-1) t
                 | [] -> outOfRange()
             loop n l
 
@@ -3809,7 +3809,7 @@ namespace Microsoft.FSharp.Collections
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         static member Empty       : 'T list = []
 
-        static member Cons(head,tail) : 'T list = head::tail
+        static member Cons(head,tail) : 'T list = head :: tail
         override x.ToString() = 
            match x with 
            | [] -> "[]"
@@ -4215,11 +4215,11 @@ namespace Microsoft.FSharp.Core
 
         let inline castToString (x:'T) = (# "" x : string #)  // internal
 
-        // let rec (@) x y = match x with [] -> y | (h::t) -> h :: (t @ y)
+        // let rec (@) x y = match x with [] -> y | (h :: t) -> h :: (t @ y)
         let (@) list1 list2 = 
             match list1 with
             | [] -> list2
-            | (h::t) -> 
+            | (h :: t) -> 
             match list2 with
             | [] -> list1
             | _ ->

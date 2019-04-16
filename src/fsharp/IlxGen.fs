@@ -80,7 +80,7 @@ let ChooseParamNames fieldNamesAndTypes =
     fieldNamesAndTypes
     |> List.map (fun (ilPropName, ilFieldName, ilPropType) ->
         let lowerPropName = String.uncapitalize ilPropName
-        let ilParamName = if takenFieldNames.Contains(lowerPropName) then ilPropName else lowerPropName
+        let ilParamName = if takenFieldNames.Contains lowerPropName then ilPropName else lowerPropName
         ilParamName, ilFieldName, ilPropType)
 
 /// Approximation for purposes of optimization and giving a warning when compiling definition-only files as EXEs
@@ -113,11 +113,11 @@ let IsILTypeByref = function ILType.Byref _ -> true | _ -> false
 let mainMethName = CompilerGeneratedName "main"
 
 /// Used to query custom attributes when emitting COM interop code.
-type AttributeDecoder (namedArgs) =
+type AttributeDecoder(namedArgs) =
 
     let nameMap = namedArgs |> List.map (fun (AttribNamedArg(s, _, _, c)) -> s, c) |> NameMap.ofList
-    let findConst x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.Const(c, _, _))) -> Some c | _ -> None
-    let findAppTr x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.App(_, _, [TType_app(tr, _)], _, _))) -> Some tr | _ -> None
+    let findConst x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.Const (c, _, _))) -> Some c | _ -> None
+    let findAppTr x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.App (_, _, [TType_app(tr, _)], _, _))) -> Some tr | _ -> None
 
     member __.FindInt16 x dflt = match findConst x with | Some(Const.Int16 x) -> x | _ -> dflt
 
@@ -127,7 +127,7 @@ type AttributeDecoder (namedArgs) =
 
     member __.FindString x dflt = match findConst x with | Some(Const.String x) -> x | _ -> dflt
 
-    member __.FindTypeName x dflt = match findAppTr x with | Some(tr) -> tr.DisplayName | _ -> dflt         
+    member __.FindTypeName x dflt = match findAppTr x with | Some tr -> tr.DisplayName | _ -> dflt         
 
 //--------------------------------------------------------------------------
 // Statistics
@@ -256,9 +256,10 @@ type cenv =
 
 
 let mkTypeOfExpr cenv m ilty =
-    mkAsmExpr ([ mkNormalCall (mspec_Type_GetTypeFromHandle cenv.g) ], [],
-                   [mkAsmExpr ([ I_ldtoken (ILToken.ILType ilty) ], [], [], [cenv.g.system_RuntimeTypeHandle_ty], m)],
-                   [cenv.g.system_Type_ty], m)
+    let g = cenv.g
+    mkAsmExpr ([ mkNormalCall (mspec_Type_GetTypeFromHandle g) ], [],
+                   [mkAsmExpr ([ I_ldtoken (ILToken.ILType ilty) ], [], [], [g.system_RuntimeTypeHandle_ty], m)],
+                   [g.system_Type_ty], m)
                
 let mkGetNameExpr cenv (ilt: ILType) m =
     mkAsmExpr ([I_ldstr ilt.BasicQualifiedName], [], [], [cenv.g.string_ty], m)
@@ -326,7 +327,7 @@ let NestedTypeRefForCompLoc cloc n =
     | [] ->
         let tyname = mkTopName cloc.Namespace n
         mkILTyRef(cloc.Scope, tyname)
-    | h::t -> mkILNestedTyRef(cloc.Scope, mkTopName cloc.Namespace h :: t, n)
+    | h :: t -> mkILNestedTyRef(cloc.Scope, mkTopName cloc.Namespace h :: t, n)
     
 let CleanUpGeneratedTypeName (nm: string) =
     if nm.IndexOfAny IllegalCharactersInTypeAndNamespaceNames = -1 then
@@ -583,7 +584,7 @@ and ComputeUnionHasHelpers g (tcref: TyconRef) =
     elif tyconRefEq g tcref g.option_tcr_canon then SpecialFSharpOptionHelpers
     else
      match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-     | Some(Attrib(_, _, [ AttribBoolArg (b) ], _, _, _, _)) ->
+     | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) ->
          if b then AllHelpers else NoHelpers
      | Some (Attrib(_, _, _, _, _, _, m)) ->
          errorR(Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded(), m))
@@ -794,7 +795,7 @@ and BranchCallItem =
 /// Represents a place we can branch to
 and Mark =
     | Mark of ILCodeLabel
-    member x.CodeLabel = (let (Mark(lab)) = x in lab)
+    member x.CodeLabel = (let (Mark lab) = x in lab)
 
 /// The overall environment at a particular point in an expression tree.
 and IlxGenEnv =
@@ -940,7 +941,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
             else
                match flatArgInfos with
                | [] -> error(InternalError("This instance method '" + vref.LogicalName + "' has no arguments", m))
-               | (h, _):: t -> h, t
+               | (h, _) :: t -> h, t
 
         let thisTy = if isByrefTy g thisTy then destByrefTy g thisTy else thisTy
         let thisArgTys = argsOfAppTy g thisTy
@@ -1170,7 +1171,7 @@ and AddBindingsForModuleDef allocVal cloc eenv x =
         eenv
     | TMAbstract(ModuleOrNamespaceExprWithSig(mtyp, _, _)) ->
         AddBindingsForLocalModuleType allocVal cloc eenv mtyp
-    | TMDefs(mdefs) ->
+    | TMDefs mdefs ->
         AddBindingsForModuleDefs allocVal cloc eenv mdefs
 
 /// Record how constructs are represented, for a module or namespace.
@@ -1197,7 +1198,7 @@ and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
 let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, typedImplFiles) =
     let cloc = CompLocForFragment fragName ccu
     let allocVal = ComputeAndAddStorageForLocalTopVal (amap, g, intraAssemblyInfo, true, NoShadowLocal)
-    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile(qname, _, mexpr, _, _, _)) ->
+    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile (qname, _, mexpr, _, _, _)) ->
         let cloc = { cloc with TopImplQualifiedName = qname.Text }
         if isIncrementalFragment then
             match mexpr with
@@ -1258,7 +1259,7 @@ type PropKey = PropKey of string * ILTypes * ILThisConvention
 
 let AddPropertyDefToHash (m: range) (ht: Dictionary<PropKey, (int * ILPropertyDef)>) (pdef: ILPropertyDef) =
     let nm = PropKey(pdef.Name, pdef.Args, pdef.CallingConv)
-    match ht.TryGetValue(nm) with
+    match ht.TryGetValue nm with
     | true, (idx, pd) ->
         ht.[nm] <- (idx, MergePropertyPair m pd pdef)
     | _ ->
@@ -1290,11 +1291,11 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                   events = mkILEvents (tdef.Events.AsList @ ResizeArray.toList gevents),
                   nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList @ gnested.Close()))
 
-    member b.AddEventDef(edef) = gevents.Add edef
+    member b.AddEventDef edef = gevents.Add edef
 
-    member b.AddFieldDef(ilFieldDef) = gfields.Add ilFieldDef
+    member b.AddFieldDef ilFieldDef = gfields.Add ilFieldDef
 
-    member b.AddMethodDef(ilMethodDef) =
+    member b.AddMethodDef ilMethodDef =
         let discard =
             match tdefDiscards with
             | Some (mdefDiscard, _) -> mdefDiscard ilMethodDef
@@ -1342,11 +1343,11 @@ and TypeDefsBuilder() =
                  || not (Array.isEmpty tdef.Methods.AsArray) then
                   yield tdef ]
 
-    member b.FindTypeDefBuilder(nm) =
+    member b.FindTypeDefBuilder nm =
         try tdefs.[nm] |> snd |> fst
         with :? KeyNotFoundException -> failwith ("FindTypeDefBuilder: " + nm + " not found")
 
-    member b.FindNestedTypeDefsBuilder(path) =
+    member b.FindNestedTypeDefsBuilder path =
         List.fold (fun (acc: TypeDefsBuilder) x -> acc.FindTypeDefBuilder(x).NestedTypeDefs) b path
 
     member b.FindNestedTypeDefBuilder(tref: ILTypeRef) =
@@ -1362,8 +1363,10 @@ type AnonTypeGenerationTable() =
 
 /// Assembly generation buffers
 type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf =
+    let g = cenv.g
     // The Abstract IL table of types
     let gtdefs= new TypeDefsBuilder()
+
     // The definitions of top level values, as quotations.
     let mutable reflectedDefinitions: Dictionary<Tast.Val, (string * int * Expr)> = Dictionary(HashIdentity.Reference)
     let mutable extraBindingsToGenerate = []
@@ -1373,7 +1376,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
          new MemoizationTable<(CompileLocation * int), ILTypeSpec>
               ((fun (cloc, size) ->
                  let name = CompilerGeneratedName ("T" + string(newUnique()) + "_" + string size + "Bytes") // Type names ending ...$T<unique>_37Bytes
-                 let vtdef = mkRawDataValueTypeDef cenv.g.iltyp_ValueType (name, size, 0us)
+                 let vtdef = mkRawDataValueTypeDef g.iltyp_ValueType (name, size, 0us)
                  let vtref = NestedTypeRefForCompLoc cloc vtdef.Name
                  let vtspec = mkILTySpec(vtref, [])
                  let vtdef = vtdef.WithAccess(ComputeTypeAccess vtref true)
@@ -1406,7 +1409,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             mkILFields
                 [ for (_, fldName, fldTy) in flds ->
                     let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
-                    fdef.With(customAttrs = mkILCustomAttrs [ cenv.g.DebuggerBrowsableNeverAttribute ]) ]
+                    fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
      
         // Generate property definitions for the fields compiled as properties
         let ilProperties =
@@ -1420,14 +1423,14 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                           propertyType=fldTy,
                           init= None,
                           args=[],
-                          customAttrs=mkILCustomAttrs [ mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i ]) ]
+                          customAttrs=mkILCustomAttrs [ mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i ]) ]
      
         let ilMethods =
             [ for (propName, fldName, fldTy) in flds ->
                     mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
               yield! genToStringMethod ilTy ]
 
-        let ilBaseTy = (if isStruct then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object)
+        let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
            
         let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
         let ilCtorRef = mkRefToILMethod(ilTypeRef, ilCtorDef)
@@ -1448,7 +1451,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                 NewTycon(Some cpath, ilTypeRef.Name, m, taccessPublic, taccessPublic, TyparKind.Type, LazyWithContext.NotLazy tps, XmlDoc.Empty, false, false, false, lmtyp)             
 
             if isStruct then
-                tycon.SetIsStructRecordOrUnion(true)
+                tycon.SetIsStructRecordOrUnion true
 
             tycon.entity_tycon_repr <-
                 TRecdRepr (MakeRecdFieldsTable
@@ -1460,16 +1463,16 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let tcaug = tcref.TypeContents
                 
             tcaug.tcaug_interfaces <-
-                [ (cenv.g.mk_IStructuralComparable_ty, true, m)
-                  (cenv.g.mk_IComparable_ty, true, m)
-                  (mkAppTy cenv.g.system_GenericIComparable_tcref [typ], true, m)
-                  (cenv.g.mk_IStructuralEquatable_ty, true, m)
-                  (mkAppTy cenv.g.system_GenericIEquatable_tcref [typ], true, m) ]
+                [ (g.mk_IStructuralComparable_ty, true, m)
+                  (g.mk_IComparable_ty, true, m)
+                  (mkAppTy g.system_GenericIComparable_tcref [typ], true, m)
+                  (g.mk_IStructuralEquatable_ty, true, m)
+                  (mkAppTy g.system_GenericIEquatable_tcref [typ], true, m) ]
 
-            let vspec1, vspec2 = AugmentWithHashCompare.MakeValsForEqualsAugmentation cenv.g tcref
-            let evspec1, evspec2, evspec3 = AugmentWithHashCompare.MakeValsForEqualityWithComparerAugmentation cenv.g tcref
-            let cvspec1, cvspec2 = AugmentWithHashCompare.MakeValsForCompareAugmentation cenv.g tcref
-            let cvspec3 = AugmentWithHashCompare.MakeValsForCompareWithComparerAugmentation cenv.g tcref
+            let vspec1, vspec2 = AugmentWithHashCompare.MakeValsForEqualsAugmentation g tcref
+            let evspec1, evspec2, evspec3 = AugmentWithHashCompare.MakeValsForEqualityWithComparerAugmentation g tcref
+            let cvspec1, cvspec2 = AugmentWithHashCompare.MakeValsForCompareAugmentation g tcref
+            let cvspec3 = AugmentWithHashCompare.MakeValsForCompareWithComparerAugmentation g tcref
 
             tcaug.SetCompare (mkLocalValRef cvspec1, mkLocalValRef cvspec2)
             tcaug.SetCompareWith (mkLocalValRef cvspec3)
@@ -1478,7 +1481,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
             // Build the ILTypeDef. We don't rely on the normal record generation process because we want very specific field names
 
-            let ilTypeDefAttribs = mkILCustomAttrs [ cenv.g.CompilerGeneratedAttribute; mkCompilationMappingAttr cenv.g (int SourceConstructFlags.RecordType) ]
+            let ilTypeDefAttribs = mkILCustomAttrs [ g.CompilerGeneratedAttribute; mkCompilationMappingAttr g (int SourceConstructFlags.RecordType) ]
 
             let ilInterfaceTys = [ for (ity, _, _) in tcaug.tcaug_interfaces -> GenType cenv.amap m (TypeReprEnv.ForTypars tps) ity ]
 
@@ -1493,10 +1496,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             mgbuf.AddTypeDef(ilTypeRef, ilTypeDef, false, true, None)
              
             let extraBindings =
-                [ yield! AugmentWithHashCompare.MakeBindingsForCompareAugmentation cenv.g tycon
-                  yield! AugmentWithHashCompare.MakeBindingsForCompareWithComparerAugmentation cenv.g tycon
-                  yield! AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation cenv.g tycon
-                  yield! AugmentWithHashCompare.MakeBindingsForEqualsAugmentation cenv.g tycon ]
+                [ yield! AugmentWithHashCompare.MakeBindingsForCompareAugmentation g tycon
+                  yield! AugmentWithHashCompare.MakeBindingsForCompareWithComparerAugmentation g tycon
+                  yield! AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation g tycon
+                  yield! AugmentWithHashCompare.MakeBindingsForEqualsAugmentation g tycon ]
 
             let optimizedExtraBindings = extraBindings |> List.map (fun (TBind(a, b, c)) -> TBind(a, cenv.optimizeDuringCodeGen b, c))
 
@@ -1569,7 +1572,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     member mgbuf.AddMethodDef(tref: ILTypeRef, ilMethodDef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddMethodDef(ilMethodDef)
         if ilMethodDef.IsEntryPoint then
-            explicitEntryPointInfo <- Some(tref)
+            explicitEntryPointInfo <- Some tref
 
     member mgbuf.AddExplicitInitToSpecificMethodDef(cond, tref, fspec, sourceOpt, feefee, seqpt) =
     // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
@@ -1624,6 +1627,7 @@ type CodeGenBuffer(m: range,
                    methodName,
                    alreadyUsedArgs: int) =
 
+    let g = mgbuf.cenv.g
     let locals = new ResizeArray<((string * (Mark * Mark)) list * ILType * bool)>(10)
     let codebuf = new ResizeArray<ILInstr>(200)
     let exnSpecs = new ResizeArray<ILExceptionSpec>(10)
@@ -1641,7 +1645,7 @@ type CodeGenBuffer(m: range,
 
     let rec lab2pc n lbl =
         if n = System.Int32.MaxValue then error(InternalError("recursive label graph", m))
-        match codeLabelToCodeLabel.TryGetValue(lbl) with
+        match codeLabelToCodeLabel.TryGetValue lbl with
         | true, l -> lab2pc (n + 1) l
         | _ -> codeLabelToPC.[lbl]
 
@@ -1649,9 +1653,9 @@ type CodeGenBuffer(m: range,
 
     // Add a nop to make way for the first sequence point.
     do if mgbuf.cenv.opts.generateDebugSymbols then
-          let doc = mgbuf.cenv.g.memoize_file m.FileIndex
+          let doc = g.memoize_file m.FileIndex
           let i = FeeFeeInstr mgbuf.cenv doc
-          codebuf.Add(i) // for the FeeFee or a better sequence point
+          codebuf.Add i // for the FeeFee or a better sequence point
 
     member cgbuf.DoPushes (pushes: Pushes) =
         for ty in pushes do
@@ -1703,9 +1707,9 @@ type CodeGenBuffer(m: range,
     
             codebuf.Add(AI_nop)
 
-    member cgbuf.EmitSeqPoint(src) =
+    member cgbuf.EmitSeqPoint src =
         if mgbuf.cenv.opts.generateDebugSymbols then
-            let attr = GenILSourceMarker mgbuf.cenv.g src
+            let attr = GenILSourceMarker g src
             let i = I_seqpoint attr
             hasSequencePoints <- true
 
@@ -1716,7 +1720,7 @@ type CodeGenBuffer(m: range,
 
             else
                 cgbuf.EnsureNopBetweenDebugPoints()
-                codebuf.Add(i)
+                codebuf.Add i
 
             // Save the last sequence point away so we can make a decision graph look consistent (i.e. reassert the sequence point at each target)
             lastSeqPoint <- Some src
@@ -1725,7 +1729,7 @@ type CodeGenBuffer(m: range,
     // Emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
     member cgbuf.EmitStartOfHiddenCode() =
         if mgbuf.cenv.opts.generateDebugSymbols then
-            let doc = mgbuf.cenv.g.memoize_file m.FileIndex
+            let doc = g.memoize_file m.FileIndex
             let i = FeeFeeInstr mgbuf.cenv doc
             hasSequencePoints <- true
 
@@ -1734,9 +1738,9 @@ type CodeGenBuffer(m: range,
             | I_seqpoint sm when sm.Line = FeeFee mgbuf.cenv -> ()
             | _ ->
                 cgbuf.EnsureNopBetweenDebugPoints()
-                codebuf.Add(i)
+                codebuf.Add i
 
-    member cgbuf.EmitExceptionClause(clause) =
+    member cgbuf.EmitExceptionClause clause =
          exnSpecs.Add clause
 
     member cgbuf.GenerateDelayMark(_nm) =
@@ -1745,7 +1749,7 @@ type CodeGenBuffer(m: range,
 
     member cgbuf.SetCodeLabelToCodeLabel(lab1, lab2) =
 #if DEBUG
-        if codeLabelToCodeLabel.ContainsKey(lab1) then
+        if codeLabelToCodeLabel.ContainsKey lab1 then
             let msg = sprintf "two values given for label %s, methodName = %s, m = %s" (formatCodeLabel lab1) methodName (stringOfRange m)
             System.Diagnostics.Debug.Assert(false, msg)
             warning(InternalError(msg, m))
@@ -1754,7 +1758,7 @@ type CodeGenBuffer(m: range,
 
     member cgbuf.SetCodeLabelToPC(lab, pc) =
 #if DEBUG
-        if codeLabelToPC.ContainsKey(lab) then
+        if codeLabelToPC.ContainsKey lab then
             let msg = sprintf "two values given for label %s, methodName = %s, m = %s" (formatCodeLabel lab) methodName (stringOfRange m)
             System.Diagnostics.Debug.Assert(false, msg)
             warning(InternalError(msg, m))
@@ -1767,13 +1771,13 @@ type CodeGenBuffer(m: range,
     member cgbuf.SetMarkToHere (Mark lab) =
         cgbuf.SetCodeLabelToPC(lab, codebuf.Count)
 
-    member cgbuf.SetStack(s) =
+    member cgbuf.SetStack s =
         stack <- s
         nstack <- s.Length
 
-    member cgbuf.Mark(s) =
-        let res = cgbuf.GenerateDelayMark(s)
-        cgbuf.SetMarkToHere(res)
+    member cgbuf.Mark s =
+        let res = cgbuf.GenerateDelayMark s
+        cgbuf.SetMarkToHere res
         res
 
     member cgbuf.mgbuf = mgbuf
@@ -1819,12 +1823,12 @@ type CodeGenBuffer(m: range,
 module CG =
     let EmitInstr (cgbuf: CodeGenBuffer) pops pushes i = cgbuf.EmitInstr(pops, pushes, i)
     let EmitInstrs (cgbuf: CodeGenBuffer) pops pushes is = cgbuf.EmitInstrs(pops, pushes, is)
-    let EmitSeqPoint (cgbuf: CodeGenBuffer) src = cgbuf.EmitSeqPoint(src)
-    let GenerateDelayMark (cgbuf: CodeGenBuffer) nm = cgbuf.GenerateDelayMark(nm)
+    let EmitSeqPoint (cgbuf: CodeGenBuffer) src = cgbuf.EmitSeqPoint src
+    let GenerateDelayMark (cgbuf: CodeGenBuffer) nm = cgbuf.GenerateDelayMark nm
     let SetMark (cgbuf: CodeGenBuffer) m1 m2 = cgbuf.SetMark(m1, m2)
-    let SetMarkToHere (cgbuf: CodeGenBuffer) m1 = cgbuf.SetMarkToHere(m1)
-    let SetStack (cgbuf: CodeGenBuffer) s = cgbuf.SetStack(s)
-    let GenerateMark (cgbuf: CodeGenBuffer) s = cgbuf.Mark(s)
+    let SetMarkToHere (cgbuf: CodeGenBuffer) m1 = cgbuf.SetMarkToHere m1
+    let SetStack (cgbuf: CodeGenBuffer) s = cgbuf.SetStack s
+    let GenerateMark (cgbuf: CodeGenBuffer) s = cgbuf.Mark s
 
 open CG
 
@@ -1837,24 +1841,25 @@ let GenString cenv cgbuf s =
     CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_String]) [ I_ldstr s ]
 
 let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data:'a[]) (write: ByteBuffer -> 'a -> unit) =
+    let g = cenv.g
     let buf = ByteBuffer.Create data.Length
     data |> Array.iter (write buf)
     let bytes = buf.Close()
     let ilArrayType = mkILArr1DTy ilElementType
     if data.Length = 0 then
-        CG.EmitInstrs cgbuf (pop 0) (Push [ilArrayType]) [ mkLdcInt32 (0); I_newarr (ILArrayShape.SingleDimensional, ilElementType); ]
+        CG.EmitInstrs cgbuf (pop 0) (Push [ilArrayType]) [ mkLdcInt32 0; I_newarr (ILArrayShape.SingleDimensional, ilElementType); ]
     else    
         let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
         let ilFieldName = CompilerGeneratedName ("field" + string(newUnique()))
         let fty = ILType.Value vtspec
         let ilFieldDef = mkILStaticField (ilFieldName, fty, None, Some bytes, ILMemberAccess.Assembly)
-        let ilFieldDef = ilFieldDef.With(customAttrs = mkILCustomAttrs [ cenv.g.DebuggerBrowsableNeverAttribute ])
+        let ilFieldDef = ilFieldDef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ])
         let fspec = mkILFieldSpecInTy (mkILTyForCompLoc eenv.cloc, ilFieldName, fty)
         CountStaticFieldDef()
         cgbuf.mgbuf.AddFieldDef(fspec.DeclaringTypeRef, ilFieldDef)
         CG.EmitInstrs cgbuf
           (pop 0)
-          (Push [ ilArrayType; ilArrayType; cenv.g.iltyp_RuntimeFieldHandle ])
+          (Push [ ilArrayType; ilArrayType; g.iltyp_RuntimeFieldHandle ])
           [ mkLdcInt32 data.Length
             I_newarr (ILArrayShape.SingleDimensional, ilElementType)
             AI_dup
@@ -1862,7 +1867,7 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data:'a[]) (wr
         CG.EmitInstrs cgbuf
           (pop 2)
           Push0
-          [ mkNormalCall (mkInitializeArrayMethSpec cenv.g) ]
+          [ mkNormalCall (mkInitializeArrayMethSpec g) ]
 
 
 //--------------------------------------------------------------------------
@@ -2042,7 +2047,7 @@ let rec FirstEmittedCodeWillBeSequencePoint g sp expr =
             BindingEmitsSequencePoint g bind ||
             FirstEmittedCodeWillBeSequencePoint g sp bind.Expr ||
             (BindingEmitsNoCode g bind && FirstEmittedCodeWillBeSequencePoint g sp body)
-        | Expr.LetRec(binds, body, _, _) ->
+        | Expr.LetRec (binds, body, _, _) ->
             binds |> List.exists (BindingEmitsSequencePoint g) ||
             (binds |> List.forall (BindingEmitsNoCode g) && FirstEmittedCodeWillBeSequencePoint g sp body)
         | Expr.Sequential (_, _, NormalSeq, spSeq, _) ->
@@ -2051,7 +2056,7 @@ let rec FirstEmittedCodeWillBeSequencePoint g sp expr =
             | SuppressSequencePointOnExprOfSequential -> true
             | SuppressSequencePointOnStmtOfSequential -> false
         | Expr.Match (SequencePointAtBinding _, _, _, _, _, _) -> true
-        | Expr.Op((TOp.TryCatch (SequencePointAtTry _, _)
+        | Expr.Op ((TOp.TryCatch (SequencePointAtTry _, _)
                   | TOp.TryFinally (SequencePointAtTry _, _)
                   | TOp.For (SequencePointAtForLoop _, _)
                   | TOp.While (SequencePointAtWhileLoop _, _)), _, _, _) -> true
@@ -2082,22 +2087,22 @@ let EmitSequencePointForWholeExpr g sp expr =
         // _before_ the evaluation of 'x'. This will only happen for sticky 'let' introduced by inlining and other code generation
         // steps. We do _not_ do this for 'invisible' let which can be skipped.
         | Expr.Let (bind, _, _, _) when BindingIsInvisible bind -> false
-        | Expr.LetRec(binds, _, _, _) when binds |> List.forall BindingIsInvisible -> false
+        | Expr.LetRec (binds, _, _, _) when binds |> List.forall BindingIsInvisible -> false
 
         // If the binding is a lambda then we don't emit a sequence point.
         | Expr.Let (bind, _, _, _) when BindingEmitsHiddenCode bind -> false
-        | Expr.LetRec(binds, _, _, _) when binds |> List.forall BindingEmitsHiddenCode -> false
+        | Expr.LetRec (binds, _, _, _) when binds |> List.forall BindingEmitsHiddenCode -> false
 
         // If the binding is represented by a top-level generated constant value then we don't emit a sequence point.
         | Expr.Let (bind, _, _, _) when BindingEmitsNoCode g bind -> false
-        | Expr.LetRec(binds, _, _, _) when binds |> List.forall (BindingEmitsNoCode g) -> false
+        | Expr.LetRec (binds, _, _, _) when binds |> List.forall (BindingEmitsNoCode g) -> false
 
         // Suppress sequence points for the whole 'a;b' and do it at 'a' instead.
         | Expr.Sequential _ -> false
 
         // Suppress sequence points at labels and gotos, it makes no sense to emit sequence points at these. We emit FeeFee instead
-        | Expr.Op(TOp.Label _, _, _, _) -> false
-        | Expr.Op(TOp.Goto _, _, _, _) -> false
+        | Expr.Op (TOp.Label _, _, _, _) -> false
+        | Expr.Op (TOp.Goto _, _, _, _) -> false
 
         // We always suppress at the whole 'match'/'try'/... expression because we do it at the individual parts.
         //
@@ -2107,10 +2112,10 @@ let EmitSequencePointForWholeExpr g sp expr =
         // So since the 'let tmp = expr' has a sequence point, then no sequence point is needed for the 'match'. But the processing
         // of the 'let' requests SPAlways for the body.
         | Expr.Match _ -> false
-        | Expr.Op(TOp.TryCatch _, _, _, _) -> false
-        | Expr.Op(TOp.TryFinally _, _, _, _) -> false
-        | Expr.Op(TOp.For _, _, _, _) -> false
-        | Expr.Op(TOp.While _, _, _, _) -> false
+        | Expr.Op (TOp.TryCatch _, _, _, _) -> false
+        | Expr.Op (TOp.TryFinally _, _, _, _) -> false
+        | Expr.Op (TOp.For _, _, _, _) -> false
+        | Expr.Op (TOp.While _, _, _, _) -> false
         | _ -> true
     | SPSuppress ->
         false
@@ -2127,7 +2132,7 @@ let EmitHiddenCodeMarkerForWholeExpr g sp expr =
     | SPAlways ->
         match stripExpr expr with
         | Expr.Let (bind, _, _, _) when BindingEmitsHiddenCode bind -> true
-        | Expr.LetRec(binds, _, _, _) when binds |> List.exists BindingEmitsHiddenCode -> true
+        | Expr.LetRec (binds, _, _, _) when binds |> List.exists BindingEmitsHiddenCode -> true
         | _ -> false
     | SPSuppress ->
         false
@@ -2142,7 +2147,7 @@ let rec RangeOfSequencePointForWholeExpr g expr =
         | _, None, SPSuppress -> RangeOfSequencePointForWholeExpr g body
         | _, Some m, _ -> m
         | _, None, SPAlways -> RangeOfSequencePointForWholeExpr g bind.Expr
-    | Expr.LetRec(_, body, _, _) -> RangeOfSequencePointForWholeExpr g body
+    | Expr.LetRec (_, body, _, _) -> RangeOfSequencePointForWholeExpr g body
     | Expr.Sequential (expr1, _, NormalSeq, _, _) -> RangeOfSequencePointForWholeExpr g expr1
     | _ -> expr.Range
 
@@ -2156,26 +2161,26 @@ let DoesGenExprStartWithSequencePoint g sp expr =
 //-------------------------------------------------------------------------
 
 let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
-
+  let g = cenv.g
   let expr = stripExpr expr
 
-  if not (FirstEmittedCodeWillBeSequencePoint cenv.g sp expr) then
-      if EmitSequencePointForWholeExpr cenv.g sp expr then
-          CG.EmitSeqPoint cgbuf (RangeOfSequencePointForWholeExpr cenv.g expr)
-      elif EmitHiddenCodeMarkerForWholeExpr cenv.g sp expr then
+  if not (FirstEmittedCodeWillBeSequencePoint g sp expr) then
+      if EmitSequencePointForWholeExpr g sp expr then
+          CG.EmitSeqPoint cgbuf (RangeOfSequencePointForWholeExpr g expr)
+      elif EmitHiddenCodeMarkerForWholeExpr g sp expr then
           cgbuf.EmitStartOfHiddenCode()
 
-  match (if compileSequenceExpressions then LowerCallsAndSeqs.LowerSeqExpr cenv.g cenv.amap expr else None) with
+  match (if compileSequenceExpressions then LowerCallsAndSeqs.LowerSeqExpr g cenv.amap expr else None) with
   | Some info ->
       GenSequenceExpr cenv cgbuf eenv info sequel
   | None ->
 
   match expr with
-  | Expr.Const(c, m, ty) ->
+  | Expr.Const (c, m, ty) ->
       GenConstant cenv cgbuf eenv (c, m, ty) sequel
   | Expr.Match (spBind, exprm, tree, targets, m, ty) ->
       GenMatch cenv cgbuf eenv (spBind, exprm, tree, targets, m, ty) sequel
-  | Expr.Sequential(e1, e2, dir, spSeq, m) ->
+  | Expr.Sequential (e1, e2, dir, spSeq, m) ->
       GenSequential cenv cgbuf eenv sp (e1, e2, dir, spSeq, m) sequel
   | Expr.LetRec (binds, body, m, _) ->
       GenLetRec cenv cgbuf eenv (binds, body, m) sequel
@@ -2203,8 +2208,8 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
 
   | Expr.Lambda _ | Expr.TyLambda _ ->
       GenLambda cenv cgbuf eenv false None expr sequel
-  | Expr.App(Expr.Val(vref, _, m) as v, _, tyargs, [], _) when
-        List.forall (isMeasureTy cenv.g) tyargs &&
+  | Expr.App (Expr.Val (vref, _, m) as v, _, tyargs, [], _) when
+        List.forall (isMeasureTy g) tyargs &&
         (
             // inline only values that are stored in local variables
             match StorageForValRef m vref eenv with
@@ -2214,11 +2219,11 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
       // application of local type functions with type parameters = measure types and body = local value - inine the body
       GenExpr cenv cgbuf eenv sp v sequel
 
-  | Expr.App(f, fty, tyargs, curriedArgs, m) -> 
+  | Expr.App (f, fty, tyargs, curriedArgs, m) -> 
       GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel
 
-  | Expr.Val(v,_,m) -> 
-      GenGetVal cenv cgbuf eenv (v,m) sequel
+  | Expr.Val (v, _, m) -> 
+      GenGetVal cenv cgbuf eenv (v, m) sequel
 
   // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
   // This is because the element of expansion happens to be the final thing generated in most cases. However
@@ -2226,33 +2231,33 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | LinearOpExpr _ -> 
       GenLinearExpr cenv cgbuf eenv expr sequel id |> ignore<FakeUnit>
 
-  | Expr.Op(op, tyargs, args, m) -> 
+  | Expr.Op (op, tyargs, args, m) -> 
       match op, args, tyargs with 
-      | TOp.ExnConstr(c), _, _ -> 
+      | TOp.ExnConstr c, _, _ -> 
           GenAllocExn cenv cgbuf eenv (c, args, m) sequel
-      | TOp.UnionCase(c), _, _ -> 
+      | TOp.UnionCase c, _, _ -> 
           GenAllocUnionCase cenv cgbuf eenv (c, tyargs, args, m) sequel
-      | TOp.Recd(isCtor, tycon), _, _ -> 
+      | TOp.Recd (isCtor, tycon), _, _ -> 
           GenAllocRecd cenv cgbuf eenv isCtor (tycon, tyargs, args, m) sequel
-      | TOp.AnonRecd(anonInfo), _, _ -> 
+      | TOp.AnonRecd anonInfo, _, _ -> 
           GenAllocAnonRecd cenv cgbuf eenv (anonInfo, tyargs, args, m) sequel
       | TOp.AnonRecdGet (anonInfo, n), [e], _ -> 
           GenGetAnonRecdField cenv cgbuf eenv (anonInfo, e, tyargs, n, m) sequel
       | TOp.TupleFieldGet (tupInfo, n), [e], _ -> 
           GenGetTupleField cenv cgbuf eenv (tupInfo, e, tyargs, n, m) sequel
-      | TOp.ExnFieldGet(ecref, n), [e], _ -> 
+      | TOp.ExnFieldGet (ecref, n), [e], _ -> 
           GenGetExnField cenv cgbuf eenv (e, ecref, n, m) sequel
-      | TOp.UnionCaseFieldGet(ucref, n), [e], _ -> 
+      | TOp.UnionCaseFieldGet (ucref, n), [e], _ -> 
           GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel
-      | TOp.UnionCaseFieldGetAddr(ucref, n, _readonly), [e], _ -> 
+      | TOp.UnionCaseFieldGetAddr (ucref, n, _readonly), [e], _ -> 
           GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel
       | TOp.UnionCaseTagGet ucref, [e], _ -> 
           GenGetUnionCaseTag cenv cgbuf eenv (e, ucref, tyargs, m) sequel
       | TOp.UnionCaseProof ucref, [e], _ -> 
           GenUnionCaseProof cenv cgbuf eenv (e, ucref, tyargs, m) sequel
-      | TOp.ExnFieldSet(ecref, n), [e;e2], _ -> 
+      | TOp.ExnFieldSet (ecref, n), [e;e2], _ -> 
           GenSetExnField cenv cgbuf eenv (e, ecref, n, e2, m) sequel 
-      | TOp.UnionCaseFieldSet(ucref, n), [e;e2], _ -> 
+      | TOp.UnionCaseFieldSet (ucref, n), [e;e2], _ -> 
           GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel
       | TOp.ValFieldGet f, [e], _ -> 
          GenGetRecdField cenv cgbuf eenv (e, f, tyargs, m) sequel
@@ -2268,40 +2273,40 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
          GenSetStaticField cenv cgbuf eenv (f, tyargs, e2, m) sequel
       | TOp.Tuple tupInfo, _, _ -> 
          GenAllocTuple cenv cgbuf eenv (tupInfo, args, tyargs, m) sequel
-      | TOp.ILAsm(code, returnTys), _, _ ->  
+      | TOp.ILAsm (code, returnTys), _, _ ->  
          GenAsmCode cenv cgbuf eenv (code, tyargs, args, returnTys, m) sequel 
-      | TOp.While (sp, _), [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _)], [] -> 
+      | TOp.While (sp, _), [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _)], [] -> 
          GenWhileLoop cenv cgbuf eenv (sp, e1, e2, m) sequel 
-      | TOp.For(spStart, dir), [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _);Expr.Lambda(_, _, _, [v], e3, _, _)], [] -> 
+      | TOp.For (spStart, dir), [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)], [] -> 
          GenForLoop cenv cgbuf eenv (spStart, v, e1, dir, e2, e3, m) sequel
-      | TOp.TryFinally(spTry, spFinally), [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], e2, _, _)], [resty] -> 
+      | TOp.TryFinally (spTry, spFinally), [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], [resty] -> 
          GenTryFinally cenv cgbuf eenv (e1, e2, m, resty, spTry, spFinally) sequel
-      | TOp.TryCatch(spTry, spWith), [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [vf], ef, _, _);Expr.Lambda(_, _, _, [vh], eh, _, _)], [resty] -> 
+      | TOp.TryCatch (spTry, spWith), [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _);Expr.Lambda (_, _, _, [vh], eh, _, _)], [resty] -> 
          GenTryCatch cenv cgbuf eenv (e1, vf, ef, vh, eh, m, resty, spTry, spWith) sequel
-      | TOp.ILCall(virt, _, valu, newobj, valUseFlags, _, isDllImport, ilMethRef, enclArgTys, methArgTys, returnTys), args, [] -> 
+      | TOp.ILCall (virt, _, valu, newobj, valUseFlags, _, isDllImport, ilMethRef, enclArgTys, methArgTys, returnTys), args, [] -> 
          GenILCall cenv cgbuf eenv (virt, valu, newobj, valUseFlags, isDllImport, ilMethRef, enclArgTys, methArgTys, args, returnTys, m) sequel
       | TOp.RefAddrGet _readonly, [e], [ty] -> GenGetAddrOfRefCellField cenv cgbuf eenv (e, ty, m) sequel
       | TOp.Coerce, [e], [tgty;srcty] -> GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel
       | TOp.Reraise, [], [rtnty] -> GenReraise cenv cgbuf eenv (rtnty, m) sequel
-      | TOp.TraitCall(ss), args, [] -> GenTraitCall cenv cgbuf eenv (ss, args, m) expr sequel
-      | TOp.LValueOp(LSet, v), [e], [] -> GenSetVal cenv cgbuf eenv (v, e, m) sequel
-      | TOp.LValueOp(LByrefGet, v), [], [] -> GenGetByref cenv cgbuf eenv (v, m) sequel
-      | TOp.LValueOp(LByrefSet, v), [e], [] -> GenSetByref cenv cgbuf eenv (v, e, m) sequel
-      | TOp.LValueOp(LAddrOf _, v), [], [] -> GenGetValAddr cenv cgbuf eenv (v, m) sequel
+      | TOp.TraitCall ss, args, [] -> GenTraitCall cenv cgbuf eenv (ss, args, m) expr sequel
+      | TOp.LValueOp (LSet, v), [e], [] -> GenSetVal cenv cgbuf eenv (v, e, m) sequel
+      | TOp.LValueOp (LByrefGet, v), [], [] -> GenGetByref cenv cgbuf eenv (v, m) sequel
+      | TOp.LValueOp (LByrefSet, v), [e], [] -> GenSetByref cenv cgbuf eenv (v, e, m) sequel
+      | TOp.LValueOp (LAddrOf _, v), [], [] -> GenGetValAddr cenv cgbuf eenv (v, m) sequel
       | TOp.Array, elems, [elemTy] -> GenNewArray cenv cgbuf eenv (elems, elemTy, m) sequel
       | TOp.Bytes bytes, [], [] -> 
           if cenv.opts.emitConstantArraysUsingStaticDataBlobs then 
-              GenConstArray cenv cgbuf eenv cenv.g.ilg.typ_Byte bytes (fun buf b -> buf.EmitByte b)
+              GenConstArray cenv cgbuf eenv g.ilg.typ_Byte bytes (fun buf b -> buf.EmitByte b)
               GenSequel cenv eenv.cloc cgbuf sequel
           else
-              GenNewArraySimple cenv cgbuf eenv (List.ofArray (Array.map (mkByte cenv.g m) bytes), cenv.g.byte_ty, m) sequel
+              GenNewArraySimple cenv cgbuf eenv (List.ofArray (Array.map (mkByte g m) bytes), g.byte_ty, m) sequel
       | TOp.UInt16s arr, [], [] ->
           if cenv.opts.emitConstantArraysUsingStaticDataBlobs then
-              GenConstArray cenv cgbuf eenv cenv.g.ilg.typ_UInt16 arr (fun buf b -> buf.EmitUInt16 b)
+              GenConstArray cenv cgbuf eenv g.ilg.typ_UInt16 arr (fun buf b -> buf.EmitUInt16 b)
               GenSequel cenv eenv.cloc cgbuf sequel
           else
-              GenNewArraySimple cenv cgbuf eenv (List.ofArray (Array.map (mkUInt16 cenv.g m) arr), cenv.g.uint16_ty, m) sequel
-      | TOp.Goto(label), _, _ ->
+              GenNewArraySimple cenv cgbuf eenv (List.ofArray (Array.map (mkUInt16 g m) arr), g.uint16_ty, m) sequel
+      | TOp.Goto label, _, _ ->
           if cgbuf.mgbuf.cenv.opts.generateDebugSymbols then
              cgbuf.EmitStartOfHiddenCode()
              CG.EmitInstr cgbuf (pop 0) Push0 AI_nop
@@ -2313,18 +2318,18 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
       | TOp.Return, [], _ ->
          GenSequel cenv eenv.cloc cgbuf ReturnVoid
          // NOTE: discard sequel
-      | TOp.Label(label), _, _ ->
+      | TOp.Label label, _, _ ->
          cgbuf.SetMarkToHere (Mark label)
          GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
       | _ -> error(InternalError("Unexpected operator node expression", expr.Range))
-  | Expr.StaticOptimization(constraints, e2, e3, m) ->
+  | Expr.StaticOptimization (constraints, e2, e3, m) ->
       GenStaticOptimization cenv cgbuf eenv (constraints, e2, e3, m) sequel
-  | Expr.Obj(_, ty, _, _, [meth], [], m) when isDelegateTy cenv.g ty ->
+  | Expr.Obj (_, ty, _, _, [meth], [], m) when isDelegateTy g ty ->
       GenDelegateExpr cenv cgbuf eenv expr (meth, m) sequel
-  | Expr.Obj(_, ty, basev, basecall, overrides, interfaceImpls, m) ->
+  | Expr.Obj (_, ty, basev, basecall, overrides, interfaceImpls, m) ->
       GenObjectExpr cenv cgbuf eenv expr (ty, basev, basecall, overrides, interfaceImpls, m) sequel
 
-  | Expr.Quote(ast, conv, _, m, ty) -> GenQuotation cenv cgbuf eenv (ast, conv, m, ty) sequel
+  | Expr.Quote (ast, conv, _, m, ty) -> GenQuotation cenv cgbuf eenv (ast, conv, m, ty) sequel
   | Expr.Link _ -> failwith "Unexpected reclink"
   | Expr.TyChoose (_, _, m) -> error(InternalError("Unexpected Expr.TyChoose", m))
 
@@ -2347,7 +2352,7 @@ and CodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, al
 (* does the sequel discard its result, and if so what does it do next? *)
 and sequelAfterDiscard sequel =
   match sequel with
-   | DiscardThen sequel -> Some(sequel)
+   | DiscardThen sequel -> Some sequel
    | EndLocalScope(sq, mark) -> sequelAfterDiscard sq |> Option.map (fun sq -> EndLocalScope(sq, mark))
    | _ -> None
 
@@ -2419,16 +2424,17 @@ and GenSequel cenv cloc cgbuf sequel =
 //--------------------------------------------------------------------------
 
 and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
+  let g = cenv.g
   let ilTy = GenType cenv.amap m eenv.tyenv ty
   // Check if we need to generate the value at all
   match sequelAfterDiscard sequel with
   | None ->
-      match TryEliminateDesugaredConstants cenv.g m c with
+      match TryEliminateDesugaredConstants g m c with
       | Some e ->
           GenExpr cenv cgbuf eenv SPSuppress e Continue
       | None ->
           match c with
-          | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_Bool]) (mkLdcInt32 (if b then 1 else 0))
+          | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [g.ilg.typ_Bool]) (mkLdcInt32 (if b then 1 else 0))
           | Const.SByte i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
           | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
           | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 i)
@@ -2448,8 +2454,8 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
           | Const.UIntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ilTy]) [iLdcInt64 (int64 i); AI_conv DT_U ]
           | Const.Double f -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (AI_ldc (DT_R8, ILConst.R8 f))
           | Const.Single f -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (AI_ldc (DT_R4, ILConst.R4 f))
-          | Const.Char(c) -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) ( mkLdcInt32 (int c))
-          | Const.String(s) -> GenString cenv cgbuf s
+          | Const.Char c -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) ( mkLdcInt32 (int c))
+          | Const.String s -> GenString cenv cgbuf s
           | Const.Unit -> GenUnit cenv eenv m cgbuf
           | Const.Zero -> GenDefaultValue cenv cgbuf eenv (ty, m)
           | Const.Decimal _ -> failwith "unreachable"
@@ -2471,7 +2477,7 @@ and GenUnit cenv eenv m cgbuf =
 
 and GenUnitThenSequel cenv eenv m cloc cgbuf sequel =
     match sequelAfterDiscard sequel with
-    | Some(sq) -> GenSequel cenv cloc cgbuf sq
+    | Some sq -> GenSequel cenv cloc cgbuf sq
     | None -> GenUnit cenv eenv m cgbuf; GenSequel cenv cloc cgbuf sequel
 
 
@@ -2504,7 +2510,7 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo, e, tys, n, m) sequel =
             let ty = GenNamedTyApp cenv.amap m eenv.tyenv tcr' tys
             mkGetTupleItemN g m n ty tupInfo e tys.[n]
         else
-            let tysA, tysB = List.splitAfter (goodTupleFields) tys
+            let tysA, tysB = List.splitAfter goodTupleFields tys
             let tyB = mkCompiledTupleTy g tupInfo tysB
             let tys' = tysA@[tyB]
             let tcr' = mkCompiledTupleTyconRef g tupInfo (List.length tys')
@@ -2541,7 +2547,7 @@ and GenLinearExpr cenv cgbuf eenv expr sequel (contf: FakeUnit -> FakeUnit) =
     match expr with 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) -> 
         GenExprs cenv cgbuf eenv argsFront
-        GenLinearExpr cenv cgbuf eenv argLast Continue (contf << (fun (Fake) -> 
+        GenLinearExpr cenv cgbuf eenv argLast Continue (contf << (fun Fake -> 
             GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
             GenSequel cenv eenv.cloc cgbuf sequel
             Fake))
@@ -2577,7 +2583,7 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
         GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, m) sequel =
-    let anonCtor, _anonMethods, anonType = cgbuf.mgbuf.LookupAnonType(anonInfo)
+    let anonCtor, _anonMethods, anonType = cgbuf.mgbuf.LookupAnonType anonInfo
     let boxity = anonType.Boxity
     GenExprs cenv cgbuf eenv args
     let ilTypeArgs = GenTypeArgs cenv.amap m eenv.tyenv tyargs
@@ -2586,7 +2592,7 @@ and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, 
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetAnonRecdField cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, e, tyargs, n, m) sequel =
-    let _anonCtor, anonMethods, anonType = cgbuf.mgbuf.LookupAnonType(anonInfo)
+    let _anonCtor, anonMethods, anonType = cgbuf.mgbuf.LookupAnonType anonInfo
     let boxity = anonType.Boxity
     let ilTypeArgs = GenTypeArgs cenv.amap m eenv.tyenv tyargs
     let anonMethod = anonMethods.[n]
@@ -2620,53 +2626,54 @@ and GenNewArray cenv cgbuf eenv (elems: Expr list, elemTy, m) sequel =
       let elems' = Array.ofList elems
       let test, write =
           match elems'.[0] with
-          | Expr.Const(Const.Bool _, _, _) ->
+          | Expr.Const (Const.Bool _, _, _) ->
               (function Const.Bool _ -> true | _ -> false),
               (fun (buf: ByteBuffer) -> function Const.Bool b -> buf.EmitBoolAsByte b | _ -> failwith "unreachable")
-          | Expr.Const(Const.Char _, _, _) ->
+          | Expr.Const (Const.Char _, _, _) ->
               (function Const.Char _ -> true | _ -> false),
               (fun buf -> function Const.Char b -> buf.EmitInt32AsUInt16 (int b) | _ -> failwith "unreachable")
-          | Expr.Const(Const.Byte _, _, _) ->
+          | Expr.Const (Const.Byte _, _, _) ->
               (function Const.Byte _ -> true | _ -> false),
               (fun buf -> function Const.Byte b -> buf.EmitByte b | _ -> failwith "unreachable")
-          | Expr.Const(Const.UInt16 _, _, _) ->
+          | Expr.Const (Const.UInt16 _, _, _) ->
               (function Const.UInt16 _ -> true | _ -> false),
               (fun buf -> function Const.UInt16 b -> buf.EmitUInt16 b | _ -> failwith "unreachable")
-          | Expr.Const(Const.UInt32 _, _, _) ->
+          | Expr.Const (Const.UInt32 _, _, _) ->
               (function Const.UInt32 _ -> true | _ -> false),
               (fun buf -> function Const.UInt32 b -> buf.EmitInt32 (int32 b) | _ -> failwith "unreachable")
-          | Expr.Const(Const.UInt64 _, _, _) ->
+          | Expr.Const (Const.UInt64 _, _, _) ->
               (function Const.UInt64 _ -> true | _ -> false),
               (fun buf -> function Const.UInt64 b -> buf.EmitInt64 (int64 b) | _ -> failwith "unreachable")
-          | Expr.Const(Const.SByte _, _, _) ->
+          | Expr.Const (Const.SByte _, _, _) ->
               (function Const.SByte _ -> true | _ -> false),
               (fun buf -> function Const.SByte b -> buf.EmitByte (byte b) | _ -> failwith "unreachable")
-          | Expr.Const(Const.Int16 _, _, _) ->
+          | Expr.Const (Const.Int16 _, _, _) ->
               (function Const.Int16 _ -> true | _ -> false),
               (fun buf -> function Const.Int16 b -> buf.EmitUInt16 (uint16 b) | _ -> failwith "unreachable")
-          | Expr.Const(Const.Int32 _, _, _) ->
+          | Expr.Const (Const.Int32 _, _, _) ->
               (function Const.Int32 _ -> true | _ -> false),
               (fun buf -> function Const.Int32 b -> buf.EmitInt32 b | _ -> failwith "unreachable")
-          | Expr.Const(Const.Int64 _, _, _) ->
+          | Expr.Const (Const.Int64 _, _, _) ->
               (function Const.Int64 _ -> true | _ -> false),
               (fun buf -> function Const.Int64 b -> buf.EmitInt64 b | _ -> failwith "unreachable")      
           | _ -> (function _ -> false), (fun _ _ -> failwith "unreachable")
 
-      if elems' |> Array.forall (function Expr.Const(c, _, _) -> test c | _ -> false) then
+      if elems' |> Array.forall (function Expr.Const (c, _, _) -> test c | _ -> false) then
            let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy
-           GenConstArray cenv cgbuf eenv ilElemTy elems' (fun buf -> function Expr.Const(c, _, _) -> write buf c | _ -> failwith "unreachable")
+           GenConstArray cenv cgbuf eenv ilElemTy elems' (fun buf -> function Expr.Const (c, _, _) -> write buf c | _ -> failwith "unreachable")
            GenSequel cenv eenv.cloc cgbuf sequel
 
       else
            GenNewArraySimple cenv cgbuf eenv (elems, elemTy, m) sequel
 
 and GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel =
+  let g = cenv.g
   // Is this an upcast?
-  if TypeRelations.TypeDefinitelySubsumesTypeNoCoercion 0 cenv.g cenv.amap m tgty srcty &&
+  if TypeRelations.TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty &&
      // Do an extra check - should not be needed
-     TypeRelations.TypeFeasiblySubsumesType 0 cenv.g cenv.amap m tgty TypeRelations.NoCoerce srcty then
+     TypeRelations.TypeFeasiblySubsumesType 0 g cenv.amap m tgty TypeRelations.NoCoerce srcty then
      begin
-       if (isInterfaceTy cenv.g tgty) then (
+       if (isInterfaceTy g tgty) then (
            GenExpr cenv cgbuf eenv SPSuppress e Continue
            let ilToTy = GenType cenv.amap m eenv.tyenv tgty
            // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
@@ -2679,10 +2686,10 @@ and GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel =
      end   
   else
     GenExpr cenv cgbuf eenv SPSuppress e Continue      
-    if not (isObjTy cenv.g srcty) then
+    if not (isObjTy g srcty) then
        let ilFromTy = GenType cenv.amap m eenv.tyenv srcty
-       CG.EmitInstrs cgbuf (pop 1) (Push [cenv.g.ilg.typ_Object]) [ I_box ilFromTy ]
-    if not (isObjTy cenv.g tgty) then
+       CG.EmitInstrs cgbuf (pop 1) (Push [g.ilg.typ_Object]) [ I_box ilFromTy ]
+    if not (isObjTy g tgty) then
         let ilToTy = GenType cenv.amap m eenv.tyenv tgty
         CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) [ I_unbox_any ilToTy ]
     GenSequel cenv eenv.cloc cgbuf sequel
@@ -2724,56 +2731,61 @@ and GenSetExnField cenv cgbuf eenv (e, ecref, fieldNum, e2, m) sequel =
 
 and UnionCodeGen (cgbuf: CodeGenBuffer) =
     { new EraseUnions.ICodeGen<Mark> with
-        member __.CodeLabel(m) = m.CodeLabel
+        member __.CodeLabel m = m.CodeLabel
         member __.GenerateDelayMark() = CG.GenerateDelayMark cgbuf "unionCodeGenMark"
-        member __.GenLocal(ilty) = cgbuf.AllocLocal([], ilty, false) |> uint16
-        member __.SetMarkToHere(m) = CG.SetMarkToHere cgbuf m
+        member __.GenLocal ilty = cgbuf.AllocLocal([], ilty, false) |> uint16
+        member __.SetMarkToHere m = CG.SetMarkToHere cgbuf m
         member __.MkInvalidCastExnNewobj () = mkInvalidCastExnNewobj cgbuf.mgbuf.cenv.g
         member __.EmitInstr x = CG.EmitInstr cgbuf (pop 0) (Push []) x
         member __.EmitInstrs xs = CG.EmitInstrs cgbuf (pop 0) (Push []) xs }
 
 and GenUnionCaseProof cenv cgbuf eenv (e, ucref, tyargs, m) sequel =
+    let g = cenv.g
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     let cuspec, idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
     let fty = EraseUnions.GetILTypeForAlternative cuspec idx
-    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
-    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false, avoidHelpers, cuspec, idx)
+    let avoidHelpers = entityRefInThisAssembly g.compilingFslib ucref.TyconRef
+    EraseUnions.emitCastData g.ilg (UnionCodeGen cgbuf) (false, avoidHelpers, cuspec, idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [fty]) [ ]  // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
-    assert (ucref.Tycon.IsStructOrEnumTycon || isProvenUnionCaseTy (tyOfExpr cenv.g e))
+    let g = cenv.g
+    assert (ucref.Tycon.IsStructOrEnumTycon || isProvenUnionCaseTy (tyOfExpr g e))
 
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     let cuspec, idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
-    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
+    let avoidHelpers = entityRefInThisAssembly g.compilingFslib ucref.TyconRef
     CG.EmitInstrs cgbuf (pop 1) (Push [fty]) (EraseUnions.mkLdData (avoidHelpers, cuspec, idx, n))
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
-    assert (ucref.Tycon.IsStructOrEnumTycon || isProvenUnionCaseTy (tyOfExpr cenv.g e))
+    let g = cenv.g
+    assert (ucref.Tycon.IsStructOrEnumTycon || isProvenUnionCaseTy (tyOfExpr g e))
 
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     let cuspec, idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
-    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
+    let avoidHelpers = entityRefInThisAssembly g.compilingFslib ucref.TyconRef
     CG.EmitInstrs cgbuf (pop 1) (Push [ILType.Byref fty]) (EraseUnions.mkLdDataAddr (avoidHelpers, cuspec, idx, n))
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseTag cenv cgbuf eenv (e, tcref, tyargs, m) sequel =
+    let g = cenv.g
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     let cuspec = GenUnionSpec cenv.amap m eenv.tyenv tcref tyargs
-    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib tcref
-    EraseUnions.emitLdDataTag cenv.g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec)
-    CG.EmitInstrs cgbuf (pop 1) (Push [cenv.g.ilg.typ_Int32]) [ ] // push/pop to match the line above
+    let avoidHelpers = entityRefInThisAssembly g.compilingFslib tcref
+    EraseUnions.emitLdDataTag g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec)
+    CG.EmitInstrs cgbuf (pop 1) (Push [g.ilg.typ_Int32]) [ ] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel =
+    let g = cenv.g
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     let cuspec, idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
-    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
-    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false, avoidHelpers, cuspec, idx)
+    let avoidHelpers = entityRefInThisAssembly g.compilingFslib ucref.TyconRef
+    EraseUnions.emitCastData g.ilg (UnionCodeGen cgbuf) (false, avoidHelpers, cuspec, idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [cuspec.DeclaringType]) [ ] // push/pop to match the line above
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue
     CG.EmitInstrs cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n))
@@ -2842,15 +2854,16 @@ and GenFieldStore isStatic cenv cgbuf eenv (rfref: RecdFieldRef, tyargs, m) sequ
 /// Generate arguments to a call, unless the argument is the single lone "unit" value
 /// to a method or value compiled as a method taking no arguments
 and GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m numObjArgs curriedArgInfos args =
+    let g = cenv.g
     match curriedArgInfos, args with
     // Type.M()
     // new C()
     | [[]], [arg] when numObjArgs = 0 ->
-        assert isUnitTy cenv.g (tyOfExpr cenv.g arg)
+        assert isUnitTy g (tyOfExpr g arg)
         GenExpr cenv cgbuf eenv SPSuppress arg discard
     // obj.M()
     | [[_];[]], [arg1;arg2] when numObjArgs = 1 ->
-        assert isUnitTy cenv.g (tyOfExpr cenv.g arg2)
+        assert isUnitTy g (tyOfExpr g arg2)
         GenExpr cenv cgbuf eenv SPSuppress arg1 Continue
         GenExpr cenv cgbuf eenv SPSuppress arg2 discard
     | _ ->
@@ -2859,6 +2872,7 @@ and GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m numObjArgs curriedArgInf
 
 /// Codegen arguments
 and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
+    let g = cenv.g
     let numRequiredExprs = List.length argInfos
     assert (numRequiredExprs >= 1)
     if numRequiredExprs = 1 then
@@ -2869,13 +2883,13 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
         es |> List.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue)
         GenSequel cenv eenv.cloc cgbuf sequel
     else
-        let ty = tyOfExpr cenv.g expr
+        let ty = tyOfExpr g expr
         let locv, loce = mkCompGenLocal m "arg" ty
         let bind = mkCompGenBind locv expr
         LocalScope "untuple" cgbuf (fun scopeMarks ->
             let eenvinner = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
             GenBinding cenv cgbuf eenvinner bind
-            let tys = destRefTupleTy cenv.g ty
+            let tys = destRefTupleTy g ty
             assert (tys.Length = numRequiredExprs)
             argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef, loce, tys, i, m) Continue)
             GenSequel cenv eenv.cloc cgbuf sequel
@@ -2889,7 +2903,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
 and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
   match (f, tyargs, curriedArgs) with
   // Look for tailcall to turn into branch 
-  | (Expr.Val(v, _, _), _, _) when
+  | (Expr.Val (v, _, _), _, _) when
         match ListAssoc.tryFind cenv.g.valRefEq v eenv.innerVals with
         | Some (kind, _) ->
            (not v.IsConstructor &&
@@ -2909,7 +2923,7 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
             (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
         | None -> false
     ->
-        let (kind, mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals // already checked above in when guard
+        let (kind, mark) = ListAssoc.find g.valRefEq v eenv.innerVals // already checked above in when guard
         let ntmargs =
           match kind with
           | BranchCallClosure arityInfo ->
@@ -2938,25 +2952,25 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
   // PhysicalEquality becomes cheap reference equality once
   // a nominal type is known. We can't replace it for variable types since
   // a "ceq" instruction can't be applied to variable type values.
-  | (Expr.Val(v, _, _), [ty], [arg1;arg2]) when
-    (valRefEq cenv.g v cenv.g.reference_equality_inner_vref)
-    && isAppTy cenv.g ty ->
+  | (Expr.Val (v, _, _), [ty], [arg1;arg2]) when
+    (valRefEq g v g.reference_equality_inner_vref)
+    && isAppTy g ty ->
     
       GenExpr cenv cgbuf eenv SPSuppress arg1 Continue
       GenExpr cenv cgbuf eenv SPSuppress arg2 Continue
-      CG.EmitInstr cgbuf (pop 2) (Push [cenv.g.ilg.typ_Bool]) AI_ceq
+      CG.EmitInstr cgbuf (pop 2) (Push [g.ilg.typ_Bool]) AI_ceq
       GenSequel cenv eenv.cloc cgbuf sequel
 
   // Emit "methodhandleof" calls as ldtoken instructions
   //
   // The token for the "GenericMethodDefinition" is loaded
-  | Expr.Val(v, _, m), _, [arg] when valRefEq cenv.g v cenv.g.methodhandleof_vref ->
-        let (|OptionalCoerce|) = function Expr.Op(TOp.Coerce _, _, [arg], _) -> arg | x -> x
-        let (|OptionalTyapp|) = function Expr.App(f, _, [_], [], _) -> f | x -> x
+  | Expr.Val (v, _, m), _, [arg] when valRefEq g v g.methodhandleof_vref ->
+        let (|OptionalCoerce|) = function Expr.Op (TOp.Coerce _, _, [arg], _) -> arg | x -> x
+        let (|OptionalTyapp|) = function Expr.App (f, _, [_], [], _) -> f | x -> x
         match arg with
         // Generate ldtoken instruction for "methodhandleof(fun (a, b, c) -> f(a, b, c))"
         // where f is an F# function value or F# method
-        | Expr.Lambda(_, _, _, _, Expr.App(OptionalCoerce(OptionalTyapp(Expr.Val(vref, _, _))), _, _, _, _), _, _) ->
+        | Expr.Lambda (_, _, _, _, Expr.App (OptionalCoerce(OptionalTyapp(Expr.Val (vref, _, _))), _, _, _, _), _, _) ->
         
             let storage = StorageForValRef m vref eenv
             match storage with
@@ -2967,13 +2981,13 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         
         // Generate ldtoken instruction for "methodhandleof(fun (a, b, c) -> obj.M(a, b, c))"
         // where M is an IL method.
-        | Expr.Lambda(_, _, _, _, Expr.Op(TOp.ILCall(_, _, valu, _, _, _, _, ilMethRef, actualTypeInst, actualMethInst, _), _, _, _), _, _) ->
+        | Expr.Lambda (_, _, _, _, Expr.Op (TOp.ILCall (_, _, valu, _, _, _, _, ilMethRef, actualTypeInst, actualMethInst, _), _, _, _), _, _) ->
         
             let boxity = (if valu then AsValue else AsObject)
             let mkFormalParams gparams = gparams |> DropErasedTyargs |> List.mapi (fun n _gf -> mkILTyvarTy (uint16 n))
             let ilGenericMethodSpec = IL.mkILMethSpec (ilMethRef, boxity, mkFormalParams actualTypeInst, mkFormalParams actualMethInst)
             let i = I_ldtoken (ILToken.ILMethod ilGenericMethodSpec)
-            CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.iltyp_RuntimeMethodHandle]) i
+            CG.EmitInstr cgbuf (pop 0) (Push [g.iltyp_RuntimeMethodHandle]) i
 
         | _ ->
             System.Diagnostics.Debug.Assert(false, sprintf "Break for invalid methodhandleof argument expression")
@@ -2983,7 +2997,7 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         GenSequel cenv eenv.cloc cgbuf sequel
 
   // Optimize calls to top methods when given "enough" arguments.
-  | Expr.Val(vref, valUseFlags, _), _, _
+  | Expr.Val (vref, valUseFlags, _), _, _
                 when
                      (let storage = StorageForValRef m vref eenv
                       match storage with
@@ -3071,7 +3085,7 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
           let isTailCall =
               if isNil laterArgs && not isSelfInit then
-                  let isDllImport = IsValRefIsDllImport cenv.g vref
+                  let isDllImport = IsValRefIsDllImport g vref
                   let hasByrefArg = mspec.FormalArgTypes |> List.exists (function ILType.Byref _ -> true | _ -> false)
                   let makesNoCriticalTailcalls = vref.MakesNoCriticalTailcalls
                   CanTailcall((boxity=AsValue), ccallInfo, eenv.withinSEH, hasByrefArg, mustGenerateUnitAfterCall, isDllImport, isSelfInit, makesNoCriticalTailcalls, sequel)
@@ -3101,8 +3115,8 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 let whereSaved, eenv =
                     (eenv, laterArgs) ||> List.mapFold (fun eenv laterArg ->
                         // Only save arguments that have effects
-                        if Optimizer.ExprHasEffect cenv.g laterArg then
-                            let ilTy = laterArg |> tyOfExpr cenv.g |> GenType cenv.amap m eenv.tyenv
+                        if Optimizer.ExprHasEffect g laterArg then
+                            let ilTy = laterArg |> tyOfExpr g |> GenType cenv.amap m eenv.tyenv
                             let locName = ilxgenGlobalNng.FreshCompilerGeneratedName ("arg", m), ilTy, false
                             let loc, _realloc, eenv = AllocLocal cenv cgbuf eenv true locName scopeMarks
                             GenExpr cenv cgbuf eenv SPSuppress laterArg Continue
@@ -3165,7 +3179,7 @@ and CanTailcall (hasStructObjArg, ccallInfo, withinSEH, hasByrefArg, mustGenerat
     else Normalcall
     
 and GenNamedLocalTyFuncCall cenv (cgbuf: CodeGenBuffer) eenv ty cloinfo tyargs m =
-
+    let g = cenv.g
     let ilContractClassTyargs =
         cloinfo.localTypeFuncContractFreeTypars
             |> List.map mkTyparTy
@@ -3183,7 +3197,7 @@ and GenNamedLocalTyFuncCall cenv (cgbuf: CodeGenBuffer) eenv ty cloinfo tyargs m
     // Local TyFunc are represented as a $contract type. they currently get stored in a value of type object
     // Recover result (value or reference types) via unbox_any.
     CG.EmitInstrs cgbuf (pop 1) (Push [ilContractTy]) [I_unbox_any ilContractTy]
-    let actualRetTy = applyTys cenv.g ty (tyargs, [])
+    let actualRetTy = applyTys g ty (tyargs, [])
 
     let ilDirectInvokeMethSpec = mkILInstanceMethSpecInTy(ilContractTy, "DirectInvoke", [], ilContractFormalRetTy, ilTyArgs)
     let ilActualRetTy = GenType cenv.amap m eenv.tyenv actualRetTy
@@ -3207,7 +3221,7 @@ and GenIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, m) sequel =
         // keep only non-erased type arguments when computing indirect call
         let tyargs = DropErasedTyargs tyargs
 
-        let typars, formalFuncTy = tryDestForallTy cenv.g functy
+        let typars, formalFuncTy = tryDestForallTy g functy
 
         let feenv = eenv.tyenv.Add typars
 
@@ -3274,6 +3288,8 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry) =
     whereToSave, eenvinner, stack, tryMarks, afterHandler, ilResultTy
 
 and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, spWith) sequel =
+    let g = cenv.g
+
     // Save the stack - gross because IL flushes the stack at the exn. handler
     // note: eenvinner notes spill vars are live
     LocalScope "trystack" cgbuf (fun scopeMarks ->
@@ -3285,7 +3301,7 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
            if cenv.opts.generateFilterBlocks then
                let startOfFilter = CG.GenerateMark cgbuf "startOfFilter"
                let afterFilter = CG.GenerateDelayMark cgbuf "afterFilter"
-               let (sequelOnBranches, afterJoin, stackAfterJoin, sequelAfterJoin) = GenJoinPoint cenv cgbuf "filter" eenv cenv.g.int_ty m EndFilter
+               let (sequelOnBranches, afterJoin, stackAfterJoin, sequelAfterJoin) = GenJoinPoint cenv cgbuf "filter" eenv g.int_ty m EndFilter
                begin
                    // We emit the sequence point for the 'with' keyword span on the start of the filter
                    // block. However the targets of the filter block pattern matching should not get any
@@ -3301,9 +3317,9 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
                    | NoSequencePointAtWith -> ()
 
 
-                   CG.SetStack cgbuf [cenv.g.ilg.typ_Object]
+                   CG.SetStack cgbuf [g.ilg.typ_Object]
                    let _, eenvinner = AllocLocalVal cenv cgbuf vf eenvinner None (startOfFilter, afterFilter)
-                   CG.EmitInstr cgbuf (pop 1) (Push [cenv.g.iltyp_Exception]) (I_castclass cenv.g.iltyp_Exception)
+                   CG.EmitInstr cgbuf (pop 1) (Push [g.iltyp_Exception]) (I_castclass g.iltyp_Exception)
 
                    GenStoreVal cgbuf eenvinner vf.Range vf
 
@@ -3320,9 +3336,9 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
 
                let startOfHandler = CG.GenerateMark cgbuf "startOfHandler"
                begin
-                   CG.SetStack cgbuf [cenv.g.ilg.typ_Object]
+                   CG.SetStack cgbuf [g.ilg.typ_Object]
                    let _, eenvinner = AllocLocalVal cenv cgbuf vh eenvinner None (startOfHandler, afterHandler)
-                   CG.EmitInstr cgbuf (pop 1) (Push [cenv.g.iltyp_Exception]) (I_castclass cenv.g.iltyp_Exception)
+                   CG.EmitInstr cgbuf (pop 1) (Push [g.iltyp_Exception]) (I_castclass g.iltyp_Exception)
                    GenStoreVal cgbuf eenvinner vh.Range vh
 
                    GenExpr cenv cgbuf eenvinner SPAlways eh (LeaveHandler (false, whereToSave, afterHandler))
@@ -3337,9 +3353,9 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
                    | SequencePointAtWith m -> CG.EmitSeqPoint cgbuf m
                    | NoSequencePointAtWith -> ()
 
-                   CG.SetStack cgbuf [cenv.g.ilg.typ_Object]
+                   CG.SetStack cgbuf [g.ilg.typ_Object]
                    let _, eenvinner = AllocLocalVal cenv cgbuf vh eenvinner None (startOfHandler, afterHandler)
-                   CG.EmitInstr cgbuf (pop 1) (Push [cenv.g.iltyp_Exception]) (I_castclass cenv.g.iltyp_Exception)
+                   CG.EmitInstr cgbuf (pop 1) (Push [g.iltyp_Exception]) (I_castclass g.iltyp_Exception)
 
                    GenStoreVal cgbuf eenvinner m vh
 
@@ -3347,7 +3363,7 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
                end
                let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
                let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
-               ILExceptionClause.TypeCatch(cenv.g.ilg.typ_Object, handlerMarks)
+               ILExceptionClause.TypeCatch(g.ilg.typ_Object, handlerMarks)
 
        cgbuf.EmitExceptionClause
          { Clause = seh
@@ -3386,7 +3402,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
        let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
        let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
        cgbuf.EmitExceptionClause
-         { Clause = ILExceptionClause.Finally(handlerMarks)
+         { Clause = ILExceptionClause.Finally handlerMarks
            Range = tryMarks }
 
        CG.SetMarkToHere cgbuf afterHandler
@@ -3404,6 +3420,8 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
 //--------------------------------------------------------------------------
 
 and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
+    let g = cenv.g
+
     // The JIT/NGen eliminate array-bounds checks for C# loops of form:
     //   for(int i=0; i < (#ldlen arr#); i++) { ... arr[i] ... }
     // Here
@@ -3422,14 +3440,14 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
 
     let finishIdx, eenvinner =
         if isFSharpStyle then
-            let v, _realloc, eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("endLoop", m), cenv.g.ilg.typ_Int32, false) (start, finish)
+            let v, _realloc, eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("endLoop", m), g.ilg.typ_Int32, false) (start, finish)
             v, eenvinner
         else
             -1, eenvinner
 
     let _, eenvinner = AllocLocalVal cenv cgbuf v eenvinner None (start, finish) (* note: eenvStack noted stack spill vars are live *)
     match spFor with
-    | SequencePointAtForLoop(spStart) -> CG.EmitSeqPoint cgbuf spStart
+    | SequencePointAtForLoop spStart -> CG.EmitSeqPoint cgbuf spStart
     | NoSequencePointAtForLoop -> ()
 
     GenExpr cenv cgbuf eenv SPSuppress e1 Continue
@@ -3437,7 +3455,7 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
     if isFSharpStyle then
         GenExpr cenv cgbuf eenvinner SPSuppress e2 Continue
         EmitSetLocal cgbuf finishIdx
-        EmitGetLocal cgbuf cenv.g.ilg.typ_Int32 finishIdx
+        EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
         GenGetLocalVal cenv cgbuf eenvinner e2.Range v None    
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp ((if isUp then BI_blt else BI_bgt), finish.CodeLabel))
 
@@ -3451,7 +3469,7 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
     //    v++ or v--
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
-    CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_Int32]) (mkLdcInt32 1)
+    CG.EmitInstr cgbuf (pop 0) (Push [g.ilg.typ_Int32]) (mkLdcInt32 1)
     CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
     GenStoreVal cgbuf eenvinner m v
 
@@ -3462,7 +3480,7 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
     // FSharpForLoopDown: if v <> e2 - 1 then goto .inner
     // CSharpStyle: if v < e2 then goto .inner
     match spFor with
-    | SequencePointAtForLoop(spStart) -> CG.EmitSeqPoint cgbuf spStart
+    | SequencePointAtForLoop spStart -> CG.EmitSeqPoint cgbuf spStart
     | NoSequencePointAtForLoop -> () //CG.EmitSeqPoint cgbuf e2.Range
 
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
@@ -3471,8 +3489,8 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
     let e2Sequel = (CmpThenBrOrContinue (pop 2, [ I_brcmp(cmp, inner.CodeLabel) ]))
 
     if isFSharpStyle then
-        EmitGetLocal cgbuf cenv.g.ilg.typ_Int32 finishIdx
-        CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_Int32]) (mkLdcInt32 1)
+        EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
+        CG.EmitInstr cgbuf (pop 0) (Push [g.ilg.typ_Int32]) (mkLdcInt32 1)
         CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
         GenSequel cenv eenv.cloc cgbuf e2Sequel
     else
@@ -3494,7 +3512,7 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
     let startTest = CG.GenerateMark cgbuf "startTest"
 
     match spWhile with
-    | SequencePointAtWhileLoop(spStart) -> CG.EmitSeqPoint cgbuf spStart
+    | SequencePointAtWhileLoop spStart -> CG.EmitSeqPoint cgbuf spStart
     | NoSequencePointAtWhileLoop -> ()
 
     // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do'
@@ -3536,6 +3554,7 @@ and GenSequential cenv cgbuf eenv spIn (e1, e2, specialSeqFlag, spSeq, _m) seque
 //--------------------------------------------------------------------------
 
 and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
+    let g = cenv.g
     let ilTyArgs = GenTypesPermitVoid cenv.amap m eenv.tyenv tyargs
     let ilReturnTys = GenTypesPermitVoid cenv.amap m eenv.tyenv returnTys
     let ilAfterInst =
@@ -3553,28 +3572,28 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
                                    let tspec = ty.TypeSpec
                                    mkILTy ty.Boxity (mkILTySpec(tspec.TypeRef, ilTyArgs)) }      
           match i, ilTyArgs with
-            | I_unbox_any (ILType.TypeVar _), [tyarg] -> I_unbox_any (tyarg)
-            | I_box (ILType.TypeVar _), [tyarg] -> I_box (tyarg)
-            | I_isinst (ILType.TypeVar _), [tyarg] -> I_isinst (tyarg)
-            | I_castclass (ILType.TypeVar _), [tyarg] -> I_castclass (tyarg)
+            | I_unbox_any (ILType.TypeVar _), [tyarg] -> I_unbox_any tyarg
+            | I_box (ILType.TypeVar _), [tyarg] -> I_box tyarg
+            | I_isinst (ILType.TypeVar _), [tyarg] -> I_isinst tyarg
+            | I_castclass (ILType.TypeVar _), [tyarg] -> I_castclass tyarg
             | I_newarr (shape, ILType.TypeVar _), [tyarg] -> I_newarr (shape, tyarg)
             | I_ldelem_any (shape, ILType.TypeVar _), [tyarg] -> I_ldelem_any (shape, tyarg)
             | I_ldelema (ro, _, shape, ILType.TypeVar _), [tyarg] -> I_ldelema (ro, false, shape, tyarg)
             | I_stelem_any (shape, ILType.TypeVar _), [tyarg] -> I_stelem_any (shape, tyarg)
             | I_ldobj (a, b, ILType.TypeVar _), [tyarg] -> I_ldobj (a, b, tyarg)
             | I_stobj (a, b, ILType.TypeVar _), [tyarg] -> I_stobj (a, b, tyarg)
-            | I_ldtoken (ILToken.ILType (ILType.TypeVar _)), [tyarg] -> I_ldtoken (ILToken.ILType (tyarg))
-            | I_sizeof (ILType.TypeVar _), [tyarg] -> I_sizeof (tyarg)
+            | I_ldtoken (ILToken.ILType (ILType.TypeVar _)), [tyarg] -> I_ldtoken (ILToken.ILType tyarg)
+            | I_sizeof (ILType.TypeVar _), [tyarg] -> I_sizeof tyarg
             // currently unused, added for forward compat, see https://visualfsharp.codeplex.com/SourceControl/network/forks/jackpappas/fsharpcontrib/contribution/7134
-            | I_cpobj (ILType.TypeVar _), [tyarg] -> I_cpobj (tyarg) 
-            | I_initobj (ILType.TypeVar _), [tyarg] -> I_initobj (tyarg)  
+            | I_cpobj (ILType.TypeVar _), [tyarg] -> I_cpobj tyarg 
+            | I_initobj (ILType.TypeVar _), [tyarg] -> I_initobj tyarg  
             | I_ldfld (al, vol, fspec), _ -> I_ldfld (al, vol, modFieldSpec fspec)
-            | I_ldflda (fspec), _ -> I_ldflda (modFieldSpec fspec)
+            | I_ldflda fspec, _ -> I_ldflda (modFieldSpec fspec)
             | I_stfld (al, vol, fspec), _ -> I_stfld (al, vol, modFieldSpec fspec)
             | I_stsfld (vol, fspec), _ -> I_stsfld (vol, modFieldSpec fspec)
             | I_ldsfld (vol, fspec), _ -> I_ldsfld (vol, modFieldSpec fspec)
-            | I_ldsflda (fspec), _ -> I_ldsflda (modFieldSpec fspec)
-            | EI_ilzero(ILType.TypeVar _), [tyarg] -> EI_ilzero(tyarg)
+            | I_ldsflda fspec, _ -> I_ldsflda (modFieldSpec fspec)
+            | EI_ilzero(ILType.TypeVar _), [tyarg] -> EI_ilzero tyarg
             | AI_nop, _ -> i
                 // These are embedded in the IL for a an initonly ldfld, i.e.
                 // here's the relevant comment from tc.fs
@@ -3596,7 +3615,7 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
     // This is the instruction sequence for "not"
     // For these we can just generate the argument and change the test (from a brfalse to a brtrue and vice versa)
     | ([ AI_ceq ],
-       [arg1; Expr.Const((Const.Bool false | Const.SByte 0y| Const.Int16 0s | Const.Int32 0 | Const.Int64 0L | Const.Byte 0uy| Const.UInt16 0us | Const.UInt32 0u | Const.UInt64 0UL), _, _) ],
+       [arg1; Expr.Const ((Const.Bool false | Const.SByte 0y| Const.Int16 0s | Const.Int32 0 | Const.Int64 0L | Const.Byte 0uy| Const.UInt16 0us | Const.UInt32 0u | Const.UInt64 0UL), _, _) ],
        CmpThenBrOrContinue(1, [I_brcmp (((BI_brfalse | BI_brtrue) as bi), label1) ]),
        _) ->
 
@@ -3643,7 +3662,6 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
             GenSequel cenv eenv.cloc cgbuf sequel
     | _ ->
       // float or float32 or float<_> or float32<_>
-      let g = cenv.g in
       let anyfpType ty = typeEquivAux EraseMeasures g g.float_ty ty || typeEquivAux EraseMeasures g g.float32_ty ty
 
       // Otherwise generate the arguments, and see if we can use a I_brcmp rather than a comparison followed by an I_brfalse/I_brtrue
@@ -3690,7 +3708,7 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
 //--------------------------------------------------------------------------
 
 and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
-
+    let g = cenv.g
     let referencedTypeDefs, spliceTypes, spliceArgExprs, astSpec =
         match !conv with
         | Some res -> res
@@ -3701,15 +3719,15 @@ and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
                 let referencedTypeDefs, spliceTypes, spliceArgExprs = qscope.Close()
                 referencedTypeDefs, List.map fst spliceTypes, List.map fst spliceArgExprs, astSpec
             with
-                QuotationTranslator.InvalidQuotedTerm e -> error(e)
+                QuotationTranslator.InvalidQuotedTerm e -> error e
 
     let astSerializedBytes = QuotationPickler.pickle astSpec
 
     let someTypeInModuleExpr = mkTypeOfExpr cenv m eenv.someTypeInThisAssembly
-    let rawTy = mkRawQuotedExprTy cenv.g                      
+    let rawTy = mkRawQuotedExprTy g                      
     let spliceTypeExprs = List.map (GenType cenv.amap m eenv.tyenv >> (mkTypeOfExpr cenv m)) spliceTypes
 
-    let bytesExpr = Expr.Op(TOp.Bytes(astSerializedBytes), [], [], m)
+    let bytesExpr = Expr.Op (TOp.Bytes astSerializedBytes, [], [], m)
 
     let deserializeExpr =
         let qf = QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g 
@@ -3723,13 +3741,13 @@ and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
             let mkList ty els = List.foldBack (mkCons cenv.g ty) els (mkNil cenv.g m ty)
             let spliceTypesExpr = mkList cenv.g.system_Type_ty spliceTypeExprs
             let spliceArgsExpr = mkList rawTy spliceArgExprs
-            mkCallDeserializeQuotationFSharp20Plus cenv.g m someTypeInModuleExpr spliceTypesExpr spliceArgsExpr bytesExpr
+            mkCallDeserializeQuotationFSharp20Plus g m someTypeInModuleExpr spliceTypesExpr spliceArgsExpr bytesExpr
 
     let afterCastExpr =
         // Detect a typed quotation and insert the cast if needed. The cast should not fail but does
         // unfortunately involve a "typeOf" computation over a quotation tree.
-        if tyconRefEq cenv.g (tcrefOfAppTy cenv.g ety) cenv.g.expr_tcr then
-            mkCallCastQuotation cenv.g m (List.head (argsOfAppTy cenv.g ety)) deserializeExpr
+        if tyconRefEq g (tcrefOfAppTy g ety) g.expr_tcr then
+            mkCallCastQuotation g m (List.head (argsOfAppTy g ety)) deserializeExpr
         else
             deserializeExpr
     GenExpr cenv cgbuf eenv SPSuppress afterCastExpr sequel
@@ -3783,10 +3801,11 @@ and CommitCallSequel cenv eenv m cloc cgbuf mustGenerateUnitAfterCall sequel =
 
 
 and MakeNotSupportedExnExpr cenv eenv (argExpr, m) =
-    let ety = mkAppTy (cenv.g.FindSysTyconRef ["System"] "NotSupportedException") []
+    let g = cenv.g
+    let ety = mkAppTy (g.FindSysTyconRef ["System"] "NotSupportedException") []
     let ilty = GenType cenv.amap m eenv.tyenv ety
-    let mref = mkILCtorMethSpecForTy(ilty, [cenv.g.ilg.typ_String]).MethodRef
-    Expr.Op(TOp.ILCall(false, false, false, true, NormalValUse, false, false, mref, [], [], [ety]), [], [argExpr], m)
+    let mref = mkILCtorMethSpecForTy(ilty, [g.ilg.typ_String]).MethodRef
+    Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [ety]), [], [argExpr], m)
 
 and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExprs, m) expr sequel =
     let g = cenv.g
@@ -3870,26 +3889,27 @@ and GenSetByref cenv cgbuf eenv (v: ValRef, e, m) sequel =
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 and GenDefaultValue cenv cgbuf eenv (ty, m) =
+    let g = cenv.g
     let ilTy = GenType cenv.amap m eenv.tyenv ty
-    if isRefTy cenv.g ty then
+    if isRefTy g ty then
         CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) AI_ldnull
     else
-        match tryDestAppTy cenv.g ty with
-        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_SByte_tcref tcref ||
-                                   tyconRefEq cenv.g cenv.g.system_Int16_tcref tcref ||
-                                   tyconRefEq cenv.g cenv.g.system_Int32_tcref tcref ||
-                                   tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref ||
-                                   tyconRefEq cenv.g cenv.g.system_Byte_tcref tcref ||
-                                   tyconRefEq cenv.g cenv.g.system_Char_tcref tcref ||
-                                   tyconRefEq cenv.g cenv.g.system_UInt16_tcref tcref ||
-                                   tyconRefEq cenv.g cenv.g.system_UInt32_tcref tcref) ->
+        match tryDestAppTy g ty with
+        | ValueSome tcref when (tyconRefEq g g.system_SByte_tcref tcref ||
+                                   tyconRefEq g g.system_Int16_tcref tcref ||
+                                   tyconRefEq g g.system_Int32_tcref tcref ||
+                                   tyconRefEq g g.system_Bool_tcref tcref ||
+                                   tyconRefEq g g.system_Byte_tcref tcref ||
+                                   tyconRefEq g g.system_Char_tcref tcref ||
+                                   tyconRefEq g g.system_UInt16_tcref tcref ||
+                                   tyconRefEq g g.system_UInt32_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) iLdcZero
-        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Int64_tcref tcref ||
-                                 tyconRefEq cenv.g cenv.g.system_UInt64_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq g g.system_Int64_tcref tcref ||
+                                 tyconRefEq g g.system_UInt64_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcInt64 0L)
-        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Single_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq g g.system_Single_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcSingle 0.0f)
-        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Double_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq g g.system_Double_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcDouble 0.0)
         | _ ->
             let ilTy = GenType cenv.amap m eenv.tyenv ty
@@ -3910,9 +3930,10 @@ and GenDefaultValue cenv cgbuf eenv (ty, m) =
 //--------------------------------------------------------------------------
 
 and GenGenericParam cenv eenv (tp: Typar) =
+    let g = cenv.g
     let subTypeConstraints =
         tp.Constraints
-        |> List.choose (function | TyparConstraint.CoercesTo(ty, _) -> Some(ty) | _ -> None)
+        |> List.choose (function | TyparConstraint.CoercesTo(ty, _) -> Some ty | _ -> None)
         |> List.map (GenTypeAux cenv.amap tp.Range eenv.tyenv VoidNotOK PtrTypesNotOK)
 
     let refTypeConstraint =
@@ -3933,7 +3954,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
               | None -> tp.Name
               | Some nm -> nm
           // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters
-          if cenv.g.compilingFslib then
+          if g.compilingFslib then
               match nm with
               | "U" -> "TResult"
               | "U1" -> "TResult1"
@@ -3998,7 +4019,8 @@ and GenFormalSlotsig m cenv eenv (TSlotSig(_, ty, ctps, mtps, paraml, returnTy))
         | None -> ilRet
     ilTy, ilParams, ilRet
 
-and instSlotParam inst (TSlotParam(nm, ty, inFlag, fl2, fl3, attrs)) = TSlotParam(nm, instType inst ty, inFlag, fl2, fl3, attrs)
+and instSlotParam inst (TSlotParam(nm, ty, inFlag, fl2, fl3, attrs)) =
+    TSlotParam(nm, instType inst ty, inFlag, fl2, fl3, attrs)
 
 and GenActualSlotsig m cenv eenv (TSlotSig(_, ty, ctps, mtps, ilSlotParams, ilSlotRetTy)) methTyparsOfOverridingMethod (methodParams: Val list) =
     let ilSlotParams = List.concat ilSlotParams
@@ -4015,8 +4037,10 @@ and GenActualSlotsig m cenv eenv (TSlotSig(_, ty, ctps, mtps, ilSlotParams, ilSl
     let iLRet = mkILReturn ilRetTy
     ilParams, iLRet
 
-and GenNameOfOverridingMethod cenv (useMethodImpl, (TSlotSig(nameOfOverridenMethod, enclTypOfOverridenMethod, _, _, _, _))) =
-    if useMethodImpl then qualifiedMangledNameOfTyconRef (tcrefOfAppTy cenv.g enclTypOfOverridenMethod) nameOfOverridenMethod else nameOfOverridenMethod
+and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
+    let (TSlotSig(nameOfOverridenMethod, enclTypOfOverridenMethod, _, _, _, _)) = slotsig
+    if useMethodImpl then qualifiedMangledNameOfTyconRef (tcrefOfAppTy cenv.g enclTypOfOverridenMethod) nameOfOverridenMethod
+    else nameOfOverridenMethod
 
 and GenMethodImpl cenv eenv (useMethodImpl, (TSlotSig(nameOfOverridenMethod, _, _, _, _, _) as slotsig)) m =
     let ilOverrideTy, ilOverrideParams, ilOverrideRet = GenFormalSlotsig m cenv eenv slotsig
@@ -4049,23 +4073,24 @@ and fixupMethodImplFlags (mdef: ILMethodDef) =
     mdef.WithAccess(ILMemberAccess.Private).WithHideBySig().WithFinal(true).WithNewSlot
 
 and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod =
+    let g = cenv.g
 
     // Check if we're compiling the property as a .NET event
     let (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, methodBodyExpr, m)) = tmethod
     let (TSlotSig(nameOfOverridenMethod, _, _, _, _, _)) = slotsig
-    if CompileAsEvent cenv.g attribs then
+    if CompileAsEvent g attribs then
         []
     else
         let eenvUnderTypars = AddTyparsToEnv methTyparsOfOverridingMethod eenvinner
         let methodParams = List.concat methodParams
-        let methodParamsNonSelf = match methodParams with [] -> [] | _::t -> t // drop the 'this' arg when computing better argument names for IL parameters
+        let methodParamsNonSelf = match methodParams with [] -> [] | _ :: t -> t // drop the 'this' arg when computing better argument names for IL parameters
         let ilParamsOfOverridingMethod, ilReturnOfOverridingMethod =
             GenActualSlotsig m cenv eenvUnderTypars slotsig methTyparsOfOverridingMethod methodParamsNonSelf
 
         let ilAttribs = GenAttrs cenv eenvinner attribs
 
         // Args are stored starting at #1
-        let eenvForMeth = AddStorageForLocalVals cenv.g (methodParams |> List.mapi (fun i v -> (v, Arg i))) eenvUnderTypars
+        let eenvForMeth = AddStorageForLocalVals g (methodParams |> List.mapi (fun i v -> (v, Arg i))) eenvUnderTypars
         let sequel = (if slotSigHasVoidReturnTy slotsig then discardAndReturnVoid else Return)
         let ilMethodBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, [], nameOfOverridenMethod, eenvForMeth, 0, methodBodyExpr, sequel)
 
@@ -4086,6 +4111,7 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
 and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, overrides, interfaceImpls, m) sequel =
+    let g = cenv.g
     let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m false None eenvouter expr
 
     let cloAttribs = cloinfo.cloAttribs
@@ -4112,7 +4138,7 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, ove
 
     let mimpls, mdefs =
         [ for ov in overrides do
-              yield! genMethodAndOptionalMethodImpl ov (isInterfaceTy cenv.g baseType)
+              yield! genMethodAndOptionalMethodImpl ov (isInterfaceTy g baseType)
           for (_, tmethods) in interfaceImpls do
              for tmethod in tmethods do
                  yield! genMethodAndOptionalMethodImpl tmethod true ]
@@ -4123,15 +4149,15 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, ove
     let interfaceTys = interfaceImpls |> List.map (fst >> GenType cenv.amap m eenvinner.tyenv)
 
     let attrs = GenAttrs cenv eenvinner cloAttribs
-    let super = (if isInterfaceTy cenv.g baseType then cenv.g.ilg.typ_Object else ilCloRetTy)
-    let interfaceTys = interfaceTys @ (if isInterfaceTy cenv.g baseType then [ilCloRetTy] else [])
+    let super = (if isInterfaceTy g baseType then g.ilg.typ_Object else ilCloRetTy)
+    let interfaceTys = interfaceTys @ (if isInterfaceTy g baseType then [ilCloRetTy] else [])
     let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, ilCloGenericFormals, attrs, ilCloFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls, super, interfaceTys)
 
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
     CountClosure()
     GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
-    CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [ EraseClosures.mkTyOfLambdas cenv.g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
+    CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [ EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
 
 and GenSequenceExpr
@@ -4140,24 +4166,25 @@ and GenSequenceExpr
         eenvouter
         (nextEnumeratorValRef: ValRef, pcvref: ValRef, currvref: ValRef, stateVars, generateNextExpr, closeExpr, checkCloseExpr: Expr, seqElemTy, m) sequel =
 
+    let g = cenv.g
     let stateVars = [ pcvref; currvref ] @ stateVars
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
     // pretend that the state variables are bound
     let eenvouter =
-        eenvouter |> AddStorageForLocalVals cenv.g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
+        eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
 
     // Get the free variables. Make a lambda to pretend that the 'nextEnumeratorValRef' is bound (it is an argument to GenerateNext)
     let (cloAttribs, _, _, cloFreeTyvars, cloFreeVars, ilCloTypeRef: ILTypeRef, ilCloFreeVars, eenvinner) =
-         GetIlxClosureFreeVars cenv m None eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, cenv.g.int32_ty))
+         GetIlxClosureFreeVars cenv m None eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, g.int32_ty))
 
     let ilCloSeqElemTy = GenType cenv.amap m eenvinner.tyenv seqElemTy
-    let cloRetTy = mkSeqTy cenv.g seqElemTy
+    let cloRetTy = mkSeqTy g seqElemTy
     let ilCloRetTyInner = GenType cenv.amap m eenvinner.tyenv cloRetTy
     let ilCloRetTyOuter = GenType cenv.amap m eenvouter.tyenv cloRetTy
-    let ilCloEnumeratorTy = GenType cenv.amap m eenvinner.tyenv (mkIEnumeratorTy cenv.g seqElemTy)
-    let ilCloEnumerableTy = GenType cenv.amap m eenvinner.tyenv (mkSeqTy cenv.g seqElemTy)
-    let ilCloBaseTy = GenType cenv.amap m eenvinner.tyenv (mkAppTy cenv.g.seq_base_tcr [seqElemTy])
+    let ilCloEnumeratorTy = GenType cenv.amap m eenvinner.tyenv (mkIEnumeratorTy g seqElemTy)
+    let ilCloEnumerableTy = GenType cenv.amap m eenvinner.tyenv (mkSeqTy g seqElemTy)
+    let ilCloBaseTy = GenType cenv.amap m eenvinner.tyenv (mkAppTy g.seq_base_tcr [seqElemTy])
     let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
 
     // Create a new closure class with a single "MoveNext" method that implements the iterator.
@@ -4182,7 +4209,7 @@ and GenSequenceExpr
                     GenSequel cenv eenv.cloc cgbuf Return),
                  m)
         mkILNonGenericVirtualMethod("GetFreshEnumerator", ILMemberAccess.Public, [], mkILReturn ilCloEnumeratorTy, MethodBody.IL mbody)
-        |> AddNonUserCompilerGeneratedAttribs cenv.g
+        |> AddNonUserCompilerGeneratedAttribs g
 
     let closeMethod =
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
@@ -4194,22 +4221,22 @@ and GenSequenceExpr
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq, [], "get_CheckClose", eenvinner, 1, checkCloseExpr, Return)
-        mkILNonGenericVirtualMethod("get_CheckClose", ILMemberAccess.Public, [], mkILReturn cenv.g.ilg.typ_Bool, MethodBody.IL ilCode)
+        mkILNonGenericVirtualMethod("get_CheckClose", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_Bool, MethodBody.IL ilCode)
 
     let generateNextMethod =
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
         // the 'next enumerator' byref arg is at arg position 1
-        let eenvinner = eenvinner |> AddStorageForLocalVals cenv.g [ (nextEnumeratorValRef.Deref, Arg 1) ]
+        let eenvinner = eenvinner |> AddStorageForLocalVals g [ (nextEnumeratorValRef.Deref, Arg 1) ]
         let ilParams = [mkILParamNamed("next", ILType.Byref ilCloEnumerableTy)]
-        let ilReturn = mkILReturn cenv.g.ilg.typ_Int32
+        let ilReturn = mkILReturn g.ilg.typ_Int32
         let ilCode = MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq, [], "GenerateNext", eenvinner, 2, generateNextExpr, Return))
         mkILNonGenericVirtualMethod("GenerateNext", ILMemberAccess.Public, ilParams, ilReturn, ilCode)
 
     let lastGeneratedMethod =
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "get_LastGenerated", eenvinner, 1, exprForValRef m currvref, Return)
         mkILNonGenericVirtualMethod("get_LastGenerated", ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL ilCode)
-        |> AddNonUserCompilerGeneratedAttribs cenv.g
+        |> AddNonUserCompilerGeneratedAttribs g
 
     let ilCtorBody =
         mkILSimpleStorageCtor(None, Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], [], ILMemberAccess.Assembly).MethodBody
@@ -4236,7 +4263,7 @@ and GenSequenceExpr
 
 /// Generate the class for a closure type definition
 and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls, ext, ilIntfTys) =
-
+  let g = cenv.g
   let cloInfo =
       { cloFreeVars=ilCloFreeVars
         cloStructure=ilCloLambdas
@@ -4247,7 +4274,7 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloFreeVars,
               layout = ILTypeDefLayout.Auto,
               attributes = enum 0,
               genericParams = ilGenParams,
-              customAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]),
+              customAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ]),
               fields = emptyILFields,
               events= emptyILEvents,
               properties = emptyILProperties,
@@ -4265,7 +4292,7 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloFreeVars,
         .WithEncoding(ILDefaultPInvokeEncoding.Auto)
         .WithInitSemantics(ILTypeInit.BeforeField)
 
-  let tdefs = EraseClosures.convIlxClosureDef cenv.g.ilxPubCloEnv tref.Enclosing tdef cloInfo
+  let tdefs = EraseClosures.convIlxClosureDef g.ilxPubCloEnv tref.Enclosing tdef cloInfo
   tdefs
       
 and GenGenericParams cenv eenv tps = 
@@ -4276,9 +4303,10 @@ and GenGenericArgs m (tyenv: TypeReprEnv) tps =
 
 /// Generate the closure class for a function
 and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr =
+    let g = cenv.g
     match expr with
     | Expr.Lambda (_, _, _, _, _, m, _)
-    | Expr.TyLambda(_, _, _, m, _) ->
+    | Expr.TyLambda (_, _, _, m, _) ->
       
         let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenv expr
       
@@ -4296,7 +4324,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
                 let (ilContractGenericParams, ilContractMethTyargs, ilContractTySpec: ILTypeSpec, ilContractFormalRetTy) = GenNamedLocalTypeFuncContractInfo cenv eenv m cloinfo
                 let ilContractTypeRef = ilContractTySpec.TypeRef
                 let ilContractTy = mkILFormalBoxedTy ilContractTypeRef ilContractGenericParams
-                let ilContractCtor = mkILNonGenericEmptyCtor None cenv.g.ilg.typ_Object
+                let ilContractCtor = mkILNonGenericEmptyCtor None g.ilg.typ_Object
 
                 let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, ilContractMethTyargs, [], mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
                 let ilContractTypeDef =
@@ -4304,7 +4332,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
                               layout = ILTypeDefLayout.Auto,
                               attributes = enum 0,
                               genericParams = ilContractGenericParams,
-                              customAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ],
+                              customAttrs = mkILCustomAttrs [mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ],
                               fields = emptyILFields,
                               events= emptyILEvents,
                               properties = emptyILProperties,
@@ -4312,7 +4340,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
                               methodImpls= emptyILMethodImpls,
                               nestedTypes=emptyILTypeDefs,
                               implements = [],
-                              extends= Some cenv.g.ilg.typ_Object,
+                              extends= Some g.ilg.typ_Object,
                               securityDecls= emptyILSecurityDecls)
 
                 // the contract type is an abstract type and not sealed
@@ -4334,7 +4362,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
                 cloTypeDefs
             
             else
-                GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.cloILFreeVars, cloinfo.ilCloLambdas, ilCloBody, [], [], cenv.g.ilg.typ_Object, [])
+                GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.cloILFreeVars, cloinfo.ilCloLambdas, ilCloBody, [], [], g.ilg.typ_Object, [])
         CountClosure()
         for cloTypeDef in cloTypeDefs do
             cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
@@ -4343,10 +4371,11 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
     | _ -> failwith "GenLambda: not a lambda"
     
 and GenLambdaVal cenv (cgbuf: CodeGenBuffer) eenv (cloinfo, m) =
+    let g = cenv.g
     GenGetLocalVals cenv cgbuf eenv m cloinfo.cloFreeVars
     CG.EmitInstr cgbuf
         (pop cloinfo.cloILFreeVars.Length)
-        (Push [EraseClosures.mkTyOfLambdas cenv.g.ilxPubCloEnv cloinfo.ilCloLambdas])
+        (Push [EraseClosures.mkTyOfLambdas g.ilxPubCloEnv cloinfo.ilCloLambdas])
         (I_newobj (cloinfo.cloSpec.Constructor, None))
 
 and GenLambda cenv cgbuf eenv isLocalTypeFunc selfv expr sequel =
@@ -4358,9 +4387,10 @@ and GenTypeOfVal cenv eenv (v: Val) =
     GenType cenv.amap v.Range eenv.tyenv v.Type
 
 and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
+    let g = cenv.g
     match StorageForVal m fv eenvouter with
     // Local type functions
-    | Local(_, _, Some _) | Env(_, _, _, Some _) -> cenv.g.ilg.typ_Object
+    | Local(_, _, Some _) | Env(_, _, _, Some _) -> g.ilg.typ_Object
 #if DEBUG
     // Check for things that should never make it into the free variable set. Only do this in debug for performance reasons
     | (StaticField _ | StaticProperty _ | Method _ | Null) -> error(InternalError("GenFreevar: compiler error: unexpected unrealized value", fv.Range))
@@ -4368,6 +4398,7 @@ and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
     | _ -> GenType cenv.amap m tyenvinner fv.Type
 
 and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
+    let g = cenv.g
 
     // Choose a base name for the closure
     let basename =
@@ -4381,7 +4412,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
         match expr with
         | Expr.Obj (uniq, _, _, _, _, _, _)
         | Expr.Lambda (uniq, _, _, _, _, _, _)
-        | Expr.TyLambda(uniq, _, _, _, _) -> uniq
+        | Expr.TyLambda (uniq, _, _, _, _) -> uniq
         | _ -> newUnique()
 
     // Choose a name for the closure
@@ -4406,7 +4437,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
             | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
             | _ ->
                 match selfv with
-                | Some v -> not (valRefEq cenv.g (mkLocalValRef fv) v)
+                | Some v -> not (valRefEq g (mkLocalValRef fv) v)
                 | _ -> true)
 
     // The general shape is:
@@ -4419,7 +4450,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     //     bake our own function base contracts for local type functions
     //
     //  -- "internal" ones, which get used internally in the implementation
-    let cloContractFreeTyvarSet = (freeInType CollectTypars (tyOfExpr cenv.g expr)).FreeTypars
+    let cloContractFreeTyvarSet = (freeInType CollectTypars (tyOfExpr g expr)).FreeTypars
 
     let cloInternalFreeTyvars = Zset.diff cloFreeVarResults.FreeTyvars.FreeTypars cloContractFreeTyvarSet |> Zset.elements
     let cloContractFreeTyvars = cloContractFreeTyvarSet |> Zset.elements
@@ -4437,7 +4468,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     // If generating a named closure, add the closure itself as a var, available via "arg0" .
     // The latter doesn't apply for the delegate implementation of closures.
     // Build the environment that is active inside the closure itself
-    let eenvinner = eenvinner |> AddStorageForLocalVals cenv.g (match selfv with | Some v -> [(v.Deref, Arg 0)] | _ -> [])
+    let eenvinner = eenvinner |> AddStorageForLocalVals g (match selfv with | Some v -> [(v.Deref, Arg 0)] | _ -> [])
 
     let ilCloFreeVars =
         let ilCloFreeVarNames = ChooseFreeVarNames takenNames (List.map nameOfVal cloFreeVars)
@@ -4455,17 +4486,18 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
 
             (v, Env(ilCloTyInner, i, ilField, localCloInfo)))
 
-    let eenvinner = eenvinner |> AddStorageForLocalVals cenv.g ilCloFreeVarStorage
+    let eenvinner = eenvinner |> AddStorageForLocalVals g ilCloFreeVarStorage
 
     // Return a various results
     (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, cloFreeTyvars, cloFreeVars, ilCloTypeRef, Array.ofList ilCloFreeVars, eenvinner)
 
 
 and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
+    let g = cenv.g
     let returnTy =
       match expr with
-      | Expr.Lambda (_, _, _, _, _, _, returnTy) | Expr.TyLambda(_, _, _, _, returnTy) -> returnTy
-      | Expr.Obj(_, ty, _, _, _, _, _) -> ty
+      | Expr.Lambda (_, _, _, _, _, _, returnTy) | Expr.TyLambda (_, _, _, _, returnTy) -> returnTy
+      | Expr.Obj (_, ty, _, _, _, _, _) -> ty
       | _ -> failwith "GetIlxClosureInfo: not a lambda expression"
 
     // Determine the structure of the closure. We do this before analyzing free variables to
@@ -4473,12 +4505,12 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
     let tvsl, vs, body, returnTy =
         let rec getCallStructure tvacc vacc (e, ety) =
             match e with
-            | Expr.TyLambda(_, tvs, body, _m, bty) ->
+            | Expr.TyLambda (_, tvs, body, _m, bty) ->
                 getCallStructure ((DropErasedTypars tvs) :: tvacc) vacc (body, bty)
             | Expr.Lambda (_, _, _, vs, body, _, bty) when not isLocalTypeFunc ->
                 // Transform a lambda taking untupled arguments into one
                 // taking only a single tupled argument if necessary. REVIEW: do this earlier
-                let tupledv, body = MultiLambdaToTupledLambda cenv.g vs body
+                let tupledv, body = MultiLambdaToTupledLambda g vs body
                 getCallStructure tvacc (tupledv :: vacc) (body, bty)
             | _ ->
                 (List.rev tvacc, List.rev vacc, e, ety)
@@ -4500,7 +4532,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
         | [], v :: rest ->
             let nm = v.CompiledName
             let l, eenv =
-                let eenv = AddStorageForVal cenv.g (v, notlazy (Arg ntmargs)) eenv
+                let eenv = AddStorageForVal g (v, notlazy (Arg ntmargs)) eenv
                 getClosureArgs eenv (ntmargs+1) [] rest
             let lambdas = Lambdas_lambda (mkILParamNamed(nm, GenTypeOfVal cenv eenv v), l)
             lambdas, eenv
@@ -4566,7 +4598,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
         if isLocalTypeFunc then
             let rec strip lambdas acc =
                 match lambdas with
-                | Lambdas_forall(gp, r) -> strip r (gp::acc)
+                | Lambdas_forall(gp, r) -> strip r (gp :: acc)
                 | Lambdas_return returnTy -> List.rev acc, returnTy, lambdas
                 | _ -> failwith "AdjustNamedLocalTypeFuncIlxClosureInfo: local functions can currently only be type functions"
             strip ilCloLambdas []
@@ -4609,7 +4641,7 @@ and GenNamedLocalTypeFuncContractInfo cenv eenv m cloinfo =
     let ilContractGenericParams = GenGenericParams cenv eenv cloinfo.localTypeFuncContractFreeTypars
     let tvs, contractRetTy =
         match cloinfo.cloExpr with
-        | Expr.TyLambda(_, tvs, _, _, bty) -> tvs, bty
+        | Expr.TyLambda (_, tvs, _, _, bty) -> tvs, bty
         | e -> [], tyOfExpr cenv.g e
     let eenvForContract = AddTyparsToEnv tvs eenvForContract
     let ilContractMethTyargs = GenGenericParams cenv eenvForContract tvs
@@ -4619,6 +4651,8 @@ and GenNamedLocalTypeFuncContractInfo cenv eenv m cloinfo =
 /// Generate a new delegate construction including a closure class if necessary. This is a lot like generating function closures
 /// and object expression closures, and most of the code is shared.
 and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, delegateTy, _, _, _, _) as slotsig), _attribs, methTyparsOfOverridingMethod, tmvs, body, _), m) sequel =
+    let g = cenv.g
+
     // Get the instantiation of the delegate type
     let ilCtxtDelTy = GenType cenv.amap m eenvouter.tyenv delegateTy
     let tmvs = List.concat tmvs
@@ -4626,8 +4660,8 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     // Yuck. TLBIMP.EXE generated APIs use UIntPtr for the delegate ctor.
     let useUIntPtrForDelegateCtor =
         try
-            if isILAppTy cenv.g delegateTy then
-                let tcref = tcrefOfAppTy cenv.g delegateTy
+            if isILAppTy g delegateTy then
+                let tcref = tcrefOfAppTy g delegateTy
                 let tdef = tcref.ILTyconRawMetadata
                 match tdef.Methods.FindByName ".ctor" with
                 | [ctorMDef] ->
@@ -4653,13 +4687,13 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     let envForDelegeeUnderTypars = AddTyparsToEnv methTyparsOfOverridingMethod eenvinner
 
     let numthis = 1
-    let tmvs, body = BindUnitVars cenv.g (tmvs, List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1, body)
+    let tmvs, body = BindUnitVars g (tmvs, List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1, body)
 
     // The slot sig contains a formal instantiation. When creating delegates we're only
     // interested in the actual instantiation since we don't have to emit a method impl.
     let ilDelegeeParams, ilDelegeeRet = GenActualSlotsig m cenv envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
 
-    let envForDelegeeMeth = AddStorageForLocalVals cenv.g (List.mapi (fun i v -> (v, Arg (i+numthis))) tmvs) envForDelegeeUnderTypars
+    let envForDelegeeMeth = AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg (i+numthis))) tmvs) envForDelegeeUnderTypars
     let ilMethodBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, [], delegeeMethName, envForDelegeeMeth, 1, body, (if slotSigHasVoidReturnTy slotsig then discardAndReturnVoid else Return))
     let delegeeInvokeMeth =
         mkILNonGenericInstanceMethod
@@ -4667,12 +4701,12 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
              ilDelegeeParams,
              ilDelegeeRet,
              MethodBody.IL ilMethodBody)
-    let delegeeCtorMeth = mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly)
+    let delegeeCtorMeth = mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly)
     let ilCtorBody = delegeeCtorMeth.MethodBody
 
     let ilCloLambdas = Lambdas_return ilCtxtDelTy
     let ilAttribs = GenAttrs cenv eenvinner cloAttribs
-    let cloTypeDefs = GenClosureTypeDefs cenv (ilDelegeeTypeRef, ilDelegeeGenericParams, ilAttribs, ilCloFreeVars, ilCloLambdas, ilCtorBody, [delegeeInvokeMeth], [], cenv.g.ilg.typ_Object, [])
+    let cloTypeDefs = GenClosureTypeDefs cenv (ilDelegeeTypeRef, ilDelegeeGenericParams, ilAttribs, ilCloFreeVars, ilCloLambdas, ilCtorBody, [delegeeInvokeMeth], [], g.ilg.typ_Object, [])
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None)
     CountClosure()
@@ -4680,12 +4714,12 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
     let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloFreeVars), ctxtGenericArgsForDelegee)
     GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
-    CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [EraseClosures.mkTyOfLambdas cenv.g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
+    CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
 
     let ilDelegeeTyOuter = mkILBoxedTy ilDelegeeTypeRef ctxtGenericArgsForDelegee
     let ilDelegeeInvokeMethOuter = mkILNonGenericInstanceMethSpecInTy (ilDelegeeTyOuter, "Invoke", typesOfILParams ilDelegeeParams, ilDelegeeRet.Type)
-    let ilDelegeeCtorMethOuter = mkCtorMethSpecForDelegate cenv.g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
-    CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_IntPtr]) (I_ldftn ilDelegeeInvokeMethOuter)
+    let ilDelegeeCtorMethOuter = mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
+    CG.EmitInstr cgbuf (pop 0) (Push [g.ilg.typ_IntPtr]) (I_ldftn ilDelegeeInvokeMethOuter)
     CG.EmitInstr cgbuf (pop 2) (Push [ilCtxtDelTy]) (I_newobj(ilDelegeeCtorMethOuter, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
 
@@ -4930,6 +4964,7 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets _targetIdx (targetMarkBefore
 
 
 and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defaultTargetOpt switchm targets repeatSP targetInfos sequel =
+    let g = cenv.g
     let m = e.Range
     match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab
 
@@ -4943,7 +4978,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
       // // Remove a single test for a union case . Union case tests are always exa
       //| [ TCase(DecisionTreeTest.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone) ->
       //  GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv successTree targets repeatSP targetInfos sequel
-      //   //GenDecisionTree cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
+      //   //GenDecisionTree cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
 
       // Optimize a single test for a union case to an "isdata" test - much
       // more efficient code, and this case occurs in the generated equality testers where perf is important
@@ -4954,8 +4989,8 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             | Some tg -> tg
         let cuspec = GenUnionSpec cenv.amap m eenv.tyenv c.TyconRef tyargs
         let idx = c.Index
-        let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib c.TyconRef
-        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
+        let avoidHelpers = entityRefInThisAssembly g.compilingFslib c.TyconRef
+        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
 
       | _ ->
         let caseLabels = List.map (fun _ -> CG.GenerateDelayMark cgbuf "switch_case") cases
@@ -4975,13 +5010,13 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   BI_brfalse
               | DecisionTreeTest.IsNull ->
                   GenExpr cenv cgbuf eenv SPSuppress e Continue
-                  let srcTy = tyOfExpr cenv.g e
-                  if isTyparTy cenv.g srcTy then
+                  let srcTy = tyOfExpr g e
+                  if isTyparTy g srcTy then
                       let ilFromTy = GenType cenv.amap m eenv.tyenv srcTy
-                      CG.EmitInstr cgbuf (pop 1) (Push [cenv.g.ilg.typ_Object]) (I_box ilFromTy)
+                      CG.EmitInstr cgbuf (pop 1) (Push [g.ilg.typ_Object]) (I_box ilFromTy)
                   BI_brfalse
               | DecisionTreeTest.IsInst (_srcty, tgty) ->
-                  let e = mkCallTypeTest cenv.g m tgty e
+                  let e = mkCallTypeTest g m tgty e
                   GenExpr cenv cgbuf eenv SPSuppress e Continue
                   BI_brtrue
               | _ -> failwith "internal error: GenDecisionTreeSwitch"
@@ -4999,8 +5034,8 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   | TCase(DecisionTreeTest.UnionCase (c, _), _) -> (c.Index, label.CodeLabel)
                   | _ -> failwith "error: mixed constructor/const test?")
         
-            let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib hdc.TyconRef
-            EraseUnions.emitDataSwitch cenv.g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec, dests)
+            let avoidHelpers = entityRefInThisAssembly g.compilingFslib hdc.TyconRef
+            EraseUnions.emitDataSwitch g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec, dests)
             CG.EmitInstrs cgbuf (pop 1) Push0 [ ] // push/pop to match the line above
             GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
           
@@ -5040,7 +5075,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                 if mx - mn = (List.length dests - 1) then
                     let destinationLabels = dests |> List.sortBy fst |> List.map snd
                     if mn <> 0 then
-                      CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_Int32]) [ mkLdcInt32 mn]
+                      CG.EmitInstrs cgbuf (pop 0) (Push [g.ilg.typ_Int32]) [ mkLdcInt32 mn]
                       CG.EmitInstrs cgbuf (pop 1) Push0 [ AI_sub ]
                     CG.EmitInstr cgbuf (pop 1) Push0 (I_switch destinationLabels)
                 else
@@ -5062,10 +5097,10 @@ and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetI
     targetInfos
 
 // Used for the peephole optimization below
-and (|BoolExpr|_|) = function Expr.Const(Const.Bool b1, _, _) -> Some(b1) | _ -> None
+and (|BoolExpr|_|) = function Expr.Const (Const.Bool b1, _, _) -> Some b1 | _ -> None
 
 and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree failureTree targets repeatSP targetInfos sequel =
-
+    let g = cenv.g
     match successTree, failureTree with
 
     // Peephole: if generating a boolean value or its negation then just leave it on the stack
@@ -5074,21 +5109,21 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
       TDSuccess(es2, n2) when
          isNil es1 && isNil es2 &&
          (match GetTarget targets n1, GetTarget targets n2 with
-          | TTarget(_, BoolExpr(b1), _), TTarget(_, BoolExpr(b2), _) -> b1 = not b2
+          | TTarget(_, BoolExpr b1, _), TTarget(_, BoolExpr b2, _) -> b1 = not b2
           | _ -> false) ->
 
              match GetTarget targets n1, GetTarget targets n2 with
 
-             | TTarget(_, BoolExpr(b1), _), _ ->
+             | TTarget(_, BoolExpr b1, _), _ ->
                  GenExpr cenv cgbuf eenv SPSuppress e Continue
                  match tester with
                  | Some (pops, pushes, i) ->
                     match i with
-                    | Choice1Of2 (avoidHelpers, cuspec, idx) -> CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData cenv.g.ilg (avoidHelpers, cuspec, idx))
+                    | Choice1Of2 (avoidHelpers, cuspec, idx) -> CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData g.ilg (avoidHelpers, cuspec, idx))
                     | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
                  | _ -> ()
                  if not b1 then
-                   CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_Bool]) [mkLdcInt32 (0) ]
+                   CG.EmitInstrs cgbuf (pop 0) (Push [g.ilg.typ_Bool]) [mkLdcInt32 0 ]
                    CG.EmitInstrs cgbuf (pop 1) Push0 [AI_ceq]
                  GenSequel cenv cloc cgbuf sequel
                  targetInfos
@@ -5104,12 +5139,12 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
 
         // Turn 'isdata' tests that branch into EI_brisdata tests
         | Some (_, _, Choice1Of2 (avoidHelpers, cuspec, idx)) ->
-            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData cenv.g.ilg false (avoidHelpers, cuspec, idx, failure.CodeLabel)))
+            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData g.ilg false (avoidHelpers, cuspec, idx, failure.CodeLabel)))
 
         | Some (pops, pushes, i) ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue
             match i with
-            | Choice1Of2 (avoidHelpers, cuspec, idx) -> CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData cenv.g.ilg (avoidHelpers, cuspec, idx))
+            | Choice1Of2 (avoidHelpers, cuspec, idx) -> CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData g.ilg (avoidHelpers, cuspec, idx))
             | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (BI_brfalse, failure.CodeLabel))
 
@@ -5142,7 +5177,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ ->
             let isLocalTypeFunc = Option.isSome selfv && (IsNamedLocalTypeFuncVal cenv.g (Option.get selfv) e)
             let selfv = (match e with Expr.Obj _ -> None | _ when isLocalTypeFunc -> None | _ -> Option.map mkLocalValRef selfv)
-            let clo, _, eenvclo = GetIlxClosureInfo cenv m isLocalTypeFunc selfv {eenv with letBoundVars=(mkLocalValRef boundv)::eenv.letBoundVars} e
+            let clo, _, eenvclo = GetIlxClosureInfo cenv m isLocalTypeFunc selfv {eenv with letBoundVars=(mkLocalValRef boundv) :: eenv.letBoundVars} e
             clo.cloFreeVars |> List.iter (fun fv ->
                 if Zset.contains fv forwardReferenceSet then
                     match StorageForVal m fv eenvclo with
@@ -5214,6 +5249,7 @@ and ComputeMethodAccessRestrictedBySig eenv vspec =
     ComputeMemberAccess isHidden
 
 and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) startScopeMarkOpt =
+    let g = cenv.g
 
     // Record the closed reflection definition if publishing
     // There is no real reason we're doing this so late in the day
@@ -5243,7 +5279,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
     | _ when vspec.IsClassConstructor && isNil vspec.TopValDeclaringEntity.TyparsNoRange ->
-        let tps, _, _, _, cctorBody, _ = IteratedAdjustArityOfLambda cenv.g cenv.amap vspec.ValReprInfo.Value rhsExpr
+        let tps, _, _, _, cctorBody, _ = IteratedAdjustArityOfLambda g cenv.amap vspec.ValReprInfo.Value rhsExpr
         let eenv = EnvForTypars tps eenv
         CommitStartScope cgbuf startScopeMarkOpt
         GenExpr cenv cgbuf eenv SPSuppress cctorBody discard
@@ -5284,7 +5320,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         let ilMethodDef =
             let ilMethodBody = MethodBody.IL(CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return))
             (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody)).WithSpecialName
-            |> AddNonUserCompilerGeneratedAttribs cenv.g
+            |> AddNonUserCompilerGeneratedAttribs g
 
         CountMethodDef()
         cgbuf.mgbuf.AddMethodDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilMethodDef)
@@ -5325,7 +5361,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
                 else
                     GenAttrs cenv eenv vspec.Attribs  // literals have no property, so preserve all the attributes on the field itself
 
-            let ilFieldDef = ilFieldDef.With(customAttrs = mkILCustomAttrs (ilAttribs @ [ cenv.g.DebuggerBrowsableNeverAttribute ]))
+            let ilFieldDef = ilFieldDef.With(customAttrs = mkILCustomAttrs (ilAttribs @ [ g.DebuggerBrowsableNeverAttribute ]))
 
             [ (fspec.DeclaringTypeRef, ilFieldDef) ]
       
@@ -5350,7 +5386,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
                               propertyType=fty,
                               init=None,
                               args = [],
-                              customAttrs=mkILCustomAttrs (ilAttribs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Value)]))
+                              customAttrs=mkILCustomAttrs (ilAttribs @ [mkCompilationMappingAttr g (int SourceConstructFlags.Value)]))
             cgbuf.mgbuf.AddOrMergePropertyDef(ilTypeRefForProperty, ilPropDef, m)
 
             let getterMethod =
@@ -5378,7 +5414,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         let storage = StorageForVal m vspec eenv
         match storage, rhsExpr with
         // locals are zero-init, no need to initialize them
-        | Local (_, realloc, _), Expr.Const(Const.Zero, _, _) when not realloc ->
+        | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc ->
             CommitStartScope cgbuf startScopeMarkOpt
         | _ ->
             GenBindingRhs cenv cgbuf eenv SPSuppress vspec rhsExpr
@@ -5391,6 +5427,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
 
 /// Generate encoding P/Invoke and COM marshalling information
 and GenMarshal cenv attribs =
+    let g = cenv.g
     let otherAttribs =
         // For IlReflect backend, we rely on Reflection.Emit API to emit the pseudo-custom attributes
         // correctly, so we do not filter them out.
@@ -5398,9 +5435,9 @@ and GenMarshal cenv attribs =
         match cenv.opts.ilxBackend with
         | IlReflectBackend -> attribs
         | IlWriteBackend ->
-            attribs |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_MarshalAsAttribute >> not)
+            attribs |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_MarshalAsAttribute >> not)
 
-    match TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_MarshalAsAttribute attribs with
+    match TryFindFSharpAttributeOpt g g.attrib_MarshalAsAttribute attribs with
     | Some (Attrib(_, _, [ AttribInt32Arg unmanagedType ], namedArgs, _, _, m)) ->
         let decoder = AttributeDecoder namedArgs
         let rec decodeUnmanagedType unmanagedType =
@@ -5479,7 +5516,7 @@ and GenMarshal cenv attribs =
                     // the argument is a System.Type obj, but it's written to MD as a UTF8 string
                     match decoder.FindTypeName "SafeArrayUserDefinedSubType" "" with
                     | "" -> None
-                    | res -> if (safeArraySubType = ILNativeVariant.IDispatch) || (safeArraySubType = ILNativeVariant.IUnknown) then Some(res) else None
+                    | res -> if (safeArraySubType = ILNativeVariant.IDispatch) || (safeArraySubType = ILNativeVariant.IUnknown) then Some res else None
                 ILNativeType.SafeArray(safeArraySubType, safeArrayUserDefinedSubType)
             | 0x1E -> ILNativeType.FixedArray (decoder.FindInt32 "SizeConst" 0x0)
             | 0x1F -> ILNativeType.Int
@@ -5518,20 +5555,21 @@ and GenMarshal cenv attribs =
 
 /// Generate special attributes on an IL parameter
 and GenParamAttribs cenv paramTy attribs =
-    let inFlag = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute attribs || isInByrefTy cenv.g paramTy
-    let outFlag = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute attribs || isOutByrefTy cenv.g paramTy
-    let optionalFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute attribs
+    let g = cenv.g
+    let inFlag = HasFSharpAttribute g g.attrib_InAttribute attribs || isInByrefTy g paramTy
+    let outFlag = HasFSharpAttribute g g.attrib_OutAttribute attribs || isOutByrefTy g paramTy
+    let optionalFlag = HasFSharpAttributeOpt g g.attrib_OptionalAttribute attribs
 
-    let defaultValue = TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute attribs
+    let defaultValue = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute attribs
                        |> Option.bind OptionalArgInfo.FieldInitForDefaultParameterValueAttrib
     // Return the filtered attributes. Do not generate In, Out, Optional or DefaultParameterValue attributes
     // as custom attributes in the code - they are implicit from the IL bits for these
     let attribs =
         attribs
-        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_InAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_OutAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttribute g g.attrib_InAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttribute g g.attrib_OutAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_OptionalAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute >> not)
 
     let Marshal, attribs = GenMarshal cenv attribs
     inFlag, outFlag, optionalFlag, defaultValue, Marshal, attribs
@@ -5560,11 +5598,13 @@ and GenParams cenv eenv m (mspec: ILMethodSpec) witnessInfos (argInfos: ArgReprI
         ||> List.mapFold (fun takenNames (methodArgTy, ((ilArgTy, topArgInfo), implValOpt)) ->
             let inFlag, outFlag, optionalFlag, defaultParamValue, Marshal, attribs = GenParamAttribs cenv methodArgTy topArgInfo.Attribs
     
-            let idOpt = (match topArgInfo.Name with
-                         | Some v -> Some v
-                         | None -> match implValOpt with
-                                   | Some v -> Some v.Id
-                                   | None -> None)
+            let idOpt = 
+                match topArgInfo.Name with
+                | Some v -> Some v
+                | None ->
+                match implValOpt with
+                | Some v -> Some v.Id
+               | None -> None
 
             let nmOpt, takenNames =
                 match idOpt with
@@ -5583,13 +5623,13 @@ and GenParams cenv eenv m (mspec: ILMethodSpec) witnessInfos (argInfos: ArgReprI
                 | None -> ilAttribs
 
             let param : ILParameter =
-                { Name=nmOpt
-                  Type= ilArgTy
-                  Default=defaultParamValue
-                  Marshal=Marshal
-                  IsIn=inFlag
-                  IsOut=outFlag
-                  IsOptional=optionalFlag
+                { Name = nmOpt
+                  Type = ilArgTy
+                  Default = defaultParamValue
+                  Marshal = Marshal
+                  IsIn = inFlag
+                  IsOut = outFlag
+                  IsOptional = optionalFlag
                   CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs ilAttribs)
                   MetadataIndex = NoMetadataIdx }
 
@@ -5684,13 +5724,14 @@ and ComputeFlagFixupsForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
            | None -> () ]
           
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
+    let g = cenv.g
     let implflags =
-        match TryFindFSharpAttribute cenv.g cenv.g.attrib_MethodImplAttribute attrs with
+        match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
         | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
         | _ -> 0x0
 
     let hasPreserveSigAttr =
-        match TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_PreserveSigAttribute attrs with
+        match TryFindFSharpAttributeOpt g g.attrib_PreserveSigAttribute attrs with
         | Some _ -> true
         | _ -> false
 
@@ -5701,8 +5742,8 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     // (See ECMA 335, Partition II, section 23.1.11 - Flags for methods [MethodImplAttributes])
     let attrs =
         attrs
-        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_MethodImplAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_PreserveSigAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttribute g g.attrib_MethodImplAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_PreserveSigAttribute >> not)
 
     let hasPreserveSigImplFlag = ((implflags &&& 0x80) <> 0x0) || hasPreserveSigAttr
     let hasSynchronizedImplFlag = (implflags &&& 0x20) <> 0x0
@@ -5715,6 +5756,7 @@ and GenMethodForBinding
         (v: Val, mspec, hasWitnessArgs, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo,
          ctorThisValOpt, baseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, returnTy) =
 
+    let g = cenv.g
     let m = v.Range
 
     let selfMethodVars, nonSelfMethodVars, compileAsInstance =
@@ -5767,7 +5809,7 @@ and GenMethodForBinding
 
     // Discard the result on a 'void' return type. For a constructor just return 'void'
     let sequel =
-        if isUnitTy cenv.g returnTy then discardAndReturnVoid
+        if isUnitTy g returnTy then discardAndReturnVoid
         elif isCtor then ReturnVoid
         else Return
 
@@ -5804,28 +5846,28 @@ and GenMethodForBinding
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
     let attrs =
         v.Attribs
-            |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute >> not)
-            |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_CompiledNameAttribute >> not)
+            |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_DllImportAttribute >> not)
+            |> List.filter (IsMatchingFSharpAttribute g g.attrib_CompiledNameAttribute >> not)
         
     let attrsAppliedToGetterOrSetter, attrs =
         List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
         
     let sourceNameAttribs, compiledName =
-        match v.Attribs |> List.tryFind (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_CompiledNameAttribute) with
-        | Some (Attrib(_, _, [ AttribStringArg(b) ], _, _, _, _)) -> [ mkCompilationSourceNameAttr cenv.g v.LogicalName ], Some b
+        match v.Attribs |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_CompiledNameAttribute) with
+        | Some (Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> [ mkCompilationSourceNameAttr g v.LogicalName ], Some b
         | _ -> [], None
 
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
     let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, attrs = ComputeMethodImplAttribs cenv v attrs
     
-    let securityAttributes, attrs = attrs |> List.partition (fun a -> IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m)
+    let securityAttributes, attrs = attrs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap cenv.casApplied a m)
 
     let permissionSets = CreatePermissionSets cenv eenv securityAttributes
 
     let secDecls = if List.isEmpty securityAttributes then emptyILSecurityDecls else mkILSecurityDecls permissionSets
 
     // Do not push the attributes to the method for events and properties
-    let ilAttrsCompilerGenerated = if v.IsCompilerGenerated then [ cenv.g.CompilerGeneratedAttribute ] else []
+    let ilAttrsCompilerGenerated = if v.IsCompilerGenerated then [ g.CompilerGeneratedAttribute ] else []
 
     let ilAttrsThatGoOnPrimaryItem =
         [ yield! GenAttrs cenv eenv attrs
@@ -5934,9 +5976,9 @@ and GenMethodForBinding
 
                    // Emit the property, but not if its a private method impl
                    if mdef.Access <> ILMemberAccess.Private then
-                       let vtyp = ReturnTypeOfPropertyVal cenv.g v
+                       let vtyp = ReturnTypeOfPropertyVal g v
                        let ilPropTy = GenType cenv.amap m eenvUnderMethTypeTypars.tyenv vtyp
-                       let ilArgTys = v |> ArgInfosOfPropertyVal cenv.g |> List.map fst |> GenTypes cenv.amap m eenvUnderMethTypeTypars.tyenv
+                       let ilArgTys = v |> ArgInfosOfPropertyVal g |> List.map fst |> GenTypes cenv.amap m eenvUnderMethTypeTypars.tyenv
                        let ilPropDef = GenPropertyForMethodDef compileAsInstance tref mdef v memberInfo ilArgTys ilPropTy (mkILCustomAttrs ilAttrsThatGoOnPrimaryItem) compiledName
                        cgbuf.mgbuf.AddOrMergePropertyDef(tref, ilPropDef, m)
 
@@ -6044,18 +6086,19 @@ and GenGetVal cenv cgbuf eenv (v: ValRef, m) sequel =
     GenSequel cenv eenv.cloc cgbuf sequel
   
 and GenBindingRhs cenv cgbuf eenv sp (vspec: Val) e =
+    let g = cenv.g
     match e with
     | Expr.TyLambda _ | Expr.Lambda _ ->
-        let isLocalTypeFunc = IsNamedLocalTypeFuncVal cenv.g vspec e
+        let isLocalTypeFunc = IsNamedLocalTypeFuncVal g vspec e
      
         match e with
-        | Expr.TyLambda(_, tyargs, body, _, ttype) when
+        | Expr.TyLambda (_, tyargs, body, _, ttype) when
             (
                 tyargs |> List.forall (fun tp -> tp.IsErased) &&
                 (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false) &&
                 (isLocalTypeFunc ||
                     (match ttype with
-                     TType_var(typar) -> match typar.Solution with Some(TType_app(t, _))-> t.IsStructOrEnumTycon | _ -> false
+                     TType_var typar -> match typar.Solution with Some(TType_app(t, _))-> t.IsStructOrEnumTycon | _ -> false
                      | _ -> false))
             ) ->
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
@@ -6069,7 +6112,7 @@ and GenBindingRhs cenv cgbuf eenv sp (vspec: Val) e =
 and CommitStartScope cgbuf startScopeMarkOpt =
     match startScopeMarkOpt with
     | None -> ()
-    | Some ss -> cgbuf.SetMarkToHere(ss)
+    | Some ss -> cgbuf.SetMarkToHere ss
     
 and EmitInitLocal cgbuf ty idx = CG.EmitInstrs cgbuf (pop 0) Push0 [I_ldloca (uint16 idx); (I_initobj ty) ]
 
@@ -6151,7 +6194,7 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (ty, ilTy) storage fetchSequel =
 
         // First build a lambda expression for the saturated use of the toplevel value...
         // REVIEW: we should NOT be doing this in the backend...
-        let expr, exprty = AdjustValForExpectedArity cenv.g m vref NormalValUse topValInfo
+        let expr, exprty = AdjustValForExpectedArity g m vref NormalValUse topValInfo
 
         // Then reduce out any arguments (i.e. apply the sequel immediately if we can...)
         match fetchSequel with
@@ -6202,27 +6245,28 @@ and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark
 
 /// Decide storage for local value and if necessary allocate an ILLocal for it
 and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
+    let g = cenv.g
     let repr, eenv =
         let ty = v.Type
-        if isUnitTy cenv.g ty && not v.IsMutable then Null, eenv
+        if isUnitTy g ty && not v.IsMutable then Null, eenv
         else
             match repr with 
-            | Some r when IsNamedLocalTypeFuncVal cenv.g v r ->
+            | Some r when IsNamedLocalTypeFuncVal g v r ->
                 // known, named, non-escaping type functions 
                 let cloinfoGenerate eenv =
                     let eenvinner =
                         {eenv with
-                             letBoundVars=(mkLocalValRef v)::eenv.letBoundVars}
+                             letBoundVars=(mkLocalValRef v) :: eenv.letBoundVars}
                     let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range true None eenvinner (Option.get repr)
                     cloinfo
         
-                let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName, cenv.g.ilg.typ_Object, false) scopeMarks
+                let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName, g.ilg.typ_Object, false) scopeMarks
                 Local (idx, realloc, Some(ref (NamedLocalIlxClosureInfoGenerator cloinfoGenerate))), eenv
             | _ -> 
                 // normal local 
                 let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName, GenTypeOfVal cenv eenv v, v.IsFixed) scopeMarks
                 Local (idx, realloc, None), eenv
-    let eenv = AddStorageForVal cenv.g (v, notlazy repr) eenv
+    let eenv = AddStorageForVal g (v, notlazy repr) eenv
     Some repr, eenv
 
 and AllocStorageForBind cenv cgbuf scopeMarks eenv bind =
@@ -6257,6 +6301,7 @@ and AllocValForBind cenv cgbuf (scopeMarks: Mark * Mark) eenv (TBind(v, repr, _)
 
 
 and AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v eenv =
+    let g = cenv.g
     // decide whether to use a shadow local or not
     let useShadowLocal =
         cenv.opts.generateDebugSymbols &&
@@ -6264,7 +6309,7 @@ and AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v eenv =
         not v.IsCompilerGenerated &&
         not v.IsMutable &&
         // Don't use shadow locals for things like functions which are not compiled as static values/properties
-        IsCompiledAsStaticProperty cenv.g v
+        IsCompiledAsStaticProperty g v
 
     let optShadowLocal, eenv =
         if useShadowLocal then
@@ -6276,9 +6321,7 @@ and AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v eenv =
         else
             NoShadowLocal, eenv
 
-    ComputeAndAddStorageForLocalTopVal (cenv.amap, cenv.g, cenv.intraAssemblyInfo, cenv.opts.isInteractive, optShadowLocal) cloc v eenv
-
-
+    ComputeAndAddStorageForLocalTopVal (cenv.amap, g, cenv.intraAssemblyInfo, cenv.opts.isInteractive, optShadowLocal) cloc v eenv
 
 //--------------------------------------------------------------------------
 // Generate stack save/restore and assertions - pulled into letrec by alloc*
@@ -6311,11 +6354,11 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
     match x, ilArgTy with
 
     // Detect 'null' used for an array argument
-    | Expr.Const(Const.Zero, _, _), ILType.Array _ ->
+    | Expr.Const (Const.Zero, _, _), ILType.Array _ ->
         ILAttribElem.Null
 
     // Detect standard constants
-    | Expr.Const(c, m, _), _ ->
+    | Expr.Const (c, m, _), _ ->
         let tynm = ilArgTy.TypeSpec.Name
         let isobj = (tynm = "System.Object")
 
@@ -6346,7 +6389,7 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
         | _ -> error (InternalError ( "The type '" + tynm + "' may not be used as a custom attribute value", m))
 
     // Detect '[| ... |]' nodes
-    | Expr.Op(TOp.Array, [elemTy], args, m), _ ->
+    | Expr.Op (TOp.Array, [elemTy], args, m), _ ->
         let ilElemTy = GenType amap m eenv.tyenv elemTy
         ILAttribElem.Array (ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
 
@@ -6359,7 +6402,7 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
         ILAttribElem.TypeRef (Some (GenType amap x.Range eenv.tyenv ty).TypeRef)
 
     // Ignore upcasts
-    | Expr.Op(TOp.Coerce, _, [arg2], _), _ ->
+    | Expr.Op (TOp.Coerce, _, [arg2], _), _ ->
         GenAttribArg amap g eenv arg2 ilArgTy
 
     // Detect explicit enum values
@@ -6397,38 +6440,41 @@ and GenAttr amap g eenv (Attrib(_, k, args, props, _, _, _)) =
             (s, ilTy, fld, cval))
     let mspec =
         match k with
-        | ILAttrib(mref) -> mkILMethSpec(mref, AsObject, [], [])
-        | FSAttrib(vref) ->
+        | ILAttrib mref -> mkILMethSpec(mref, AsObject, [], [])
+        | FSAttrib vref ->
              assert(vref.IsMember)
              let mspec, _, _, _, _, _, _, _, _ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
              mspec
     let ilArgs = List.map2 (fun (AttribExpr(_, vexpr)) ty -> GenAttribArg amap g eenv vexpr ty) args mspec.FormalArgTypes
     mkILCustomAttribMethRef g.ilg (mspec, ilArgs, props)
 
-and GenAttrs cenv eenv attrs = List.map (GenAttr cenv.amap cenv.g eenv) attrs
+and GenAttrs cenv eenv attrs =
+    List.map (GenAttr cenv.amap cenv.g eenv) attrs
 
 and GenCompilationArgumentCountsAttr cenv (v: Val) =
+    let g = cenv.g
     [ match v.ValReprInfo with
-      | Some(tvi) when v.IsMemberOrModuleBinding ->
-          let arities = if ValSpecIsCompiledAsInstance cenv.g v then List.tail tvi.AritiesOfArgs else tvi.AritiesOfArgs
+      | Some tvi when v.IsMemberOrModuleBinding ->
+          let arities = if ValSpecIsCompiledAsInstance g v then List.tail tvi.AritiesOfArgs else tvi.AritiesOfArgs
           if arities.Length > 1 then
-              yield mkCompilationArgumentCountsAttr cenv.g arities
+              yield mkCompilationArgumentCountsAttr g arities
       | _ ->
           () ]      
 
 // Create a permission set for a list of security attributes
 and CreatePermissionSets cenv eenv (securityAttributes: Attrib list) =
+    let g = cenv.g
     [for ((Attrib(tcref, _, actions, _, _, _, _)) as attr) in securityAttributes do
         let action = match actions with | [AttribInt32Arg act] -> act | _ -> failwith "internal error: unrecognized security action"
         let secaction = (List.assoc action (Lazy.force ILSecurityActionRevMap))
         let tref = tcref.CompiledRepresentationForNamedType
-        let ilattr = GenAttr cenv.amap cenv.g eenv attr
+        let ilattr = GenAttr cenv.amap g eenv attr
         let _, ilNamedArgs =
-            match TryDecodeILAttribute cenv.g tref (mkILCustomAttrs [ilattr]) with
+            match TryDecodeILAttribute g tref (mkILCustomAttrs [ilattr]) with
             | Some(ae, na) -> ae, na
             | _ -> [], []
         let setArgs = ilNamedArgs |> List.map (fun (n, ilt, _, ilae) -> (n, ilt, ilae))
-        yield IL.mkPermissionSet cenv.g.ilg (secaction, [(tref, setArgs)])]
+        yield IL.mkPermissionSet g.ilg (secaction, [(tref, setArgs)])]
 
 //--------------------------------------------------------------------------
 // Generate the set of modules for an assembly, and the declarations in each module
@@ -6436,9 +6482,10 @@ and CreatePermissionSets cenv eenv (securityAttributes: Attrib list) =
 
 /// Generate a static class at the given cloc
 and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attribs, initTrigger, eliminateIfEmpty, addAtEnd) =
+    let g = cenv.g
     let tref = TypeRefForCompLoc cloc
     let tdef =
-      mkILSimpleClass cenv.g.ilg
+      mkILSimpleClass g.ilg
         (tref.Name,
          ComputeTypeAccess tref hidden,
          emptyILMethods,
@@ -6450,7 +6497,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
            (GenAttrs cenv eenv attribs @
             (if List.contains tref.Name [TypeNameForImplicitMainMethod cloc; TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]
              then [ ]
-             else [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Module)])),
+             else [mkCompilationMappingAttr g (int SourceConstructFlags.Module)])),
          initTrigger)
     let tdef = tdef.WithSealed(true).WithAbstract(true)
     mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None)
@@ -6489,10 +6536,10 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
     | TMDefDo(e, _) ->
         GenExpr cenv cgbuf eenv SPAlways e discard
 
-    | TMAbstract(mexpr) ->
+    | TMAbstract mexpr ->
         GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
 
-    | TMDefs(mdefs) ->
+    | TMDefs mdefs ->
         GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs
 
 
@@ -6534,8 +6581,8 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
 
 /// Generate the namespace fragments in a single file
-and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes), optimizeDuringCodeGen) =
-
+and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes), optimizeDuringCodeGen) =
+    let g = cenv.g
     let m = qname.Range
 
     // Generate all the anonymous record types mentioned anywhere in this module
@@ -6666,9 +6713,9 @@ and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile(qname, 
         // There is no need to do this for a final file with an implicit entry point. For an explicit entry point in lazyInitInfo.
         let initFieldName = CompilerGeneratedName "init"
         let ilFieldDef =
-            mkILStaticField (initFieldName, cenv.g.ilg.typ_Int32, None, None, ComputeMemberAccess true)
-            |> cenv.g.AddFieldNeverAttrs
-            |> cenv.g.AddFieldGeneratedAttrs
+            mkILStaticField (initFieldName, g.ilg.typ_Int32, None, None, ComputeMemberAccess true)
+            |> g.AddFieldNeverAttrs
+            |> g.AddFieldGeneratedAttrs
 
         let fspec = mkILFieldSpecInTy (initClassTy, initFieldName, cenv. g.ilg.typ_Int32)
         CountStaticFieldDef()
@@ -6678,14 +6725,14 @@ and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile(qname, 
         // of references to the cctor for nested modules etc.
         lazyInitInfo |> Seq.iter (fun f -> f fspec feefee seqpt)
 
-        if isScript && not(isFinalFile) then
+        if isScript && not isFinalFile then
             mgbuf.AddScriptInitFieldSpec(fspec, m)
 
     // Compute the ilxgenEnv after the generation of the module, i.e. the residue need to generate anything that
     // uses the constructs exported from this module.
     // We add the module type all over again. Note no shadow locals for static fields needed here since they are only relevant to the main/.cctor
     let eenvafter =
-        let allocVal = ComputeAndAddStorageForLocalTopVal (cenv.amap, cenv.g, cenv.intraAssemblyInfo, cenv.opts.isInteractive, NoShadowLocal)
+        let allocVal = ComputeAndAddStorageForLocalTopVal (cenv.amap, g, cenv.intraAssemblyInfo, cenv.opts.isInteractive, NoShadowLocal)
         AddBindingsForLocalModuleType allocVal clocCcu eenv mexpr.Type
 
     eenvafter
@@ -6698,12 +6745,13 @@ and GenForceWholeFileInitializationAsPartOfCCtor cenv (mgbuf: AssemblyBuilder) (
 
 /// Generate an Equals method.
 and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThatTy) =
-    let mspec = mkILNonGenericInstanceMethSpecInTy (cenv.g.iltyp_IComparable, "CompareTo", [cenv.g.ilg.typ_Object], cenv.g.ilg.typ_Int32)
+    let g = cenv.g
+    let mspec = mkILNonGenericInstanceMethSpecInTy (g.iltyp_IComparable, "CompareTo", [g.ilg.typ_Object], g.ilg.typ_Int32)
 
     mkILNonGenericVirtualMethod
         ("Equals", ILMemberAccess.Public,
-         [mkILParamNamed ("obj", cenv.g.ilg.typ_Object)],
-         mkILReturn cenv.g.ilg.typ_Bool,
+         [mkILParamNamed ("obj", g.ilg.typ_Object)],
+         mkILReturn g.ilg.typ_Bool,
          mkMethodBody(true, [], 2,
                          nonBranchingInstrsToCode
                             [ yield mkLdarg0
@@ -6712,10 +6760,10 @@ and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThat
                                   yield I_callconstraint ( Normalcall, ilThisTy, mspec, None)
                               else
                                   yield I_callvirt ( Normalcall, mspec, None)
-                              yield mkLdcInt32 (0)
+                              yield mkLdcInt32 0
                               yield AI_ceq ],
                          None))
-    |> AddNonUserCompilerGeneratedAttribs cenv.g
+    |> AddNonUserCompilerGeneratedAttribs g
 
 and GenFieldInit m c =
     match c with
@@ -6742,6 +6790,7 @@ and GenWitnessParams cenv eenv m (witnessInfos: TraitWitnessInfos) =
 
 and GenAbstractBinding cenv eenv tref (vref: ValRef) =
     assert(vref.IsMember)
+    let g = cenv.g
     let m = vref.Range
     let memberInfo = Option.get vref.MemberInfo
     let attribs = vref.Attribs
@@ -6761,7 +6810,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         let ilReturn = GenReturnInfo cenv eenvForMeth mspec.FormalReturnType retInfo
         let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None
     
-        let compileAsInstance = ValRefIsCompiledAsInstanceMember cenv.g vref
+        let compileAsInstance = ValRefIsCompiledAsInstanceMember g vref
         let mdef = mkILGenericVirtualMethod (vref.CompiledName, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, MethodBody.Abstract)
 
         let mdef = fixupVirtualSlotFlags mdef
@@ -6769,7 +6818,11 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
             if mdef.IsVirtual then
                 mdef.WithFinal(memberInfo.MemberFlags.IsFinal).WithAbstract(memberInfo.MemberFlags.IsDispatchSlot)
             else mdef
-        let mdef = mdef.WithPreserveSig(hasPreserveSigImplFlag).WithSynchronized(hasSynchronizedImplFlag).WithNoInlining(hasNoInliningFlag).WithAggressiveInlining(hasAggressiveInliningImplFlag)
+        let mdef =
+             mdef.WithPreserveSig(hasPreserveSigImplFlag)
+                 .WithSynchronized(hasSynchronizedImplFlag)
+                 .WithNoInlining(hasNoInliningFlag)
+                 .WithAggressiveInlining(hasAggressiveInliningImplFlag)
     
         match memberInfo.MemberFlags.MemberKind with
         | MemberKind.ClassConstructor
@@ -6780,15 +6833,15 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         | MemberKind.PropertyGetSet -> error(Error(FSComp.SR.ilUnexpectedGetSetAnnotation(), m))
         | MemberKind.PropertySet | MemberKind.PropertyGet ->
              let v = vref.Deref
-             let vtyp = ReturnTypeOfPropertyVal cenv.g v
-             if CompileAsEvent cenv.g attribs then
+             let vtyp = ReturnTypeOfPropertyVal g v
+             if CompileAsEvent g attribs then
                
                  let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrs m vtyp
                  [], [], [edef]
              else
                  let ilPropDef =
                      let ilPropTy = GenType cenv.amap m eenvForMeth.tyenv vtyp
-                     let ilArgTys = v |> ArgInfosOfPropertyVal cenv.g |> List.map fst |> GenTypes cenv.amap m eenvForMeth.tyenv
+                     let ilArgTys = v |> ArgInfosOfPropertyVal g |> List.map fst |> GenTypes cenv.amap m eenvForMeth.tyenv
                      GenPropertyForMethodDef compileAsInstance tref mdef v memberInfo ilArgTys ilPropTy (mkILCustomAttrs ilAttrs) None
                  let mdef = mdef.WithSpecialName
                  [mdef], [ilPropDef], []
@@ -6802,23 +6855,23 @@ and GenToStringMethod cenv eenv ilThisTy m =
              eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
       | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                // The type returned by the 'sprintf' call
-               let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
+               let funcTy = EraseClosures.mkILFuncTy g.ilxPubCloEnv ilThisTy g.ilg.typ_String
                // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
                let newFormatMethSpec = mkILMethSpec(newFormatMethSpec.MethodRef, AsObject,
                                                [// 'T -> string'
                                                funcTy
                                                // rest follow from 'StringFormat<T>'
                                                GenUnitTy cenv eenv m
-                                               cenv.g.ilg.typ_String
-                                               cenv.g.ilg.typ_String
+                                               g.ilg.typ_String
+                                               g.ilg.typ_String
                                                ilThisTy], [])
                // Instantiate with our own type
                let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef, AsObject, [], [funcTy])
                // Here's the body of the method. Call printf, then invoke the function it returns
-               let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
+               let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
                let mdef =
                    mkILNonGenericVirtualMethod ("ToString", ILMemberAccess.Public, [],
-                        mkILReturn cenv.g.ilg.typ_String,
+                        mkILReturn g.ilg.typ_String,
                         mkMethodBody (true, [], 2, nonBranchingInstrsToCode
                                 ([ // load the hardwired format string
                                     yield I_ldstr "%+A"
@@ -6832,11 +6885,12 @@ and GenToStringMethod cenv eenv ilThisTy m =
                                         yield mkNormalLdobj ilThisTy ] @
                                     callInstrs),
                                 None))
-               let mdef = mdef.With(customAttrs = mkILCustomAttrs [ cenv.g.CompilerGeneratedAttribute ])
+               let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
                yield mdef
       | _ -> () ]
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
+    let g = cenv.g
     let tcref = mkLocalTyconRef tycon
     if tycon.IsTypeAbbrev then () else
     match tycon.TypeReprInfo with
@@ -6872,8 +6926,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
               (if Option.isNone tycon.GeneratedCompareToValues &&
                   Option.isNone tycon.GeneratedHashAndEqualsValues &&
-                  tycon.HasInterface cenv.g cenv.g.mk_IComparable_ty &&
-                  not (tycon.HasOverride cenv.g "Equals" [cenv.g.obj_ty]) &&
+                  tycon.HasInterface g g.mk_IComparable_ty &&
+                  not (tycon.HasOverride g "Equals" [g.obj_ty]) &&
                   not tycon.IsFSharpInterfaceTycon
                then
                   [ GenEqualsOverrideCallingIComparable cenv (tcref, ilThisTy, ilThisTy) ]
@@ -6902,17 +6956,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
             [ for vref in tycon.MembersOfFSharpTyconByName |> NameMultiMap.range do
                  assert(vref.IsMember)
                  let memberInfo = vref.MemberInfo.Value
-                 if memberInfo.MemberFlags.IsOverrideOrExplicitImpl && not (CompileAsEvent cenv.g vref.Attribs) then
+                 if memberInfo.MemberFlags.IsOverrideOrExplicitImpl && not (CompileAsEvent g vref.Attribs) then
 
                      for slotsig in memberInfo.ImplementedSlotSigs do
 
-                         if isInterfaceTy cenv.g slotsig.ImplementedType then
+                         if isInterfaceTy g slotsig.ImplementedType then
 
                              match vref.ValReprInfo with
                              | Some _ ->
 
                                  let memberParentTypars, memberMethodTypars =
-                                     match PartitionValRefTypars cenv.g vref with
+                                     match PartitionValRefTypars g vref with
                                      | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
                                      | None -> [], []
 
@@ -6934,19 +6988,19 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                 | None -> None
                 | Some memberInfo ->
                     match name, memberInfo.MemberFlags.MemberKind with
-                    | ("Item" | "op_IndexedLookup"), (MemberKind.PropertyGet | MemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal cenv.g vref.Deref)) ->
-                        Some( mkILCustomAttribute cenv.g.ilg (cenv.g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute", [cenv.g.ilg.typ_String], [ILAttribElem.String(Some(name))], []) )
+                    | ("Item" | "op_IndexedLookup"), (MemberKind.PropertyGet | MemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal g vref.Deref)) ->
+                        Some( mkILCustomAttribute g.ilg (g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute", [g.ilg.typ_String], [ILAttribElem.String(Some name)], []) )
                     | _ -> None)
             |> Option.toList
 
         let tyconRepr = tycon.TypeReprInfo
 
         // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
-        let debugDisplayAttrs, normalAttrs = tycon.Attribs |> List.partition (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_DebuggerDisplayAttribute)
-        let securityAttrs, normalAttrs = normalAttrs |> List.partition (fun a -> IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m)
-        let generateDebugDisplayAttribute = not cenv.g.compilingFslib && tycon.IsUnionTycon && isNil debugDisplayAttrs
-        let generateDebugProxies = (not (tyconRefEq cenv.g tcref cenv.g.unit_tcr_canon) &&
-                                    not (HasFSharpAttribute cenv.g cenv.g.attrib_DebuggerTypeProxyAttribute tycon.Attribs))
+        let debugDisplayAttrs, normalAttrs = tycon.Attribs |> List.partition (IsMatchingFSharpAttribute g g.attrib_DebuggerDisplayAttribute)
+        let securityAttrs, normalAttrs = normalAttrs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap cenv.casApplied a m)
+        let generateDebugDisplayAttribute = not g.compilingFslib && tycon.IsUnionTycon && isNil debugDisplayAttrs
+        let generateDebugProxies = (not (tyconRefEq g tcref g.unit_tcr_canon) &&
+                                    not (HasFSharpAttribute g g.attrib_DebuggerTypeProxyAttribute tycon.Attribs))
 
         let permissionSets = CreatePermissionSets cenv eenv securityAttrs
         let secDecls = if List.isEmpty securityAttrs then emptyILSecurityDecls else mkILSecurityDecls permissionSets
@@ -6954,13 +7008,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         let ilDebugDisplayAttributes =
             [ yield! GenAttrs cenv eenv debugDisplayAttrs
               if generateDebugDisplayAttribute then
-                  yield cenv.g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(),nq}") ]
+                  yield g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(),nq}") ]
 
 
         let ilCustomAttrs =
           [ yield! defaultMemberAttrs
             yield! normalAttrs
-                      |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute >> not)
+                      |> List.filter (IsMatchingFSharpAttribute g g.attrib_StructLayoutAttribute >> not)
                       |> GenAttrs cenv eenv
             yield! ilDebugDisplayAttributes ]
 
@@ -6989,7 +7043,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
             isEmptyStruct && cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty
     
         // Compute a bunch of useful things for each field
-        let isCLIMutable = (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_CLIMutableAttribute tycon.Attribs = Some true)
+        let isCLIMutable = (TryFindFSharpBoolAttribute g g.attrib_CLIMutableAttribute tycon.Attribs = Some true)
         let fieldSummaries =
 
              [ for fspec in tycon.AllFieldsArray do
@@ -7016,8 +7070,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
              [ for (useGenuineField, ilFieldName, isFSharpMutable, isStatic, _, ilPropType, isPropHidden, fspec) in fieldSummaries do
 
                   let ilFieldOffset =
-                     match TryFindFSharpAttribute cenv.g cenv.g.attrib_FieldOffsetAttribute fspec.FieldAttribs with
-                     | Some (Attrib(_, _, [ AttribInt32Arg(fieldOffset) ], _, _, _, _)) ->
+                     match TryFindFSharpAttribute g g.attrib_FieldOffsetAttribute fspec.FieldAttribs with
+                     | Some (Attrib(_, _, [ AttribInt32Arg fieldOffset ], _, _, _, _)) ->
                          Some fieldOffset
                      | Some (Attrib(_, _, _, _, _, _, m)) ->
                          errorR(Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded(), m))
@@ -7033,14 +7087,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         yield! fspec.FieldAttribs ]
 
                         
-                  let ilNotSerialized = HasFSharpAttributeOpt cenv.g cenv.g.attrib_NonSerializedAttribute attribs
+                  let ilNotSerialized = HasFSharpAttributeOpt g g.attrib_NonSerializedAttribute attribs
               
                   let fattribs =
                       attribs
                       // Do not generate FieldOffset as a true CLI custom attribute, since it is implied by other corresponding CLI metadata
-                      |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_FieldOffsetAttribute >> not)
+                      |> List.filter (IsMatchingFSharpAttribute g g.attrib_FieldOffsetAttribute >> not)
                       // Do not generate NonSerialized as a true CLI custom attribute, since it is implied by other corresponding CLI metadata
-                      |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_NonSerializedAttribute >> not)
+                      |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_NonSerializedAttribute >> not)
 
                   let ilFieldMarshal, fattribs = GenMarshal cenv fattribs
 
@@ -7050,7 +7104,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
               
                   let extraAttribs =
                      match tyconRepr with
-                     | TRecdRepr _ when not useGenuineField -> [ cenv.g.DebuggerBrowsableNeverAttribute ] // hide fields in records in debug display
+                     | TRecdRepr _ when not useGenuineField -> [ g.DebuggerBrowsableNeverAttribute ] // hide fields in records in debug display
                      | _ -> [] // don't hide fields in classes in debug display
 
                   let access = ComputeMemberAccess isFieldHidden
@@ -7074,7 +7128,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                   yield fdef
 
                if requiresExtraField then
-                   yield mkILInstanceField("__dummy", cenv.g.ilg.typ_Int32, None, ILMemberAccess.Assembly) ]
+                   yield mkILInstanceField("__dummy", g.ilg.typ_Int32, None, ILMemberAccess.Assembly) ]
      
         // Generate property definitions for the fields compiled as properties
         let ilPropertyDefsForFields =
@@ -7083,7 +7137,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                      let ilCallingConv = if isStatic then ILCallingConv.Static else ILCallingConv.Instance
                      let ilPropName = fspec.Name
                      let ilHasSetter = isCLIMutable || isFSharpMutable
-                     let ilFieldAttrs = GenAttrs cenv eenv propAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i]
+                     let ilFieldAttrs = GenAttrs cenv eenv propAttribs @ [mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i]
                      yield
                        ILPropertyDef(name= ilPropName,
                                      attributes= PropertyAttributes.None,
@@ -7131,22 +7185,22 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                          eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
                   | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                       // The type returned by the 'sprintf' call
-                      let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
+                      let funcTy = EraseClosures.mkILFuncTy g.ilxPubCloEnv ilThisTy g.ilg.typ_String
                       // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
                       let newFormatMethSpec = mkILMethSpec(newFormatMethSpec.MethodRef, AsObject,
                                                       [// 'T -> string'
                                                        funcTy
                                                        // rest follow from 'StringFormat<T>'
                                                        GenUnitTy cenv eenv m
-                                                       cenv.g.ilg.typ_String
-                                                       cenv.g.ilg.typ_String
-                                                       cenv.g.ilg.typ_String], [])
+                                                       g.ilg.typ_String
+                                                       g.ilg.typ_String
+                                                       g.ilg.typ_String], [])
                       // Instantiate with our own type
                       let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef, AsObject, [], [funcTy])
                       // Here's the body of the method. Call printf, then invoke the function it returns
-                      let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
+                      let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
                       let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName, ILMemberAccess.Assembly, [],
-                                                   mkILReturn cenv.g.ilg.typ_Object,
+                                                   mkILReturn g.ilg.typ_Object,
                                                    mkMethodBody
                                                          (true, [], 2,
                                                           nonBranchingInstrsToCode
@@ -7162,7 +7216,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                                                   yield mkNormalLdobj ilThisTy ] @
                                                              callInstrs),
                                                           None))
-                      yield ilMethodDef.WithSpecialName |> AddNonUserCompilerGeneratedAttribs cenv.g
+                      yield ilMethodDef.WithSpecialName |> AddNonUserCompilerGeneratedAttribs g
                   | None, _ ->
                       //printfn "sprintf not found"
                       ()
@@ -7190,17 +7244,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                  let isStructRecord = tycon.IsStructRecordOrUnionTycon
 
                  // No type spec if the record is a value type
-                 let spec = if isStructRecord then None else Some(cenv.g.ilg.typ_Object.TypeSpec)
+                 let spec = if isStructRecord then None else Some(g.ilg.typ_Object.TypeSpec)
                  let ilMethodDef = mkILSimpleStorageCtorWithParamNames(None, spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
 
                  yield ilMethodDef
                  // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true) attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
                  // FSharp 3.0 feature: adding CLIMutable to a record type causes emit of default constructor, and all fields get property setters
                  // Records that are value types do not create a default constructor with CLIMutable or ComVisible
-                 if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
-                     yield mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess)
+                 if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute g g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
+                     yield mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess)
              
-                 if not (tycon.HasMember cenv.g "ToString" []) then
+                 if not (tycon.HasMember g "ToString" []) then
                     yield! GenToStringMethod cenv eenv ilThisTy m
               | TFSharpObjectRepr r when tycon.IsFSharpDelegateTycon ->
 
@@ -7213,13 +7267,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                          let (TSlotSig(nm, ty, ctps, mtps, paraml, returnTy)) = ss
                          let paraml =
                              match paraml with
-                             | [[tsp]] when isUnitTy cenv.g tsp.Type -> [] (* suppress unit arg *)
+                             | [[tsp]] when isUnitTy g tsp.Type -> [] (* suppress unit arg *)
                              | paraml -> paraml
                          GenActualSlotsig m cenv eenvinner (TSlotSig(nm, ty, ctps, mtps, paraml, returnTy)) [] []
-                     yield! mkILDelegateMethods reprAccess cenv.g.ilg (cenv.g.iltyp_AsyncCallback, cenv.g.iltyp_IAsyncResult) (p, r)
+                     yield! mkILDelegateMethods reprAccess g.ilg (g.iltyp_AsyncCallback, g.iltyp_IAsyncResult) (p, r)
                  | _ ->
                      ()
-              | TUnionRepr _ when not (tycon.HasMember cenv.g "ToString" []) ->
+              | TUnionRepr _ when not (tycon.HasMember g "ToString" []) ->
                   yield! GenToStringMethod cenv eenv ilThisTy m
               | _ -> () ]
           
@@ -7229,23 +7283,23 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         let ilFields = mkILFields ilFieldDefs
     
         let tdef, tdefDiscards =
-           let isSerializable = (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AutoSerializableAttribute tycon.Attribs <> Some(false))
+           let isSerializable = (TryFindFSharpBoolAttribute g g.attrib_AutoSerializableAttribute tycon.Attribs <> Some false)
 
            match tycon.TypeReprInfo with
            | TILObjectRepr _ ->
-               let tdef = tycon.ILTyconRawMetadata.WithAccess(access)
+               let tdef = tycon.ILTyconRawMetadata.WithAccess access
                let tdef = tdef.With(customAttrs = mkILCustomAttrs ilCustomAttrs, genericParams = ilGenParams)
                tdef, None
 
            | TRecdRepr _ | TFSharpObjectRepr _ as tyconRepr ->
-               let super = superOfTycon cenv.g tycon
+               let super = superOfTycon g tycon
                let ilBaseTy = GenType cenv.amap m eenvinner.tyenv super
            
                // Build a basic type definition
                let isObjectType = (match tyconRepr with TFSharpObjectRepr _ -> true | _ -> false)
                let ilAttrs =
                    ilCustomAttrs @
-                   [mkCompilationMappingAttr cenv.g
+                   [mkCompilationMappingAttr g
                        (int (if isObjectType
                              then SourceConstructFlags.ObjectType
                              elif hiddenRepr then SourceConstructFlags.RecordType ||| SourceConstructFlags.NonPublicRepresentation
@@ -7273,14 +7327,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                             typeDefTrigger)
 
                // Set some the extra entries in the definition
-               let isTheSealedAttribute = tyconRefEq cenv.g tcref cenv.g.attrib_SealedAttribute.TyconRef
+               let isTheSealedAttribute = tyconRefEq g tcref g.attrib_SealedAttribute.TyconRef
 
-               let tdef = tdef.WithSealed(isSealedTy cenv.g thisTy || isTheSealedAttribute).WithSerializable(isSerializable).WithAbstract(isAbstract).WithImport(isComInteropTy cenv.g thisTy)
+               let tdef = tdef.WithSealed(isSealedTy g thisTy || isTheSealedAttribute).WithSerializable(isSerializable).WithAbstract(isAbstract).WithImport(isComInteropTy g thisTy)
                let tdef = tdef.With(methodImpls=mkILMethodImpls methodImpls)
 
                let tdLayout, tdEncoding =
-                    match TryFindFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute tycon.Attribs with
-                    | Some (Attrib(_, _, [ AttribInt32Arg(layoutKind) ], namedArgs, _, _, _)) ->
+                    match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
+                    | Some (Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
                         let decoder = AttributeDecoder namedArgs
                         let ilPack = decoder.FindInt32 "Pack" 0x0
                         let ilSize = decoder.FindInt32 "Size" 0x0
@@ -7347,19 +7401,19 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                    tycon.UnionCasesArray |> Array.mapi (fun i ucspec ->
                        { altName=ucspec.CompiledName
                          altFields=GenUnionCaseRef cenv.amap m eenvinner.tyenv i ucspec.RecdFieldsArray
-                         altCustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv ucspec.Attribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.UnionCase) i]) })
+                         altCustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv ucspec.Attribs @ [mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.UnionCase) i]) })
                let cuinfo =
                   { cudReprAccess=reprAccess
-                    cudNullPermitted=IsUnionTypeWithNullAsTrueValue cenv.g tycon
+                    cudNullPermitted=IsUnionTypeWithNullAsTrueValue g tycon
                     cudHelpersAccess=reprAccess
-                    cudHasHelpers=ComputeUnionHasHelpers cenv.g tcref
+                    cudHasHelpers=ComputeUnionHasHelpers g tcref
                     cudDebugProxies= generateDebugProxies
                     cudDebugDisplayAttributes= ilDebugDisplayAttributes
                     cudAlternatives= alternatives
                     cudWhere = None}
 
                let layout =
-                   if isStructTy cenv.g thisTy then
+                   if isStructTy g thisTy then
                        if (match ilTypeDefKind with ILTypeDefKind.ValueType -> true | _ -> false) then
                            // Structs with no instance fields get size 1, pack 0
                            ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }
@@ -7370,7 +7424,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                let cattrs =
                    mkILCustomAttrs (ilCustomAttrs @
-                                    [mkCompilationMappingAttr cenv.g
+                                    [mkCompilationMappingAttr g
                                         (int (if hiddenRepr
                                               then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation
                                               else SourceConstructFlags.SumType)) ])
@@ -7387,7 +7441,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                              methodImpls= mkILMethodImpls methodImpls,
                              nestedTypes=emptyILTypeDefs,
                              implements = ilIntfTys,
-                             extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object),
+                             extends= Some (if tycon.IsStructOrEnumTycon then g.iltyp_ValueType else g.ilg.typ_Object),
                              securityDecls= emptyILSecurityDecls)
                          .WithLayout(layout)
                          .WithSerializable(isSerializable)
@@ -7396,7 +7450,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                          .WithAccess(access)
                          .WithInitSemantics(ILTypeInit.BeforeField)
 
-               let tdef2 = cenv.g.eraseClassUnionDef tref tdef cuinfo
+               let tdef2 = g.eraseClassUnionDef tref tdef cuinfo
 
                // Discard the user-supplied (i.e. prim-type.fs) implementations of the get_Empty, get_IsEmpty, get_Value and get_None and Some methods.
                // This is because we will replace their implementations by ones that load the unique
@@ -7433,6 +7487,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
     
 /// Generate the type for an F# exception declaration.
 and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
+    let g = cenv.g
     let exncref = mkLocalEntityRef exnc
     match exnc.ExceptionInfo with
     | TExnAbbrevRepr _ | TExnAsmRepr _ | TExnNone -> ()
@@ -7461,24 +7516,24 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                                  propertyType = ilPropType,
                                  init = None,
                                  args = [],
-                                 customAttrs=mkILCustomAttrs (GenAttrs cenv eenv fld.PropertyAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i]))
+                                 customAttrs=mkILCustomAttrs (GenAttrs cenv eenv fld.PropertyAttribs @ [mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i]))
                yield (ilMethodDef, ilFieldDef, ilPropDef, (ilPropName, ilFieldName, ilPropType)) ]
              |> List.unzip4
 
         let ilCtorDef =
-            mkILSimpleStorageCtorWithParamNames(None, Some cenv.g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
+            mkILSimpleStorageCtorWithParamNames(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
 
         // In compiled code, all exception types get a parameterless constructor for use with XML serialization
         // This does default-initialization of all fields
         let ilCtorDefNoArgs =
             if not (isNil fieldNamesAndTypes) then
-                [ mkILSimpleStorageCtor(None, Some cenv.g.iltyp_Exception.TypeSpec, ilThisTy, [], [], reprAccess) ]
+                [ mkILSimpleStorageCtor(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], [], reprAccess) ]
             else
                 []
 
         let serializationRelatedMembers =
           // do not emit serialization related members if target framework lacks SerializationInfo or StreamingContext
-          match cenv.g.iltyp_SerializationInfo, cenv.g.iltyp_StreamingContext with
+          match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
           | Some serializationInfoType, Some streamingContextType ->
             let ilCtorDefForSerialziation =
                 mkILCtor(ILMemberAccess.Family,
@@ -7489,7 +7544,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                               [ mkLdarg0
                                 mkLdarg 1us
                                 mkLdarg 2us
-                                mkNormalCall (mkILCtorMethSpecForTy (cenv.g.iltyp_Exception, [serializationInfoType; streamingContextType])) ],
+                                mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [serializationInfoType; streamingContextType])) ],
                            None))
             
 //#if BE_SECURITY_TRANSPARENT
@@ -7501,23 +7556,23 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                 let ilMethodDef =
                     mkILNonGenericVirtualMethod
                         ("GetObjectData", ILMemberAccess.Public,
-                         [mkILParamNamed ("info", serializationInfoType);mkILParamNamed("context", cenv.g.iltyp_StreamingContext)],
+                         [mkILParamNamed ("info", serializationInfoType);mkILParamNamed("context", g.iltyp_StreamingContext)],
                          mkILReturn ILType.Void,
                          (let code =
                             nonBranchingInstrsToCode
                               [ mkLdarg0
                                 mkLdarg 1us
                                 mkLdarg 2us
-                                mkNormalCall (mkILNonGenericInstanceMethSpecInTy (cenv.g.iltyp_Exception, "GetObjectData", [serializationInfoType; cenv.g.iltyp_StreamingContext], ILType.Void))
+                                mkNormalCall (mkILNonGenericInstanceMethSpecInTy (g.iltyp_Exception, "GetObjectData", [serializationInfoType; g.iltyp_StreamingContext], ILType.Void))
                               ]
                           mkMethodBody(true, [], 8, code, None)))
                 // Here we must encode: [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
                 // In ILDASM this is: .permissionset demand = {[mscorlib]System.Security.Permissions.SecurityPermissionAttribute = {property bool 'SerializationFormatter' = bool(true)}}
-                match cenv.g.tref_SecurityPermissionAttribute with
+                match g.tref_SecurityPermissionAttribute with
                 | None -> ilMethodDef
                 | Some securityPermissionAttributeType ->
                     { ilMethodDef with
-                           SecurityDecls=mkILSecurityDecls [ IL.mkPermissionSet cenv.g.ilg (ILSecurityAction.Demand, [(securityPermissionAttributeType, [("SerializationFormatter", cenv.g.ilg.typ_Bool, ILAttribElem.Bool(true))])])]
+                           SecurityDecls=mkILSecurityDecls [ IL.mkPermissionSet g.ilg (ILSecurityAction.Demand, [(securityPermissionAttributeType, [("SerializationFormatter", g.ilg.typ_Bool, ILAttribElem.Bool true)])])]
                            HasSecurity=true }
             [ilCtorDefForSerialziation; getObjectDataMethodForSerialization]
 *)
@@ -7529,14 +7584,14 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
         let interfaces = exnc.ImmediateInterfaceTypesOfFSharpTycon |> List.map (GenType cenv.amap m eenv.tyenv)
         let tdef =
           mkILGenericClass
-            (ilTypeName, access, [], cenv.g.iltyp_Exception,
+            (ilTypeName, access, [], g.iltyp_Exception,
              interfaces,
              mkILMethods ([ilCtorDef] @ ilCtorDefNoArgs @ serializationRelatedMembers @ ilMethodDefsForProperties),
              mkILFields ilFieldDefs,
              emptyILTypeDefs,
              mkILProperties ilPropertyDefs,
              emptyILEvents,
-             mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Exception)],
+             mkILCustomAttrs [mkCompilationMappingAttr g (int SourceConstructFlags.Exception)],
              ILTypeInit.BeforeField)
         let tdef = tdef.WithSerializable(true)
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
@@ -7604,6 +7659,7 @@ type IlxGenResults =
 let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization fileImpls, assemAttribs, moduleAttribs) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
+    let g = cenv.g
 
     // Generate the implementations into the mgbuf
     let mgbuf = new AssemblyBuilder(cenv, anonTypeTable)
@@ -7629,10 +7685,10 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
             let defns =
               reflectedDefinitions |> List.choose (fun ((methName, v), e) ->
                     try
-                      let ety = tyOfExpr cenv.g e
+                      let ety = tyOfExpr g e
                       let tps, taue, _ =
                         match e with
-                        | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy cenv.g ety (List.map mkTyparTy tps)
+                        | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
                         | _ -> [], e, ety
                       let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
                       let astExpr = QuotationTranslator.ConvExprPublic qscope env taue
@@ -7640,7 +7696,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
                   
                       Some(mbaseR, astExpr)
                     with
-                    | QuotationTranslator.InvalidQuotedTerm e -> warning(e); None)
+                    | QuotationTranslator.InvalidQuotedTerm e -> warning e; None)
 
             let referencedTypeDefs, freeTypes, spliceArgExprs = qscope.Close()
 
@@ -7657,7 +7713,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
     let ilNetModuleAttrs = GenAttrs cenv eenv moduleAttribs
 
     let casApplied = new Dictionary<Stamp, bool>()
-    let securityAttrs, topAssemblyAttrs = assemAttribs |> List.partition (fun a -> IsSecurityAttribute cenv.g cenv.amap casApplied a rangeStartup)
+    let securityAttrs, topAssemblyAttrs = assemAttribs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap casApplied a rangeStartup)
     // remove any security attributes from the top-level assembly attribute list
     let permissionSets = CreatePermissionSets cenv eenv securityAttrs
 
