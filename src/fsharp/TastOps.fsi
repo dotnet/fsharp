@@ -2078,18 +2078,6 @@ val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 /// Check if the type is a byref-like but not a byref.
 val isSpanLikeTy : TcGlobals -> range -> TType -> bool
 
-val isSpanTy : TcGlobals -> range -> TType -> bool
-
-val tryDestSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
-
-val destSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
-
-val isReadOnlySpanTy : TcGlobals -> range -> TType -> bool
-
-val tryDestReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
-
-val destReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
-
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
 //------------------------------------------------------------------------- 

@@ -5,12 +5,13 @@ namespace FSharp.Compiler.UnitTests
 open System
 open NUnit.Framework
 
-#if !NETCOREAPP
 [<TestFixture>]
-module StringConcatOptimizationTests =
+module StringConcat =
 
-    // helper methods in this test only run on the full framework
+// helper methods in this test only run on the full framework
+#if !NETCOREAPP
     [<Test>]
+#endif
     let Optimizations () =
         let baseSource = """
 module Test
@@ -845,4 +846,3 @@ let test9 () =
                 test8IL
                 test9IL
             ]
-#endif
