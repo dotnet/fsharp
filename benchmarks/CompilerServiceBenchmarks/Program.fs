@@ -7,7 +7,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Text
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 
