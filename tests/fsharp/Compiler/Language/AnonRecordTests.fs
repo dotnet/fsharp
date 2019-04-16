@@ -5,46 +5,38 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 
 [<TestFixture>]
-module AnonRecords =
+module AnonRecordsTests =
 
-#if !NETCOREAPP
     [<Test>]
-#endif
     let NotStructConstraintPass() =
-        Compiler.AssertPass
+        CompilerAssert.Pass
             """
 type RefClass<'a when 'a : not struct>() = class end
 let rAnon = RefClass<{| R: int |}>()
             """
 
-#if !NETCOREAPP
     [<Test>]
-#endif
     let StructConstraintPass() =
-        Compiler.AssertPass
+        CompilerAssert.Pass
             """
 type StructClass<'a when 'a : struct>() = class end
 let sAnon = StructClass<struct {| S: int |}>()
             """
 
-#if !NETCOREAPP
     [<Test>]
-#endif
     let NotStructConstraintFail() =
-        Compiler.AssertSingleErrorTypeCheck 
+        CompilerAssert.TypeCheckSingleError
             """
-    type RefClass<'a when 'a : not struct>() = class end
-    let rAnon = RefClass<struct {| R: int |}>()
+type RefClass<'a when 'a : not struct>() = class end
+let rAnon = RefClass<struct {| R: int |}>()
             """ 
             1
-            (3, 16, 3, 45)
+            (3, 12, 3, 41)
             "A generic construct requires that the type 'struct {|R : int|}' have reference semantics, but it does not, i.e. it is a struct"
 
-#if !NETCOREAPP
     [<Test>]
-#endif
     let StructConstraintFail() =
-        Compiler.AssertSingleErrorTypeCheck 
+        CompilerAssert.TypeCheckSingleError
             """
 type StructClass<'a when 'a : struct>() = class end
 let sAnon = StructClass<{| S: int |}>()
@@ -52,4 +44,3 @@ let sAnon = StructClass<{| S: int |}>()
             1
             (3, 12, 3, 37)
             "A generic construct requires that the type '{|S : int|}' is a CLI or F# struct type"
-        

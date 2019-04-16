@@ -58,7 +58,7 @@ module internal ResizeArray =
         let res = new ResizeArray<_>(len)
         let rec add = function
           | [] -> ()
-          | e::l -> res.Add(e); add l
+          | e :: l -> res.Add(e); add l
         add l
         res
 

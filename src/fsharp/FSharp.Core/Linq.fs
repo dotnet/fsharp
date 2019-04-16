@@ -213,7 +213,7 @@ module LeafExpressionConverter =
 
     let SubstHelperRaw (q:Expr, x:Var[], y:obj[]) : Expr =
         let d = Map.ofArray (Array.zip x y)
-        q.Substitute(fun v -> v |> d.TryFind |> Option.map (fun x -> Expr.Value(x, v.Type)))
+        q.Substitute(fun v -> v |> d.TryFind |> Option.map (fun x -> Expr.Value (x, v.Type)))
 
     let SubstHelper<'T> (q:Expr, x:Var[], y:obj[]) : Expr<'T> =
         SubstHelperRaw(q, x, y) |> Expr.Cast
@@ -846,9 +846,9 @@ module LeafExpressionConverter =
        | Value (obj, _) -> obj
        | _ ->
        let ty = e.Type
-       let e = Expr.NewDelegate(Expression.GetFuncType([|typeof<unit>; ty |]), [new Var("unit", typeof<unit>)], e)
+       let e = Expr.NewDelegate (Expression.GetFuncType([|typeof<unit>; ty |]), [new Var("unit", typeof<unit>)], e)
        let linqExpr = (ConvExprToLinq e:?> LambdaExpression)
-       let d = linqExpr.Compile()
+       let d = linqExpr.Compile ()
        try
            d.DynamicInvoke [| box () |]
        with :? System.Reflection.TargetInvocationException as exn ->
