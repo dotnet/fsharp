@@ -3098,13 +3098,23 @@ namespace Microsoft.FSharp.Core
 
         let UnaryDynamicImpl nm : ('T -> 'U) =
              let aty = typeof<'T>
-             let minfo = aty.GetRuntimeMethod(nm, [| aty |])
+#if FX_RESHAPED_REFLECTION
+             let minfo = aty.GetMethod(nm, [| aty |])
+#else
+             let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+             let minfo = aty.GetMethod(nm, staticBindingFlags, null, [| aty |], null )
+#endif
              (fun x -> unboxPrim<_>(minfo.Invoke(null,[| box x|])))
 
         let BinaryDynamicImpl nm : ('T -> 'U -> 'V) =
              let aty = typeof<'T>
              let bty = typeof<'U>
-             let minfo = aty.GetRuntimeMethod(nm,[| aty;bty |])
+#if FX_RESHAPED_REFLECTION
+             let minfo = aty.GetMethod(nm,[| aty;bty |])
+#else
+             let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+             let minfo = aty.GetMethod(nm, staticBindingFlags, null, [| aty; bty |], null )
+#endif
              (fun x y -> unboxPrim<_>(minfo.Invoke(null,[| box x; box y|])))
 
         // Dynamic implementation of operator resolution, using  BuiltInWitnesses as backing data
@@ -3115,10 +3125,18 @@ namespace Microsoft.FSharp.Core
                 let bty = typeof<'U>
 
                 // Find the operator name
-                //let staticBindingFlags = (BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-                let opNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_Name", [| |] (*, staticBindingFlags, [| |], null*)  )
+#if FX_RESHAPED_REFLECTION
+                let opNameMeth = typeof<'OpInfo>.GetMethod("get_Name", [| |])
+#else
+                let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                let opNameMeth = typeof<'OpInfo>.GetMethod("get_Name", staticBindingFlags, null, [| |], null)
+#endif
                 let opName = opNameMeth.Invoke(null, [| |]) :?> string
-                let builtinNameMeth = typeof<'OpInfo>.GetTypeInfo().GetMethod("get_BuiltInName", (* staticBindingFlags, *) [| |] (*, null *) )
+#if FX_RESHAPED_REFLECTION
+                let builtinNameMeth = typeof<'OpInfo>.GetTypeInfo().GetMethod("get_BuiltInName", [| |])
+#else
+                let builtinNameMeth = typeof<'OpInfo>.GetMethod("get_BuiltInName", staticBindingFlags, null, [| |], null)
+#endif
                 let builtinName = match builtinNameMeth with null -> opName | _ -> builtinNameMeth.Invoke(null, [| |]) :?> string
 
                 let meth = 
@@ -3134,11 +3152,19 @@ namespace Microsoft.FSharp.Core
                                             res <- meth
                             res
                         else
-                            witnessesTy.GetRuntimeMethod(builtinName, (* , staticBindingFlags *) [| aty |] (* , null *) )
+#if FX_RESHAPED_REFLECTION
+                            witnessesTy.GetMethod(builtinName, [| aty |])
+#else
+                            witnessesTy.GetMethod(builtinName, staticBindingFlags, null, [| aty |], null)
+#endif
 
                     match cmeth with 
                     | null -> 
-                        let ameth = aty.GetRuntimeMethod(opName, [| aty |])
+#if FX_RESHAPED_REFLECTION
+                        let ameth = aty.GetMethod(opName, [| aty |])
+#else
+                        let ameth = aty.GetMethod(opName, staticBindingFlags, null, [| aty |], null)
+#endif
                         match ameth with
                         | null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
                         | res -> res
@@ -3155,19 +3181,41 @@ namespace Microsoft.FSharp.Core
                 let bty = typeof<'U>
 
                 // Find the operator name
-                //let staticBindingFlags = (BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-                let opNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_Name" (* , staticBindingFlags *) , [| |] (*, null *) )
+#if FX_RESHAPED_REFLECTION
+                let opNameMeth = typeof<'OpInfo>.GetMethod("get_Name", [| |])
+#else
+                let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                let opNameMeth = typeof<'OpInfo>.GetMethod("get_Name", staticBindingFlags, null, [| |], null)
+#endif
                 let opName = opNameMeth.Invoke(null, [| |]) :?> string
-                let builtinNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_BuiltInName" (*, staticBindingFlags *) , [| |] (*, null *) )
+#if FX_RESHAPED_REFLECTION
+                let builtinNameMeth = typeof<'OpInfo>.GetMethod("get_BuiltInName", [| |])
+#else
+                let builtinNameMeth = typeof<'OpInfo>.GetMethod("get_BuiltInName", staticBindingFlags, null, [| |], null)
+#endif
                 let builtinName = match builtinNameMeth with null -> opName | _ -> builtinNameMeth.Invoke(null, [| |]) :?> string
 
                 let meth = 
                     let witnessesTy = typeof<BuiltInWitnesses>
-                    let cmeth = witnessesTy.GetRuntimeMethod(builtinName (*, staticBindingFlags *) , [| aty; bty |] (*, null *) )
+#if FX_RESHAPED_REFLECTION
+                    let cmeth = witnessesTy.GetMethod(builtinName, [| aty; bty |])
+#else
+                    let cmeth = witnessesTy.GetMethod(builtinName, staticBindingFlags, null, [| aty; bty |], null)
+#endif
                     match cmeth with 
                     | null -> 
-                        let ameth = aty.GetRuntimeMethod(opName, [| aty; bty |])
-                        let bmeth = if aty.Equals(bty) then null else bty.GetRuntimeMethod(opName, [| aty; bty |])
+#if FX_RESHAPED_REFLECTION
+                        let ameth = aty.GetMethod(opName, [| aty; bty |])
+#else
+                        let ameth = aty.GetMethod(opName, staticBindingFlags, null, [| aty; bty |], null)
+#endif
+                        let bmeth = 
+                            if aty.Equals(bty) then null else 
+#if FX_RESHAPED_REFLECTION
+                            bty.GetMethod(opName, [| aty; bty |])
+#else
+                            bty.GetMethod(opName, staticBindingFlags, null, [| aty; bty |], null)
+#endif
                         match ameth, bmeth with
                         | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
                         | m, null | null, m -> m

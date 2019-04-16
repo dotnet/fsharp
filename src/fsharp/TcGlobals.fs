@@ -1532,7 +1532,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     | ("Abs" | "Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10"| "Log"), [aty], _, [_] -> 
         // Call corresponding Operators.*
         let nm = t.MemberName
-        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, nm.ToLowerInvariant(), None, Some nm, [vara], ([[varaTy]], varaTy))
+        let lower = if nm = "Ceiling" then "ceil" else nm.ToLowerInvariant()
+        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, lower, None, Some nm, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, argExprs)
     | "get_Item", [arrTy; _], Some rty, [_; _] when isArrayTy g arrTy -> 
