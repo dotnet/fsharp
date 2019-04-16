@@ -186,7 +186,7 @@ module QuickParse =
             let IsDot pos = lineStr.[pos] = '.'
 
             let rec InLeadingIdentifier(pos,right,(prior,residue)) = 
-                let PushName() = ((lineStr.Substring(pos+1,right-pos-1))::prior),residue
+                let PushName() = ((lineStr.Substring(pos+1,right-pos-1)) :: prior),residue
                 if pos < 0 then PushName()
                 elif IsIdentifierPartCharacter pos then InLeadingIdentifier(pos-1,right,(prior,residue))
                 elif IsDot pos then InLeadingIdentifier(pos-1,pos,PushName())
@@ -231,7 +231,7 @@ module QuickParse =
             let rec SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos) =
                 if pos > index then PartialLongName.Empty(index)  // we're in whitespace after an identifier, if this is where the cursor is, there is no PLID here
                 elif IsWhitespace pos then SkipWhitespaceBeforeDotIdentifier(pos+1,ident,current,throwAwayNext,lastDotPos)
-                elif IsDot pos then AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
+                elif IsDot pos then AtStartOfIdentifier(pos+1,ident :: current,throwAwayNext, Some pos)
                 elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAwayNext), lastDotPos)
                 else AtStartOfIdentifier(pos,[],false,None) // Throw away what we have and start over.
 
@@ -269,7 +269,7 @@ module QuickParse =
                     if IsIdentifierPartCharacter pos then InUnquotedIdentifier(left,pos+1,current,throwAwayNext,lastDotPos)
                     elif IsDot pos then 
                         let ident = lineStr.Substring(left,pos-left)
-                        AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
+                        AtStartOfIdentifier(pos+1,ident :: current,throwAwayNext, Some pos)
                     elif IsWhitespace pos || IsStartOfComment pos then 
                         let ident = lineStr.Substring(left,pos-left)
                         SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos)
@@ -310,7 +310,7 @@ module QuickParse =
                         elif IsDot pos then 
                             if pos = 0 then
                                 // dot on first char of line, currently treat it like empty identifier to the left
-                                AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)
+                                AtStartOfIdentifier(pos+1,"":: current,throwAwayNext, Some pos)
                             elif not (pos > 0 && (IsIdentifierPartCharacter(pos-1) || IsWhitespace(pos-1))) then
                                 // it's not dots as part.of.a.long.ident, it's e.g. the range operator (..), or some other multi-char operator ending in dot
                                 if lineStr.[pos-1] = ')' then
@@ -322,7 +322,7 @@ module QuickParse =
                                 else
                                     AtStartOfIdentifier(pos+1,[],false,None) // Throw away what we have and start over.
                             else
-                                AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)
+                                AtStartOfIdentifier(pos+1,"":: current,throwAwayNext, Some pos)
                         else AtStartOfIdentifier(pos+1,[],throwAwayNext, None)
             let partialLongName = AtStartOfIdentifier(0, [], false, None) 
             
