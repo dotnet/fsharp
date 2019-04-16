@@ -238,7 +238,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                         let rec iter comps =
                             match comps with
                             |   [] -> ()
-                            |   h::t ->
+                            |   h :: t ->
                                     try h() finally iter t
                         try
                             compensations |> List.rev |> iter
