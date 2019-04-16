@@ -7,11 +7,11 @@
   <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'net40'">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
 
-    <FscToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\net472\publish</FscToolPath>
+    <FscToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\net472</FscToolPath>
     <FscToolExe>fsc.exe</FscToolExe>
     <DotnetFscCompilerPath></DotnetFscCompilerPath>
 
-    <FsiToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\net472\publish</FsiToolPath>
+    <FsiToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\net472</FsiToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <DotnetFsiCompilerPath></DotnetFsiCompilerPath>
   </PropertyGroup>
