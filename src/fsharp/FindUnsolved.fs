@@ -48,7 +48,7 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     
     | Expr.Val (_v, _vFlags, _m) -> ()
 
-    | Expr.Quote(ast, _, _, _m, ty) -> 
+    | Expr.Quote (ast, _, _, _m, ty) -> 
         accExpr cenv env ast
         accTy cenv env ty
 
@@ -68,27 +68,27 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     | Expr.Op (c, tyargs, args, m) ->
         accOp cenv env (c, tyargs, args, m) 
 
-    | Expr.App(f, fty, tyargs, argsl, _m) ->
+    | Expr.App (f, fty, tyargs, argsl, _m) ->
         accTy cenv env fty
         accTypeInst cenv env tyargs
         accExpr cenv env f
         accExprs cenv env argsl
 
-    | Expr.Lambda(_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, rty) -> 
+    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy m argvs rty 
         accLambdas cenv env topValInfo expr ty
 
-    | Expr.TyLambda(_, tps, _body, _m, rty)  -> 
+    | Expr.TyLambda (_, tps, _body, _m, rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
         accTy cenv env rty
         let ty = mkForallTyIfNeeded tps rty 
         accLambdas cenv env topValInfo expr ty
 
-    | Expr.TyChoose(_tps, e1, _m)  -> 
+    | Expr.TyChoose (_tps, e1, _m)  -> 
         accExpr cenv env e1 
 
-    | Expr.Match(_, _exprm, dtree, targets, m, ty) -> 
+    | Expr.Match (_, _exprm, dtree, targets, m, ty) -> 
         accTy cenv env ty
         accDTree cenv env dtree
         accTargets cenv env m ty targets
@@ -133,7 +133,7 @@ and accOp cenv env (op, tyargs, args, _m) =
         accTypeInst cenv env enclTypeArgs
         accTypeInst cenv env methTypeArgs
         accTypeInst cenv env tys
-    | TOp.TraitCall(TTrait(tys, _nm, _, argtys, rty, _sln)) -> 
+    | TOp.TraitCall (TTrait(tys, _nm, _, argtys, rty, _sln)) -> 
         argtys |> accTypeInst cenv env 
         rty |> Option.iter (accTy cenv env)
         tys |> List.iter (accTy cenv env)
@@ -144,7 +144,7 @@ and accOp cenv env (op, tyargs, args, _m) =
 
 and accLambdas cenv env topValInfo e ety =
     match e with
-    | Expr.TyChoose(_tps, e1, _m)  -> accLambdas cenv env topValInfo e1 ety      
+    | Expr.TyChoose (_tps, e1, _m)  -> accLambdas cenv env topValInfo e1 ety      
     | Expr.Lambda _
     | Expr.TyLambda _ ->
         let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda cenv.g cenv.amap topValInfo (e, ety) 

@@ -163,7 +163,7 @@ let LookupMultiMap (trDict:MultiMap<_,_>) a  =
 
 let AddToMultiMap (trDict:MultiMap<_,_>) a b =
     let prev = LookupMultiMap trDict a
-    trDict.[a] <- b::prev
+    trDict.[a] <- b :: prev
 
 type NfaNodeMap() = 
     let map = new Dictionary<int,NfaNode>(100)
@@ -311,8 +311,8 @@ let newDfaNodeId =
 let NfaToDfa (nfaNodeMap:NfaNodeMap) nfaStartNode = 
     let numNfaNodes = nfaNodeMap.Count
     let rec EClosure1 (acc:NfaNodeIdSetBuilder) (n:NfaNode) = 
-        if not (acc.Contains(n.Id)) then 
-            acc.Add(n.Id) |> ignore;
+        if not (acc.Contains n.Id) then 
+            acc.Add n.Id |> ignore;
             if n.Transitions.ContainsKey(Epsilon) then
                 match n.Transitions.[Epsilon] with 
                 | [] -> () // this Clause is an optimization - the list is normally empty
@@ -367,7 +367,7 @@ let NfaToDfa (nfaNodeMap:NfaNodeMap) nfaStartNode =
     let rec Loop () = 
         match !workList with 
         | [] -> ()
-        | nfaSet ::t -> 
+        | nfaSet :: t -> 
             workList := t;
             if (!doneSet).Contains(nfaSet) then 
                 Loop () 
