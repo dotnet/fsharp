@@ -179,13 +179,6 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 #### Updating FSComp.fs, FSComp.resx and XLF
 
-If you change error messages you may need to update FSComp.fs in `src\buildfromsource\FSharp.Compiler.Private`.
-
-To do this, build the non-buildfromsource version of FSharp.Compiler.Private (src\fsharp\FSharp.Compiler.Private) then check its obj\ directory for `FSComp.fs` and manually copy that into the buildfromsource directory.
-
-    .\build net40
-    copy /y artifacts\obj\FSharp.Compiler.Private\Release\net472\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
-
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
     pushd src\fsharp\FSharp.Compiler.Private
@@ -193,8 +186,6 @@ If your changes involve modifying the list of language keywords in any way, (e.g
     popd
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
-
-You can also change build.cmd to default COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES to 1 under ":ARGUMENTS_OK" label.
 
 #### Configuring proxy server
 

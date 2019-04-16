@@ -163,7 +163,7 @@ module ListAssoc =
     let rec find f x l = 
       match l with 
       | [] -> notFound()
-      | (x2, y)::t -> if f x x2 then y else find f x t
+      | (x2, y) :: t -> if f x x2 then y else find f x t
 
     /// Treat a list of key-value pairs as a lookup collection.
     /// This function looks up a value based on a match from the supplied
@@ -171,7 +171,7 @@ module ListAssoc =
     let rec tryFind (f:'key->'key->bool) (x:'key) (l:('key*'value) list) : 'value option = 
         match l with 
         | [] -> None
-        | (x2, y)::t -> if f x x2 then Some y else tryFind f x t
+        | (x2, y) :: t -> if f x x2 then Some y else tryFind f x t
 
 //-------------------------------------------------------------------------
 // Library: lists as generalized sets
@@ -181,7 +181,7 @@ module ListSet =
     let inline contains f x l = List.exists (f x) l
 
     (* NOTE: O(n)! *)
-    let insert f x l = if contains f x l then l else x::l
+    let insert f x l = if contains f x l then l else x :: l
 
     let unionFavourRight f l1 l2 = 
         match l1, l2 with 
@@ -193,19 +193,19 @@ module ListSet =
     let rec private findIndexAux eq x l n =
         match l with
         | [] -> notFound()
-        | (h::t) -> if eq h x then n else findIndexAux eq x t (n+1)
+        | (h :: t) -> if eq h x then n else findIndexAux eq x t (n+1)
 
     let findIndex eq x l = findIndexAux eq x l 0
 
     let rec remove f x l = 
         match l with 
-        | (h::t) -> if f x h then t else h:: remove f x t
+        | (h :: t) -> if f x h then t else h :: remove f x t
         | [] -> []
 
     (* NOTE: quadratic! *)
     let rec subtract f l1 l2 = 
       match l2 with 
-      | (h::t) -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
+      | (h :: t) -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
       | [] -> l1
 
     let isSubsetOf f l1 l2 = List.forall (fun x1 -> contains f x1 l2) l1
@@ -223,7 +223,7 @@ module ListSet =
     (* NOTE: not tail recursive! *)
     let rec intersect f l1 l2 = 
         match l2 with 
-        | (h::t) -> if contains f h l1 then h::intersect f l1 t else intersect f l1 t
+        | (h :: t) -> if contains f h l1 then h :: intersect f l1 t else intersect f l1 t
         | [] -> []
 
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
@@ -234,15 +234,15 @@ module ListSet =
         | [] -> false
         | [_] -> false
         | [x; y] -> f x y
-        | x::rest ->
+        | x :: rest ->
             let rec loop acc l =
                 match l with
                 | [] -> false
-                | x::rest ->
+                | x :: rest ->
                     if contains f x acc then
                         true 
                     else
-                        loop (x::acc) rest
+                        loop (x :: acc) rest
 
             loop [x] rest
 
@@ -358,7 +358,7 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
     member g.IterateCycles f = 
         let rec trace path node = 
             if List.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
-            else List.iter (trace (node.nodeData::path)) node.nodeNeighbours
+            else List.iter (trace (node.nodeData :: path)) node.nodeNeighbours
         List.iter (fun node -> trace [] node) nodes 
 
 //---------------------------------------------------------------------------
@@ -485,7 +485,7 @@ module internal AsyncUtil =
                         | None ->
                             // Otherwise save the continuation and call it in RegisterResult
                             let sc = SynchronizationContext.Current
-                            savedConts <- (sc, cont)::savedConts
+                            savedConts <- (sc, cont) :: savedConts
                             None)
                 // Run the action outside the lock
                 match grabbedResult with
