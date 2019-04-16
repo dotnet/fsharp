@@ -150,7 +150,7 @@ let (|TyappAndApp|_|) e =
     match e with 
     | Expr.App (f, fty, tys, args, m)       -> 
         match stripExpr f with
-        | Expr.App(f2, fty2, tys2, [], m2) -> Some(f2, fty2, tys2 @ tys, args, m2)
+        | Expr.App (f2, fty2, tys2, [], m2) -> Some(f2, fty2, tys2 @ tys, args, m2)
         | Expr.App _                   -> Some(f, fty, tys, args, m) (* has args, so not combine ty args *)
         | f                             -> Some(f, fty, tys, args, m)
     | _ -> None
@@ -204,7 +204,7 @@ module GlobalUsageAnalysis =
     let logUse (f: Val) tup z =
        {z with Uses = 
                   match Zmap.tryFind f z.Uses with
-                  | Some sites -> Zmap.add f (tup::sites) z.Uses
+                  | Some sites -> Zmap.add f (tup :: sites) z.Uses
                   | None    -> Zmap.add f [tup] z.Uses }
 
     /// Log the definition of a binding
@@ -278,15 +278,15 @@ module GlobalUsageAnalysis =
                      // NO: app but function is not val 
                      noInterceptF z origExpr 
 
-             | Expr.Op(TOp.TupleFieldGet (tupInfo, n), ts, [x], _) when not (evalTupInfoIsStruct tupInfo)  -> 
+             | Expr.Op (TOp.TupleFieldGet (tupInfo, n), ts, [x], _) when not (evalTupInfoIsStruct tupInfo)  -> 
                  let context = TupleGet (n, ts) :: context
                  recognise context x
                  
              // lambdas end top-level status 
-             | Expr.Lambda(_id, _ctorThisValOpt, _baseValOpt, _vs, body, _, _)   -> 
+             | Expr.Lambda (_id, _ctorThisValOpt, _baseValOpt, _vs, body, _, _)   -> 
                  foldUnderLambda exprF z body
 
-             | Expr.TyLambda(_id, _tps, body, _, _) -> 
+             | Expr.TyLambda (_id, _tps, body, _, _) -> 
                  foldUnderLambda exprF z body
 
              | _  -> 
@@ -360,7 +360,7 @@ let checkTS = function
 /// explicit tuple-structure in expr 
 let rec uncheckedExprTS expr = 
     match expr with 
-    | Expr.Op(TOp.Tuple tupInfo, _tys, args, _) when not (evalTupInfoIsStruct tupInfo) -> 
+    | Expr.Op (TOp.Tuple tupInfo, _tys, args, _) when not (evalTupInfoIsStruct tupInfo) -> 
         TupleTS (List.map uncheckedExprTS args)
     | _ -> 
         UnknownTS
@@ -379,7 +379,7 @@ let rebuildTS g m ts vs =
     let rec rebuild vs ts = 
       match vs, ts with
       | [], UnknownTS   -> internalError "rebuildTS: not enough fringe to build tuple"
-      | v::vs, UnknownTS   -> (exprForVal m v, v.Type), vs
+      | v :: vs, UnknownTS   -> (exprForVal m v, v.Type), vs
       | vs, TupleTS tss -> 
           let xtys, vs = List.mapFold rebuild vs tss
           let xs, tys  = List.unzip xtys
@@ -405,20 +405,20 @@ let inline isTrivialCP xs = isNil xs
 let rec minimalCallPattern callPattern =
     match callPattern with 
     | []                -> []
-    | UnknownTS::tss    -> 
+    | UnknownTS :: tss    -> 
         match minimalCallPattern tss with
         | []  -> []              (* drop trailing UnknownTS *)
-        | tss -> UnknownTS::tss (* non triv tss tail *)
-    | (TupleTS ts)::tss -> TupleTS ts :: minimalCallPattern tss
+        | tss -> UnknownTS :: tss (* non triv tss tail *)
+    | (TupleTS ts) :: tss -> TupleTS ts :: minimalCallPattern tss
 
 /// Combines a list of callpatterns into one common callpattern.
 let commonCallPattern callPatterns =
     let rec andCPs cpA cpB =
       match cpA, cpB with
       | [], []        -> []
-      | tsA::tsAs, tsB::tsBs -> andTS tsA tsB :: andCPs tsAs tsBs
-      | _tsA::_tsAs, []        -> [] (* now trim to shortest - UnknownTS     :: andCPs tsAs []   *)
-      | [], _tsB::_tsBs -> [] (* now trim to shortest - UnknownTS     :: andCPs []   tsBs *)
+      | tsA :: tsAs, tsB :: tsBs -> andTS tsA tsB :: andCPs tsAs tsBs
+      | _tsA :: _tsAs, []        -> [] (* now trim to shortest - UnknownTS     :: andCPs tsAs []   *)
+      | [], _tsB :: _tsBs -> [] (* now trim to shortest - UnknownTS     :: andCPs []   tsBs *)
    
     List.reduce andCPs callPatterns
 
@@ -532,7 +532,7 @@ let decideFormalSuggestedCP g z tys vss =
         match ts, accessors with
         | UnknownTS, _                       -> UnknownTS
         | TupleTS _tss, []                     -> UnknownTS (* trim it, require the val at this point *)
-        | TupleTS tss, TupleGet (i, _ty)::accessors -> 
+        | TupleTS tss, TupleGet (i, _ty) :: accessors -> 
             let tss = List.mapNth i (trimTsByAccess accessors) tss
             TupleTS tss
 
@@ -607,7 +607,7 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
         let tps, vss, _b, rty = stripTopLambda (e, f.Type)
         match List.concat vss with
         | []      -> None // defn has no term args 
-        | arg1::_ -> // consider f 
+        | arg1 :: _ -> // consider f 
           let m   = arg1.Range                       // mark of first arg, mostly for error reporting 
           let callPatterns = sitesCPs sites                   // callPatterns from sites 
           decideTransform g z f callPatterns (m, tps, vss, rty) // make transform (if required) 
@@ -648,7 +648,7 @@ type env =
 let suffixE env s = {env with prefix = env.prefix + s}
 let rangeE  env m = {env with m = m}
 
-let push  b  bs = b::bs
+let push  b  bs = b :: bs
 let pushL xs bs = xs@bs
 
 let newLocal  env   ty = mkCompGenLocal env.m env.prefix ty
@@ -686,7 +686,7 @@ let rec collapseArg env bindings ts (x: Expr) =
     | UnknownTS, x -> 
         let bindings, vx = noEffectExpr env bindings x
         bindings, [vx]
-    | TupleTS tss, Expr.Op(TOp.Tuple tupInfo, _xtys, xs, _) when not (evalTupInfoIsStruct tupInfo) -> 
+    | TupleTS tss, Expr.Op (TOp.Tuple tupInfo, _xtys, xs, _) when not (evalTupInfoIsStruct tupInfo) -> 
         let env = suffixE env "'"
         collapseArgs env bindings 1 tss xs
     | TupleTS tss, x                      -> 
@@ -701,12 +701,12 @@ let rec collapseArg env bindings ts (x: Expr) =
 and collapseArgs env bindings n (callPattern) args =
     match callPattern, args with
     | [], args        -> bindings, args
-    | ts::tss, arg::args -> 
+    | ts :: tss, arg :: args -> 
         let env1 = suffixE env (string n)
         let bindings, xty  = collapseArg  env1 bindings ts    arg     
         let bindings, xtys = collapseArgs env  bindings (n+1) tss args
         bindings, xty @ xtys
-    | _ts::_tss, []            -> 
+    | _ts :: _tss, []            -> 
         internalError "collapseArgs: CallPattern longer than callsite args. REPORT BUG"
 
 

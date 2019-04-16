@@ -4,7 +4,7 @@ open System.IO
 
 let lines = 
     [| for dir in [ "src/fsharp"; "src/fsharp/FSharp.Core"; "src/fsharp/symbols"; "src/fsharp/service"; "src/absil" ]do
-          for file in Directory.EnumerateFiles(__SOURCE_DIRECTORY__ + "/../../" + dir,"*.fs") do
+          for file in Directory.EnumerateFiles(__SOURCE_DIRECTORY__ + "/../../" + dir, "*.fs") do
         // TcGlobals.fs gets an exception
             let lines = File.ReadAllLines file
             for (line, lineText) in Array.indexed lines do 
@@ -44,9 +44,9 @@ let commas =
     lines
     |> Array.groupBy fst 
     |> Array.map (fun (file, lines) -> 
-        file,
+        file, 
         lines 
-        |> Array.sumBy (fun (_,(_,line)) ->
+        |> Array.sumBy (fun (_, (_, line)) ->
               line |> Seq.pairwise |> Seq.filter (fun (c1, c2) -> c1 = ',' && c2 <> ' ') |> Seq.length)) 
     |> Array.sortByDescending snd
 
@@ -59,9 +59,9 @@ let semis =
     lines
     |> Array.groupBy fst 
     |> Array.map (fun (file, lines) -> 
-        file,
+        file, 
         lines 
-        |> Array.filter (fun (_,(_,line)) -> line.Trim().EndsWith(";"))
+        |> Array.filter (fun (_, (_, line)) -> line.Trim().EndsWith(";"))
         |> Array.length)
     |> Array.sortByDescending snd
 
@@ -77,9 +77,9 @@ let noSpaceAfterColons =
     lines
     |> Array.groupBy fst 
     |> Array.map (fun (file, lines) -> 
-        file,
+        file, 
         lines 
-        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.filter (fun (_, (_, line)) -> re.IsMatch(line))
         |> Array.length)
     |> Array.sortByDescending snd
 
@@ -93,9 +93,9 @@ let spaceBeforeColon =
     lines
     |> Array.groupBy fst 
     |> Array.map (fun (file, lines) -> 
-        file,
+        file, 
         lines 
-        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.filter (fun (_, (_, line)) -> re.IsMatch(line))
         |> Array.length)
     |> Array.sortByDescending snd
 
@@ -109,11 +109,41 @@ let internalSpacing =
     lines
     |> Array.groupBy fst 
     |> Array.map (fun (file, lines) -> 
-        file,
+        file, 
         lines 
-        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.filter (fun (_, (_, line)) -> re.IsMatch(line))
         |> Array.length)
     |> Array.sortByDescending snd
 
 printfn "Top files that have internal spacing in lines:\n%A" (Array.truncate 10 internalSpacing)
+
+printfn "------ cenv.g ----------"
+
+let cenv_dot_g =
+    let re =  Regex("cenv\.g")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file, 
+        lines 
+        |> Array.filter (fun (_, (_, line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have endless cenv.g:\n%A" (Array.truncate 10 cenv_dot_g)
+
+printfn "------ parenthesized atomic expressions (id) ----------"
+
+let parens_id =
+    let re =  Regex("\([a-zA-Z0-9]+\)")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file, 
+        lines 
+        |> Array.filter (fun (_, (_, line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have parenthesized atomic expressionsg:\n%A" (Array.truncate 10 parens_id)
 
