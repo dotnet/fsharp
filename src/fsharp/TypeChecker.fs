@@ -10164,16 +10164,16 @@ and TcMethodApplication
 
                       match calledArg.CallerInfo, env.eCallerMemberName with
                       | CallerLineNumber, _ when typeEquiv cenv.g calledNonOptTy cenv.g.int_ty ->
-                          let lineExpr = Expr.Const (Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
-                          emptyPreBinder, mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [lineExpr], mMethExpr)
+                          let lineExpr = Expr.Const(Const.Int32 mMethExpr.StartLine, mMethExpr, calledNonOptTy)
+                          emptyPreBinder, mkSome cenv.g calledNonOptTy lineExpr mMethExpr
                       | CallerFilePath, _ when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
-                          let filePathExpr = Expr.Const (Const.String(FileSystem.GetFullPathShim(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
-                          emptyPreBinder, mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [filePathExpr], mMethExpr)
-                      | CallerMemberName, Some callerName when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
+                          let filePathExpr = Expr.Const (Const.String (FileSystem.GetFullPathShim(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
+                          emptyPreBinder, mkSome cenv.g calledNonOptTy filePathExpr mMethExpr
+                      | CallerMemberName, Some(callerName) when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
                           let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
-                          emptyPreBinder, mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [memberNameExpr], mMethExpr)
+                          emptyPreBinder, mkSome cenv.g calledNonOptTy memberNameExpr mMethExpr
                       | _ ->
-                          emptyPreBinder, mkUnionCaseExpr(mkNoneCase cenv.g, [calledNonOptTy], [], mMethExpr)
+                          emptyPreBinder, mkNone cenv.g calledNonOptTy mMethExpr
 
               // Combine the variable allocators (if any)
               let wrapper = (wrapper >> wrapper2)
@@ -10207,7 +10207,7 @@ and TcMethodApplication
                             let calledArgTy = assignedArg.CalledArg.CalledArgumentType
                             if isOptionTy cenv.g calledArgTy then 
                                 let calledNonOptTy = destOptionTy cenv.g calledArgTy 
-                                mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [mkCoerceIfNeeded cenv.g calledNonOptTy callerArgTy expr], m)
+                                mkSome cenv.g calledNonOptTy (mkCoerceIfNeeded cenv.g calledNonOptTy callerArgTy expr) m
                             else 
                                 expr // should be unreachable 
                             

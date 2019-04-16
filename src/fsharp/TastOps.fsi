@@ -1648,6 +1648,10 @@ val mkNil  : TcGlobals -> range -> TType -> Expr
 
 val mkCons : TcGlobals -> TType -> Expr -> Expr -> Expr
 
+val mkSome : TcGlobals -> TType -> Expr -> range -> Expr
+
+val mkNone: TcGlobals -> TType -> range -> Expr
+
 //-------------------------------------------------------------------------
 // Make a few more expressions
 //------------------------------------------------------------------------- 
