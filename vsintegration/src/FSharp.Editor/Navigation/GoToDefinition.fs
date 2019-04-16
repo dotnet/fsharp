@@ -115,38 +115,41 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
         member __.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
         member __.ChildItems = ImmutableArray<INavigableItem>.Empty
 
+// TODO: Uncomment code when VS has a fix for updating the status bar.
 type internal StatusBar(statusBar: IVsStatusbar) =
-    let mutable searchIcon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
+    let mutable _searchIcon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
 
-    let clear() =
+    let _clear() =
         // unfreeze the statusbar
         statusBar.FreezeOutput 0 |> ignore  
         statusBar.Clear() |> ignore
         
-    member __.Message(msg: string) =
-        let _, frozen = statusBar.IsFrozen()
-        // unfreeze the status bar
-        if frozen <> 0 then statusBar.FreezeOutput 0 |> ignore
-        statusBar.SetText msg |> ignore
-        // freeze the status bar
-        statusBar.FreezeOutput 1 |> ignore
+    member __.Message(_msg: string) =
+        ()
+        //let _, frozen = statusBar.IsFrozen()
+        //// unfreeze the status bar
+        //if frozen <> 0 then statusBar.FreezeOutput 0 |> ignore
+        //statusBar.SetText msg |> ignore
+        //// freeze the status bar
+        //statusBar.FreezeOutput 1 |> ignore
 
-    member this.TempMessage(msg: string) =
-        this.Message msg
-        async {
-            do! Async.Sleep 4000
-            match statusBar.GetText() with
-            | 0, currentText when currentText <> msg -> ()
-            | _ -> clear()
-        }|> Async.Start
+    member this.TempMessage(_msg: string) =
+        ()
+        //this.Message msg
+        //async {
+        //    do! Async.Sleep 4000
+        //    match statusBar.GetText() with
+        //    | 0, currentText when currentText <> msg -> ()
+        //    | _ -> clear()
+        //}|> Async.Start
     
-    member __.Clear() = clear()
+    member __.Clear() = () //clear()
 
     /// Animated magnifying glass that displays on the status bar while a symbol search is in progress.
     member __.Animate() : IDisposable = 
-        statusBar.Animation (1, &searchIcon) |> ignore
+        //statusBar.Animation (1, &searchIcon) |> ignore
         { new IDisposable with
-            member __.Dispose() = statusBar.Animation(0, &searchIcon) |> ignore }
+            member __.Dispose() = () } //statusBar.Animation(0, &searchIcon) |> ignore }
 
 type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     let userOpName = "GoToDefinition"
@@ -171,7 +174,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
     member private __.FindSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(originDocument, CancellationToken.None)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
@@ -193,7 +196,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 if not (File.Exists fsfilePath) then return! None else
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(implDoc, CancellationToken.None)
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, sourceText=implSourceText, userOpName=userOpName)
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
@@ -207,12 +210,12 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
     /// instance of its presence in the provided source file. The first case is needed to return proper declaration location for
     /// recursive type definitions, where the first its usage may not be the declaration.
-    member __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, source: string, options: FSharpProjectOptions, fileVersion:int) = 
+    member __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, sourceText: SourceText, options: FSharpProjectOptions, fileVersion:int) = 
         asyncMaybe {
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
             | _ ->
-                let! _, checkFileAnswer = checker.ParseAndCheckFileInProject (filePath, fileVersion, source, options, userOpName = userOpName) |> liftAsync
+                let! _, checkFileAnswer = checker.ParseAndCheckFileInProject (filePath, fileVersion, sourceText.ToFSharpSourceText(), options, userOpName = userOpName) |> liftAsync
                 match checkFileAnswer with 
                 | FSharpCheckFileAnswer.Aborted -> return! None
                 | FSharpCheckFileAnswer.Succeeded checkFileResults ->
@@ -223,7 +226,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
     member private this.FindDefinitionAtPosition(originDocument: Document, position: int) =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(originDocument, CancellationToken.None)
             let! sourceText = originDocument.GetTextAsync () |> liftTaskAsync
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let textLine = sourceText.Lines.GetLineFromPosition position
@@ -273,7 +276,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
                         let! implVersion = implDocument.GetTextVersionAsync () |> liftTaskAsync
                         
-                        let! targetRange = this.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText.ToString(), projectOptions, implVersion.GetHashCode())
+                        let! targetRange = this.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText, projectOptions, implVersion.GetHashCode())
 
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)
@@ -310,9 +313,9 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
                         let! implVersion = implDocument.GetTextVersionAsync () |> liftTaskAsync
                         let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
-                        let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDocument
+                        let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(implDocument, CancellationToken.None)
                         
-                        let! targetRange = this.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText.ToString(), projectOptions, implVersion.GetHashCode())                               
+                        let! targetRange = this.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText, projectOptions, implVersion.GetHashCode())                               
                         
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)

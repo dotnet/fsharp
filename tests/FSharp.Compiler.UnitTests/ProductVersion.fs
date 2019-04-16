@@ -93,7 +93,7 @@ module TypeProviderDesignTimeComponentLoading =
     let ``check tooling paths for type provider design time component loading`` () =
         let expected =
           [
-#if NET46 // only available on net46
+#if NET472 // only available on net472
             Path.Combine("typeproviders", "fsharp41", "net461")
             Path.Combine("tools", "fsharp41", "net461")
             Path.Combine("typeproviders", "fsharp41", "net452")

@@ -13,10 +13,10 @@ $binaryLog = if (Test-Path variable:binaryLog) { $binaryLog } else { $false }
 $nodeReuse = if (Test-Path variable:nodeReuse) { $nodeReuse } else { $false }
 $bootstrapDir = if (Test-Path variable:bootstrapDir) { $bootstrapDir } else { "" }
 $bootstrapConfiguration = if (Test-Path variable:bootstrapConfiguration) { $bootstrapConfiguration } else { "Proto" }
-$bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "net46" }
+$bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "net472" }
 $properties = if (Test-Path variable:properties) { $properties } else { @() }
 
-function GetProjectOutputBinary([string]$fileName, [string]$projectName = "", [string]$configuration = $script:configuration, [string]$tfm = "net46", [string]$rid = "", [bool]$published = $false) {
+function GetProjectOutputBinary([string]$fileName, [string]$projectName = "", [string]$configuration = $script:configuration, [string]$tfm = "net472", [string]$rid = "", [bool]$published = $false) {
   $projectName = if ($projectName -ne "") { $projectName } else { [System.IO.Path]::GetFileNameWithoutExtension($fileName) }
   $publishDir = if ($published) { "publish\" } else { "" }
   $ridDir = if ($rid -ne "") { "$rid\" } else { "" }
@@ -238,8 +238,8 @@ function Make-BootstrapBuild() {
 
     # prepare FsLex and Fsyacc
     Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Build" -logFileName "BuildTools" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.0\*" -Destination $dir
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.0\*" -Destination $dir
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir
 
     # prepare compiler
     $projectPath = "$RepoRoot\proto.proj"

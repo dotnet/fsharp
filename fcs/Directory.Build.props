@@ -4,6 +4,7 @@
     <RestoreSources>
       $(RestoreSources);
       https://api.nuget.org/v3/index.json;
+      https://dotnet.myget.org/F/fsharp/api/v3/index.json;
     </RestoreSources>
   </PropertyGroup>
 
@@ -22,6 +23,6 @@
 
   <!-- SDK targets override -->
   <PropertyGroup>
-    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net46</ProtoOutputPath>
+    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net472</ProtoOutputPath>
   </PropertyGroup>
 </Project>
