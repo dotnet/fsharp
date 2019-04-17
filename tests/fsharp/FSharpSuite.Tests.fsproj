@@ -30,6 +30,13 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
+    <Compile Include="Compiler\CompilerAssert.fs" />
+    <Compile Include="Compiler\ILHelpers.fs" />
+    <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\AnonRecordTests.fs" />
+    <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
+    <Compile Include="Compiler\Language\SpanTests.fs" />
+    <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />

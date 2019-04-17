@@ -13,13 +13,13 @@
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <FSCoreMajorVersion>4.6</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).2</FSCorePackageVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
   </PropertyGroup>
   <PropertyGroup>
     <FSPackageMajorVersion>10.4</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).2</FSPackageVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
