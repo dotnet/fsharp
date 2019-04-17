@@ -242,14 +242,14 @@ function Make-BootstrapBuild() {
 
     # prepare FsLex and Fsyacc
     Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Build" -logFileName "BuildTools" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir -force
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir -force
 
     # prepare compiler
     $projectPath = "$RepoRoot\proto.proj"
     Run-MSBuild $projectPath "/restore /t:Build" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
-    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
+    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir -force
+    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir -force
 
     return $dir
 }

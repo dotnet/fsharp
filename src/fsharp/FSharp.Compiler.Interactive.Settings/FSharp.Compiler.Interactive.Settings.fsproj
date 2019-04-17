@@ -27,8 +27,8 @@
     <Compile Include="..\fsiaux.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
+  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
