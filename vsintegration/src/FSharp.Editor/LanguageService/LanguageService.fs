@@ -73,6 +73,33 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member this.Checker = checkerProvider.Checker
                 member this.FSharpProjectOptionsManager = projectInfoManager }
 
+[<Sealed>]
+type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
+
+    interface IVsSolutionEvents with
+
+        member __.OnAfterCloseSolution(_) =
+            projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            VSConstants.S_OK
+
+        member __.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnAfterOpenProject(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnAfterOpenSolution(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnBeforeCloseProject(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnBeforeCloseSolution(_) = VSConstants.E_NOTIMPL
+
+        member __.OnBeforeUnloadProject(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnQueryCloseProject(_, _, _) = VSConstants.E_NOTIMPL
+
+        member __.OnQueryCloseSolution(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnQueryUnloadProject(_, _) = VSConstants.E_NOTIMPL       
+
 [<Microsoft.CodeAnalysis.Host.Mef.ExportWorkspaceServiceFactory(typeof<EditorOptions>, Microsoft.CodeAnalysis.Host.Mef.ServiceLayer.Default)>]
 type internal FSharpSettingsFactory
     [<Composition.ImportingConstructor>] (settings: EditorOptions) =
@@ -143,6 +170,8 @@ type internal FSharpPackage() as this =
             vfsiToolWindow <- this.FindToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 0, true) :?> Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow
         vfsiToolWindow :> Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI
 
+    let mutable solutionEventsOpt = None
+
     // FSI-LINKAGE-POINT: unsited init
     do 
         Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
@@ -165,8 +194,12 @@ type internal FSharpPackage() as this =
                     let projectInfoManager = this.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
                     let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
                     let solution = solution :?> IVsSolution
+                    let solutionEvents = FSharpSolutionEvents(projectInfoManager)
                     let rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>).Result
                     let rdt = rdt :?> IVsRunningDocumentTable
+
+                    solutionEventsOpt <- Some(solutionEvents)
+                    solution.AdviseSolutionEvents(solutionEvents) |> ignore
 
                     let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
                     let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
