@@ -1768,11 +1768,14 @@ let isStructRecordOrUnionTyconTy g ty =
     | ValueSome tcref -> tcref.Deref.IsStructRecordOrUnionTycon
     | _ -> false
 
+let isStructTyconRef (tcref: TyconRef) =
+    let tycon = tcref.Deref
+    tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
+
 let isStructTy g ty =
     match tryDestAppTy g ty with
     | ValueSome tcref -> 
-        let tycon = tcref.Deref
-        tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
+        isStructTyconRef tcref
     | _ -> 
         isStructAnonRecdTy g ty || isStructTupleTy g ty
 
@@ -3043,7 +3046,7 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     | None -> 
        let res = 
            isByrefTyconRef g tcref ||
-           TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref
+           (isStructTyconRef tcref && TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref)
        tcref.SetIsByRefLike res
        res
 
@@ -3052,11 +3055,45 @@ let isSpanLikeTyconRef g m tcref =
     not (isByrefTyconRef g tcref)
 
 let isByrefLikeTy g m ty = 
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref | _ -> false) 
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref | _ -> false)
 
 let isSpanLikeTy g m ty =
     isByrefLikeTy g m ty && 
-    not (isByrefTy g ty) 
+    not (isByrefTy g ty)
+
+let isSpanTyconRef g m tcref =
+    isByrefLikeTyconRef g m tcref &&
+    tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Span`1"
+
+let isSpanTy g m ty =
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g m tcref | _ -> false)
+
+let rec tryDestSpanTy g m ty =
+    match tryAppTy g ty with
+    | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> ValueSome(struct(tcref, ty))
+    | _ -> ValueNone
+
+let destSpanTy g m ty =
+    match tryDestSpanTy g m ty with
+    | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
+    | _ -> failwith "destSpanTy"
+
+let isReadOnlySpanTyconRef g m tcref =
+    isByrefLikeTyconRef g m tcref &&
+    tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.ReadOnlySpan`1"
+
+let isReadOnlySpanTy g m ty =
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
+
+let tryDestReadOnlySpanTy g m ty =
+    match tryAppTy g ty with
+    | ValueSome(tcref, [ty]) when isReadOnlySpanTyconRef g m tcref -> ValueSome(struct(tcref, ty))
+    | _ -> ValueNone
+
+let destReadOnlySpanTy g m ty =
+    match tryDestReadOnlySpanTy g m ty with
+    | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
+    | _ -> failwith "destReadOnlySpanTy"    
 
 //-------------------------------------------------------------------------
 // List and reference types...
@@ -3134,6 +3171,10 @@ let destLinqExpressionTy g ty =
 
 let mkNoneCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "None"
 let mkSomeCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "Some"
+
+let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
+
+let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
 
 type ValRef with 
     member vref.IsDispatchSlot = 

@@ -372,7 +372,8 @@ type OptimizationSettings =
     /// eliminate non-compiler generated immediate bindings 
     member x.EliminateImmediatelyConsumedLocals() = x.localOpt () 
 
-    /// expand "let x = (exp1, exp2, ...)" bind fields as prior tmps 
+    /// expand "let x = (exp1, exp2, ...)" bindings as prior tmps 
+    /// expand "let x = Some exp1" bindings as prior tmps 
     member x.ExpandStructrualValues() = x.localOpt () 
 
 type cenv =
@@ -1570,6 +1571,8 @@ let rec CombineBoolLogic expr =
 // Similarly for other structural constructions, like records...
 // If the item is only projected from then the construction (allocation) can be eliminated.
 // This transform encourages that by allowing projections to be simplified.
+//
+// Apply the same to 'Some(x)' constructions
 //------------------------------------------------------------------------- 
 
 let CanExpandStructuralBinding (v: Val) =
@@ -1580,7 +1583,13 @@ let CanExpandStructuralBinding (v: Val) =
 
 let ExprIsValue = function Expr.Val _ -> true | _ -> false
 
+let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
+    let name = v.LogicalName + "_" + string i
+    let v, ve = mkCompGenLocal arg.Range name argTy
+    ve, mkCompGenBind v arg
+           
 let ExpandStructuralBindingRaw cenv expr =
+    assert cenv.settings.ExpandStructrualValues()
     match expr with
     | Expr.Let (TBind(v, rhs, tgtSeqPtOpt), body, m, _) 
         when (isRefTupleExpr rhs &&
@@ -1590,19 +1599,16 @@ let ExpandStructuralBindingRaw cenv expr =
               expr (* avoid re-expanding when recursion hits original binding *)
           else
               let argTys = destRefTupleTy cenv.g v.Type
-              let argBind i (arg: Expr) argTy =
-                  let name = v.LogicalName + "_" + string i
-                  let v, ve = mkCompGenLocal arg.Range name argTy
-                  ve, mkCompGenBind v arg
-           
-              let ves, binds = List.mapi2 argBind args argTys |> List.unzip
+              let ves, binds = List.mapi2 (MakeStructuralBindingTemp v) args argTys |> List.unzip
               let tuple = mkRefTupled cenv.g m ves argTys
               mkLetsBind m binds (mkLet tgtSeqPtOpt m v tuple body)
     | expr -> expr
 
 // Moves outer tuple binding inside near the tupled expression:
-// let t = (let a0=v0 in let a1=v1 in ... in let an=vn in e0, e1, ..., em) in body
-// let a0=v0 in let a1=v1 in ... in let an=vn in (let t = e0, e1, ..., em in body)
+//   let t = (let a0=v0 in let a1=v1 in ... in let an=vn in e0, e1, ..., em) in body
+// becomes
+//   let a0=v0 in let a1=v1 in ... in let an=vn in (let t = e0, e1, ..., em in body)
+//
 // This way ExpandStructuralBinding can replace expressions in constants, t is directly bound
 // to a tuple expression so that other optimizations such as OptimizeTupleFieldGet work, 
 // and the tuple allocation can be eliminated.
@@ -1618,6 +1624,7 @@ let rec RearrangeTupleBindings expr fin =
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
+    assert cenv.settings.ExpandStructrualValues()
     match expr with
     | Expr.Let (TBind(v, rhs, tgtSeqPtOpt), body, m, _)
         when (isRefTupleTy cenv.g v.Type &&
@@ -1626,7 +1633,20 @@ let ExpandStructuralBinding cenv expr =
         match RearrangeTupleBindings rhs (fun top -> mkLet tgtSeqPtOpt m v top body) with
         | Some e -> ExpandStructuralBindingRaw cenv e
         | None -> expr
-    | e -> ExpandStructuralBindingRaw cenv e
+
+    // Expand 'let v = Some arg in ...' to 'let tmp = arg in let v = Some tp in ...'
+    // Used to give names to values of optional arguments prior as we inline.
+    | Expr.Let (TBind(v, Expr.Op(TOp.UnionCase uc, _, [arg], _), tgtSeqPtOpt), body, m, _)
+        when isOptionTy cenv.g v.Type && 
+             not (ExprIsValue arg) && 
+             cenv.g.unionCaseRefEq uc (mkSomeCase cenv.g) &&
+             CanExpandStructuralBinding v ->
+            let argTy = destOptionTy cenv.g v.Type 
+            let ve, bind = MakeStructuralBindingTemp v 0 arg argTy
+            let newExpr = mkSome cenv.g argTy ve m
+            mkLetBind m bind (mkLet tgtSeqPtOpt m v newExpr body)
+    | e ->
+        ExpandStructuralBindingRaw cenv e
 
 /// Detect a query { ... }
 let (|QueryRun|_|) g expr = 
