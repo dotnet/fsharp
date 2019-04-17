@@ -8,7 +8,7 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)" Condition="'$(DotNetBuildFromSource)' != 'true' or '$(FSharpSourceBuild)' != 'true'" />
 
     <!-- When building building from source we use the fsharp.core alongside the compiler.  Frankly this is awfull -->
-    <Reference Include="FSharp.Core" Condition="'$(DotNetBuildFromSource)' == 'true' and '$(FSharpSourceBuild)' == 'true'">
+    <Reference Include="FSharp.Core" Condition="'$(DotNetBuildFromSource)' == 'true' and '$(FSharpSourceBuild)' == 'true'">
         <HintPath>$(_DotNetRoot)sdk\$(NETCoreSdkVersion)\FSharp\FSharp.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
