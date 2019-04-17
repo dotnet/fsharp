@@ -10,7 +10,7 @@
     <MoreInfo>https://docs.microsoft.com/en-us/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
   <Installation Experimental="true">
-    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[|%CurrentProject%;GetVSGeneralVersion|,)" />
   </Installation>
   <Dependencies>
     <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.6,)" />
@@ -21,7 +21,7 @@
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|LibraryProject;TemplateProjectOutputGroup|" d:ProjectName="LibraryProject" d:VsixSubPath="ProjectTemplates" />
   </Assets>
   <Prerequisites>
-    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,16.0)" DisplayName="Visual Studio core editor" />
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[|%CurrentProject%;GetVSGeneralVersion|,)" DisplayName="Visual Studio core editor" />
   </Prerequisites>
 
 </PackageManifest>
