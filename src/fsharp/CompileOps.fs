@@ -2141,6 +2141,7 @@ type TcConfigBuilder =
 
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences: bool
+      mutable useSdkRefs: bool
 
      /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
      /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -2280,6 +2281,7 @@ type TcConfigBuilder =
           exename = None
           copyFSharpCore = CopyFSharpCoreFlag.No
           shadowCopyReferences = false
+          useSdkRefs = true
           tryGetMetadataSnapshot = (fun _ -> None)
           internalTestSpanStackReferring = false
           noConditionalErasure = false
@@ -2747,6 +2749,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
     member x.copyFSharpCore = data.copyFSharpCore
     member x.shadowCopyReferences = data.shadowCopyReferences
+    member x.useSdkRefs = data.useSdkRefs
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member x.noConditionalErasure = data.noConditionalErasure
@@ -2794,6 +2797,11 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
                     if Directory.Exists runtimeRootWPF then
                         yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
+
+                    match getFrameworkRefsPackDirectory with
+                    | Some path when Directory.Exists(path) ->
+                        yield path
+                    | _ -> ()
 
                 | ResolutionEnvironment.EditingOrCompilation _ ->
 #if ENABLE_MONO_SUPPORT
@@ -3506,9 +3514,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                 TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig, assemblyList, rangeStartup, ResolveAssemblyReferenceMode.ReportErrors)
         TcAssemblyResolutions(tcConfig, resolved, unresolved @ knownUnresolved)                    
 
-
-    static member GetAllDllReferences (tcConfig: TcConfig) =
-        [
+    static member GetAllDllReferences (tcConfig: TcConfig) = [
             let primaryReference = tcConfig.PrimaryAssemblyDllReference()
             yield primaryReference
 
@@ -3516,8 +3522,8 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                 yield tcConfig.CoreLibraryDllReference()
 
             let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
-            if tcConfig.framework then 
-                for s in defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework do
+            if tcConfig.framework then
+                for s in defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework tcConfig.useSdkRefs do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
             if tcConfig.useFsiAuxLib then
@@ -4913,8 +4919,8 @@ module private ScriptPreprocessClosure =
             filename: string, codeContext, 
             useSimpleResolution, useFsiAuxLib, 
             basicReferences, applyCommandLineArgs, 
-            assumeDotNetFramework, tryGetMetadataSnapshot, 
-            reduceMemoryUsage) =  
+            assumeDotNetFramework, useSdkRefs,
+            tryGetMetadataSnapshot, reduceMemoryUsage) =  
 
         let projectDir = Path.GetDirectoryName filename
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
@@ -4929,7 +4935,7 @@ module private ScriptPreprocessClosure =
         applyCommandLineArgs tcConfigB
 
         match basicReferences with 
-        | None -> (basicReferencesForScriptLoadClosure useFsiAuxLib assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
+        | None -> (basicReferencesForScriptLoadClosure useFsiAuxLib useSdkRefs assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
         | Some rs -> for m, r in rs do tcConfigB.AddReferencedAssemblyByPath(m, r)
 
         tcConfigB.resolutionEnvironment <-
@@ -4942,8 +4948,10 @@ module private ScriptPreprocessClosure =
         // Indicates that there are some references not in basicReferencesForScriptLoadClosure which should
         // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
+        tcConfigB.useSdkRefs <- useSdkRefs
+
         TcConfig.Create(tcConfigB, validate=true)
-        
+
     let ClosureSourceOfFilename(filename, m, inputCodePage, parseRequired) = 
         try
             let filename = FileSystem.GetFullPathShim filename
@@ -5111,12 +5119,13 @@ module private ScriptPreprocessClosure =
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptText
-           (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
-            filename, sourceText,
-            codeContext, useSimpleResolution, useFsiAuxLib,
-            lexResourceManager: Lexhelp.LexResourceManager,
+           (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
+            filename, sourceText, codeContext, 
+            useSimpleResolution, useFsiAuxLib, useSdkRefs,
+            lexResourceManager: Lexhelp.LexResourceManager, 
             applyCommmandLineArgs, assumeDotNetFramework,
-            tryGetMetadataSnapshot, reduceMemoryUsage) =
+            tryGetMetadataSnapshot, reduceMemoryUsage) = 
+
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
@@ -5126,7 +5135,7 @@ module private ScriptPreprocessClosure =
                 CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, 
                     filename, codeContext, useSimpleResolution, 
                     useFsiAuxLib, None, applyCommmandLineArgs, assumeDotNetFramework, 
-                    tryGetMetadataSnapshot, reduceMemoryUsage)
+                    useSdkRefs, tryGetMetadataSnapshot, reduceMemoryUsage)
 
             let resolutions0, _unresolvedReferences = GetAssemblyResolutionInformation(ctok, tcConfig)
             let references0 = resolutions0 |> List.map (fun r->r.originalReference.Range, r.resolvedPath) |> Seq.distinct |> List.ofSeq
@@ -5135,7 +5144,8 @@ module private ScriptPreprocessClosure =
         let tcConfig = 
             CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, 
                  codeContext, useSimpleResolution, useFsiAuxLib, Some references0, 
-                 applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
+                 applyCommmandLineArgs, assumeDotNetFramework, useSdkRefs,
+                 tryGetMetadataSnapshot, reduceMemoryUsage)
 
         let closureSources = [ClosureSource(filename, range0, sourceText, true)]
         let closureFiles, tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
@@ -5161,15 +5171,15 @@ type LoadClosure with
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText
-                  (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
-                   filename: string, sourceText:ISourceText, codeContext, useSimpleResolution: bool,
-                   useFsiAuxLib, lexResourceManager: Lexhelp.LexResourceManager,
-                   applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage): LoadClosure =
+                     (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
+                      filename: string, sourceText: ISourceText, codeContext, useSimpleResolution: bool, 
+                      useFsiAuxLib, useSdkRefs, lexResourceManager: Lexhelp.LexResourceManager, 
+                      applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) = 
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
-            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText,
-             codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager,
+            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, 
+             codeContext, useSimpleResolution, useFsiAuxLib, useSdkRefs, lexResourceManager, 
              applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
     /// Analyze a set of script files and find the closure of their references.
@@ -5479,4 +5489,4 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
 
 // Existing public APIs delegate to newer implementations
 let GetFSharpCoreLibraryName () = getFSharpCoreLibraryName
-let DefaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework = defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework 
+let DefaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework = defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework false
