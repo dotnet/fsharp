@@ -263,6 +263,4 @@
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" />
   </ItemGroup>
 
-  <Target Name="GetVSGeneralVersion" Returns="$(VSGeneralVersion)" />
-
 </Project>
