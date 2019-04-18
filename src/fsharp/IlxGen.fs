@@ -704,6 +704,8 @@ type IlxClosureInfo =
 
       cloFreeTyvars: Typars
 
+      cloWitnessInfos: TraitWitnessInfos
+
       /// ILX view of the lambdas for the closures
       ilCloLambdas: IlxClosureLambdas
 
@@ -2911,6 +2913,24 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
 // Generate calls (try to detect direct calls)
 //--------------------------------------------------------------------------
 
+and GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo =
+    let g = cenv.g
+    let storage = TryStorageForWitness eenv witnessInfo
+    match storage with 
+    | None ->
+        System.Diagnostics.Debug.Assert(false, "expected storage for witness")
+    | Some storage -> 
+        let ty = GenWitnessTy g witnessInfo
+        GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) storage None
+
+and GenWitnessArgsFromInfos cenv cgbuf eenv m witnessInfos =
+    let g = cenv.g
+    let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
+    // Witness arguments are only generated in emitted 'inline' code where witness parameters are available.
+    if g.generateWitnesses && inWitnessPassingScope then 
+        for witnessInfo in witnessInfos do
+            GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo
+
 and GenWitnessArgs cenv cgbuf eenv m tps tyargs =
     let g = cenv.g
     let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
@@ -2923,13 +2943,7 @@ and GenWitnessArgs cenv cgbuf eenv m tps tyargs =
         for witnessArg in mwitnesses do
             match witnessArg with 
             | Choice1Of2 witnessInfo ->
-                let storage = TryStorageForWitness eenv witnessInfo
-                match storage with 
-                | None ->
-                    System.Diagnostics.Debug.Assert(false, "expected storage for witness")
-                | Some storage -> 
-                    let ty = GenWitnessTy g witnessInfo
-                    GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) storage None
+                GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo
             | Choice2Of2 arg ->
                 GenExpr cenv cgbuf eenv SPSuppress arg Continue
 
@@ -4211,7 +4225,7 @@ and GenSequenceExpr
         eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
 
     // Get the free variables. Make a lambda to pretend that the 'nextEnumeratorValRef' is bound (it is an argument to GenerateNext)
-    let (cloAttribs, _, _, cloFreeTyvars, cloFreeVars, ilCloTypeRef: ILTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloAttribs, _, _, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef: ILTypeRef, ilCloAllFreeVars, eenvinner) =
          GetIlxClosureFreeVars cenv m None eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, g.int32_ty))
 
     let ilCloSeqElemTy = GenType cenv.amap m eenvinner.tyenv seqElemTy
@@ -4235,9 +4249,9 @@ and GenSequenceExpr
             CodeGenMethod cenv cgbuf.mgbuf
                 ([], "GetFreshEnumerator", eenvinner, 1,
                  (fun cgbuf eenv ->
-                    GenWitnessArgs cenv cgbuf eenv m cloFreeTyvars (List.map mkTyparTy cloFreeTyvars)
+                    GenWitnessArgsFromInfos cenv cgbuf eenv m cloWitnessInfos
                     for fv in cloFreeVars do
-                        /// State variables always get zero-initialized
+                        // State variables always get zero-initialized
                         if stateVarsSet.Contains fv then
                             GenDefaultValue cenv cgbuf eenv (fv.Type, m)
                         else
@@ -4286,7 +4300,7 @@ and GenSequenceExpr
 
     CountClosure()
 
-    GenWitnessArgs cenv cgbuf eenvouter m cloFreeTyvars (List.map mkTyparTy cloFreeTyvars)
+    GenWitnessArgsFromInfos cenv cgbuf eenvouter m cloWitnessInfos
     for fv in cloFreeVars do
        /// State variables always get zero-initialized
        if stateVarsSet.Contains fv then
@@ -4411,7 +4425,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
 and GenClosureAlloc cenv (cgbuf: CodeGenBuffer) eenv (cloinfo, m) =
     let g = cenv.g
     CountClosure()
-    GenWitnessArgs cenv cgbuf eenv m cloinfo.cloFreeTyvars (List.map mkTyparTy cloinfo.cloFreeTyvars)
+    GenWitnessArgsFromInfos cenv cgbuf eenv m cloinfo.cloWitnessInfos
     GenGetLocalVals cenv cgbuf eenv m cloinfo.cloFreeVars
     CG.EmitInstr cgbuf
         (pop cloinfo.ilCloAllFreeVars.Length)
@@ -4563,7 +4577,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     let eenvinner = eenvinner |> AddStorageForLocalVals g ilCloFreeVarStorage
 
     // Return a various results
-    (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, cloWitnessInfos, cloFreeTyvars, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
+    (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
 
 
 and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
@@ -4593,7 +4607,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
     let takenNames = vs |> List.map (fun v -> v.CompiledName)
 
     // Get the free variables and the information about the closure, add the free variables to the environment
-    let (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, cloFreeTyvars, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner) =
         GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr
 
     // Put the type and value arguments into the environment
@@ -4693,6 +4707,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
           cloILGenericParams = ilCloGenericFormals
           cloFreeVars=cloFreeVars
           cloFreeTyvars=cloFreeTyvars
+          cloWitnessInfos = cloWitnessInfos
           cloAttribs=cloAttribs
           localTypeFuncContractFreeTypars = cloContractFreeTyvars
           localTypeFuncInternalFreeTypars = cloInternalFreeTyvars
@@ -4752,7 +4767,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     
     // Work out the free type variables for the morphing thunk
     let takenNames = List.map nameOfVal tmvs
-    let (cloAttribs, _, _, cloFreeTyvars, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner) =
+    let (cloAttribs, _, _, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner) =
         GetIlxClosureFreeVars cenv m None eenvouter takenNames expr
 
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
@@ -4792,7 +4807,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
     let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloAllFreeVars), ctxtGenericArgsForDelegee)
 
-    GenWitnessArgs cenv cgbuf eenvouter m cloFreeTyvars (List.map mkTyparTy cloFreeTyvars)
+    GenWitnessArgsFromInfos cenv cgbuf eenvouter m cloWitnessInfos
     GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
 
     CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
