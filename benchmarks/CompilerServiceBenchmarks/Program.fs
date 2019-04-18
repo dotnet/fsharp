@@ -83,7 +83,7 @@ type SourceText with
 [<AutoOpen>]
 module Helpers =
 
-    let createProject name referencedProjects stamp =
+    let createProject name referencedProjects =
         let tmpPath = Path.GetTempPath()
         let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
         {
