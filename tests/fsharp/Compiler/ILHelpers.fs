@@ -10,24 +10,14 @@ open NUnit.Framework
 
 open FSharp.Compiler.SourceCodeServices
 
+open TestFramework
+
 [<RequireQualifiedAccess>]
 module ILChecker =
 
-    let checker = Compiler.checker
+    let checker = CompilerAssert.checker
 
-    let private (++) a b = Path.Combine(a,b)
-
-    let private getfullpath workDir (path: string) =
-        let rooted =
-            if Path.IsPathRooted(path) then path
-            else Path.Combine(workDir, path)
-        rooted |> Path.GetFullPath
-
-    let private fileExists workDir path = 
-        if path |> getfullpath workDir |> File.Exists then Some path else None
-
-    let private requireFile nm = 
-        if fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
+    let config = initializeSuite ()
 
     let private exec exe args =
         let startInfo = ProcessStartInfo(exe, String.concat " " args)
@@ -37,22 +27,14 @@ module ILChecker =
         p.WaitForExit()
         p.StandardError.ReadToEnd(), p.ExitCode
 
-    /// Compile the source and check to see if the expected IL exists.
-    /// The first line of each expected IL string is found first.
-    let check source expectedIL =
-        let packagesDir = 
-            // On Unix the user profile directory is in the variable HOME
-            // On windows it's called USERPROFILE
-            let userProfile =
-                let profile = Environment.GetEnvironmentVariable("USERPROFILE")
-                if not (String.IsNullOrEmpty(profile)) then profile
-                else Environment.GetEnvironmentVariable("HOME")
-            userProfile ++ ".nuget" ++ "packages"
-        let Is64BitOperatingSystem = sizeof<nativeint> = 8
-        let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
-        let ildasmExe = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
-        let coreclrDll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
+    /// Filters i.e ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']
+    let private filterSpecialComment (text: string) =
+        let pattern = @"(\[\'(.*?)\'\])"
+        System.Text.RegularExpressions.Regex.Replace(text, pattern,
+            (fun me -> String.Empty)
+        )
 
+    let private checkAux extraDlls source expectedIL =
         let tmp = Path.GetTempFileName()
         let tmpFs = Path.ChangeExtension(tmp, ".fs")
         let tmpDll = Path.ChangeExtension(tmp, ".dll")
@@ -60,17 +42,33 @@ module ILChecker =
 
         let mutable errorMsgOpt = None
         try
-            // ildasm requires coreclr.dll to run which has already been restored to the packages directory
-            File.Copy(coreclrDll, Path.GetDirectoryName(ildasmExe) ++ "coreclr.dll", overwrite=true)
+            let ildasmPath = config.ILDASM
 
             File.WriteAllText(tmpFs, source)
 
-            let errors, exitCode = checker.Compile([| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs |]) |> Async.RunSynchronously
+            let extraReferences = extraDlls |> Array.ofList |> Array.map (fun reference -> "-r:" + reference)
+
+#if NETCOREAPP
+            // Hack: Currently a hack to get the runtime assemblies for netcore in order to compile.
+            let runtimeAssemblies =
+                typeof<obj>.Assembly.Location
+                |> Path.GetDirectoryName
+                |> Directory.EnumerateFiles
+                |> Seq.toArray
+                |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system."))
+                |> Array.map (fun x -> sprintf "-r:%s" x)
+
+            let extraReferences = Array.append runtimeAssemblies extraReferences
+
+            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs; "--targetprofile:netcore"; "--noframework" |] extraReferences) |> Async.RunSynchronously
+#else
+            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs |] extraReferences) |> Async.RunSynchronously
+#endif
             let errors =
                 String.concat "\n" (errors |> Array.map (fun x -> x.Message))
 
             if exitCode = 0 then
-                exec ildasmExe [ sprintf "%s /out=%s" tmpDll tmpIL ] |> ignore
+                exec ildasmPath [ sprintf "%s /out=%s" tmpDll tmpIL ] |> ignore
 
                 let text = File.ReadAllText(tmpIL)
                 let blockComments = @"/\*(.*?)\*/"
@@ -85,6 +83,7 @@ module ILChecker =
                                 if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
                             else
                                 me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
+                    |> filterSpecialComment
                 
                 expectedIL
                 |> List.iter (fun (ilCode: string) ->
@@ -106,6 +105,9 @@ module ILChecker =
                             errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
                 )
 
+                if expectedIL.Length = 0 then
+                    errorMsgOpt <- Some ("No Expected IL")
+
                 match errorMsgOpt with
                 | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ENTIRE ACTUAL==\n" + textNoComments)
                 | _ -> ()
@@ -121,4 +123,18 @@ module ILChecker =
             | Some(errorMsg) -> 
                 Assert.Fail(errorMsg)
             | _ -> ()
+
+    let getPackageDlls name version framework dllNames =
+        dllNames
+        |> List.map (fun dllName ->
+            requireFile (packagesDir ++ name ++ version ++ "lib" ++ framework ++ dllName)
+        )
             
+    /// Compile the source and check to see if the expected IL exists.
+    /// The first line of each expected IL string is found first.
+    let check source expectedIL =
+        checkAux [] source expectedIL
+
+    let checkWithDlls extraDlls source expectedIL =
+        checkAux extraDlls source expectedIL
+
