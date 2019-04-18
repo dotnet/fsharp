@@ -87,10 +87,11 @@ module Helpers =
         let tmpPath = Path.GetTempPath()
         let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
         {
-            ProjectFileName = name
+            ProjectFileName = Path.Combine(tmpPath, Path.ChangeExtension(name, ".dll"))
             ProjectId = None
             SourceFiles = [|file|]
-            OtherOptions = [|"--optimize+"|]
+            OtherOptions = 
+                Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
             ReferencedProjects =
                 referencedProjects
                 |> List.map (fun x -> (x.ProjectFileName, x))
@@ -106,21 +107,21 @@ module Helpers =
 
     let generateSourceCode moduleName =
         sprintf """
-module %s =
+module Benchmark.%s
 
-    type %s =
+type %s =
 
-        val X : int
+    val X : int
 
-        val Y : int
+    val Y : int
 
-        val Z : int
+    val Z : int
 
-    let function%s (x: %s) =
-        let x = 1
-        let y = 2
-        let z = x + y
-        z""" moduleName moduleName moduleName moduleName
+let function%s (x: %s) =
+    let x = 1
+    let y = 2
+    let z = x + y
+    z""" moduleName moduleName moduleName moduleName
 
 [<MemoryDiagnoser>]
 type CompilerService() =
