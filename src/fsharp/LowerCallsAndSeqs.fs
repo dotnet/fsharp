@@ -24,13 +24,13 @@ open FSharp.Compiler.MethodCalls
 let InterceptExpr g cont expr =
 
     match expr with
-    | Expr.Val(vref, flags, m) ->
+    | Expr.Val (vref, flags, m) ->
         match vref.ValReprInfo with
         | Some arity -> Some (fst (AdjustValForExpectedArity g m vref flags arity))
         | None -> None
 
     // App (Val v, tys, args)
-    | Expr.App((Expr.Val (vref, flags, _) as f0), f0ty, tyargsl, argsl, m) ->
+    | Expr.App ((Expr.Val (vref, flags, _) as f0), f0ty, tyargsl, argsl, m) ->
         // Only transform if necessary, i.e. there are not enough arguments
         match vref.ValReprInfo with
         | Some(topValInfo) ->
@@ -43,7 +43,7 @@ let InterceptExpr g cont expr =
             Some (MakeApplicationAndBetaReduce g (f0, f0ty, [tyargsl], argsl, m))
         | None -> None
 
-    | Expr.App(f0, f0ty, tyargsl, argsl, m) ->
+    | Expr.App (f0, f0ty, tyargsl, argsl, m) ->
         Some (MakeApplicationAndBetaReduce g (f0, f0ty, [tyargsl], argsl, m) )
 
     | _ -> None
@@ -113,7 +113,7 @@ let LowerSeqExpr g amap overallExpr =
     /// Detect a 'yield x' within a 'seq { ... }'
     let (|SeqYield|_|) expr =
         match expr with
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, _tyargsl, [arg], m) when valRefEq g vref g.seq_singleton_vref ->
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, _tyargsl, [arg], m) when valRefEq g vref g.seq_singleton_vref ->
             Some (arg, m)
         | _ ->
             None
@@ -121,7 +121,7 @@ let LowerSeqExpr g amap overallExpr =
     /// Detect a 'expr; expr' within a 'seq { ... }'
     let (|SeqAppend|_|) expr =
         match expr with
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, _tyargsl, [arg1;arg2], m) when valRefEq g vref g.seq_append_vref ->
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, _tyargsl, [arg1;arg2], m) when valRefEq g vref g.seq_append_vref ->
             Some (arg1, arg2, m)
         | _ ->
             None
@@ -129,7 +129,7 @@ let LowerSeqExpr g amap overallExpr =
     /// Detect a 'while gd do expr' within a 'seq { ... }'
     let (|SeqWhile|_|) expr =
         match expr with
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, _tyargsl, [Expr.Lambda(_, _, _, [dummyv], gd, _, _);arg2], m)
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, _tyargsl, [Expr.Lambda (_, _, _, [dummyv], gd, _, _);arg2], m)
              when valRefEq g vref g.seq_generated_vref &&
                   not (isVarFreeInExpr dummyv gd) ->
             Some (gd, arg2, m)
@@ -138,7 +138,7 @@ let LowerSeqExpr g amap overallExpr =
 
     let (|SeqTryFinally|_|) expr =
         match expr with
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, _tyargsl, [arg1;Expr.Lambda(_, _, _, [dummyv], compensation, _, _)], m)
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, _tyargsl, [arg1;Expr.Lambda (_, _, _, [dummyv], compensation, _, _)], m)
             when valRefEq g vref g.seq_finally_vref &&
                  not (isVarFreeInExpr dummyv compensation) ->
             Some (arg1, compensation, m)
@@ -147,7 +147,7 @@ let LowerSeqExpr g amap overallExpr =
 
     let (|SeqUsing|_|) expr =
         match expr with
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, [_;_;elemTy], [resource;Expr.Lambda(_, _, _, [v], body, _, _)], m)
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, [_;_;elemTy], [resource;Expr.Lambda (_, _, _, [v], body, _, _)], m)
             when valRefEq g vref g.seq_using_vref ->
             Some (resource, v, body, elemTy, m)
         | _ ->
@@ -156,27 +156,27 @@ let LowerSeqExpr g amap overallExpr =
     let (|SeqFor|_|) expr =
         match expr with
         // Nested for loops are represented by calls to Seq.collect
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, [_inpElemTy;_enumty2;genElemTy], [Expr.Lambda(_, _, _, [v], body, _, _); inp], m) when valRefEq g vref g.seq_collect_vref ->
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, [_inpElemTy;_enumty2;genElemTy], [Expr.Lambda (_, _, _, [v], body, _, _); inp], m) when valRefEq g vref g.seq_collect_vref ->
             Some (inp, v, body, genElemTy, m)
         // "for x in e -> e2" is converted to a call to Seq.map by the F# type checker. This could be removed, except it is also visible in F# quotations.
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, [_inpElemTy;genElemTy], [Expr.Lambda(_, _, _, [v], body, _, _); inp], m) when valRefEq g vref g.seq_map_vref ->
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, [_inpElemTy;genElemTy], [Expr.Lambda (_, _, _, [v], body, _, _); inp], m) when valRefEq g vref g.seq_map_vref ->
             Some (inp, v, mkCallSeqSingleton g body.Range genElemTy body, genElemTy, m)
         | _ -> None
 
     let (|SeqDelay|_|) expr =
         match expr with
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, [elemTy], [Expr.Lambda(_, _, _, [v], e, _, _)], _m) when valRefEq g vref g.seq_delay_vref && not (isVarFreeInExpr v e) ->  Some (e, elemTy)
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, [elemTy], [Expr.Lambda (_, _, _, [v], e, _, _)], _m) when valRefEq g vref g.seq_delay_vref && not (isVarFreeInExpr v e) ->  Some (e, elemTy)
         | _ -> None
 
     let (|SeqEmpty|_|) expr =
         match expr with
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, _tyargsl, [], m) when valRefEq g vref g.seq_empty_vref ->  Some (m)
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, _tyargsl, [], m) when valRefEq g vref g.seq_empty_vref ->  Some (m)
         | _ -> None
 
     let (|Seq|_|) expr =
         match expr with
         // use 'seq { ... }' as an indicator
-        | Expr.App(Expr.Val (vref, _, _), _f0ty, [elemTy], [e], _m) when valRefEq g vref g.seq_vref ->  Some (e, elemTy)
+        | Expr.App (Expr.Val (vref, _, _), _f0ty, [elemTy], [e], _m) when valRefEq g vref g.seq_vref ->  Some (e, elemTy)
         | _ -> None
 
     let RepresentBindingAsLocal (bind: Binding) res2 m =
@@ -211,7 +211,7 @@ let LowerSeqExpr g amap overallExpr =
                 let dispose = dispose2
                 let checkDispose = checkDispose2
                 generate, dispose, checkDispose)
-            stateVars = vref::res2.stateVars }
+            stateVars = vref :: res2.stateVars }
 
     let RepresentBindingsAsLifted mkBinds res2 =
         // printfn "found top level let  "
@@ -245,16 +245,16 @@ let LowerSeqExpr g amap overallExpr =
                                 (mkSequential SequencePointsAtSeq m
                                     (mkValSet m currv e)
                                     (mkCompGenSequential m
-                                        (Expr.Op(TOp.Return, [], [mkOne g m], m))
-                                        (Expr.Op(TOp.Label label, [], [], m))))
+                                        (Expr.Op (TOp.Return, [], [mkOne g m], m))
+                                        (Expr.Op (TOp.Label label, [], [], m))))
                         let dispose =
                             mkCompGenSequential m
-                                (Expr.Op(TOp.Label label, [], [], m))
-                                (Expr.Op(TOp.Goto currentDisposeContinuationLabel, [], [], m))
+                                (Expr.Op (TOp.Label label, [], [], m))
+                                (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
                         let checkDispose =
                             mkCompGenSequential m
-                                (Expr.Op(TOp.Label label, [], [], m))
-                                (Expr.Op(TOp.Return, [], [mkBool g m (not (noDisposeContinuationLabel = currentDisposeContinuationLabel))], m))
+                                (Expr.Op (TOp.Label label, [], [], m))
+                                (Expr.Op (TOp.Return, [], [mkBool g m (not (noDisposeContinuationLabel = currentDisposeContinuationLabel))], m))
                         generate, dispose, checkDispose)
                    labels=[label]
                    stateVars=[]
@@ -366,7 +366,7 @@ let LowerSeqExpr g amap overallExpr =
                                         generate1 )
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
                                     (mkCompGenSequential m
-                                        (Expr.Op(TOp.Label innerDisposeContinuationLabel, [], [], m))
+                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
                                         (mkCompGenSequential m
                                             (mkValSet m pcv (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
                                             compensation))
@@ -376,18 +376,18 @@ let LowerSeqExpr g amap overallExpr =
                                     dispose1
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
                                     (mkCompGenSequential m
-                                        (Expr.Op(TOp.Label innerDisposeContinuationLabel, [], [], m))
+                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
                                         (mkCompGenSequential m
                                             (mkValSet m pcv (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
                                             (mkCompGenSequential m
                                                 compensation
-                                                (Expr.Op(TOp.Goto currentDisposeContinuationLabel, [], [], m)))))
+                                                (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)))))
                             let checkDispose =
                                 mkCompGenSequential m
                                     checkDispose1
                                     (mkCompGenSequential m
-                                        (Expr.Op(TOp.Label innerDisposeContinuationLabel, [], [], m))
-                                        (Expr.Op(TOp.Return, [], [mkTrue g m (* yes, we must dispose!!! *) ], m)))
+                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
+                                        (Expr.Op (TOp.Return, [], [mkTrue g m (* yes, we must dispose!!! *) ], m)))
 
                             generate, dispose, checkDispose)
                        labels = innerDisposeContinuationLabel :: res1.labels
@@ -401,28 +401,28 @@ let LowerSeqExpr g amap overallExpr =
             // printfn "found Seq.empty"
             Some { phase2 = (fun _ ->
                             let generate = mkUnit g  m
-                            let dispose = Expr.Op(TOp.Goto currentDisposeContinuationLabel, [], [], m)
-                            let checkDispose = Expr.Op(TOp.Goto currentDisposeContinuationLabel, [], [], m)
+                            let dispose = Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)
+                            let checkDispose = Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)
                             generate, dispose, checkDispose)
                    labels = []
                    stateVars = []
                    significantClose = false
                    capturedVars = emptyFreeVars }
 
-        | Expr.Sequential(x1, x2, NormalSeq, ty, m) ->
+        | Expr.Sequential (x1, x2, NormalSeq, ty, m) ->
             match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel x2 with
             | Some res2->
                 // printfn "found sequential execution"
                 Some { res2 with
                         phase2 = (fun ctxt ->
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = Expr.Sequential(x1, generate2, NormalSeq, ty, m)
+                            let generate = Expr.Sequential (x1, generate2, NormalSeq, ty, m)
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate, dispose, checkDispose) }
             | None -> None
 
-        | Expr.Let(bind, bodyExpr, m, _)
+        | Expr.Let (bind, bodyExpr, m, _)
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
               when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) ->
 
@@ -441,7 +441,7 @@ let LowerSeqExpr g amap overallExpr =
                 None
 
 (*
-        | Expr.LetRec(binds, e2, m, _)
+        | Expr.LetRec (binds, e2, m, _)
               when  // Restriction: only limited forms of "let rec" in sequence expressions can be handled by assignment to state local values
 
                     (let recvars = valsOfBinds binds  |> List.map (fun v -> (v, 0)) |> ValMap.OfList
@@ -456,7 +456,7 @@ let LowerSeqExpr g amap overallExpr =
                           | Expr.Lambda _
                           | Expr.TyLambda _ -> false
                           // "let v = otherv" bindings get produced for environment packing by InnerLambdasToTopLevelFuncs.fs, we can accept and compiler these ok
-                          | Expr.Val(v, _, _) when not (recvars.ContainsVal v.Deref) -> false
+                          | Expr.Val (v, _, _) when not (recvars.ContainsVal v.Deref) -> false
                           | _ -> true) <= 1)  ->
 
             match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with
@@ -547,16 +547,16 @@ let LowerSeqExpr g amap overallExpr =
                                             (mkSequential SequencePointsAtSeq m
                                                 (mkAddrSet m nextv arbitrarySeqExpr)
                                                 (mkCompGenSequential m
-                                                    (Expr.Op(TOp.Return, [], [mkTwo g m], m))
-                                                    (Expr.Op(TOp.Label label, [], [], m))))
+                                                    (Expr.Op (TOp.Return, [], [mkTwo g m], m))
+                                                    (Expr.Op (TOp.Label label, [], [], m))))
                                     let dispose =
                                         mkCompGenSequential m
-                                            (Expr.Op(TOp.Label label, [], [], m))
-                                            (Expr.Op(TOp.Goto currentDisposeContinuationLabel, [], [], m))
+                                            (Expr.Op (TOp.Label label, [], [], m))
+                                            (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
                                     let checkDispose =
                                         mkCompGenSequential m
-                                            (Expr.Op(TOp.Label label, [], [], m))
-                                            (Expr.Op(TOp.Return, [], [mkFalse g m], m))
+                                            (Expr.Op (TOp.Label label, [], [], m))
+                                            (Expr.Op (TOp.Return, [], [mkFalse g m], m))
                                     generate, dispose, checkDispose)
                                labels=[label]
                                stateVars=[]
@@ -598,21 +598,21 @@ let LowerSeqExpr g amap overallExpr =
                         // set the pc to "finished"
                         (mkValSet m pcvref (mkInt32 g m pcDone))
                         (mkCompGenSequential m
-                            (Expr.Op(TOp.Label noDisposeContinuationLabel, [], [], m))
+                            (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
                             (mkCompGenSequential m
                                 // zero out the current value to free up its memory
                                 (mkValSet m currvref (mkDefault (m, currvref.Type)))
-                                (Expr.Op(TOp.Return, [], [mkZero g m], m)))))
+                                (Expr.Op (TOp.Return, [], [mkZero g m], m)))))
             let checkDisposeExpr =
                 mkCompGenSequential m
                     checkDisposeExpr
                     (mkCompGenSequential m
-                        (Expr.Op(TOp.Label noDisposeContinuationLabel, [], [], m))
-                        (Expr.Op(TOp.Return, [], [mkFalse g m], m)))
+                        (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
+                        (Expr.Op (TOp.Return, [], [mkFalse g m], m)))
 
             let addJumpTable isDisposal expr =
                 let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m )
-                let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op(TOp.Goto lab, [], [], m), SuppressSequencePointAtTarget)
+                let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), SuppressSequencePointAtTarget)
                 let dtree =
                   TDSwitch(pce,
                            [
@@ -626,7 +626,7 @@ let LowerSeqExpr g amap overallExpr =
                            m)
 
                 let table = mbuilder.Close(dtree, m, g.int_ty)
-                mkCompGenSequential m table (mkCompGenSequential m (Expr.Op(TOp.Label initLabel, [], [], m)) expr)
+                mkCompGenSequential m table (mkCompGenSequential m (Expr.Op (TOp.Label initLabel, [], [], m)) expr)
 
             let handleExeceptionsInDispose disposalExpr =
                 // let mutable exn : exn = null
@@ -642,11 +642,11 @@ let LowerSeqExpr g amap overallExpr =
                 // try ``disposalExpr'' with e -> exn <- e
                 let eV, eE = mkLocal m "e" g.exn_ty
                 let efV, _ = mkLocal m "ef" g.exn_ty
-                let assignToExn = Expr.Op(TOp.LValueOp(LValueOperation.LSet, exnVref), [], [eE], m)
+                let assignToExn = Expr.Op (TOp.LValueOp (LValueOperation.LSet, exnVref), [], [eE], m)
                 let exceptionCatcher =
                     mkTryWith g
                         (disposalExpr,
-                            efV, Expr.Const((Const.Bool true), m, g.bool_ty),
+                            efV, Expr.Const ((Const.Bool true), m, g.bool_ty),
                             eV, assignToExn,
                             m, g.unit_ty,
                             NoSequencePointAtTry, NoSequencePointAtWith)
@@ -658,28 +658,28 @@ let LowerSeqExpr g amap overallExpr =
                     let addResultTarget e = mbuilder.AddResultTarget(e, SuppressSequencePointAtTarget)
                     let dtree =
                         TDSwitch(pce,
-                                    [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op(TOp.Goto doneLabel, [], [], m)) ) ],
+                                    [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op (TOp.Goto doneLabel, [], [], m)) ) ],
                                     Some (addResultTarget (mkUnit g m)),
                                     m)
                     let pcIsEndStateComparison = mbuilder.Close(dtree, m, g.unit_ty)
                     mkCompGenSequential m
-                        (Expr.Op((TOp.Label startLabel), [], [], m))
+                        (Expr.Op ((TOp.Label startLabel), [], [], m))
                         (mkCompGenSequential m
                             pcIsEndStateComparison
                             (mkCompGenSequential m
                                 exceptionCatcher
                                 (mkCompGenSequential m
-                                    (Expr.Op((TOp.Goto startLabel), [], [], m))
-                                    (Expr.Op((TOp.Label doneLabel), [], [], m))
+                                    (Expr.Op ((TOp.Goto startLabel), [], [], m))
+                                    (Expr.Op ((TOp.Label doneLabel), [], [], m))
                                 )
                             )
                         )
                 // if exn != null then raise exn
                 let doRaise =
-                    mkNonNullCond g m g.unit_ty exnE (mkThrow m g.unit_ty exnE) (Expr.Const(Const.Unit, m, g.unit_ty))
+                    mkNonNullCond g m g.unit_ty exnE (mkThrow m g.unit_ty exnE) (Expr.Const (Const.Unit, m, g.unit_ty))
 
                 mkLet
-                    NoSequencePointAtLetBinding m exnV  (Expr.Const(Const.Zero, m, g.exn_ty))
+                    NoSequencePointAtLetBinding m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
                         (mkCompGenSequential m whileLoop doRaise)
 
             let stateMachineExprWithJumpTable = addJumpTable false stateMachineExpr
@@ -689,7 +689,7 @@ let LowerSeqExpr g amap overallExpr =
                         mkCompGenSequential m
                             disposalExpr
                             (mkCompGenSequential m
-                                (Expr.Op(TOp.Label noDisposeContinuationLabel, [], [], m))
+                                (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
                                 (mkCompGenSequential m
                                     // set the pc to "finished"
                                     (mkValSet m pcvref (mkInt32 g m pcDone))

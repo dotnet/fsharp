@@ -134,7 +134,7 @@ module DispatchSlotChecking =
 
         // Drop 'this'
         match vsl with 
-        | [thisv]::vs -> 
+        | [thisv] :: vs -> 
             // Check for empty variable list from a () arg
             let vs = if vs.Length = 1 && argInfos.IsEmpty then [] else vs
             let implKind = 
@@ -417,7 +417,7 @@ module DispatchSlotChecking =
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
                     match dispatchSlots with
-                    | meth::_ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
+                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
                     | _ -> ()
 
 

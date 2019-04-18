@@ -9,7 +9,7 @@
     <MoreInfo>https://docs.microsoft.com/en-us/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
   <Installation Experimental="true">
-    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[|%CurrentProject%;GetVSGeneralVersion|]" />
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[|%CurrentProject%;GetVSGeneralVersion|,)" />
   </Installation>
   <Installer>
     <Actions>

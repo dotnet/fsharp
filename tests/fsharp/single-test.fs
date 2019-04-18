@@ -103,7 +103,29 @@ let computeSourceItems (pc: ProjectConfiguration) addDirectory addCondition (com
             yield "\n    <LoadSource Include=\"" + fileName + "\"" + condition + " />" ]
     |> String.concat ""
 
-let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configuration =
+// Arguments:
+//    pc = ProjectConfiguration
+//    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
+//    targetFramework optimize = "net472" OR NETCOREAPP2.1 etc ...
+//    optimize = true or false
+//    configuration = "Release" or "Debug"
+//
+let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramework:string) configuration =
+    let fsharpCoreLocation =
+        let compiler =
+            if outputType = OutputType.Script then
+                "fsi"
+            else
+                "FSharp.Core"
+        let targetCore =
+            if targetFramework.StartsWith("netstandard", StringComparison.InvariantCultureIgnoreCase) || targetFramework.StartsWith("netcoreapp", StringComparison.InvariantCultureIgnoreCase) then 
+                "netstandard1.6"
+            else
+                "net45"
+        (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/bin/"  + compiler + "/" + configuration + "/" + targetCore + "/FSharp.Core.dll")
+
+
+    let replace tag items addDirectory addCondition compileItem (template:string) = template.Replace(tag, computeSourceItems addDirectory addCondition compileItem items)
 
     let outputType =
         match pc.OutputType with
@@ -112,10 +134,11 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
     let optimize = if pc.Optimize then "True" else "False"
     let debug = if pc.Optimize then "True" else "False"
     let template = @"<Project Sdk='Microsoft.NET.Sdk'>
-        
+
   <PropertyGroup>
     <OutputType>$(OUTPUTTYPE)</OutputType>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <IsPackable>false</IsPackable>
     <DebugSymbols>$(DEBUG)</DebugSymbols>
     <DebugType>portable</DebugType>
@@ -128,7 +151,13 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
-  <!-- Utility sources -->
+  <!-- FSharp.Core reference -->
+  <ItemGroup>
+    <Reference Include='FSharp.Core'>
+        <HintPath>$(FSHARPCORELOCATION)</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <ItemGroup>$(UTILITYSOURCEITEMS)
   </ItemGroup>
 
@@ -157,6 +186,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
          .Replace("$(REFERENCEITEMS)", computeSourceItems pc true true CompileItem.Reference pc.ReferenceItems)
          .Replace("$(LOADSOURCEITEMS)", computeSourceItems pc true true CompileItem.LoadSource pc.LoadSources)
          .Replace("$(USESOURCEITEMS)", computeSourceItems pc true true CompileItem.UseSource pc.UseSources)
+         .Replace("$(FSHARPCORELOCATION)", fsharpCoreLocation)
          .Replace("$(DIRECTORYBUILDLOCATION)", Path.GetFullPath(__SOURCE_DIRECTORY__))
          .Replace("$(OUTPUTTYPE)", outputType)
          .Replace("$(OPTIMIZE)", optimize)
@@ -168,6 +198,11 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
 
 let potentialSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
 
+// Arguments:
+//    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
+//    compilerType = "coreclr" or "net40"
+//    targetFramework optimize = "net472" OR NETCOREAPP2.1 etc ...
+//    optimize = true or false
 let executeSingleTestBuildAndRun cfg outputType testCompilerVersion targetFramework optimize extraRef =
     let loadSources = []
     let useSources = []
