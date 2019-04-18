@@ -3516,7 +3516,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
     static member GetAllDllReferences (tcConfig: TcConfig) = [
             let primaryReference = tcConfig.PrimaryAssemblyDllReference()
-            yield primaryReference
+            //yield primaryReference
 
             if not tcConfig.compilingFslib then 
                 yield tcConfig.CoreLibraryDllReference()
