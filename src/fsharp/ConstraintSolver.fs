@@ -2773,7 +2773,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
     let ftps, _renaming, tinst = FreshenTypeInst m typars
     let cxs = GetTraitConstraintInfosOfTypars g ftps 
     do! SolveTypeEqualsTypeEqns csenv 0 m NoTrace None tinst tyargs
-    return MethodCalls.GenWitnessArgs amap g m cxs
+    return MethodCalls.GenNonGenericWitnessArgs amap g m cxs
   }
 
 let ChooseTyparSolutionAndSolve css denv tp =

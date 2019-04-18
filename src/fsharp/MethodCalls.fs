@@ -1435,15 +1435,17 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             tryMkCallBuiltInWitness g traitInfo argExprs m
         
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
-    let argtysl = GenWitnessArgTys g traitInfo.TraitKey
+    let witnessInfo = traitInfo.TraitKey
+    let argtysl = GenWitnessArgTys g witnessInfo
     let vse = argtysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
     let vsl = List.mapSquared fst vse
     match GenWitnessExpr amap g m traitInfo (List.concat (List.mapSquared snd vse)) with 
     | Some expr -> 
-        mkMemberLambdas m [] None None vsl (expr, tyOfExpr g expr)
+        Choice2Of2 (mkMemberLambdas m [] None None vsl (expr, tyOfExpr g expr))
     | None -> 
-        assert ("A constraint witness could not be found for a built-in constraint solution" |> ignore; false)
-        mkOne g m
+        Choice1Of2 witnessInfo
+        //assert ("A constraint witness could not be found for a built-in constraint solution" |> ignore; false)
+        //mkOne g m
 
-let GenWitnessArgs amap g m (traitInfos: TraitConstraintInfo list) =
+let GenNonGenericWitnessArgs amap g m (traitInfos: TraitConstraintInfo list) =
     [ for traitInfo in traitInfos -> GenWitnessExprLambda amap g m traitInfo ]

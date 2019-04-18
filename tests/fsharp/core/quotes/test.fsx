@@ -3583,6 +3583,71 @@ module WitnessTests =
                 true
             | _ -> false))
 
+module MoreWitnessTests =
+
+    open System.Runtime.CompilerServices
+    open System.IO
+
+    // TODO - ths fails
+    //[<ReflectedDefinition>]
+    module Tests = 
+        let inline f0 (x: 'T) : (unit -> 'T) list = 
+           [] 
+
+        let inline f (x: 'T) : (unit -> 'T) list = 
+           [(fun () -> x + x)] 
+
+        type C() =
+            member inline __.F(x: 'T) = x + x
+
+        [<AutoOpen>]
+        module M = 
+
+            type C with 
+                member inline __.F2(x: 'T) = x + x
+                static member inline F2Static(x: 'T) = x + x
+
+            [<Extension>]
+            type FileExt =
+               [<Extension>]
+               static member CreateDirectory(fileInfo: FileInfo) =
+                   Directory.CreateDirectory fileInfo.Directory.FullName
+
+               [<Extension>]
+               static member inline F3(s: string, x: 'T) =
+                   x + x
+
+               [<Extension>]
+               static member inline F4(s: string, x1: 'T, x2: 'T) =
+                   x1 + x2
+
+
+        [<ReflectedDefinition>]
+        module Usage  = 
+            let q0 = <@ f0 3 @>
+            let q1 = <@ f 3 @>
+            let q2 = <@ C().F(3) @>
+            let q3 = <@ C().F2(3) @>
+            let q4 = <@ C.F2Static(3) @>
+            let q5 = <@ "".F3(3) @>
+            let q6 = <@ "".F4(3, 4) @>
+
+            check "wekncjeck1" (q0.ToString()) "Call (None, f0, [Value (3)])"
+            check "wekncjeck2" (q1.ToString()) "Call (None, f, [Value (3)])"
+            check "wekncjeck3" (q2.ToString()) "Call (Some (NewObject (C)), F, [Value (3)])"
+            check "wekncjeck4" (q3.ToString()) "Call (None, C.F2, [NewObject (C), Value (3)])"
+            check "wekncjeck5" (q4.ToString()) "Call (None, C.F2Static.Static, [Value (3)])"
+            check "wekncjeck6" (q5.ToString()) "Call (None, F3, [Value (\"\"), Value (3)])"
+            check "wekncjeck7" (q6.ToString()) "Call (None, F4, [Value (\"\"), Value (3), Value (4)])"
+
+            check "ewlknweknl1" (FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q0) (box ([] : (unit -> int) list))
+            check "ewlknweknl2" (match FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q1 with :? ((unit -> int) list) as x -> x.[0] ()) 6
+            check "ewlknweknl3" (match FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q2 with :? int as x -> x) 6
+            check "ewlknweknl4" (match FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q3 with :? int as x -> x) 6
+            check "ewlknweknl5" (match FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q4 with :? int as x -> x) 6
+            check "ewlknweknl6" (match FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q5 with :? int as x -> x) 6
+            check "ewlknweknl7" (match FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q6 with :? int as x -> x) 7
+
 #if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)

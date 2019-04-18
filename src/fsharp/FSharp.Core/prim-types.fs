@@ -2943,7 +2943,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_LessThanOrEqual(x: uint32, y: uint32) = not (# "cgt.un" x y : bool #)
             static member inline op_LessThanOrEqual(x: uint64, y: uint64) = not (# "cgt.un" x y : bool #)
             static member inline op_LessThanOrEqual(x: unativeint, y: unativeint) = not (# "cgt.un" x y : bool #)
-            static member inline op_LessThanOrEqual(x: float, y: unativeint) = not (# "cgt.un" x y : bool #) 
+            static member inline op_LessThanOrEqual(x: float, y: float) = not (# "cgt.un" x y : bool #) 
             static member inline op_LessThanOrEqual(x: float32, y: float32) = not (# "cgt.un" x y : bool #) 
             static member inline op_LessThanOrEqual(x: char, y: char) = not (# "cgt" x y : bool #)
             static member inline op_LessThanOrEqual(x: decimal, y: decimal) = Decimal.op_LessThanOrEqual (x, y)

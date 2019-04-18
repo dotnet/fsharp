@@ -2308,7 +2308,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_LessThanOrEqual: x: unativeint * y: unativeint -> bool
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LessThanOrEqual: x: float * y: unativeint -> bool
+            static member inline op_LessThanOrEqual: x: float * y: float -> bool
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
             static member inline op_LessThanOrEqual: x: float32 * y: float32 -> bool

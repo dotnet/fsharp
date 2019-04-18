@@ -693,7 +693,12 @@ and ConvLValueArgs cenv env args =
     | [] -> []
 
 and ConvWitnessArgs cenv env witnessArgs =
-    ConvExprs cenv { env with isWitness = true } witnessArgs
+    let env = { env with isWitness = true }
+    witnessArgs |> List.map (fun arg -> 
+        match arg with 
+        | Choice1Of2 _witnessInfo -> failwith "TODO: ReflectedDefinition of 'let inline' quotations that utilise witnesses"
+        | Choice2Of2 arg -> ConvExpr cenv env arg
+        ) 
 
 and ConvLValueExpr cenv env expr =
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
