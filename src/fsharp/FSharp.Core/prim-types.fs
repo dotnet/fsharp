@@ -2491,6 +2491,9 @@ namespace Microsoft.FSharp.Core
         let inline ParseSingle (s:string) = Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
             
         type BuiltInWitnesses = 
+#if BUILDING_WITH_LKG
+            static member NoUseOfWitnessesAllowedInProto() = ()
+#else
             static member inline op_Addition(x: int32, y: int32) = (# "add" x y : int32 #)
             static member inline op_Addition(x: float, y: float) = (# "add" x y : float #)
             static member inline op_Addition(x: float32, y: float32) = (# "add" x y : float32 #)
@@ -2687,7 +2690,6 @@ namespace Microsoft.FSharp.Core
             static member inline op_LogicalNot(value: nativeint) = (# "not" value : nativeint #)
             static member inline op_LogicalNot(value: unativeint) = (# "not" value : unativeint #)
 
-#if !BUILD_FROM_SOURCE
             static member inline op_Explicit(value: sbyte) : byte = (# "conv.u1" value  : byte #)
             static member inline op_Explicit(value: byte) : byte = (# "conv.u1" value  : byte #)
             static member inline op_Explicit(value: int16) : byte = (# "conv.u1" value  : byte #)
@@ -3004,6 +3006,7 @@ namespace Microsoft.FSharp.Core
             static member inline DivideByInt (x: decimal, n: int) = Decimal.Divide(x, Convert.ToDecimal(n))
             static member inline DivideByInt (x: float, n: int) = (# "div" x ((# "conv.r8" n  : float #)) : float #)
             static member inline DivideByInt (x: float32, n:int) = (# "div" x ((# "conv.r4" n  : float32 #)) : float32 #)
+#endif
 
         type GenericZeroDynamicImplTable<'T>() = 
             static let result : 'T = 
@@ -3308,9 +3311,9 @@ namespace Microsoft.FSharp.Core
 
         let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x: ^T) (y: int) : ^T =
             DivideByIntDynamic<'T> x y
-            when ^T : float = BuiltInWitnesses.DivideByInt ((retype x: float), y)
-            when ^T : float32 = BuiltInWitnesses.DivideByInt ((retype x: float32), y)
-            when ^T : decimal = BuiltInWitnesses.DivideByInt ((retype x: decimal), y)
+            when ^T : float = (# "div" x ((# "conv.r8" y  : float #)) : float #)
+            when ^T : float32 = (# "div" x ((# "conv.r4" y  : float32 #)) : float32 #)
+            when ^T : decimal = Decimal.Divide((# "" x : decimal #), Convert.ToDecimal(y))
             when ^T : ^T = (^T : (static member DivideByInt : ^T * int -> ^T) (x, y))
 
 namespace Microsoft.FSharp.Core
