@@ -83,7 +83,7 @@ type SourceText with
 [<AutoOpen>]
 module Helpers =
 
-    let createProject name referencedProjects =
+    let createProject name referencedProjects stamp =
         let tmpPath = Path.GetTempPath()
         let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
         {
@@ -102,7 +102,7 @@ module Helpers =
             UnresolvedReferences = None
             OriginalLoadReferences = []
             ExtraProjectInfo = None
-            Stamp = None
+            Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
         }
 
     let generateSourceCode moduleName =
@@ -245,7 +245,8 @@ type CompilerService() =
     member val TypeCheckFileWith100ReferencedProjectsOptions =
         createProject "MainProject"
             [ for i = 1 to 100 do
-                yield createProject ("ReferencedProject" + string i) []
+                yield 
+                    createProject ("ReferencedProject" + string i) []
             ]
 
     member this.TypeCheckFileWith100ReferencedProjectsRun() =
@@ -256,7 +257,7 @@ type CompilerService() =
         | None -> failwith "no checker"
         | Some checker ->
             let parseResult, checkResult =                                                                
-                checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), (* set the stamp to 0L on each run so we don't evaluate the whole project again *) { options with Stamp = Some 0L })
+                checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
                 |> Async.RunSynchronously
 
             if parseResult.Errors.Length > 0 then
