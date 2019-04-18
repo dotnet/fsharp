@@ -3077,7 +3077,7 @@ let isSpanTyconRef g m tcref =
     tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Span`1"
 
 let isSpanTy g m ty =
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g m tcref | _ -> false)
+    ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isSpanTyconRef g m tcref | _ -> false)
 
 let rec tryDestSpanTy g m ty =
     match tryAppTy g ty with
@@ -3094,7 +3094,7 @@ let isReadOnlySpanTyconRef g m tcref =
     tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.ReadOnlySpan`1"
 
 let isReadOnlySpanTy g m ty =
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
+    ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
 
 let tryDestReadOnlySpanTy g m ty =
     match tryAppTy g ty with
