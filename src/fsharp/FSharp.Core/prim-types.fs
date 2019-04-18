@@ -2687,6 +2687,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_LogicalNot(value: nativeint) = (# "not" value : nativeint #)
             static member inline op_LogicalNot(value: unativeint) = (# "not" value : unativeint #)
 
+#if !BUILD_FROM_SOURCE
             static member inline op_Explicit(value: sbyte) : byte = (# "conv.u1" value  : byte #)
             static member inline op_Explicit(value: byte) : byte = (# "conv.u1" value  : byte #)
             static member inline op_Explicit(value: int16) : byte = (# "conv.u1" value  : byte #)
