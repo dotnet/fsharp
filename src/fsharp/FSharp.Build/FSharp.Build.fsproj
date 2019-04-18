@@ -34,8 +34,7 @@
 
   <!-- when building the proto tools, use an FSharp.Core package as the latest FSharp.Core code may not build with LKG compiler -->
   <ItemGroup>
-    <ProjectReference Condition="'$(Configuration)' != 'Proto'" Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <PackageReference Condition="'$(Configuration)' == 'Proto'" Include="FSharp.Core" Version="$(FSharpCoreProtoVersion)" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
