@@ -1,0 +1,8 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+  <Target Name="GetVSGeneralVersion" Returns="$(VSGeneralVersion)">
+  </Target>
+
+</Project>
