@@ -6,74 +6,48 @@ open Microsoft.Diagnostics.Runtime
 // WARNING: This type name can change.
 let CompilerServiceProjectCacheTypeName = "Internal.Utilities.Collections.MruCache<FSharp.Compiler.AbstractIL.Internal.Library+CompilationThreadToken,FSharp.Compiler.SourceCodeServices.FSharpProjectOptions,System.Tuple<Microsoft.FSharp.Core.FSharpOption<FSharp.Compiler.IncrementalBuilder>,FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[],System.IDisposable>>"
 
-[<RequireQualifiedAccess>]
-type ClrInstance =
-    | Object of ClrObject
-    | ValueClass of ClrValueClass
+let getClrObjectSize (clrRuntime: ClrRuntime) (clrObject: ClrObject) =
+    let heap = clrRuntime.Heap
+    let eval = Stack<uint64>()
+    let considered = ObjectSet(heap)
 
-let rec getFullMemorySize (instance: ClrInstance) (objSet: HashSet<uint64>) =
-    match instance with
-    | ClrInstance.Object(clrInstance) ->
+    let mutable count = 0
+    let mutable size = 0UL
+    eval.Push(clrObject.Address)
 
-        if clrInstance.IsNull || not (objSet.Add clrInstance.Address) then 0
-        else
+    while eval.Count > 0 do
+        let objRef = eval.Pop()
 
-        let instanceFieldFullMemorySize =
-            clrInstance.Type.Fields
-            |> Seq.map (fun clrInstanceField ->
-                if clrInstanceField.Type.IsValueClass then
-                    let clrValueClass = clrInstance.GetValueClassField(clrInstanceField.Name)
-                    fun () -> getFullMemorySize (ClrInstance.ValueClass clrValueClass) objSet
-                elif clrInstanceField.Type.IsPrimitive then
-                    fun () -> clrInstanceField.Type.BaseSize
-                else
-                    let clrObject = clrInstance.GetObjectField(clrInstanceField.Name)
-                    fun () -> getFullMemorySize (ClrInstance.Object clrObject) objSet
-            )
-            |> Seq.sumBy (fun f -> f ())
+        if considered.Add objRef then
 
-        clrInstance.Type.BaseSize + instanceFieldFullMemorySize
+            let typ = heap.GetObjectType(objRef)
+            match typ with
+            | null -> ()
+            | typ ->
+                count <- count + 1
+                size <- size + typ.GetSize(objRef)
 
-    | ClrInstance.ValueClass(clrInstance) ->
+                typ.EnumerateRefsOfObject(objRef, fun childObjRef _ ->
+                    if childObjRef <> 0UL && not (considered.Contains childObjRef) then
+                        eval.Push(childObjRef)
+                )
 
-        let instanceFieldFullMemorySize =
-            clrInstance.Type.Fields
-            |> Seq.map (fun clrInstanceField ->
-                if clrInstanceField.Type.IsValueClass then
-                    let clrValueClass = clrInstance.GetValueClassField(clrInstanceField.Name)
-                    fun () -> getFullMemorySize (ClrInstance.ValueClass clrValueClass) objSet
-                elif clrInstanceField.Type.IsPrimitive then
-                    fun () -> clrInstanceField.Type.BaseSize
-                else
-                    let clrObject = clrInstance.GetObjectField(clrInstanceField.Name)
-                    fun () -> getFullMemorySize (ClrInstance.Object clrObject) objSet
-            )
-            |> Seq.sumBy (fun f -> f ())
+    size
 
-        clrInstance.Type.BaseSize + instanceFieldFullMemorySize
-
-let analyzeCompilerServiceProjectCache (cacheObject: ClrObject) (runtime: ClrRuntime) =
-    printfn "Analyzing compiler service project cache"
-
-    let totalByteCount = getFullMemorySize (ClrInstance.Object cacheObject) (HashSet())
+let analyzeCompilerServiceProjectCache clrRuntime cacheObject =
+    let totalByteCount = getClrObjectSize clrRuntime cacheObject
     printfn "Cache Size: %.00f MB" (single totalByteCount / 1024.f / 1024.f)
 
-    printfn "Finished analyzing compiler service project cache"
-
 let analyzeTestModule (runtime: ClrRuntime) (info: ModuleInfo) =
-    printfn "Analyzing test module"
-
     for seg in runtime.Heap.Segments do
         let mutable objId = seg.FirstObject
         while objId <> 0UL do
             let clrObject = runtime.Heap.GetObject(objId)
             if not clrObject.IsNull && clrObject.Type.Name = CompilerServiceProjectCacheTypeName then
-                analyzeCompilerServiceProjectCache clrObject runtime
+                analyzeCompilerServiceProjectCache runtime clrObject 
                 objId <- 0UL
             else
                 objId <- seg.NextObject(objId)
-
-    printfn "Finished analyzing test module"
 
 let analyzeDataTarget (dataTarget: DataTarget) =
     dataTarget.EnumerateModules()

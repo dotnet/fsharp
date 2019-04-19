@@ -45,6 +45,28 @@ module Helpers =
         }
 
     let generateSourceCode moduleName =
+        let extra =
+            [
+                for i = 1 to 100 do
+                    yield
+                        sprintf """
+module Test%i =
+
+    type Cool =
+
+        val X : int
+
+        val Y : int
+
+        val Z : int
+
+    let CoolFunction (x: Cool) =
+        let x = 1
+        let y = 2
+        let z = x + y
+        z
+                        """ i
+            ] |> List.reduce (fun s1 s2 -> String.Concat(s1, s2))
         sprintf """
 module Benchmark.%s
 
@@ -60,7 +82,7 @@ let function%s (x: %s) =
     let x = 1
     let y = 2
     let z = x + y
-    z""" moduleName moduleName moduleName moduleName
+    z""" moduleName moduleName moduleName moduleName + extra
 
 type Test() =
 
