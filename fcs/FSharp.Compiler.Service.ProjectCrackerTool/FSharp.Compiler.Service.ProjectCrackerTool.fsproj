@@ -1,12 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
-  </PropertyGroup>
-  <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework)</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
@@ -23,7 +19,7 @@
     <None Include="paket.references" />
     <Reference Include="System.Runtime" />
     <Reference Include="System.IO" />
-    <PackageReference Include="FSharp.Core" Version="4.6.2" />
+    <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
     <PackageReference Include="FSharp.Compiler.Service.MSBuild.v12.0" Version="1.0.0" />
   </ItemGroup>
 </Project>
