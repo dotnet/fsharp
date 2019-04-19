@@ -12,8 +12,3 @@ vs.dependencies
                 version=$(VsixVersion)
                 type=Required
                 when=Microsoft.VisualStudio.Product.Enterprise,Microsoft.VisualStudio.Product.Professional,Microsoft.VisualStudio.Product.Community
-
-  vs.dependency id=Microsoft.FSharp.VSIX.Full.Resources
-                version=$(VsixVersion)
-                type=Required
-                when=Microsoft.VisualStudio.Product.Enterprise,Microsoft.VisualStudio.Product.Professional,Microsoft.VisualStudio.Product.Community
