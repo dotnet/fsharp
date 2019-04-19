@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly MethodImplAttribute.InternalCall
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.MethodImplAttribute.InternalCall
 {
-  // Offset: 0x00000000 Length: 0x00000339
+  // Offset: 0x00000000 Length: 0x00000341
+}
+.mresource public FSharpSignatureDataB.MethodImplAttribute.InternalCall
+{
+  // Offset: 0x00000348 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.MethodImplAttribute.InternalCall
 {
-  // Offset: 0x00000340 Length: 0x0000007F
+  // Offset: 0x00000358 Length: 0x0000007F
+}
+.mresource public FSharpOptimizationDataB.MethodImplAttribute.InternalCall
+{
+  // Offset: 0x000003E0 Length: 0x00000000
 }
 .module MethodImplAttribute.InternalCall.dll
-// MVID: {59B1920C-FBF7-6A35-A745-03830C92B159}
+// MVID: {5C6C932A-6140-610F-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x015B0000
+// Image base: 0x01300000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

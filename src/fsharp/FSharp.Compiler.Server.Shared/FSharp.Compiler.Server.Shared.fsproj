@@ -7,6 +7,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Condition="'$(Configuration)' != 'Proto'" Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+     <!-- when building the proto tools, use an FSharp.Core package - the latest FSharp.Core code may not build with the LKG compiler -->
+    <PackageReference Condition="'$(Configuration)' == 'Proto'" Include="FSharp.Core" Version="$(FSharpCoreProtoVersion)" />
   </ItemGroup>
 
   <ItemGroup>

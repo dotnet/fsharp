@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly CCtorDUWithMember01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.CCtorDUWithMember01
 {
-  // Offset: 0x00000000 Length: 0x00000790
+  // Offset: 0x00000000 Length: 0x00000784
+}
+.mresource public FSharpSignatureDataB.CCtorDUWithMember01
+{
+  // Offset: 0x00000788 Length: 0x00000085
 }
 .mresource public FSharpOptimizationData.CCtorDUWithMember01
 {
-  // Offset: 0x00000798 Length: 0x00000227
+  // Offset: 0x00000818 Length: 0x00000227
+}
+.mresource public FSharpOptimizationDataB.CCtorDUWithMember01
+{
+  // Offset: 0x00000A48 Length: 0x0000002F
 }
 .module CCtorDUWithMember01.exe
-// MVID: {59B1923F-26F1-14EE-A745-03833F92B159}
+// MVID: {5C6C932A-6E31-E300-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00A70000
+// Image base: 0x00360000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

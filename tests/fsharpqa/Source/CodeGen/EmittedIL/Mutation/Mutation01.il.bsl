@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly Mutation01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.Mutation01
 {
-  // Offset: 0x00000000 Length: 0x00000705
+  // Offset: 0x00000000 Length: 0x000006F9
+}
+.mresource public FSharpSignatureDataB.Mutation01
+{
+  // Offset: 0x00000700 Length: 0x00000098
 }
 .mresource public FSharpOptimizationData.Mutation01
 {
-  // Offset: 0x00000710 Length: 0x00000220
+  // Offset: 0x000007A0 Length: 0x00000220
+}
+.mresource public FSharpOptimizationDataB.Mutation01
+{
+  // Offset: 0x000009C8 Length: 0x00000039
 }
 .module Mutation01.exe
-// MVID: {59B19213-8C6A-2EAE-A745-03831392B159}
+// MVID: {5C6C932A-B7C4-3CC1-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002E0000
+// Image base: 0x01800000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

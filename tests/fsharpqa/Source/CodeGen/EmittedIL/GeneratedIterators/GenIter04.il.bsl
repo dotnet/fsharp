@@ -31,18 +31,26 @@
 {
   // Offset: 0x00000000 Length: 0x000001F0
 }
+.mresource public FSharpSignatureDataB.GenIter04
+{
+  // Offset: 0x000001F8 Length: 0x00000002
+}
 .mresource public FSharpOptimizationData.GenIter04
 {
-  // Offset: 0x000001F8 Length: 0x0000007B
+  // Offset: 0x00000200 Length: 0x0000007B
+}
+.mresource public FSharpOptimizationDataB.GenIter04
+{
+  // Offset: 0x00000280 Length: 0x00000000
 }
 .module GenIter04.exe
-// MVID: {5B9A6329-F79D-DC98-A745-038329639A5B}
+// MVID: {5C6C932A-0870-8011-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00790000
+// Image base: 0x00680000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

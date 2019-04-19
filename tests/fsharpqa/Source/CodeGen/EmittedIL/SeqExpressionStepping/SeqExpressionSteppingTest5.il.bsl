@@ -31,18 +31,26 @@
 {
   // Offset: 0x00000000 Length: 0x0000026F
 }
+.mresource public FSharpSignatureDataB.SeqExpressionSteppingTest5
+{
+  // Offset: 0x00000278 Length: 0x00000004
+}
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest5
 {
-  // Offset: 0x00000278 Length: 0x000000AD
+  // Offset: 0x00000280 Length: 0x000000AD
+}
+.mresource public FSharpOptimizationDataB.SeqExpressionSteppingTest5
+{
+  // Offset: 0x00000338 Length: 0x00000000
 }
 .module SeqExpressionSteppingTest5.exe
-// MVID: {5B9A632A-2432-9401-A745-03832A639A5B}
+// MVID: {5C6C932B-1582-094B-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x026A0000
+// Image base: 0x015E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

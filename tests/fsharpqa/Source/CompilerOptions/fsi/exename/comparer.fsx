@@ -1,4 +1,7 @@
 // #NoMT #CompilerOptions #RequiresENU   
+open System
+open System.IO
+
 let fn1 = fsi.CommandLineArgs.[1]
 let fn2 = fsi.CommandLineArgs.[2]
 let File2List(filename : string) = System.IO.File.ReadAllLines filename |> Array.toList
@@ -15,6 +18,13 @@ let compare f1 f2 =
             printfn "\t>> %s" a
             printfn "\t<< %s" b
             false) 
+
+
+let update = try Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") = "1" with _ -> false
+
+if update then 
+    printfn "Updating %s --> %s" fn1 fn2
+    File.Copy(fn1, fn2, true)
 
 exit (if compare f1 f2 then 0
       else 1)

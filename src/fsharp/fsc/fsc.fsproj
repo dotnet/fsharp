@@ -29,7 +29,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+     <!-- when building the proto tools, use an FSharp.Core package - the latest FSharp.Core code may not build with the LKG compiler -->
+    <ProjectReference Condition="'$(Configuration)' != 'Proto'" Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <PackageReference Condition="'$(Configuration)' == 'Proto'" Include="FSharp.Core" Version="$(FSharpCoreProtoVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
   </ItemGroup>

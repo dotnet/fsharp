@@ -9,6 +9,7 @@
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls</OtherFlags>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);MSBUILD_AT_LEAST_15</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
@@ -675,7 +676,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Condition="'$(Configuration)' != 'Proto'" Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+     <!-- when building the proto tools, use an FSharp.Core package - the latest FSharp.Core code may not build with the LKG compiler -->
+    <PackageReference Condition="'$(Configuration)' == 'Proto'" Include="FSharp.Core" Version="$(FSharpCoreProtoVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">

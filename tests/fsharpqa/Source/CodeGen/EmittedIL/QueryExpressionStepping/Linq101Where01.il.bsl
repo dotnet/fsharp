@@ -35,18 +35,26 @@
 {
   // Offset: 0x00000000 Length: 0x000003D6
 }
+.mresource public FSharpSignatureDataB.Linq101Where01
+{
+  // Offset: 0x000003E0 Length: 0x00000012
+}
 .mresource public FSharpOptimizationData.Linq101Where01
 {
-  // Offset: 0x000003E0 Length: 0x0000012E
+  // Offset: 0x000003F8 Length: 0x0000012E
+}
+.mresource public FSharpOptimizationDataB.Linq101Where01
+{
+  // Offset: 0x00000530 Length: 0x00000000
 }
 .module Linq101Where01.exe
-// MVID: {5B9A632A-FF23-CD21-A745-03832A639A5B}
+// MVID: {5C6C932B-7DD2-6B6A-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x009E0000
+// Image base: 0x01210000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
