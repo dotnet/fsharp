@@ -96,17 +96,35 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | _, -1 -> None
         | pos, length -> Some ("netcoreapp" + file.Substring(pos, length))
 
-    let getFrameworkRefsPackDirectory =
-        //let netCoreRefDirectory = Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation), "../../../packs/Microsoft.NETCore.App.Ref/$(RefVersion)/ref/$(tfm)
+
+    let getFrameworkRefsPackDirectoryPath =
         match executionTfm with
-        | Some tfm ->
+        | Some _ ->
             let appRefDir = Path.Combine(getFSharpCompilerLocation, "../../../packs/Microsoft.NETCore.App.Ref")
+            if Directory.Exists(appRefDir) then
+                Some appRefDir
+            else
+                None
+        | _ -> None
+
+    let isInReferenceAssemblyPackDirectory filename =
+        match getFrameworkRefsPackDirectoryPath with
+        | Some appRefDir ->
+            let path = Path.GetDirectoryName(filename)
+            path.StartsWith(appRefDir, StringComparison.OrdinalIgnoreCase)
+        | _ -> false
+
+    let getFrameworkRefsPackDirectory =
+        match executionTfm, getFrameworkRefsPackDirectoryPath with
+        | Some tfm, Some appRefDir ->
             try
                 let refDirs = Directory.GetDirectories(appRefDir)
                 let versionPath = refDirs |> Array.sortWith (versionCompare) |> Array.last
                 Some(Path.Combine(versionPath, "ref", tfm))
             with | _ -> None
         | _ -> None
+
+
 
     let getDependenciesOf assemblyReferences =
         let assemblies = new Dictionary<string, string>()
@@ -216,13 +234,12 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                                   yield getDefaultFSharpCoreReference
                                   if useFsiAuxLib then yield getFsiLibraryName
                                 ]
-                            with | _ -> printfn "None"; List.empty<string>
+                            with | _ -> List.empty<string>
                         | None ->
                             getImplementationReferences ()
                     else
                         getImplementationReferences ()
                 dependencies
-        results |> Seq.iter(fun f-> printfn "%s" f)
         results
 
     let defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework useSdkRefs =

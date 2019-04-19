@@ -2865,13 +2865,14 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     ///
     /// Returning true may mean that the file is locked and/or placed into the
     /// 'framework' reference set that is potentially shared across multiple compilations.
-    member tcConfig.IsSystemAssembly (filename: string) =  
-        try 
-            FileSystem.SafeExists filename && 
+    member tcConfig.IsSystemAssembly (filename: string) =
+        try
+            FileSystem.SafeExists filename &&
             ((tcConfig.GetTargetFrameworkDirectories() |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
-             (systemAssemblies.Contains(fileNameWithoutExtension filename)))
+             (systemAssemblies.Contains (fileNameWithoutExtension filename)) ||
+             isInReferenceAssemblyPackDirectory filename)
         with _ ->
-            false    
+            false
 
     // This is not the complete set of search paths, it is just the set 
     // that is special to F# (as compared to MSBuild resolution)
@@ -4558,8 +4559,14 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
 
         // Note: TcImports are disposable - the caller owns this object and must dispose
         let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None) 
-        
-        let primaryAssemblyReference = tcConfig.PrimaryAssemblyDllReference()
+
+        // Fetch the primaryAssembly from the referenced assemblies otherwise 
+        let primaryAssemblyReference =
+            let path = frameworkDLLs |> List.tryFind(fun dll -> String.Compare(Path.GetFileNameWithoutExtension(dll.resolvedPath), tcConfig.primaryAssembly.Name, StringComparison.OrdinalIgnoreCase) = 0)
+            match path with
+            | Some p -> AssemblyReference(range0, p.resolvedPath, None)
+            | None -> tcConfig.PrimaryAssemblyDllReference()
+
         let primaryAssemblyResolution = frameworkTcImports.ResolveAssemblyReference(ctok, primaryAssemblyReference, ResolveAssemblyReferenceMode.ReportErrors)
         let! primaryAssem = frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, primaryAssemblyResolution)
         let primaryScopeRef = 
@@ -4574,7 +4581,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
         let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies (ctok, tcResolutions.GetAssemblyResolutions())
 
         // These are the DLLs we can search for well-known types
-        let sysCcus =  
+        let sysCcus =
              [| for ccu in frameworkTcImports.GetCcusInDeclOrder() do
                    //printfn "found sys ccu %s" ccu.AssemblyName
                    yield ccu |]
