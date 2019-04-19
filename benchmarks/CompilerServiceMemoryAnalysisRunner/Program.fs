@@ -20,8 +20,7 @@ let rec getFullMemorySize (instance: ClrInstance) (objSet: HashSet<uint64>) =
 
         let instanceFieldFullMemorySize =
             clrInstance.Type.Fields
-            |> Array.ofSeq
-            |> Array.map (fun clrInstanceField ->
+            |> Seq.map (fun clrInstanceField ->
                 if clrInstanceField.Type.IsValueClass then
                     let clrValueClass = clrInstance.GetValueClassField(clrInstanceField.Name)
                     fun () -> getFullMemorySize (ClrInstance.ValueClass clrValueClass) objSet
