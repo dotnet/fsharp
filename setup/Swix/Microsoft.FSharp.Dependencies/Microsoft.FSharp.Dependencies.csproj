@@ -12,8 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <SwrFile Include="Files.swr" />
-    <SwrFile Include="Dependencies.swr" />
+    <SwrFile Include="Package.swr" />
   </ItemGroup>
 
 </Project>
