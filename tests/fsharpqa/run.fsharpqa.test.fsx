@@ -56,7 +56,7 @@ let runPerl arguments =
   perlProcess.StartInfo.set_RedirectStandardError true
   perlProcess.StartInfo.set_UseShellExecute false
   
-  printfn "starting perl.exe with arguments: %s" perlProcess.StartInfo.Arguments
+  printfn "starting perl.exe from directory: %s\nwith arguments: %s" perlProcess.StartInfo.WorkingDirectory perlProcess.StartInfo.Arguments
   
   perlProcess.Start() |> ignore
   
