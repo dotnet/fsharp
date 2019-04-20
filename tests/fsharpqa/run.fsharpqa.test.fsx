@@ -17,9 +17,13 @@ let addToPath path =
 
 let rootFolder = Path.Combine(__SOURCE_DIRECTORY__, "..", "..")
 let compilerBinFolder = Path.Combine(rootFolder, releaseOrDebug, "net40", "bin")
+
+// this needs to be kept in sync with something else somewhere else
+// this is probably outdated
 setEnvVar "CSC_PIPE"      (Path.Combine(rootFolder, "packages", "Microsoft.Net.Compilers.2.7.0", "tools", "csc.exe"))
 setEnvVar "FSC"           (Path.Combine(compilerBinFolder, "fsc.exe"))
 setEnvVar "FSCOREDLLPATH" (Path.Combine(compilerBinFolder, "FSharp.Core.dll"))
+
 addToPath compilerBinFolder
 
 let runPerl arguments =
@@ -43,18 +47,27 @@ let runPerl arguments =
     
   if not perlExe.Exists then failwithf "couldn't find %s, please adjust this script" perlExe.FullName else
 
+  printfn "found perl.exe in %s" perlExe.Directory.FullName
+
   perlProcess.StartInfo.set_FileName (perlExe.FullName)
   perlProcess.StartInfo.set_Arguments (arguments |> Array.map(fun a -> @"""" + a + @"""") |> String.concat " ")
   perlProcess.StartInfo.set_WorkingDirectory (Path.Combine(rootFolder, "tests", "fsharpqa", "source"))
   perlProcess.StartInfo.set_RedirectStandardOutput true
   perlProcess.StartInfo.set_RedirectStandardError true
   perlProcess.StartInfo.set_UseShellExecute false
+  
+  printfn "starting perl.exe with arguments: %s" perlProcess.StartInfo.Arguments
+  
   perlProcess.Start() |> ignore
+  
   while (not perlProcess.StandardOutput.EndOfStream) do
     perlProcess.StandardOutput.ReadLine() |> printfn "%s" 
+  
   while (not perlProcess.StandardError.EndOfStream) do
     perlProcess.StandardError.ReadLine() |> printfn "%s" 
+  
   perlProcess.WaitForExit()
+  
   if perlProcess.ExitCode <> 0 then
     failwithf "exit code: %i" perlProcess.ExitCode
 
