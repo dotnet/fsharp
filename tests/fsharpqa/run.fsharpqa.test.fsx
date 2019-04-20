@@ -3,7 +3,7 @@
 
 open System.IO
 open System.Diagnostics
-
+type Env = System.Environment
 let releaseOrDebug = "Debug"
 let setEnvVar name value =
   System.Environment.SetEnvironmentVariable(name, value)
@@ -26,7 +26,24 @@ let runPerl arguments =
   // a bit expeditive, but does the deed
   Process.GetProcessesByName("perl") |> Array.iter (fun p -> p.Kill())
   use perlProcess = new Process()
-  perlProcess.StartInfo.set_FileName (Path.Combine(rootFolder, "packages", "StrawberryPerl64.5.22.2.1", "Tools", "perl", "bin", "perl.exe"))
+  let userRoot = Env.SpecialFolder.UserProfile |> Env.GetFolderPath
+
+  let perlExe = 
+    [| userRoot
+       ".nuget"
+       "packages"
+       "strawberryperl64"
+       "5.22.2.1"
+       "Tools"
+       "perl"
+       "bin"
+       "perl.exe" |] 
+    |> Path.Combine
+    |> FileInfo
+    
+  if not perlExe.Exists then failwithf "couldn't find %s, please adjust this script" perlExe.FullName else
+
+  perlProcess.StartInfo.set_FileName (perlExe.FullName)
   perlProcess.StartInfo.set_Arguments (arguments |> Array.map(fun a -> @"""" + a + @"""") |> String.concat " ")
   perlProcess.StartInfo.set_WorkingDirectory (Path.Combine(rootFolder, "tests", "fsharpqa", "source"))
   perlProcess.StartInfo.set_RedirectStandardOutput true
