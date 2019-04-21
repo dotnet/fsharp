@@ -71,11 +71,11 @@ module CoreTests =
     [<Test>]
     let ``innerpoly-FSC_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSC_BASIC
 
-    [<Test; Category("namespaces")>]
-    let namespaceAttributes () = singleTestBuildAndRun "core/namespaces" FSC_BASIC
+    [<Test>]
+    let ``namespaceAttributes-FSC_BASIC`` () = singleTestBuildAndRun "core/namespaces" FSC_BASIC
 
     [<Test>]
-    let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_BASIC // TODO: fails on coreclr
+    let ``unicode2-FSC_BASIC`` () = singleTestBuildAndRun "core/unicode" FSC_BASIC // TODO: fails on coreclr
 
     [<Test>]
     let ``unicode2-FSI_BASIC`` () = singleTestBuildAndRun "core/unicode" FSI_BASIC
@@ -102,70 +102,132 @@ module CoreTests =
     let ``libtest-FSC_BASIC`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC
 
     [<Test>]
-    let lift () = singleTestBuildAndRun "core/lift" FSC_BASIC
+    let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
 
     [<Test>]
-    let map () = singleTestBuildAndRun "core/map" FSC_BASIC
+    let ``lift-FSC_BASIC`` () = singleTestBuildAndRun "core/lift" FSC_BASIC
 
     [<Test>]
-    let ``measures-FSI_BASIC`` () = singleTestBuildAndRun "core/measures" FSI_BASIC
+    let ``lift-FSI_BASIC`` () = singleTestBuildAndRun "core/lift" FSI_BASIC
+
+    [<Test>]
+    let ``map-FSC_BASIC`` () = singleTestBuildAndRun "core/map" FSC_BASIC
+
+    [<Test>]
+    let ``map-FSI_BASIC`` () = singleTestBuildAndRun "core/map" FSI_BASIC
 
     [<Test>]
     let ``measures-FSC_BASIC`` () = singleTestBuildAndRun "core/measures" FSC_BASIC
 
     [<Test>]
-    let nested () = singleTestBuildAndRun "core/nested" FSC_BASIC
+    let ``measures-FSI_BASIC`` () = singleTestBuildAndRun "core/measures" FSI_BASIC
 
     [<Test>]
-    let ``members-ops`` () = singleTestBuildAndRun "core/members/ops" FSC_BASIC
+    let ``nested-FSC_BASIC`` () = singleTestBuildAndRun "core/nested" FSC_BASIC
 
     [<Test>]
-    let ``members-ops-mutrec`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_BASIC
+    let ``nested-FSI_BASIC`` () = singleTestBuildAndRun "core/nested" FSI_BASIC
 
     [<Test>]
-    let seq () = singleTestBuildAndRun "core/seq" FSC_BASIC
+    let ``members-ops-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ops" FSC_BASIC
 
     [<Test>]
-    let ``math-numbers`` () = singleTestBuildAndRun "core/math/numbers" FSC_BASIC
-
-
-    [<Test>]
-    let ``members-ctree`` () = singleTestBuildAndRun "core/members/ctree" FSC_BASIC
+    let ``members-ops-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ops" FSI_BASIC
 
     [<Test>]
-    let ``members-factors`` () = singleTestBuildAndRun "core/members/factors" FSC_BASIC
+    let ``members-ops-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_BASIC
 
     [<Test>]
-    let ``members-factors-mutrec`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_BASIC
+    let ``members-ops-mutrec-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSI_BASIC
 
     [<Test>]
-    let graph () = singleTestBuildAndRun "perf/graph" FSC_BASIC
+    let ``seq-FSC_BASIC`` () = singleTestBuildAndRun "core/seq" FSC_BASIC
 
     [<Test>]
-    let nbody () = singleTestBuildAndRun "perf/nbody" FSC_BASIC
+    let ``seq-FSI_BASIC`` () = singleTestBuildAndRun "core/seq" FSI_BASIC
+
+    [<Test>]
+    let ``math-numbers-FSC_BASIC`` () = singleTestBuildAndRun "core/math/numbers" FSC_BASIC
+
+    [<Test>]
+    let ``math-numbers-FSI_BASIC`` () = singleTestBuildAndRun "core/math/numbers" FSI_BASIC
+
+    [<Test>]
+    let ``members-ctree-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ctree" FSC_BASIC
+
+    [<Test>]
+    let ``members-ctree-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ctree" FSI_BASIC
+
+    [<Test>]
+    let ``members-factors-FSC_BASIC`` () = singleTestBuildAndRun "core/members/factors" FSC_BASIC
+
+    [<Test>]
+    let ``members-factors-FSI_BASIC`` () = singleTestBuildAndRun "core/members/factors" FSI_BASIC
+
+    [<Test>]
+    let ``members-factors-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_BASIC
+
+    [<Test>]
+    let ``members-factors-mutrec-FSI_BASIC`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSI_BASIC
+
+    [<Test>]
+    let ``graph-FSC_BASIC`` () = singleTestBuildAndRun "perf/graph" FSC_BASIC
+
+    [<Test>]
+    let ``graph-FSI_BASIC`` () = singleTestBuildAndRun "perf/graph" FSI_BASIC
+
+    [<Test>]
+    let ``nbody-FSC_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSC_BASIC
+
+    [<Test>]
+    let ``nbody-FSI_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSI_BASIC
 
     [<Test>]
     let ``letrec (mutrec variations part two) FSC_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC
 
     [<Test>]
-    let printf () = singleTestBuildAndRun "core/printf" FSC_BASIC
+    let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
-    let tlr () = singleTestBuildAndRun "core/tlr" FSC_BASIC
+    let ``printf-FSC_BASIC`` () = singleTestBuildAndRun "core/printf" FSC_BASIC
 
     [<Test>]
-    let subtype () = singleTestBuildAndRun "core/subtype" FSC_BASIC
+    let ``tlr-FSC_BASIC`` () = singleTestBuildAndRun "core/tlr" FSC_BASIC
 
     [<Test>]
-    let syntax () = singleTestBuildAndRun "core/syntax" FSC_BASIC
+    let ``tlr-FSI_BASIC`` () = singleTestBuildAndRun "core/tlr" FSI_BASIC
 
     [<Test>]
-    let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
+    let ``subtype-FSC_BASIC`` () = singleTestBuildAndRun "core/subtype" FSC_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``subtype-FSI_BASIC`` () = singleTestBuildAndRun "core/subtype" FSI_BASIC
+
+    [<Test>]
+    let ``syntax-FSC_BASIC`` () = singleTestBuildAndRun "core/syntax" FSC_BASIC
+
+    [<Test>]
+    let ``syntax-FSI_BASIC`` () = singleTestBuildAndRun "core/syntax" FSI_BASIC
+
+    [<Test>]
+    let ``test int32-FSC_BASIC`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
+
+    [<Test>]
+    let ``test int32-FSI_BASIC`` () = singleTestBuildAndRun "core/int32" FSI_BASIC
+
     [<Test>]
     let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC // TODO: fails on coreclr
 
+    [<Test>]
+    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
+
+    [<Test>]
+    let ``recordResolution-FSC_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSC_BASIC
+
+    [<Test>]
+    let ``recordResolution-FSI_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSI_BASIC
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
 
@@ -364,50 +426,56 @@ module CoreTests =
 #endif
 
     [<Test>]
-    let control () = singleTestBuildAndRun "core/control" FSC_BASIC
+    let ``control-FSC_BASIC`` () = singleTestBuildAndRun "core/control" FSC_BASIC
 
     [<Test>]
-    let ``control --tailcalls`` () = 
+    let ``control-FSI_BASIC`` () = singleTestBuildAndRun "core/control" FSI_BASIC
+
+    [<Test>]
+    let ``control --tailcalls`` () =
         let cfg = testConfig "core/control"
         singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
-
     [<Test>]
-    let controlChamenos () = 
+    let ``controlChamenos-FSC_BASIC`` () =
         let cfg = testConfig "core/controlChamenos"
-        
         singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
+    [<Test>]
+    let ``controlChamenos-FSI_BASIC`` () = 
+        let cfg = testConfig "core/controlChamenos"
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSI_BASIC
 
     [<Test>]
-    let controlMailbox () = singleTestBuildAndRun "core/controlMailbox" FSC_BASIC
+    let ``controlMailbox-FSC_BASIC`` () = singleTestBuildAndRun "core/controlMailbox" FSC_BASIC
 
     [<Test>]
-    let ``controlMailbox --tailcalls`` () = 
+    let ``controlMailbox-FSI_BASIC`` () = singleTestBuildAndRun "core/controlMailbox" FSI_BASIC
+
+    [<Test>]
+    let ``controlMailbox --tailcalls`` () =
         let cfg = testConfig "core/controlMailbox"
-        
         singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
+    [<Test>]
+    let ``csext-FSC_BASIC`` () = singleTestBuildAndRun "core/csext" FSC_BASIC
+
+    [<Test>]
+    let ``csext-FSI_BASIC`` () = singleTestBuildAndRun "core/csext" FSI_BASIC
+
+    [<Test>]
+    let ``enum-FSC_BASIC`` () = singleTestBuildAndRun "core/enum" FSC_BASIC
+
+    [<Test>]
+    let ``enum-FSI_BASIC`` () = singleTestBuildAndRun "core/enum" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
     // Requires winforms will not run on coreclr
     [<Test>]
     let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_BASIC
-#endif
 
-    [<Test>]
-    let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
-
-
-    [<Test>]
-    let fscenum () = singleTestBuildAndRun "core/enum" FSC_BASIC
-
-//    [<Test>]
-//    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
-
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-
-    // These tests are enabled for .NET Framework and .NET Core
+    // These tests are enabled for .NET Framework
     [<Test>]
     let ``anon-FSC_BASIC``() = 
         let cfg = testConfig "core/anon"
@@ -628,7 +696,6 @@ module CoreTests =
         end
 
         fsc cfg "" ["load1.fsx"]
-
         fsc cfg "" ["load2.fsx"]
 
 
@@ -708,8 +775,6 @@ module CoreTests =
 
             testOkFile.CheckExists()
         end
-                
-
 
     // Debug with 
     //     ..\..\..\..\debug\net40\bin\fsi.exe --nologo < test.fsx >a.out 2>a.err
@@ -863,9 +928,6 @@ module CoreTests =
 #endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    [<Test>]
-    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
-
     [<Test>]
     let quotes () = 
         let cfg = testConfig "core/quotes"
@@ -1041,15 +1103,6 @@ module CoreTests =
 
     [<Test>]
     let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
-
-    [<Test>]
-    let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
-
-    [<Test>]
-    let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
-
-    [<Test>]
-    let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_BASIC
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
@@ -1242,58 +1295,60 @@ module CoreTests =
 #endif
 
     [<Test>]
-    let longnames () = singleTestBuildAndRun "core/longnames" FSC_BASIC
+    let ``longnames-FSC_BASIC`` () = singleTestBuildAndRun "core/longnames" FSC_BASIC
 
     [<Test>]
-    let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_BASIC
+    let ``longnames-FSI_BASIC`` () = singleTestBuildAndRun "core/longnames" FSI_BASIC
+
+    [<Test>]
+    let ``math-numbersVS2008-FSC_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_BASIC
+
+    [<Test>]
+    let ``math-numbersVS2008-FSI_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI_BASIC
+
+    [<Test>]
+    let ``patterns-FSC_BASIC`` () = singleTestBuildAndRun "core/patterns" FSC_BASIC
+
+//BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
+//    [<Test>]
+//    let ``patterns-FSI_BASIC`` () = singleTestBuildAndRun "core/patterns" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
 
-    // Requires winforms will not run on coreclr
-    [<Test>]
-    let ``members-basics-FSI_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSI_BASIC
-
-    // Requires winforms will not run on coreclr
-    [<Test>]
-    let ``members-basics-FSC_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSC_BASIC
-
-    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
 
-    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_BASIC
 
-    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_BASIC
 
     [<Test>]
-    let ``members-incremental`` () = singleTestBuildAndRun "core/members/incremental" FSC_BASIC
+    let ``members-incremental-FSC_BASIC`` () = singleTestBuildAndRun "core/members/incremental" FSC_BASIC
 
     [<Test>]
-    let ``members-incremental-hw`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_BASIC
+    let ``members-incremental-FSI_BASIC`` () = singleTestBuildAndRun "core/members/incremental" FSI_BASIC
 
     [<Test>]
-    let ``members-incremental-hw-mutrec`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_BASIC
-
-#endif
+    let ``members-incremental-hw-FSC_BASIC`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_BASIC
 
     [<Test>]
-    let patterns () = singleTestBuildAndRun "core/patterns" FSC_BASIC
+    let ``members-incremental-hw-FSI_BASIC`` () = singleTestBuildAndRun "core/members/incremental-hw" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``members-incremental-hw-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_BASIC
+
     [<Test>]
     let pinvoke () = 
         let cfg = testConfig "core/pinvoke"
 
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
-   
+
         peverifyWithArgs cfg "/nologo /MD" "test.exe"
-                
+
     [<Test>]
     let fsi_load () = 
         let cfg = testConfig "core/fsi-load"
@@ -1500,10 +1555,12 @@ module CoreTests =
 
         testOkFile.CheckExists()
 #endif
-                
-    [<Test>]
-    let reflect () = singleTestBuildAndRun "core/reflect" FSC_BASIC
 
+    [<Test>]
+    let ``reflect-FSC_BASIC`` () = singleTestBuildAndRun "core/reflect" FSC_BASIC
+
+    [<Test>]
+    let ``reflect-FSI_BASIC`` () = singleTestBuildAndRun "core/reflect" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
@@ -1754,10 +1811,10 @@ module ToolsTests =
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
 #endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
-    let eval () = singleTestBuildAndRun "tools/eval" FSC_BASIC
-#endif
+    let ``eval-FSC_BASIC`` () = singleTestBuildAndRun "tools/eval" FSC_BASIC
+    [<Test>]
+    let ``eval-FSI_BASIC`` () = singleTestBuildAndRun "tools/eval" FSI_BASIC
 
 module RegressionTests = 
 
@@ -2018,7 +2075,6 @@ module TypecheckTests =
         SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_BASIC
 
 #if !FX_NO_CONVERTER
-    // Converter is not coming back until dotnet standard 2.0
     [<Test>]
     let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
 #endif
