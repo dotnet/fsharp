@@ -1441,8 +1441,10 @@ tyconDefn:
   | typeNameInfo 
      { TypeDefn($1,SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range),$1.Range),[],$1.Range) }
 
-  | typeNameInfo EQUALS tyconDefnRhsBlock
-     { let nameRange = rhs parseState 1
+  | typeNameInfo opt_EQUALS tyconDefnRhsBlock
+     {
+       if Option.isNone $2 then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsEqualsMissingInTypeDefinition())
+       let nameRange = rhs parseState 1
        let (tcDefRepr:SynTypeDefnRepr),members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)    
@@ -4934,6 +4936,10 @@ opt_ODECLEND:
 deprecated_opt_equals: 
   | EQUALS      { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () } 
   | /* EMPTY */ {  }
+
+opt_EQUALS:
+  | EQUALS      { } 
+  | /* EMPTY */ { }
 
 opt_OBLOCKSEP: 
   | OBLOCKSEP   { }
