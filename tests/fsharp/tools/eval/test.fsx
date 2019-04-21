@@ -1,9 +1,5 @@
 #light
 
-//#r @"System.Core.dll"
-//#r @"System.Data.Linq.dll"
-//#endif
-
 #nowarn "57"
 
 open Microsoft.FSharp.Quotations
