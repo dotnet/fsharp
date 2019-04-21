@@ -12394,7 +12394,7 @@ module TcRecdUnionAndEnumDeclarations = begin
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
         for (sf, f) in List.zip synFields tastFields do
-            match seen.TryGetValue(f.Name) with
+            match seen.TryGetValue f.Name with
             | true, synField ->
                 match sf, synField with
                 | Field(_, _, Some id, _, _, _, _, _), Field(_, _, Some(_), _, _, _, _, _) ->

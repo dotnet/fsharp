@@ -43,7 +43,7 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 type LexResourceManager() =
     let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(1024)
     member x.InternIdentifierToken(s) = 
-        match strings.TryGetValue(s) with
+        match strings.TryGetValue s with
         | true, res -> res
         | _ ->
             let res = IDENT s

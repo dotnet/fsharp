@@ -71,7 +71,7 @@ type Table<'T> =
         tbl.rows.Add x
         n
     member tbl.FindOrAdd x =
-        match tbl.tbl.TryGetValue(x) with
+        match tbl.tbl.TryGetValue x with
         | true, res -> res
         | _ -> tbl.Add x
 

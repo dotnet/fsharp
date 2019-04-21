@@ -336,7 +336,7 @@ module internal ExtensionTyping =
             match ctxt with 
             | NoEntries -> None 
             | Entries(d, _) -> 
-                match d.TryGetValue(st) with
+                match d.TryGetValue st with
                 | true, res -> Some res
                 | _ -> None
 
@@ -345,7 +345,7 @@ module internal ExtensionTyping =
             | NoEntries -> None 
             | Entries(_, d) -> 
                 let d = d.Force()
-                match d.TryGetValue(st) with
+                match d.TryGetValue st with
                 | true, res -> Some res
                 | _ -> None
 

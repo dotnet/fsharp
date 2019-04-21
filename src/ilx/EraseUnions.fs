@@ -587,7 +587,7 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
         for (i,case) in cases do dict.[i] <- case
         let failLab = cg.GenerateDelayMark ()
         let emitCase i _ = 
-            match dict.TryGetValue(i) with
+            match dict.TryGetValue i with
             | true, res -> res
             | _ -> cg.CodeLabel failLab
 

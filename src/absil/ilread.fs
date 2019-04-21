@@ -903,7 +903,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
             | null -> cache := new Dictionary<int32, _>(11)
             | _ -> ()
             !cache
-        match cache.TryGetValue(idx) with
+        match cache.TryGetValue idx with
         | true, res ->
             incr count 
             res
@@ -4047,7 +4047,7 @@ let OpenILModuleReader fileName opts =
     let cacheResult2 = 
         // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
         if keyOk && opts.pdbDirPath.IsNone then 
-            ilModuleReaderCache2.TryGetValue(key)
+            ilModuleReaderCache2.TryGetValue key
         else 
             false, Unchecked.defaultof<_>
 

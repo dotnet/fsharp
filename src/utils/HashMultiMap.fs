@@ -22,12 +22,12 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
         then seq |> Seq.iter (fun (k,v) -> x.Add(k,v))
 
     member x.GetRest(k) =
-        match rest.TryGetValue(k) with
+        match rest.TryGetValue k with
         | true, res -> res
         | _ -> []
 
     member x.Add(y,z) = 
-        match firstEntries.TryGetValue(y) with
+        match firstEntries.TryGetValue y with
         | true, res ->
             rest.[y] <- res :: x.GetRest(y)
         | _ -> ()
@@ -52,14 +52,14 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
 
     member x.Item 
         with get(y : 'Key) = 
-            match firstEntries.TryGetValue(y) with
+            match firstEntries.TryGetValue y with
             | true, res -> res
             | _ -> raise (KeyNotFoundException("The item was not found in collection"))
         and set (y:'Key) (z:'Value) = 
             x.Replace(y,z)
 
     member x.FindAll(y) = 
-        match firstEntries.TryGetValue(y) with
+        match firstEntries.TryGetValue y with
         | true, res -> res :: x.GetRest(y)
         | _ -> []
 
@@ -88,11 +88,11 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
     member x.ContainsKey(y) = firstEntries.ContainsKey(y)
 
     member x.Remove(y) = 
-        match firstEntries.TryGetValue(y) with
+        match firstEntries.TryGetValue y with
         // NOTE: If not ok then nothing to remove - nop
         | true, _res ->
             // We drop the FirstEntry. Here we compute the new FirstEntry and residue MoreEntries
-            match rest.TryGetValue(y) with
+            match rest.TryGetValue y with
             | true, res ->
                 match res with 
                 | [h] -> 
@@ -111,7 +111,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
         firstEntries.[y] <- z
 
     member x.TryFind(y) =
-        match firstEntries.TryGetValue(y) with
+        match firstEntries.TryGetValue y with
         | true, res -> Some(res)
         | _ -> None
 

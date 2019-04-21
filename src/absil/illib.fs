@@ -985,11 +985,11 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
 
     member t.Apply x = 
         if (match canMemoize with None -> true | Some f -> f x) then 
-            match table.TryGetValue(x) with
+            match table.TryGetValue x with
             | true, res -> res
             | _ ->
                 lock table (fun () -> 
-                    match table.TryGetValue(x) with
+                    match table.TryGetValue x with
                     | true, res -> res
                     | _ ->
                         let res = compute x
@@ -1072,7 +1072,7 @@ module Tables =
     let memoize f = 
         let t = new Dictionary<_, _>(1000, HashIdentity.Structural)
         fun x -> 
-            match t.TryGetValue(x) with
+            match t.TryGetValue x with
             | true, res -> res
             | _ ->
                 let res = f x

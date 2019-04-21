@@ -464,7 +464,7 @@ type MetadataTable<'T> =
 #if DEBUG
         tbl.lookups <- tbl.lookups + 1 
 #endif
-        match tbl.dict.TryGetValue(x) with
+        match tbl.dict.TryGetValue x with
         | true, res -> res
         | _ -> tbl.AddSharedEntry x
 
@@ -768,7 +768,7 @@ let rec GetTypeRefAsTypeRefRow cenv (tref: ILTypeRef) =
     SharedRow [| ResolutionScope (rs1, rs2); nelem; nselem |]
 
 and GetTypeRefAsTypeRefIdx cenv tref = 
-    match cenv.trefCache.TryGetValue(tref) with
+    match cenv.trefCache.TryGetValue tref with
     | true, res -> res
     | _ ->
         let res = FindOrAddSharedRow cenv TableNames.TypeRef (GetTypeRefAsTypeRefRow cenv tref)

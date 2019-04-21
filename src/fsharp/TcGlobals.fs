@@ -870,7 +870,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           TType_app (tcref, tinst)
       else
           let dict = getDecompileTypeDict()
-          match dict.TryGetValue(tcref.Stamp) with
+          match dict.TryGetValue tcref.Stamp with
           | true, builder -> builder tinst
           | _ -> TType_app (tcref, tinst)
 
@@ -880,12 +880,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let improveTy (tcref: EntityRef) tinst = 
         if compilingFslib then 
             let dict = getBetterTypeDict1()
-            match dict.TryGetValue(tcref.LogicalName) with
+            match dict.TryGetValue tcref.LogicalName with
             | true, builder -> builder tcref tinst
             | _ -> TType_app (tcref, tinst)
         else
             let dict = getBetterTypeDict2()
-            match dict.TryGetValue(tcref.Stamp) with
+            match dict.TryGetValue tcref.Stamp with
             | true, builder -> builder tinst
             | _ -> TType_app (tcref, tinst)
 

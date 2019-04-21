@@ -573,7 +573,7 @@ let GetInfoForLocalValue cenv env (v: Val) m =
     // Abstract slots do not have values 
     if v.IsDispatchSlot then UnknownValInfo 
     else
-        match cenv.localInternalVals.TryGetValue(v.Stamp) with
+        match cenv.localInternalVals.TryGetValue v.Stamp with
         | true, res -> res
         | _ ->
             match env.localExternalVals.TryFind v.Stamp with 
