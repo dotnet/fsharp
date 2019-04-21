@@ -2745,7 +2745,7 @@ and ResolveOverloading
                     let msg = 
                         match methodNames with
                         | [] -> msg
-                        | names -> sprintf "%s %s" msg (FSComp.SR.csCandidates (String.concat ", " names))
+                        | names -> sprintf "%s %s" msg (sprintf "fooo %s" (String.concat ", " names)) //   FSComp.SR.csCandidates (String.concat ", " names))
                     None, ErrorD (failOverloading msg []), NoTrace
 
     // If we've got a candidate solution: make the final checks - no undo here! 
