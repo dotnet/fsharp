@@ -573,18 +573,18 @@ let GetInfoForLocalValue cenv env (v: Val) m =
     // Abstract slots do not have values 
     if v.IsDispatchSlot then UnknownValInfo 
     else
-        let mutable res = Unchecked.defaultof<_> 
-        let ok = cenv.localInternalVals.TryGetValue(v.Stamp, &res)
-        if ok then res else
-        match env.localExternalVals.TryFind v.Stamp with 
-        | Some vval -> vval
-        | None -> 
-            if v.MustInline then
-                errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
+        match cenv.localInternalVals.TryGetValue(v.Stamp) with
+        | true, res -> res
+        | _ ->
+            match env.localExternalVals.TryFind v.Stamp with 
+            | Some vval -> vval
+            | None -> 
+                if v.MustInline then
+                    errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
 #if CHECKED
-            warning(Error(FSComp.SR.optLocalValueNotFoundDuringOptimization(v.DisplayName), m)) 
+                warning(Error(FSComp.SR.optLocalValueNotFoundDuringOptimization(v.DisplayName), m)) 
 #endif
-            UnknownValInfo 
+                UnknownValInfo 
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
 

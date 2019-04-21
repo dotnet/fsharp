@@ -985,15 +985,13 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
 
     member t.Apply x = 
         if (match canMemoize with None -> true | Some f -> f x) then 
-            let mutable res = Unchecked.defaultof<'U>
-            let ok = table.TryGetValue(x, &res)
-            if ok then res 
-            else
+            match table.TryGetValue(x) with
+            | true, res -> res
+            | _ ->
                 lock table (fun () -> 
-                    let mutable res = Unchecked.defaultof<'U> 
-                    let ok = table.TryGetValue(x, &res)
-                    if ok then res 
-                    else
+                    match table.TryGetValue(x) with
+                    | true, res -> res
+                    | _ ->
                         let res = compute x
                         table.[x] <- res
                         res)
@@ -1074,11 +1072,10 @@ module Tables =
     let memoize f = 
         let t = new Dictionary<_, _>(1000, HashIdentity.Structural)
         fun x -> 
-            let mutable res = Unchecked.defaultof<_>
-            if t.TryGetValue(x, &res) then 
-                res 
-            else
-                res <- f x
+            match t.TryGetValue(x) with
+            | true, res -> res
+            | _ ->
+                let res = f x
                 t.[x] <- res
                 res
 

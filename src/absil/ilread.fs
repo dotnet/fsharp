@@ -903,12 +903,11 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
             | null -> cache := new Dictionary<int32, _>(11)
             | _ -> ()
             !cache
-        let mutable res = Unchecked.defaultof<_>
-        let ok = cache.TryGetValue(idx, &res)
-        if ok then 
+        match cache.TryGetValue(idx) with
+        | true, res ->
             incr count 
             res
-        else 
+        | _ ->
             let res = f idx 
             cache.[idx] <- res 
             res 
