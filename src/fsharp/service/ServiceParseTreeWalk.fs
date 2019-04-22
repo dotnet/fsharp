@@ -9,6 +9,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractIL.Internal.Library
  
 
 /// A range of utility functions to assist with traversing an AST
@@ -537,7 +538,7 @@ module public AstTraversal =
         and normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path traverseInherit (synMemberDefns:SynMemberDefns) =
             synMemberDefns 
                     // property getters are setters are two members that can have the same range, so do some somersaults to deal with this
-                    |> Seq.groupBy (fun x -> x.Range)
+                    |> Seq.groupByNoBoxWithComparison (fun x -> x.Range) FSharp.Compiler.Range.hashRange FSharp.Compiler.Range.equals
                     |> Seq.choose (fun (r, mems) ->
                         match mems |> Seq.toList with
                         | [mem] -> // the typical case, a single member has this range 'r'

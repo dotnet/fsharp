@@ -1457,7 +1457,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
     | EventUse einfo -> einfo.ComputeHashCode()
-    | Item.ModuleOrNamespaces (mref :: _) -> hash mref.DefinitionRange
+    | Item.ModuleOrNamespaces (mref :: _) -> Range.hashRange mref.DefinitionRange
     | _ -> 389329
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
@@ -1540,7 +1540,7 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
     let capturedModulesAndNamespaces =
         new System.Collections.Generic.HashSet<range * Item>
             ( { new IEqualityComparer<range * Item> with
-                    member __.GetHashCode ((m, _)) = hash m
+                    member __.GetHashCode ((m, _)) = Range.hashRange m
                     member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual g item1 item2 } )
 
     let capturedMethodGroupResolutions = ResizeArray<_>()
@@ -1570,7 +1570,27 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
     member this.GetOpenDeclarations() =
-        capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
+        let inline hashF ((r, scope, ion): range option * range * bool) =
+            let h =
+                match r with
+                | Some m -> Range.hashRange m
+                | None -> hash None
+
+            h + Range.hashRange scope + ion.GetHashCode()
+
+        let inline eqF ((r1, scope1, ion1): range option * range * bool) ((r2, scope2, ion2): range option * range * bool) =
+            let optsEqual =
+                match r1, r2 with
+                | Some r1, Some r2 ->
+                    Range.equals r1 r2
+                | None, None -> true
+                | _ -> false
+
+            optsEqual && Range.equals scope1 scope2 && ion1 = ion2
+
+        capturedOpenDeclarations
+        |> Seq.distinctByNoBoxWithComparison (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) hashF eqF
+        |> Seq.toArray
 
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m, nenv, ad) =

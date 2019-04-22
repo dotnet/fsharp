@@ -936,7 +936,10 @@ type TypeCheckInfo
                         parseResultsOpt
                         |> Option.bind (fun x -> x.ParseTree)
                         |> Option.map (fun parsedInput -> UntypedParseImpl.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
-                    let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
+                    let isAttributeApplication =
+                        match ctx with
+                        | Some CompletionContext.AttributeApplication -> true
+                        | _ -> false
                     FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,isAttributeApplication,checkAlive))
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarations: '%s'" msg)
@@ -1662,7 +1665,7 @@ module internal Parser =
                     //  walk the list of #loads and keep the ones for this file.
                     let hashLoadsInFile = 
                         loadClosure.SourceFiles 
-                        |> List.filter(fun (_,ms) -> ms<>[]) // #loaded file, ranges of #load
+                        |> List.filter(fun (_,ms) -> not ms.IsEmpty) // #loaded file, ranges of #load
             
                     let hashLoadBackgroundDiagnostics, otherBackgroundDiagnostics = 
                         backgroundDiagnostics 
@@ -1801,22 +1804,51 @@ type FSharpProjectOptions =
     static member AreSameForChecking(options1,options2) =
         match options1.Stamp, options2.Stamp with 
         | Some x, Some y -> (x = y)
-        | _ -> 
-        FSharpProjectOptions.UseSameProject(options1, options2) &&
-        options1.SourceFiles = options2.SourceFiles &&
-        options1.OtherOptions = options2.OtherOptions &&
-        options1.UnresolvedReferences = options2.UnresolvedReferences &&
-        options1.OriginalLoadReferences = options2.OriginalLoadReferences &&
-        options1.ReferencedProjects.Length = options2.ReferencedProjects.Length &&
-        Array.forall2 (fun (n1,a) (n2,b) ->
-            n1 = n2 && 
-            FSharpProjectOptions.AreSameForChecking(a,b)) options1.ReferencedProjects options2.ReferencedProjects &&
-        options1.LoadTime = options2.LoadTime
+        | _ ->
+            let inline unresolvedReferencesEqual urs1 urs2 =
+                match urs1, urs2 with
+                | Some (UnresolvedReferencesSet(uars1)), Some (UnresolvedReferencesSet(uars2)) ->
+                    (uars1, uars2)
+                    ||> List.forall2 (fun uar1 uar2 -> 
+                        match uar1, uar2 with
+                        | UnresolvedAssemblyReference(s1, ar1), UnresolvedAssemblyReference(s2, ar2) ->
+                            s1 = s2 &&
+                            (ar1, ar2)
+                            ||> List.forall2 (fun a1 a2 -> a1.ProjectReference = a2.ProjectReference && a1.Text = a2.Text && Range.equals a1.Range a2.Range)
+                    )
+                | None, None -> true
+                | _ -> false
+
+            FSharpProjectOptions.UseSameProject(options1, options2) &&
+            options1.SourceFiles = options2.SourceFiles &&
+            options1.OtherOptions = options2.OtherOptions &&
+            unresolvedReferencesEqual options1.UnresolvedReferences options2.UnresolvedReferences &&
+            (options1.OriginalLoadReferences, options2.OriginalLoadReferences) ||> List.forall2 (fun (r1, s1) (r2, s2) -> Range.equals r1 r2 && s1 = s2) &&
+            options1.ReferencedProjects.Length = options2.ReferencedProjects.Length &&
+            Array.forall2 (fun (n1,a) (n2,b) ->
+                n1 = n2 && 
+                FSharpProjectOptions.AreSameForChecking(a,b)) options1.ReferencedProjects options2.ReferencedProjects &&
+            options1.LoadTime = options2.LoadTime
+
+    static member GetHashCode(options: FSharpProjectOptions) =
+        let rec hashF options =
+            let inline hashOriginalLoadReferences refs =
+                refs |> List.fold (fun acc (r, s) -> acc + Range.hashRange r + s.GetHashCode()) 0
+
+            let rec inline hashReferencedProjects projs =
+                projs |> Array.fold (fun acc (s, proj) -> acc + s.GetHashCode() + hashF proj) 0
+
+            hash options.Stamp + hash options.ProjectDirectory + hash options.ProjectOptions +
+            hash options.ExtraProjectInfo + hash options.IsIncompleteTypeCheckEnvironment + hash options.LoadTime +
+            hash options.OtherOptions + hash options.ProjectFileName + hash options.ProjectId + hash options.SourceFiles +
+            hashOriginalLoadReferences options.OriginalLoadReferences +
+            hashReferencedProjects options.ReferencedProjects
+        hashF options
 
     /// Compute the project directory.
     member po.ProjectDirectory = System.IO.Path.GetDirectoryName(po.ProjectFileName)
+
     override this.ToString() = "FSharpProjectOptions(" + this.ProjectFileName + ")"
- 
 
 [<Sealed>] 
 type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain) =
@@ -1891,9 +1923,13 @@ type FSharpCheckProjectResults(projectFileName:string, tcConfigOption, keepAssem
     member info.GetUsesOfSymbol(symbol:FSharpSymbol) = 
         let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
+        let inline hashF ((io, r): ItemOccurence * range) = io.GetHashCode() + Range.hashRange r
+        let inline eqF ((io1, r1): ItemOccurence * range) ((io2, r2): ItemOccurence * range) =
+            io1 = io2 && Range.equals r1 r2
+
         tcSymbolUses
         |> Seq.collect (fun r -> r.GetUsesOfSymbol symbol.Item)
-        |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) 
+        |> Seq.distinctByNoBoxWithComparison (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) hashF eqF
         |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText) 
         |> Seq.map (fun symbolUse -> FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)) 
         |> Seq.toArray
@@ -2110,8 +2146,16 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
     member info.GetUsesOfSymbolInFile(symbol:FSharpSymbol) = 
         threadSafeOp 
             (fun () -> [| |]) 
-            (fun scope -> 
-                [| for symbolUse in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) do
+            (fun scope ->
+                let inline hashF ((io, r): ItemOccurence * range) = io.GetHashCode() + Range.hashRange r
+                let inline eqF ((io1, r1): ItemOccurence * range) ((io2, r2): ItemOccurence * range) =
+                    io1 = io2 && Range.equals r1 r2
+
+                let groupedSymbols = 
+                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item)
+                    |> Seq.distinctByNoBoxWithComparison (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) hashF eqF
+
+                [| for symbolUse in groupedSymbols do
                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                         yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
          |> async.Return 
@@ -2469,11 +2513,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
              areSimilar=AreSubsumable3)
 
     /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interleaving chunck queued to Reactor).
-    let beingCheckedFileTable = 
-        ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>
-            (HashIdentity.FromFunctions
-                hash
-                (fun (f1, o1, v1) (f2, o2, v2) -> f1 = f2 && v1 = v2 && FSharpProjectOptions.AreSameForChecking(o1, o2)))
+    let beingCheckedFileTable =
+        let inline hashF ((f, o, v): FilePath * FSharpProjectOptions * FileVersion)  = hash f + hash v + FSharpProjectOptions.GetHashCode(o)
+        let inline eqF ((f1, o1, v1): FilePath * FSharpProjectOptions * FileVersion) (f2, o2, v2) =
+            f1 = f2 && v1 = v2 && FSharpProjectOptions.AreSameForChecking(o1, o2)
+
+        ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>(HashIdentity.FromFunctions hashF eqF)
 
     static let mutable foregroundParseCount = 0
     static let mutable foregroundTypeCheckCount = 0

@@ -227,7 +227,10 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
         |   :? FSharpSymbol as otherSymbol -> ItemsAreEffectivelyEqual cenv.g x.Item otherSymbol.Item
         |   _ -> false
 
-    override x.GetHashCode() = hash x.ImplementationLocation  
+    override x.GetHashCode() =
+        match x.ImplementationLocation with
+        | Some r -> Range.hashRange r
+        | None -> hash None // This is 0 today, but might as well do this just in case...
 
     override x.ToString() = "symbol " + (try item().DisplayName with _ -> "?")
 

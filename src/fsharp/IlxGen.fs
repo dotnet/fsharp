@@ -4715,7 +4715,12 @@ and GenMatch cenv cgbuf eenv (spBind, _exprm, tree, targets, m, ty) sequel =
         match activeSP with
         | None -> ()
         | Some src ->
-            if activeSP <> cgbuf.GetLastSequencePoint() then
+            let inline sequencePointsEqual sp1 sp2 =
+                match sp1, sp2 with
+                | Some r1, Some r2 -> Range.equals r1 r2
+                | None, None -> true
+                | _ -> false
+            if sequencePointsEqual activeSP (cgbuf.GetLastSequencePoint()) then
                 CG.EmitSeqPoint cgbuf src
 
     // First try the common cases where we don't need a join point.

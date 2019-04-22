@@ -2844,9 +2844,14 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                     None
                 else Some(m, path)
             with e -> errorRecovery e m; None
+
+        let inline hashF ((r, s): range * string) = Range.hashRange r + s.GetHashCode()
+        let inline eqF ((r1, s1): range * string) ((r2, s2): range * string) = Range.equals r1 r2 && s1 = s2
+
         tcConfig.loadedSources 
-        |> List.choose resolveLoadedSource 
-        |> List.distinct     
+        |> List.choose resolveLoadedSource
+        |> Seq.distinctNoBoxWithComparison hashF eqF
+        |> List.ofSeq
 
     /// A closed set of assemblies where, for any subset S:
     ///    - the TcImports object built for S (and thus the F# Compiler CCUs for the assemblies in S) 
@@ -2969,7 +2974,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
-        if originalReferences=[] then [], []
+        if originalReferences.IsEmpty then [], []
         else            
             // Group references by name with range values in the grouped value list.
             // In the grouped reference, store the index of the last use of the reference.
@@ -5129,7 +5134,16 @@ module private ScriptPreprocessClosure =
                     tryGetMetadataSnapshot, reduceMemoryUsage)
 
             let resolutions0, _unresolvedReferences = GetAssemblyResolutionInformation(ctok, tcConfig)
-            let references0 = resolutions0 |> List.map (fun r->r.originalReference.Range, r.resolvedPath) |> Seq.distinct |> List.ofSeq
+            let references0 =
+                let inline hashF ((r, s): range * string) = s.GetHashCode() + Range.hashRange r
+                let inline eqF ((r1, s1): range * string) ((r2, s2): range * string) =
+                    s1 = s2 && Range.equals r1 r2
+
+                resolutions0
+                |> List.map (fun r->r.originalReference.Range, r.resolvedPath)
+                |> Seq.distinctNoBoxWithComparison hashF eqF
+                |> List.ofSeq
+
             references0
 
         let tcConfig = 

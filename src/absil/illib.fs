@@ -244,6 +244,65 @@ module Array =
     /// Returns true if one array has trailing elements equal to another's.
     let endsWith (suffix: _ []) (whole: _ []) =
         isSubArray suffix whole (whole.Length-suffix.Length)
+
+    let inline private groupByImpl (comparer: IEqualityComparer<'SafeKey>) (keyf: 'T->'SafeKey) (getKey: 'SafeKey->'Key) (array: 'T[]) =
+        let length = array.Length
+        if length = 0 then Array.zeroCreate<_> 0 else
+        let dict = Dictionary<_, ResizeArray<_>> comparer
+
+        // Build the groupings
+        for i = 0 to length - 1 do
+            let v = array.[i]
+            let safeKey = keyf v
+            let mutable prev = Unchecked.defaultof<_>
+            if dict.TryGetValue(safeKey, &prev) then
+                prev.Add v
+            else 
+                let prev = ResizeArray ()
+                dict.[safeKey] <- prev
+                prev.Add v
+                 
+        // Return the array-of-arrays.
+        let result = Array.zeroCreate<_> dict.Count
+        let mutable i = 0
+        for group in dict do
+            result.[i] <- getKey group.Key, group.Value.ToArray()
+            i <- i + 1
+
+        result
+
+    let groupByNoBoxWithComparison (keyf: 'T -> 'Key) (hashF: 'Key -> int) (eqF: 'Key -> 'Key -> bool) (array: 'T[]) =
+        array |> groupByImpl (HashIdentity.FromFunctions hashF eqF) keyf id
+
+    let distinctNoBoxWithComparison (hashF: 'T -> int) (eqF: 'T -> 'T -> bool) (source: 'T[]) =
+        if isNull source then nullArg "source"
+
+        let hashSet = HashSet<_>(HashIdentity.FromFunctions hashF eqF)
+
+        let tmp = Array.zeroCreate source.Length
+        let mutable i = 0
+
+        for v in source do
+            if hashSet.Add(v) then
+                tmp.[i] <- v
+                i <- i + 1
+
+        Array.sub tmp 0 i
+
+    let distinctByNoBoxWithComparison projection (hashF: 'Key -> int) (eqF: 'Key -> 'Key -> bool) (source: 'T[]) =
+        if isNull source then nullArg "source"
+
+        let hashSet = HashSet<_>(HashIdentity.FromFunctions hashF eqF)
+
+        let tmp = Array.zeroCreate source.Length
+        let mutable i = 0
+
+        for v in source do
+            if hashSet.Add(projection v) then
+                tmp.[i] <- v
+                i <- i + 1
+
+        Array.sub tmp 0 i
         
 module Option = 
 
@@ -445,6 +504,60 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
 
     let mapiFoldSquared f z xss = mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
+
+module Seq =
+    let inline private groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
+        if isNull seq then nullArg "seq"
+
+        let dict = Dictionary<_,ResizeArray<_>> comparer
+
+        // Previously this was 1, but I think this is rather stingy, considering that we are already paying
+        // for at least a key, the ResizeArray reference, which includes an array reference, an Entry in the
+        // Dictionary, plus any empty space in the Dictionary of unfilled hash buckets.
+        let minimumBucketSize = 4
+
+        // Build the groupings
+        seq |> Seq.iter (fun v ->
+            let safeKey = keyf v
+            let mutable prev = Unchecked.defaultof<_>
+            match dict.TryGetValue (safeKey, &prev) with
+            | true -> prev.Add v
+            | false ->
+                let prev = ResizeArray ()
+                dict.[safeKey] <- prev
+                prev.Add v)
+
+        // Trim the size of each result group, don't trim very small buckets, as excessive work, and garbage for
+        // minimal gain
+        dict |> Seq.iter (fun group -> if group.Value.Count > minimumBucketSize then group.Value.TrimExcess())
+
+        // Return the sequence-of-sequences. Don't reveal the
+        // internal collections: just reveal them as sequences
+        dict |> Seq.map (fun group -> (getKey group.Key, Seq.readonly group.Value))
+
+    let groupByNoBoxWithComparison (keyf: 'T -> 'Key) (hashF: 'Key -> int) (eqF: 'Key -> 'Key -> bool) (seq:seq<'T>) =
+        seq |> groupByImpl (HashIdentity.FromFunctions hashF eqF) keyf id
+
+    let distinctNoBoxWithComparison (hashF: 'T -> int) (eqF: 'T -> 'T -> bool) (source: seq<'T>) =
+        if isNull source then nullArg "source"
+
+        seq {
+            let hashSet = HashSet<'T>(HashIdentity.FromFunctions hashF eqF)
+            for v in source do
+                if hashSet.Add(v) then
+                    yield v
+        }
+
+    let distinctByNoBoxWithComparison projection (hashF: 'Key -> int) (eqF: 'Key -> 'Key -> bool) (source:seq<'T>) =
+        if isNull source then nullArg "source"
+
+        seq {
+            let hashSet = HashSet<_>(HashIdentity.FromFunctions hashF eqF)
+            for v in source do
+                if hashSet.Add(projection v) then
+                    yield v
+        }
+
 
 module ResizeArray =
 

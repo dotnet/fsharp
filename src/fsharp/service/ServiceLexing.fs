@@ -473,7 +473,10 @@ module internal LexerStateEncoding =
 
     let callLexCont lexcont args skip lexbuf =
         let argsWithIfDefs ifd =
-            if !args.ifdefStack = ifd then
+            let inline ifdefStackEntriesEqual stack1 stack2 =
+                (stack1, stack2) ||> List.forall2 (fun (entry1, r1) (entry2, r2) -> entry1 = entry2 && Range.equals r1 r2)
+
+            if ifdefStackEntriesEqual args.ifdefStack.contents ifd then
                 args
             else
                 {args with ifdefStack = ref ifd}

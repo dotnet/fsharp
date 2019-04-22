@@ -45,7 +45,7 @@ val mkPos : line:int -> column:int -> pos
 val posOrder : IComparer<pos>
 
 /// Represents a range within a known file
-[<Struct; CustomEquality; NoComparison>]
+[<Struct; NoEquality; NoComparison>]
 type range =
 
     /// The start line of the range
@@ -98,7 +98,11 @@ val mkFileIndexRange : FileIndex -> pos -> pos -> range
 /// This view hides the use of file indexes and just uses filenames 
 val mkRange : string -> pos -> pos -> range
 
+/// Compare two ranges to see if their inner values are equal (no boxing).
 val equals : range -> range -> bool
+
+/// Performs a hash operation on the inner values of a given range (no boxing).
+val hashRange : range -> int
 
 /// Reduce a range so it only covers a line
 val trimRangeToLine : range -> range

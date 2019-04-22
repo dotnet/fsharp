@@ -790,7 +790,7 @@ module internal SymbolHelpers =
               | Item.CustomOperation (_, _, Some minfo) -> minfo.ComputeHashCode()
               | Item.CustomOperation (_, _, None) -> 1
               | Item.ModuleOrNamespaces(modref :: _) -> hash (fullDisplayTextOfModRef modref)          
-              | Item.SetterArg(id, _) -> hash (id.idRange, id.idText)
+              | Item.SetterArg(id, _) -> Range.hashRange id.idRange + hash id.idText
               | Item.MethodGroup(_, meths, _) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
               | Item.CtorGroup(name, meths) -> name.GetHashCode() + (meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0)
               | (Item.Value vref | Item.CustomBuilder (_, vref)) -> hash vref.LogicalName

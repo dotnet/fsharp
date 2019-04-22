@@ -9,6 +9,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents the different kinds of items that can appear in the navigation bar
 type FSharpNavigationDeclarationItemKind =
@@ -210,10 +211,11 @@ module NavigationImpl =
         and processMembers members enclosingEntityKind : (range * list<FSharpNavigationDeclarationItem * int>) = 
             let members = 
                 members 
-                |> List.groupBy (fun x -> x.Range)
+                |> Seq.groupByNoBoxWithComparison (fun x -> x.Range) FSharp.Compiler.Range.hashRange FSharp.Compiler.Range.equals
+                |> List.ofSeq
                 |> List.map (fun (range, members) ->
                     range,
-                    (match members with
+                    (match members |> List.ofSeq with
                      | [memb] ->
                          match memb with
                          | SynMemberDefn.LetBindings(binds, _, _, _) -> List.collect (processBinding false enclosingEntityKind false) binds
@@ -435,7 +437,16 @@ module NavigationImpl =
             |> Array.map (fun (d, idx, nest) -> 
                 let nest = nest |> Array.ofList |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.Name idx))
                 nest |> Array.sortInPlaceWith (fun a b -> compare a.Name b.Name)
-                let nest = nest |> Array.distinctBy (fun x -> x.Range, x.BodyRange, x.Name, x.Kind) 
+
+                let inline hashF ((r, br, name, kind): range * range * string * FSharpNavigationDeclarationItemKind) =
+                    FSharp.Compiler.Range.hashRange r + FSharp.Compiler.Range.hashRange br + name.GetHashCode() + kind.GetHashCode()
+
+                let inline eqF ((r1, br1, name1, kind1): range * range * string * FSharpNavigationDeclarationItemKind) ((r2, br2, name2, kind2): range * range * string * FSharpNavigationDeclarationItemKind) =
+                    FSharp.Compiler.Range.equals r1 r2 && FSharp.Compiler.Range.equals br1 br2 && name1 = name2 && kind1 = kind2
+
+                let nest =
+                    nest
+                    |> Array.distinctByNoBoxWithComparison (fun x -> x.Range, x.BodyRange, x.Name, x.Kind) hashF eqF
                 
                 { Declaration = d.WithUniqueName(uniqueName d.Name idx); Nested = nest } )                  
         items |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
