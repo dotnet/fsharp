@@ -547,18 +547,21 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
 // OptionBlock: Input files
 //-------------------------
 
-let inputFileFlagsFsi (_tcConfigB: TcConfigBuilder) : CompilerOption list = [
-#if NETSTANDARD
-    CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs()))
-#endif
+let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
+    [ CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
     ]
 
-let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
-    let fsi = inputFileFlagsFsi tcConfigB
-    [ CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()) )
-    ] @ fsi 
-
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB 
+
+let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
+#if NETSTANDARD
+        [ CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs())) ]
+#else
+        List.empty<CompilerOption>
+#endif
+
+let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
+    List.concat [ inputFileFlagsBoth tcConfigB; inputFileFlagsFsiBase tcConfigB]
 
 // OptionBlock: Errors and warnings
 //---------------------------------
