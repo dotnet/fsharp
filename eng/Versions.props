@@ -57,7 +57,6 @@
       https://vside.myget.org/F/vs-impl/api/v3/index.json;
       https://myget.org/F/roslyn_concord/api/v3/index.json;
       https://vside.myget.org/F/devcore/api/v3/index.json;
-      C:\roslyn\artifacts\packages\Debug\Release;
     </RestoreSources>
     <!-- version numbers from files -->
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
