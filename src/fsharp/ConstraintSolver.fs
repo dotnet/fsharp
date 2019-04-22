@@ -182,6 +182,7 @@ type ConstraintSolverState =
       amap: Import.ImportMap 
       InfoReader: InfoReader
       TcVal: TcValF
+      codegen: bool
       /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
       /// That is, there will be one entry in this table for each free type variable in 
       /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved 
@@ -194,7 +195,8 @@ type ConstraintSolverState =
           amap = amap 
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
           InfoReader = infoReader
-          TcVal = tcVal } 
+          TcVal = tcVal
+          codegen = false } 
 
 
 type ConstraintSolverEnv = 
@@ -1755,14 +1757,14 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               | (TyparRigidity.Rigid | TyparRigidity.WillBeRigid), TyparConstraint.DefaultsTo _ -> true
               | _ -> false) then 
             ()
-        elif tp.Rigidity = TyparRigidity.Rigid then
+        elif tp.Rigidity = TyparRigidity.Rigid && not csenv.SolverState.codegen then
             return! ErrorD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2)) 
         else
             // It is important that we give a warning if a constraint is missing from a 
             // will-be-made-rigid type variable. This is because the existence of these warnings
             // is relevant to the overload resolution rules (see 'candidateWarnCount' in the overload resolution
             // implementation).
-            if tp.Rigidity.WarnIfMissingConstraint then
+            if tp.Rigidity.WarnIfMissingConstraint  && not csenv.SolverState.codegen then
                 do! WarnD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2))
 
             let newConstraints = 
@@ -2757,7 +2759,8 @@ let CreateCodegenState tcVal g amap =
       amap = amap
       TcVal = tcVal
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-      InfoReader = new InfoReader(g, amap) }
+      InfoReader = new InfoReader(g, amap)
+      codegen = true }
 
 let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
     let css = CreateCodegenState tcVal g amap
@@ -2807,7 +2810,8 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               amap = amap
               TcVal = (fun _ -> failwith "should not be called")
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-              InfoReader = new InfoReader(g, amap) }
+              InfoReader = new InfoReader(g, amap) 
+              codegen = false }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with

@@ -3770,7 +3770,8 @@ and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
         | None ->
             try
                 let qscope = QuotationTranslator.QuotationGenerationScope.Create (cenv.g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No)
-                let astSpec = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast
+                let qenv = QuotationTranslator.QuotationTranslationEnv.CreateEmpty cenv.g
+                let astSpec = QuotationTranslator.ConvExprPublic qscope qenv ast
                 let referencedTypeDefs, spliceTypes, spliceArgExprs = qscope.Close()
                 referencedTypeDefs, List.map fst spliceTypes, List.map fst spliceArgExprs, astSpec
             with
@@ -7786,11 +7787,14 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
                       let ety = tyOfExpr g e
                       let tps, taue, _ =
                         match e with
-                        | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
+                        | Expr.TyLambda (_, tps, body, _, _) -> tps, body, applyForallTy g ety (List.map mkTyparTy tps)
                         | _ -> [], e, ety
-                      let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
-                      let astExpr = QuotationTranslator.ConvExprPublic qscope env taue
-                      let mbaseR = QuotationTranslator.ConvMethodBase qscope env (methName, v)
+                      let qenv = QuotationTranslator.QuotationTranslationEnv.CreateEmpty(g)
+                      let qenv = qenv.BindTypars tps
+                      let witnessInfos = GetTraitWitnessInfosOfTypars g [] tps
+                      let qenv = qenv.BindWitnessInfos witnessInfos
+                      let astExpr = QuotationTranslator.ConvExprPublic qscope qenv taue
+                      let mbaseR = QuotationTranslator.ConvMethodBase qscope qenv (methName, v)
                   
                       Some(mbaseR, astExpr)
                     with

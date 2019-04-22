@@ -3589,7 +3589,7 @@ module MoreWitnessTests =
     open System.IO
 
     // TODO - ths fails
-    //[<ReflectedDefinition>]
+    [<ReflectedDefinition>]
     module Tests = 
         let inline f0 (x: 'T) : (unit -> 'T) list = 
            [] 

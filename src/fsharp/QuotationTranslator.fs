@@ -79,13 +79,16 @@ type QuotationTranslationEnv =
       /// Map from Val to binding index
       vs: ValMap<int>
 
-      nvs: int
+      numValsInScope: int
 
       /// Map from typar stamps to binding index
       tyvs: StampMap<int>
 
       /// Indicates this is a witness arg we we disable further generation of witnesses
       isWitness: bool
+
+      /// All witnesses in scope and their mapping to lambda variables
+      witnessesInScope: System.Collections.Immutable.ImmutableDictionary<TraitWitnessInfo, int>
 
       // Map for values bound by the
       //     'let v = isinst e in .... if nonnull v then ...v .... '
@@ -96,11 +99,17 @@ type QuotationTranslationEnv =
       substVals: ValMap<Expr> 
     }
 
-    static member Empty =
+    static member CreateEmpty g =
         { vs = ValMap<_>.Empty
-          nvs = 0
+          numValsInScope = 0
           tyvs = Map.empty
           isWitness = false
+          witnessesInScope= 
+              System.Collections.Immutable.ImmutableDictionary.Create(
+                   { new IEqualityComparer<_> with 
+                          member __.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
+                          member __.GetHashCode(a) = hash a.MemberName
+                   })
           isinstVals = ValMap<_>.Empty
           substVals = ValMap<_>.Empty }
 
@@ -108,16 +117,24 @@ type QuotationTranslationEnv =
         let idx = env.tyvs.Count
         { env with tyvs = env.tyvs.Add(v.Stamp, idx ) }
 
+    member env.BindWitnessInfo (witnessInfo: TraitWitnessInfo) =
+        let idx = env.witnessesInScope.Count
+        { env with witnessesInScope = env.witnessesInScope.Add(witnessInfo, idx) }
+
     member env.BindTypars vs =
         (env, vs) ||> List.fold (fun env v -> env.BindTypar v) // fold left-to-right because indexes are left-to-right
+
+    member env.BindWitnessInfos witnessInfos =
+        (env, witnessInfos) ||> List.fold (fun env v -> env.BindWitnessInfo v) // fold left-to-right because indexes are left-to-right
 
 let BindFormalTypars (env: QuotationTranslationEnv) vs =
     { env with tyvs = Map.empty }.BindTypars vs
 
 let BindVal env v =
+    let n = env.witnessesInScope.Count + env.numValsInScope
     { env with
-       vs = env.vs.Add v env.nvs
-       nvs = env.nvs + 1 }
+       vs = env.vs.Add v n
+       numValsInScope = env.numValsInScope + 1 }
 
 let BindIsInstVal env v (ty, e) =
     { env with isinstVals = env.isinstVals.Add v (ty, e) }
@@ -212,6 +229,26 @@ let rec EmitDebugInfoIfNecessary cenv env m astExpr : QP.ExprData =
 
 and ConvExpr cenv env (expr : Expr) =
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvExprCore cenv env expr)
+
+and GetWitnessArgs cenv (env : QuotationTranslationEnv) m tps tyargs =
+    let g = cenv.g
+    if g.generateWitnesses && not env.isWitness then 
+        let witnessExprs = 
+            ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs 
+            |> CommitOperationResult
+        let env = { env with isWitness = true }
+        witnessExprs |> List.map (fun arg -> 
+            match arg with 
+            | Choice1Of2 witnessInfo -> 
+                if env.witnessesInScope.ContainsKey witnessInfo then 
+                    QP.mkVar env.witnessesInScope.[witnessInfo]
+                else
+                    System.Diagnostics.Debug.Assert(false, "unexpected missing witness representation")
+                    QP.mkVar 0
+            | Choice2Of2 arg -> 
+                ConvExpr cenv env arg) 
+    else
+        []
 
 and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.ExprData =
 
@@ -310,12 +347,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                     dprintfn "vref.DisplayName  = %A , after unit adjust, #untupledCurriedArgs = %A, #curriedArgInfos = %d" vref.DisplayName  (List.map List.length untupledCurriedArgs) curriedArgInfos.Length
 
                 let witnessArgTys = GenWitnessTys cenv.g cxs
-                let witnessArgs = 
-                    if cenv.g.generateWitnesses && not env.isWitness then 
-                        ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal cenv.g cenv.amap m tps tyargs 
-                        |> CommitOperationResult
-                    else
-                        []
+                let witnessArgs = GetWitnessArgs cenv env m tps tyargs
 
                 let subCall =
                     if isMember then
@@ -692,14 +724,6 @@ and ConvLValueArgs cenv env args =
     | obj :: rest -> ConvLValueExpr cenv env obj :: ConvExprs cenv env rest
     | [] -> []
 
-and ConvWitnessArgs cenv env witnessArgs =
-    let env = { env with isWitness = true }
-    witnessArgs |> List.map (fun arg -> 
-        match arg with 
-        | Choice1Of2 _witnessInfo -> failwith "TODO: ReflectedDefinition of 'let inline' quotations that utilise witnesses"
-        | Choice2Of2 arg -> ConvExpr cenv env arg
-        ) 
-
 and ConvLValueExpr cenv env expr =
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
 
@@ -726,11 +750,10 @@ and ConvLValueExprCore cenv env expr =
 and ConvObjectModelCall cenv env m callInfo =
     EmitDebugInfoIfNecessary cenv env m (ConvObjectModelCallCore cenv env m callInfo)
 
-and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, objArgs, witnessArgs, untupledCurriedArgs) =
+and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, objArgs, witnessArgsR, untupledCurriedArgs) =
     let tyargsR = ConvTypes cenv env m tyargs
     let callArgs = (objArgs::untupledCurriedArgs) |> List.concat
     let callArgsR = ConvLValueArgs cenv env callArgs
-    let witnessArgsR = ConvWitnessArgs cenv env witnessArgs
     let allArgsR = witnessArgsR @ callArgsR
     
     if isPropGet || isPropSet then
@@ -783,7 +806,7 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
 and ConvModuleValueApp cenv env m (vref:ValRef) tyargs witnessArgs (args: Expr list list) =
     EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs witnessArgs args)
 
-and ConvModuleValueAppCore cenv env m (vref:ValRef) tyargs witnessArgs (curriedArgs: Expr list list) =
+and ConvModuleValueAppCore cenv env m (vref: ValRef) tyargs witnessArgsR (curriedArgs: Expr list list) =
     match vref.DeclaringEntity with
     | ParentNone -> failwith "ConvModuleValueAppCore"
     | Parent(tcref) ->
@@ -791,10 +814,9 @@ and ConvModuleValueAppCore cenv env m (vref:ValRef) tyargs witnessArgs (curriedA
         let tcrefR = ConvTyconRef cenv tcref m
         let tyargsR = ConvTypes cenv env m tyargs
         let nm = vref.CompiledName
-        let witnessArgsR = ConvWitnessArgs cenv env witnessArgs
         let uncurriedArgsR = ConvExprs cenv env (List.concat curriedArgs)
         let allArgsR = witnessArgsR @ uncurriedArgsR
-        let nWitnesses = witnessArgs.Length
+        let nWitnesses = witnessArgsR.Length
         if nWitnesses = 0 then 
             QP.mkModuleValueApp(tcrefR, nm, isProperty, tyargsR, allArgsR)
         else
@@ -831,14 +853,9 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
               QP.mkHole(ConvType cenv env m vty, idx)
 
         | Parent _ ->
-
-              let witnessArgs = 
-                  if cenv.g.generateWitnesses && not env.isWitness then 
-                      ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal cenv.g cenv.amap m vref.Typars tyargs 
-                      |> CommitOperationResult
-                  else []
-
-              ConvModuleValueApp cenv env m vref tyargs witnessArgs [] 
+            // First-class use or use of type function
+            let witnessArgs = GetWitnessArgs cenv env m vref.Typars tyargs
+            ConvModuleValueApp cenv env m vref tyargs witnessArgs [] 
 
 and ConvUnionCaseRef cenv (ucref: UnionCaseRef) m =
     let ucgtypR = ConvTyconRef cenv ucref.TyconRef m

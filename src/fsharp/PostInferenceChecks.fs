@@ -943,7 +943,9 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
             // Translate to quotation data
             try 
                 let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No) 
-                let qdata = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast  
+                let qenv = QuotationTranslator.QuotationTranslationEnv.CreateEmpty g
+                // TODO: do we need to bind witnesses here
+                let qdata = QuotationTranslator.ConvExprPublic qscope qenv ast  
                 let typeDefs, spliceTypes, spliceExprs = qscope.Close()
                 match savedConv.Value with 
                 | None -> savedConv:= Some (typeDefs, List.map fst spliceTypes, List.map fst spliceExprs, qdata)
@@ -1720,13 +1722,16 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                       match bindRhs with 
                       | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
                       | _ -> [], bindRhs, ety
-                    let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
+                    let qenv = QuotationTranslator.QuotationTranslationEnv.CreateEmpty g
+                    let qenv = qenv.BindTypars tps
+                    let witnessInfos = GetTraitWitnessInfosOfTypars g [] tps
+                    let qenv = qenv.BindWitnessInfos witnessInfos
                     let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.Yes) 
-                    QuotationTranslator.ConvExprPublic qscope env taue  |> ignore
+                    QuotationTranslator.ConvExprPublic qscope qenv taue  |> ignore
                     let _, _, argExprs = qscope.Close()
                     if not (isNil argExprs) then 
                         errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
-                    QuotationTranslator.ConvMethodBase qscope env (v.CompiledName, v) |> ignore
+                    QuotationTranslator.ConvMethodBase qscope qenv (v.CompiledName, v) |> ignore
                 with 
                   | QuotationTranslator.InvalidQuotedTerm e -> 
                           errorR e
