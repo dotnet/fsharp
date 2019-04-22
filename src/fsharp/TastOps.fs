@@ -6492,8 +6492,6 @@ let mkRefTupledNoTypes g m args = mkRefTupled g m args (List.map (tyOfExpr g) ar
 
 let mkRefTupledVars g m vs = mkRefTupled g m (List.map (exprForVal m) vs) (typesOfVals vs)
 
-let mkAnonRecd (_g: TcGlobals) m anonInfo es tys = Expr.Op (TOp.AnonRecd anonInfo,tys,es,m)
-
 //--------------------------------------------------------------------------
 // Permute expressions
 //--------------------------------------------------------------------------
@@ -6569,6 +6567,20 @@ let mkRecordExpr g (lnk, tcref, tinst, rfrefs: RecdFieldRef list, args, m) =
     let names = rfrefs |> List.map (fun rfref -> rfref.FieldName)
     let binds, args = permuteExprList sigma args argTys names
     mkLetsBind m binds (Expr.Op (TOp.Recd (lnk, tcref), tinst, args, m))
+
+let mkAnonRecd (_g: TcGlobals) m (anonInfo: AnonRecdTypeInfo) es tys =
+    let rfrefsArray = rfrefs |> List.indexed |> Array.ofList
+    rfrefsArray |> Array.sortInPlaceBy (fun (_, r) -> r.Index)
+    let sigma = Array.create rfrefsArray.Length -1
+    Array.iteri (fun j (i, _) -> 
+        if sigma.[i] <> -1 then error(InternalError("bad permutation", m))
+        sigma.[i] <- j) rfrefsArray
+    
+    let argTys = List.map (fun rfref -> actualTyOfRecdFieldRef rfref tinst) rfrefs
+    let names = rfrefs |> List.map (fun rfref -> rfref.FieldName)
+    let binds, permutedArgs = permuteExprList sigma args argTys names
+    let core = Expr.Op (TOp.AnonRecd anonInfo, tys, permutedArgs, m)
+    mkLetsBind m binds core
   
 //-------------------------------------------------------------------------
 // List builders
