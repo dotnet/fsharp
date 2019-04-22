@@ -138,8 +138,8 @@
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">
-        <source>Use reference assemblies for .NET framework references when available (Enabled by default)).</source>
-        <target state="new">Use reference assemblies for .NET framework references when available (Enabled by default)).</target>
+        <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
+        <target state="new">Use reference assemblies for .NET framework references when available (Enabled by default).</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
