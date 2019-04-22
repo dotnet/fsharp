@@ -22,13 +22,13 @@ module VersionCompare =
     [<TestCase("1.0.0-Suffix1", "1.0.0-Suffix1", ExpectedResult = 0)>]  // 1.0.0-Suffix1 > 1.0.0-Suffix2
     [<TestCase("1.0.1", "1.0.0-Suffix1", ExpectedResult = 1)>]          // 1.0.1 > 1.0.0-Suffix1
     [<TestCase("1.0.0-Suffix1", "1.0.1", ExpectedResult = -1)>]        // 1.0.0-Suffix1 < 1.0.1
-    let VersionCompareTest (str1 : string, str2 : string) : int =
+    let VersionCompareTest (str1: string, str2: string) : int =
         versionCompare str1 str2
 
 
     [<Test>]
     [<TestCase("", ExpectedResult = "3.0.0-preview4-27610-06")>]
-    let VersionCompareSortArrayHighestPreview _ : string =
+    let VersionCompareSortArrayHighestPreview _: string =
         let versions = [|
             "1.0.0-preview4-20000-01"
             "3.0.0-preview4-27610-06"
@@ -40,7 +40,7 @@ module VersionCompare =
 
     [<Test>]
     [<TestCase("", ExpectedResult = "3.0.0")>]
-    let VersionCompareSortArrayHighestRelease _ : string =
+    let VersionCompareSortArrayHighestRelease _: string =
         let versions = [|
             "1.0.0-preview4-20000-01"
             "3.0.0"
@@ -53,7 +53,7 @@ module VersionCompare =
 
     [<Test>]
     [<TestCase("", ExpectedResult = "3.0.1")>]
-    let VersionCompareSortArrayEvenHighestRelease _ : string =
+    let VersionCompareSortArrayEvenHighestRelease _: string =
         let versions = [|
             "3.0.1"
             "1.0.0-preview4-20000-01"
