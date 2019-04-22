@@ -11,10 +11,10 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
-open Microsoft.FSharp.Compiler.SourceCodeServices.Keywords
+open FSharp.Compiler.SourceCodeServices.Keywords
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FSharpRenameParamToMatchSignature"); Shared>]
 type internal FSharpRenameParamToMatchSignature
@@ -58,7 +58,7 @@ type internal FSharpRenameParamToMatchSignature
                                 return changes 
                             }
                         let title = FSComp.SR.replaceWithSuggestion suggestion
-                        let codefix = createTextChangeCodeFix(title, context, computeChanges)
+                        let codefix = CodeFixHelpers.createTextChangeCodeFix(title, context, computeChanges)
                         context.RegisterCodeFix(codefix, diagnostics)
             | _ -> ()
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

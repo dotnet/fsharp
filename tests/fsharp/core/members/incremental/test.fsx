@@ -225,7 +225,7 @@ end
 
 //! Area variations
   
-#if !MONO && !NETCOREAPP1_0
+#if !MONO && !NETCOREAPP
 module AreaVariations = begin
     (* Accepted *)
     open System.Drawing
@@ -402,7 +402,7 @@ end
 
 //! Forms
   
-#if !MONO && !NETCOREAPP1_0
+#if !MONO && !NETCOREAPP
 module Forms1 = begin
     open System.Drawing
     open System.Windows.Forms

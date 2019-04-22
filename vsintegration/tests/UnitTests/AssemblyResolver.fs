@@ -10,11 +10,13 @@ module AssemblyResolver =
 
     let vsInstallDir =
         // use the environment variable to find the VS installdir
-        let vsvar = 
-            let var = Environment.GetEnvironmentVariable("VS150COMNTOOLS")
-            if String.IsNullOrEmpty var then Environment.GetEnvironmentVariable("VSAPPIDDIR") 
-            else var
-        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS and VSAPPIDDIR environment variables not found."
+        let vsvar =
+            let var = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
+            if String.IsNullOrEmpty var then
+                Environment.GetEnvironmentVariable("VSAPPIDDIR")
+            else
+                var
+        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let probingPaths = [|
@@ -28,22 +30,22 @@ module AssemblyResolver =
 
     let addResolver () =
         AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
-        let found () =
-            (probingPaths ) |> Seq.tryPick(fun p -> 
-                try
-                    let name = AssemblyName(args.Name)
-                    let codebase = Path.GetFullPath(Path.Combine(p, name.Name) + ".dll")
-                    if File.Exists(codebase) then
-                        name.CodeBase <- codebase
-                        name.CultureInfo <- Unchecked.defaultof<CultureInfo>
-                        name.Version <- Unchecked.defaultof<Version>
-                        Some (name)
-                    else None
-                with | _ -> None
-                )
-        match found() with
-        | None -> Unchecked.defaultof<Assembly>
-        | Some name -> Assembly.Load(name) )
+            let found () =
+                (probingPaths ) |> Seq.tryPick(fun p ->
+                    try
+                        let name = AssemblyName(args.Name)
+                        let codebase = Path.GetFullPath(Path.Combine(p, name.Name) + ".dll")
+                        if File.Exists(codebase) then
+                            name.CodeBase <- codebase
+                            name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                            name.Version <- Unchecked.defaultof<Version>
+                            Some (name)
+                        else None
+                    with | _ -> None
+                    )
+            match found() with
+            | None -> Unchecked.defaultof<Assembly>
+            | Some name -> Assembly.Load(name) )
 
 [<SetUpFixture>]
 type public AssemblyResolverTestFixture () =

@@ -1,6 +1,6 @@
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -11,7 +11,7 @@ open System
 open System.IO
 open System.Text
 open NUnit.Framework
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 let private filePath = "C:\\test.fs"
 
@@ -43,7 +43,7 @@ let (=>) (source: string) (expected: string list) =
                // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
                yield "" |]
 
-    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, source, projectOptions) |> Async.RunSynchronously
+    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunSynchronously
     
     let checkFileResults =
         match checkFileAnswer with

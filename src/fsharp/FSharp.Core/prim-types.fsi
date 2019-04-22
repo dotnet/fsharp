@@ -732,7 +732,7 @@ namespace Microsoft.FSharp.Core
     ///
     /// <remarks>When applied to a module within an assembly, then the attribute must not be given any arguments.
     /// When the enclosing namespace is opened in user source code, the module is also implicitly opened.</remarks>
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly ,AllowMultiple=true)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute =
         inherit Attribute
@@ -1865,6 +1865,20 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Get the value of a 'ValueSome' option. An InvalidOperationException is raised if the option is 'ValueNone'.</summary>
         member Value : 'T
+
+        /// <summary>Create a value option value that is a 'ValueNone' value.</summary>
+        static member None : 'T voption
+
+        /// <summary>Create a value option value that is a 'Some' value.</summary>
+        /// <param name="value">The input value</param>
+        /// <returns>A value option representing the value.</returns>
+        static member Some : value:'T -> 'T voption
+        
+        /// <summary>Return 'true' if the value option is a 'ValueSome' value.</summary>
+        member IsSome : bool
+
+        /// <summary>Return 'true' if the value option is a 'ValueNone' value.</summary>
+        member IsNone : bool
 
     /// <summary>The type of optional values, represented as structs.</summary>
     ///

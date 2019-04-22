@@ -162,13 +162,13 @@ if (exists($ENV{PRECMD})) {
   #    SOURCE=foo.fs PRECMD="\$FSC_PIPE bar.fs"
   # and it will expanded into $FSC_PIPE before invoking it
   $_ = $ENV{PRECMD};
-  s/^\$FSC_PIPE/$FSC_PIPE/g;
+  s/\$FSC_PIPE/$FSC_PIPE/g;
   s/\$FSI_PIPE/$FSI_PIPE/g;
-  s/^\$FSI32_PIPE/$FSI32_PIPE/g;
+  s/\$FSI32_PIPE/$FSI32_PIPE/g;
   s/\$ISCFLAGS/$ISCFLAGS/g;
-  s/^\$CSC_PIPE/$CSC_PIPE/g;
-  s/^\$VBC_PIPE/$VBC_PIPE/g;
-  RunExit(TEST_FAIL, "Fail to execute the PRECMD" . @CommandOutput . "\n")  if RunCommand("PRECMD",$_ ,1); 
+  s/\$CSC_PIPE/$CSC_PIPE/g;
+  s/\$VBC_PIPE/$VBC_PIPE/g;
+  RunExit(TEST_FAIL, "Fail to execute the PRECMD:\n" . join("\n", @CommandOutput) . "\n")  if RunCommand("PRECMD",$_ ,1);
 }
 
 # Normal testing begins 
@@ -268,12 +268,13 @@ if($ENV{REDUCED_RUNTIME} ne "1"){
      my $PEVERIFY = $ENV{PEVERIFY}; 
      unless(defined($PEVERIFY)) {
        my $scriptPath = dirname(__FILE__);
-       $PEVERIFY = "$scriptPath\\..\\testenv\\src\\PEVerify\\bin\\Release\\net46\\PEVerify.exe";
-       if (-e $PEVERIFY) {
-         $ENV{PEVERIFY} = $PEVERIFY;
-       }
-       else {
-         $ENV{PEVERIFY} = "$scriptPath\\..\\testenv\\src\\PEVerify\\bin\\Debug\\net46\\PEVerify.exe";
+       my @configurations = ("Debug", "Release");
+       foreach my $config (@configurations) {
+         $PEVERIFY = "$scriptPath\\..\\..\\..\\artifacts\\bin\\PEVerify\\$config\\net472\\PEVerify.exe";
+         if (-e $PEVERIFY) {
+           $ENV{PEVERIFY} = $PEVERIFY;
+           last;
+         }
        }
      }
 
@@ -427,7 +428,9 @@ sub RunCompilerCommand {
         @CommandOutput = <$remote>;
 
         print "--------------------------------------------------------\n";
-        print "Error from hosted compiler\n";
+        print "Results from hosted compiler\n";
+        print "msg: $msg\n";
+        print "cmd: $cmd\n";
         print "Exit code: $ExitCode\n";
         print "Error:     $Type\n";
         print @CommandOutput;
@@ -469,9 +472,10 @@ sub RunCommand {
   open(COMMAND,"$cmd 2>&1 |") or RunExit(TEST_FAIL, "Command Process Couldn't Be Created: $! Returned $? \n");
   @CommandOutput = <COMMAND>;
   close COMMAND;
+  my $result = $?;
 #  close STDERR; open STDERR, ">&SAVEERR"; #resore stderr
 
-  print @CommandOutput if ($dumpOutput == 1);
+  print(join("\n", @CommandOutput)) if ($dumpOutput == 1);
 
   # Test for an assertion failure
   if (-e ASSERT_FILE) {
@@ -483,7 +487,8 @@ sub RunCommand {
     close ASSERT;
     RunExit(TEST_FAIL, "Command Unexpectedly Failed with ASSERT \n");
   }
-  return $?;
+
+  return $result;
 }
 
 #############################################################
@@ -769,11 +774,11 @@ sub RunExit {
      #    SOURCE=foo.fs POSTCMD="\$FSC_PIPE bar.fs"
      # and it will expanded into $FSC_PIPE before invoking it
      $_ = $ENV{POSTCMD};
-     s/^\$FSC_PIPE/$FSC_PIPE/;
-     s/^\$FSI_PIPE/$FSI_PIPE/;
-     s/^\$FSI32_PIPE/$FSI32_PIPE/;
-     s/^\$CSC_PIPE/$CSC_PIPE/;
-     s/^\$VBC_PIPE/$VBC_PIPE/;
+     s/\$FSC_PIPE/$FSC_PIPE/g;
+     s/\$FSI_PIPE/$FSI_PIPE/g;
+     s/\$FSI32_PIPE/$FSI32_PIPE/g;
+     s/\$CSC_PIPE/$CSC_PIPE/g;
+     s/\$VBC_PIPE/$VBC_PIPE/g;
 
      if (RunCommand("POSTCMD",$_,1)){
   $exitVal = TEST_FAIL;

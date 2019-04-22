@@ -3,8 +3,9 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.ComponentModel.Composition
+open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open System.Runtime.InteropServices
 
 [<ExportBraceMatcher(FSharpConstants.FSharpLanguageName)>]
@@ -17,9 +18,9 @@ type internal FSharpBraceMatchingService
     
     static let defaultUserOpName = "BraceMatching"
 
-    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, parsingOptions: FSharpParsingOptions, position: int, userOpName: string, [<Optional; DefaultParameterValue(false)>] forFormatting: bool) = 
+    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText: SourceText, fileName, parsingOptions: FSharpParsingOptions, position: int, userOpName: string, [<Optional; DefaultParameterValue(false)>] forFormatting: bool) = 
         async {
-            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToString(), parsingOptions, userOpName)
+            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToFSharpSourceText(), parsingOptions, userOpName)
             let isPositionInRange range = 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                 | None -> false
@@ -35,7 +36,7 @@ type internal FSharpBraceMatchingService
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, parsingOptions, position, defaultUserOpName)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)

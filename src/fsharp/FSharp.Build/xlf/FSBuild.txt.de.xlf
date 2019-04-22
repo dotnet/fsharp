@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="de" original="../FSBuild.resx">
     <body>
       <trans-unit id="toolpathUnknown">
-        <source>ToolPath is unknown; specify the path to fsc.exe as the ToolPath property.</source>
-        <target state="translated">ToolPath ist unbekannt. Geben Sie den Pfad zu "fsc.exe" als ToolPath-Eigenschaft an.</target>
+        <source>ToolPath is unknown; specify the path to the tool.</source>
+        <target state="translated">ToolPath unbekannt. Geben Sie den Pfad zum Tool an.</target>
         <note />
       </trans-unit>
     </body>

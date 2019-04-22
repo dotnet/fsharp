@@ -315,7 +315,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">启动窗体(&amp;O):</target>
+        <target state="translated">启动窗体(&amp;O)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -355,7 +355,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">无</target>
+        <target state="translated">没有</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -714,7 +714,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Signing_IssuedBy">
         <source>Issued By</source>
-        <target state="translated">颁发者</target>
+        <target state="translated">发布者</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_Purpose">
@@ -784,7 +784,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">输入密码(&amp;P)以打开文件 {0}</target>
+        <target state="translated">输入密码以打开文件 {0}(&amp;P)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
@@ -950,7 +950,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PropPage_ReferenceNotFound">
         <source>&lt;The system cannot find the reference specified&gt;</source>
-        <target state="translated">&lt;系统无法找到指定的引用&gt;</target>
+        <target state="translated">&lt;系统找不到指定的引用&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceTitle">
@@ -985,7 +985,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">基址必须是十六进制数，位数小于或等于 8，如 H11000000(&amp;H)。</target>
+        <target state="translated">基址必须是小于或等于 8 位数字的十六进制数字，例如 &amp;H11000000。</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1607,7 +1607,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PermissionSet_Requires">
         <source>Requires:</source>
-        <target state="translated">要求: </target>
+        <target state="translated">要求:</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
@@ -1899,7 +1899,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_String">
         <source>New &amp;String</source>
-        <target state="translated">新建字符串(&amp;S)</target>
+        <target state="translated">新字符串(&amp;S)</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image">
@@ -1934,7 +1934,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
         <source>New I&amp;con...</source>
-        <target state="translated">新建图标(&amp;C)...</target>
+        <target state="translated">新图标(&amp;C)...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_TextFile">
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">应用程序</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">应用程序 (Web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">用户</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">用户 (Web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2522,7 +2512,7 @@ app.config 文件中的新值为“{1}”
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">
         <source>R&amp;emove Setting</source>
-        <target state="translated">删除设置(&amp;R)</target>
+        <target state="translated">删除设置(&amp;E)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
@@ -2730,7 +2720,7 @@ app.config 文件中的新值为“{1}”
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
         <source>Startup &amp;URI:</source>
-        <target state="translated">启动 URI (&amp;U):</target>
+        <target state="translated">启动和 URI:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">

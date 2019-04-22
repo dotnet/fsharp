@@ -14,8 +14,8 @@ open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 [<Shared>]
 [<ExportLanguageService(typeof<IBreakpointResolutionService>, FSharpConstants.FSharpLanguageName)>]
@@ -37,14 +37,14 @@ type internal FSharpBreakpointResolutionService
             else
                 let textLineColumn = textLinePos.Character
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-                let! parseResults = checker.ParseFile(fileName, sourceText.ToString(), parsingOptions, userOpName = userOpName)
+                let! parseResults = checker.ParseFile(fileName, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName)
                 return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
         }
 
     interface IBreakpointResolutionService with
         member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<BreakpointResolutionResult> =
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, sourceText, document.Name, textSpan, parsingOptions)
                 let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)

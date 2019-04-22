@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AssemblyNameLabel.Text">
         <source>Assembly &amp;name:</source>
-        <target state="translated">程序集名称(&amp;N): </target>
+        <target state="translated">程序集名称(&amp;N):</target>
         <note />
       </trans-unit>
       <trans-unit id="Win32ResourceFileBrowse.Text">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="OutputTypeLabel.Text">
         <source>O&amp;utput type:</source>
-        <target state="translated">输出类型(&amp;U): </target>
+        <target state="translated">输出类型(&amp;U):</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFrameworkLabel.Text">

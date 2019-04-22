@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The "unlinked" view of .NET metadata and code.  Central to the Abstract IL library
-module public Microsoft.FSharp.Compiler.AbstractIL.IL 
+module public FSharp.Compiler.AbstractIL.IL 
 
 open System.Collections.Generic
 open System.Reflection
@@ -53,7 +53,15 @@ type PublicKey =
     member KeyToken: byte[]
     static member KeyAsToken: byte[] -> PublicKey 
 
-type ILVersionInfo = uint16 * uint16 * uint16 * uint16
+[<Struct>]
+type ILVersionInfo =
+
+    val Major: uint16
+    val Minor: uint16
+    val Build: uint16
+    val Revision: uint16
+
+    new : major: uint16 * minor: uint16 * build: uint16 * revision: uint16 -> ILVersionInfo
 
 [<Sealed>]
 type ILAssemblyRef =
@@ -752,12 +760,22 @@ type ILAttribElem =
 /// Named args: values and flags indicating if they are fields or properties.
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
-/// Custom attributes.  See 'decodeILAttribData' for a helper to parse the byte[] 
-/// to ILAttribElem's as best as possible.  
+/// Custom attribute.
 type ILAttribute =
-    { Method: ILMethodSpec  
-      Data: byte[] 
-      Elements: ILAttribElem list}
+    /// Attribute with args encoded to a binary blob according to ECMA-335 II.21 and II.23.3.
+    /// 'decodeILAttribData' is used to parse the byte[] blob to ILAttribElem's as best as possible.
+    | Encoded of method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
+
+    /// Attribute with args in decoded form.
+    | Decoded of method: ILMethodSpec * fixedArgs: ILAttribElem list * namedArgs: ILAttributeNamedArg list
+
+    /// Attribute instance constructor.
+    member Method: ILMethodSpec
+
+    /// Decoded arguments. May be empty in encoded attribute form.
+    member Elements: ILAttribElem list
+
+    member WithMethod: method: ILMethodSpec -> ILAttribute
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes =
@@ -1595,7 +1613,7 @@ val decodeILAttribData:
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 
 /// Generate simple references to assemblies and modules.
-val mkSimpleAssRef: string -> ILAssemblyRef
+val mkSimpleAssemblyRef: string -> ILAssemblyRef
 
 val mkSimpleModRef: string -> ILModuleRef
 
@@ -1678,6 +1696,8 @@ val mkILCustomAttribute:
        ILAttribElem list (* fixed args: values and implicit types *) * 
        ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
          -> ILAttribute
+
+val getCustomAttrData: ILGlobals -> ILAttribute -> byte[]
 
 val mkPermissionSet: ILGlobals -> ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
 
@@ -1943,6 +1963,7 @@ val isILTypedReferenceTy: ILType -> bool
 val isILDoubleTy: ILType -> bool
 val isILSingleTy: ILType -> bool
 
+val sha1HashInt64 : byte[] -> int64
 /// Get a public key token from a public key.
 val sha1HashBytes: byte[] -> byte[] (* SHA1 hash *)
 

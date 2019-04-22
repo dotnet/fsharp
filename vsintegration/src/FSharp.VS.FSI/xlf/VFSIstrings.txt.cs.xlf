@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="cannotCreateToolWindow">
         <source>Cannot create window F# Interactive ToolWindow</source>
-        <target state="translated">Nedá se vytvořit Okno nástroje F# Interactive.</target>
+        <target state="translated">Nedá se vytvořit Okno nástrojů F# Interactive.</target>
         <note />
       </trans-unit>
       <trans-unit id="exceptionRaisedWhenCreatingRemotingClient">

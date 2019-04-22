@@ -1,4 +1,4 @@
-﻿namespace Microsoft.FSharp.Compiler.SourceCodeServices.ProjectCrackerTool
+﻿namespace FSharp.Compiler.SourceCodeServices.ProjectCrackerTool
 
 open System
 open System.Reflection

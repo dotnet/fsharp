@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">Advertenc&amp;ias específicas:</target>
+        <target state="translated">A&amp;dvertencias específicas:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">

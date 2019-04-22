@@ -200,6 +200,18 @@ let ``exactlyOne is consistent`` () =
     smallerSizeCheck exactlyOne<string>
     smallerSizeCheck exactlyOne<NormalFloat>
 
+let tryExactlyOne<'a when 'a : comparison> (xs : 'a []) =
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.tryExactlyOne)
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.tryExactlyOne)
+    let a = runAndCheckErrorType (fun () -> xs |> Array.tryExactlyOne)
+    consistency "tryExactlyOne" s l a
+
+[<Test>]
+let ``tryExactlyOne is consistent`` () =
+    smallerSizeCheck tryExactlyOne<int>
+    smallerSizeCheck tryExactlyOne<string>
+    smallerSizeCheck tryExactlyOne<NormalFloat>
+
 let except<'a when 'a : equality> (xs : 'a []) (itemsToExclude: 'a []) =
     let s = xs |> Seq.except itemsToExclude |> Seq.toArray
     let l = xs |> List.ofArray |> List.except itemsToExclude |> List.toArray
@@ -1205,12 +1217,14 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
 let ``unfold is consistent`` () =
     smallerSizeCheck unfold<int,int>
 
+#if EXPENSIVE
 [<Test; Category("Expensive"); Explicit>]
 let ``unfold is consistent full`` () =
     smallerSizeCheck unfold<int,int>
     smallerSizeCheck unfold<string,string>
     smallerSizeCheck unfold<float,int>
     smallerSizeCheck unfold<float,string>
+#endif
 
 let unzip<'a when 'a : equality> (xs:('a*'a) []) =       
     // no seq version

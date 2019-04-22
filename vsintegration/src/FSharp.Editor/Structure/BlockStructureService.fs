@@ -11,9 +11,9 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Structure
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.Structure
 
 module internal BlockStructure =
     let scopeToBlockType = function
@@ -150,7 +150,7 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
         asyncMaybe {
-            let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
             return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parsedInput |> Seq.toImmutableArray

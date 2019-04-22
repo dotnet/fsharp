@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The IL Binary writer.
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter 
+module internal FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.IL 
 
 [<Sealed>]
 type ILStrongNameSigner =

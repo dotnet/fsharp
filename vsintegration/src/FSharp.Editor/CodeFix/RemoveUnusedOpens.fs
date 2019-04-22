@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.Range
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
 type internal FSharpRemoveUnusedOpensCodeFixProvider
@@ -32,7 +32,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
                     let document = context.Document
                     let! sourceText = document.GetTextAsync()
                     let checker = checkerProvider.Checker
-                    let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken)
                     let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
                     let changes =
                         unusedOpens

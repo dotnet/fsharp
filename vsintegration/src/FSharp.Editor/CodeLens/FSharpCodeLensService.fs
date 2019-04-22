@@ -16,10 +16,10 @@ open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler
+open FSharp.Compiler.Ast
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 
@@ -142,7 +142,7 @@ type internal FSharpCodeLensService
             do! Async.Sleep 800 |> liftAsync
             logInfof "Rechecking code due to buffer edit!"
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
-            let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token)
             let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
             logInfof "Getting uses of all symbols!"
             let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync

@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net461"
 (**
 コンパイラサービス: シンボルの処理
 ==================================
@@ -21,7 +21,7 @@
 
 open System
 open System.IO
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()
@@ -34,7 +34,7 @@ let checker = FSharpChecker.Create()
 
 let parseAndTypeCheckSingleFile (file, input) = 
     // スタンドアロンの(スクリプト)ファイルを表すコンテキストを取得
-    let projOptions = 
+    let projOptions, _errors = 
         checker.GetProjectOptionsFromScript(file, input)
         |> Async.RunSynchronously
 
@@ -113,8 +113,8 @@ fnVal.CurriedParameterGroups.[0].[0].Name // "x"
 fnVal.CurriedParameterGroups.[0].[1].Name // "y"
 fnVal.DeclarationLocation.StartLine // 3
 fnVal.DisplayName // "foo"
-fnVal.DeclaringEntity.DisplayName // "Test"
-fnVal.DeclaringEntity.DeclarationLocation.StartLine // 1
+fnVal.DeclaringEntity.Value.DisplayName // "Test"
+fnVal.DeclaringEntity.Value.DeclarationLocation.StartLine // 1
 fnVal.GenericParameters.Count // 0
 fnVal.InlineAnnotation // FSharpInlineAnnotation.OptionalInline
 fnVal.IsActivePattern // false
@@ -175,8 +175,8 @@ argTy1c.TypeDefinition.CompiledName // "Int32"
 *)
 let projectContext = checkFileResults.ProjectContext
 
-for ass in projectContext.GetReferencedAssemblies() do
-    match ass.FileName with 
+for assembly in projectContext.GetReferencedAssemblies() do
+    match assembly.FileName with 
     | None -> printfn "コンパイル時にファイルの存在しないアセンブリを参照しました"
     | Some s -> printfn "コンパイル時にアセンブリ '%s' を参照しました" s
 
@@ -203,7 +203,7 @@ for ass in projectContext.GetReferencedAssemblies() do
 構成することもできます。
 *)
 let parseAndCheckScript (file, input) = 
-    let projOptions = 
+    let projOptions, errors = 
         checker.GetProjectOptionsFromScript(file, input)
         |> Async.RunSynchronously
 

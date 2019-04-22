@@ -1,26 +1,27 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
-module internal Microsoft.FSharp.Compiler.CompileOps
+module internal FSharp.Compiler.CompileOps
 
 open System
 open System.Text
 open System.Collections.Generic
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open Microsoft.FSharp.Core.CompilerServices
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
 
 
@@ -60,12 +61,13 @@ val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> Ast.Qualifi
 
 val PrependPathToInput: Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
-/// Checks if a module name is already given and deduplicates the name if needed.
-val DeduplicateModuleName: IDictionary<string,Set<string>> -> Set<string> -> string -> Ast.QualifiedNameOfFile -> Ast.QualifiedNameOfFile
+/// State used to de-deuplicate module names along a list of file names
+type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-val DeduplicateParsedInputModuleName: IDictionary<string,Set<string>> -> Ast.ParsedInput -> Ast.ParsedInput
+val DeduplicateParsedInputModuleName: ModuleNamesDict -> Ast.ParsedInput -> Ast.ParsedInput * ModuleNamesDict
 
+/// Parse a single input (A signature file or implementation file)
 val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
 
 //----------------------------------------------------------------------------
@@ -82,7 +84,7 @@ val GetDiagnosticNumber: PhasedDiagnostic -> int
 val SplitRelatedDiagnostics: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedDiagnostic: StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> unit
+val OutputPhasedDiagnostic: StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
 
 /// Output an error or warning to a buffer
 val OutputDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
@@ -119,7 +121,7 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// Part of LegacyHostedCompilerForTesting
-val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedDiagnostic -> seq<Diagnostic>
+val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedDiagnostic * suggestNames: bool -> seq<Diagnostic>
 
 //----------------------------------------------------------------------------
 // Resolve assembly references 
@@ -369,6 +371,9 @@ type TcConfigBuilder =
       mutable internalTestSpanStackReferring : bool
 
       mutable pathMap : PathMap
+
+      /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
+      mutable noConditionalErasure: bool
     }
 
     static member Initial: TcConfigBuilder
@@ -801,7 +806,7 @@ type LoadClosure =
     //
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
-    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: ReduceMemoryFlag -> LoadClosure
+    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * sourceText: ISourceText * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: ReduceMemoryFlag -> LoadClosure
 
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
     /// Used from fsi.fs and fsc.fs, for #load and command line. 

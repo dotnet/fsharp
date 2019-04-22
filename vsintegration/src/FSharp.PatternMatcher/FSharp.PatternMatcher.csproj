@@ -4,8 +4,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
   </PropertyGroup>
 
   <ItemGroup>

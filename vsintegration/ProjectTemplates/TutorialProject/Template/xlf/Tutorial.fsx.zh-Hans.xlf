@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">并选择“在交互窗口中执行”。  可从“视图”菜单中打开 F# 交互窗口。</target>
+        <target state="translated">并选择“在 Interactive 中执行”。  可从“视图”菜单中打开 F# 交互窗口。</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">

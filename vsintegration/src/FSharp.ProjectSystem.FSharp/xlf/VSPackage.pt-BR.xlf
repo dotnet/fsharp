@@ -124,7 +124,7 @@
       </trans-unit>
       <trans-unit id="ProjectFileExtensionFilter">
         <source>F# Project File (*.fsproj)</source>
-        <target state="translated">Arquivo de Projeto #F (*.fsproj)</target>
+        <target state="translated">Arquivo de projeto F# (*.fsproj)</target>
         <note />
       </trans-unit>
       <trans-unit id="ComponentFileExtensionFilter">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 para F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Ferramentas F# do Microsoft Visual 10.4 para F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 para F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Ferramentas F# do Microsoft Visual 10.4 para F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Visual F# Tools 10.2 para F# 4.5</target>
+        <source>Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Ferramentas F# do Visual 10.4 para F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

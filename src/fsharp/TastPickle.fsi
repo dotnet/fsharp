@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines the framework for serializing and de-serializing TAST data structures as binary blobs for the F# metadata format.
-module internal Microsoft.FSharp.Compiler.TastPickle 
+module internal FSharp.Compiler.TastPickle 
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
 
 /// Represents deserialized data with a dangling set of CCU fixup thunks indexed by name
 [<NoEquality; NoComparison>]
@@ -18,7 +18,7 @@ type PickledDataWithReferences<'RawData> =
     { /// The data that uses a collection of CcuThunks internally
       RawData: 'RawData 
       /// The assumptions that need to be fixed up
-      FixupThunks: list<CcuThunk> } 
+      FixupThunks: CcuThunk [] } 
 
     member Fixup : (CcuReference -> CcuThunk) -> 'RawData
     /// Like Fixup but loader may return None, in which case there is no fixup.

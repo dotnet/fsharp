@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Lexhelp
+module internal FSharp.Compiler.Lexhelp
 
 open Internal.Utilities
 open Internal.Utilities.Text
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
 
 
 

@@ -19,7 +19,7 @@ open Microsoft.CodeAnalysis.Text
 // IVT, we'll maintain the status quo.
 #nowarn "44"
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpClassificationService
@@ -47,7 +47,7 @@ type internal FSharpClassificationService
             asyncMaybe {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
-                let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
+                let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
