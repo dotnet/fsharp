@@ -93,7 +93,7 @@ type ContextInfo =
 exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
 exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
-exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * TType * TType * range * range
+exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argT: TType * paramT: TType * range * range
 exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
 exception ConstraintSolverError                         of string * range * range
 exception ConstraintSolverRelatedInformation            of string option * range * exn
@@ -125,7 +125,7 @@ type OptionalTrace =
 
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 
-val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> string -> ndeep: int -> TraitConstraintInfo option -> int * int -> AccessorDomain -> CalledMeth<Expr> list ->  bool -> TType option -> CalledMeth<Expr> option * OperationResult<unit>
+val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> ndeep: int -> cx: TraitConstraintInfo option -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: TType option -> CalledMeth<Expr> option * OperationResult<unit>
 
 val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
 

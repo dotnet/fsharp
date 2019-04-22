@@ -113,6 +113,16 @@ type CallerNamedArg<'T> =
 
     member x.CallerArg = (let (CallerNamedArg(_, a)) = x in a)
 
+/// Represents the list of unnamed / named arguments at method call site
+// todo: figure out / document why we are using list²
+[<Struct>]
+type CallerArgs<'T> = 
+    { Unnamed: CallerArg<'T> list list
+      Named: CallerNamedArg<'T> list list }
+with
+    static member Empty : CallerArgs<'T> = { Unnamed = List.empty; Named = List.empty }
+    member x.CallerArgCounts = (List.length x.Unnamed, List.length x.Named)
+    member x.CurriedCallerArgs = List.zip x.Unnamed x.Named
 //-------------------------------------------------------------------------
 // Callsite conversions
 //------------------------------------------------------------------------- 
@@ -303,17 +313,17 @@ type CalledMeth<'T>
       (infoReader: InfoReader,
        nameEnv: NameResolutionEnv option,
        isCheckingAttributeCall,
-       freshenMethInfo, // a function to help generate fresh type variables the property setters methods in generic classes 
-       m,
-       ad,                // the access domain of the place where the call is taking place
-       minfo: MethInfo,    // the method we're attempting to call 
-       calledTyArgs,      // the 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call 
-       callerTyArgs: TType list, // the 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call 
+       freshenMethInfo,             // a function to help generate fresh type variables the property setters methods in generic classes 
+       m,                           // range                           
+       ad,                          // the access domain of the place where the call is taking place
+       minfo: MethInfo,             // the method we're attempting to call 
+       calledTyArgs,                // the 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call 
+       callerTyArgs: TType list,    // the 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call 
        pinfoOpt: PropInfo option,   // the property related to the method we're attempting to call, if any  
-       callerObjArgTys: TType list,   // the types of the actual object argument, if any 
-       curriedCallerArgs: (CallerArg<'T> list * CallerNamedArg<'T> list) list,     // the data about any arguments supplied by the caller 
-       allowParamArgs: bool,       // do we allow the use of a param args method in its "expanded" form?
-       allowOutAndOptArgs: bool,  // do we allow the use of the transformation that converts out arguments as tuple returns?
+       callerObjArgTys: TType list, // the types of the actual object argument, if any 
+       callerArgs: CallerArgs<'T>, // the data about any arguments supplied by the caller 
+       allowParamArgs: bool,     // do we allow the use of a param args method in its "expanded" form?
+       allowOutAndOptArgs: bool, // do we allow the use of the transformation that converts out arguments as tuple returns?
        tyargsOpt : TType option) // method parameters
     =
     let g = infoReader.g
@@ -321,9 +331,10 @@ type CalledMeth<'T>
 
     let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
- 
+    
     let argSetInfos = 
-        (curriedCallerArgs, fullCurriedCalledArgs) ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
+        (callerArgs.CurriedCallerArgs, fullCurriedCalledArgs) 
+        ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
             // Find the arguments not given by name 
             let unnamedCalledArgs = 
                 fullCalledArgs |> List.filter (fun calledArg -> 
