@@ -3517,7 +3517,6 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
     static member GetAllDllReferences (tcConfig: TcConfig) = [
             let primaryReference = tcConfig.PrimaryAssemblyDllReference()
-            //yield primaryReference
 
             if not tcConfig.compilingFslib then 
                 yield tcConfig.CoreLibraryDllReference()
@@ -5126,12 +5125,12 @@ module private ScriptPreprocessClosure =
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptText
-           (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-            filename, sourceText, codeContext, 
+           (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+            filename, sourceText, codeContext,
             useSimpleResolution, useFsiAuxLib, useSdkRefs,
-            lexResourceManager: Lexhelp.LexResourceManager, 
+            lexResourceManager: Lexhelp.LexResourceManager,
             applyCommmandLineArgs, assumeDotNetFramework,
-            tryGetMetadataSnapshot, reduceMemoryUsage) = 
+            tryGetMetadataSnapshot, reduceMemoryUsage) =
 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
@@ -5178,15 +5177,15 @@ type LoadClosure with
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText
-                     (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-                      filename: string, sourceText: ISourceText, codeContext, useSimpleResolution: bool, 
-                      useFsiAuxLib, useSdkRefs, lexResourceManager: Lexhelp.LexResourceManager, 
-                      applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) = 
+                     (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                      filename: string, sourceText: ISourceText, codeContext, useSimpleResolution: bool,
+                      useFsiAuxLib, useSdkRefs, lexResourceManager: Lexhelp.LexResourceManager,
+                      applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) =
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
-            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, 
-             codeContext, useSimpleResolution, useFsiAuxLib, useSdkRefs, lexResourceManager, 
+            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText,
+             codeContext, useSimpleResolution, useFsiAuxLib, useSdkRefs, lexResourceManager,
              applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
     /// Analyze a set of script files and find the closure of their references.
@@ -5195,8 +5194,7 @@ type LoadClosure with
                       lexResourceManager: Lexhelp.LexResourceManager) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptFiles (ctok, tcConfig, files, codeContext, lexResourceManager)
-        
-              
+
 
 //----------------------------------------------------------------------------
 // Initial type checking environment

@@ -46,6 +46,7 @@ param (
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
+    [switch]$testFSharpCompiler,
     [switch]$testFSharpQA,
     [switch]$testFSharpCore,
     [switch]$testVs,
@@ -77,6 +78,7 @@ function Print-Usage() {
     Write-Host "  -testAll                  Run all tests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
+    Write-Host "  -testFSharpCompiler       Run F# Compiler unit tests"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
@@ -279,16 +281,16 @@ try {
     }
 
     if ($testFSharpCore) {
-        Write-Host "Environment Variables"
-        Get-Childitem Env:
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
+    if ($testFSharpCompiler) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
 
     if ($testVs) {
-        Write-Host "Environment Variables"
-        Get-Childitem Env:
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework
     }
