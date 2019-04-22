@@ -232,10 +232,27 @@ module QuotesFieldInitOrder =
            W = (check "cwkencelwe7" x 3; x <- x + 1; 4) |} 
           |> check "ceweoiwe" {| Y=3; X=2; W=4 |}
         x <- 1
-        {| Y = (check "clwknckl8" x 1; x <- x + 1; 2)
-           X = (check "clwknckl9" x 2; x <- x + 1; 3)
-           W = (check "cwkencelwe10" x 3; x <- x + 1; 4) 
-        |} |> check "ceweoiwe" {| Y=2; X=3; W=4 |}
+        let a = 
+            {| Y = (check "clwknckl8" x 1; x <- x + 1; 2)
+               X = (check "clwknckl9" x 2; x <- x + 1; 3)
+               W = (check "cwkencel10" x 3; x <- x + 1; 4) 
+            |} 
+        a |> check "ceweoiwe" {| Y=2; X=3; W=4 |}
+        x <- 1
+        let b = 
+            {| a with 
+                 X = (check "clwknckl9" x 1; x <- x + 1; 6)
+                 W = (check "cwkencel10" x 2; x <- x + 1; 7) 
+            |} 
+        b |> check "ceweoiwe87" {| Y=2; X=6; W=7 |}
+        x <- 1
+        let c = 
+            {| a with 
+                 X = (check "clwknckl9" x 1; x <- x + 1; 6)
+                 A = (check "cwkencel11" x 2; x <- x + 1; 8) 
+                 W = (check "cwkencel10" x 3; x <- x + 1; 7) 
+            |} 
+        c |> check "ceweoiwe87" {| Y=2; X=6; W=7; A=8 |}
     test()
 
 
