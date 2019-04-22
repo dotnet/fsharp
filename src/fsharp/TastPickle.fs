@@ -71,9 +71,9 @@ type Table<'T> =
         tbl.rows.Add x
         n
     member tbl.FindOrAdd x =
-        let mutable res = Unchecked.defaultof<_>
-        let ok = tbl.tbl.TryGetValue(x, &res)
-        if ok then res else tbl.Add x
+        match tbl.tbl.TryGetValue x with
+        | true, res -> res
+        | _ -> tbl.Add x
 
 
     static member Create n =
