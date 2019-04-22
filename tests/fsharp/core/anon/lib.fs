@@ -205,13 +205,14 @@ module QuotesNewRecord2 =
 
     open FSharp.Quotations
     open FSharp.Quotations.Patterns
-    let ty, args = match <@ {| Y = "two"; X = 1 |} @> with NewRecord(a,b) -> a,b
+    let yarg,ty, args = match <@ {| Y = "two"; X = 1 |} @> with Let(_,yarg,NewRecord(a,b)) -> yarg,a,b
 
     check "qgceoijew90ewcw1"  (FSharp.Reflection.FSharpType.IsRecord(ty)) true
     check "qgceoijew90ewcw2"  (FSharp.Reflection.FSharpType.GetRecordFields(ty).Length) 2
     // Fields are sorted
     check "qgceoijew90ewcw2"  ([ for p in FSharp.Reflection.FSharpType.GetRecordFields(ty) -> p.Name ]) [ "X"; "Y" ]
-    check "qgceoijew90ewcw3"  args [ <@@ 1 @@>; <@@ "two" @@> ] 
+    check "qgceoijew90ewcw3"  args.[0] <@@ 1 @@> 
+    check "qgceoijew90ewcw4"  yarg <@@ "two" @@> 
 
 module QuotesPropertyGet = 
 
