@@ -112,7 +112,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
 
     member x.TryFind(y) =
         match firstEntries.TryGetValue y with
-        | true, res -> Some(res)
+        | true, res -> Some res
         | _ -> None
 
     member x.Count = firstEntries.Count
