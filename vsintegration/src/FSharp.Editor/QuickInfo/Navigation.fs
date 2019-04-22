@@ -24,8 +24,8 @@ type internal QuickInfoNavigation
     let solution = workspace.CurrentSolution
 
     member __.IsTargetValid (range: range) =
-        range <> rangeStartup &&
-        range <> thisSymbolUseRange &&
+        not (equals range rangeStartup) &&
+        not (equals range thisSymbolUseRange) &&
         solution.TryGetDocumentIdFromFSharpRange (range, initialDoc.Project.Id) |> Option.isSome
 
     member __.RelativePath (range: range) =

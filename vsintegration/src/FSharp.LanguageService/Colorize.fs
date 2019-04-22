@@ -164,7 +164,7 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
                    inOneButNotTheOther.SymmetricExceptWith(newExtraColorizationsKeyed.Keys)
                    let inBoth = HashSet(oldExtraColorizationsKeyed.Keys)
                    inBoth.IntersectWith(newExtraColorizationsKeyed.Keys)
-                   inBoth.RemoveWhere(fun i -> newExtraColorizationsKeyed.[i] = oldExtraColorizationsKeyed.[i]) |> ignore
+                   inBoth.RemoveWhere(fun i -> (newExtraColorizationsKeyed.[i], oldExtraColorizationsKeyed.[i]) ||> Array.forall2 (fun (r1, sct1) (r2, sct2) -> Range.equals r1 r2 && sct1 = sct2)) |> ignore
                    Array.append (Seq.toArray inOneButNotTheOther) (Seq.toArray inBoth)
             Array.sortInPlace changedLines
             changedLines

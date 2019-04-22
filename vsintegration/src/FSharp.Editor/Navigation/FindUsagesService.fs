@@ -111,7 +111,7 @@ type internal FSharpFindUsagesService
 
             for symbolUse in symbolUses do
                 match declarationRange with
-                | Some declRange when declRange = symbolUse.RangeAlternate -> ()
+                | Some declRange when equals declRange symbolUse.RangeAlternate -> ()
                 | _ ->
                     // report a reference if we're interested in all _or_ if we're looking at an implementation
                     if allReferences || symbolUse.IsFromDispatchSlotImplementation then

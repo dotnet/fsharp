@@ -267,7 +267,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             | FSharpFindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
                 // either a signature or an implementation file then we jump to it's respective postion in thethe
-                if lexerSymbol.Range = targetRange then
+                if equals lexerSymbol.Range targetRange then
                     // jump from signature to the corresponding implementation
                     if isSignatureFile originDocument.FilePath then
                         let implFilePath = Path.ChangeExtension (originDocument.FilePath,"fs")

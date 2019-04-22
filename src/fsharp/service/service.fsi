@@ -353,6 +353,8 @@ type public FSharpProjectOptions =
       /// if and only if the stamps are equal
       Stamp: int64 option
     }
+    with
+        static member AreSameForChecking: options1: FSharpProjectOptions * options2: FSharpProjectOptions -> bool
          
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
 [<RequireQualifiedAccess>]

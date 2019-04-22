@@ -142,7 +142,7 @@ type internal FSharpAddOpenCodeFixProvider
                     longIdent
                     |> List.map (fun ident ->
                         { Ident = ident.idText
-                          Resolved = not (ident.idRange = unresolvedIdentRange)})
+                          Resolved = not (Range.equals ident.idRange unresolvedIdentRange)})
                     |> List.toArray)
                                                     
             let insertionPoint = 

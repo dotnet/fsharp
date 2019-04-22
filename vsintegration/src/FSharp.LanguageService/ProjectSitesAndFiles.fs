@@ -334,7 +334,8 @@ type internal ProjectSitesAndFiles() =
                 | Some (_parsingOptions, _site, projectOptions) ->
                     if projectSite.CompilationSourceFiles <> projectOptions.SourceFiles ||
                        projectSite.CompilationOptions <> projectOptions.OtherOptions ||
-                       referencedProjectOptions <> projectOptions.ReferencedProjects then
+                       (referencedProjectOptions, projectOptions.ReferencedProjects)
+                       ||> Array.forall2 (fun (s1, options1) (s2, options2) -> s1 = s2 && FSharpProjectOptions.AreSameForChecking(options1, options2)) then
                             newOption()
                     else
                             projectOptions
