@@ -1356,57 +1356,65 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
     let generateAnonType genToStringMethod (isStruct, ilTypeRef, nms) =
     
-        let flds = [ for (i, nm) in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar (uint16 i)) ]
+        let propTys = [ for (i, nm) in Array.indexed nms -> nm, ILType.TypeVar (uint16 i) ]
+
         // Note that this alternative below would give the same names as C#, but the generated
         // comparison/equality doesn't know about these names.
         //let flds = [ for (i, nm) in Array.indexed nms -> (nm, "<" + nm + ">" + "i__Field", ILType.TypeVar (uint16 i)) ]
+        let ilCtorRef = mkILMethRef(ilTypeRef, ILCallingConv.Instance, ".ctor", 0, List.map snd propTys, ILType.Void)
 
-        let ilGenericParams =
-            [ for nm in nms ->
-                { Name = sprintf "<%s>j__TPar" nm
-                  Constraints = []
-                  Variance=NonVariant
-                  CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-                  HasReferenceTypeConstraint=false
-                  HasNotNullableValueTypeConstraint=false
-                  HasDefaultConstructorConstraint= false
-                  MetadataIndex = NoMetadataIdx } ]
+        let ilMethodRefs = 
+            [| for (propName, propTy) in propTys ->
+                   mkILMethRef (ilTypeRef, ILCallingConv.Instance, "get_" + propName, 0, [], propTy) |]
 
-        let ilTy = mkILFormalNamedTy (if isStruct then ILBoxity.AsValue else ILBoxity.AsObject) ilTypeRef ilGenericParams
-
-        // Generate the IL fields
-        let ilFieldDefs =
-            mkILFields
-                [ for (_, fldName, fldTy) in flds ->
-                    let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
-                    fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
-     
-        // Generate property definitions for the fields compiled as properties
-        let ilProperties =
-            mkILProperties
-                [ for (i, (propName, _fldName, fldTy)) in List.indexed flds ->
-                        ILPropertyDef(name=propName,
-                          attributes=PropertyAttributes.None,
-                          setMethod=None,
-                          getMethod=Some(mkILMethRef(ilTypeRef, ILCallingConv.Instance, "get_" + propName, 0, [], fldTy )),
-                          callingConv=ILCallingConv.Instance.ThisConv,
-                          propertyType=fldTy,
-                          init= None,
-                          args=[],
-                          customAttrs=mkILCustomAttrs [ mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i ]) ]
-     
-        let ilMethods =
-            [ for (propName, fldName, fldTy) in flds ->
-                    mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
-              yield! genToStringMethod ilTy ]
-
-        let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
-           
-        let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
-        let ilCtorRef = mkRefToILMethod(ilTypeRef, ilCtorDef)
-        let ilMethodRefs = [| for mdef in ilMethods -> mkRefToILMethod(ilTypeRef, mdef) |]
+        let ilTy = mkILNamedTy (if isStruct then ILBoxity.AsValue else ILBoxity.AsObject) ilTypeRef (List.map snd propTys)
 
         if ilTypeRef.Scope.IsLocalRef then
+
+            let flds = [ for (i, nm) in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar (uint16 i)) ]
+
+            let ilGenericParams =
+                [ for nm in nms ->
+                    { Name = sprintf "<%s>j__TPar" nm
+                      Constraints = []
+                      Variance=NonVariant
+                      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+                      HasReferenceTypeConstraint=false
+                      HasNotNullableValueTypeConstraint=false
+                      HasDefaultConstructorConstraint= false
+                      MetadataIndex = NoMetadataIdx } ]
+
+            let ilTy = mkILFormalNamedTy (if isStruct then ILBoxity.AsValue else ILBoxity.AsObject) ilTypeRef ilGenericParams
+
+            // Generate the IL fields
+            let ilFieldDefs =
+                mkILFields
+                    [ for (_, fldName, fldTy) in flds ->
+                        let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
+                        fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
+     
+            // Generate property definitions for the fields compiled as properties
+            let ilProperties =
+                mkILProperties
+                    [ for (i, (propName, _fldName, fldTy)) in List.indexed flds ->
+                            ILPropertyDef(name=propName,
+                              attributes=PropertyAttributes.None,
+                              setMethod=None,
+                              getMethod=Some(mkILMethRef(ilTypeRef, ILCallingConv.Instance, "get_" + propName, 0, [], fldTy )),
+                              callingConv=ILCallingConv.Instance.ThisConv,
+                              propertyType=fldTy,
+                              init= None,
+                              args=[],
+                              customAttrs=mkILCustomAttrs [ mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i ]) ]
+     
+            let ilMethods =
+                [ for (propName, fldName, fldTy) in flds ->
+                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
+                  yield! genToStringMethod ilTy ]
+
+            let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
+           
+            let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0
@@ -1506,10 +1514,9 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     member __.GenerateAnonType (genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         let isStruct = evalAnonInfoIsStruct anonInfo
         let key = anonInfo.Stamp
-        if ccuEq cenv.viewCcu anonInfo.Assembly then
-            if not (anonTypeTable.Table.ContainsKey key) then
-                let info = generateAnonType genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)
-                anonTypeTable.Table.[key] <- info
+        if not (anonTypeTable.Table.ContainsKey key) then
+            let info = generateAnonType genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)
+            anonTypeTable.Table.[key] <- info
 
     member __.LookupAnonType (anonInfo: AnonRecdTypeInfo) =
         match anonTypeTable.Table.TryGetValue anonInfo.Stamp with
@@ -7613,7 +7620,6 @@ let ClearGeneratedValue (ctxt: ExecutionContext) (_g: TcGlobals) eenv (v: Val) =
       printf "ilxGen.ClearGeneratedValue for v=%s caught exception:\n%A\n\n" v.LogicalName e
 #endif
       ()
-
 
 /// The published API from the ILX code generator
 type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: ConstraintSolver.TcValF, ccu: Tast.CcuThunk) =
