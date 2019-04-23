@@ -17,7 +17,7 @@ let test (s : string) b =
 let check (s:string) x1 x2 = 
     stderr.Write(s)
     if (x1 = x2) then stderr.WriteLine " OK"
-    else (stderr.WriteLine (sprintf "fail, expected %A, got %A" x2 x1); report_failure (s))
+    else (stderr.WriteLine (sprintf " failed, expected %A, got %A" x2 x1); report_failure (s))
 
 let inline getX (x: ^TX) : ^X = 
         (^TX : (member get_X : unit -> ^X) (x))
@@ -205,13 +205,56 @@ module QuotesNewRecord2 =
 
     open FSharp.Quotations
     open FSharp.Quotations.Patterns
-    let ty, args = match <@ {| Y = "two"; X = 1 |} @> with NewRecord(a,b) -> a,b
+    let yarg,ty, args = match <@ {| Y = "two"; X = 1 |} @> with Let(_,yarg,NewRecord(a,b)) -> yarg,a,b
 
     check "qgceoijew90ewcw1"  (FSharp.Reflection.FSharpType.IsRecord(ty)) true
     check "qgceoijew90ewcw2"  (FSharp.Reflection.FSharpType.GetRecordFields(ty).Length) 2
     // Fields are sorted
     check "qgceoijew90ewcw2"  ([ for p in FSharp.Reflection.FSharpType.GetRecordFields(ty) -> p.Name ]) [ "X"; "Y" ]
-    check "qgceoijew90ewcw3"  args [ <@@ 1 @@>; <@@ "two" @@> ] 
+    check "qgceoijew90ewcw3"  args.[0] <@@ 1 @@> 
+    check "qgceoijew90ewcw4"  yarg <@@ "two" @@> 
+
+module QuotesFieldInitOrder = 
+
+    let mutable x = 1
+    let test() = 
+        x <- 1
+        {| X = (check "clwknckl1" x 1; x <- x + 1; 3)
+           Y = (check "cwkencelwe2" x 2; x <- x + 1; 2) 
+        |} |> check "ceweoiwe1" {| Y=2; X=3 |}
+        x <- 1
+        {| X = (check "clwknckl3" x 1; x <- x + 1; 2)
+           W = (check "cwkencelwe4" x 2; x <- x + 1; 3) 
+        |} |> check "ceweoiwe2" {| W=3; X=2 |}
+        x <- 1
+        {| X = (check "clwknckl5" x 1; x <- x + 1; 2)
+           Y = (check "clwknckl6" x 2; x <- x + 1; 3)
+           W = (check "cwkencelwe7" x 3; x <- x + 1; 4) |} 
+          |> check "ceweoiwe" {| Y=3; X=2; W=4 |}
+        x <- 1
+        let a = 
+            {| Y = (check "clwknckl8" x 1; x <- x + 1; 2)
+               X = (check "clwknckl9" x 2; x <- x + 1; 3)
+               W = (check "cwkencel10" x 3; x <- x + 1; 4) 
+            |} 
+        a |> check "ceweoiwe" {| Y=2; X=3; W=4 |}
+        x <- 1
+        let b = 
+            {| a with 
+                 X = (check "clwknckl9" x 1; x <- x + 1; 6)
+                 W = (check "cwkencel10" x 2; x <- x + 1; 7) 
+            |} 
+        b |> check "ceweoiwe87" {| Y=2; X=6; W=7 |}
+        x <- 1
+        let c = 
+            {| a with 
+                 X = (check "clwknckl9" x 1; x <- x + 1; 6)
+                 A = (check "cwkencel11" x 2; x <- x + 1; 8) 
+                 W = (check "cwkencel10" x 3; x <- x + 1; 7) 
+            |} 
+        c |> check "ceweoiwe87" {| Y=2; X=6; W=7; A=8 |}
+    test()
+
 
 module QuotesPropertyGet = 
 

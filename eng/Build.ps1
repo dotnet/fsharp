@@ -46,10 +46,10 @@ param (
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
-    [switch]$testFSharpCore,
     [switch]$testCambridge,
-    [switch]$testFSharpQA,
     [switch]$testCompiler,
+    [switch]$testFSharpCore,
+    [switch]$testFSharpQA,
     [switch]$testVs,
     [switch]$testAll,
 
@@ -77,10 +77,11 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Test actions"
     Write-Host "  -testAll                  Run all tests"
-    Write-Host "  -testCambridge            Run cambridge tests"
+    Write-Host "  -testCambridge            Run Cambridge tests"
     Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
+    Write-Host "  -testCompiler             Run F# Compiler unit tests"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
