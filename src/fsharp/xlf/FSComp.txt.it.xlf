@@ -137,6 +137,11 @@
         <target state="translated">Provare a usare 'return!' invece di 'return'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="useSdkRefs">
+        <source>Use reference assemblies for DotNET framework references when available (Enabled by default)).</source>
+        <target state="new">Use reference assemblies for DotNET framework references when available (Enabled by default)).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
         <source>Consider using 'yield!' instead of 'yield'.</source>
         <target state="translated">Provare a usare 'yield!' invece di 'yield'.</target>
