@@ -1458,3 +1458,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3245,tcCopyAndUpdateNeedsRecordType,"The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record"
 3300,chkInvalidFunctionParameterType,"The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL."
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
+useSdkRefs,"Use reference assemblies for DotNET framework references when available (Enabled by default))."
