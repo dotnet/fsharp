@@ -2286,8 +2286,8 @@ type TcConfigBuilder =
           useSdkRefs = true
           tryGetMetadataSnapshot = (fun _ -> None)
           internalTestSpanStackReferring = false
-          pathMap = PathMap.empty
           noConditionalErasure = false
+          pathMap = PathMap.empty
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
