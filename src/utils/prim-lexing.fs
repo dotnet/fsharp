@@ -103,6 +103,7 @@ module SourceText =
 
 namespace Internal.Utilities.Text.Lexing
 
+    open FSharp.Compiler.Text
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
     open System.Collections.Generic
