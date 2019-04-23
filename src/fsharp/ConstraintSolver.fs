@@ -190,7 +190,7 @@ type OverloadInformation = {
   error: exn
 }
 with
-    member OverloadMethodInfo : displayEnv: DisplayEnv -> m: range -> string
+    member x.OverloadMethodInfo displayEnv m = NicePrint.stringOfMethInfo x.amap m displayEnv x.methodSlot.Method
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
 type OverloadResolutionFailure =
