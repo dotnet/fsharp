@@ -211,7 +211,7 @@ let IsValLocal env (v: Val) =
 /// Get the limit of the val.
 let GetLimitVal cenv env m (v: Val) =
     let limit =
-        match cenv.limitVals.TryGetValue(v.Stamp) with
+        match cenv.limitVals.TryGetValue v.Stamp with
         | true, limit -> limit
         | _ ->
             if IsValLocal env v then

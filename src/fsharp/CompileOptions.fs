@@ -449,6 +449,9 @@ let subSystemVersionSwitch (tcConfigB: TcConfigBuilder) (text: string) =
             | _ -> fail()
         | _ -> fail()
 
+let SetUseSdkSwitch (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.useSdkRefs <- (switch = OptionSwitch.On)
+
 let (++) x s = x @ [s]
 
 let SetTarget (tcConfigB: TcConfigBuilder)(s: string) =
@@ -552,18 +555,21 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
 // OptionBlock: Input files
 //-------------------------
 
-let inputFileFlagsBoth (tcConfigB : TcConfigBuilder) =
-    [   CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None,
-                            Some (FSComp.SR.optsReference()) )
+let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
+    [ CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
     ]
 
-let referenceFlagAbbrev (tcConfigB: TcConfigBuilder) = 
-        CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None,
-                            Some(FSComp.SR.optsShortFormOf("--reference")) )
-      
-let inputFileFlagsFsi tcConfigB = inputFileFlagsBoth tcConfigB
-let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
+let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB 
 
+let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
+#if NETSTANDARD
+        [ CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs())) ]
+#else
+        List.empty<CompilerOption>
+#endif
+
+let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
+    List.concat [ inputFileFlagsBoth tcConfigB; inputFileFlagsFsiBase tcConfigB]
 
 // OptionBlock: Errors and warnings
 //---------------------------------
@@ -837,12 +843,6 @@ let libFlag (tcConfigB: TcConfigBuilder) =
         ("lib", tagDirList,
          OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), None,
          Some (FSComp.SR.optsLib()))
-
-let libFlagAbbrev (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("I", tagDirList,
-         OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), None,
-         Some (FSComp.SR.optsShortFormOf("--lib")))
 
 let codePageFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
@@ -1408,8 +1408,10 @@ let abbreviatedFlagsBoth tcConfigB =
         CompilerOption("O", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsShortFormOf("--optimize[+|-]")))
         CompilerOption("g", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsShortFormOf("--debug")))
         CompilerOption("i", tagString, OptionUnit (fun () -> tcConfigB.printSignature <- true), None, Some(FSComp.SR.optsShortFormOf("--sig")))
-        referenceFlagAbbrev tcConfigB (* -r <dll> *)
-        libFlagAbbrev tcConfigB       (* -I <dir> *)
+        CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)),
+            None, Some(FSComp.SR.optsShortFormOf("--reference")))
+        CompilerOption("I", tagDirList, OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), 
+            None, Some (FSComp.SR.optsShortFormOf("--lib")))
     ]
 
 let abbreviatedFlagsFsi tcConfigB = abbreviatedFlagsBoth tcConfigB

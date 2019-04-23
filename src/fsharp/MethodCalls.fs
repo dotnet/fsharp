@@ -725,7 +725,7 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
             match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, methodName)) with 
             | true, vref -> Some vref
             | _ -> 
-            match amap.g.knownFSharpCoreModules.TryGetValue(declaringEntity.LogicalName) with
+            match amap.g.knownFSharpCoreModules.TryGetValue declaringEntity.LogicalName with
             | true, modRef -> 
                 modRef.ModuleOrNamespaceType.AllValsByLogicalName 
                 |> Seq.tryPick (fun (KeyValue(_, v)) -> if v.CompiledName = methodName then Some (mkNestedValRef modRef v) else None)
@@ -1219,7 +1219,7 @@ module ProvidedMethodCalls =
             // sub in the appropriate argument
             // REVIEW: "thisArg" pointer should be first, if present
             let vRaw = pe.PUntaint(id, m)
-            match varConv.TryGetValue(vRaw) with
+            match varConv.TryGetValue vRaw with
             | true, v -> v
             | _ ->
                 let typeProviderDesignation = ExtensionTyping.DisplayNameOfTypeProvider (pe.TypeProvider, m)
