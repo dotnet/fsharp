@@ -73,6 +73,12 @@ module TypeNotGeneratedBug =
     
     let bar() = foo {| ThisIsUniqueToThisTest6353 = 1 |}
     
+module FeasibleEqualityNotImplemented = 
+    type R = {| number: int |}
+    let e = Event< R>()
+    e.Trigger {|number = 3|}
+    e.Publish.Add (printfn "%A")    // error
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
