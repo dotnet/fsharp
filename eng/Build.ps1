@@ -46,8 +46,10 @@ param (
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
-    [switch]$testFSharpQA,
     [switch]$testFSharpCore,
+    [switch]$testCambridge,
+    [switch]$testFSharpQA,
+    [switch]$testCompiler,
     [switch]$testVs,
     [switch]$testAll,
 
@@ -75,6 +77,8 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Test actions"
     Write-Host "  -testAll                  Run all tests"
+    Write-Host "  -testCambridge            Run cambridge tests"
+    Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
@@ -279,16 +283,21 @@ try {
     }
 
     if ($testFSharpCore) {
-        Write-Host "Environment Variables"
-        Get-Childitem Env:
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
+    if ($testCompiler) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
+    if ($testCambridge) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
+    }
 
     if ($testVs) {
-        Write-Host "Environment Variables"
-        Get-Childitem Env:
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework
     }

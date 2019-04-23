@@ -1500,18 +1500,18 @@ let enablePInvoke = true
 // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
 let definePInvokeMethod =
     typeof<TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
-        typeof<string>;
-        typeof<string>;
-        typeof<string>;
-        typeof<System.Reflection.MethodAttributes>;
-        typeof<System.Reflection.CallingConventions>;
-        typeof<Type>;
-        typeof<Type[]>;
-        typeof<Type[]>;
-        typeof<Type[]>;
-        typeof<Type[][]>;
-        typeof<Type[][]>;
-        typeof<System.Runtime.InteropServices.CallingConvention>;
+        typeof<string>
+        typeof<string>
+        typeof<string>
+        typeof<System.Reflection.MethodAttributes>
+        typeof<System.Reflection.CallingConventions>
+        typeof<Type>
+        typeof<Type[]>
+        typeof<Type[]>
+        typeof<Type[]>
+        typeof<Type[][]>
+        typeof<Type[][]>
+        typeof<System.Runtime.InteropServices.CallingConvention>
         typeof<System.Runtime.InteropServices.CharSet> |])
 
 let enablePInvoke = definePInvokeMethod <> null
