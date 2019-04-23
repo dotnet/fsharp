@@ -188,7 +188,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | NameClash(_, _, _, m, _, _, _) 
       | UnresolvedOverloading(_, _, _, m) 
       | UnresolvedConversionOperator (_, _, _, m)
-      | PossibleOverload(_, _, _, m) 
+      | PossibleOverload(_, _, m) 
       | VirtualAugmentationOnNullValuedType m
       | NonVirtualAugmentationOnNullValuedType m
       | NonRigidTypar(_, _, _, _, _, m)
@@ -406,9 +406,9 @@ let warningOn err level specificWarnOn =
 let SplitRelatedDiagnostics(err: PhasedDiagnostic) = 
     let ToPhased e = {Exception=e; Phase = err.Phase}
     let rec SplitRelatedException = function
-      | UnresolvedOverloading(a, overloads, b, c) -> 
+      | UnresolvedOverloading(displayEnv, msg, overloads, m) -> 
            let related = overloads |> List.map ToPhased
-           UnresolvedOverloading(a, [], b, c)|>ToPhased, related
+           UnresolvedOverloading(displayEnv, msg, [], m) |> ToPhased, related
       | ConstraintSolverRelatedInformation(fopt, m2, e) -> 
           let e, related = SplitRelatedException e
           ConstraintSolverRelatedInformation(fopt, m2, e.Exception)|>ToPhased, related
@@ -770,18 +770,18 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(e.ContextualErrorMessage) |> ignore
 #endif
 
-      | UnresolvedOverloading(_, _, mtext, _) -> 
+      | UnresolvedOverloading(_, mtext, _, _) ->
           os.Append mtext |> ignore
 
       | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
           os.Append(FSComp.SR.csTypeDoesNotSupportConversion(t1, t2)) |> ignore
 
-      | PossibleOverload(_, minfo, originalError, _) -> 
+      | PossibleOverload(denv, minfo, m) ->
           // print original error that describes reason why this overload was rejected
           let buf = new StringBuilder()
-          OutputExceptionR buf originalError
-
+          OutputExceptionR buf minfo.error
+          let minfo = minfo.OverloadMethodInfo denv m
           os.Append(PossibleOverloadE().Format minfo (buf.ToString())) |> ignore
 
       | FunctionExpected _ ->

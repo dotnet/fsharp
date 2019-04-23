@@ -90,6 +90,21 @@ type ContextInfo =
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
 
+/// Captures relevant information for a particular failed overload resolution.
+[<Struct>]
+type OverloadInformation = {
+  methodSlot: CalledMeth<Expr>
+  amap : ImportMap
+  error: exn
+}
+with
+    member OverloadMethodInfo : displayEnv: DisplayEnv -> m: range -> string
+
+/// Cases for overload resolution failure that exists in the implementation of the compiler.
+type OverloadResolutionFailure =
+    | NoOverloadsFound   of methodName: string * candidates: OverloadInformation list
+    | PossibleCandidates of methodName: string * methodNames: string list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
+
 exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
 exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
@@ -103,8 +118,8 @@ exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displa
 exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * ContextInfo * range
 exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
 exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
-exception PossibleOverload                      of displayEnv: DisplayEnv * string * exn * range
-exception UnresolvedOverloading                 of displayEnv: DisplayEnv * exn list * string * range
+exception PossibleOverload                      of displayEnv: DisplayEnv * overload: OverloadInformation * range
+exception UnresolvedOverloading                 of displayEnv: DisplayEnv * prefixMessage: string * overloads: PossibleOverload list * range
 exception NonRigidTypar                         of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
