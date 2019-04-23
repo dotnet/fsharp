@@ -38,21 +38,23 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     //
     // Format:
     // =======
-    //      $(Major).$(Minor).$(Build) [-SomePrefix]
+    //      $(Major).$(Minor).$(Build) [-SomeSuffix]
     //   Major, Minor, Build collates normally
-    //   Strings without -SomePrefix collate higher than SomePrefix, 
-    //   SomePrefix collates using normal alphanumeric rules
+    //   Strings without -SomeSuffix collate higher than SomeSuffix, 
+    //   SomeSuffix collates using normal alphanumeric rules
     //
     let deconstructVersion (version:string)  =
-        let getSuffix =
+        let version, suffix =
             let pos = version.IndexOf("-")
-            if pos >= 0 then version.Substring(pos + 1) else ""
-        let elements = version.Split('.')
+            if pos >= 0 then
+                version.Substring(0, pos), version.Substring(pos + 1)
+            else version, ""
 
+        let elements = version.Split('.')
         if elements.Length < 3 then
-            struct (0, 0, 0, getSuffix)
+            struct (0, 0, 0, suffix)
         else
-            struct (Int32.Parse(elements.[0]), Int32.Parse(elements.[1]), Int32.Parse(elements.[2]), getSuffix)
+            struct (Int32.Parse(elements.[0]), Int32.Parse(elements.[1]), Int32.Parse(elements.[2]), suffix)
 
     let versionCompare c1 c2 =
         if c1 = c2 then 0
@@ -60,17 +62,20 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             try
                 let struct (major1, minor1, build1, suffix1 ) = deconstructVersion c1
                 let struct (major2, minor2, build2, suffix2 ) = deconstructVersion c2
-
-                let v = major2 - major1
-                if v = 0 then 0
+                let v = major1 - major2
+                if v <> 0 then v
                 else
-                    let v = minor2 - minor1
+                    let v = minor1 - minor2
                     if v <> 0 then v
                     else
-                        let v = build2 - build1
+                        let v = build1 - build2
                         if v <> 0 then v
                         else
-                            String.CompareOrdinal(suffix2, suffix1)
+                            match String.IsNullOrEmpty(suffix1), String.IsNullOrEmpty(suffix2) with
+                            | true, true -> 0
+                            | true, false -> 1
+                            | false, true -> -1
+                            | false, false -> String.Compare(suffix1, suffix2, StringComparison.InvariantCultureIgnoreCase)
             with _ -> 0
 
     let executionTfm =
