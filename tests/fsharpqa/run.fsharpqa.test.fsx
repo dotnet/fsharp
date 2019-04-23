@@ -15,9 +15,10 @@ let addToPath path =
     if not(Array.contains path splits) then
         setEnvVar "PATH" (path + (string Path.PathSeparator) + currentPath)
 
+let nugetCache = Path.Combine(System.Environment.GetEnvironmentVariable "USERPROFILE", ".nuget", "packages")
 let rootFolder = Path.Combine(__SOURCE_DIRECTORY__, "..", "..")
-let compilerBinFolder = Path.Combine(rootFolder, releaseOrDebug, "net40", "bin")
-setEnvVar "CSC_PIPE"      (Path.Combine(rootFolder, "packages", "Microsoft.Net.Compilers.2.7.0", "tools", "csc.exe"))
+let compilerBinFolder = Path.Combine(rootFolder, "artifacts", "bin", "fsc", releaseOrDebug, "net472")
+setEnvVar "CSC_PIPE"      (Path.Combine(nugetCache, "Microsoft.Net.Compilers", "2.7.0", "tools", "csc.exe"))
 setEnvVar "FSC"           (Path.Combine(compilerBinFolder, "fsc.exe"))
 setEnvVar "FSCOREDLLPATH" (Path.Combine(compilerBinFolder, "FSharp.Core.dll"))
 addToPath compilerBinFolder
@@ -35,7 +36,7 @@ let runPerl arguments =
 
     use perlProcess =
         ProcessStartInfo(
-            FileName = Path.Combine(rootFolder, "packages", "StrawberryPerl64.5.22.2.1", "Tools", "perl", "bin", "perl.exe"),
+            FileName = Path.Combine(nugetCache, "StrawberryPerl64", "5.22.2.1", "Tools", "perl", "bin", "perl.exe"),
             Arguments = (arguments |> Array.map(fun a -> @"""" + a + @"""") |> String.concat " "),
             WorkingDirectory = Path.Combine(rootFolder, "tests", "fsharpqa", "source"),
             RedirectStandardOutput = true,
