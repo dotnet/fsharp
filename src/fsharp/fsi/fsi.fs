@@ -1887,7 +1887,7 @@ type internal FsiInteractionProcessor
                         if tcConfig.shadowCopyReferences then
                             let resolvedPath = ar.resolvedPath.ToUpperInvariant()
                             let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
-                            match referencedAssemblies.TryGetValue(resolvedPath) with
+                            match referencedAssemblies.TryGetValue resolvedPath with
                             | false, _ -> 
                                 referencedAssemblies.Add(resolvedPath, fileTime)
                                 FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)

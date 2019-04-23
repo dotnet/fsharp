@@ -870,9 +870,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           TType_app (tcref, tinst)
       else
           let dict = getDecompileTypeDict()
-          let mutable builder = Unchecked.defaultof<_>
-          if dict.TryGetValue(tcref.Stamp, &builder) then builder tinst
-          else TType_app (tcref, tinst)
+          match dict.TryGetValue tcref.Stamp with
+          | true, builder -> builder tinst
+          | _ -> TType_app (tcref, tinst)
 
   /// For cosmetic purposes "improve" some .NET types, e.g. Int32 --> int32. 
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
@@ -880,14 +880,14 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let improveTy (tcref: EntityRef) tinst = 
         if compilingFslib then 
             let dict = getBetterTypeDict1()
-            let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.LogicalName, &builder) then builder tcref tinst
-            else TType_app (tcref, tinst)
+            match dict.TryGetValue tcref.LogicalName with
+            | true, builder -> builder tcref tinst
+            | _ -> TType_app (tcref, tinst)
         else
             let dict = getBetterTypeDict2()
-            let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.Stamp, &builder) then builder tinst
-            else TType_app (tcref, tinst)
+            match dict.TryGetValue tcref.Stamp with
+            | true, builder -> builder tinst
+            | _ -> TType_app (tcref, tinst)
 
 
   override x.ToString() = "<TcGlobals>"

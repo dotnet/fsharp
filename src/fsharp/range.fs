@@ -146,13 +146,13 @@ type FileIndexTable() =
     //
     // TO move forward we should eventually introduce a new type NormalizedFileName that tracks this invariant.
     member t.FileToIndex normalize filePath = 
-        match fileToIndexTable.TryGetValue(filePath) with 
+        match fileToIndexTable.TryGetValue filePath with 
         | true, idx -> idx
         | _ -> 
         
         // Try again looking for a normalized entry.
         let normalizedFilePath = if normalize then normalizeFilePath filePath else filePath
-        match fileToIndexTable.TryGetValue(normalizedFilePath) with 
+        match fileToIndexTable.TryGetValue normalizedFilePath with 
         | true, idx ->
             // Record the non-normalized entry if necessary
             if filePath <> normalizedFilePath then 

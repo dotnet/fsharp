@@ -12394,8 +12394,8 @@ module TcRecdUnionAndEnumDeclarations = begin
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
         for (sf, f) in List.zip synFields tastFields do
-            let mutable synField = Unchecked.defaultof<_>
-            if seen.TryGetValue(f.Name, &synField) then
+            match seen.TryGetValue f.Name with
+            | true, synField ->
                 match sf, synField with
                 | Field(_, _, Some id, _, _, _, _, _), Field(_, _, Some(_), _, _, _, _, _) ->
                     error(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(id.idText), id.idRange))
@@ -12403,7 +12403,7 @@ module TcRecdUnionAndEnumDeclarations = begin
                 | Field(_, _, None, _, _, _, _, _), Field(_, _, Some id, _, _, _, _, _) ->
                     error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
                 | _ -> assert false
-            else
+            | _ ->
                 seen.Add(f.Name, sf)
                 
     let TcUnionCaseDecl cenv env parent thisTy tpenv (UnionCase (synAttrs, id, args, xmldoc, vis, m)) =

@@ -369,7 +369,7 @@ module internal ToolLocationHelper =
         // Doesn't need to be virtual @@@@@
         abstract member GetPathToDotNetFramework: DotNetFrameworkArchitecture -> string
         default this.GetPathToDotNetFramework arch =
-            match this.pathsToDotNetFramework.TryGetValue(arch) with
+            match this.pathsToDotNetFramework.TryGetValue arch with
             | true, x -> x
             | _ ->
                 if not (CheckForFrameworkInstallation this.dotNetFrameworkRegistryKey this.dotNetFrameworkSetupRegistryInstalledName) then null
@@ -766,7 +766,7 @@ module internal ToolLocationHelper =
         array.ToDictionary<DotNetFrameworkSpec, Version>(fun spec -> spec.Version)
 
     let getDotNetFrameworkSpec version =
-        match dotNetFrameworkSpecDict.TryGetValue(version) with
+        match dotNetFrameworkSpecDict.TryGetValue version with
         | true, x -> x
         | _ -> raise (getArgumentException version)
 
