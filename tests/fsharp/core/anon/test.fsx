@@ -67,6 +67,12 @@ module CrossAssemblyTestTupleStruct =
         check "svrknvio4" (let res = SampleAPITupleStruct.SampleFunctionReturningStructTuple() in match res with (x,y) -> x + y.Length) 4 
     tests()
 
+module TypeNotGeneratedBug = 
+    
+    let foo (_: obj) = ()
+    
+    let bar() = foo {| ThisIsUniqueToThisTest6353 = 1 |}
+    
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
