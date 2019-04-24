@@ -211,7 +211,7 @@ let IsValLocal env (v: Val) =
 /// Get the limit of the val.
 let GetLimitVal cenv env m (v: Val) =
     let limit =
-        match cenv.limitVals.TryGetValue(v.Stamp) with
+        match cenv.limitVals.TryGetValue v.Stamp with
         | true, limit -> limit
         | _ ->
             if IsValLocal env v then
@@ -285,6 +285,10 @@ let BindVal cenv env (v: Val) =
 
 let BindVals cenv env vs = List.iter (BindVal cenv env) vs
 
+let RecordAnonRecdInfo cenv (anonInfo: AnonRecdTypeInfo) =
+    if not (cenv.anonRecdTypes.ContainsKey anonInfo.Stamp) then 
+         cenv.anonRecdTypes <- cenv.anonRecdTypes.Add(anonInfo.Stamp, anonInfo)
+
 //--------------------------------------------------------------------------
 // approx walk of type
 //--------------------------------------------------------------------------
@@ -334,8 +338,7 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
     | TType_anon (anonInfo, tys) -> 
-        if not (cenv.anonRecdTypes.ContainsKey anonInfo.Stamp) then 
-             cenv.anonRecdTypes <- cenv.anonRecdTypes.Add(anonInfo.Stamp, anonInfo)
+        RecordAnonRecdInfo cenv anonInfo
         CheckTypesDeep cenv f g env tys
 
     | TType_ucase (_, tinst) -> CheckTypesDeep cenv f g env tinst
@@ -1011,8 +1014,8 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         CheckValRef cenv env baseVal m PermitByRefExpr.No
         CheckExprsPermitByRefLike cenv env rest
 
-    | Expr.Op (c, tyargs, args, m) ->
-        CheckExprOp cenv env (c, tyargs, args, m) context expr
+    | Expr.Op (op, tyargs, args, m) ->
+        CheckExprOp cenv env (op, tyargs, args, m) context expr
 
     // Allow 'typeof<System.Void>' calls as a special case, the only accepted use of System.Void! 
     | TypeOfExpr g ty when isVoidTy g ty ->
@@ -1115,7 +1118,14 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
     let ctorLimitedZoneCheck() = 
         if env.ctorLimitedZone then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
 
-    (* Special cases *)
+    // Ensure anonynous record type requirements are recorded
+    match op with
+    | TOp.AnonRecdGet (anonInfo, _) 
+    | TOp.AnonRecd anonInfo -> 
+        RecordAnonRecdInfo cenv anonInfo
+    | _ -> ()
+
+    // Special cases
     match op, tyargs, args with 
     // Handle these as special cases since mutables are allowed inside their bodies 
     | TOp.While _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _)]  ->

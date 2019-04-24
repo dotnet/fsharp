@@ -30,6 +30,7 @@ type public Fsc () as this =
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
     let mutable delaySign : bool = false
+    let mutable deterministic : bool = false
     let mutable disabledWarnings : string = null
     let mutable documentationFile : string = null
     let mutable dotnetFscCompilerPath : string = null
@@ -41,7 +42,8 @@ type public Fsc () as this =
     let mutable noFramework = false
     let mutable optimize  : bool = true
     let mutable otherFlags : string = null
-    let mutable outputAssembly : string = null 
+    let mutable outputAssembly : string = null
+    let mutable pathMap : string = null
     let mutable pdbFile : string = null
     let mutable platform : string = null
     let mutable prefer32bit : bool = false
@@ -233,6 +235,13 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
 
         builder.AppendSwitch("--nocopyfsharpcore")
+        
+        match pathMap with
+        | null -> ()
+        | _ -> builder.AppendSwitchIfNotNull("--pathmap:", pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+
+        if deterministic then
+            builder.AppendSwitch("--deterministic+")
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
@@ -263,6 +272,10 @@ type public Fsc () as this =
     member fsc.DebugType
         with get() = debugType
         and set(s) = debugType <- s
+
+    member fsc.Deterministic 
+        with get() = deterministic
+        and set(p) = deterministic <- p
 
     member fsc.DelaySign
         with get() = delaySign
@@ -346,6 +359,11 @@ type public Fsc () as this =
         with get() = outputAssembly
         and set(s) = outputAssembly <- s
 
+    // --pathmap <string>: Paths to rewrite when producing deterministic builds
+    member fsc.PathMap
+        with get() = pathMap
+        and set(s) = pathMap <- s
+    
     // --pdb <string>: 
     //     Name the debug output file
     member fsc.PdbFile

@@ -14,6 +14,7 @@ open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Ast
+open Internal.Utilities
 
 [<TestFixture>]
 type HashIfExpression()     =
@@ -63,7 +64,7 @@ type HashIfExpression()     =
         let resourceManager = LexResourceManager ()
         let defines         = []
         let startPos        = Position.Empty
-        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, stack, errorLogger)
+        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, stack, errorLogger, PathMap.empty)
 
         CompileThreadStatic.ErrorLogger <- errorLogger
 
