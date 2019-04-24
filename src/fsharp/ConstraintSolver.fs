@@ -195,7 +195,7 @@ with
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
 type OverloadResolutionFailure =
     | NoOverloadsFound   of methodName: string * candidates: OverloadInformation list
-    | PossibleCandidates of methodName: string * methodNames: string list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
+    | PossibleCandidates of methodName: string * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
 
 exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
@@ -2542,7 +2542,13 @@ and ResolveOverloading
                             let msg = FSComp.SR.csMethodIsOverloaded methodName
                             match methodNames with
                             | [] -> msg
-                            | names -> sprintf "%s %s" msg (FSComp.SR.csCandidates (String.concat ", " names))                        
+                            | names -> 
+                              names 
+                              |> List.map (fun overload -> NicePrint.stringOfMethInfo amap m denv overload.methodSlot.Method)
+                              |> List.sort
+                              |> String.concat ", "
+                              |> FSComp.SR.csCandidates
+                              |> sprintf "%s %s" msg
 
                     let overloads =
                         overloadResolutionFailure
@@ -2574,7 +2580,7 @@ and ResolveOverloading
                                              reqdRetTyOpt 
                                              calledMeth) with 
                             | OkResult _ -> None
-                            | ErrorResult(_, exn) -> Some {methodSlot = calledMeth; amap = amap; error = exn })
+                            | ErrorResult(_exns, exn) -> Some {methodSlot = calledMeth; amap = amap; error = exn })
 
                 None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors))), NoTrace
 
@@ -2748,23 +2754,32 @@ and ResolveOverloading
                 match bestMethods with 
                 | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
-                    let methodNames =
-                        let methods = 
-                            // use the most precise set
-                            // - if after filtering bestMethods still contains something - use it
-                            // - otherwise use applicableMeths or initial set of candidate methods
-                            match bestMethods with
-                            | [] -> 
-                                match applicableMeths with
-                                | [] -> candidates
-                                | m -> m |> List.map (fun (x, _, _) -> x)
-                            | m -> m |> List.map (fun (x, _, _) -> x)
-
-                        methods
-                        |> List.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
-                        |> List.sort
                     
-                    None, ErrorD (failOverloading (PossibleCandidates(methodName, methodNames))), NoTrace
+                    //let methodNames =
+                    let methods = 
+                        // use the most precise set
+                        // - if after filtering bestMethods still contains something - use it
+                        // - otherwise use applicableMeths or initial set of candidate methods
+
+                        let getMethodSlotsAndErrors =
+                          function | methodSlot, []      -> List.singleton {methodSlot = methodSlot; error = Unchecked.defaultof<exn>; amap = amap}
+                                   | methodSlot, [error] -> List.singleton {methodSlot = methodSlot; error = error; amap = amap}
+                                   | methodSlot, errors  -> errors |> List.map (fun error -> {methodSlot = methodSlot; error = error; amap = amap})
+                                   // not totally sure about what's going on with last case, so making cartesian product in case we have several exceptions
+
+                        match bestMethods with
+                        | [] -> 
+                            match applicableMeths with
+                            | [] -> candidates |> List.map (fun methodSlot -> getMethodSlotsAndErrors (methodSlot, []))
+                            | m -> m |> List.map (fun (methodSlot, errors, _) -> getMethodSlotsAndErrors (methodSlot,errors))
+                        | m -> m |> List.map (fun (methodSlot, errors, _) -> getMethodSlotsAndErrors (methodSlot,errors))
+
+
+                    let methods = List.concat methods
+                    //|> List.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
+                    //|> List.sort
+                    
+                    None, ErrorD (failOverloading (PossibleCandidates(methodName, methods))), NoTrace
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
