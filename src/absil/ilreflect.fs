@@ -2003,9 +2003,6 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
             visited.[tref] <- true
             let tdef = envGetTypeDef emEnv tref
             if verbose2 then dprintf "- traversing type %s\n" typB.FullName
-#if FX_NO_APP_DOMAINS
-            traverseTypeDef tref tdef
-#else
             // This looks like a special case (perhaps bogus) of the dependency logic above, where
             // we require the type r.Name, though with "nestingToProbe" being the enclosing types of the
             // type being defined.
@@ -2029,7 +2026,7 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
                 traverseTypeDef tref tdef
             finally
                System.AppDomain.CurrentDomain.remove_TypeResolve typeCreationHandler
-#endif
+
             // At this point, we've done everything we can to prepare the type for loading by eagerly forcing the
             // load of other types. Everything else is up to the implementation of System.Reflection.Emit.
             if not (created.ContainsKey tref) then 
