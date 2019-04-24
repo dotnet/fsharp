@@ -14,7 +14,7 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.PrettyNaming
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
-// QUERY: This relation is approximate and not part of the language specification. 
+// Note: This relation is approximate and not part of the language specification. 
 //
 //  Some appropriate uses: 
 //     patcompile.fs: IsDiscrimSubsumedBy (approximate warning for redundancy of 'isinst' patterns)
