@@ -30,6 +30,7 @@ type public Fsc () as this =
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
     let mutable delaySign : bool = false
+    let mutable deterministic : bool = false
     let mutable disabledWarnings : string = null
     let mutable documentationFile : string = null
     let mutable dotnetFscCompilerPath : string = null
@@ -234,6 +235,9 @@ type public Fsc () as this =
 
         builder.AppendSwitch("--nocopyfsharpcore")
 
+        if deterministic then
+            builder.AppendSwitch("--deterministic+")
+
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
         capturedArguments <- builder.CapturedArguments()
@@ -263,6 +267,10 @@ type public Fsc () as this =
     member fsc.DebugType
         with get() = debugType
         and set(s) = debugType <- s
+
+    member fsc.Deterministic 
+        with get() = deterministic
+        and set(p) = deterministic <- p
 
     member fsc.DelaySign
         with get() = delaySign
