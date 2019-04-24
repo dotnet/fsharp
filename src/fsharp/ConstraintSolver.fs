@@ -2451,15 +2451,15 @@ and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMet
 // This is used after analyzing the types of arguments 
 and ResolveOverloading 
          (csenv: ConstraintSolverEnv) 
-         trace            // The undo trace, if any
-         methodName       // The name of the method being called, for error reporting
-         ndeep            // Depth of inference
-         cx               // We're doing overload resolution as part of constraint solving, where special rules apply for op_Explicit and op_Implicit constraints.
+         trace           // The undo trace, if any
+         methodName      // The name of the method being called, for error reporting
+         ndeep           // Depth of inference
+         cx              // We're doing overload resolution as part of constraint solving, where special rules apply for op_Explicit and op_Implicit constraints.
          (callerArgs: CallerArgs<Expr>)
-         ad               // The access domain of the caller, e.g. a module, type etc. 
-         calledMethGroup  // The set of methods being called 
-         permitOptArgs    // Can we supply optional arguments?
-         reqdRetTyOpt     // The expected return type, if known 
+         ad              // The access domain of the caller, e.g. a module, type etc. 
+         calledMethGroup // The set of methods being called 
+         permitOptArgs   // Can we supply optional arguments?
+         reqdRetTyOpt    // The expected return type, if known 
      =
     let g = csenv.g
     let amap = csenv.amap
@@ -2757,16 +2757,15 @@ and ResolveOverloading
                     
                     //let methodNames =
                     let methods = 
-                        // use the most precise set
-                        // - if after filtering bestMethods still contains something - use it
-                        // - otherwise use applicableMeths or initial set of candidate methods
-
                         let getMethodSlotsAndErrors =
                           function | methodSlot, []      -> List.singleton {methodSlot = methodSlot; error = Unchecked.defaultof<exn>; amap = amap}
                                    | methodSlot, [error] -> List.singleton {methodSlot = methodSlot; error = error; amap = amap}
                                    | methodSlot, errors  -> errors |> List.map (fun error -> {methodSlot = methodSlot; error = error; amap = amap})
                                    // not totally sure about what's going on with last case, so making cartesian product in case we have several exceptions
 
+                        // use the most precise set
+                        // - if after filtering bestMethods still contains something - use it
+                        // - otherwise use applicableMeths or initial set of candidate methods
                         match bestMethods with
                         | [] -> 
                             match applicableMeths with
