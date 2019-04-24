@@ -473,6 +473,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize/InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fsi">
+      <Link>Optimize/LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fs">
       <Link>Optimize/LowerCallsAndSeqs.fs</Link>
     </Compile>

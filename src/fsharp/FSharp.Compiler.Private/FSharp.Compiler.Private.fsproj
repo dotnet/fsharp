@@ -488,6 +488,9 @@
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="..\LowerCallsAndSeqs.fsi">
+      <Link>Optimize\LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="..\LowerCallsAndSeqs.fs">
       <Link>Optimize\LowerCallsAndSeqs.fs</Link>
     </Compile>

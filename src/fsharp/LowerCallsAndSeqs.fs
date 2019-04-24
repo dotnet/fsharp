@@ -65,10 +65,6 @@ let LowerImplFile g assembly =
 let mkLambdaNoType g m uv e =
     mkLambda m uv (e, tyOfExpr g e)
 
-let mkUnitDelayLambda (g: TcGlobals) m e =
-    let uv, _ue = mkCompGenLocal m "unitVar" g.unit_ty
-    mkLambdaNoType g m uv e
-
 let callNonOverloadedMethod g amap m methName ty args =
     match TryFindIntrinsicMethInfo (InfoReader(g, amap)) m AccessibleFromSomeFSharpCode methName ty  with
     | [] -> error(InternalError("No method called '"+methName+"' was found", m))
