@@ -17,11 +17,7 @@
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />
     <Compile Include="EditDistance.fs" />
-    <Compile Include="Compiler.fs" />
-    <Compile Include="ILHelpers.fs" />
-    <Compile Include="Language\AnonRecords.fs" />
-    <Compile Include="Language\StringConcat.fs" />
-    <Compile Include="SourceTextTests.fs" />
+    <Compile Include="VersionCompare.fs" />
   </ItemGroup>
 
   <ItemGroup>

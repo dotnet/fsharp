@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0"     xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 <Target Name="ProjectCrackerToolCopy" AfterTargets="Build">
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)\..\..\utilities\net461\FSharp.Compiler.Service.ProjectCrackerTool.exe" DestinationFolder="$(OutputPath)" />
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)\..\..\utilities\net461\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\utilities\net461\FSharp.Compiler.Service.ProjectCrackerTool.exe" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\utilities\net461\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" DestinationFolder="$(OutputPath)" />
 </Target>
 </Project>

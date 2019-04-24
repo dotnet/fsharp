@@ -179,7 +179,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       mlCompatibility: bool, isInteractive:bool, 
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
-                      emitDebugInfoInQuotations: bool, noDebugData: bool) =
+                      emitDebugInfoInQuotations: bool, noDebugData: bool,
+                      pathMap: PathMap) =
       
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -458,7 +459,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_struct_tuple5_tcr      = findSysTyconRef sys "ValueTuple`5" 
   let v_struct_tuple6_tcr      = findSysTyconRef sys "ValueTuple`6" 
   let v_struct_tuple7_tcr      = findSysTyconRef sys "ValueTuple`7" 
-  let v_struct_tuple8_tcr      = findSysTyconRef sys "ValueTuple`8" 
+  let v_struct_tuple8_tcr      = findSysTyconRef sys "ValueTuple`8"
   
   let v_choice2_tcr     = mk_MFCore_tcref fslibCcu "Choice`2" 
   let v_choice3_tcr     = mk_MFCore_tcref fslibCcu "Choice`3" 
@@ -728,7 +729,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fail_static_init_info      = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "FailStaticInit"                       , None                 , None                          , [],      ([[v_unit_ty]], v_unit_ty))
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
-    
+
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
 
@@ -870,9 +871,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           TType_app (tcref, tinst)
       else
           let dict = getDecompileTypeDict()
-          let mutable builder = Unchecked.defaultof<_>
-          if dict.TryGetValue(tcref.Stamp, &builder) then builder tinst
-          else TType_app (tcref, tinst)
+          match dict.TryGetValue tcref.Stamp with
+          | true, builder -> builder tinst
+          | _ -> TType_app (tcref, tinst)
 
   /// For cosmetic purposes "improve" some .NET types, e.g. Int32 --> int32. 
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
@@ -880,14 +881,14 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let improveTy (tcref: EntityRef) tinst = 
         if compilingFslib then 
             let dict = getBetterTypeDict1()
-            let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.LogicalName, &builder) then builder tcref tinst
-            else TType_app (tcref, tinst)
+            match dict.TryGetValue tcref.LogicalName with
+            | true, builder -> builder tcref tinst
+            | _ -> TType_app (tcref, tinst)
         else
             let dict = getBetterTypeDict2()
-            let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.Stamp, &builder) then builder tinst
-            else TType_app (tcref, tinst)
+            match dict.TryGetValue tcref.Stamp with
+            | true, builder -> builder tinst
+            | _ -> TType_app (tcref, tinst)
 
 
   override x.ToString() = "<TcGlobals>"
@@ -901,6 +902,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.mlCompatibility                = mlCompatibility
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
+  member __.pathMap = pathMap
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu

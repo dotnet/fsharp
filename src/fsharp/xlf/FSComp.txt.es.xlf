@@ -137,6 +137,11 @@
         <target state="translated">Considere la posibilidad de usar "return!" en lugar de "return".</target>
         <note />
       </trans-unit>
+      <trans-unit id="useSdkRefs">
+        <source>Use reference assemblies for DotNET framework references when available (Enabled by default)).</source>
+        <target state="new">Use reference assemblies for DotNET framework references when available (Enabled by default)).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
         <source>Consider using 'yield!' instead of 'yield'.</source>
         <target state="translated">Considere la posibilidad de usar "yield!" en lugar de "yield".</target>
@@ -5538,8 +5543,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Determinstic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Las compilaciones deterministas solo admiten PDB portátiles (--debug:portable o --debug:embedded)</target>
+        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
+        <target state="needs-review-translation">Las compilaciones deterministas solo admiten PDB portátiles (--debug:portable o --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -7150,6 +7155,21 @@
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
         <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsPathMap">
+        <source>Maps physical paths to source path names output by the compiler</source>
+        <target state="new">Maps physical paths to source path names output by the compiler</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
+        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
+        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidPathMapFormat">
+        <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
+        <target state="new">Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</target>
         <note />
       </trans-unit>
     </body>

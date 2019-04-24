@@ -1519,7 +1519,8 @@ module internal ParseAndCheckFile =
         let lexResourceManager = new Lexhelp.LexResourceManager()
         
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
-        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, ref [], errHandler.ErrorLogger)
+        // TODO(pathmap): expose PathMap on the service API, and thread it through here
+        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, ref [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
@@ -2231,11 +2232,20 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
-            let loadClosure = LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
+            let loadClosure =
+                LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                    filename, sourceText, CodeContext.Editing,
+                    tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
+                    tcConfig.useSdkRefs, new Lexhelp.LexResourceManager(),
+                    applyCompilerOptions, assumeDotNetFramework,
+                    tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
+
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, sourceText, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, 
-                     Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName, suggestNamesForErrors)
+                    (parseResults, sourceText, filename, "project",
+                     tcConfig, tcGlobals, tcImports,  tcState, 
+                     Map.empty, Some loadClosure, backgroundDiagnostics,
+                     reactorOps, (fun () -> true), None, userOpName, suggestNamesForErrors)
 
             return
                 match tcFileInfo with 
@@ -2243,11 +2253,14 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     let errors = [|  yield! parseErrors; yield! tcErrors |]
                     let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, reactorOps, false)   
                     let projectResults = 
-                        FSharpCheckProjectResults (filename, Some tcConfig, keepAssemblyContents, errors, 
-                                                   Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
-                                                        [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssemblyRef "stdin", 
-                                                        tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles))
+                        FSharpCheckProjectResults (filename, Some tcConfig,
+                            keepAssemblyContents, errors, 
+                            Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
+                                 [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssemblyRef "stdin", 
+                                 tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles))
+
                     parseResults, typeCheckResults, projectResults
+
                 | Result.Error () ->
                     failwith "unexpected aborted"
         }

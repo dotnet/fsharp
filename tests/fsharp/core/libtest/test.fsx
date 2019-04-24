@@ -4918,15 +4918,15 @@ type ToStringClass(x) =
   end
 do check "Bug1049.customClass" (string (ToStringClass("fred"))) "fred"
 
-[<Struct>]
-type ToStringStruct =
-  struct
-    val x : int
-    new(x) = {x=x}
-    override this.ToString() = string this.x
-  end
-do check "Bug1049.customStruct" (string (ToStringStruct(123))) "123"
-
+// BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6597
+// [<Struct>]
+// type ToStringStruct =
+//   struct
+//     val x : int
+//     new(x) = {x=x}
+//     override this.ToString() = string this.x
+//   end
+// do check "Bug1049.customStruct" (string (ToStringStruct(123))) "123"
 type ToStringEnum = 
     | A = 1
     | B = 2
@@ -5120,7 +5120,6 @@ module Check1477 = begin
     val x1      : string
   end
 end
-
 
 (*---------------------------------------------------------------------------
 !* BUG 1561: (-star-star-) opens a comment but does not close it and other XML Doc issues.
@@ -5320,8 +5319,6 @@ end
 
 module TestNoNullElementsInListChainFromInit = begin
 
-
-
  let test n x = 
    printfn "testing %A" n;
    let a = List.init n x in
@@ -5336,10 +5333,7 @@ module TestNoNullElementsInListChainFromInit = begin
 
 end
 
-
 module TestNoNullElementsInListChainFromUnzip = begin
-
-
 
  let test x = 
    printfn "testing %A" x;
@@ -5432,31 +5426,35 @@ module SetToString = begin
     do check "cewjhnkrveo81p" ((Map.ofList [(4,40);(3,30);(2,20);(1,10)]) |> sprintf "%A") "map [(1, 10); (2, 20); (3, 30); (4, 40)]"
 end
 
-(*---------------------------------------------------------------------------
-!* Bug 5816: Unable to define mutually recursive types with mutually recursive generic constraints within FSI
- *--------------------------------------------------------------------------- *)
-module Bug5816 = begin
-  type IView<'v, 'vm when 'v :> IView<'v,'vm> and 'vm :> IViewModel<'v,'vm>> = interface
-        abstract ViewModel : 'vm
-    end 
-  and IViewModel<'v, 'vm when 'v :> IView<'v,'vm> and 'vm :> IViewModel<'v,'vm>> = interface
-        abstract View : 'v
-    end 
-end
-(*---------------------------------------------------------------------------
-!* Bug 5825: Constraints with nested types
- *--------------------------------------------------------------------------- *)
-module Bug5825 = begin
-  type I = interface
-        abstract member m : unit 
-    end
-  type C() = class
-        interface I with 
-            member this.m = () 
-        end
-    end
-  let f (c : #C) = () 
-end
+// BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6599
+
+//(*---------------------------------------------------------------------------
+//!* Bug 5816: Unable to define mutually recursive types with mutually recursive generic constraints within FSI
+// *--------------------------------------------------------------------------- *)
+//module Bug5816 = begin
+//  type IView<'v, 'vm when 'v :> IView<'v,'vm> and 'vm :> IViewModel<'v,'vm>> = interface
+//        abstract ViewModel : 'vm
+//    end 
+//  and IViewModel<'v, 'vm when 'v :> IView<'v,'vm> and 'vm :> IViewModel<'v,'vm>> = interface
+//        abstract View : 'v
+//    end 
+//end
+
+// BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6600
+//(*---------------------------------------------------------------------------
+//!* Bug 5825: Constraints with nested types
+// *--------------------------------------------------------------------------- *)
+//module Bug5825 = begin
+//  type I = interface
+//        abstract member m : unit 
+//    end
+//  type C() = class
+//        interface I with 
+//            member this.m = () 
+//        end
+//    end
+//  let f (c : #C) = () 
+//end
 
 module Bug5981 = begin
     // guard against type variable tokens leaking into the IL stream
@@ -5501,7 +5499,6 @@ module Bug920236 =
   for i in a do
       result := i::(!result)  
   do test "hfduweyr" (!result = [box 1])
-    
 
 module TripleQuoteStrings = 
 
@@ -5596,6 +5593,7 @@ module Regression_139182 =
 module LittleTestFor823 = 
     let x, y = 1, 2
     let v = Some ((x = y), (x = x))
+
 
 (*---------------------------------------------------------------------------
 !* wrap up

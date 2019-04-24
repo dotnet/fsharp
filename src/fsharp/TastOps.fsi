@@ -1648,6 +1648,10 @@ val mkNil  : TcGlobals -> range -> TType -> Expr
 
 val mkCons : TcGlobals -> TType -> Expr -> Expr -> Expr
 
+val mkSome : TcGlobals -> TType -> Expr -> range -> Expr
+
+val mkNone: TcGlobals -> TType -> range -> Expr
+
 //-------------------------------------------------------------------------
 // Make a few more expressions
 //------------------------------------------------------------------------- 
@@ -2078,6 +2082,18 @@ val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 /// Check if the type is a byref-like but not a byref.
 val isSpanLikeTy : TcGlobals -> range -> TType -> bool
 
+val isSpanTy : TcGlobals -> range -> TType -> bool
+
+val tryDestSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
+
+val destSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
+
+val isReadOnlySpanTy : TcGlobals -> range -> TType -> bool
+
+val tryDestReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
+
+val destReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
+
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
 //------------------------------------------------------------------------- 
@@ -2104,7 +2120,7 @@ val mkMethodTy : TcGlobals -> TType list list -> TType -> TType
 
 val mkAnyAnonRecdTy : TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
 
-val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Exprs -> TType list -> Expr 
+val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr 
 
 val AdjustValForExpectedArity : TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 

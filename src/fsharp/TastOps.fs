@@ -1757,11 +1757,14 @@ let isStructRecordOrUnionTyconTy g ty =
     | ValueSome tcref -> tcref.Deref.IsStructRecordOrUnionTycon
     | _ -> false
 
+let isStructTyconRef (tcref: TyconRef) =
+    let tycon = tcref.Deref
+    tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
+
 let isStructTy g ty =
     match tryDestAppTy g ty with
     | ValueSome tcref -> 
-        let tycon = tcref.Deref
-        tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
+        isStructTyconRef tcref
     | _ -> 
         isStructAnonRecdTy g ty || isStructTupleTy g ty
 
@@ -3014,7 +3017,7 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     | None -> 
        let res = 
            isByrefTyconRef g tcref ||
-           TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref
+           (isStructTyconRef tcref && TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref)
        tcref.SetIsByRefLike res
        res
 
@@ -3023,11 +3026,45 @@ let isSpanLikeTyconRef g m tcref =
     not (isByrefTyconRef g tcref)
 
 let isByrefLikeTy g m ty = 
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref | _ -> false) 
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref | _ -> false)
 
 let isSpanLikeTy g m ty =
     isByrefLikeTy g m ty && 
-    not (isByrefTy g ty) 
+    not (isByrefTy g ty)
+
+let isSpanTyconRef g m tcref =
+    isByrefLikeTyconRef g m tcref &&
+    tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Span`1"
+
+let isSpanTy g m ty =
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g m tcref | _ -> false)
+
+let rec tryDestSpanTy g m ty =
+    match tryAppTy g ty with
+    | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> ValueSome(struct(tcref, ty))
+    | _ -> ValueNone
+
+let destSpanTy g m ty =
+    match tryDestSpanTy g m ty with
+    | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
+    | _ -> failwith "destSpanTy"
+
+let isReadOnlySpanTyconRef g m tcref =
+    isByrefLikeTyconRef g m tcref &&
+    tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.ReadOnlySpan`1"
+
+let isReadOnlySpanTy g m ty =
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
+
+let tryDestReadOnlySpanTy g m ty =
+    match tryAppTy g ty with
+    | ValueSome(tcref, [ty]) when isReadOnlySpanTyconRef g m tcref -> ValueSome(struct(tcref, ty))
+    | _ -> ValueNone
+
+let destReadOnlySpanTy g m ty =
+    match tryDestReadOnlySpanTy g m ty with
+    | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
+    | _ -> failwith "destReadOnlySpanTy"    
 
 //-------------------------------------------------------------------------
 // List and reference types...
@@ -3105,6 +3142,10 @@ let destLinqExpressionTy g ty =
 
 let mkNoneCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "None"
 let mkSomeCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "Some"
+
+let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
+
+let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
 
 type ValRef with 
     member vref.IsDispatchSlot = 
@@ -6451,8 +6492,6 @@ let mkRefTupledNoTypes g m args = mkRefTupled g m args (List.map (tyOfExpr g) ar
 
 let mkRefTupledVars g m vs = mkRefTupled g m (List.map (exprForVal m) vs) (typesOfVals vs)
 
-let mkAnonRecd (_g: TcGlobals) m anonInfo es tys = Expr.Op (TOp.AnonRecd anonInfo,tys,es,m)
-
 //--------------------------------------------------------------------------
 // Permute expressions
 //--------------------------------------------------------------------------
@@ -6513,21 +6552,35 @@ let permuteExprList (sigma: int[]) (exprs: Expr list) (ty: TType list) (names: s
 ///     let sigma = Array.map #Index ()  
 /// However the presence of static fields means .Index may index into a non-compact set of instance field indexes. 
 /// We still need to sort by index. 
-let mkRecordExpr g (lnk, tcref, tinst, rfrefs: RecdFieldRef list, args, m) =  
+let mkRecordExpr g (lnk, tcref, tinst, unsortedRecdFields: RecdFieldRef list, unsortedFieldExprs, m) =  
     // Remove any abbreviations 
     let tcref, tinst = destAppTy g (mkAppTy tcref tinst)
     
-    let rfrefsArray = rfrefs |> List.indexed |> Array.ofList
-    rfrefsArray |> Array.sortInPlaceBy (fun (_, r) -> r.Index)
-    let sigma = Array.create rfrefsArray.Length -1
-    Array.iteri (fun j (i, _) -> 
-        if sigma.[i] <> -1 then error(InternalError("bad permutation", m))
-        sigma.[i] <- j) rfrefsArray
+    let sortedRecdFields = unsortedRecdFields |> List.indexed |> Array.ofList |> Array.sortBy (fun (_, r) -> r.Index)
+    let sigma = Array.create sortedRecdFields.Length -1
+    sortedRecdFields |> Array.iteri (fun sortedIdx (unsortedIdx, _) -> 
+        if sigma.[unsortedIdx] <> -1 then error(InternalError("bad permutation", m))
+        sigma.[unsortedIdx] <- sortedIdx) 
     
-    let argTys = List.map (fun rfref -> actualTyOfRecdFieldRef rfref tinst) rfrefs
-    let names = rfrefs |> List.map (fun rfref -> rfref.FieldName)
-    let binds, args = permuteExprList sigma args argTys names
-    mkLetsBind m binds (Expr.Op (TOp.Recd (lnk, tcref), tinst, args, m))
+    let unsortedArgTys = unsortedRecdFields |> List.map (fun rfref -> actualTyOfRecdFieldRef rfref tinst)
+    let unsortedArgNames = unsortedRecdFields |> List.map (fun rfref -> rfref.FieldName)
+    let unsortedArgBinds, sortedArgExprs = permuteExprList sigma unsortedFieldExprs unsortedArgTys unsortedArgNames
+    let core = Expr.Op (TOp.Recd (lnk, tcref), tinst, sortedArgExprs, m)
+    mkLetsBind m unsortedArgBinds core
+
+let mkAnonRecd (_g: TcGlobals) m (anonInfo: AnonRecdTypeInfo) (unsortedIds: Ident[]) (unsortedFieldExprs: Expr list) unsortedArgTys =
+    let sortedRecdFields = unsortedFieldExprs |> List.indexed |> Array.ofList |> Array.sortBy (fun (i,_) -> unsortedIds.[i].idText)
+    let sortedArgTys = unsortedArgTys |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) |> List.map snd
+
+    let sigma = Array.create sortedRecdFields.Length -1
+    sortedRecdFields |> Array.iteri (fun sortedIdx (unsortedIdx, _) -> 
+        if sigma.[unsortedIdx] <> -1 then error(InternalError("bad permutation", m))
+        sigma.[unsortedIdx] <- sortedIdx) 
+    
+    let unsortedArgNames = unsortedIds |> Array.toList |> List.map (fun id -> id.idText)
+    let unsortedArgBinds, sortedArgExprs = permuteExprList sigma unsortedFieldExprs unsortedArgTys unsortedArgNames
+    let core = Expr.Op (TOp.AnonRecd anonInfo, sortedArgTys, sortedArgExprs, m)
+    mkLetsBind m unsortedArgBinds core
   
 //-------------------------------------------------------------------------
 // List builders
