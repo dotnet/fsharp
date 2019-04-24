@@ -918,7 +918,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
         if ok then 
             incr count 
             res
-        else 
+        | _ ->
             let res = f idx 
             cache.[idx] <- res 
             res 
@@ -4065,7 +4065,7 @@ let OpenILModuleReader fileName opts =
     let cacheResult2 = 
         // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
         if keyOk && opts.pdbDirPath.IsNone then 
-            ilModuleReaderCache2.TryGetValue(key)
+            ilModuleReaderCache2.TryGetValue key
         else 
             false, Unchecked.defaultof<_>
 

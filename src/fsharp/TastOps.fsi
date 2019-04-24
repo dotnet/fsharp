@@ -2133,7 +2133,7 @@ val mkMethodTy : TcGlobals -> TType list list -> TType -> TType
 
 val mkAnyAnonRecdTy : TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
 
-val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Exprs -> TType list -> Expr 
+val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr 
 
 val AdjustValForExpectedArity : TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 

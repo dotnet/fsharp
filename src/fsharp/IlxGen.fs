@@ -1358,57 +1358,65 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
     let generateAnonType genToStringMethod (isStruct, ilTypeRef, nms) =
     
-        let flds = [ for (i, nm) in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar (uint16 i)) ]
+        let propTys = [ for (i, nm) in Array.indexed nms -> nm, ILType.TypeVar (uint16 i) ]
+
         // Note that this alternative below would give the same names as C#, but the generated
         // comparison/equality doesn't know about these names.
         //let flds = [ for (i, nm) in Array.indexed nms -> (nm, "<" + nm + ">" + "i__Field", ILType.TypeVar (uint16 i)) ]
+        let ilCtorRef = mkILMethRef(ilTypeRef, ILCallingConv.Instance, ".ctor", 0, List.map snd propTys, ILType.Void)
 
-        let ilGenericParams =
-            [ for nm in nms ->
-                { Name = sprintf "<%s>j__TPar" nm
-                  Constraints = []
-                  Variance=NonVariant
-                  CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-                  HasReferenceTypeConstraint=false
-                  HasNotNullableValueTypeConstraint=false
-                  HasDefaultConstructorConstraint= false
-                  MetadataIndex = NoMetadataIdx } ]
+        let ilMethodRefs = 
+            [| for (propName, propTy) in propTys ->
+                   mkILMethRef (ilTypeRef, ILCallingConv.Instance, "get_" + propName, 0, [], propTy) |]
 
-        let ilTy = mkILFormalNamedTy (if isStruct then ILBoxity.AsValue else ILBoxity.AsObject) ilTypeRef ilGenericParams
-
-        // Generate the IL fields
-        let ilFieldDefs =
-            mkILFields
-                [ for (_, fldName, fldTy) in flds ->
-                    let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
-                    fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
-     
-        // Generate property definitions for the fields compiled as properties
-        let ilProperties =
-            mkILProperties
-                [ for (i, (propName, _fldName, fldTy)) in List.indexed flds ->
-                        ILPropertyDef(name=propName,
-                          attributes=PropertyAttributes.None,
-                          setMethod=None,
-                          getMethod=Some(mkILMethRef(ilTypeRef, ILCallingConv.Instance, "get_" + propName, 0, [], fldTy )),
-                          callingConv=ILCallingConv.Instance.ThisConv,
-                          propertyType=fldTy,
-                          init= None,
-                          args=[],
-                          customAttrs=mkILCustomAttrs [ mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i ]) ]
-     
-        let ilMethods =
-            [ for (propName, fldName, fldTy) in flds ->
-                    mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
-              yield! genToStringMethod ilTy ]
-
-        let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
-           
-        let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
-        let ilCtorRef = mkRefToILMethod(ilTypeRef, ilCtorDef)
-        let ilMethodRefs = [| for mdef in ilMethods -> mkRefToILMethod(ilTypeRef, mdef) |]
+        let ilTy = mkILNamedTy (if isStruct then ILBoxity.AsValue else ILBoxity.AsObject) ilTypeRef (List.map snd propTys)
 
         if ilTypeRef.Scope.IsLocalRef then
+
+            let flds = [ for (i, nm) in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar (uint16 i)) ]
+
+            let ilGenericParams =
+                [ for nm in nms ->
+                    { Name = sprintf "<%s>j__TPar" nm
+                      Constraints = []
+                      Variance=NonVariant
+                      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+                      HasReferenceTypeConstraint=false
+                      HasNotNullableValueTypeConstraint=false
+                      HasDefaultConstructorConstraint= false
+                      MetadataIndex = NoMetadataIdx } ]
+
+            let ilTy = mkILFormalNamedTy (if isStruct then ILBoxity.AsValue else ILBoxity.AsObject) ilTypeRef ilGenericParams
+
+            // Generate the IL fields
+            let ilFieldDefs =
+                mkILFields
+                    [ for (_, fldName, fldTy) in flds ->
+                        let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
+                        fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
+     
+            // Generate property definitions for the fields compiled as properties
+            let ilProperties =
+                mkILProperties
+                    [ for (i, (propName, _fldName, fldTy)) in List.indexed flds ->
+                            ILPropertyDef(name=propName,
+                              attributes=PropertyAttributes.None,
+                              setMethod=None,
+                              getMethod=Some(mkILMethRef(ilTypeRef, ILCallingConv.Instance, "get_" + propName, 0, [], fldTy )),
+                              callingConv=ILCallingConv.Instance.ThisConv,
+                              propertyType=fldTy,
+                              init= None,
+                              args=[],
+                              customAttrs=mkILCustomAttrs [ mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i ]) ]
+     
+            let ilMethods =
+                [ for (propName, fldName, fldTy) in flds ->
+                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
+                  yield! genToStringMethod ilTy ]
+
+            let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
+           
+            let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0
@@ -1484,12 +1492,12 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     /// static init fields on script modules.
     let mutable scriptInitFspecs: (ILFieldSpec * range) list = []
 
-    member mgbuf.AddScriptInitFieldSpec(fieldSpec, range) =
+    member __.AddScriptInitFieldSpec (fieldSpec, range) =
         scriptInitFspecs <- (fieldSpec, range) :: scriptInitFspecs
     
     /// This initializes the script in #load and fsc command-line order causing their
     /// sideeffects to be executed.
-    member mgbuf.AddInitializeScriptsInOrderToEntryPoint() =
+    member mgbuf.AddInitializeScriptsInOrderToEntryPoint () =
         // Get the entry point and initialized any scripts in order.
         match explicitEntryPointInfo with
         | Some tref ->
@@ -1498,57 +1506,54 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             scriptInitFspecs |> List.iter IntializeCompiledScript
         | None -> ()
 
-    member mgbuf.GenerateRawDataValueType(cloc, size) =
+    member __.GenerateRawDataValueType (cloc, size) =
         // Byte array literals require a ValueType of size the required number of bytes.
         // With fsi.exe, S.R.Emit TypeBuilder CreateType has restrictions when a ValueType VT is nested inside a type T, and T has a field of type VT.
         // To avoid this situation, these ValueTypes are generated under the private implementation rather than in the current cloc. [was bug 1532].
         let cloc = CompLocForPrivateImplementationDetails cloc
         rawDataValueTypeGenerator.Apply((cloc, size))
 
-    member mgbuf.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
+    member __.GenerateAnonType (genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         let isStruct = evalAnonInfoIsStruct anonInfo
         let key = anonInfo.Stamp
-        match anonTypeTable.Table.TryGetValue key with
-        | true, res -> res
-        | _ ->
+        if not (anonTypeTable.Table.ContainsKey key) then
             let info = generateAnonType genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)
             anonTypeTable.Table.[key] <- info
-            info
 
-    member mgbuf.LookupAnonType(anonInfo: AnonRecdTypeInfo) =
+    member __.LookupAnonType (anonInfo: AnonRecdTypeInfo) =
         match anonTypeTable.Table.TryGetValue anonInfo.Stamp with
         | true, res -> res
         | _ -> failwithf "the anonymous record %A has not been generated in the pre-phase of generating this module" anonInfo.ILTypeRef
 
-    member mgbuf.GrabExtraBindingsToGenerate() =
+    member __.GrabExtraBindingsToGenerate () =
         let result = extraBindingsToGenerate
         extraBindingsToGenerate <- []
         result
 
-    member mgbuf.AddTypeDef(tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
+    member __.AddTypeDef (tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
         gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards)
 
-    member mgbuf.GetCurrentFields(tref: ILTypeRef) =
+    member __.GetCurrentFields (tref: ILTypeRef) =
         gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
 
-    member mgbuf.AddReflectedDefinition(vspec: Tast.Val, expr) =
+    member __.AddReflectedDefinition (vspec: Tast.Val, expr) =
         // preserve order by storing index of item
         let n = reflectedDefinitions.Count
         reflectedDefinitions.Add(vspec, (vspec.CompiledName, n, expr))
 
-    member mgbuf.ReplaceNameOfReflectedDefinition(vspec, newName) =
+    member __.ReplaceNameOfReflectedDefinition (vspec, newName) =
         match reflectedDefinitions.TryGetValue vspec with
         | true, (name, n, expr) when name <> newName -> reflectedDefinitions.[vspec] <- (newName, n, expr)
         | _ -> ()
 
-    member mgbuf.AddMethodDef(tref: ILTypeRef, ilMethodDef) =
+    member __.AddMethodDef (tref: ILTypeRef, ilMethodDef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddMethodDef(ilMethodDef)
         if ilMethodDef.IsEntryPoint then
             explicitEntryPointInfo <- Some tref
 
-    member mgbuf.AddExplicitInitToSpecificMethodDef(cond, tref, fspec, sourceOpt, feefee, seqpt) =
-    // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
-    // Doing both a store and load keeps FxCop happier because it thinks the field is useful
+    member __.AddExplicitInitToSpecificMethodDef (cond, tref, fspec, sourceOpt, feefee, seqpt) =
+        // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
+        // Doing both a store and load keeps FxCop happier because it thinks the field is useful
         let instrs =
             [ yield! (if condition "NO_ADD_FEEFEE_TO_CCTORS" then [] elif condition "ADD_SEQPT_TO_CCTORS" then seqpt else feefee) // mark start of hidden code
               yield mkLdcInt32 0
@@ -1557,25 +1562,26 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
               yield AI_pop]
         gtdefs.FindNestedTypeDefBuilder(tref).PrependInstructionsToSpecificMethodDef(cond, instrs, sourceOpt)
 
-    member mgbuf.AddEventDef(tref, edef) =
+    member __.AddEventDef (tref, edef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddEventDef(edef)
 
-    member mgbuf.AddFieldDef(tref, ilFieldDef) =
+    member __.AddFieldDef (tref, ilFieldDef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddFieldDef(ilFieldDef)
 
-    member mgbuf.AddOrMergePropertyDef(tref, pdef, m) =
+    member __.AddOrMergePropertyDef (tref, pdef, m) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddOrMergePropertyDef(pdef, m)
 
-    member mgbuf.Close() =
+    member __.Close() =
         // old implementation adds new element to the head of list so result was accumulated in reversed order
         let orderedReflectedDefinitions =
             [for (KeyValue(vspec, (name, n, expr))) in reflectedDefinitions -> n, ((name, vspec), expr)]
             |> List.sortBy (fst >> (~-)) // invert the result to get 'order-by-descending' behavior (items in list are 0..* so we don't need to worry about int.MinValue)
             |> List.map snd
         gtdefs.Close(), orderedReflectedDefinitions
-    member mgbuf.cenv = cenv
-    member mgbuf.GetExplicitEntryPointInfo() = explicitEntryPointInfo
 
+    member __.cenv = cenv
+
+    member __.GetExplicitEntryPointInfo() = explicitEntryPointInfo
 
 /// Record the types of the things on the evaluation stack.
 /// Used for the few times we have to flush the IL evaluation stack and to compute maxStack.
@@ -6409,7 +6415,7 @@ and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname,
 
     // Generate all the anonymous record types mentioned anywhere in this module
     for anonInfo in anonRecdTypes.Values do
-        mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo) |> ignore
+        mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
 
     let eenv = {eenv with cloc = { eenv.cloc with TopImplQualifiedName = qname.Text } }
 
@@ -7616,7 +7622,6 @@ let ClearGeneratedValue (ctxt: ExecutionContext) (_g: TcGlobals) eenv (v: Val) =
       printf "ilxGen.ClearGeneratedValue for v=%s caught exception:\n%A\n\n" v.LogicalName e
 #endif
       ()
-
 
 /// The published API from the ILX code generator
 type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: ConstraintSolver.TcValF, ccu: Tast.CcuThunk) =

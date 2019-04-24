@@ -93,6 +93,12 @@
     <Compile Include="$(FSharpSourcesRoot)/utils/prim-parsing.fs">
       <Link>LexYaccRuntime/prim-parsing.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/utils/PathMap.fsi">
+      <Link>Utilities/PathMap.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/utils/PathMap.fs">
+      <Link>Utilities/PathMap.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/ResizeArray.fsi">
       <Link>Utilities/ResizeArray.fsi</Link>
     </Compile>

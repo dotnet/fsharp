@@ -166,7 +166,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       mlCompatibility: bool, isInteractive:bool, assumeNullOnImport: bool, checkNullness: bool, langVersion: double,
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
-                      emitDebugInfoInQuotations: bool, noDebugData: bool) =
+                      emitDebugInfoInQuotations: bool, noDebugData: bool,
+                      pathMap: PathMap) =
       
   let v_langFeatureNullness = (langVersion >= 5.0)
   let v_langFeatureAnonRecds = (langVersion >= 5.0)
@@ -888,11 +889,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           TType_app (tcref, tinst, nullness)
       else
           let dict = getDecompileTypeDict()
-          let mutable builder = Unchecked.defaultof<_>
-          if dict.TryGetValue(tcref.Stamp, &builder) then 
-              builder tinst nullness
-          else
-              TType_app (tcref, tinst, nullness)
+          match dict.TryGetValue tcref.Stamp with
+          | true, builder -> builder tinst nullness
+          | _ -> TType_app (tcref, tinst, nullness)
 
   /// For cosmetic purposes "improve" some .NET types, e.g. Int32 --> int32. 
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
@@ -900,18 +899,14 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let improveTy (tcref: EntityRef) tinst nullness= 
         if compilingFslib then 
             let dict = getBetterTypeDict1()
-            let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.LogicalName, &builder) then
-                builder tcref tinst nullness
-            else
-                TType_app (tcref, tinst, nullness)
+            match dict.TryGetValue tcref.LogicalName with
+            | true, builder -> builder tcref tinst nullness
+            | _ -> TType_app (tcref, tinst, nullness)
         else
             let dict = getBetterTypeDict2()
-            let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.Stamp, &builder) then
-                builder tinst nullness
-            else
-                TType_app (tcref, tinst, nullness)
+            match dict.TryGetValue tcref.Stamp with
+            | true, builder -> builder tinst nullness
+            | _ -> TType_app (tcref, tinst, nullness)
 
 
   override x.ToString() = "<TcGlobals>"
@@ -938,6 +933,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.mlCompatibility                = mlCompatibility
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
+  member __.pathMap = pathMap
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu

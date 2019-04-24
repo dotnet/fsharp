@@ -80,6 +80,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --deterministic[+|-]                     Produce a deterministic assembly
                                          (including module version GUID and
                                          timestamp)
+--pathmap:<path=sourcePath;...>          Maps physical paths to source path
+                                         names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
                                          optimizations
 

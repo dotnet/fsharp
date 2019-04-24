@@ -32,16 +32,16 @@ xie.All(fun x -> x > 1)
 xie.Average()
 x.Average()
 
-[<Struct>]
-type S(v:int) =
-    interface System.Collections.Generic.IEnumerable<int> with 
-        member x.GetEnumerator() = (Seq.singleton v).GetEnumerator() 
-    interface System.Collections.IEnumerable with 
-        member x.GetEnumerator() = ((Seq.singleton v).GetEnumerator() :> System.Collections.IEnumerator)
-
-let s : S = S(3)
-
-s.Average()
+// BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
+//[<Struct>]
+//type S(v:int) =
+//    interface System.Collections.Generic.IEnumerable<int> with 
+//        member x.GetEnumerator() = (Seq.singleton v).GetEnumerator() 
+//    interface System.Collections.IEnumerable with 
+//        member x.GetEnumerator() = ((Seq.singleton v).GetEnumerator() :> System.Collections.IEnumerator)
+//
+//let s : S = S(3)
+//s.Average()
 
         
 [<Struct>]

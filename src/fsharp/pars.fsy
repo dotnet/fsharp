@@ -132,7 +132,7 @@ let mkDefnBindings (mWhole,BindingSetPreAttrs(_,isRec,isUse,declsPreAttrs,_bindi
 let idOfPat m p = 
     match p with 
     | SynPat.Named (SynPat.Wild _,id,false,_,_) -> id 
-    | SynPat.LongIdent(LongIdentWithDots([id],_),_,_,_,_,_) -> id
+    | SynPat.LongIdent(LongIdentWithDots([id],_),_,None, SynConstructorArgs.Pats [], None,_) -> id
     | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier())
 
 let checkForMultipleAugmentations m a1 a2 = 

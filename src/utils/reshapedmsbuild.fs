@@ -368,11 +368,12 @@ module internal ToolLocationHelper =
 
         // Doesn't need to be virtual @@@@@
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-        member this.GetPathToDotNetFramework (arch: DotNetFrameworkArchitecture) : string =
+        abstract member GetPathToDotNetFramework: DotNetFrameworkArchitecture -> string
 #else
-        member this.GetPathToDotNetFramework (arch: DotNetFrameworkArchitecture) : string? =
+        abstract member GetPathToDotNetFramework: DotNetFrameworkArchitecture -> string?
 #endif
-            match this.pathsToDotNetFramework.TryGetValue(arch) with
+        default this.GetPathToDotNetFramework arch =
+            match this.pathsToDotNetFramework.TryGetValue arch with
             | true, x -> x
             | _ ->
                 if not (CheckForFrameworkInstallation this.dotNetFrameworkRegistryKey this.dotNetFrameworkSetupRegistryInstalledName) then null
@@ -769,7 +770,7 @@ module internal ToolLocationHelper =
         array.ToDictionary<DotNetFrameworkSpec, Version>(fun spec -> spec.Version)
 
     let getDotNetFrameworkSpec version =
-        match dotNetFrameworkSpecDict.TryGetValue(version) with
+        match dotNetFrameworkSpecDict.TryGetValue version with
         | true, x -> x
         | _ -> raise (getArgumentException version)
 

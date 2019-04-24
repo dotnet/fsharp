@@ -4130,7 +4130,7 @@ and [<RequireQualifiedAccess>] AnonRecdTypeInfo =
 
     /// Get the ILTypeRef for the generated type implied by the anonymous type
     member x.ILTypeRef = 
-        let ilTypeName = sprintf "<>f__AnonymousType%s%u`%d'" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.Stamp) x.SortedIds.Length
+        let ilTypeName = sprintf "<>f__AnonymousType%s%u`%d" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.Stamp) x.SortedIds.Length
         mkILTyRef(x.Assembly.ILScopeRef, ilTypeName)
 
     static member NewUnlinked() : AnonRecdTypeInfo = 

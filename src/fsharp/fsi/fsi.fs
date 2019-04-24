@@ -1758,8 +1758,8 @@ type internal FsiStdinLexerProvider
 
         Lexhelp.resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer 
-        let defines = "INTERACTIVE":: tcConfigB.conditionalCompilationDefines
-        let lexargs = mkLexargs (sourceFileName,defines, interactiveInputLightSyntaxStatus, lexResourceManager, ref [], errorLogger) 
+        let defines = "INTERACTIVE"::tcConfigB.conditionalCompilationDefines
+        let lexargs = mkLexargs (sourceFileName,defines, interactiveInputLightSyntaxStatus, lexResourceManager, ref [], errorLogger, PathMap.empty)
         let tokenizer = LexFilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
@@ -1906,7 +1906,7 @@ type internal FsiInteractionProcessor
                         if tcConfig.shadowCopyReferences then
                             let resolvedPath = ar.resolvedPath.ToUpperInvariant()
                             let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
-                            match referencedAssemblies.TryGetValue(resolvedPath) with
+                            match referencedAssemblies.TryGetValue resolvedPath with
                             | false, _ -> 
                                 referencedAssemblies.Add(resolvedPath, fileTime)
                                 FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
@@ -2451,6 +2451,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
 #if NETSTANDARD
+    do tcConfigB.useSdkRefs <- true
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
