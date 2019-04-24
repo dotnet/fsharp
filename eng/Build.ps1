@@ -167,7 +167,6 @@ function BuildSolution() {
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
-        /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
 }
