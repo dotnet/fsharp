@@ -244,35 +244,40 @@ module TaskHelpers =
 
     type Priority3 = obj
     type Priority2 = IComparable
-    type Bind<'T, 'TResult> = (('T -> TaskStep< 'TResult >) -> TaskStep< 'TResult >)
 
     [<NoComparison; NoEquality>]
     type BindSensitive =
         | Priority1 
-        //static member inline (>>=) (_:Priority2, taskLike : ^TaskLike) : Bind< ^T, ^TResult> = fun k -> Binder<_>.GenericAwait (taskLike, k)
-        static member        (>>=) (  Priority1, task: Task<'T>)         : Bind<'T, 'TResult> = fun k -> bindTask task k                      
-        //static member        (>>=) (  Priority1, a  : Async<'T>)       : Bind<'T, 'TResult> = fun k -> bindTask (Async.StartAsTask a) k     
+        //static member inline (>>=) (_:Priority2, taskLike : ^TaskLike) : ((^T -> TaskStep< ^TResult >) -> TaskStep< ^TResult >) = fun k -> Binder<_>.GenericAwait (taskLike, k)
+        static member        (>>=) (_: BindSensitive, task: Task<'T>)         : (('T -> TaskStep< 'TResult >) -> TaskStep< 'TResult >) = fun k -> bindTask task k                      
+        //static member        (>>=) (_:BindSensitive, computation  : Async<'T>)       : (('T -> TaskStep< 'TResult >) -> TaskStep< 'TResult >) = fun k -> bindTask (Async.StartAsTask computation) k     
 
     [<NoComparison; NoEquality>]
     type ReturnFromSensitive = 
         | Priority1 
-        static member inline ($) (Priority1, taskLike: ^TaskLike) = Binder<_>.GenericAwait (taskLike, ret)
-        //static member        ($) (Priority1, a : Async<'T>) = bindTask (Async.StartAsTask a) ret : TaskStep<'T>
+        static member inline ($) (_:ReturnFromSensitive, taskLike: ^TaskLike) : TaskStep< ^T > 
+    //                when  ^TaskLike: (member GetAwaiter:  ^TaskLike ->  ^Awaiter)
+    //                and ^Awaiter :> ICriticalNotifyCompletion
+    //                and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
+    //                and ^Awaiter: (member GetResult:  ^Awaiter ->  ^T)
+           = Binder< ^T >.GenericAwait (taskLike, ret)
+
+        //static member        ($) (_:ReturnFromSensitive, computation : Async<'T>) = bindTask (Async.StartAsTask computation) ret : TaskStep<'T>
 
     [<NoComparison; NoEquality>]
     type BindInsensitive = 
         | Priority1 
-        //static member inline (>>=) (_:Priority3, taskLike            : 'T) : Bind<'T, 'TResult> = fun k -> Binder<'TResult>.GenericAwait (taskLike, k)                          : TaskStep<'TResult>
-        //static member inline (>>=) (_:Priority2, configurableTaskLike: 'T) = fun (k :  _ -> TaskStep<'TResult>) -> Binder<'TResult>.GenericAwaitConfigureFalse (configurableTaskLike, k): TaskStep<'TResult>
-        static member        (>>=) (  Priority1, task: Task<'T>          ) = fun (k : 'T -> TaskStep<'TResult>) -> bindTaskConfigureFalse task k                                  : TaskStep<'TResult>
-        //static member        (>>=) (  Priority1, a   : Async<'T>         ) = fun (k : 'T -> TaskStep<'TResult>) -> bindTaskConfigureFalse (Async.StartAsTask a) k                 : TaskStep<'TResult>
+        //static member inline (>>=) (_:Priority3, taskLike            : 'T) : (('T -> TaskStep< 'TResult >) -> TaskStep< 'TResult >) = fun k -> Binder<'TResult>.GenericAwait (taskLike, k)
+        //static member inline (>>=) (_:Priority2, configurableTaskLike: 'T) = fun (k :  _ -> TaskStep<'TResult>) -> Binder<'TResult>.GenericAwaitConfigureFalse (configurableTaskLike, k)
+        static member        (>>=) (_:BindInsensitive, task: Task<'T>)  : (('T -> TaskStep< 'TResult >) -> TaskStep< 'TResult >) = fun (k : 'T -> TaskStep<'TResult>) -> bindTaskConfigureFalse task k
+        //static member        (>>=) (_:BindInsensitive, computation   : Async<'T>) = fun (k : 'T -> TaskStep<'TResult>) -> bindTaskConfigureFalse (Async.StartAsTask computation) k
 
     [<NoComparison; NoEquality>]
     type ReturnFromInsensitive = 
         | Priority1 with
         static member inline ($) (_:Priority2, taskLike            ) = Binder<_>.GenericAwait(taskLike, ret)
-        //static member inline ($) (  Priority1, configurableTaskLike) = Binder<_>.GenericAwaitConfigureFalse(configurableTaskLike, ret)
-        //static member        ($) (  Priority1, a   : Async<'T>      ) = bindTaskConfigureFalse (Async.StartAsTask a) ret
+        //static member inline ($) (_:ReturnFromInsensitive, configurableTaskLike) = Binder<_>.GenericAwaitConfigureFalse(configurableTaskLike, ret)
+        //static member        ($) (_:ReturnFromInsensitive, computation   : Async<'T>      ) = bindTaskConfigureFalse (Async.StartAsTask computation) ret
 
 // New style task builder.
 type TaskBuilder() =
@@ -287,7 +292,7 @@ type TaskBuilder() =
     member __.TryWith(body : unit -> TaskStep<'T>, catch : exn -> TaskStep<'T>) = tryWith body catch
     member __.TryFinally(body : unit -> TaskStep<'T>, fin : unit -> unit) = tryFinally body fin
     member __.Using(disp : #IDisposable, body : #IDisposable -> TaskStep<'T>) = using disp body
-    member __.ReturnFrom a : TaskStep<'T> = ReturnFrom a
+    member __.ReturnFrom (task: Task<'T>) : TaskStep<'T> = ReturnFrom task
 
 [<AutoOpen>]
 module ContextSensitiveTasks =
@@ -295,13 +300,14 @@ module ContextSensitiveTasks =
     let task = TaskBuilder()
 
     type TaskBuilder with
-        member inline __.Bind (task, continuation : 'T -> TaskStep<'TResult>) : TaskStep<'TResult> = (BindSensitive.Priority1 >>= task) continuation
-        member inline __.ReturnFrom a                               : TaskStep<'TResult> = ReturnFromSensitive.Priority1 $ a
+        member inline __.Bind (task: Task<'T>, continuation : 'T -> TaskStep<'TResult>) : TaskStep<'TResult> = (Unchecked.defaultof<BindSensitive> >>= task) continuation
+        //member inline __.ReturnFrom computation                               : TaskStep<'TResult> = Unchecked.defaultof<ReturnFromSensitive> $ computation
 
 module ContextInsensitiveTasks =
 
     let task = TaskBuilder()
 
     type TaskBuilder with
-        member inline __.Bind (task, continuation : 'T -> TaskStep<'TResult>) : TaskStep<'TResult> = (BindInsensitive.Priority1 >>= task) continuation
-//        member inline __.ReturnFrom a                               : TaskStep<'TResult> = ReturnFromInsensitive.Priority1 $ a
+        member inline __.Bind (task: Task<'T>, continuation : 'T -> TaskStep<'TResult>) : TaskStep<'TResult> = (Unchecked.defaultof<BindInsensitive> >>= task) continuation
+//        member inline __.Bind (task, continuation : 'T -> TaskStep<'TResult>) : TaskStep<'TResult> = (Unchecked.defaultof<BindInsensitive> >>= task) continuation
+//        member inline __.ReturnFrom computation                               : TaskStep<'TResult> = Unchecked.defaultof<ReturnFromInsensitive> $ computation

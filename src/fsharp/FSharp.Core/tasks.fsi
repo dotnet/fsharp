@@ -43,22 +43,26 @@ module TaskHelpers =
 
     [<Sealed; NoComparison; NoEquality>]
     type BindSensitive =
+        // TODO: restore these 
         //static member inline ( >>= ): Priority2 * taskLike: ^TaskLike -> (( ^TResult -> TaskStep<'TResult>) -> TaskStep<'TResult>)
         //              when  ^TaskLike: (member GetAwaiter:  ^TaskLike ->  ^Awaiter)
         //              and ^Awaiter :> ICriticalNotifyCompletion
         //              and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
         //              and ^Awaiter: (member GetResult:  ^Awaiter ->  ^TResult)
-        static member ( >>= ): Priority1: BindSensitive * task: Task<'T> -> (('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
-        //static member ( >>= ): Priority1: BindSensitive * computation: Async<'T1> -> (('T1 -> TaskStep<'TResult1>) -> TaskStep<'TResult1>)
 
-    [<Sealed; NoComparison; NoEquality>]
-    type ReturnFromSensitive =
-        static member inline ( $ ): Priority1: ReturnFromSensitive * taskLike: ^TaskLike -> TaskStep< ^T >
-                    when  ^TaskLike: (member GetAwaiter:  ^TaskLike ->  ^Awaiter)
-                    and ^Awaiter :> ICriticalNotifyCompletion
-                    and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
-                    and ^Awaiter: (member GetResult:  ^Awaiter ->  ^T)
-        //static member ( $ ): Priority1: ReturnFromSensitive * computation: Async<'T> -> TaskStep<'T>
+        static member ( >>= ): BindSensitive * task: Task<'T> -> (('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
+
+        // TODO: restore these 
+        //static member ( >>= ): BindSensitive * computation: Async<'T1> -> (('T1 -> TaskStep<'TResult1>) -> TaskStep<'TResult1>)
+
+    //[<Sealed; NoComparison; NoEquality>]
+    //type ReturnFromSensitive =
+    //    static member inline ( $ ): ReturnFromSensitive * taskLike: ^TaskLike -> TaskStep< ^T >
+    //                when  ^TaskLike: (member GetAwaiter:  ^TaskLike ->  ^Awaiter)
+    //                and ^Awaiter :> ICriticalNotifyCompletion
+    //                and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
+    //                and ^Awaiter: (member GetResult:  ^Awaiter ->  ^T)
+        //static member ( $ ): ReturnFromSensitive * computation: Async<'T> -> TaskStep<'T>
 
     [<Sealed; NoComparison; NoEquality>]
     type BindInsensitive =
@@ -75,25 +79,26 @@ module TaskHelpers =
         //    and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
         //    and ^Awaiter: (member GetResult:  ^Awaiter ->  ^TResult)
 
-        static member ( >>= ): Priority1: BindInsensitive * task: Task<'T> -> (('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
-        //static member ( >>= ): Priority1: BindInsensitive * computation: Async<'T> -> (('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
+        static member ( >>= ): BindInsensitive * task: Task<'T> -> (('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
+        //static member ( >>= ): BindInsensitive * computation: Async<'T> -> (('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
 
-    [<Sealed; NoComparison; NoEquality>]
-    type ReturnFromInsensitive =
-        static member inline ( $ ): Priority2 * taskLike: ^TaskLike -> TaskStep< ^T>
-                    when  ^TaskLike: (member GetAwaiter:  ^TaskLike ->  ^Awaiter)
-                    and ^Awaiter :> ICriticalNotifyCompletion
-                    and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
-                    and ^Awaiter: (member GetResult:  ^Awaiter ->  ^T)
+// TODO: restore these 
+    //[<Sealed; NoComparison; NoEquality>]
+    //type ReturnFromInsensitive =
+    //    static member inline ( $ ): Priority2 * taskLike: ^TaskLike -> TaskStep< ^T>
+    //                when  ^TaskLike: (member GetAwaiter:  ^TaskLike ->  ^Awaiter)
+    //                and ^Awaiter :> ICriticalNotifyCompletion
+    //                and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
+    //                and ^Awaiter: (member GetResult:  ^Awaiter ->  ^T)
 
-        //static member inline ( $ ): Priority1: ReturnFromInsensitive * configurableTaskLike: ^TaskLike -> TaskStep< ^T>
+        //static member inline ( $ ): ReturnFromInsensitive * configurableTaskLike: ^TaskLike -> TaskStep< ^T>
         //            when  ^TaskLike: (member ConfigureAwait:  ^TaskLike * bool ->  ^Awaitable)
         //            and ^Awaitable: (member GetAwaiter:  ^Awaitable ->  ^Awaiter)
         //            and ^Awaiter :> ICriticalNotifyCompletion
         //            and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
         //            and ^Awaiter: (member GetResult:  ^Awaiter ->  ^T)
 
-        //static member ( $ ): Priority1: ReturnFromInsensitive * computation: Async<'T> -> TaskStep<'T>
+        //static member ( $ ): ReturnFromInsensitive * computation: Async<'T> -> TaskStep<'T>
 
 
 type TaskBuilder =
@@ -117,15 +122,18 @@ module ContextSensitiveTasks =
     val task: TaskBuilder
 
     type TaskBuilder with
-      member inline Bind: task: ^TaskLike * continuation: ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>
-          when (TaskHelpers.BindSensitive or  ^TaskLike): (static member ( >>= ): TaskHelpers.BindSensitive * ^TaskLike -> ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
+      member inline Bind: task: Task<'T> * continuation: ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>
+      // TODO: restore these 
+      //member inline Bind: task: ^TaskLike * continuation: ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>
+      //    when (TaskHelpers.BindSensitive or  ^TaskLike): (static member ( >>= ): TaskHelpers.BindSensitive * ^TaskLike -> ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
 
-      member inline ReturnFrom: a: ^TaskLike -> TaskStep< ^TResult >
+      // TODO: restore these 
+      //member inline ReturnFrom: a: ^TaskLike -> TaskStep< ^TResult >
           //when (TaskHelpers.ReturnFromSensitive or  ^TaskLike): (static member ( $ ): TaskHelpers.ReturnFromSensitive * ^TaskLike -> TaskStep<'TResult>)
-                    when  ^TaskLike: (member GetAwaiter:  ^TaskLike ->  ^Awaiter)
-                    and ^Awaiter :> ICriticalNotifyCompletion
-                    and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
-                    and ^Awaiter: (member GetResult:  ^Awaiter ->  ^TResult)
+      //              when  ^TaskLike: (member GetAwaiter:  ^TaskLike ->  ^Awaiter)
+      //              and ^Awaiter :> ICriticalNotifyCompletion
+      //              and ^Awaiter: (member get_IsCompleted:  ^Awaiter -> bool)
+      //              and ^Awaiter: (member GetResult:  ^Awaiter ->  ^TResult)
 
 module ContextInsensitiveTasks = 
     /// Builds a `System.Threading.Tasks.Task<'T>` similarly to a C# async/await method, but with
@@ -135,8 +143,12 @@ module ContextInsensitiveTasks =
     val task: TaskBuilder
 
     type TaskBuilder with
-      member inline Bind: task: ^TaskLike * continuation: ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>
-          when (TaskHelpers.BindInsensitive or  ^TaskLike): (static member ( >>= ): TaskHelpers.BindInsensitive * ^TaskLike -> ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
+      member inline Bind: task: Task<'T> * continuation: ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>
 
+// TODO: restore these 
+//      member inline Bind: task: ^TaskLike * continuation: ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>
+//          when (TaskHelpers.BindInsensitive or  ^TaskLike): (static member ( >>= ): TaskHelpers.BindInsensitive * ^TaskLike -> ('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
+
+// TODO: restore these 
 //      member inline ReturnFrom: a: ^TaskLike -> TaskStep<'TResult>
 //          when (TaskHelpers.ReturnFromInsensitive or  ^TaskLike): (static member ( $ ): TaskHelpers.ReturnFromInsensitive * ^TaskLike -> TaskStep<'TResult>)
