@@ -295,6 +295,7 @@ this file.
               Optimize="$(Optimize)"
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
+              PathMap="$(PathMap)"
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"
               Prefer32Bit="$(Actual32Bit)"

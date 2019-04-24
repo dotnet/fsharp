@@ -264,8 +264,12 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
         if not (String.IsNullOrEmpty(tcConfigB.sourceLink)) then
             error(Error(FSComp.SR.optsSourceLinkRequirePortablePDBs(), rangeCmdArgs))
 
-    if tcConfigB.deterministic && tcConfigB.debuginfo && (tcConfigB.portablePDB = false) then
-      error(Error(FSComp.SR.fscDeterministicDebugRequiresPortablePdb(), rangeCmdArgs))
+    if tcConfigB.debuginfo && not tcConfigB.portablePDB then
+        if tcConfigB.deterministic then
+            error(Error(FSComp.SR.fscDeterministicDebugRequiresPortablePdb(), rangeCmdArgs))
+
+        if tcConfigB.pathMap <> PathMap.empty then
+            error(Error(FSComp.SR.fscPathMapDebugRequiresPortablePdb(), rangeCmdArgs))
 
     let inputFiles = List.rev !inputFilesRef
 
@@ -2142,7 +2146,8 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
                     embedSourceList = tcConfig.embedSourceList
                     sourceLink = tcConfig.sourceLink
                     signer = GetStrongNameSigner signingInfo
-                    dumpDebugInfo = tcConfig.dumpDebugInfo }, 
+                    dumpDebugInfo = tcConfig.dumpDebugInfo
+                    pathMap = tcConfig.pathMap },
                   ilxMainModule,
                   normalizeAssemblyRefs
                   )

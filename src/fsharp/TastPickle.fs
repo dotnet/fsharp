@@ -1315,7 +1315,11 @@ let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
 
 let p_pos (x: pos) st = p_tup2 p_int p_int (x.Line, x.Column) st
-let p_range (x: range) st = p_tup3 p_string p_pos p_pos (x.FileName, x.Start, x.End) st
+
+let p_range (x: range) st =
+    let fileName = PathMap.apply st.oglobals.pathMap x.FileName
+    p_tup3 p_string p_pos p_pos (fileName, x.Start, x.End) st
+
 let p_dummy_range : range pickler   = fun _x _st -> ()
 let p_ident (x: Ident) st = p_tup2 p_string p_range (x.idText, x.idRange) st
 let p_xmldoc (XmlDoc x) st = p_array p_string x st

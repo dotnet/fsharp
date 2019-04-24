@@ -407,6 +407,13 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
+let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
+    match pathPair.Split([|'='|], 2) with
+    | [| oldPrefix; newPrefix |] ->
+        tcConfigB.AddPathMapping (oldPrefix, newPrefix)
+    | _ ->
+        error(Error(FSComp.SR.optsInvalidPathMapFormat(), rangeCmdArgs))
+
 let jitoptimizeSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some (switch = OptionSwitch.On) }
     
@@ -516,6 +523,7 @@ let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
 let tagInt = "<n>"
+let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
 
 // PrintOptionInfo
@@ -786,7 +794,12 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
            ("deterministic", tagNone,
             OptionSwitch (SetDeterministicSwitch tcConfigB), None,
             Some (FSComp.SR.optsDeterministic()))
-         
+
+          CompilerOption
+           ("pathmap", tagPathMap,
+            OptionStringList (AddPathMapping tcConfigB), None,
+            Some (FSComp.SR.optsPathMap()))
+
           CompilerOption
            ("crossoptimize", tagNone,
             OptionSwitch (crossOptimizeSwitch tcConfigB), None,
