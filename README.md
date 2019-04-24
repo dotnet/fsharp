@@ -106,3 +106,4 @@ This project has adopted the code of conduct defined by the [Contributor Covenan
 Follow [@VisualFSharp](https://twitter.com/VisualFSharp) and [@fsharporg](https://twitter.com/fsharporg) on twitter and subscribe to the [.NET Blog](https://blogs.msdn.microsoft.com/dotnet/).
 
 Members of the F# Software Foundation can be invited to the "F# Software Foundation" discussion rooms on slack. More details at http://fsharp.org/guides/slack/.
+
