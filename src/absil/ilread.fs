@@ -913,9 +913,9 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
                 cache :=  c
                 c
             | NonNull c -> c 
-        let mutable res = Unchecked.defaultof<_>
-        let ok = cache.TryGetValue(idx, &res)
-        if ok then 
+
+        match cache.TryGetValue idx with
+        | true, res ->
             incr count 
             res
         | _ ->

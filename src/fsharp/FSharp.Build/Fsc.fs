@@ -91,6 +91,7 @@ type public Fsc () as this =
     let mutable keyFile : string? = null
     let mutable otherFlags : string? = null
     let mutable outputAssembly : string? = null 
+    let mutable pathMap : string? = null
     let mutable pdbFile : string? = null
     let mutable platform : string? = null
     let mutable preferredUILang : string? = null
@@ -283,9 +284,13 @@ type public Fsc () as this =
 
         builder.AppendSwitch("--nocopyfsharpcore")
         
-        match pathMap with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--pathmap:", pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        let pathMapArray = // create a array of strings
+            match pathMap with
+            | null -> null
+            | NonNull pathMap ->
+                 pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+
+        builder.AppendSwitchesIfNotNull("--pathmap:", pathMapArray, ",")   
 
         if deterministic then
             builder.AppendSwitch("--deterministic+")

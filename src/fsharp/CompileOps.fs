@@ -3690,7 +3690,7 @@ let MakeILResource rname bytes =
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
 
-let PickleToResource inMem file g scope rname rnameB p x = 
+let PickleToResource inMem file (g: TcGlobals) scope rname rnameB p x = 
     let file = PathMap.apply g.pathMap file
     let bytes, bytesB = pickleObjWithDanglingCcus inMem file g scope p x 
     { Name = rname
