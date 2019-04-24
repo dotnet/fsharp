@@ -1,6 +1,6 @@
-# -----------------------------------------------------------------------------
-# use a completely new error number and add new messages at the end of the file
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# use a completely new error number and keep messages in their surounding groups
+# ------------------------------------------------------------------------------
 undefinedNameNamespace,"The namespace '%s' is not defined."
 undefinedNameNamespaceOrModule,"The namespace or module '%s' is not defined."
 undefinedNameFieldConstructorOrMember,"The field, constructor or member '%s' is not defined."
@@ -362,6 +362,9 @@ csCtorHasNoArgumentOrReturnProperty,"The object constructor '%s' has no argument
 508,csNoMemberTakesTheseArguments3,"No %s member or object constructor named '%s' takes %d arguments. The named argument '%s' doesn't correspond to any argument or settable return property for any overload."
 509,csMethodNotFound,"Method or object constructor '%s' not found"
 csNoOverloadsFound,"No overloads match for method '%s'."
+csNoOverloadsFoundArgumentsPrefixSingular,"Argument given: %s"
+csNoOverloadsFoundArgumentsPrefixPlural,"Arguments given:"
+csNoOverloadsFoundArgumentsSingleArgumentInstance," - %s"
 csMethodIsOverloaded,"A unique overload for method '%s' could not be determined based on type information prior to this program point. A type annotation may be needed."
 csCandidates,"Candidates: %s"
 csSeeAvailableOverloads,"The available overloads are shown below."

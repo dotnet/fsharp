@@ -123,6 +123,11 @@ with
     static member Empty : CallerArgs<'T> = { Unnamed = List.empty; Named = List.empty }
     member x.CallerArgCounts = (List.length x.Unnamed, List.length x.Named)
     member x.CurriedCallerArgs = List.zip x.Unnamed x.Named
+    member x.LayoutArgumentTypes denv =
+      [ (x.Unnamed |> List.map (List.map (fun i -> None, NicePrint.layoutType denv i.Type))) |> List.concat // not sure why we end up with a nested list
+        (x.Named |> List.map (List.map (fun i -> Some i.Name, NicePrint.layoutType denv i.CallerArg.Type))) |> List.concat ]
+      |> List.concat
+    
 //-------------------------------------------------------------------------
 // Callsite conversions
 //------------------------------------------------------------------------- 
