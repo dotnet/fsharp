@@ -10385,7 +10385,7 @@ and TcMethodApplication
         let formatOptions = FormatOptions.Default
         let getArgType =
             function | (Some argName), typeLayout -> sprintf "(%s) : %s" argName (Display.layout_to_string formatOptions typeLayout)
-                     | _, typeLayout -> (Display.layout_to_string typeLayout)
+                     | _, typeLayout -> (Display.layout_to_string formatOptions typeLayout)
 
         let callerArgs = { Unnamed = unnamedCurriedCallerArgs ; Named = namedCurriedCallerArgs }
         let argsMessage =
