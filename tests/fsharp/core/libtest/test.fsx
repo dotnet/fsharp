@@ -4918,15 +4918,14 @@ type ToStringClass(x) =
   end
 do check "Bug1049.customClass" (string (ToStringClass("fred"))) "fred"
 
-// BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6597
-// [<Struct>]
-// type ToStringStruct =
-//   struct
-//     val x : int
-//     new(x) = {x=x}
-//     override this.ToString() = string this.x
-//   end
-// do check "Bug1049.customStruct" (string (ToStringStruct(123))) "123"
+[<Struct>]
+type ToStringStruct =
+  struct
+    val x : int
+    new(x) = {x=x}
+    override this.ToString() = string this.x
+  end
+do check "Bug1049.customStruct" (string (ToStringStruct(123))) "123"
 type ToStringEnum = 
     | A = 1
     | B = 2
@@ -5426,35 +5425,32 @@ module SetToString = begin
     do check "cewjhnkrveo81p" ((Map.ofList [(4,40);(3,30);(2,20);(1,10)]) |> sprintf "%A") "map [(1, 10); (2, 20); (3, 30); (4, 40)]"
 end
 
-// BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6599
+(*---------------------------------------------------------------------------
+!* Bug 5816: Unable to define mutually recursive types with mutually recursive generic constraints within FSI
+ *--------------------------------------------------------------------------- *)
+module Bug5816 = begin
+  type IView<'v, 'vm when 'v :> IView<'v,'vm> and 'vm :> IViewModel<'v,'vm>> = interface
+        abstract ViewModel : 'vm
+    end 
+  and IViewModel<'v, 'vm when 'v :> IView<'v,'vm> and 'vm :> IViewModel<'v,'vm>> = interface
+        abstract View : 'v
+    end 
+end
 
-//(*---------------------------------------------------------------------------
-//!* Bug 5816: Unable to define mutually recursive types with mutually recursive generic constraints within FSI
-// *--------------------------------------------------------------------------- *)
-//module Bug5816 = begin
-//  type IView<'v, 'vm when 'v :> IView<'v,'vm> and 'vm :> IViewModel<'v,'vm>> = interface
-//        abstract ViewModel : 'vm
-//    end 
-//  and IViewModel<'v, 'vm when 'v :> IView<'v,'vm> and 'vm :> IViewModel<'v,'vm>> = interface
-//        abstract View : 'v
-//    end 
-//end
-
-// BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6600
-//(*---------------------------------------------------------------------------
-//!* Bug 5825: Constraints with nested types
-// *--------------------------------------------------------------------------- *)
-//module Bug5825 = begin
-//  type I = interface
-//        abstract member m : unit 
-//    end
-//  type C() = class
-//        interface I with 
-//            member this.m = () 
-//        end
-//    end
-//  let f (c : #C) = () 
-//end
+(*---------------------------------------------------------------------------
+!* Bug 5825: Constraints with nested types
+ *--------------------------------------------------------------------------- *)
+module Bug5825 = begin
+  type I = interface
+        abstract member m : unit 
+    end
+  type C() = class
+        interface I with 
+            member this.m = () 
+        end
+    end
+  let f (c : #C) = () 
+end
 
 module Bug5981 = begin
     // guard against type variable tokens leaking into the IL stream

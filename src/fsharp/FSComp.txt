@@ -1475,6 +1475,6 @@ csTypeHasNullAsTrueValue,"The type '%s' has 'null' as a true representation valu
 csTypeHasNullAsExtraValue,"The type '%s' has 'null' as an extra value but a constraint does not permit this"
 3300,chkInvalidFunctionParameterType,"The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL."
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
-useSdkRefs,"Use reference assemblies for DotNET framework references when available (Enabled by default))."
+useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 optsCheckNulls,"Enable nullness declarations and checks"
 optsLangVersion,"Specify the language version"
