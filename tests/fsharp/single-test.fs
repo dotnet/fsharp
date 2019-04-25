@@ -206,6 +206,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
 
     generateProjBody
 
+let lockObj = obj()
 let singleTestBuildAndRunCore cfg copyFiles p =
     let sources = []
     let loadSources = []
@@ -222,7 +223,19 @@ let singleTestBuildAndRunCore cfg copyFiles p =
     //    optimize = true or false
     let executeSingleTestBuildAndRun outputType compilerType targetFramework optimize =
         let mutable result = false
-        let directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() )
+        let directory =
+            let mutable result = ""
+            lock lockObj <| (fun () ->
+                let rec loop () =
+                    let dir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+                    if Directory.Exists(dir) then
+                        loop ()
+                    else
+                        Directory.CreateDirectory(dir) |>ignore
+                        dir
+                result <- loop())
+            result
+
         let pc = {
             OutputType = outputType
             Framework = framework

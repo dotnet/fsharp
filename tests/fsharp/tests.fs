@@ -60,16 +60,16 @@ module CoreTests =
     let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
 
     [<Test>]
-    let ``genericmeasures-FSI_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSI_BASIC
-
-    [<Test>]
     let ``genericmeasures-FSC_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC
 
     [<Test>]
-    let ``innerpoly-FSI_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSI_BASIC
+    let ``genericmeasures-FSI_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSI_BASIC
 
     [<Test>]
     let ``innerpoly-FSC_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSC_BASIC
+
+    [<Test>]
+    let ``innerpoly-FSI_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSI_BASIC
 
     [<Test>]
     let ``namespaceAttributes-FSC_BASIC`` () = singleTestBuildAndRun "core/namespaces" FSC_BASIC
@@ -279,7 +279,7 @@ module CoreTests =
 #endif
 
     [<Test>]
-    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC // TODO: fails on coreclr
+    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
 
     [<Test>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
@@ -1401,6 +1401,40 @@ module CoreTests =
 //    [<Test>]
 //    let ``patterns-FSI_BASIC`` () = singleTestBuildAndRun "core/patterns" FSI_BASIC
 
+    [<Test>]
+    let ``pinvoke-FSC_BASIC`` () = singleTestBuildAndRun "core/pinvoke" FSC_BASIC
+
+    [<Test>]
+    let ``pinvoke-FSI_BASIC`` () =
+        // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
+        // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+        let definePInvokeMethod =
+            typeof<System.Reflection.Emit.TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
+                typeof<string>
+                typeof<string>
+                typeof<string>
+                typeof<System.Reflection.MethodAttributes>
+                typeof<System.Reflection.CallingConventions>
+                typeof<Type>
+                typeof<Type[]>
+                typeof<Type[]>
+                typeof<Type[]>
+                typeof<Type[][]>
+                typeof<Type[][]>
+                typeof<System.Runtime.InteropServices.CallingConvention>
+                typeof<System.Runtime.InteropServices.CharSet> |])
+
+        let enablePInvokeOnCoreClr = definePInvokeMethod <> null
+
+        if enablePInvokeOnCoreClr then
+            singleTestBuildAndRun "core/pinvoke" FSI_BASIC
+
+    [<Test>]
+    let ``fsi_load-FSC_BASIC`` () = singleTestBuildAndRun "core/fsi-load" FSC_BASIC
+
+    [<Test>]
+    let ``fsi_load-FSI_BASIC`` () = singleTestBuildAndRun "core/fsi-load" FSI_BASIC
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
@@ -1429,24 +1463,6 @@ module CoreTests =
     [<Test>]
     let ``members-incremental-hw-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_BASIC
 
-    [<Test>]
-    let pinvoke () = 
-        let cfg = testConfig "core/pinvoke"
-
-        fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
-
-        peverifyWithArgs cfg "/nologo /MD" "test.exe"
-
-    [<Test>]
-    let fsi_load () = 
-        let cfg = testConfig "core/fsi-load"
-
-        use testOkFile = fileguard cfg "test.ok"
-
-        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-
-        testOkFile.CheckExists()
-                
     [<Test>]
     let queriesLeafExpressionConvert () = 
         let cfg = testConfig "core/queriesLeafExpressionConvert"
