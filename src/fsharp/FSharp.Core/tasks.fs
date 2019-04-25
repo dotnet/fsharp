@@ -52,8 +52,6 @@ and
     | Return of 'T
     | ReturnFrom of Task<'T>
 
-
-
 [<AutoOpen>]
 module TaskHelpers = 
 
@@ -109,11 +107,11 @@ module TaskHelpers =
     /// Used to return a value.
     let inline ret (x : 'T) = TaskStep<'T>.Return x
 
-    let inline RequireCanBind< ^Priority, ^TaskLike, 'TResult1, ^TResult2 when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike -> (('TResult1 -> TaskStep< ^TResult2 >) -> TaskStep< ^TResult2 >))                                   > (x: ^Priority) (y: ^TaskLike) = 
-        ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike -> (('TResult1 -> TaskStep< ^TResult2 >) -> TaskStep< ^TResult2 >)) (x,y))
+    let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2 when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >))                                   > (x: ^Priority) (y: ^TaskLike) = 
+        ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >)) (x,y))
 
-    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'TResult when (^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskStep<'TResult>)> (x: ^Priority) (y: ^TaskLike) = 
-        ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskStep< 'TResult >) (x,y))
+    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskStep<'T>)> (x: ^Priority) (y: ^TaskLike) = 
+        ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskStep< 'T >) (x,y))
 
     type TaskLikeBind<'TResult2> =
         // We put the output generic parameter up here at the class level, so it doesn't get subject to
@@ -151,7 +149,7 @@ module TaskHelpers =
 
     /// Special case of the above for `Task<'T>`. Have to write this T by hand to avoid confusing the compiler
     /// trying to decide between satisfying the constraints with `Task` or `Task<'T>`.
-    let bindTask (task : Task<'T>) (continuation : 'T -> TaskStep<'TResult>) =
+    let bindTask (task : Task<'T>) (continuation : 'T -> TaskStep<'TResult2>) =
         let awaiter = task.GetAwaiter()
         if awaiter.IsCompleted then 
             // Continue directly
@@ -163,7 +161,7 @@ module TaskHelpers =
     /// Special case of the above for `Task<'T>`, for the context-insensitive builder.
     /// Have to write this T by hand to avoid confusing the compiler thinking our built-in bind method
     /// defined on the builder has fancy generic constraints on inp and T parameters.
-    let bindTaskConfigureFalse (task : Task<'T>) (continuation : 'T -> TaskStep<'TResult>) =
+    let bindTaskConfigureFalse (task : Task<'T>) (continuation : 'T -> TaskStep<'TResult2>) =
         let awaiter = task.ConfigureAwait(false).GetAwaiter()
         if awaiter.IsCompleted then
             // Continue directly
@@ -175,7 +173,7 @@ module TaskHelpers =
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
-    let rec combine (step : TaskStep<unit>) (continuation : unit -> TaskStep<'TResult>) =
+    let rec combine (step : TaskStep<unit>) (continuation : unit -> TaskStep<'T>) =
         match step.Contents with
         | Return _ -> continuation()
         | ReturnFrom t -> TaskStep<_>.Await (t.GetAwaiter(), continuation)
@@ -297,6 +295,10 @@ module ContextSensitiveTasks =
     [<Sealed>]
     type Witnesses() =
 
+        interface IPriority1
+        interface IPriority2
+        interface IPriority3
+
         // Give the type arguments explicitly to make it match the signature precisely
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter 
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
@@ -306,16 +308,14 @@ module ContextSensitiveTasks =
               : ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >) 
                   = fun k -> TaskLikeBind< 'TResult2 >.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (taskLike, k)
 
-        static member CanBind (_priority: IPriority1, task: Task<'TResult1>)
-              : (('TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >)
+        static member CanBind (_priority: IPriority1, task: Task<'TResult1>) : (('TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >)
                   = fun k -> bindTask task k                      
 
-        static member CanBind (_priority: IPriority1, computation  : Async<'TResult1>)
-              : (('TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >) 
+        static member CanBind (_priority: IPriority1, computation  : Async<'TResult1>) : (('TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >) 
                   = fun k -> bindTask (Async.StartAsTask computation) k     
 
         // Give the type arguments explicitly to make it match the signature precisely
-        static member inline CanReturnFrom< ^TaskLike, ^T, ^Awaiter
+        static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T
                                            when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                            and ^Awaiter :> ICriticalNotifyCompletion
                                            and ^Awaiter: (member get_IsCompleted: unit -> bool)
@@ -327,13 +327,13 @@ module ContextSensitiveTasks =
                   = bindTask (Async.StartAsTask computation) ret : TaskStep<'T>
 
     type TaskBuilder with
-        member inline __.Bind< ^TaskLike, 'TResult1, ^TResult2 
-                                           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> (('TResult1 -> TaskStep< ^TResult2 >) -> TaskStep< ^TResult2 >))> 
-                    (task: ^TaskLike, continuation: 'TResult1 -> TaskStep< ^TResult2 >) : TaskStep< ^TResult2 >
-                  = RequireCanBind< Witnesses, ^TaskLike, 'TResult1, ^TResult2> Unchecked.defaultof<Witnesses> task continuation
+        member inline __.Bind< ^TaskLike, ^TResult1, 'TResult2 
+                                           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >))> 
+                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep< 'TResult2 >) : TaskStep< 'TResult2 >
+                  = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> Unchecked.defaultof<Witnesses> task continuation
 
-        member inline __.ReturnFrom< ^TaskLike, 'TResult  when (Witnesses or ^TaskLike): (static member CanReturnFrom : Witnesses * ^TaskLike -> TaskStep<'TResult>) > (task: ^TaskLike) : TaskStep<'TResult> 
-                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'TResult> Unchecked.defaultof<Witnesses> task
+        member inline __.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom : Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
+                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> Unchecked.defaultof<Witnesses> task
 
 module ContextInsensitiveTasks =
 
@@ -382,10 +382,10 @@ module ContextInsensitiveTasks =
         static member CanReturnFrom (_priority: IPriority1, computation   : Async<'T>      ) = bindTaskConfigureFalse (Async.StartAsTask computation) ret
 
     type TaskBuilder with
-        member inline __.Bind< ^TaskLike, 'TResult1, ^TResult2 
-                                           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> (('TResult1 -> TaskStep< ^TResult2 >) -> TaskStep< ^TResult2 >))> 
-                    (task: ^TaskLike, continuation: 'TResult1 -> TaskStep< ^TResult2 >) : TaskStep< ^TResult2 >
-                  = RequireCanBind< Witnesses, ^TaskLike, 'TResult1, ^TResult2> Unchecked.defaultof<Witnesses> task continuation
+        member inline __.Bind< ^TaskLike, ^TResult1, 'TResult2 
+                                           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >))> 
+                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep< 'TResult2 >) : TaskStep< 'TResult2 >
+                  = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> Unchecked.defaultof<Witnesses> task continuation
 
-        member inline __.ReturnFrom< ^TaskLike, 'TResult  when (Witnesses or ^TaskLike): (static member CanReturnFrom : Witnesses * ^TaskLike -> TaskStep<'TResult>) > (task: ^TaskLike) : TaskStep<'TResult> 
-                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'TResult> Unchecked.defaultof<Witnesses> task
+        member inline __.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom : Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
+                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> Unchecked.defaultof<Witnesses> task

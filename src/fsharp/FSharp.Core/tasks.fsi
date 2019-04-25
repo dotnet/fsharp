@@ -54,6 +54,9 @@ module ContextSensitiveTasks =
     /// Provides evidence that various types can be used in bind and return constructs in task computation expressions
     [<Sealed; NoComparison; NoEquality>]
     type Witnesses =
+        interface IPriority1
+        interface IPriority2
+        interface IPriority3
 
         /// Provides evidence that task-like types can be used in 'bind' in a task computation expression
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter >
@@ -70,7 +73,7 @@ module ContextSensitiveTasks =
         static member CanBind: priority: IPriority1 * computation: Async<'TResult1> -> (('TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)
 
         /// Provides evidence that task-like types can be used in 'return' in a task workflow
-        static member inline CanReturnFrom< ^TaskLike, ^T, ^Awaiter> : priority: IPriority1 * taskLike: ^TaskLike -> TaskStep< ^T > 
+        static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T> : priority: IPriority1 * taskLike: ^TaskLike -> TaskStep< ^T > 
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted: unit -> bool)
@@ -81,11 +84,11 @@ module ContextSensitiveTasks =
 
     type TaskBuilder with
       /// Provides the ability to bind to a variety of tasks, using context-sensitive semantics
-      member inline Bind : task: ^TaskLike * continuation: ('TResult1 -> TaskStep< ^TResult2 >) -> TaskStep< ^TResult2 >
-          when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> (('TResult1 -> TaskStep< ^TResult2 >) -> TaskStep< ^TResult2 >))
+      member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >
+          when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >))
 
       /// Provides the ability to return results from a variety of tasks, using context-sensitive semantics
-      member inline ReturnFrom: a: ^TaskLike -> TaskStep< ^TResult >
+      member inline ReturnFrom: a: ^TaskLike -> TaskStep< 'TResult >
           when (Witnesses or  ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'TResult>)
 
 module ContextInsensitiveTasks = 
@@ -120,17 +123,17 @@ module ContextInsensitiveTasks =
             and ^Awaiter: (member GetResult: unit ->  ^TResult1)
 
         /// Provides evidence that tasks can be used in 'bind' in a task computation expression
-        static member CanBind: priority: IPriority1 * task: Task<'T> -> (('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
+        static member CanBind: priority: IPriority1 * task: Task<'TResult1> -> (('TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)
 
         /// Provides evidence that F# async computations can be used in 'bind' in a task computation expression
-        static member CanBind: priority: IPriority1 * computation: Async<'T> -> (('T -> TaskStep<'TResult>) -> TaskStep<'TResult>)
+        static member CanBind: priority: IPriority1 * computation: Async<'TResult1> -> (('TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)
 
         /// Provides evidence that types following the "awaitable" pattern can be used in 'return!' in a task computation expression
         static member inline CanReturnFrom< ^Awaitable, ^Awaiter, ^T> : IPriority2 * taskLike: ^Awaitable -> TaskStep< ^T>
                                                 when  ^Awaitable: (member GetAwaiter: unit ->  ^Awaiter)
                                                 and ^Awaiter :> ICriticalNotifyCompletion
                                                 and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                                and ^Awaiter: (member GetResult: unit -> 'T)
+                                                and ^Awaiter: (member GetResult: unit -> ^T)
 
         /// Provides evidence that types following the task-like pattern can be used in 'return!' in a task computation expression
         static member inline CanReturnFrom< ^TaskLike, ^Awaitable, ^Awaiter, ^T
@@ -146,10 +149,10 @@ module ContextInsensitiveTasks =
     type TaskBuilder with
 
       /// Provides the ability to bind to a variety of tasks, using context-sensitive semantics
-      member inline Bind : task: ^TaskLike * continuation: ('TResult1 -> TaskStep< ^TResult2 >) -> TaskStep< ^TResult2 >
-          when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> (('TResult1 -> TaskStep< ^TResult2 >) -> TaskStep< ^TResult2 >))
+      member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >
+          when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >))
 
       /// Provides the ability to return results from a variety of tasks, using context-sensitive semantics
-      member inline ReturnFrom: a: ^TaskLike -> TaskStep< ^TResult >
+      member inline ReturnFrom: a: ^TaskLike -> TaskStep< 'TResult >
           when (Witnesses or  ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'TResult>)
 
