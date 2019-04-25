@@ -770,19 +770,27 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(e.ContextualErrorMessage) |> ignore
 #endif
 
-      | UnresolvedOverloading(_, mtext, _, _) ->
-          os.Append mtext |> ignore
+      | UnresolvedOverloading(denv, mtext, overloads, m) ->
+          os.AppendLine mtext |> ignore
+          overloads
+          |> List.map (fun e -> e.overload.OverloadMethodInfo denv m |> FSComp.SR.formatDashItem)
+          |> List.iter (os.AppendLine >> ignore)
 
       | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
           os.Append(FSComp.SR.csTypeDoesNotSupportConversion(t1, t2)) |> ignore
 
       | PossibleOverload(denv, minfo, m) ->
-          // print original error that describes reason why this overload was rejected
-          let buf = new StringBuilder()
-          OutputExceptionR buf minfo.error
-          let minfo = minfo.OverloadMethodInfo denv m
-          os.Append(PossibleOverloadE().Format minfo (buf.ToString())) |> ignore
+          minfo.OverloadMethodInfo denv m
+          |> FSComp.SR.formatDashItem
+          |> os.Append
+          |> ignore
+          
+          //// print original error that describes reason why this overload was rejected
+          //let minfo = minfo.OverloadMethodInfo denv m
+          //let buf = new StringBuilder()
+          //OutputExceptionR buf minfo.error
+          //os.Append(PossibleOverloadE().Format minfo (buf.ToString())) |> ignore
 
       | FunctionExpected _ ->
           os.Append(FunctionExpectedE().Format) |> ignore

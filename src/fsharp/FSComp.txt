@@ -364,7 +364,6 @@ csCtorHasNoArgumentOrReturnProperty,"The object constructor '%s' has no argument
 csNoOverloadsFound,"No overloads match for method '%s'."
 csNoOverloadsFoundArgumentsPrefixSingular,"Argument given: %s"
 csNoOverloadsFoundArgumentsPrefixPlural,"Arguments given:"
-csNoOverloadsFoundArgumentsSingleArgumentInstance," - %s"
 csMethodIsOverloaded,"A unique overload for method '%s' could not be determined based on type information prior to this program point. A type annotation may be needed."
 csCandidates,"Candidates: %s"
 csSeeAvailableOverloads,"The available overloads are shown below."
@@ -1488,3 +1487,4 @@ optsLangVersion,"Display the allowed values for language version, specify langua
 optsSupportedLangVersions,"Supported language versions:"
 nativeResourceFormatError,"Stream does not begin with a null resource and is not in '.RES' format."
 nativeResourceHeaderMalformed,"Resource header beginning at offset %s is malformed."
+formatDashItem," - %s"

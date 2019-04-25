@@ -8,7 +8,6 @@ open System
 open System.Collections.Generic
 
 open Internal.Utilities
-open Internal.Utilities.StructuredFormat
 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
@@ -10382,25 +10381,9 @@ and TcMethodApplication
     // STEP 3. Resolve overloading 
     /// Select the called method that's the result of overload resolution
     let finalCalledMeth =
-        let formatOptions = FormatOptions.Default
-        let getArgType =
-            function | (Some argName), typeLayout -> sprintf "(%s) : %s" argName (Display.layout_to_string formatOptions typeLayout)
-                     | _, typeLayout -> (Display.layout_to_string formatOptions typeLayout)
-
+      
         let callerArgs = { Unnamed = unnamedCurriedCallerArgs ; Named = namedCurriedCallerArgs }
-        let argsMessage =
-            match callerArgs.LayoutArgumentTypes denv with
-            | [] -> String.Empty
-            | [item] -> item |> getArgType |> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular
-            | items -> 
-                let args = 
-                    items 
-                    |> List.map (getArgType >> FSComp.SR.csNoOverloadsFoundArgumentsSingleArgumentInstance)
-                    |> List.toArray
-                    |> String.concat Environment.NewLine
-                (FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural()) + args
-          
-        printfn "%A" argsMessage
+
         let postArgumentTypeCheckingCalledMethGroup = 
             preArgumentTypeCheckingCalledMethGroup |> List.map (fun (minfo: MethInfo, minst, pinfoOpt, usesParamArrayConversion) ->
                 let callerTyArgs = 
