@@ -118,6 +118,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         abstract MaxRows : int
 
     module TaggedTextOps =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+        let inline nonNull<'T> (x: 'T) = x
+#endif
+
         let tag tag text = 
           { new TaggedText with 
             member x.Tag = tag
@@ -466,7 +471,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             // analysis of null values. 
 
             let GetValueInfo bindingFlags (x : 'a, ty : Type)  (* x could be null *) = 
-                let obj = (box x)
+                let obj = box x
                 match obj with 
                 | null ->
                    let isNullaryUnion =
@@ -802,11 +807,12 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let getProperty (ty: Type) (obj: obj) name =
 #if FX_RESHAPED_REFLECTION
             let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
-            if not (isNull prop) then prop.GetValue(obj,[||])
-            // Others raise MissingMethodException
-            else 
+            match prop with 
+            | null -> 
                 let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
                 raise (System.MissingMethodException(msg))
+            | NonNull prop -> 
+                prop.GetValue(obj,[||])
 #else
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
 #endif
@@ -910,10 +916,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                             // Try the StructuredFormatDisplayAttribute extensibility attribute
                             match ty.GetCustomAttributes (typeof<StructuredFormatDisplayAttribute>, true) with
                             | null | [| |] -> None
-                            | res -> 
+                            | NonNull res -> 
                                let attr = (res.[0] :?> StructuredFormatDisplayAttribute) 
                                let txt = attr.Value
-                               if isNull txt || txt.Length <= 1 then  
+                               if isNull (box txt) || txt.Length <= 1 then  
                                    None
                                else
                                   let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"

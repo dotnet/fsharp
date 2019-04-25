@@ -36,6 +36,9 @@ type internal ByteStream =
     { bytes: byte[] 
       mutable pos: int 
       max: int }
+
+    member b.IsEOF = (b.pos >= b.max)
+
     member b.ReadByte() = 
         if b.pos >= b.max then failwith "end of stream"
         let res = b.bytes.[b.pos]
@@ -56,11 +59,6 @@ type internal ByteStream =
         res 
 
     member b.Position = b.pos 
-#if LAZY_UNPICKLE
-    member b.CloneAndSeek = { bytes=b.bytes; pos=pos; max=b.max }
-    member b.Skip = b.pos <- b.pos + n
-#endif
-
 
 type internal ByteBuffer = 
     { mutable bbArray: byte[] 

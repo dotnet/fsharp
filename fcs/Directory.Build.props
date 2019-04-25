@@ -31,7 +31,6 @@
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
     <ToolsetFsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</ToolsetFsiToolPath>
     <ToolsetFsiToolExe>fsi.exe</ToolsetFsiToolExe>
-    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net472</ProtoOutputPath>
     <FcsFSharpCorePkgVersion>4.6.2</FcsFSharpCorePkgVersion>
     <FcsTargetNetFxFramework>net461</FcsTargetNetFxFramework>
   </PropertyGroup>

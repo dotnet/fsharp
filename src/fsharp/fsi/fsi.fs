@@ -333,9 +333,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
                                    match obj with 
                                    | null -> None 
                                    | _ when aty.IsAssignableFrom(obj.GetType())  ->  
-                                       match printer obj with 
+                                       let text = printer obj
+                                       match box text with 
                                        | null -> None
-                                       | s -> Some (wordL (TaggedTextOps.tagText s)) 
+                                       | _ -> Some (wordL (TaggedTextOps.tagText text)) 
                                    | _ -> None)
                                    
                          | Choice2Of2 (aty: System.Type, converter) -> 
@@ -1584,8 +1585,11 @@ module internal MagicAssemblyResolution =
         { new System.IDisposable with 
              member x.Dispose() = () }
 #else
-        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName:string) = 
-
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName:string) : Assembly = 
+#else
+        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName:string) : Assembly? = 
+#endif
            try 
                // Grab the name of the assembly
                let tcConfig = TcConfig.Create(tcConfigB,validate=false)
@@ -1705,17 +1709,25 @@ type internal FsiStdinLexerProvider
         let initialLightSyntaxStatus = tcConfigB.light <> Some false
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
-    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readf = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readf: unit -> string) = 
+#else
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readf: unit -> string?) = 
+#endif
         UnicodeLexing.FunctionAsLexbuf 
           (fun (buf: char[], start, len) -> 
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readf()) with :? EndOfStreamException -> None
-            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
+            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add ((match t with null -> "" | NonNull t -> t) + "\n"))
             match inputOption with 
             |  Some(null) | None -> 
                  if !progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
-            | Some (input:string) ->
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+            | Some input ->
+#else
+            | Some (NonNull input) ->
+#endif
                 let input  = input + "\n" 
                 let ninput = input.Length 
                 if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
@@ -1729,11 +1741,18 @@ type internal FsiStdinLexerProvider
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let removeZeroCharsFromString (str:string) = (* bug://4466 *)
-        if str<>null && str.Contains("\000") then
-          System.String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
-        else
-          str
+#else
+    let removeZeroCharsFromString (str:string?) : string? = (* bug://4466 *)
+#endif
+        match str with 
+        | null -> str
+        | NonNull str -> 
+            if str.Contains("\000") then
+              System.String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
+            else
+              str
 
     let CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger) =
 

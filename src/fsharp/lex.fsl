@@ -75,9 +75,7 @@ let parseOctalUInt64 (s:string) p l =
     parse p 0UL
 
 let removeUnderscores (s:string) =
-    match s with
-    | null -> null
-    | s -> s.Replace("_", "")
+    s.Replace("_", "")
 
 let parseInt32 (s:string) = 
     let s = removeUnderscores s

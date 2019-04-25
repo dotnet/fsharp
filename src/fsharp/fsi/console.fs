@@ -6,6 +6,7 @@ open System
 open System.Text
 open System.Collections.Generic
 open Internal.Utilities
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 /// System.Console.ReadKey appears to return an ANSI character (not the expected the unicode character).
 /// When this fix flag is true, this byte is converted to a char using the System.Console.InputEncoding.
@@ -14,8 +15,7 @@ open Internal.Utilities
 module internal ConsoleOptions =
 
   let readKeyFixup (c:char) =
-#if FX_NO_SERVERCODEPAGES
-#else
+#if !FX_NO_SERVERCODEPAGES
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
       // Convert it to a Unicode char through the encoding.
       if 0 <= int c && int c <= 255 then
@@ -42,19 +42,26 @@ type internal History() =
         if current >= 0 && current < list.Count then list.[current] else String.Empty
 
     member x.Clear() = list.Clear(); current <- -1
-    member x.Add line =
-        match line with
-        | null | "" -> ()
-        | _ -> list.Add(line)
 
-    member x.AddLast line =
-        match line with
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member x.Add (line: string) =
+#else
+    member x.Add (line: string?) = 
+#endif
+        match line with 
         | null | "" -> ()
-        | _ -> list.Add(line); current <- list.Count
+        | NonNull line -> list.Add(line)
 
-    // Dead code
-    // member x.First() = current <- 0; x.Current
-    // member x.Last() = current <- list.Count - 1; x.Current
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member x.AddLast (line: string) =
+#else
+    member x.AddLast (line: string?) =  
+#endif
+        match line with 
+        | null | "" -> ()
+        | NonNull line ->
+            list.Add(line)
+            current <- list.Count
 
     member x.Previous() =
         if (list.Count > 0)  then

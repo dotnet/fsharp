@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly GenericTypeStaticField01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.GenericTypeStaticField01
 {
-  // Offset: 0x00000000 Length: 0x00000608
+  // Offset: 0x00000000 Length: 0x00000610
+}
+.mresource public FSharpSignatureDataB.GenericTypeStaticField01
+{
+  // Offset: 0x00000618 Length: 0x0000004C
 }
 .mresource public FSharpOptimizationData.GenericTypeStaticField01
 {
-  // Offset: 0x00000610 Length: 0x000001E7
+  // Offset: 0x00000668 Length: 0x000001E7
+}
+.mresource public FSharpOptimizationDataB.GenericTypeStaticField01
+{
+  // Offset: 0x00000858 Length: 0x00000018
 }
 .module GenericTypeStaticField01.exe
-// MVID: {59B19213-1E75-7E6B-A745-03831392B159}
+// MVID: {5C6C932A-315A-51B2-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00730000
+// Image base: 0x00350000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

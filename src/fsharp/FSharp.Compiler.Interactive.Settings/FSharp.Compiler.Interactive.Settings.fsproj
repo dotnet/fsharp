@@ -28,7 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Condition="'$(Configuration)' != 'Proto'" Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+     <!-- when building the proto tools, use an FSharp.Core package - the latest FSharp.Core code may not build with the LKG compiler -->
+    <PackageReference Condition="'$(Configuration)' == 'Proto'" Include="FSharp.Core" Version="$(FSharpCoreProtoVersion)" />
   </ItemGroup>
 
   <ItemGroup>

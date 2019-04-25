@@ -440,14 +440,13 @@ let GenerateInterfaceData(tcConfig: TcConfig) =
 
 let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
     if GenerateInterfaceData tcConfig then 
-        let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
+        let resource1, resource2 = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
         // The resource gets written to a file for FSharp.Core
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
             let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-            File.WriteAllBytes(sigDataFileName, resource.GetBytes())
-        let resources = 
-            [ resource ]
+            File.WriteAllBytes(sigDataFileName, resource1.GetBytes())
+        let resources = [resource1; resource2]
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         [sigAttr], resources
       else 
@@ -463,7 +462,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
             let ccu, modulInfo = data
-            let bytes = TastPickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
+            let bytes, _bytesB = TastPickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName, bytes)
         let (ccu, optData) = 
@@ -471,7 +470,8 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
                 map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
             else 
                 data
-        [ WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData) ]
+        let r1, r2 = WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData)
+        [ r1; r2 ]
     else
         [ ]
 

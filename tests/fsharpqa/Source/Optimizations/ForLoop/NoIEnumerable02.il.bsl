@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly NoIEnumerable02
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.NoIEnumerable02
 {
-  // Offset: 0x00000000 Length: 0x000001D1
+  // Offset: 0x00000000 Length: 0x000001D9
+}
+.mresource public FSharpSignatureDataB.NoIEnumerable02
+{
+  // Offset: 0x000001E0 Length: 0x00000003
 }
 .mresource public FSharpOptimizationData.NoIEnumerable02
 {
-  // Offset: 0x000001D8 Length: 0x0000006C
+  // Offset: 0x000001E8 Length: 0x0000006C
+}
+.mresource public FSharpOptimizationDataB.NoIEnumerable02
+{
+  // Offset: 0x00000258 Length: 0x00000000
 }
 .module NoIEnumerable02.dll
-// MVID: {59B18AEE-5066-4012-A745-0383EE8AB159}
+// MVID: {5C6C9457-56CE-81FC-A745-038357946C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00720000
+// Image base: 0x02DF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly AsyncExpressionSteppingTest4
 {
@@ -31,18 +31,26 @@
 {
   // Offset: 0x00000000 Length: 0x00000277
 }
+.mresource public FSharpSignatureDataB.AsyncExpressionSteppingTest4
+{
+  // Offset: 0x00000280 Length: 0x00000004
+}
 .mresource public FSharpOptimizationData.AsyncExpressionSteppingTest4
 {
-  // Offset: 0x00000280 Length: 0x000000B1
+  // Offset: 0x00000288 Length: 0x000000B1
+}
+.mresource public FSharpOptimizationDataB.AsyncExpressionSteppingTest4
+{
+  // Offset: 0x00000340 Length: 0x00000000
 }
 .module AsyncExpressionSteppingTest4.dll
-// MVID: {5AF5DDAE-6394-6D4B-A745-0383AEDDF55A}
+// MVID: {5C6C9329-A47C-E149-A745-038329936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x028F0000
+// Image base: 0x00680000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

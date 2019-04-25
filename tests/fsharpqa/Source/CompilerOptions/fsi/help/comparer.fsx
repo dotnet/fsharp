@@ -1,5 +1,6 @@
 // #NoMT #CompilerOptions #RequiresENU   
-#light
+open System
+open System.IO
 
 let arg0 = System.Environment.GetCommandLineArgs().[0]
 let path = System.Environment.GetEnvironmentVariable("PATH")
@@ -32,5 +33,12 @@ let compare (f1:string[]) (f2:string[]) =
             printfn "\t<< %s" b
             false
        ) 
+
+
+let update = try Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") = "1" with _ -> false
+
+if update then 
+    printfn "Updating %s --> %s" fn1 fn2
+    File.Copy(fn1, fn2, true)
 
 exit (if compare f1 f2 then 0 else 1)

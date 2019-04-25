@@ -557,8 +557,7 @@ let (|ConstNeedsDefaultCase|_|) c =
 ///     switches, string switches and floating point switches are treated in the
 ///     same way as DecisionTreeTest.IsInst.
 let rec BuildSwitch inpExprOpt g expr edges dflt m =
-    if verbose then dprintf "--> BuildSwitch@%a, #edges = %A, dflt.IsSome = %A\n" outputRange m (List.length edges) (Option.isSome dflt)
-    match edges, dflt with
+    match edges, dflt with 
     | [], None      -> failwith "internal error: no edges and no default"
     | [], Some dflt -> dflt      (* NOTE: first time around, edges<>[] *)
 
@@ -783,16 +782,16 @@ let CompilePatternBasic
                           // We throw instead of rethrow on unmatched try-catch in a computation expression. But why?
                           // Because this isn't a real .NET exception filter/handler but just a function we're passing
                           // to a computation expression builder to simulate one.
-                          mkThrow   matchm resultTy (exprForVal matchm origInputVal)
-
-                      | ThrowIncompleteMatchException  ->
-                          mkThrow   matchm resultTy
-                              (mkExnExpr(mk_MFCore_tcref g.fslibCcu "MatchFailureException",
-                                            [ mkString g matchm matchm.FileName
-                                              mkInt g matchm matchm.StartLine
+                          mkThrow   matchm resultTy (exprForVal matchm origInputVal) 
+                          
+                      | ThrowIncompleteMatchException  -> 
+                          mkThrow matchm resultTy 
+                              (mkExnExpr(g.MatchFailureException_tcr, 
+                                            [ mkString g matchm matchm.FileName 
+                                              mkInt g matchm matchm.StartLine 
                                               mkInt g matchm matchm.StartColumn], matchm))
 
-                      | IgnoreWithWarning  ->
+                      | IgnoreWithWarning  -> 
                           mkUnit g matchm
 
                 // We don't emit a sequence point at any of the above cases because they don't correspond to
