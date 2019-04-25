@@ -2542,24 +2542,23 @@ and ResolveOverloading
                             function | (Some argName), typeLayout -> sprintf "(%s) : %s" argName (Display.layout_to_string formatOptions typeLayout)
                                      | _, typeLayout -> (Display.layout_to_string formatOptions typeLayout)
 
+                        let nl = System.Environment.NewLine
                         let argsMessage =
                             match callerArgs.LayoutArgumentTypes denv with
                             | [] -> System.String.Empty
-                            | [item] -> Environment.NewLine + (item |> getArgType |> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular)
+                            | [item] -> nl + (item |> getArgType |> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular)
                             | items -> 
                                 let args = 
                                     items 
                                     |> List.map (getArgType >> FSComp.SR.formatDashItem)
                                     |> List.toArray
-                                    |> String.concat Environment.NewLine
+                                    |> String.concat nl
 
-                                Environment.NewLine 
-                                + Environment.NewLine 
+                                nl + nl
                                 + (FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural()) 
-                                + Environment.NewLine 
+                                + nl
                                 + args
-                                + Environment.NewLine 
-                                + Environment.NewLine 
+                                + nl + nl
 
   
                         //printfn "%A" argsMessage

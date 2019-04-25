@@ -771,10 +771,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 #endif
 
       | UnresolvedOverloading(denv, mtext, overloads, m) ->
-          os.AppendLine mtext |> ignore
+          os.Append mtext |> ignore
           overloads
           |> List.map (fun e -> e.overload.OverloadMethodInfo denv m |> FSComp.SR.formatDashItem)
-          |> List.iter (os.AppendLine >> ignore)
+          |> List.iter (os.Append >> ignore)
 
       | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
