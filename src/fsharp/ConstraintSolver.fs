@@ -2569,12 +2569,25 @@ and ResolveOverloading
                             match methodNames with
                             | [] -> msg
                             | names -> 
-                              names 
-                              |> List.map (fun overload -> NicePrint.stringOfMethInfo amap m denv overload.methodSlot.Method)
-                              |> List.sort
-                              |> String.concat ", "
-                              |> FSComp.SR.csCandidates
-                              |> sprintf "%s %s %s" argsMessage msg
+                                let overloads =
+
+                                    FSComp.SR.csCandidates ()
+                                    + nl +
+                                    (
+                                    names 
+                                    |> List.map (fun overload -> NicePrint.stringOfMethInfo amap m denv overload.methodSlot.Method)
+                                    |> List.sort
+                                    |> List.map FSComp.SR.formatDashItem
+                                    |> String.concat nl)
+                                    
+
+                                msg 
+                                + nl
+                                + argsMessage  
+                                + nl
+                                + nl
+                                + overloads
+                                
 
                     let overloads =
                         overloadResolutionFailure
