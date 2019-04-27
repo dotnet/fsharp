@@ -31,6 +31,53 @@ module Helpers =
                 | Choice2Of2 err -> econt err) 
          }
 
+     [<Sealed>]
+     type AsyncLazy<'T> (computation: Async<'T>) =
+
+        let syncLock = obj ()
+        let mutable cachedResult = ValueNone
+        let mutable currentThreadId = 0
+
+        let isLocked () = currentThreadId <> 0
+
+        member __.GetValueAsync () =
+            async {
+                if currentThreadId = Environment.CurrentManagedThreadId then
+                    failwith "AsyncLazy tried to re-enter computation recursively."
+
+                match cachedResult with
+                | ValueSome result -> return result
+                | _ ->
+                    let! cancellationToken = Async.CancellationToken
+
+                    use _cancellationTokenRegistration = cancellationToken.Register((fun o -> lock o (fun () -> Monitor.PulseAll o |> ignore)), syncLock, useSynchronizationContext = false)
+
+                    let spin = SpinWait ()
+                    while isLocked () && not spin.NextSpinWillYield do
+                        spin.SpinOnce ()
+
+                    lock syncLock <| fun () ->
+                        while isLocked () do
+                            cancellationToken.ThrowIfCancellationRequested ()
+                            Monitor.Wait syncLock |> ignore
+                        currentThreadId <- Environment.CurrentManagedThreadId
+
+                    try
+                        cancellationToken.ThrowIfCancellationRequested ()
+
+                        match cachedResult with
+                        | ValueSome result -> return result
+                        | _ ->
+                            let! result = computation
+                            cachedResult <- ValueSome result
+                            return result
+                    finally
+                        lock syncLock <| fun() ->
+                            currentThreadId <- 0
+                            Monitor.Pulse syncLock |> ignore
+                    
+            }
+
 /// Global service state
 type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list* (*fsharpBinaries*)string
 
@@ -105,7 +152,7 @@ type ProjectId =
 
 type Project =
     {
-        [<DefaultValue>] mutable asyncLazyGetCompilation: Async<Lazy<Compilation>>
+        [<DefaultValue>] mutable asyncLazyGetCompilation: AsyncLazy<Compilation option>
 
         // --
         id: ProjectId
@@ -123,11 +170,13 @@ type Project =
 
     member this.TryGetCompilationAsync () : Async<Compilation option> =
         async {
-            let! compilation = this.asyncLazyGetCompilation
-            return Some compilation.Value
+            try
+                return! this.asyncLazyGetCompilation.GetValueAsync ()
+            with
+            | _ -> return None
         }
 
-    member this.TryCreateCompilation () =
+    member this.TryCreateCompilationAsync () =
         let useSimpleResolutionSwitch = "--simpleresolution"
         let ctok = this.solution.compilationThreadToken
         let commandLineArgs = this.options
@@ -167,7 +216,7 @@ type Project =
 
                         member __.FileName = project.filePath
 
-                        member __.TryGetLogicalTimeStamp (_, _) = None
+                        member __.TryGetLogicalTimeStamp (_, _) = Some project.dependentVersion.dateTime
                             
                     }
                 | _ -> failwith "did not find project"
@@ -285,7 +334,7 @@ type Project =
            }
 
           return builderOpt
-        }
+        } |> toAsync
 
 and Solution =
     {
@@ -326,17 +375,9 @@ and Solution =
                 dependentVersion = { dateTime = DateTime.UtcNow }
                 version = { dateTime = DateTime.UtcNow }
             }
+
         project.solution <- { this with projects = this.projects.Add(project.id, project); version = { dateTime = DateTime.UtcNow } }
-
-        project.asyncLazyGetCompilation <-
-            let lazyGetCompilation =
-                let t = project.TryCreateCompilation () |> toAsync
-                lazy
-                    t.
-            async {
-                return lazyGetCompilation
-            }
-
+        project.asyncLazyGetCompilation <- AsyncLazy (project.TryCreateCompilationAsync ())
         project
 
 and Compilation =
