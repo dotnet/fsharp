@@ -15,6 +15,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open System.Runtime.Caching
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 type private TextVersionHash = int
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
@@ -39,7 +40,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             category = DiagnosticCategory.Style, 
             defaultSeverity = DiagnosticSeverity.Hidden, 
             isEnabledByDefault = true, 
-            customTags = DiagnosticCustomTags.Unnecessary)
+            customTags = FSharpDiagnosticCustomTags.Unnecessary)
 
     static member LongIdentPropertyKey = "FullName"
     override __.Priority = 100 // Default = 50

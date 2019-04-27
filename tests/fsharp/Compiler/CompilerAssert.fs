@@ -47,68 +47,73 @@ module CompilerAssert =
             ExtraProjectInfo = None
             Stamp = None
         }
+        
+    let lockObj = obj ()
 
     let Pass (source: string) =
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
+        lock lockObj <| fun () ->
+            let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
-        Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
+            Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
 
-        match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
-        | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+            match fileAnswer with
+            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-        Assert.True(typeCheckResults.Errors.Length = 0, sprintf "Type Check errors: %A" typeCheckResults.Errors)
+            Assert.True(typeCheckResults.Errors.Length = 0, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
     let TypeCheckSingleError (source: string) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
+        lock lockObj <| fun () ->
+            let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
-        Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
+            Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
 
-        match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
-        | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+            match fileAnswer with
+            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-        Assert.True(typeCheckResults.Errors.Length = 1, sprintf "Expected one type check error: %A" typeCheckResults.Errors)
-        typeCheckResults.Errors
-        |> Array.iter (fun info ->
-            Assert.AreEqual(FSharpErrorSeverity.Error, info.Severity)
-            Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
-            Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn, info.EndLineAlternate, info.EndColumn), "expectedErrorRange")
-            Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
-        )
+            Assert.True(typeCheckResults.Errors.Length = 1, sprintf "Expected one type check error: %A" typeCheckResults.Errors)
+            typeCheckResults.Errors
+            |> Array.iter (fun info ->
+                Assert.AreEqual(FSharpErrorSeverity.Error, info.Severity)
+                Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
+                Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn, info.EndLineAlternate, info.EndColumn), "expectedErrorRange")
+                Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
+            )
 
     let RunScript (source: string) (expectedErrorMessages: string list) =
-        // Intialize output and input streams
-        use inStream = new StringReader("")
-        use outStream = new StringWriter()
-        use errStream = new StringWriter()
+        lock lockObj <| fun () ->
+            // Intialize output and input streams
+            use inStream = new StringReader("")
+            use outStream = new StringWriter()
+            use errStream = new StringWriter()
 
-        // Build command line arguments & start FSI session
-        let argv = [| "C:\\fsi.exe" |]
-#if !NETCOREAPP
-        let allArgs = Array.append argv [|"--noninteractive"|]
-#else
-        let allArgs = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
-#endif
+            // Build command line arguments & start FSI session
+            let argv = [| "C:\\fsi.exe" |]
+    #if !NETCOREAPP
+            let allArgs = Array.append argv [|"--noninteractive"|]
+    #else
+            let allArgs = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+    #endif
 
-        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
-        
-        let ch, errors = fsiSession.EvalInteractionNonThrowing source
+            let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+            use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
+            
+            let ch, errors = fsiSession.EvalInteractionNonThrowing source
 
-        let errorMessages = ResizeArray()
-        errors
-        |> Seq.iter (fun error -> errorMessages.Add(error.Message))
+            let errorMessages = ResizeArray()
+            errors
+            |> Seq.iter (fun error -> errorMessages.Add(error.Message))
 
-        match ch with
-        | Choice2Of2 ex -> errorMessages.Add(ex.Message)
-        | _ -> ()
+            match ch with
+            | Choice2Of2 ex -> errorMessages.Add(ex.Message)
+            | _ -> ()
 
-        if expectedErrorMessages.Length <> errorMessages.Count then
-            Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
-        else
-            (expectedErrorMessages, errorMessages)
-            ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
-                Assert.AreEqual(expectedErrorMessage, errorMessage)
-            )
+            if expectedErrorMessages.Length <> errorMessages.Count then
+                Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
+            else
+                (expectedErrorMessages, errorMessages)
+                ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
+                    Assert.AreEqual(expectedErrorMessage, errorMessage)
+                )
         

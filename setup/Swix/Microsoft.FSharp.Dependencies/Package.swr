@@ -3,6 +3,11 @@ use vs
 package name=Microsoft.FSharp.Dependencies
         version=$(VsixVersion)
 
+vs.dependencies
+  vs.dependency id=Microsoft.FSharp.SDK
+                version=$(VsixVersion)
+                type=Required
+
 folder "InstallDir:MSBuild\Microsoft\VisualStudio\v$(VSGeneralVersion)\FSharp"
   file "Microsoft.FSharp.targets" source="$(SetupShimsDir)\Microsoft.FSharp.Shim.targets"
   file "Microsoft.Portable.FSharp.targets" source="$(SetupShimsDir)\Microsoft.Portable.FSharp.Shim.targets"
