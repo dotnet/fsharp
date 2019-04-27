@@ -79,7 +79,7 @@ These are the branches in use:
   - May contain new features that depend on new things or fixes in the corresponding forthcoming Visual Studio release.
   - Gets integrated back into master once the corresponding Visual Studio release is made.
 
-### F# language and core library evolution
+## F# language and core library evolution
 
 Although this repository is where actual F# development occurs, evolution of the F# language and core library follows a process spanning two additional repositories. The process is as follows:
 
@@ -87,7 +87,7 @@ Although this repository is where actual F# development occurs, evolution of the
 2. Ideas that are "approved in principle" are eligible for a new RFC in the [F# language design repo](https://github.com/fsharp/fslang-design). This is where the technical specification and discussion of approved suggestions go.
 3. Implementations and testing of an RFC are submitted to this repository.
 
-### Additional documentation
+## Additional documentation
 
 The following links can help you get an overview of some technical aspects of the F# language and compiler:
 
