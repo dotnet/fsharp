@@ -15,7 +15,7 @@ If you're curious about F# itself, check out these links:
 
 ### Quickstart on Windows
 
-First, build:
+Build from the command line:
 
 ```bash
 build.cmd
@@ -25,7 +25,7 @@ You can then open either `FSharp.sln` or `VisualFSharp.sln` in your editor of ch
 
 ### Quickstart on Linux or macOS
 
-If you're on Linux or macOS:
+Build from the command line:
 
 ```bash
 sh ./build.sh
