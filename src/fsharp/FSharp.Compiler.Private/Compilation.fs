@@ -223,6 +223,9 @@ type Project =
             )
             |> List.ofSeq
 
+        // TODO:
+        let sourceFileToFilePathMap = ImmutableDictionary.Empty
+
         cancellable {
 
           // Trap and report warnings and errors from creation.
@@ -293,13 +296,13 @@ type Project =
               | None -> ()
 
               let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-              let niceNameGen = NiceNameGenerator()
-              let outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
+              let _niceNameGen = NiceNameGenerator()
+              let _outfile, _, _assemblyName = tcConfigB.DecideNames sourceFilesNew
 
               // Resolve assemblies and create the framework TcImports. This is done when constructing the
               // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
               // included in these references. 
-              let! (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = frameworkTcImportsCache.Get(ctok, tcConfig)
+              let! (_tcGlobals, _frameworkTcImports, nonFrameworkResolutions, _unresolvedReferences) = frameworkTcImportsCache.Get(ctok, tcConfig)
 
               // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
               // This is ok because not much can actually go wrong here.
@@ -312,7 +315,7 @@ type Project =
               // as inputs to one of the nodes in the build. 
               //
               // This operation is done when constructing the builder itself, rather than as an incremental task. 
-              let nonFrameworkAssemblyInputs = 
+              let _nonFrameworkAssemblyInputs = 
                   // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
                   // This is ok because not much can actually go wrong here.
                   let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
@@ -326,7 +329,7 @@ type Project =
                     for pr in projectReferences  do
                       yield Choice2Of2 pr, (fun (cache: TimeStampCache) ctok -> cache.GetProjectReferenceTimeStamp (pr, ctok)) ]
       
-              let compilation = { project = this; tcAssemblyData = None; tcConfig = tcConfig }
+              let compilation = { project = this; tcAssemblyData = None; tcConfig = tcConfig; lexResourceManager = resourceManager; sourceFileToFilePathMap = sourceFileToFilePathMap }
               return Some compilation
             with e -> 
               errorRecoveryNoRange e
@@ -384,10 +387,24 @@ and Compilation =
     {
         mutable tcAssemblyData: IRawFSharpAssemblyData option
         tcConfig: TcConfig
+        sourceFileToFilePathMap: ImmutableDictionary<SourceFileId, string>
+        lexResourceManager: Lexhelp.LexResourceManager
 
         // --
         project: Project
     }
+
+    member this.TryParseSourceFileAsync sourceFileId =
+        async {
+            try
+                let filename = this.sourceFileToFilePathMap.[sourceFileId]
+                let errorLogger = CompilationErrorLogger("TryParseSourceFileAsync", this.tcConfig.errorSeverityOptions)
+                let input = ParseOneInputFile (this.tcConfig, this.lexResourceManager, [], filename, (false, false), errorLogger, (*retrylocked*) true)
+                return Some (input, errorLogger.GetErrors ())
+            with
+            | _ ->
+                return None
+        }
 
     member this.TryGetAssemblyData () =
         this.tcAssemblyData
