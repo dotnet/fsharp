@@ -1,15 +1,6 @@
-# The F# Language, Library, and F# Tools for Visual Studio
+# The F# language, Core library, and F# tools for Visual Studio
 
-You are invited to contrinute tp future releases of the F# language compiler, library, and tools. Development of this repository can be done anywhere [.NET Core]() is supported: various Linux distributions, macOS, and Windows.
-
-## About F#
-
-If you're curious about F# itself, check out these links:
-
-* [What is F#](https://docs.microsoft.com/dotnet/fsharp/what-is-fsharp)
-* [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
-* [F# Software Foundation](http://fsharp.org)
-* [F# Testimonials](http://fsharp.org/testimonials)
+You are invited to contrinute to future releases of the F# language compiler, core library, and tools. Development of this repository can be done anywhere [.NET Core](https://dotnet.microsoft.com/) is supported: Windows, macOS, and a variety of Linux distributions.
 
 ## Contributing
 
@@ -81,13 +72,13 @@ These are the branches in use:
 
 ## F# language and core library evolution
 
-Although this repository is where actual F# development occurs, evolution of the F# language and core library follows a process spanning two additional repositories. The process is as follows:
+Evolution of the F# language and core library follows a process spanning two additional repositories. The process is as follows:
 
 1. Use the [F# language suggestions repo](https://github.com/fsharp/fslang-suggestions/) to search for ideas, vote on ones you like, submit new ideas, and discuss details with the F# community.
 2. Ideas that are "approved in principle" are eligible for a new RFC in the [F# language design repo](https://github.com/fsharp/fslang-design). This is where the technical specification and discussion of approved suggestions go.
 3. Implementations and testing of an RFC are submitted to this repository.
 
-## Additional documentation
+## Additional project documentation
 
 The following links can help you get an overview of some technical aspects of the F# language and compiler:
 
@@ -96,14 +87,23 @@ The following links can help you get an overview of some technical aspects of th
 
 ## License
 
-This project is subject to the MIT License. A copy of this license can be found in [License.txt](License.txt) at the root of this repo.
+This project is subject to the MIT License. A copy of this license is in [License.txt](License.txt).
 
 ## Code of Conduct
 
-This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
+This project has adopts the [Contributor Covenant](http://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
 
 ## Get In Touch
 
-Members of the F# Software Foundation can be invited to the "F# Software Foundation" discussion rooms on slack. More details at http://fsharp.org/guides/slack/.
+Members of the [F# Software Foundation](http://fsharp.org) are invited to the [FSSF Slack](http://fsharp.org/guides/slack/). The `#compiler` and `#editor-support` channels are where other contributors typically chat with others.
 
-Additionally, using the `#fsharp` tag on Twitter with any question can easily help you get pointed to the right person if you have a question.
+Additionally, you can use the `#fsharp` tag on Twitter if you have general F# questions, including about this repository. Chances are you'll get multiple responses.
+
+## About F#
+
+If you're curious about F# itself, check out these links:
+
+* [What is F#](https://docs.microsoft.com/dotnet/fsharp/what-is-fsharp)
+* [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
+* [F# Software Foundation](http://fsharp.org)
+* [F# Testimonials](http://fsharp.org/testimonials)
