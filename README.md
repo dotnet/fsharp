@@ -1,6 +1,6 @@
 # The F# language, Core library, and F# tools for Visual Studio
 
-You are invited to contrinute to future releases of the F# language compiler, core library, and tools. Development of this repository can be done anywhere [.NET Core](https://dotnet.microsoft.com/) is supported: Windows, macOS, and a variety of Linux distributions.
+You're invited to contribute to future releases of the F# language compiler, core library, and tools. Development of this repository can be done anywhere [.NET Core](https://dotnet.microsoft.com/) is supported: Windows, macOS, and a variety of Linux distributions.
 
 ## Contributing
 
@@ -24,7 +24,7 @@ sh ./build.sh
 
 You can then open `FSharp.sln` in your editor of choice.
 
-### More info
+### More options and information
 
 See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) for more details on additional configurations for building and testing, how to update compiler error messages, and more.
 
