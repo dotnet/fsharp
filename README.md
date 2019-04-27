@@ -1,4 +1,4 @@
-# The F# language, Core library, and F# tools for Visual Studio
+# The F# language, Core library, and F# editor tools
 
 You're invited to contribute to future releases of the F# language compiler, core library, and tools. Development of this repository can be done anywhere [.NET Core](https://dotnet.microsoft.com/) is supported: Windows, macOS, and a variety of Linux distributions.
 
