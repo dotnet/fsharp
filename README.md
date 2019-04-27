@@ -12,7 +12,7 @@ Build from the command line:
 build.cmd
 ```
 
-You can then open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
+After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
 
 ### Quickstart on Linux or macOS
 
@@ -22,7 +22,7 @@ Build from the command line:
 sh ./build.sh
 ```
 
-You can then open `FSharp.sln` in your editor of choice.
+After it's finished, open `FSharp.sln` in your editor of choice.
 
 ### More options and information
 
@@ -44,7 +44,7 @@ https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-f
 
 ### Even more nightly than the nightly
 
-Alternatively, if you _really_ want to live on the bleeding edge, you can set up a nightly feed for the Visual Studio preview releases, which use the latest commit in the preview branch of this repository. To do so, follow the same instructions as the above blog post, but instead with these links:
+Alternatively, if you _really_ want to live on the bleeding edge, you can set up a nightly feed for the Visual Studio preview releases, which use the latest commit in the preview branch. To do so, follow the same instructions as the above blog post, but instead with these links:
 
 * Set your feed to the [preview feed](https://dotnet.myget.org/F/fsharp-preview/vsix)
 * Install manually from the [preview feed](https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp)
