@@ -22,9 +22,6 @@ open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Service.Utilities
 
-type private CompilationErrorLogger = FSharp.Compiler.SourceCodeServices.CompilationErrorLogger
-type private CompilationGlobalsScope = FSharp.Compiler.SourceCodeServices.CompilationGlobalsScope
-
 [<NoEquality;NoComparison>]
 type CompilationOptions =
     {
@@ -115,21 +112,6 @@ type Compilation =
         filePaths: ImmutableArray<string>
         stamp: TimeStamp
     }
-
-    member this.ParseFile (filePath: string) =
-        if not (this.resultCache.ContainsKey filePath) then
-            failwith "file does not exist in compilation"
-
-        let tcConfig = this.initialTcAcc.tcConfig
-        let isLastFile = String.Equals (this.filePaths.[this.filePaths.Length - 1], filePath, StringComparison.OrdinalIgnoreCase)
-
-        let errorLogger = CompilationErrorLogger("ParseFile", tcConfig.errorSeverityOptions)
-        let input = ParseOneInputFile (tcConfig, this.lexResourceManager, [], filePath, (isLastFile, this.options.IsExecutable), errorLogger, (*retrylocked*) true)
-
-        {
-            FilePath = filePath
-            ParseResult = (input, errorLogger.GetErrors ())
-        }
 
     member this.RunEventually input capturingErrorLogger computation =
         let maxTimeShareMilliseconds = 100L
@@ -230,7 +212,7 @@ type Compilation =
 
     member this.Stamp = this.stamp
 
-    static member Create (lexResourceManager, initialTcAcc, options, parseResults, asyncLazyTryGetAssemblyData) =
+    static member Create (lexResourceManager, initialTcAcc, options, parseResults: SyntaxTree seq, asyncLazyTryGetAssemblyData) =
         let filePaths =
             parseResults
             |> Seq.map (fun x -> x.FilePath)

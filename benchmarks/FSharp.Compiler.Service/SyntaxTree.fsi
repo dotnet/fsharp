@@ -3,8 +3,6 @@
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 
-type FSharpErrorSeverity = FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity
-
 type SyntaxTree = 
     {
         FilePath: string
