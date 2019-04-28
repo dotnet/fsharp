@@ -274,7 +274,7 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
     let rangeStartup = Range.rangeN "startup" 1
 
     // Caches
-    let frameworkTcImportCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize   
+    let frameworkTcImportsCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize   
 
     member __.CreateInitialState (info: InitialInfo) =
       let tcConfig = info.tcConfig
@@ -478,7 +478,7 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
               // Resolve assemblies and create the framework TcImports. This is done when constructing the
               // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
               // included in these references. 
-              let! (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = frameworkTcImportCache.Get(ctok, tcConfig)
+              let! (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = frameworkTcImportsCache.Get(ctok, tcConfig)
 
               // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
               // This is ok because not much can actually go wrong here.
