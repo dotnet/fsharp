@@ -1,11 +1,13 @@
-﻿namespace FSharp.Compiler
+﻿namespace FSharp.Compiler.Service
 
 open System
+open System.IO
 open System.Threading
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Collections.Concurrent
 open Internal.Utilities.Collections
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
@@ -14,10 +16,11 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.CompileOptions
-
-type Stamp = struct end
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.NameResolution
+open Internal.Utilities
+open FSharp.Compiler.Service.Utilities
 
 [<NoEquality;NoComparison>]
 type CompilationOptions =
@@ -35,13 +38,7 @@ type CompilationOptions =
         KeepAllBackgroundResolutions: bool
     }
 
-    static member Create: assemblyPath: AssemblyPath * commandLineArgs: string list * projectDirectory: string * isExecutable: bool -> CompilationOptions
-
-type SyntaxTree = 
-    {
-        FilePath: string
-        ParseResult: ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
-    }
+    static member Create: assemblyPath: string * commandLineArgs: string list * projectDirectory: string * isExecutable: bool -> CompilationOptions
 
 [<Sealed>]
 type Compilation

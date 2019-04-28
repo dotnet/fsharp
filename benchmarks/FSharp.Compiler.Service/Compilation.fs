@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler
+﻿namespace FSharp.Compiler.Service
 
 open System
 open System.IO
@@ -7,6 +7,7 @@ open System.Collections.Immutable
 open System.Collections.Generic
 open System.Collections.Concurrent
 open Internal.Utilities.Collections
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
@@ -17,146 +18,12 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.TypeChecker
-open NameResolution
+open FSharp.Compiler.NameResolution
 open Internal.Utilities
+open FSharp.Compiler.Service.Utilities
 
-type FSharpErrorSeverity = FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity
 type private CompilationErrorLogger = FSharp.Compiler.SourceCodeServices.CompilationErrorLogger
 type private CompilationGlobalsScope = FSharp.Compiler.SourceCodeServices.CompilationGlobalsScope
-
-[<AutoOpen>]
-module Helpers =
-
-     let toAsync e = 
-         async { 
-           let! ct = Async.CancellationToken
-           return! 
-              Async.FromContinuations(fun (cont, econt, ccont) -> 
-                // Run the computation synchronously using the given cancellation token
-                let res = try Choice1Of2 (Cancellable.run ct e) with err -> Choice2Of2 err
-                match res with 
-                | Choice1Of2 (ValueOrCancelled.Value v) -> cont v
-                | Choice1Of2 (ValueOrCancelled.Cancelled err) -> ccont err
-                | Choice2Of2 err -> econt err) 
-         }
-
-     [<Sealed>]
-     type NonReentrantLock () =
-
-        let syncLock = obj ()
-        let mutable currentThreadId = 0
-
-        let isLocked () = currentThreadId <> 0
-
-        member this.Wait (cancellationToken: CancellationToken) =
-
-            if currentThreadId = Environment.CurrentManagedThreadId then
-                failwith "AsyncLazy tried to re-enter computation recursively."
-            
-            use _cancellationTokenRegistration = cancellationToken.Register((fun o -> lock o (fun () -> Monitor.PulseAll o |> ignore)), syncLock, useSynchronizationContext = false)
-
-            let spin = SpinWait ()
-            while isLocked () && not spin.NextSpinWillYield do
-                spin.SpinOnce ()
-
-            lock syncLock <| fun () ->
-                while isLocked () do
-                    cancellationToken.ThrowIfCancellationRequested ()
-                    Monitor.Wait syncLock |> ignore
-                currentThreadId <- Environment.CurrentManagedThreadId
-
-            new SemaphoreDisposer (this)
-
-        member this.Release () =
-            lock syncLock <| fun() ->
-                currentThreadId <- 0
-                Monitor.Pulse syncLock |> ignore
-
-     and [<Struct>] SemaphoreDisposer (semaphore: NonReentrantLock) =
-
-        interface IDisposable with
-
-            member __.Dispose () = semaphore.Release ()
-
-     [<Sealed>]
-     type AsyncLazy<'T> (computation: Async<'T>) =
-
-        let gate = NonReentrantLock ()
-        let mutable cachedResult = ValueNone
-
-        member __.GetValueAsync () =
-            async {
-                match cachedResult with
-                | ValueSome result -> return result
-                | _ ->
-                    let! cancellationToken = Async.CancellationToken
-                    use _semaphoreDisposer = gate.Wait cancellationToken
-
-                    cancellationToken.ThrowIfCancellationRequested ()
-
-                    match cachedResult with
-                    | ValueSome result -> return result
-                    | _ ->
-                        let! result = computation
-                        cachedResult <- ValueSome result
-                        return result
-                    
-            }
-
-/// Global service state
-type FrameworkImportCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list* (*fsharpBinaries*)string
-
-/// Represents a cache of 'framework' references that can be shared betweeen multiple incremental builds
-type FrameworkImportCache(keepStrongly) = 
-
-    // Mutable collection protected via CompilationThreadToken 
-    let frameworkTcImportCache = AgedLookup<CompilationThreadToken, FrameworkImportCacheKey, (TcGlobals * TcImports)>(keepStrongly, areSimilar=(fun (x, y) -> x = y)) 
-
-    /// Reduce the size of the cache in low-memory scenarios
-    member __.Downsize ctok = frameworkTcImportCache.Resize(ctok, keepStrongly=0)
-
-    /// Clear the cache
-    member __.Clear ctok = frameworkTcImportCache.Clear ctok
-
-    /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
-    member __.Get(ctok, tcConfig: TcConfig) =
-      cancellable {
-        // Split into installed and not installed.
-        let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
-        let frameworkDLLsKey = 
-            frameworkDLLs 
-            |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
-            |> List.sort  // Sort to promote cache hits.
-
-        let! tcGlobals, frameworkTcImports = 
-          cancellable {
-            // Prepare the frameworkTcImportsCache
-            //
-            // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
-            // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
-            // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
-            let key = (frameworkDLLsKey, 
-                        tcConfig.primaryAssembly.Name, 
-                        tcConfig.GetTargetFrameworkDirectories(), 
-                        tcConfig.fsharpBinariesDir)
-
-            match frameworkTcImportCache.TryGet (ctok, key) with 
-            | Some res -> return res
-            | None -> 
-                let tcConfigP = TcConfigProvider.Constant tcConfig
-                let! ((tcGlobals, tcImports) as res) = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkResolutions)
-                frameworkTcImportCache.Put(ctok, key, res)
-                return tcGlobals, tcImports
-          }
-        return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
-      }
-
-[<Struct>]
-type Stamp (dateTime: DateTime) =
-
-    member __.DateTime = dateTime
-
-    static member Create () = Stamp DateTime.UtcNow
 
 [<NoEquality;NoComparison>]
 type CompilationOptions =
@@ -196,12 +63,6 @@ type CompilationOptions =
             KeepAssemblyContents = false
             KeepAllBackgroundResolutions = false
         }
-
-type SyntaxTree = 
-    {
-        FilePath: string
-        ParseResult: ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
-    }
 
 /// Accumulated results of type checking.
 [<NoEquality; NoComparison>]
@@ -252,7 +113,7 @@ type Compilation =
         initialTcAcc: TcAccumulator
         options: CompilationOptions
         filePaths: ImmutableArray<string>
-        stamp: Stamp
+        stamp: TimeStamp
     }
 
     member this.ParseFile (filePath: string) =
@@ -386,7 +247,7 @@ type Compilation =
             initialTcAcc = initialTcAcc
             options = options
             filePaths = filePaths
-            stamp = Stamp.Create ()
+            stamp = TimeStamp.Create ()
         }
     
 type [<NoEquality;NoComparison>] CompilationInfo =
@@ -669,4 +530,4 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
            }
 
           return builderOpt
-        } |> toAsync
+        } |> Cancellable.toAsync
