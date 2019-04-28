@@ -40,15 +40,14 @@ open Microsoft.FSharp.Collections
 // Uses a struct-around-single-reference to allow future changes in representation (the representation is
 // not revealed in the signature)
 [<Struct; NoComparison; NoEquality>]
-type TaskStep<'T>(actionAndPc: int, data: obj) =
+type TaskStep<'T>(action: int, data: obj) =
     static member Return (x: 'T) = TaskStep<'T>(0, box x)
     static member ReturnFrom (task: Task<'T>) = TaskStep<'T>(1, box task)
-    static member Await (completion:  ICriticalNotifyCompletion, pc: int) = TaskStep<'T>(((pc <<< 2) ||| 2), box completion)
-    member __.IsReturn = ((actionAndPc &&& 0b11) = 0)
-    member __.IsReturnFrom = ((actionAndPc &&& 0b11) = 1)
-    member __.IsAwait = ((actionAndPc &&& 0b11) = 2)
+    static member Await (completion:  ICriticalNotifyCompletion) = TaskStep<'T>(2, box completion)
+    member __.IsReturn = (action = 0)
+    member __.IsReturnFrom = (action = 1)
+    member __.IsAwait = (action = 2)
     member __.GetAwaitable() = (data :?> ICriticalNotifyCompletion) 
-    member __.GetResumePoint() = (actionAndPc >>> 2) 
     member __.GetNextTask() = (data :?> Task<'T>) 
     member __.GetResult() = (data :?> 'T) 
 
@@ -62,13 +61,13 @@ module TaskHelpers =
 
     type SM() =
         let mutable conts = ResizeArray<(unit -> obj)>()
+        let mutable pc = 0
         member __.__genlabel() = 
             let v = conts.Count
             conts.Add(Unchecked.defaultof<_>)
             v
 
         member __.__gencode n (f: unit -> TaskStep<'T>) = 
-            //printfn "conts.Capacity = %d, n = %d, counts.Count = %d" conts.Capacity n conts.Count
             conts.[n] <- (f >> box)
 
         member sm.__code (f: unit -> TaskStep<'T>) =
@@ -76,13 +75,15 @@ module TaskHelpers =
             sm.__gencode n f
             n
 
-        member __.__jsr<'T> n = 
+        member __.__jmp<'T> n = 
             match conts.[n]() with 
             | :? TaskStep<'T> as t -> t
             | res -> 
                 printfn "T = %A" typeof<'T>
                 printfn "res.GetType() = %A" (res.GetType())
                 failwith "invalid type"
+        member __.__setpc v = pc <- v
+        member __.__getpc = pc 
         //-> unit (* unit -> TasskStep<'T> *)
 
     //let inline unwrapException (agg : AggregateException) =
@@ -125,12 +126,13 @@ module TaskHelpers =
                 let CONT = sm.__genlabel () 
                 sm.__gencode ENTRY (fun () -> 
                     if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then // shortcut to continue immediately
-                        sm.__jsr<'TResult2> CONT
+                        sm.__jmp<'TResult2> CONT
                     else
-                        TaskStep<'TResult2>.Await (awaiter, CONT))
+                        sm.__setpc CONT
+                        TaskStep<'TResult2>.Await (awaiter))
                 sm.__gencode CONT (fun () -> 
                     continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter)))
-                sm.__jsr ENTRY
+                sm.__jmp ENTRY
 
         static member inline GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
@@ -152,16 +154,17 @@ module TaskHelpers =
         sm.__gencode ENTRY (fun () -> 
             if awaiter.IsCompleted then 
                 // Continue directly
-                sm.__jsr<'TResult2> CONT
+                sm.__jmp<'TResult2> CONT
             else
                 // Await and continue later when a result is available.
-                TaskStep<'TResult2>.Await (awaiter, CONT)
+                sm.__setpc CONT
+                TaskStep<'TResult2>.Await (awaiter)
         )
         sm.__gencode CONT (fun () -> 
            result <- awaiter.GetResult()
            continuation result
         )
-        sm.__jsr ENTRY
+        sm.__jmp ENTRY
 
     /// Special case of the above for `Task<'TResult1>`, for the context-insensitive builder.
     /// Have to write this T by hand to avoid confusing the compiler thinking our built-in bind method
@@ -174,16 +177,17 @@ module TaskHelpers =
         sm.__gencode ENTRY (fun () -> 
             if awaiter.IsCompleted then
                 // Continue directly
-                sm.__jsr<'TResult2> CONT
+                sm.__jmp<'TResult2> CONT
             else
                 // Await and continue later when a result is available.
-                TaskStep<'TResult2>.Await (awaiter, CONT)
+                sm.__setpc CONT
+                TaskStep<'TResult2>.Await (awaiter)
         )
         sm.__gencode CONT (fun () -> 
            continuation (awaiter.GetResult())
         )
         // execute
-        sm.__jsr ENTRY
+        sm.__jmp ENTRY
 
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
@@ -192,34 +196,39 @@ module TaskHelpers =
         let mutable step = step
         let ENTRY = sm.__genlabel ()
         let CONT = sm.__genlabel ()
-        let RESUME = sm.__genlabel ()
         sm.__gencode ENTRY (fun () -> 
             if step.IsReturn then 
-                sm.__jsr<'T> CONT
+                sm.__jmp<'T> CONT
             elif step.IsReturnFrom then
-                printfn "*******************----- combine"
                 let t = step.GetNextTask()
-                TaskStep<'T>.Await (t.GetAwaiter(), CONT)
+                sm.__setpc CONT
+                TaskStep<'T>.Await (t.GetAwaiter())
             else  
-                TaskStep<'T>.Await (step.GetAwaitable(), RESUME))
-        sm.__gencode RESUME (fun () -> 
-            let pc = step.GetResumePoint()
-            step <- sm.__jsr<unit> pc
-            sm.__jsr<'T> ENTRY)
+                // CODEGEN: TODO: this doesn't feel right, we are not jumping to a label
+                // CODEGEN: instead, all code paths should end up executing the continuation
+                //
+                // Whenever an Await has been generated elsewhere, the pc has already been set to
+                // the resumption point.
+                let rp = sm.__getpc
+                sm.__setpc (sm.__code (fun () -> 
+                    step <- sm.__jmp<unit> rp
+                    sm.__jmp<'T> ENTRY))
+                TaskStep<'T>.Await (step.GetAwaitable()))
+
         sm.__gencode CONT (fun () -> 
             continuation ())
-        sm.__jsr ENTRY
+
+        sm.__jmp ENTRY
 
     /// Builds a step that executes the body while the condition predicate is true.
     let inline whileLoop (sm: SM) (cond : unit -> bool) (body : unit -> TaskStep<unit>) : TaskStep<unit> =
         let ENTRY = sm.__genlabel()
         sm.__gencode ENTRY (fun () -> 
             if cond() then
-                printfn "while loop step"
-                combine sm (body()) (fun () -> sm.__jsr<unit> ENTRY)
+                combine sm (body()) (fun () -> sm.__jmp<unit> ENTRY)
             else
                 zero())
-        sm.__jsr<unit> ENTRY
+        sm.__jmp<unit> ENTRY
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -229,30 +238,32 @@ module TaskHelpers =
         let mutable INNER_ENTRY = sm.__code code 
         sm.__gencode ENTRY (fun () -> 
             try
-                let step = sm.__jsr<'T> INNER_ENTRY
+                let step = sm.__jmp<'T> INNER_ENTRY
                 if step.IsReturn then 
                     step
                 elif step.IsReturnFrom then
-                    printfn "*******************-----"
                     let t = step.GetNextTask()
                     let awaitable = t.GetAwaiter()
-                    TaskStep<'T>.Await(awaitable, sm.__code (fun () ->
+                    sm.__setpc (sm.__code (fun () ->
                         try
                              // note, this may raise exceptions, but the code is generated in the context of the try-with
                              awaitable.GetResult() |> TaskStep<_>.Return
                         with exn -> 
                              catch exn))
+                    TaskStep<'T>.Await(awaitable)
                 else 
-                    let rp = step.GetResumePoint()
-                    TaskStep<_>.Await (step.GetAwaitable(), 
-                        sm.__code (fun () -> 
-                            INNER_ENTRY <- rp
-                            sm.__jsr<'T> ENTRY))
+                    // CODEGEN: This can be:
+                    // pc <- step.GetResumeLabel()
+                    // TaskStep<_>.Await (step.GetAwaitable())
+                    let rp = sm.__getpc
+                    sm.__setpc (sm.__code (fun () -> 
+                        INNER_ENTRY <- rp
+                        sm.__jmp<'T> ENTRY))
+                    TaskStep<_>.Await (step.GetAwaitable())
             with exn -> 
-                printfn "*******************----- catch"
                 catch exn
         )
-        sm.__jsr<'T> ENTRY
+        sm.__jmp<'T> ENTRY
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -261,27 +272,23 @@ module TaskHelpers =
         let ENTRY = sm.__genlabel()
         let mutable INNER_ENTRY = sm.__code code 
         sm.__gencode ENTRY (fun () -> 
-            printfn "TF step"
             let mutable step =
                 try
-                    sm.__jsr<'T> INNER_ENTRY
+                    sm.__jmp<'T> INNER_ENTRY
                     // Important point: we use a try/with, not a try/finally, to implement tryFinally.
                     // The reason for this is that if we're just building a continuation, we definitely *shouldn't*
                     // execute the `compensation()` part yet -- the actual execution of the asynchronous code hasn't completed!
                 with _ ->
-                    printfn "************** TF exception"
                     compensation()
                     reraise()
 
             if step.IsReturn then 
-                printfn "*******************"
                 compensation()
                 step
             elif step.IsReturnFrom then
-                printfn "!!!!!!!!!!!!!!!!!!!!!"
                 let t = step.GetNextTask()
                 let awaitable = t.GetAwaiter()
-                TaskStep<_>.Await(awaitable, sm.__code (fun () ->
+                sm.__setpc (sm.__code (fun () ->
                     let result =
                         try
                             awaitable.GetResult() |> TaskStep<_>.Return
@@ -290,15 +297,16 @@ module TaskHelpers =
                             reraise()
                     compensation() // if we got here we haven't run compensation(), because we would've reraised after doing so
                     result))
+                TaskStep<_>.Await(awaitable)
             else 
-                let rp = step.GetResumePoint()
-                TaskStep<'T>.Await (step.GetAwaitable(), 
-                    sm.__code (fun () -> 
-                        // go back to get inside the try/finally again
-                        INNER_ENTRY <- rp
-                        sm.__jsr<'T> ENTRY))
+                let rp = sm.__getpc
+                sm.__setpc (sm.__code (fun () -> 
+                    // go back to get inside the try/finally again
+                    INNER_ENTRY <- rp
+                    sm.__jmp<'T> ENTRY))
+                TaskStep<'T>.Await (step.GetAwaitable()) 
         )
-        sm.__jsr<'T> ENTRY
+        sm.__jmp<'T> ENTRY
 
     /// Implements a using statement that disposes `disp` after `body` has completed.
     let inline using (sm: SM) (disp : #IDisposable) (body : _ -> TaskStep<'T>) =
@@ -316,56 +324,41 @@ module TaskHelpers =
 
     /// Runs a step as a task -- with a short-circuit for immediately completed steps.
     let inline run (sm: SM) (code : unit -> TaskStep<'T>) =
+        // CODEGEN: TODO: make this a field of the generated object
+        let mutable methodBuilder = AsyncTaskMethodBuilder<Task<'T>>()
+        
+        // CODEGEN: generate the code and set the initial PC
+        do sm.__setpc (sm.__code code)
+        
+        let mutable machine = 
+            { new IAsyncStateMachine with
+
+                /// Proceed to one of three states: result, failure, or awaiting.
+                /// If awaiting, MoveNext() will be called again when the awaitable completes.
+                member this.MoveNext() =
+                    try
+                        // CODEGEN: this is a jumptable into the generated code
+                        let step = sm.__jmp<'T> sm.__getpc
+                        if step.IsReturn then 
+                            let res = step.GetResult()
+                            methodBuilder.SetResult(Task.FromResult res)
+                        elif step.IsReturnFrom then 
+                            methodBuilder.SetResult (step.GetNextTask())
+                        else 
+                            let mutable this = this
+                            let mutable await = step.GetAwaitable()
+                            assert (not (isNull await))
+                            // Tell the builder to call us again when done.
+                            methodBuilder.AwaitUnsafeOnCompleted(&await, &this)    
+                    with exn ->
+                        methodBuilder.SetException exn
+
+                member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
+            }
+
         try
-            printfn "run..."
-            let firstStep = code()
-            if firstStep.IsReturn then 
-                printfn "first step is Return..."
-                Task.FromResult (firstStep.GetResult())
-            elif firstStep.IsReturnFrom then 
-                printfn "first step is ReturnFrom..."
-                firstStep.GetNextTask()
-            else
-                printfn "first step is Await..."
-                let mutable methodBuilder = AsyncTaskMethodBuilder<Task<'T>>()
-
-                let mutable pc = firstStep.GetResumePoint()
-                let mutable first = true
-                let mutable machine = 
-                  { new IAsyncStateMachine with
-
-                    /// Proceed to one of three states: result, failure, or awaiting.
-                    /// If awaiting, MoveNext() will be called again when the awaitable completes.
-                    member this.MoveNext() =
-                        try
-                            printfn "second step, pc = %d..." pc
-                            let step = if first then (first <- false; firstStep) else sm.__jsr<'T> pc
-                            //__code
-                            if step.IsReturn then 
-                                let res = step.GetResult()
-                                printfn "step is Return(%A)..." res
-                                methodBuilder.SetResult(Task.FromResult res)
-                                printfn "result set..." 
-                            elif step.IsReturnFrom then 
-                                printfn "step is ReturnFrom..."
-                                methodBuilder.SetResult (step.GetNextTask())
-                            else 
-                                pc <- step.GetResumePoint()
-                                printfn "step is Await, next pc = %d..." pc
-                                let mutable this = this
-                                let mutable await = step.GetAwaitable()
-                                assert (not (isNull await))
-                                // Tell the builder to call us again when done.
-                                methodBuilder.AwaitUnsafeOnCompleted(&await, &this)    
-                        with exn ->
-                            methodBuilder.SetException exn
-
-                    member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
-                  }
-
-                methodBuilder.Start(&machine)
-                methodBuilder.Task.Unwrap()
-
+            methodBuilder.Start(&machine)
+            methodBuilder.Task.Unwrap()
         with exn ->
             // Any exceptions should go on the task, rather than being thrown from this call.
             // This matches C# behavior where you won't see an exception until awaiting the task,

@@ -28,13 +28,12 @@ open Microsoft.FSharp.Collections
 [<Struct; NoComparison; NoEquality>]
 type TaskStep<'T> =
     static member Return : 'T -> TaskStep<'T>
-    static member Await : ICriticalNotifyCompletion * int -> TaskStep<'T>
+    static member Await : ICriticalNotifyCompletion -> TaskStep<'T>
     static member ReturnFrom : Task<'T> -> TaskStep<'T>
     member IsReturn : bool
     member IsReturnFrom : bool
     member IsAwait : bool
     member GetAwaitable: unit -> ICriticalNotifyCompletion
-    member GetResumePoint: unit -> int
     member GetNextTask: unit -> Task<'T>
     member GetResult: unit -> 'T
 
@@ -45,11 +44,9 @@ module TaskHelpers =
         member __genlabel: unit -> int
         member __gencode: int -> (unit -> TaskStep<'T>) -> unit
         member __code: (unit -> TaskStep<'T>)  -> int
-        member __jsr<'T> : int -> TaskStep<'T>
-//    val __jumptable : int -> unit
-//    val __jsr : int -> 'T
-//    val __label : int -> unit
-//    val __resume: (unit -> TaskStep<_>) -> int
+        member __jmp<'T> : int -> TaskStep<'T>
+        member __getpc : int 
+        member __setpc : int -> unit
 
 type TaskBuilder =
     new: unit -> TaskBuilder
