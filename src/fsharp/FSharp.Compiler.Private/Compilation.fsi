@@ -19,21 +19,9 @@ open FSharp.Compiler.CompileOptions
 
 type Stamp = struct end
 
-type SourceId = struct end
-
-[<Sealed>]
-type Source =
-
-    member Id: SourceId
-
-    member FilePath: string
-
-    member TryGetSourceText: unit -> FSharp.Compiler.Text.ISourceText option
-
 [<NoEquality;NoComparison>]
 type CompilationOptions =
     {
-        CompilationThreadToken: CompilationThreadToken
         LegacyReferenceResolver: ReferenceResolver.Resolver
         DefaultFSharpBinariesDir: string
         TryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
@@ -42,37 +30,33 @@ type CompilationOptions =
         ProjectDirectory: string
         UseScriptResolutionRules: bool
         AssemblyPath: string
+        IsExecutable: bool
+        KeepAssemblyContents: bool
+        KeepAllBackgroundResolutions: bool
     }
 
-    static member Create: assemblyPath: AssemblyPath * commandLineArgs: string list * projectDirectory: string -> CompilationOptions
+    static member Create: assemblyPath: AssemblyPath * commandLineArgs: string list * projectDirectory: string * isExecutable: bool -> CompilationOptions
 
-type CompilationId = struct end
+type ParseResult = 
+    {
+        FilePath: string
+        Result: ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
+    }
 
 [<Sealed>]
-type Compilation =
-
-    member Id: CompilationId
+type Compilation
 
 [<NoEquality;NoComparison>]
 type CompilationInfo =
     {
         Options: CompilationOptions
-        Sources: SourceId seq
-        CompilationReferences: CompilationId seq
+        ParseResults: ParseResult seq
+        CompilationReferences: Compilation seq
     }
 
-type ParseResult = (ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) [])
-
 [<Sealed>]
-type CompilationManager =
+type CompilerService =
 
-    new: compilationCacheSize: int * keepStrongly: int -> CompilationManager
-
-    member AddSourceAsync: filePath: string -> Async<Source>
+    new: compilationCacheSize: int * keepStrongly: int -> CompilerService
 
     member TryCreateCompilationAsync: CompilationInfo -> Async<Compilation option>
-
-    member TryParseSourceFileAsync: SourceId * CompilationId -> Async<ParseResult option>
-
-    member ParseSourceFilesAsync: SourceId seq * CompilationId -> Async<ParseResult seq>
-
