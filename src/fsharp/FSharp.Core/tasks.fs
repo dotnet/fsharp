@@ -21,12 +21,14 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// A marker interface to give priority to different available overloads
     type IPriority1 = interface inherit IPriority2 end
 
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
 
 open System
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
@@ -38,80 +40,64 @@ open Microsoft.FSharp.Collections
 // Uses a struct-around-single-reference to allow future changes in representation (the representation is
 // not revealed in the signature)
 [<Struct; NoComparison; NoEquality>]
-type TaskStep<'T>(contents: TaskStepContents<'T>) =
-    member __.Contents = contents
+type TaskStep<'T>(actionAndPc: int, data: obj) =
+    static member Return (x: 'T) = TaskStep<'T>(0, box x)
+    static member ReturnFrom (task: Task<'T>) = TaskStep<'T>(1, box task)
+    static member Await (completion:  ICriticalNotifyCompletion, pc: int) = TaskStep<'T>(((pc <<< 2) ||| 2), box completion)
+    member __.IsReturn = ((actionAndPc &&& 0b11) = 0)
+    member __.IsReturnFrom = ((actionAndPc &&& 0b11) = 1)
+    member __.IsAwait = ((actionAndPc &&& 0b11) = 2)
+    member __.GetAwaitable() = (data :?> ICriticalNotifyCompletion) 
+    member __.GetResumePoint() = (actionAndPc >>> 2) 
+    member __.GetNextTask() = (data :?> Task<'T>) 
+    member __.GetResult() = (data :?> 'T) 
 
-    static member Return x = TaskStep<'T>(Return x)
-    static member Await (completion, continuation) = TaskStep<'T>(Await (completion, continuation))
-    static member ReturnFrom task = TaskStep<'T>(ReturnFrom task)
-
-and 
-    [<NoComparison; NoEquality>]
-    TaskStepContents<'T> =
-    | Await of ICriticalNotifyCompletion * (unit -> TaskStep<'T>)
-    | Return of 'T
-    | ReturnFrom of Task<'T>
+    //| Return of 'T
+    //| ReturnFrom of Task<'T>
+    //| Await of ICriticalNotifyCompletion * (unit -> TaskStep<'T>)
 
 [<AutoOpen>]
 module TaskHelpers = 
+    //let __jumptable (_x:int) = ()
 
-    /// Implements the machinery of running a `TaskStep` as a task returning a continuation task.
-    type StepStateMachine<'T>(firstStep: TaskStep<'T>) =
-        let methodBuilder = AsyncTaskMethodBuilder<Task<'T>>()
+    type SM() =
+        let mutable conts = ResizeArray<(unit -> obj)>()
+        member __.__genlabel() = 
+            let v = conts.Count
+            conts.Add(Unchecked.defaultof<_>)
+            v
+        member __.__setcode n (f: unit -> TaskStep<'T>) = 
+            //printfn "conts.Capacity = %d, n = %d, counts.Count = %d" conts.Capacity n conts.Count
+            conts.[n] <- (f >> box)
+        member sm.__code (f: unit -> TaskStep<'T>) =
+            let n = sm.__genlabel ()
+            sm.__setcode n f
+            n
+        member __.__goto<'T> n = 
+            match conts.[n]() with 
+            | :? TaskStep<'T> as t -> t
+            | res -> 
+                printfn "T = %A" typeof<'T>
+                printfn "res.GetType() = %A" (res.GetType())
+                failwith "invalid type"
+        //-> unit (* unit -> TasskStep<'T> *)
 
-        /// The continuation we left off awaiting on our last MoveNext().
-        let mutable continuation = fun () -> firstStep
-
-        /// Start execution as a `Task<Task<'T>>`.
-        member this.Run() =
-            let mutable this = this
-            methodBuilder.Start(&this)
-            methodBuilder.Task
-    
-        interface IAsyncStateMachine with
-
-            /// Proceed to one of three states: result, failure, or awaiting.
-            /// If awaiting, MoveNext() will be called again when the awaitable completes.
-            member this.MoveNext() =
-                let mutable await = 
-                    try
-                        match continuation().Contents with
-                        | Return r ->
-                            methodBuilder.SetResult(Task.FromResult r)
-                            null
-                        | ReturnFrom t ->
-                            methodBuilder.SetResult t
-                            null
-                        | Await (await, next) ->
-                            continuation <- next
-                            await
-                    with exn ->
-                        methodBuilder.SetException exn
-                        null
-
-                if not (isNull await) then
-                    let mutable this = this
-                    // Tell the builder to call us again when this thing is done.
-                    methodBuilder.AwaitUnsafeOnCompleted(&await, &this)    
-
-            member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
-
-    let unwrapException (agg : AggregateException) =
-        let inners = agg.InnerExceptions
-        if inners.Count = 1 then inners.[0]
-        else agg :> Exception
+    //let inline unwrapException (agg : AggregateException) =
+    //    let inners = agg.InnerExceptions
+    //    if inners.Count = 1 then inners.[0]
+    //    else agg :> Exception
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
-    let zero = TaskStep<unit>.Return ()
+    let inline zero() = TaskStep<unit>.Return ()
 
     /// Used to return a value.
     let inline ret (x : 'T) = TaskStep<'T>.Return x
 
-    let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2 when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >))                                   > (x: ^Priority) (y: ^TaskLike) = 
-        ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >)) (x,y))
+    let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2 when (^Priority or ^TaskLike): (static member CanBind : SM * ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>) > (sm: SM) (x: ^Priority) (y: ^TaskLike) k = 
+        ((^Priority or ^TaskLike): (static member CanBind : SM * ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>) (sm, x, y, k))
 
-    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskStep<'T>)> (x: ^Priority) (y: ^TaskLike) = 
-        ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskStep< 'T >) (x,y))
+    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom: SM * ^Priority * ^TaskLike -> TaskStep<'T>)> (sm: SM) (x: ^Priority) (y: ^TaskLike) = 
+        ((^Priority or ^TaskLike): (static member CanReturnFrom : SM * ^Priority * ^TaskLike -> TaskStep<'T>) (sm, x, y))
 
     type TaskLikeBind<'TResult2> =
         // We put the output generic parameter up here at the class level, so it doesn't get subject to
@@ -130,12 +116,18 @@ module TaskHelpers =
                                             and ^Awaiter :> ICriticalNotifyCompletion 
                                             and ^Awaiter : (member get_IsCompleted : unit -> bool)
                                             and ^Awaiter : (member GetResult : unit -> ^TResult1) >
-            (awaitable : ^Awaitable, continuation : ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
+            (sm: SM, awaitable : ^Awaitable, continuation : ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
                 let awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable)) // get an awaiter from the awaitable
-                if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then // shortcut to continue immediately
-                    continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                else
-                    TaskStep<_>.Await (awaiter, fun () -> continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter)))
+                let ENTRY = sm.__genlabel () 
+                let CONT = sm.__genlabel () 
+                sm.__setcode ENTRY (fun () -> 
+                    if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then // shortcut to continue immediately
+                        sm.__goto<'TResult2> CONT
+                    else
+                        TaskStep<'TResult2>.Await (awaiter, CONT))
+                sm.__setcode CONT (fun () -> 
+                    continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter)))
+                sm.__goto ENTRY
 
         static member inline GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
@@ -143,126 +135,227 @@ module TaskHelpers =
                                                         and ^Awaiter :> ICriticalNotifyCompletion 
                                                         and ^Awaiter : (member get_IsCompleted : unit -> bool)
                                                         and ^Awaiter : (member GetResult : unit -> ^TResult1) >
-            (task : ^TaskLike, continuation : ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
+            (sm, task : ^TaskLike, continuation : ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
                 let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
-                TaskLikeBind<'TResult2>.GenericAwait(awaitable, continuation)
+                TaskLikeBind<'TResult2>.GenericAwait(sm, awaitable, continuation)
 
-    /// Special case of the above for `Task<'T>`. Have to write this T by hand to avoid confusing the compiler
-    /// trying to decide between satisfying the constraints with `Task` or `Task<'T>`.
-    let bindTask (task : Task<'T>) (continuation : 'T -> TaskStep<'TResult2>) =
+    /// Special case of the above for `Task<'TResult1>`. Have to write this T by hand to avoid confusing the compiler
+    /// trying to decide between satisfying the constraints with `Task` or `Task<'TResult1>`.
+    let inline bindTask (sm: SM) (task : Task<'TResult1>) (continuation : 'TResult1 -> TaskStep<'TResult2>) =
         let awaiter = task.GetAwaiter()
+        let mutable result = Unchecked.defaultof<_>
+        let CONT = sm.__code (fun () -> 
+           result <- awaiter.GetResult()
+           continuation result)
         if awaiter.IsCompleted then 
             // Continue directly
-            continuation (awaiter.GetResult())
+            sm.__goto<'TResult2> CONT
         else
             // Await and continue later when a result is available.
-            TaskStep<_>.Await (awaiter, (fun () -> continuation (awaiter.GetResult())))
+            TaskStep<'TResult2>.Await (awaiter, CONT)
 
-    /// Special case of the above for `Task<'T>`, for the context-insensitive builder.
+    /// Special case of the above for `Task<'TResult1>`, for the context-insensitive builder.
     /// Have to write this T by hand to avoid confusing the compiler thinking our built-in bind method
     /// defined on the builder has fancy generic constraints on inp and T parameters.
-    let bindTaskConfigureFalse (task : Task<'T>) (continuation : 'T -> TaskStep<'TResult2>) =
+    let inline bindTaskConfigureFalse (sm: SM) (task : Task<'TResult1>) (continuation : 'TResult1 -> TaskStep<'TResult2>) =
         let awaiter = task.ConfigureAwait(false).GetAwaiter()
-        if awaiter.IsCompleted then
-            // Continue directly
-            continuation (awaiter.GetResult())
-        else
-            // Await and continue later when a result is available.
-            TaskStep<_>.Await (awaiter, (fun () -> continuation (awaiter.GetResult())))
+        let mutable result = Unchecked.defaultof<_>
+        // codegen
+        let ENTRY = sm.__genlabel ()
+        let CONT = sm.__genlabel ()
+        sm.__setcode ENTRY (fun () -> 
+            if awaiter.IsCompleted then
+                // Continue directly
+                sm.__goto<'TResult2> CONT
+            else
+                // Await and continue later when a result is available.
+                TaskStep<'TResult2>.Await (awaiter, CONT)
+        )
+        sm.__setcode CONT (fun () -> 
+           result <- awaiter.GetResult()
+           continuation result
+        )
+        // execute
+        sm.__goto ENTRY
 
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
-    let rec combine (step : TaskStep<unit>) (continuation : unit -> TaskStep<'T>) =
-        match step.Contents with
-        | Return _ -> continuation()
-        | ReturnFrom t -> TaskStep<_>.Await (t.GetAwaiter(), continuation)
-        | Await (awaitable, next) -> TaskStep<_>.Await (awaitable, fun () -> combine (next()) continuation)
+    let inline combine (sm: SM) (step : TaskStep<unit>) (continuation : unit -> TaskStep<'T>) : TaskStep<'T> =
+        let mutable step = step
+        let CONT = sm.__genlabel ()
+        let ENTRY = sm.__genlabel ()
+        sm.__setcode ENTRY (fun () -> 
+            if step.IsReturn then 
+                sm.__goto<'T> CONT
+            elif step.IsReturnFrom then
+                printfn "*******************----- combine"
+                let t = step.GetNextTask()
+                TaskStep<'T>.Await (t.GetAwaiter(), CONT)
+            else  
+                let pc = step.GetResumePoint()
+                TaskStep<'T>.Await (step.GetAwaitable(), sm.__code (fun () -> 
+                    step <- sm.__goto<unit> pc
+                    sm.__goto<'T> ENTRY)))
+        sm.__setcode CONT (fun () -> 
+           continuation ())
+        sm.__goto ENTRY
 
     /// Builds a step that executes the body while the condition predicate is true.
-    let whileLoop (cond : unit -> bool) (body : unit -> TaskStep<unit>) =
-        if cond() then
-            // Create a self-referencing closure to test whether to repeat the loop on future iterations.
-            let mutable repeat = Unchecked.defaultof<_>
-            repeat <- fun () ->
-                if cond() then
-                    combine (body()) repeat
-                else
-                    zero
-            // Run the body the first time and chain it to the repeat logic.
-            combine (body()) repeat
-        else zero
+    let inline whileLoop (sm: SM) (cond : unit -> bool) (body : unit -> TaskStep<unit>) : TaskStep<unit> =
+        let ENTRY = sm.__genlabel()
+        sm.__setcode ENTRY (fun () -> 
+            if cond() then
+                printfn "while loop step"
+                combine sm (body()) (fun () -> sm.__goto<unit> ENTRY)
+            else
+                zero())
+        sm.__goto<unit> ENTRY
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    let rec tryWith (step : unit -> TaskStep<'T>) (catch : exn -> TaskStep<'T>) =
-        try
-            let stepResult = step()
-            match stepResult.Contents with
-            | Return _ -> stepResult
-            | ReturnFrom t ->
-                let awaitable = t.GetAwaiter()
-                TaskStep<_>.Await(awaitable, fun () ->
-                    try
-                        awaitable.GetResult() |> TaskStep<_>.Return
-                    with exn -> 
-                        catch exn)
-            | Await (awaitable, next) -> 
-                TaskStep<_>.Await (awaitable, fun () -> tryWith next catch)
-        with exn -> catch exn
+    let inline tryWith (sm: SM) (code : unit -> TaskStep<'T>) (catch : exn -> TaskStep<'T>) : TaskStep<'T> =
+        let ENTRY = sm.__genlabel()
+        // On resume, we have to go through into the INNER_ENTRY protected by the try/with
+        let mutable INNER_ENTRY = sm.__code code 
+        sm.__setcode ENTRY (fun () -> 
+            try
+                let step = sm.__goto<'T> INNER_ENTRY
+                if step.IsReturn then 
+                    step
+                elif step.IsReturnFrom then
+                    printfn "*******************-----"
+                    let t = step.GetNextTask()
+                    let awaitable = t.GetAwaiter()
+                    TaskStep<'T>.Await(awaitable, sm.__code (fun () ->
+                        try
+                             // note, this may raise exceptions, but the code is generated in the context of the try-with
+                             awaitable.GetResult() |> TaskStep<_>.Return
+                        with exn -> 
+                             catch exn))
+                else 
+                    let rp = step.GetResumePoint()
+                    TaskStep<_>.Await (step.GetAwaitable(), 
+                        sm.__code (fun () -> 
+                            INNER_ENTRY <- rp
+                            sm.__goto<'T> ENTRY))
+            with exn -> 
+                printfn "*******************----- catch"
+                catch exn
+        )
+        sm.__goto<'T> ENTRY
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    let rec tryFinally (step : unit -> TaskStep<'T>) fin =
-        let stepResult =
-            try step()
-            // Important point: we use a try/with, not a try/finally, to implement tryFinally.
-            // The reason for this is that if we're just building a continuation, we definitely *shouldn't*
-            // execute the `fin()` part yet -- the actual execution of the asynchronous code hasn't completed!
-            with _ ->
-                fin()
-                reraise()
+    let inline tryFinally (sm: SM) (code : unit -> TaskStep<'T>) compensation =
+        // codegen
+        let ENTRY = sm.__genlabel()
+        let mutable INNER_ENTRY = sm.__code code 
+        sm.__setcode ENTRY (fun () -> 
+            printfn "TF step"
+            let mutable step =
+                try
+                    sm.__goto<'T> INNER_ENTRY
+                    // Important point: we use a try/with, not a try/finally, to implement tryFinally.
+                    // The reason for this is that if we're just building a continuation, we definitely *shouldn't*
+                    // execute the `compensation()` part yet -- the actual execution of the asynchronous code hasn't completed!
+                with _ ->
+                    printfn "************** TF exception"
+                    compensation()
+                    reraise()
 
-        match stepResult.Contents with
-        | Return _ ->
-            fin()
-            stepResult
-        | ReturnFrom t ->
-            let awaitable = t.GetAwaiter()
-            TaskStep<_>.Await(awaitable, fun () ->
-                let result =
-                    try
-                        awaitable.GetResult() |> TaskStep<_>.Return
-                    with _ ->
-                        fin()
-                        reraise()
-                fin() // if we got here we haven't run fin(), because we would've reraised after doing so
-                result)
-        | Await (awaitable, next) ->
-            TaskStep<_>.Await (awaitable, fun () -> tryFinally next fin)
+            if step.IsReturn then 
+                printfn "*******************"
+                compensation()
+                step
+            elif step.IsReturnFrom then
+                printfn "!!!!!!!!!!!!!!!!!!!!!"
+                let t = step.GetNextTask()
+                let awaitable = t.GetAwaiter()
+                TaskStep<_>.Await(awaitable, sm.__code (fun () ->
+                    let result =
+                        try
+                            awaitable.GetResult() |> TaskStep<_>.Return
+                        with _ ->
+                            compensation()
+                            reraise()
+                    compensation() // if we got here we haven't run compensation(), because we would've reraised after doing so
+                    result))
+            else 
+                let rp = step.GetResumePoint()
+                TaskStep<'T>.Await (step.GetAwaitable(), 
+                    sm.__code (fun () -> 
+                        // go back to get inside the try/finally again
+                        INNER_ENTRY <- rp
+                        sm.__goto<'T> ENTRY))
+        )
+        sm.__goto<'T> ENTRY
 
     /// Implements a using statement that disposes `disp` after `body` has completed.
-    let using (disp : #IDisposable) (body : _ -> TaskStep<'T>) =
+    let inline using (sm: SM) (disp : #IDisposable) (body : _ -> TaskStep<'T>) =
         // A using statement is just a try/finally with the finally block disposing if non-null.
-        tryFinally
+        tryFinally sm
             (fun () -> body disp)
             (fun () -> if not (isNull (box disp)) then disp.Dispose())
 
     /// Implements a loop that runs `body` for each element in `sequence`.
-    let forLoop (sequence : seq<'T>) (body : 'T -> TaskStep<unit>) =
+    let inline forLoop sm (sequence : seq<'T>) (body : 'T -> TaskStep<unit>) =
         // A for loop is just a using statement on the sequence's enumerator...
-        using (sequence.GetEnumerator())
+        using sm (sequence.GetEnumerator())
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
-            (fun e -> whileLoop e.MoveNext (fun () -> body e.Current))
+            (fun e -> whileLoop sm e.MoveNext (fun () -> body e.Current))
 
     /// Runs a step as a task -- with a short-circuit for immediately completed steps.
-    let run (firstStep : unit -> TaskStep<'T>) =
+    let inline run (sm: SM) (code : unit -> TaskStep<'T>) =
         try
-            let firstStepResult = firstStep()
-            match firstStepResult.Contents with
-            | Return x -> Task.FromResult x
-            | ReturnFrom task -> task
-            | Await _ -> StepStateMachine<'T>(firstStepResult).Run().Unwrap() // sadly can't do tail recursion
+            printfn "run..."
+            let firstStep = code()
+            if firstStep.IsReturn then 
+                printfn "first step is Return..."
+                Task.FromResult (firstStep.GetResult())
+            elif firstStep.IsReturnFrom then 
+                printfn "first step is ReturnFrom..."
+                firstStep.GetNextTask()
+            else
+                printfn "first step is Await..."
+                let mutable methodBuilder = AsyncTaskMethodBuilder<Task<'T>>()
+
+                let mutable pc = firstStep.GetResumePoint()
+                let mutable first = true
+                let mutable machine = 
+                  { new IAsyncStateMachine with
+
+                    /// Proceed to one of three states: result, failure, or awaiting.
+                    /// If awaiting, MoveNext() will be called again when the awaitable completes.
+                    member this.MoveNext() =
+                        try
+                            printfn "second step, pc = %d..." pc
+                            let step = if first then (first <- false; firstStep) else sm.__goto<'T> pc
+                            //__code
+                            if step.IsReturn then 
+                                let res = step.GetResult()
+                                printfn "step is Return(%A)..." res
+                                methodBuilder.SetResult(Task.FromResult res)
+                                printfn "result set..." 
+                            elif step.IsReturnFrom then 
+                                printfn "step is ReturnFrom..."
+                                methodBuilder.SetResult (step.GetNextTask())
+                            else 
+                                pc <- step.GetResumePoint()
+                                printfn "step is Await, next pc = %d..." pc
+                                let mutable this = this
+                                let mutable await = step.GetAwaitable()
+                                assert (not (isNull await))
+                                // Tell the builder to call us again when done.
+                                methodBuilder.AwaitUnsafeOnCompleted(&await, &this)    
+                        with exn ->
+                            methodBuilder.SetException exn
+
+                    member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
+                  }
+
+                methodBuilder.Start(&machine)
+                methodBuilder.Task.Unwrap()
 
         with exn ->
             // Any exceptions should go on the task, rather than being thrown from this call.
@@ -274,23 +367,25 @@ module TaskHelpers =
 
 // New style task builder.
 type TaskBuilder() =
+    let _sm = SM()
     // These methods are consistent between all builders.
-    member __.Delay(f : unit -> TaskStep<'T>) = f
-    member __.Run(f : unit -> TaskStep<'T>) = run f
-    member __.Zero() = zero
-    member __.Return(x) = ret x
-    member __.Combine(step : TaskStep<unit>, continuation) = combine step continuation
-    member __.While(condition : unit -> bool, body : unit -> TaskStep<unit>) = whileLoop condition body
-    member __.For(sequence : seq<'T>, body : 'T -> TaskStep<unit>) = forLoop sequence body
-    member __.TryWith(body : unit -> TaskStep<'T>, catch : exn -> TaskStep<'T>) = tryWith body catch
-    member __.TryFinally(body : unit -> TaskStep<'T>, fin : unit -> unit) = tryFinally body fin
-    member __.Using(disp : #IDisposable, body : #IDisposable -> TaskStep<'T>) = using disp body
-    member __.ReturnFrom (task: Task<'T>) : TaskStep<'T> = TaskStep<_>.ReturnFrom task
+    member inline __.Delay(f : unit -> TaskStep<'T>) = f
+    member inline this.Run(f : unit -> TaskStep<'T>) = run this.SM f
+    member inline __.Zero() = zero()
+    member inline __.Return(x) = ret x
+    member inline this.Combine(step : TaskStep<unit>, continuation) = combine this.SM step continuation
+    member inline this.While(condition : unit -> bool, body : unit -> TaskStep<unit>) = whileLoop this.SM condition body
+    member inline this.For(sequence : seq<'T>, body : 'T -> TaskStep<unit>) = forLoop this.SM sequence body
+    member inline this.TryWith(body : unit -> TaskStep<'T>, catch : exn -> TaskStep<'T>) = tryWith this.SM body catch
+    member inline this.TryFinally(body : unit -> TaskStep<'T>, compensation : unit -> unit) = tryFinally this.SM body compensation
+    member inline this.Using(disp : #IDisposable, body : #IDisposable -> TaskStep<'T>) = using this.SM disp body
+    member inline __.ReturnFrom (task: Task<'T>) : TaskStep<'T> = TaskStep<_>.ReturnFrom task
+    member __.SM = _sm
 
 [<AutoOpen>]
 module ContextSensitiveTasks =
 
-    let task = TaskBuilder()
+    let task<'T> = TaskBuilder()
 
     [<Sealed>]
     type Witnesses() =
@@ -304,15 +399,14 @@ module ContextSensitiveTasks =
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>(_priority: IPriority2, taskLike : ^TaskLike) 
-              : ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >) 
-                  = fun k -> TaskLikeBind< 'TResult2 >.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (taskLike, k)
+                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>(sm, _priority: IPriority2, taskLike : ^TaskLike, k: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+                  = TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (sm, taskLike, k)
 
-        static member CanBind (_priority: IPriority1, task: Task<'TResult1>) : (('TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >)
-                  = fun k -> bindTask task k                      
+        static member inline CanBind (sm, _priority: IPriority1, task: Task<'TResult1>, k: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+                  = bindTask sm task k                      
 
-        static member CanBind (_priority: IPriority1, computation  : Async<'TResult1>) : (('TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >) 
-                  = fun k -> bindTask (Async.StartAsTask computation) k     
+        static member inline CanBind (sm, _priority: IPriority1, computation  : Async<'TResult1>, k: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> 
+                  = bindTask sm (Async.StartAsTask computation) k     
 
         // Give the type arguments explicitly to make it match the signature precisely
         static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T
@@ -320,24 +414,25 @@ module ContextSensitiveTasks =
                                            and ^Awaiter :> ICriticalNotifyCompletion
                                            and ^Awaiter: (member get_IsCompleted: unit -> bool)
                                            and ^Awaiter: (member GetResult: unit ->  ^T)> 
-              (_priority: IPriority1, taskLike: ^TaskLike) : TaskStep< ^T > 
-                  = TaskLikeBind< ^T >.GenericAwait< ^TaskLike, ^Awaiter, ^T> (taskLike, ret)
+              (sm, _priority: IPriority1, taskLike: ^TaskLike) : TaskStep< ^T > 
+                  = TaskLikeBind< ^T >.GenericAwait< ^TaskLike, ^Awaiter, ^T> (sm, taskLike, ret)
 
-        static member CanReturnFrom (_priority: IPriority1, computation : Async<'T>) 
-                  = bindTask (Async.StartAsTask computation) ret : TaskStep<'T>
+        static member inline CanReturnFrom (sm, _priority: IPriority1, computation : Async<'T>) 
+                  = bindTask sm (Async.StartAsTask computation) ret : TaskStep<'T>
 
     type TaskBuilder with
-        member inline __.Bind< ^TaskLike, ^TResult1, 'TResult2 
-                                           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >))> 
-                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep< 'TResult2 >) : TaskStep< 'TResult2 >
-                  = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> Unchecked.defaultof<Witnesses> task continuation
+        member inline builder.Bind< ^TaskLike, ^TResult1, 'TResult2 
+                                           when (Witnesses or  ^TaskLike): (static member CanBind: SM * Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
+                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2>
+                  = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> builder.SM Unchecked.defaultof<Witnesses> task continuation
 
-        member inline __.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom : Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
-                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> Unchecked.defaultof<Witnesses> task
+        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: SM * Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
+                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> builder.SM Unchecked.defaultof<Witnesses> task
+
 
 module ContextInsensitiveTasks =
 
-    let task = TaskBuilder()
+    let task<'T> = TaskBuilder()
 
     [<Sealed; NoComparison; NoEquality>]
     type Witnesses() = 
@@ -349,43 +444,49 @@ module ContextInsensitiveTasks =
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)> (_priority: IPriority3, taskLike: ^TaskLike) : ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >)
-              = fun k -> TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (taskLike, k)
+                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)> (sm, _priority: IPriority3, taskLike: ^TaskLike, k: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+              = TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (sm, taskLike, k)
 
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaitable, ^Awaiter 
                                             when  ^TaskLike: (member ConfigureAwait:  bool ->  ^Awaitable)
                                             and ^Awaitable: (member GetAwaiter: unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                            and ^Awaiter: (member GetResult: unit -> ^TResult1)> (_priority: IPriority2, configurableTaskLike: ^TaskLike) : ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >) 
-              = fun k -> TaskLikeBind<'TResult2>.GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1> (configurableTaskLike, k)
+                                            and ^Awaiter: (member GetResult: unit -> ^TResult1)> (sm, _priority: IPriority2, configurableTaskLike: ^TaskLike, k: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+              = TaskLikeBind<'TResult2>.GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1> (sm, configurableTaskLike, k)
 
-        static member CanBind (_priority :IPriority1, task: Task<'TResult1>) : (('TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >) = fun k -> bindTaskConfigureFalse task k
+        static member inline CanBind (sm, _priority :IPriority1, task: Task<'TResult1>, k: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> = bindTaskConfigureFalse sm task k
 
-        static member CanBind (_priority: IPriority1, computation : Async<'TResult1>) : (('TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >) = fun k -> bindTaskConfigureFalse (Async.StartAsTask computation) k
+        static member inline CanBind (sm, _priority: IPriority1, computation : Async<'TResult1>, k: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> = bindTaskConfigureFalse sm (Async.StartAsTask computation) k
 
+(*
         static member inline CanReturnFrom< ^Awaitable, ^Awaiter, ^T
                                     when ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
                                     and ^Awaiter :> ICriticalNotifyCompletion 
                                     and ^Awaiter : (member get_IsCompleted : unit -> bool)
-                                    and ^Awaiter : (member GetResult : unit -> ^T) > (_priority: IPriority2, taskLike: ^Awaitable) 
-                            = TaskLikeBind< ^T >.GenericAwait< ^Awaitable, ^Awaiter, ^T >(taskLike, ret)
+                                    and ^Awaiter : (member GetResult : unit -> ^T) > (sm, _priority: IPriority2, taskLike: ^Awaitable) 
+                            = TaskLikeBind< ^T >.GenericAwait< ^Awaitable, ^Awaiter, ^T >(sm, taskLike, ret)
         
         static member inline CanReturnFrom< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
                                                         and ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
                                                         and ^Awaiter :> ICriticalNotifyCompletion 
                                                         and ^Awaiter : (member get_IsCompleted : unit -> bool)
-                                                        and ^Awaiter : (member GetResult : unit -> ^TResult1) > (_: IPriority1, configurableTaskLike: ^TaskLike) = 
-                                    TaskLikeBind< ^TResult1 >.GenericAwaitConfigureFalse(configurableTaskLike, ret)
-        
-        static member CanReturnFrom (_priority: IPriority1, computation   : Async<'T>      ) = bindTaskConfigureFalse (Async.StartAsTask computation) ret
+                                                        and ^Awaiter : (member GetResult : unit -> ^TResult1) > (sm, _: IPriority1, configurableTaskLike: ^TaskLike)
+                            = TaskLikeBind< ^TResult1 >.GenericAwaitConfigureFalse(sm, configurableTaskLike, ret)
+
+
+        static member inline CanReturnFrom (sm, _priority: IPriority1, computation: Async<'T>) 
+                            = bindTaskConfigureFalse sm (Async.StartAsTask computation) ret
+*)
 
     type TaskBuilder with
-        member inline __.Bind< ^TaskLike, ^TResult1, 'TResult2 
-                                           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike -> ((^TResult1 -> TaskStep< 'TResult2 >) -> TaskStep< 'TResult2 >))> 
-                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep< 'TResult2 >) : TaskStep< 'TResult2 >
-                  = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> Unchecked.defaultof<Witnesses> task continuation
-
-        member inline __.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom : Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
-                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> Unchecked.defaultof<Witnesses> task
+        member inline builder.Bind< ^TaskLike, ^TResult1, 'TResult2 
+                                           when (Witnesses or  ^TaskLike): (static member CanBind: SM * Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
+                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2>
+                  = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> builder.SM Unchecked.defaultof<Witnesses> task continuation
+(*
+        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: SM * Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
+                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> builder.SM Unchecked.defaultof<Witnesses> task
+*)
+#endif

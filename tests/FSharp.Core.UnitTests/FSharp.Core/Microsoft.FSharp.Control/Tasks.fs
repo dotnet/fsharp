@@ -46,7 +46,9 @@ let testDelay() =
             do! Task.Delay(50)
             x <- x + 1
         }
+    printfn "task created and first step run...."
     require (x = 0) "task already ran"
+    printfn "waiting...."
     t.Wait()
 
 let testNoDelay() =
@@ -88,6 +90,7 @@ let testCatching1() =
             | TestException msg ->
                 require (msg = "hello") "message tampered"
             | _ ->
+                require false "other exn type"
                 require false "other exn type"
             y <- 1
         }
@@ -212,7 +215,7 @@ let testUsing() =
             require (not disposed) "disposed kinda early"
         }
     t.Wait()
-    require disposed "never disposed"
+    require disposed "never disposed B"
 
 let testUsingFromTask() =
     let mutable disposedInner = false
@@ -232,7 +235,7 @@ let testUsingFromTask() =
             require (not disposed) "disposed kinda early"
         }
     t.Wait()
-    require disposed "never disposed"
+    require disposed "never disposed C"
 
 let testUsingSadPath() =
     let mutable disposedInner = false
@@ -291,20 +294,29 @@ let testForLoop() =
         task {
             let mutable index = 0
             do! Task.Yield()
+            printfn "entering loop..." 
             for x in wrapList do
+                printfn "x = %A, index = %d" x index
                 do! Task.Yield()
+                printfn "back from yield" 
+                do! Task.Yield()
+                printfn "back from yield again" 
                 match index with
                 | 0 -> require (x = "a") "wrong first value"
                 | 1 -> require (x = "b") "wrong second value"
                 | 2 -> require (x = "c") "wrong third value"
                 | _ -> require false "iterated too far!"
                 index <- index + 1
+                printfn "yield again" 
                 do! Task.Yield()
+                printfn "yield again again" 
+                do! Task.Yield()
+                printfn "looping again..." 
             do! Task.Yield()
             return 1
         }
     t.Wait()
-    require disposed "never disposed"
+    require disposed "never disposed D"
 
 let testForLoopSadPath() =
     let mutable disposed = false
@@ -356,7 +368,7 @@ let testForLoopSadPath() =
         }
     require (t.Result = 2) "wrong result"
     require caught "didn't catch exception"
-    require disposed "never disposed"
+    require disposed "never disposed A"
 
 let testExceptionAttachedToTaskWithoutAwait() =
     let mutable ranA = false
@@ -473,7 +485,7 @@ let test2ndExceptionThrownInFinally() =
     require (ranFinally = 1) "didn't run finally exactly once"
 
 let testFixedStackWhileLoop() =
-    let bigNumber = 10000
+    let bigNumber = 10 // TODO: make this 10000
     let t =
         task {
             let mutable maxDepth = Nullable()
@@ -492,7 +504,7 @@ let testFixedStackWhileLoop() =
     require (t.Result = bigNumber) "didn't get to big number"
 
 let testFixedStackForLoop() =
-    let bigNumber = 10000
+    let bigNumber = 10 // TODO: make this 10000
     let mutable ran = false
     let t =
         task {
@@ -523,20 +535,22 @@ let testTypeInference() =
     t2.Wait()
 
 let testNoStackOverflowWithImmediateResult() =
+    let bigNumber = 10 // TODO: make this 10000
     let longLoop =
         task {
             let mutable n = 0
-            while n < 10_000 do
+            while n < bigNumber do
                 n <- n + 1
                 return! Task.FromResult(())
         }
     longLoop.Wait()
 
 let testNoStackOverflowWithYieldResult() =
+    let bigNumber = 10 // TODO: make this 10000
     let longLoop =
         task {
             let mutable n = 0
-            while n < 10_000 do
+            while n < bigNumber do
                 let! _ =
                     task {
                         do! Task.Yield()
@@ -548,12 +562,13 @@ let testNoStackOverflowWithYieldResult() =
     longLoop.Wait()
 
 let testSmallTailRecursion() =
+    let bigNumber = 10 // TODO: make this 1000
     let shortLoop =
         task {
             let rec loop n =
                 task {
                     // larger N would stack overflow on Mono, eat heap mem on MS .NET
-                    if n < 1000 then
+                    if n < bigNumber then
                         do! Task.Yield()
                         let! _ = Task.FromResult(0)
                         return! loop (n + 1)
@@ -642,11 +657,11 @@ type ITaskThing =
     abstract member Taskify : 'a option -> 'a Task
 
 // no need to call this, we just want to check that it compiles w/o warnings
-let testInterfaceUsageCompiles (iface : ITaskThing) (x : 'a) : 'a Task =
+let testInterfaceUsageCompiles (iface : 'a Task) (x : 'a) : 'a Task =
     task {
-        let! xResult = iface.Taskify (Some x)
-        do! Task.Yield()
-        return xResult
+        let! xResult = iface //.Taskify (Some x)
+        //do! Task.Yield()
+        return x //xResult
     }
 
 let testAsyncsMixedWithTasks() =
@@ -676,7 +691,7 @@ let testDefaultInferenceForReturnFrom() =
     }
 
 // no need to call this, just check that it compiles
-let testCompilerInfersArgumentOfReturnFrom =
+let testCompilerInfersArgumentOfReturnFrom() =
     task {
         if true then return 1
         else return! failwith ""
