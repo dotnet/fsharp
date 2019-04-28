@@ -43,11 +43,11 @@ module TaskHelpers =
     type SM = 
         new : unit -> SM
         member __genlabel: unit -> int
-        member __setcode: int -> (unit -> TaskStep<'T>) -> unit
+        member __gencode: int -> (unit -> TaskStep<'T>) -> unit
         member __code: (unit -> TaskStep<'T>)  -> int
-        member __goto<'T> : int -> TaskStep<'T>
+        member __jsr<'T> : int -> TaskStep<'T>
 //    val __jumptable : int -> unit
-//    val __goto : int -> 'T
+//    val __jsr : int -> 'T
 //    val __label : int -> unit
 //    val __resume: (unit -> TaskStep<_>) -> int
 

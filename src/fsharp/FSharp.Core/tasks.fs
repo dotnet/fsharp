@@ -66,14 +66,17 @@ module TaskHelpers =
             let v = conts.Count
             conts.Add(Unchecked.defaultof<_>)
             v
-        member __.__setcode n (f: unit -> TaskStep<'T>) = 
+
+        member __.__gencode n (f: unit -> TaskStep<'T>) = 
             //printfn "conts.Capacity = %d, n = %d, counts.Count = %d" conts.Capacity n conts.Count
             conts.[n] <- (f >> box)
+
         member sm.__code (f: unit -> TaskStep<'T>) =
             let n = sm.__genlabel ()
-            sm.__setcode n f
+            sm.__gencode n f
             n
-        member __.__goto<'T> n = 
+
+        member __.__jsr<'T> n = 
             match conts.[n]() with 
             | :? TaskStep<'T> as t -> t
             | res -> 
@@ -120,14 +123,14 @@ module TaskHelpers =
                 let awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable)) // get an awaiter from the awaitable
                 let ENTRY = sm.__genlabel () 
                 let CONT = sm.__genlabel () 
-                sm.__setcode ENTRY (fun () -> 
+                sm.__gencode ENTRY (fun () -> 
                     if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then // shortcut to continue immediately
-                        sm.__goto<'TResult2> CONT
+                        sm.__jsr<'TResult2> CONT
                     else
                         TaskStep<'TResult2>.Await (awaiter, CONT))
-                sm.__setcode CONT (fun () -> 
+                sm.__gencode CONT (fun () -> 
                     continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter)))
-                sm.__goto ENTRY
+                sm.__jsr ENTRY
 
         static member inline GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
@@ -144,73 +147,79 @@ module TaskHelpers =
     let inline bindTask (sm: SM) (task : Task<'TResult1>) (continuation : 'TResult1 -> TaskStep<'TResult2>) =
         let awaiter = task.GetAwaiter()
         let mutable result = Unchecked.defaultof<_>
-        let CONT = sm.__code (fun () -> 
+        let ENTRY = sm.__genlabel()
+        let CONT = sm.__genlabel()
+        sm.__gencode ENTRY (fun () -> 
+            if awaiter.IsCompleted then 
+                // Continue directly
+                sm.__jsr<'TResult2> CONT
+            else
+                // Await and continue later when a result is available.
+                TaskStep<'TResult2>.Await (awaiter, CONT)
+        )
+        sm.__gencode CONT (fun () -> 
            result <- awaiter.GetResult()
-           continuation result)
-        if awaiter.IsCompleted then 
-            // Continue directly
-            sm.__goto<'TResult2> CONT
-        else
-            // Await and continue later when a result is available.
-            TaskStep<'TResult2>.Await (awaiter, CONT)
+           continuation result
+        )
+        sm.__jsr ENTRY
 
     /// Special case of the above for `Task<'TResult1>`, for the context-insensitive builder.
     /// Have to write this T by hand to avoid confusing the compiler thinking our built-in bind method
     /// defined on the builder has fancy generic constraints on inp and T parameters.
     let inline bindTaskConfigureFalse (sm: SM) (task : Task<'TResult1>) (continuation : 'TResult1 -> TaskStep<'TResult2>) =
         let awaiter = task.ConfigureAwait(false).GetAwaiter()
-        let mutable result = Unchecked.defaultof<_>
         // codegen
         let ENTRY = sm.__genlabel ()
         let CONT = sm.__genlabel ()
-        sm.__setcode ENTRY (fun () -> 
+        sm.__gencode ENTRY (fun () -> 
             if awaiter.IsCompleted then
                 // Continue directly
-                sm.__goto<'TResult2> CONT
+                sm.__jsr<'TResult2> CONT
             else
                 // Await and continue later when a result is available.
                 TaskStep<'TResult2>.Await (awaiter, CONT)
         )
-        sm.__setcode CONT (fun () -> 
-           result <- awaiter.GetResult()
-           continuation result
+        sm.__gencode CONT (fun () -> 
+           continuation (awaiter.GetResult())
         )
         // execute
-        sm.__goto ENTRY
+        sm.__jsr ENTRY
 
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
     let inline combine (sm: SM) (step : TaskStep<unit>) (continuation : unit -> TaskStep<'T>) : TaskStep<'T> =
         let mutable step = step
-        let CONT = sm.__genlabel ()
         let ENTRY = sm.__genlabel ()
-        sm.__setcode ENTRY (fun () -> 
+        let CONT = sm.__genlabel ()
+        let RESUME = sm.__genlabel ()
+        sm.__gencode ENTRY (fun () -> 
             if step.IsReturn then 
-                sm.__goto<'T> CONT
+                sm.__jsr<'T> CONT
             elif step.IsReturnFrom then
                 printfn "*******************----- combine"
                 let t = step.GetNextTask()
                 TaskStep<'T>.Await (t.GetAwaiter(), CONT)
             else  
-                let pc = step.GetResumePoint()
-                TaskStep<'T>.Await (step.GetAwaitable(), sm.__code (fun () -> 
-                    step <- sm.__goto<unit> pc
-                    sm.__goto<'T> ENTRY)))
-        sm.__setcode CONT (fun () -> 
-           continuation ())
-        sm.__goto ENTRY
+                TaskStep<'T>.Await (step.GetAwaitable(), RESUME))
+        sm.__gencode RESUME (fun () -> 
+            let pc = step.GetResumePoint()
+            step <- sm.__jsr<unit> pc
+            sm.__jsr<'T> ENTRY)
+        sm.__gencode CONT (fun () -> 
+            continuation ())
+        sm.__jsr ENTRY
 
     /// Builds a step that executes the body while the condition predicate is true.
     let inline whileLoop (sm: SM) (cond : unit -> bool) (body : unit -> TaskStep<unit>) : TaskStep<unit> =
         let ENTRY = sm.__genlabel()
-        sm.__setcode ENTRY (fun () -> 
+        sm.__gencode ENTRY (fun () -> 
             if cond() then
                 printfn "while loop step"
-                combine sm (body()) (fun () -> sm.__goto<unit> ENTRY)
+                combine sm (body()) (fun () -> sm.__jsr<unit> ENTRY)
             else
                 zero())
-        sm.__goto<unit> ENTRY
+        sm.__jsr<unit> ENTRY
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -218,9 +227,9 @@ module TaskHelpers =
         let ENTRY = sm.__genlabel()
         // On resume, we have to go through into the INNER_ENTRY protected by the try/with
         let mutable INNER_ENTRY = sm.__code code 
-        sm.__setcode ENTRY (fun () -> 
+        sm.__gencode ENTRY (fun () -> 
             try
-                let step = sm.__goto<'T> INNER_ENTRY
+                let step = sm.__jsr<'T> INNER_ENTRY
                 if step.IsReturn then 
                     step
                 elif step.IsReturnFrom then
@@ -238,12 +247,12 @@ module TaskHelpers =
                     TaskStep<_>.Await (step.GetAwaitable(), 
                         sm.__code (fun () -> 
                             INNER_ENTRY <- rp
-                            sm.__goto<'T> ENTRY))
+                            sm.__jsr<'T> ENTRY))
             with exn -> 
                 printfn "*******************----- catch"
                 catch exn
         )
-        sm.__goto<'T> ENTRY
+        sm.__jsr<'T> ENTRY
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -251,11 +260,11 @@ module TaskHelpers =
         // codegen
         let ENTRY = sm.__genlabel()
         let mutable INNER_ENTRY = sm.__code code 
-        sm.__setcode ENTRY (fun () -> 
+        sm.__gencode ENTRY (fun () -> 
             printfn "TF step"
             let mutable step =
                 try
-                    sm.__goto<'T> INNER_ENTRY
+                    sm.__jsr<'T> INNER_ENTRY
                     // Important point: we use a try/with, not a try/finally, to implement tryFinally.
                     // The reason for this is that if we're just building a continuation, we definitely *shouldn't*
                     // execute the `compensation()` part yet -- the actual execution of the asynchronous code hasn't completed!
@@ -287,9 +296,9 @@ module TaskHelpers =
                     sm.__code (fun () -> 
                         // go back to get inside the try/finally again
                         INNER_ENTRY <- rp
-                        sm.__goto<'T> ENTRY))
+                        sm.__jsr<'T> ENTRY))
         )
-        sm.__goto<'T> ENTRY
+        sm.__jsr<'T> ENTRY
 
     /// Implements a using statement that disposes `disp` after `body` has completed.
     let inline using (sm: SM) (disp : #IDisposable) (body : _ -> TaskStep<'T>) =
@@ -330,7 +339,7 @@ module TaskHelpers =
                     member this.MoveNext() =
                         try
                             printfn "second step, pc = %d..." pc
-                            let step = if first then (first <- false; firstStep) else sm.__goto<'T> pc
+                            let step = if first then (first <- false; firstStep) else sm.__jsr<'T> pc
                             //__code
                             if step.IsReturn then 
                                 let res = step.GetResult()
