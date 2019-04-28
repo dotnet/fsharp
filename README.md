@@ -1,6 +1,6 @@
-# The F# language, Core library, and F# editor tools
+# The F# compiler, F# core library, and F# editor tools
 
-You're invited to contribute to future releases of the F# language compiler, core library, and tools. Development of this repository can be done anywhere [.NET Core](https://dotnet.microsoft.com/) is supported: Windows, macOS, and a variety of Linux distributions.
+You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done anywhere [.NET Core](https://dotnet.microsoft.com/) is supported: Windows, macOS, and a variety of Linux distributions.
 
 ## Contributing
 
@@ -38,7 +38,7 @@ See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) for more details
 
 ## Using nightly releases in Visual Studio
 
-You can use the latest `master` build of the F# compiler and tools for Visual Studio via our nightly releases if you are a Visual Studio users. See details on setup here:
+You can use the latest `master` build of the F# compiler and tools for Visual Studio via our nightly releases if you are a Visual Studio user. See details on setup here:
 
 https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
 
@@ -46,8 +46,8 @@ https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-f
 
 Alternatively, if you _really_ want to live on the bleeding edge, you can set up a nightly feed for the Visual Studio preview releases, which use the latest commit in the preview branch. To do so, follow the same instructions as the above blog post, but instead with these links:
 
-* Set your feed to the [preview feed](https://dotnet.myget.org/F/fsharp-preview/vsix)
-* Install manually from the [preview feed](https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp)
+* Set your feed to the preview feed: https://dotnet.myget.org/F/fsharp-preview/vsix
+* Install a VSIX manually from the preview feed: https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp
 
 ## Branches
 
@@ -95,7 +95,7 @@ This project has adopts the [Contributor Covenant](http://contributor-covenant.o
 
 ## Get In Touch
 
-Members of the [F# Software Foundation](http://fsharp.org) are invited to the [FSSF Slack](http://fsharp.org/guides/slack/). The `#compiler` and `#editor-support` channels are where other contributors typically chat with others.
+Members of the [F# Software Foundation](http://fsharp.org) are invited to the [FSSF Slack](http://fsharp.org/guides/slack/). You can find support from other contributors in the `#compiler` and `#editor-support` channels.
 
 Additionally, you can use the `#fsharp` tag on Twitter if you have general F# questions, including about this repository. Chances are you'll get multiple responses.
 
