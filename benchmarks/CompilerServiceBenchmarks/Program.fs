@@ -316,32 +316,36 @@ type CompilerService() =
     //        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     //        ClearAllILModuleReaderCache()
 
-    let compilationManager = CompilationManager (3, 8)
+    let service = FSharp.Compiler.CompilerService (3, 8)
 
-    let sources =
-        async {
-            let sources = ResizeArray ()
-            for file in Directory.EnumerateFiles("""C:\visualfsharp\src\fsharp""") do
-                if String.Equals (Path.GetExtension file, ".fs", StringComparison.OrdinalIgnoreCase) || String.Equals (Path.GetExtension file, ".fsi", StringComparison.OrdinalIgnoreCase) then
-                    let! source = compilationManager.AddSourceAsync file
-                    sources.Add source
-            return sources
-        } |> Async.RunSynchronously
+    //let sources =
+    //    async {
+    //        let sources = ResizeArray ()
+    //        for file in Directory.EnumerateFiles("""C:\visualfsharp\src\fsharp""") do
+    //            if String.Equals (Path.GetExtension file, ".fs", StringComparison.OrdinalIgnoreCase) || String.Equals (Path.GetExtension file, ".fsi", StringComparison.OrdinalIgnoreCase) then
+    //                let! source = compilationManager.AddSourceAsync file
+    //                sources.Add source
+    //        return sources
+    //    } |> Async.RunSynchronously
 
-    let compilationOptions = CompilationOptions.Create ("""C:\visualfsharp\src\fsharp\test.dll""", [], """C:\visualfsharp\src\fsharp""")
-    let compilationInfo = { Options = compilationOptions; Sources = sources |> Seq.map (fun source -> source.Id); CompilationReferences = [] }
-    let compilation = compilationManager.TryCreateCompilationAsync compilationInfo |> Async.RunSynchronously
+    //let compilationOptions = CompilationOptions.Create ("""C:\visualfsharp\src\fsharp\test.dll""", [], """C:\visualfsharp\src\fsharp""", false)
+    //let compilationInfo = { Options = compilationOptions; ParseResults = []; CompilationReferences = [] }
+    //let compilation = service.TryCreateCompilationAsync compilationInfo |> Async.RunSynchronously
 
     [<Benchmark>]
     member __.Compilation() =
-        let parsedFiles = 
-            let sourceIds =
-                sources
-                |> Seq.map (fun x -> x.Id)
+        let compilationOptions = CompilationOptions.Create ("""C:\visualfsharp\src\fsharp\test.dll""", [], """C:\visualfsharp\src\fsharp""", false)
+        let compilationInfo = { Options = compilationOptions; ParseResults = []; CompilationReferences = [] }
+        let _compilation = service.TryCreateCompilationAsync compilationInfo |> Async.RunSynchronously
+        ()
+        //let parsedFiles = 
+        //    let sourceIds =
+        //        sources
+        //        |> Seq.map (fun x -> x.Id)
 
-            compilationManager.ParseSourceFilesAsync (sourceIds, compilation.Value.Id) |> Async.RunSynchronously
+        //    compilationManager.ParseSourceFilesAsync (sourceIds, compilation.Value.Id) |> Async.RunSynchronously
 
-        printfn "%A" (parsedFiles |> Seq.length)
+       // printfn "%A" (parsedFiles |> Seq.length)
 
 [<EntryPoint>]
 let main argv =

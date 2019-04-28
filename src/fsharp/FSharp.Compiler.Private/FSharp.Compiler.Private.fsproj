@@ -57,6 +57,7 @@
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service" />
   </ItemGroup>
 
   <ItemGroup>
@@ -653,8 +654,6 @@
     <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-    <Compile Include="Compilation.fsi" />
-    <Compile Include="Compilation.fs" />
     
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <EmbeddedText Include="..\fsi\FSIstrings.txt">

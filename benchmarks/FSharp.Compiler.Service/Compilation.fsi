@@ -37,10 +37,10 @@ type CompilationOptions =
 
     static member Create: assemblyPath: AssemblyPath * commandLineArgs: string list * projectDirectory: string * isExecutable: bool -> CompilationOptions
 
-type ParseResult = 
+type SyntaxTree = 
     {
         FilePath: string
-        Result: ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
+        ParseResult: ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
     }
 
 [<Sealed>]
@@ -50,7 +50,7 @@ type Compilation
 type CompilationInfo =
     {
         Options: CompilationOptions
-        ParseResults: ParseResult seq
+        ParseResults: SyntaxTree seq
         CompilationReferences: Compilation seq
     }
 

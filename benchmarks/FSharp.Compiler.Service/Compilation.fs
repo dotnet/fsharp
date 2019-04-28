@@ -197,10 +197,10 @@ type CompilationOptions =
             KeepAllBackgroundResolutions = false
         }
 
-type ParseResult = 
+type SyntaxTree = 
     {
         FilePath: string
-        Result: ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
+        ParseResult: ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
     }
 
 /// Accumulated results of type checking.
@@ -238,9 +238,8 @@ type TcAccumulator =
 
 [<RequireQualifiedAccess>]
 type CompilationResult =
-    | Empty
-    | Parsed of ParseResult
-    | SignatureChecked of ParseResult * TcAccumulator // is an impl file, but only checked its signature file (.fsi)
+    | Parsed of SyntaxTree
+    | SignatureChecked of SyntaxTree * TcAccumulator // is an impl file, but only checked its signature file (.fsi)
     | Checked of TcAccumulator
 
 [<NoEquality;NoComparison>]
@@ -268,7 +267,7 @@ type Compilation =
 
         {
             FilePath = filePath
-            Result = (input, errorLogger.GetErrors ())
+            ParseResult = (input, errorLogger.GetErrors ())
         }
 
     member this.RunEventually input capturingErrorLogger computation =
@@ -287,13 +286,13 @@ type Compilation =
                     use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
                     f ctok)
 
-    member this.GetTcAcc (parseResult: ParseResult) capturingErrorLogger =
+    member this.GetTcAcc (parseResult: SyntaxTree) capturingErrorLogger =
         match this.resultCache.TryGetValue parseResult.FilePath with
         | true, (0, _) -> Eventually.Done this.initialTcAcc
         | true, (i, _) ->
             match this.resultCache.TryGetValue this.filePaths.[i - 1] with
             | true, (_, CompilationResult.Parsed parseResult) -> 
-                match parseResult.Result with
+                match parseResult.ParseResult with
                 | Some input, _ ->
                     this.Check parseResult |> this.RunEventually input capturingErrorLogger 
                 | _ ->
@@ -302,9 +301,9 @@ type Compilation =
             | _ -> failwith "file does not exist in compilation"
         | _ -> failwith "file does not exist in compilation"
 
-    member this.Check (parseResult: ParseResult) =
+    member this.Check (parseResult: SyntaxTree) =
 
-        let inputOpt, parseErrors = parseResult.Result
+        let inputOpt, parseErrors = parseResult.ParseResult
         let filePath = parseResult.FilePath
 
         let tcConfig = this.initialTcAcc.tcConfig
@@ -393,7 +392,7 @@ type Compilation =
 type [<NoEquality;NoComparison>] CompilationInfo =
     {
         Options: CompilationOptions
-        ParseResults: ParseResult seq
+        ParseResults: SyntaxTree seq
         CompilationReferences: Compilation seq
     }
 
