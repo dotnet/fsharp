@@ -22,8 +22,8 @@
     <Compile Include="SyntaxTree.fs" />
     <Compile Include="FrameworkImportsCache.fsi" />
     <Compile Include="FrameworkImportsCache.fs" />
-    <Compile Include="Stamp.fsi" />
-    <Compile Include="Stamp.fs" />
+    <Compile Include="TimeStamp.fsi" />
+    <Compile Include="TimeStamp.fs" />
     <Compile Include="Parser.fsi" />
     <Compile Include="Parser.fs" />
     <Compile Include="Compilation.fsi" />
