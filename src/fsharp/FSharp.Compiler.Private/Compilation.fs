@@ -3,6 +3,8 @@
 open System
 open System.Threading
 open System.Collections.Immutable
+open System.Collections.Generic
+open System.Collections.Concurrent
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Ast
@@ -14,6 +16,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.CompileOptions
+open Internal.Utilities
 
 [<AutoOpen>]
 module Helpers =
@@ -32,66 +35,82 @@ module Helpers =
          }
 
      [<Sealed>]
-     type AsyncLazy<'T> (computation: Async<'T>) =
+     type NonReentrantLock () =
 
         let syncLock = obj ()
-        let mutable cachedResult = ValueNone
         let mutable currentThreadId = 0
 
         let isLocked () = currentThreadId <> 0
 
+        member this.Wait (cancellationToken: CancellationToken) =
+
+            if currentThreadId = Environment.CurrentManagedThreadId then
+                failwith "AsyncLazy tried to re-enter computation recursively."
+            
+            use _cancellationTokenRegistration = cancellationToken.Register((fun o -> lock o (fun () -> Monitor.PulseAll o |> ignore)), syncLock, useSynchronizationContext = false)
+
+            let spin = SpinWait ()
+            while isLocked () && not spin.NextSpinWillYield do
+                spin.SpinOnce ()
+
+            lock syncLock <| fun () ->
+                while isLocked () do
+                    cancellationToken.ThrowIfCancellationRequested ()
+                    Monitor.Wait syncLock |> ignore
+                currentThreadId <- Environment.CurrentManagedThreadId
+
+            new SemaphoreDisposer (this)
+
+        member this.Release () =
+            lock syncLock <| fun() ->
+                currentThreadId <- 0
+                Monitor.Pulse syncLock |> ignore
+
+     and [<Struct>] SemaphoreDisposer (semaphore: NonReentrantLock) =
+
+        interface IDisposable with
+
+            member __.Dispose () = semaphore.Release ()
+
+     [<Sealed>]
+     type AsyncLazy<'T> (computation: Async<'T>) =
+
+        let gate = NonReentrantLock ()
+        let mutable cachedResult = ValueNone
+
         member __.GetValueAsync () =
             async {
-                if currentThreadId = Environment.CurrentManagedThreadId then
-                    failwith "AsyncLazy tried to re-enter computation recursively."
-
                 match cachedResult with
                 | ValueSome result -> return result
                 | _ ->
                     let! cancellationToken = Async.CancellationToken
+                    use _semaphoreDisposer = gate.Wait cancellationToken
 
-                    use _cancellationTokenRegistration = cancellationToken.Register((fun o -> lock o (fun () -> Monitor.PulseAll o |> ignore)), syncLock, useSynchronizationContext = false)
+                    cancellationToken.ThrowIfCancellationRequested ()
 
-                    let spin = SpinWait ()
-                    while isLocked () && not spin.NextSpinWillYield do
-                        spin.SpinOnce ()
-
-                    lock syncLock <| fun () ->
-                        while isLocked () do
-                            cancellationToken.ThrowIfCancellationRequested ()
-                            Monitor.Wait syncLock |> ignore
-                        currentThreadId <- Environment.CurrentManagedThreadId
-
-                    try
-                        cancellationToken.ThrowIfCancellationRequested ()
-
-                        match cachedResult with
-                        | ValueSome result -> return result
-                        | _ ->
-                            let! result = computation
-                            cachedResult <- ValueSome result
-                            return result
-                    finally
-                        lock syncLock <| fun() ->
-                            currentThreadId <- 0
-                            Monitor.Pulse syncLock |> ignore
+                    match cachedResult with
+                    | ValueSome result -> return result
+                    | _ ->
+                        let! result = computation
+                        cachedResult <- ValueSome result
+                        return result
                     
             }
 
 /// Global service state
-type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list* (*fsharpBinaries*)string
+type FrameworkImportCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list* (*fsharpBinaries*)string
 
 /// Represents a cache of 'framework' references that can be shared betweeen multiple incremental builds
-type FrameworkImportsCache(keepStrongly) = 
+type FrameworkImportCache(keepStrongly) = 
 
     // Mutable collection protected via CompilationThreadToken 
-    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey, (TcGlobals * TcImports)>(keepStrongly, areSimilar=(fun (x, y) -> x = y)) 
+    let frameworkTcImportCache = AgedLookup<CompilationThreadToken, FrameworkImportCacheKey, (TcGlobals * TcImports)>(keepStrongly, areSimilar=(fun (x, y) -> x = y)) 
 
     /// Reduce the size of the cache in low-memory scenarios
-    member __.Downsize ctok = frameworkTcImportsCache.Resize(ctok, keepStrongly=0)
+    member __.Downsize ctok = frameworkTcImportCache.Resize(ctok, keepStrongly=0)
 
     /// Clear the cache
-    member __.Clear ctok = frameworkTcImportsCache.Clear ctok
+    member __.Clear ctok = frameworkTcImportCache.Clear ctok
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member __.Get(ctok, tcConfig: TcConfig) =
@@ -115,118 +134,256 @@ type FrameworkImportsCache(keepStrongly) =
                         tcConfig.GetTargetFrameworkDirectories(), 
                         tcConfig.fsharpBinariesDir)
 
-            match frameworkTcImportsCache.TryGet (ctok, key) with 
+            match frameworkTcImportCache.TryGet (ctok, key) with 
             | Some res -> return res
             | None -> 
                 let tcConfigP = TcConfigProvider.Constant tcConfig
                 let! ((tcGlobals, tcImports) as res) = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkResolutions)
-                frameworkTcImportsCache.Put(ctok, key, res)
+                frameworkTcImportCache.Put(ctok, key, res)
                 return tcGlobals, tcImports
           }
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
 
-[<Struct>]
-type Version =
-    {
-        dateTime: DateTime
-    }
 
 [<Struct>]
-type SourceFileId =
-    {
-        guid: Guid
-    }
+type Stamp (dateTime: DateTime) =
 
-type SourceFile =
+    member __.DateTime = dateTime
+
+    static member Create () = Stamp DateTime.UtcNow
+
+[<Struct>]
+type SourceId (guid: Guid) =
+
+    member __.Guid = guid
+
+    static member Create () = SourceId (Guid.NewGuid ())
+
+[<NoEquality;NoComparison>]
+type Source =
     {
-        id: SourceFileId
+        id: SourceId
         filePath: string
+        sourceText: FSharp.Compiler.Text.ISourceText option
     }
 
-[<Struct>]
-type ProjectId =
+    member this.Id = this.id
+        
+    member this.FilePath = this.filePath
+
+    // TODO: Make this async?
+    member this.TryGetSourceText () = this.sourceText
+
+[<NoEquality;NoComparison>]
+type CompilationOptions =
     {
-        guid: Guid
+        CompilationThreadToken: CompilationThreadToken
+        LegacyReferenceResolver: ReferenceResolver.Resolver
+        DefaultFSharpBinariesDir: string
+        TryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+        SuggestNamesForErrors: bool
+        CommandLineArgs: string list
+        ProjectDirectory: string
+        UseScriptResolutionRules: bool
+        AssemblyPath: string
     }
 
-type Project =
-    {
-        [<DefaultValue>] mutable asyncLazyGetCompilation: AsyncLazy<Compilation option>
-
-        // --
-        id: ProjectId
-        filePath: string
-        directory: string
-        sourceFiles: ImmutableArray<SourceFileId>
-        projectReferences: ImmutableArray<ProjectId>
-        options: string list
-        useScriptResolutionsRules: bool
-        loadClosureOpt: LoadClosure option
-        [<DefaultValue>] mutable solution: Solution
-        dependentVersion: Version
-        version: Version
-    }
-
-    member this.TryGetCompilationAsync () : Async<Compilation option> =
-        async {
-            try
-                return! this.asyncLazyGetCompilation.GetValueAsync ()
-            with
-            | _ -> return None
+    static member Create (assemblyPath, commandLineArgs, projectDirectory) =
+        let compilationThreadToken = CompilationThreadToken ()
+        let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+        let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharpCheckFileAnswer>.Assembly.Location)).Value
+        let tryGetMetadataSnapshot = (fun _ -> None)
+        let suggestNamesForErrors = false
+        let useScriptResolutionRules = false
+        {
+            CompilationThreadToken = compilationThreadToken
+            LegacyReferenceResolver = legacyReferenceResolver
+            DefaultFSharpBinariesDir = defaultFSharpBinariesDir
+            TryGetMetadataSnapshot = tryGetMetadataSnapshot
+            SuggestNamesForErrors = suggestNamesForErrors
+            CommandLineArgs = commandLineArgs
+            ProjectDirectory = projectDirectory
+            UseScriptResolutionRules = useScriptResolutionRules
+            AssemblyPath = assemblyPath
         }
 
-    member this.TryCreateCompilationAsync () =
-        let useSimpleResolutionSwitch = "--simpleresolution"
-        let ctok = this.solution.compilationThreadToken
-        let commandLineArgs = this.options
-        let legacyReferenceResolver = this.solution.legacyReferenceResolver
-        let defaultFSharpBinariesDir = this.solution.defaultFSharpBinariesDir
-        let projectDirectory = this.directory
-        let tryGetMetadataSnapshot = this.solution.tryGetMetadataSnapshot
-        let useScriptResolutionRules = this.useScriptResolutionsRules
-        let loadClosureOpt = this.loadClosureOpt
-        let frameworkTcImportsCache = this.solution.frameworkImportsCache
-        let sourceFiles =
-            this.sourceFiles
-            |> Seq.map (fun sourceFileId ->
-                match this.solution.TryGetSourceFile sourceFileId with
-                | Some sourceFile -> sourceFile.filePath
-                | _ -> failwith "did not find source file"
+[<Struct>]
+type CompilationId (guid: Guid) =
+
+    member __.Guid = guid
+
+    static member Create () = CompilationId (Guid.NewGuid ())
+
+[<NoEquality;NoComparison>]
+type CompilationState =
+    {
+        tcAssemblyData: IRawFSharpAssemblyData option
+        sources: ImmutableArray<SourceId>
+        sourceSet: ImmutableHashSet<SourceId>
+        stamp: Stamp
+    }
+
+    member this.TryGetAssemblyData () = this.tcAssemblyData
+
+    static member Create (sources: SourceId seq) =
+        {
+            tcAssemblyData = None
+            sources = ImmutableArray.CreateRange sources
+            sourceSet = ImmutableHashSet.CreateRange sources
+            stamp = Stamp.Create ()
+        }
+
+[<Sealed;NoEquality;NoComparison>]
+type Compilation (id: CompilationId, lexResourceManager: Lexhelp.LexResourceManager, tcConfig: TcConfig, options: CompilationOptions, state: CompilationState) =
+
+    member this.Id = id
+
+    member this.AssemblyPath = options.AssemblyPath
+
+    member this.LexResourceManager = lexResourceManager
+
+    member this.TcConfig = tcConfig
+
+    member this.Options = options
+
+    // TODO: Make this async?
+    member this.TryGetAssemblyData () = state.tcAssemblyData
+
+    member this.HasSource sourceId = state.sourceSet.Contains sourceId
+
+    member this.Stamp = state.stamp
+
+    static member Create (compilationId, lexResourceManager, options, sources, tcConfig) =
+        Compilation (compilationId, lexResourceManager, tcConfig, options, CompilationState.Create sources)
+    
+type [<NoEquality;NoComparison>] CompilationInfo =
+    {
+        Options: CompilationOptions
+        Sources: SourceId seq
+        CompilationReferences: CompilationId seq
+    }
+
+type [<NoEquality;NoComparison>] CompilationManagerState =
+    {
+        compilationMap: ImmutableDictionary<CompilationId, Compilation>
+        sourceMap: ImmutableDictionary<SourceId, Source>
+    }
+
+    member this.TryGetCompilation compilationId =
+        match this.compilationMap.TryGetValue compilationId with
+        | true, compilation -> Some compilation
+        | _ -> None
+
+    member this.TryGetSource sourceId =
+        match this.sourceMap.TryGetValue sourceId with
+        | true, source -> Some source
+        | _ -> None
+
+    member this.AddSources (sources: Source seq) =
+        let sourceMap =
+            (this.sourceMap, sources)
+            ||> Seq.fold (fun sourceMap source ->
+                sourceMap.Add (source.Id, source)
             )
-            |> List.ofSeq
+        { this with sourceMap = sourceMap }
 
-        let projectReferences =
-            this.projectReferences
-            |> Seq.map (fun projectId ->
-                match this.solution.TryGetProject projectId with
-                | Some (project: Project) -> 
-                    { new IProjectReference with
+    member this.AddCompilation (compilation: Compilation) =
+        { this with compilationMap = this.compilationMap.Add (compilation.Id, compilation) }
 
-                        member __.EvaluateRawContents _ctok =
-                            cancellable {
-                                let! cancellationToken = Cancellable.token ()
-                                let computation : Async<Compilation option> = project.TryGetCompilationAsync ()
-                                let result = Async.RunSynchronously (computation, cancellationToken = cancellationToken)
-                                match result with
-                                | None -> return None
-                                | Some compilation ->
-                                    return compilation.tcAssemblyData
-                            }
+    static member Create () =
+        {
+            compilationMap = ImmutableDictionary.Empty
+            sourceMap = ImmutableDictionary.Empty
+        }
 
-                        member __.FileName = project.filePath
+type ParseResult = (ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) [])
 
-                        member __.TryGetLogicalTimeStamp (_, _) = Some project.dependentVersion.dateTime
-                            
-                    }
-                | _ -> failwith "did not find project"
-            )
-            |> List.ofSeq
+[<Sealed>]
+type CompilationManager (_compilationCacheSize: int, frameworkTcImportsCacheStrongSize) =
+    let gate = NonReentrantLock ()
+    let mutable state = CompilationManagerState.Create ()
 
-        // TODO:
-        let sourceFileToFilePathMap = ImmutableDictionary.Empty
+    let takeLock () =
+        async {
+            let! cancellationToken = Async.CancellationToken
+            return gate.Wait cancellationToken
+        }
 
+    // Caches
+    let frameworkTcImportCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize
+
+    member __.AddSourceAsync (filePath: string) =
+        async {
+            let source =
+                {
+                    id = SourceId.Create ()
+                    filePath = filePath
+                    sourceText = None
+                }
+
+            use! _semaphoreDisposer = takeLock ()
+
+            state <- state.AddSources [ source ]
+            return source
+        }      
+
+    member __.TryCreateCompilationAsync info =
         cancellable {
+          let! cancellationToken = Cancellable.token ()
+          use _semaphoreDisposer = gate.Wait cancellationToken
+
+          let compilationId = CompilationId.Create ()
+          let useSimpleResolutionSwitch = "--simpleresolution"
+          let ctok = info.Options.CompilationThreadToken
+          let commandLineArgs = info.Options.CommandLineArgs
+          let legacyReferenceResolver = info.Options.LegacyReferenceResolver
+          let defaultFSharpBinariesDir = info.Options.DefaultFSharpBinariesDir
+          let projectDirectory = info.Options.ProjectDirectory
+          let tryGetMetadataSnapshot = info.Options.TryGetMetadataSnapshot
+          let useScriptResolutionRules = info.Options.UseScriptResolutionRules
+          let loadClosureOpt : LoadClosure option = None
+          let lexResourceManager = Lexhelp.LexResourceManager ()
+          let sourceFiles =
+              info.Sources
+              |> Seq.map (fun sourceId -> 
+                  match state.TryGetSource sourceId with
+                  | Some source -> source.FilePath
+                  | _ -> failwith "no source found"
+              )
+              |> List.ofSeq
+
+          let projectReferences =
+              info.CompilationReferences
+              |> Seq.map (fun compilationId ->
+                  let filePath =
+                      match state.TryGetCompilation compilationId with
+                      | Some compilation -> compilation.AssemblyPath 
+                      | _ -> failwith "no compilation found"
+                  { new IProjectReference with
+
+                      member __.EvaluateRawContents _ctok =
+                          cancellable {
+                              let! cancellationToken = Cancellable.token ()
+                              use _semaphoreDisposer = gate.Wait cancellationToken
+
+                              match state.TryGetCompilation compilationId with
+                              | Some compilation -> return compilation.TryGetAssemblyData ()
+                              | _ -> return None
+                          }
+
+                      member __.FileName = filePath
+
+                      member __.TryGetLogicalTimeStamp (_, _) =
+                          use _semaphoreDisposer = gate.Wait cancellationToken
+
+                          match state.TryGetCompilation compilationId with
+                          | Some compilation -> Some compilation.Stamp.DateTime
+                          | _ -> None
+                              
+                  }
+              )
+              |> List.ofSeq
 
           // Trap and report warnings and errors from creation.
           let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
@@ -237,9 +394,9 @@ type Project =
            cancellable {
             try
 
-              // Create the builder.         
-              // Share intern'd strings across all lexing/parsing
-              let resourceManager = new Lexhelp.LexResourceManager() 
+              //// Create the builder.         
+              //// Share intern'd strings across all lexing/parsing
+              //let resourceManager = new Lexhelp.LexResourceManager() 
 
               /// Create a type-check configuration
               let tcConfigB, sourceFilesNew = 
@@ -302,7 +459,7 @@ type Project =
               // Resolve assemblies and create the framework TcImports. This is done when constructing the
               // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
               // included in these references. 
-              let! (_tcGlobals, _frameworkTcImports, nonFrameworkResolutions, _unresolvedReferences) = frameworkTcImportsCache.Get(ctok, tcConfig)
+              let! (_tcGlobals, _frameworkTcImports, nonFrameworkResolutions, _unresolvedReferences) = frameworkTcImportCache.Get(ctok, tcConfig)
 
               // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
               // This is ok because not much can actually go wrong here.
@@ -329,7 +486,9 @@ type Project =
                     for pr in projectReferences  do
                       yield Choice2Of2 pr, (fun (cache: TimeStampCache) ctok -> cache.GetProjectReferenceTimeStamp (pr, ctok)) ]
       
-              let compilation = { project = this; tcAssemblyData = None; tcConfig = tcConfig; lexResourceManager = resourceManager; sourceFileToFilePathMap = sourceFileToFilePathMap }
+              
+              let compilation = Compilation.Create (compilationId, lexResourceManager, info.Options, info.Sources, tcConfig)
+              state <- state.AddCompilation compilation
               return Some compilation
             with e -> 
               errorRecoveryNoRange e
@@ -339,80 +498,53 @@ type Project =
           return builderOpt
         } |> toAsync
 
-and Solution =
-    {
-        compilationThreadToken: CompilationThreadToken
-        legacyReferenceResolver: ReferenceResolver.Resolver
-        defaultFSharpBinariesDir: string
-        frameworkImportsCache: FrameworkImportsCache
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
-        suggestNamesForErrors: bool
+    member this.GetSourceAndCompilation (sourceId, compilationId, cancellationToken) =
+        use _semaphoreDisposer = gate.Wait cancellationToken
+        let compilation =
+            match state.TryGetCompilation compilationId with
+            | Some compilation -> compilation
+            | _ -> failwith "compilation not found"
 
-        // ---
-        projects: ImmutableDictionary<ProjectId, Project>
-        sourceFiles: ImmutableDictionary<SourceFileId, SourceFile>
-        version: Version
-    }
+        let source =
+            if not (compilation.HasSource sourceId) then
+                failwith "source not found in compilation"
 
-    member this.TryGetProject projectId =
-        match this.projects.TryGetValue projectId with
-        | true, project -> Some project
-        | _ -> None
+            match state.TryGetSource sourceId with
+            | Some source -> source
+            | _ -> failwith "source not found"
 
-    member this.TryGetSourceFile sourceFileId : SourceFile option =
-        match this.sourceFiles.TryGetValue sourceFileId with
-        | true, sourceFile -> Some sourceFile
-        | _ -> None
+        struct (source, compilation)
 
-    member this.AddProject (filePath, directory, sourceFiles, projectReferences, options, useScriptResolutionsRules, loadClosureOpt) =
-        let project =
-            {
-                id = { guid = Guid.NewGuid () }
-                filePath = filePath
-                directory = directory
-                sourceFiles = sourceFiles
-                projectReferences = projectReferences
-                options = options
-                useScriptResolutionsRules = useScriptResolutionsRules
-                loadClosureOpt = loadClosureOpt
-                dependentVersion = { dateTime = DateTime.UtcNow }
-                version = { dateTime = DateTime.UtcNow }
-            }
-
-        project.solution <- { this with projects = this.projects.Add(project.id, project); version = { dateTime = DateTime.UtcNow } }
-        project.asyncLazyGetCompilation <- AsyncLazy (project.TryCreateCompilationAsync ())
-        project
-
-and Compilation =
-    {
-        mutable tcAssemblyData: IRawFSharpAssemblyData option
-        tcConfig: TcConfig
-        sourceFileToFilePathMap: ImmutableDictionary<SourceFileId, string>
-        lexResourceManager: Lexhelp.LexResourceManager
-
-        // --
-        project: Project
-    }
-
-    member this.TryParseSourceFileAsync sourceFileId =
+    member this.TryParseSourceFileAsync (sourceId, compilationId) =
         async {
-            try
-                let filename = this.sourceFileToFilePathMap.[sourceFileId]
-                let errorLogger = CompilationErrorLogger("TryParseSourceFileAsync", this.tcConfig.errorSeverityOptions)
-                let input = ParseOneInputFile (this.tcConfig, this.lexResourceManager, [], filename, (false, false), errorLogger, (*retrylocked*) true)
+            let! cancellationToken = Async.CancellationToken
+            let struct (source, compilation) = this.GetSourceAndCompilation (sourceId, compilationId, cancellationToken)
+
+            try                
+                let errorLogger = CompilationErrorLogger("TryParseSourceFileAsync", compilation.TcConfig.errorSeverityOptions)
+                let input = ParseOneInputFile (compilation.TcConfig, compilation.LexResourceManager, [], source.FilePath, (false, false), errorLogger, (*retrylocked*) true)
                 return Some (input, errorLogger.GetErrors ())
             with
             | _ ->
                 return None
         }
 
-    member this.TryGetAssemblyData () =
-        this.tcAssemblyData
+    member this.ParseSourceFilesAsync (sources, compilationId) =
+        async {
+            let! cancellationToken = Async.CancellationToken
+            let pairs =
+                sources
+                |> Seq.map (fun x -> this.GetSourceAndCompilation (x, compilationId, cancellationToken))
+                |> Array.ofSeq
 
+            let results = ResizeArray ()
 
+            pairs
+            |> Array.iter (fun struct (source, compilation) ->             
+                let errorLogger = CompilationErrorLogger("TryParseSourceFileAsync", compilation.TcConfig.errorSeverityOptions)
+                let input = ParseOneInputFile (compilation.TcConfig, compilation.LexResourceManager, [], source.FilePath, (false, false), errorLogger, (*retrylocked*) true)
+                results.Add (input, errorLogger.GetErrors ())
+            )
 
-
-
-
-        
-
+            return results :> ParseResult seq
+        }

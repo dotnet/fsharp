@@ -543,8 +543,6 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
-    <Compile Include="Compilation.fsi" />
-    <Compile Include="Compilation.fs" />
 
     <!-- the incremental builder and service . -->
     <Compile Include="..\service\IncrementalBuild.fsi">
@@ -655,6 +653,8 @@
     <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
+    <Compile Include="Compilation.fsi" />
+    <Compile Include="Compilation.fs" />
     
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
