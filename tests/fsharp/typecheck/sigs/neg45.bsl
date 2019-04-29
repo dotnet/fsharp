@@ -53,11 +53,53 @@ neg45.fs(80,20,80,22): typecheck error FS0340: The signature and implementation 
 
 neg45.fs(81,35,81,40): typecheck error FS0001: A type parameter is missing a constraint 'when 'T :> System.IComparable'
 
-neg45.fs(89,26,89,40): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member D.M : 'a -> 'b, member D.M : 'a -> 'b
+neg45.fs(89,26,89,40): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-neg45.fs(97,26,97,55): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member D.M : 'a -> 'b, member D.M : 'a -> 'b
 
-neg45.fs(104,26,104,31): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member D.M : 'a -> 'b, member D.M : 'a -> 'b
+
+Argument given: R1
+
+
+
+Candidates:
+
+ - member D.M : 'a -> 'b
+
+ - member D.M : 'a -> 'b
+
+
+
+neg45.fs(97,26,97,55): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+
+
+Argument given: (R1 * R1)
+
+
+
+Candidates:
+
+ - member D.M : 'a -> 'b
+
+ - member D.M : 'a -> 'b
+
+
+
+neg45.fs(104,26,104,31): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+
+
+Argument given: int
+
+
+
+Candidates:
+
+ - member D.M : 'a -> 'b
+
+ - member D.M : 'a -> 'b
+
+
 
 neg45.fs(105,24,105,25): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
 
