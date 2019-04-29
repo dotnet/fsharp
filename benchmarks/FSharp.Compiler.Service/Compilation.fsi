@@ -47,7 +47,7 @@ type Compilation
 type CompilationInfo =
     {
         Options: CompilationOptions
-        ParseResults: SyntaxTree seq
+        FilePaths: string seq // TODO: extend to support ISourceText
         CompilationReferences: Compilation seq
     }
 

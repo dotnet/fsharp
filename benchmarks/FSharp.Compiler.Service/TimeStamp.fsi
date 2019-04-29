@@ -3,8 +3,10 @@
 open System
 
 [<Struct>]
-type internal TimeStamp =
+type internal VersionStamp =
 
     member DateTime: DateTime
 
-    static member Create: unit -> TimeStamp
+    member NewVersionStamp: unit -> VersionStamp
+
+    static member Create: unit -> VersionStamp

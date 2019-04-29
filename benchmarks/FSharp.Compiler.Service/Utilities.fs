@@ -61,6 +61,8 @@ and [<Struct>] private SemaphoreDisposer (semaphore: NonReentrantLock) =
 [<Sealed>]
 type AsyncLazy<'T> (computation: Async<'T>) =
 
+   let mutable computation = computation
+
    let gate = NonReentrantLock ()
    let mutable cachedResult = ValueNone
 
@@ -79,5 +81,6 @@ type AsyncLazy<'T> (computation: Async<'T>) =
                | _ ->
                    let! result = computation
                    cachedResult <- ValueSome result
+                   computation <- Unchecked.defaultof<Async<'T>> // null out function since we have result, so we don't strongly hold onto more stuff
                    return result               
        }

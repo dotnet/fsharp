@@ -3,9 +3,11 @@
 open System
 
 [<Struct>]
-type TimeStamp (dateTime: DateTime) =
+type VersionStamp (dateTime: DateTime) =
 
     member __.DateTime = dateTime
 
-    static member Create () = TimeStamp DateTime.UtcNow
+    member __.NewVersionStamp () = VersionStamp DateTime.UtcNow
+
+    static member Create () = VersionStamp DateTime.UtcNow
 

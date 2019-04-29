@@ -1,7 +1,9 @@
 ﻿namespace FSharp.Compiler.Service
 
 open FSharp.Compiler
+open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
+open FSharp.Compiler.ErrorLogger
 
 type internal ParsingInfo =
     {
@@ -12,7 +14,9 @@ type internal ParsingInfo =
         FilePath: string
     }
 
+type ParseResult = ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
+
 [<RequireQualifiedAccess>]
 module internal Parser =
 
-    val ParseFile: ParsingInfo -> SyntaxTree
+    val Parse: ParsingInfo -> ParseResult

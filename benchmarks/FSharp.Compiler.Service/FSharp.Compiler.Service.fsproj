@@ -18,20 +18,24 @@
   <ItemGroup>
     <Compile Include="Utilities.fs" />
     <Compile Include="Abbreviations.fs" />
-    <Compile Include="SyntaxTree.fsi" />
-    <Compile Include="SyntaxTree.fs" />
     <Compile Include="FrameworkImportsCache.fsi" />
     <Compile Include="FrameworkImportsCache.fs" />
-    <Compile Include="TimeStamp.fsi" />
-    <Compile Include="TimeStamp.fs" />
     <Compile Include="Parser.fsi" />
     <Compile Include="Parser.fs" />
+    <Compile Include="Source.fsi" />
+    <Compile Include="Source.fs" />
+    <Compile Include="TimeStamp.fsi" />
+    <Compile Include="TimeStamp.fs" />
+    <Compile Include="IncrementalChecker.fsi" />
+    <Compile Include="IncrementalChecker.fs" />
     <Compile Include="Compilation.fsi" />
     <Compile Include="Compilation.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="2.9.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
   <ItemGroup>
