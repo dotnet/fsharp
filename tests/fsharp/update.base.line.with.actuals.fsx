@@ -7,6 +7,7 @@ open System.IO
 let directories =
     [
       "typecheck/sigs"
+      "typecheck/overloads"
       "typeProviders/negTests"
     ]
     |> List.map (fun d -> Path.Combine(__SOURCE_DIRECTORY__, d) |> DirectoryInfo)
@@ -17,7 +18,7 @@ for d in directories do
         for errFile in d.GetFiles p do
             let baseLineFile = FileInfo(Path.ChangeExtension(errFile.FullName, "bsl"))
             let baseLineFilePreProcess = FileInfo(Path.ChangeExtension(errFile.FullName, "bslpp"))
-
+            if not baseLineFile.Exists then () else
             if File.ReadAllText(errFile.FullName) <> File.ReadAllText(baseLineFile.FullName) then
                 let expectedFile =
                     if baseLineFilePreProcess.Exists then baseLineFilePreProcess
