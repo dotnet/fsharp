@@ -70,9 +70,7 @@ To build and test Visual F# IDE Tools, install these requirements:
 - Launch the Visual Studio Installer
   - Under the **"Windows"** workload, select **".NET desktop development"**
     - Select the optional component **"F# desktop language support"**
-  - Under the **"Mobile & Gaming"** workload, select **"Mobile development with .NET"**
   - Under the **"Other Toolsets"** workload, select **"Visual Studio extension development"**
-  - On the **"Individual Components"** tab, select **".NET Framework 4.7.2 SDK"** and **".NET Framework 4.7.2 targeting pack"**
 
 Steps to build:
 

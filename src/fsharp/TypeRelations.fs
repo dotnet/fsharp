@@ -66,18 +66,28 @@ let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
     match ty1, ty2 with 
-    // QUERY: should these be false for non-equal rigid typars? warn-if-not-rigid typars?
     | TType_var _, _  
     | _, TType_var _ -> true
+
     | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  ->  
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
+
+    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
+        (evalTupInfoIsStruct anonInfo1.TupInfo = evalTupInfoIsStruct anonInfo2.TupInfo) &&
+        (match anonInfo1.Assembly, anonInfo2.Assembly with ccu1, ccu2 -> ccuEq ccu1 ccu2) &&
+        (anonInfo1.SortedNames = anonInfo2.SortedNames) &&
+        List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
+
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)     -> 
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
+
     | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
+
     | TType_measure _, TType_measure _ ->
         true
+
     | _ -> 
         false
 
@@ -88,18 +98,18 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
     match ty1, ty2 with 
-    // QUERY: should these be false for non-equal rigid typars? warn-if-not-rigid typars?
     | TType_var _, _  | _, TType_var _ -> true
 
     | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  ->  
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)     -> 
-        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
-        List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
-        (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
+
+    | TType_tuple _, TType_tuple _
+    | TType_anon _, TType_anon _
+    | TType_fun _, TType_fun _ -> TypesFeasiblyEquiv ndeep g amap m ty1 ty2
+
     | TType_measure _, TType_measure _ ->
         true
+
     | _ -> 
         // F# reference types are subtypes of type 'obj' 
         (isObjTy g ty1 && (canCoerce = CanCoerce || isRefTy g ty2)) 

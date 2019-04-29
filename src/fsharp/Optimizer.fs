@@ -573,18 +573,18 @@ let GetInfoForLocalValue cenv env (v: Val) m =
     // Abstract slots do not have values 
     if v.IsDispatchSlot then UnknownValInfo 
     else
-        let mutable res = Unchecked.defaultof<_> 
-        let ok = cenv.localInternalVals.TryGetValue(v.Stamp, &res)
-        if ok then res else
-        match env.localExternalVals.TryFind v.Stamp with 
-        | Some vval -> vval
-        | None -> 
-            if v.MustInline then
-                errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
+        match cenv.localInternalVals.TryGetValue v.Stamp with
+        | true, res -> res
+        | _ ->
+            match env.localExternalVals.TryFind v.Stamp with 
+            | Some vval -> vval
+            | None -> 
+                if v.MustInline then
+                    errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
 #if CHECKED
-            warning(Error(FSComp.SR.optLocalValueNotFoundDuringOptimization(v.DisplayName), m)) 
+                warning(Error(FSComp.SR.optLocalValueNotFoundDuringOptimization(v.DisplayName), m)) 
 #endif
-            UnknownValInfo 
+                UnknownValInfo 
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
 
@@ -1688,10 +1688,6 @@ let (|AnyQueryBuilderOpTrans|_|) g = function
           (match vref.ApparentEnclosingEntity with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
          Some (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
     | _ -> None
-
-let mkUnitDelayLambda (g: TcGlobals) m e =
-    let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
-    mkLambda m uv (e, tyOfExpr g e) 
 
 /// If this returns "Some" then the source is not IQueryable.
 //  <qexprInner> := 

@@ -17,6 +17,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open Internal.Utilities
 
 type Position = int * int
 type Range = Position * Position
@@ -768,8 +769,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 type FSharpSourceTokenizer(defineConstants: string list, filename: string option) =
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
-    let lexArgsLightOn = mkLexargs(filename, defineConstants, LightSyntaxStatus(true, false), lexResourceManager, ref [], DiscardErrorsLogger)
-    let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, ref [], DiscardErrorsLogger)
+    let lexArgsLightOn = mkLexargs(filename, defineConstants, LightSyntaxStatus(true, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
+    let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
 
     member this.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf lineText

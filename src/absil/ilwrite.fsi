@@ -3,6 +3,7 @@
 /// The IL Binary writer.
 module internal FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
+open Internal.Utilities
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.IL 
@@ -27,7 +28,8 @@ type options =
    emitTailcalls: bool
    deterministic: bool
    showTimes : bool
-   dumpDebugInfo : bool }
+   dumpDebugInfo : bool
+   pathMap : PathMap }
 
 /// Write a binary to the file system. Extra configuration parameters can also be specified. 
 val WriteILBinary: filename: string * options:  options * input: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit
