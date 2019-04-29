@@ -47,8 +47,8 @@ type Compilation
 type CompilationInfo =
     {
         Options: CompilationOptions
-        FilePaths: string seq // TODO: extend to support ISourceText
-        CompilationReferences: Compilation seq
+        Sources: ImmutableArray<Source>
+        CompilationReferences: ImmutableArray<Compilation>
     }
 
 [<Sealed>]

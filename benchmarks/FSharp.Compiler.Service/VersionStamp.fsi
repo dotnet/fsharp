@@ -2,6 +2,7 @@
 
 open System
 
+/// We could use Roslyn's version stamp, but we need access to DateTime in order for IProjectReference TryGetLogicalTimeStamp to function correctly.
 [<Struct>]
 type internal VersionStamp =
 

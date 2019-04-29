@@ -30,7 +30,7 @@ type internal IncrementalChecker =
 
     member AddSources: sources: ImmutableArray<Source> -> IncrementalChecker
 
-    member UpdateSource: source: Source -> IncrementalChecker
+    member ReplaceSource: source: Source -> IncrementalChecker
 
 type internal InitialInfo =
     {

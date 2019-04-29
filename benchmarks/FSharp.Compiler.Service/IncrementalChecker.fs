@@ -55,10 +55,10 @@ type TcAccumulator =
 
 [<RequireQualifiedAccess>]
 type CompilationResult =
-    | NotParsed of Source
-    | Parsed of Source * ParseResult
+   // | NotParsed of Source
+    | Parsed of Source * SyntaxTree
    // | SignatureChecked of SyntaxTree * TcAccumulator // is an impl file, but only checked its signature file (.fsi)
-    | Checked of Source * WeakReference<ParseResult> * TcAccumulator
+    | Checked of Source * WeakReference<SyntaxTree> * TcAccumulator
 
 type ParsingOptions =
     {
@@ -84,14 +84,26 @@ type IncrementalCheckerState =
             version = VersionStamp.Create ()
         }
 
-    member this.ParseSource source =
+    member this.ParseSource (source: Source, isLastFile) =
         let parsingInfo =
             {
                 tcConfig = this.tcConfig
-                isLastFileOrScript = (orderedFilePathsBuilder.Count - 1) = (i + offset)
+                isLastFileOrScript = isLastFile
                 isExecutable = this.parsingOptions.isExecutable
-
+                conditionalCompilationDefines = []
+                sourceText = source.SourceText
+                filePath = source.FilePath
             }
+
+        Parser.Parse parsingInfo
+
+    member this.ParseSource (source: Source) =
+        match this.resultCache.TryGetValue source.FilePath with
+        | false, _ -> failwith "source does not exist in incremental checker"
+        | true, (i, _) ->
+
+            let isLastFile = (this.orderedFilePaths.Length - 1) = i
+            this.ParseSource (source, isLastFile)
 
     member this.AddSources (orderedSources: ImmutableArray<Source>) =
         if Seq.isEmpty orderedSources then this
@@ -107,44 +119,34 @@ type IncrementalCheckerState =
             let offset = this.orderedFilePaths.Length
             Parallel.For (0, orderedSources.Length, fun i ->
                 let source = orderedSources.[i]
-                let parsingInfo =
-                    {
-                        tcConfig = this.tcConfig
-                        isLastFileOrScript = (orderedFilePathsBuilder.Count - 1) = (i + offset)
-                        isExecutable = 
-                    }
+                let isLastFile = (orderedFilePathsBuilder.Count - 1) = (i + offset)
+                let syntaxTree = this.ParseSource (source, isLastFile)
+                resultCacheBuilder.Add (source.FilePath, (offset + i, ref (CompilationResult.Parsed (source, syntaxTree))))
             ) |> ignore
 
-            for i = 0 to orderedSources.Length - 1 do
-                let source = orderedSources.[i]
-                resultCacheBuilder.Add (source.FilePath, (offset + i, ref (CompilationResult.Parsed syntaxTree)))
+            { this with
+                orderedFilePaths = orderedFilePathsBuilder.ToImmutableArray ()
+                resultCache = resultCacheBuilder.ToImmutableDictionary ()
+                version = VersionStamp.Create ()
+            }
 
-            let newState =
-                {
-                    orderedFilePaths = orderedFilePathsBuilder.ToImmutableArray ()
-                    resultCache = resultCacheBuilder.ToImmutableDictionary ()
-                    version = VersionStamp.Create ()
-                }
-
-            newState
-
-    member this.ReplaceSource (source: Source, parseResult: ParseResult) =
+    member this.ReplaceSource (source: Source) =
         match this.resultCache.TryGetValue source.FilePath with
         | false, _ -> failwith "syntax tree does not exist in incremental checker"
-        | true, (i, _) ->
+        | true, (_i, _) ->
 
-            let mutable resultCache = this.resultCache.SetItem(source.FilePath, (i, ref (CompilationResult.Parsed source)))
+            let mutable resultCache = this.resultCache//this.resultCache.SetItem(source.FilePath, (i, ref (CompilationResult.Parsed source)))
 
-            for i = i + 1 to this.orderedFilePaths.Length - 1 do
-                let filePath = this.orderedFilePaths.[i]
-                match this.resultCache.TryGetValue filePath with
-                | false, _ -> failwith "should not happen"
-                | true, (i, refResult) ->
-                    let syntaxTree =
-                        match refResult.contents with
-                        | CompilationResult.Parsed syntaxTree -> syntaxTree
-                        | CompilationResult.Checked (syntaxTree, _) -> syntaxTree
-                    resultCache <- resultCache.SetItem(syntaxTree.FilePath, (i, ref (CompilationResult.Parsed syntaxTree)))
+            //for i = i + 1 to this.orderedFilePaths.Length - 1 do
+            //    let filePath = this.orderedFilePaths.[i]
+            //    match this.resultCache.TryGetValue filePath with
+            //    | false, _ -> failwith "should not happen"
+            //    | true, (i, refResult) ->
+            //        let syntaxTree =
+            //            match refResult.contents with
+            //            | CompilationResult.Parsed syntaxTree -> syntaxTree
+            //            | CompilationResult.Checked (syntaxTree, _) -> syntaxTree
+            //        resultCache <- resultCache.SetItem(syntaxTree.FilePath, (i, ref (CompilationResult.Parsed syntaxTree)))
 
             { this with
                 resultCache = resultCache
@@ -173,25 +175,31 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
         let newState = state.AddSources sources
         IncrementalChecker (tcConfig, tcGlobals, tcImports, initialTcAcc, options, newState)
 
-    member __.UpdateSource source =
-        let newState = state.UpdateSource source
+    member __.ReplaceSource source =
+        let newState = state.ReplaceSource source
         IncrementalChecker (tcConfig, tcGlobals, tcImports, initialTcAcc, options, newState)
 
     member this.GetTcAcc (source: Source, cancellationToken) =
         match state.resultCache.TryGetValue source.FilePath with
-        | true, (0, refResult) -> Eventually.Done (initialTcAcc, 0, refResult)
+        | true, (0, refResult) -> 
+            let syntaxTree =
+                match refResult.contents with
+                | CompilationResult.Parsed (_, syntaxTree) -> syntaxTree
+                | CompilationResult.Checked (source, _, _) -> state.ParseSource source // TODO:
+            Eventually.Done (initialTcAcc, syntaxTree, refResult)
         | true, (i, refResult) ->
             match state.resultCache.TryGetValue state.orderedFilePaths.[i - 1] with
             | true, (_, nextRefResult) -> 
                 match nextRefResult.contents with
-                | CompilationResult.Parsed syntaxTree ->
+                | CompilationResult.Parsed (source, syntaxTree) ->
                     eventually {
                         // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
-                        let! tcAcc, _ = this.Check (syntaxTree, CheckerFlags.None, cancellationToken)
-                        return (tcAcc, i, refResult)
+                        let! tcAcc, _ = this.Check (source, CheckerFlags.None, cancellationToken)
+                        return (tcAcc, syntaxTree, refResult)
                     }
-                | CompilationResult.Checked (_, tcAcc) ->
-                    Eventually.Done (tcAcc, i, refResult)
+                | CompilationResult.Checked (source, _, tcAcc) ->
+                    let syntaxTree = state.ParseSource source // TODO:
+                    Eventually.Done (tcAcc, syntaxTree, refResult)
             | _ -> failwith "file does not exist in incremental checker"
         | _ -> failwith "file does not exist in incremental checker"
 
@@ -200,8 +208,8 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
             cancellationToken.ThrowIfCancellationRequested ()
 
             let filePath = source.FilePath
-            let! (tcAcc, index, refResult) = this.GetTcAcc (source, cancellationToken)
-            let (inputOpt, parseErrors) = Async.RunSynchronously (source.GetParseResultAsync (), cancellationToken = cancellationToken)
+            let! (tcAcc, syntaxTree, refResult) = this.GetTcAcc (source, cancellationToken)
+            let (inputOpt, parseErrors) = syntaxTree.parseResult
             match inputOpt with
             | Some input ->
                 let capturingErrorLogger = CompilationErrorLogger("Check", tcConfig.errorSeverityOptions)
@@ -267,31 +275,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                                     f ctok)
 
                 let! tcAcc, tcResolutionsOpt = timeSlicedComputation
-
-                // Since we have checked the source, we don't want to strongly hold onto the source and its parse result anymore.
-                // However, we still need it to do a re-type check, so re-parse if the source was already collected.
-                let isLastFile = (state.orderedFilePaths.Length - 1) = index
-                let syntaxTree =
-                    {
-                        filePath = filePath
-                        asyncLazyParseResult =
-                            let weakSyntaxTree = WeakReference<_>(source)
-                            AsyncLazy (async {
-                                match weakSyntaxTree.TryGetTarget () with
-                                | true, syntaxTree -> return! syntaxTree.GetParseResultAsync ()
-                                | _ ->
-                                    let parsingInfo =
-                                        {
-                                            TcConfig = tcConfig
-                                            IsLastFileOrScript = isLastFile
-                                            IsExecutable = options.parsingOptions.isExecutable
-                                            LexResourceManager = options.parsingOptions.lexResourceManager
-                                            FilePath = filePath
-                                        }
-                                    return Parser.Parse parsingInfo
-                            })
-                    }
-                refResult := CompilationResult.Checked (syntaxTree, tcAcc)
+                refResult := CompilationResult.Checked (source, WeakReference<_> syntaxTree, tcAcc)
                 return (tcAcc, tcResolutionsOpt)
                                        
             | _ ->
@@ -406,5 +390,5 @@ module IncrementalChecker =
               tcDependencyFiles=basicDependencies
               tcErrorsRev = [ initialErrors ] 
               tcModuleNamesDict = Map.empty }
-        return IncrementalChecker (tcConfig, tcGlobals, tcImports, tcAcc, info.checkerOptions, IncrementalCheckerState.Create ())
+        return IncrementalChecker (tcConfig, tcGlobals, tcImports, tcAcc, info.checkerOptions, IncrementalCheckerState.Create (tcConfig, info.checkerOptions.parsingOptions))
         }

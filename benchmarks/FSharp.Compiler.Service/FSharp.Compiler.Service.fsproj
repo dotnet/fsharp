@@ -24,8 +24,8 @@
     <Compile Include="Parser.fs" />
     <Compile Include="Source.fsi" />
     <Compile Include="Source.fs" />
-    <Compile Include="TimeStamp.fsi" />
-    <Compile Include="TimeStamp.fs" />
+    <Compile Include="VersionStamp.fsi" />
+    <Compile Include="VersionStamp.fs" />
     <Compile Include="IncrementalChecker.fsi" />
     <Compile Include="IncrementalChecker.fs" />
     <Compile Include="Compilation.fsi" />

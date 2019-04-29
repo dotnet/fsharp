@@ -14,7 +14,13 @@ type internal ParsingInfo =
         filePath: string
     }
 
+type internal SyntaxTree =
+    {
+        filePath: string
+        parseResult: ParseResult
+    }
+
 [<RequireQualifiedAccess>]
 module internal Parser =
 
-    val Parse: ParsingInfo -> ParseResult
+    val Parse: ParsingInfo -> SyntaxTree

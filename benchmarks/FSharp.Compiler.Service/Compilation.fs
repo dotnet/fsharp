@@ -72,8 +72,8 @@ type [<NoEquality;NoComparison>] Compilation =
 type [<NoEquality;NoComparison>] CompilationInfo =
     {
         Options: CompilationOptions
-        FilePaths: string seq
-        CompilationReferences: Compilation seq
+        Sources: ImmutableArray<Source>
+        CompilationReferences: ImmutableArray<Compilation>
     }
 
 [<Sealed>]
@@ -166,7 +166,8 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
                   tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 
                   let sourceFiles =
-                    info.FilePaths
+                    info.Sources
+                    |> Seq.map (fun x -> x.FilePath)
                     |> List.ofSeq
 
                   // Apply command-line arguments and collect more source files if they are in the arguments
@@ -236,27 +237,10 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
                         }
                 }
 
-              let length = info.FilePaths |> Seq.length
-              let sources =
-                info.FilePaths
-                |> Seq.mapi (fun i filePath ->
-                    let isLastFile = length - 1 = i
-                    let parsingInfo =
-                        {
-                            TcConfig = tcConfig
-                            IsLastFileOrScript = isLastFile
-                            IsExecutable = info.Options.IsExecutable
-                            LexResourceManager = lexResourceManager
-                            FilePath = filePath
-                        }
-                    Source.Create parsingInfo
-                )
-                |> ImmutableArray.CreateRange
-
               let! checker = IncrementalChecker.Create initialInfo
               return
                 Some {
-                    checker = checker.AddSources sources
+                    checker = checker.AddSources info.Sources
                     options = info.Options
                 }
             with e -> 
