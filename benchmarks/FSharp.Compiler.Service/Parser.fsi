@@ -1,17 +1,17 @@
 ﻿namespace FSharp.Compiler.Service
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
+open FSharp.Compiler.Text
 open FSharp.Compiler.CompileOps
-open FSharp.Compiler.ErrorLogger
 
 type internal ParsingInfo =
     {
-        TcConfig: TcConfig
-        IsLastFileOrScript: bool
-        IsExecutable: bool
-        LexResourceManager: Lexhelp.LexResourceManager
-        FilePath: string
+        tcConfig: TcConfig
+        isLastFileOrScript: bool
+        isExecutable: bool
+        conditionalCompilationDefines: string list
+        sourceText: ISourceText
+        filePath: string
     }
 
 [<RequireQualifiedAccess>]

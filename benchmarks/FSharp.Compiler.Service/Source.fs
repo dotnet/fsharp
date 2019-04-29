@@ -1,23 +1,10 @@
 ﻿namespace FSharp.Compiler.Service
 
-open FSharp.Compiler.Service.Utilities
+open FSharp.Compiler.Text
 
-type Source = 
-    {
-        filePath: string
-        asyncLazyParseResult: AsyncLazy<ParseResult>
-    }
+[<Sealed>]
+type Source (filePath: string, sourceText: ISourceText) = 
 
-    member this.FilePath = this.filePath
-    
-    member this.GetParseResultAsync () =
-        this.asyncLazyParseResult.GetValueAsync ()
+    member __.FilePath = filePath
 
-    static member Create (parsingInfo) =
-        {
-            filePath = parsingInfo.FilePath
-            asyncLazyParseResult =
-                AsyncLazy(async {
-                    return Parser.Parse parsingInfo
-                })
-        }
+    member __.SourceText = sourceText

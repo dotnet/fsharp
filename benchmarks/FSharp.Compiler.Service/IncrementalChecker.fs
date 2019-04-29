@@ -3,6 +3,7 @@
 open System
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -54,23 +55,43 @@ type TcAccumulator =
 
 [<RequireQualifiedAccess>]
 type CompilationResult =
-    | Parsed of Source
+    | NotParsed of Source
+    | Parsed of Source * ParseResult
    // | SignatureChecked of SyntaxTree * TcAccumulator // is an impl file, but only checked its signature file (.fsi)
-    | Checked of Source * TcAccumulator
+    | Checked of Source * WeakReference<ParseResult> * TcAccumulator
+
+type ParsingOptions =
+    {
+        isExecutable: bool
+        lexResourceManager: Lexhelp.LexResourceManager
+    }
 
 type IncrementalCheckerState =
     {
+        tcConfig: TcConfig
+        parsingOptions: ParsingOptions
         orderedFilePaths: ImmutableArray<string>
         resultCache: ImmutableDictionary<string, int * CompilationResult ref>
         version: VersionStamp
     }
 
-    static member Create () =
+    static member Create (tcConfig, parsingOptions) =
         {
+            tcConfig = tcConfig
+            parsingOptions = parsingOptions
             orderedFilePaths = ImmutableArray.Empty
             resultCache = ImmutableDictionary.Empty
             version = VersionStamp.Create ()
         }
+
+    member this.ParseSource source =
+        let parsingInfo =
+            {
+                tcConfig = this.tcConfig
+                isLastFileOrScript = (orderedFilePathsBuilder.Count - 1) = (i + offset)
+                isExecutable = this.parsingOptions.isExecutable
+
+            }
 
     member this.AddSources (orderedSources: ImmutableArray<Source>) =
         if Seq.isEmpty orderedSources then this
@@ -80,12 +101,23 @@ type IncrementalCheckerState =
 
             orderedFilePathsBuilder.AddRange this.orderedFilePaths
             resultCacheBuilder.AddRange this.resultCache
+
+            orderedFilePathsBuilder.Count <- this.orderedFilePaths.Length + orderedSources.Length
                 
             let offset = this.orderedFilePaths.Length
+            Parallel.For (0, orderedSources.Length, fun i ->
+                let source = orderedSources.[i]
+                let parsingInfo =
+                    {
+                        tcConfig = this.tcConfig
+                        isLastFileOrScript = (orderedFilePathsBuilder.Count - 1) = (i + offset)
+                        isExecutable = 
+                    }
+            ) |> ignore
+
             for i = 0 to orderedSources.Length - 1 do
-                let syntaxTree = orderedSources.[i]
-                orderedFilePathsBuilder.Add syntaxTree.FilePath
-                resultCacheBuilder.Add (syntaxTree.FilePath, (offset + i, ref (CompilationResult.Parsed syntaxTree)))
+                let source = orderedSources.[i]
+                resultCacheBuilder.Add (source.FilePath, (offset + i, ref (CompilationResult.Parsed syntaxTree)))
 
             let newState =
                 {
@@ -96,7 +128,7 @@ type IncrementalCheckerState =
 
             newState
 
-    member this.UpdateSource (source: Source) =
+    member this.ReplaceSource (source: Source, parseResult: ParseResult) =
         match this.resultCache.TryGetValue source.FilePath with
         | false, _ -> failwith "syntax tree does not exist in incremental checker"
         | true, (i, _) ->
@@ -118,12 +150,6 @@ type IncrementalCheckerState =
                 resultCache = resultCache
                 version = this.version.NewVersionStamp ()
             }
-
-type ParsingOptions =
-    {
-        isExecutable: bool
-        lexResourceManager: Lexhelp.LexResourceManager
-    }
 
 type IncrementalCheckerOptions =
     {

@@ -691,6 +691,9 @@ val DefaultReferencesForScriptsAndOutOfProjectSources: bool -> string list
 /// Parse one input file
 val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: (bool * bool) * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
 
+/// Parse one input source text
+val ParseOneInputSourceText: TcConfig * Lexhelp.LexResourceManager * string list * string * ISourceText * isLastCompiland: (bool * bool) * ErrorLogger -> ParsedInput option
+
 //----------------------------------------------------------------------------
 // Type checking and querying the type checking state
 //--------------------------------------------------------------------------
