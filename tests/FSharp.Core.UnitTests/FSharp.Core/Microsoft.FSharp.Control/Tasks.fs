@@ -300,7 +300,7 @@ let testForLoop() =
                 do! Task.Yield()
                 printfn "back from yield" 
                 do! Task.Yield()
-                printfn "back from yield again" 
+                printfn "back from yield" 
                 match index with
                 | 0 -> require (x = "a") "wrong first value"
                 | 1 -> require (x = "b") "wrong second value"
@@ -485,7 +485,7 @@ let test2ndExceptionThrownInFinally() =
     require (ranFinally = 1) "didn't run finally exactly once"
 
 let testFixedStackWhileLoop() =
-    let bigNumber = 10 // TODO: make this 10000
+    let bigNumber = 10000
     let t =
         task {
             let mutable maxDepth = Nullable()
@@ -504,7 +504,7 @@ let testFixedStackWhileLoop() =
     require (t.Result = bigNumber) "didn't get to big number"
 
 let testFixedStackForLoop() =
-    let bigNumber = 10 // TODO: make this 10000
+    let bigNumber = 10000
     let mutable ran = false
     let t =
         task {
@@ -535,22 +535,20 @@ let testTypeInference() =
     t2.Wait()
 
 let testNoStackOverflowWithImmediateResult() =
-    let bigNumber = 10 // TODO: make this 10000
     let longLoop =
         task {
             let mutable n = 0
-            while n < bigNumber do
+            while n < 10_000 do
                 n <- n + 1
                 return! Task.FromResult(())
         }
     longLoop.Wait()
 
 let testNoStackOverflowWithYieldResult() =
-    let bigNumber = 10 // TODO: make this 10000
     let longLoop =
         task {
             let mutable n = 0
-            while n < bigNumber do
+            while n < 10_000 do
                 let! _ =
                     task {
                         do! Task.Yield()
@@ -562,13 +560,12 @@ let testNoStackOverflowWithYieldResult() =
     longLoop.Wait()
 
 let testSmallTailRecursion() =
-    let bigNumber = 10 // TODO: make this 1000
     let shortLoop =
         task {
             let rec loop n =
                 task {
                     // larger N would stack overflow on Mono, eat heap mem on MS .NET
-                    if n < bigNumber then
+                    if n < 1000 then
                         do! Task.Yield()
                         let! _ = Task.FromResult(0)
                         return! loop (n + 1)
