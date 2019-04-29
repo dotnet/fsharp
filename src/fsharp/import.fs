@@ -41,8 +41,6 @@ type AssemblyLoader =
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
 #endif
         
-
-
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
 //------------------------------------------------------------------------- 

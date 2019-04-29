@@ -448,6 +448,9 @@
     <Compile Include="..\CheckFormatStrings.fs">
       <Link>Logic\CheckFormatStrings.fs</Link>
     </Compile>
+    <Compile Include="..\FindUnsolved.fsi">
+      <Link>Logic\FindUnsolved.fsi</Link>
+    </Compile>
     <Compile Include="..\FindUnsolved.fs">
       <Link>Logic\FindUnsolved.fs</Link>
     </Compile>
@@ -469,8 +472,6 @@
     <Compile Include="..\TypeChecker.fs">
       <Link>Logic\TypeChecker.fs</Link>
     </Compile>
-
-    <!-- includes the optimizer and code generator -->
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
@@ -489,8 +490,14 @@
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="..\LowerCallsAndSeqs.fsi">
+      <Link>Optimize\LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="..\LowerCallsAndSeqs.fs">
       <Link>Optimize\LowerCallsAndSeqs.fs</Link>
+    </Compile>
+    <Compile Include="..\autobox.fsi">
+      <Link>Optimize\autobox.fsi</Link>
     </Compile>
     <Compile Include="..\autobox.fs">
       <Link>Optimize\autobox.fs</Link>

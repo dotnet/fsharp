@@ -1689,10 +1689,6 @@ let (|AnyQueryBuilderOpTrans|_|) g = function
          Some (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
     | _ -> None
 
-let mkUnitDelayLambda (g: TcGlobals) m e =
-    let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
-    mkLambda m uv (e, tyOfExpr g e) 
-
 /// If this returns "Some" then the source is not IQueryable.
 //  <qexprInner> := 
 //     | query.Select(<qexprInner>, <other-arguments>) --> Seq.map(qexprInner', ...)

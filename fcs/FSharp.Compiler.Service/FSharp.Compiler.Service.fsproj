@@ -434,6 +434,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CheckFormatStrings.fs">
       <Link>Logic/CheckFormatStrings.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fsi">
+      <Link>Logic/FindUnsolved.fsi</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fs">
       <Link>Logic/FindUnsolved.fs</Link>
     </Compile>
@@ -473,8 +476,14 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize/InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fsi">
+      <Link>Optimize/LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fs">
       <Link>Optimize/LowerCallsAndSeqs.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fsi">
+      <Link>Optimize/autobox.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fs">
       <Link>Optimize/autobox.fs</Link>
