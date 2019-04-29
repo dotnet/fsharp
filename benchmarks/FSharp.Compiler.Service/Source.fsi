@@ -1,7 +1,5 @@
 ﻿namespace FSharp.Compiler.Service
 
-open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Service.Utilities
 
 type internal Source = 
@@ -14,4 +12,4 @@ type internal Source =
 
    member GetParseResultAsync: unit -> Async<ParseResult>
  
-   static member Create: filePath: string * parsingInfo: ParsingInfo -> Source
+   static member Create: parsingInfo: ParsingInfo -> Source

@@ -11,6 +11,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.CodeAnalysis.Text
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
+open FSharp.Compiler.Service
 
 module private SourceText =
 
@@ -316,7 +317,7 @@ type CompilerService() =
     //        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     //        ClearAllILModuleReaderCache()
 
-    let service = FSharp.Compiler.CompilerService (3, 8)
+    let service = FSharp.Compiler.Service.CompilerService (3, 8)
 
     //let sources =
     //    async {
@@ -334,10 +335,23 @@ type CompilerService() =
 
     [<Benchmark>]
     member __.Compilation() =
-        let compilationOptions = CompilationOptions.Create ("""C:\visualfsharp\src\fsharp\test.dll""", [], """C:\visualfsharp\src\fsharp""", false)
-        let compilationInfo = { Options = compilationOptions; ParseResults = []; CompilationReferences = [] }
-        let _compilation = service.TryCreateCompilationAsync compilationInfo |> Async.RunSynchronously
-        ()
+        let tmpFilePath = Path.GetTempFileName ()
+        
+
+        try
+            File.WriteAllText (tmpFilePath, """
+module Test
+
+let x = 1
+"""
+            )
+
+            let compilationOptions = CompilationOptions.Create ("""C:\visualfsharp\src\fsharp\test.dll""", [], """C:\visualfsharp\src\fsharp""", false)
+            let compilationInfo = { Options = compilationOptions; FilePaths = [tmpFilePath]; CompilationReferences = [] }
+            let _compilation = service.TryCreateCompilationAsync compilationInfo |> Async.RunSynchronously
+            ()
+        finally
+            try File.Delete tmpFilePath with | _ -> ()
         //let parsedFiles = 
         //    let sourceIds =
         //        sources

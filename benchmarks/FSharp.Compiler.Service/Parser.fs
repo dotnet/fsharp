@@ -1,9 +1,7 @@
 ﻿namespace FSharp.Compiler.Service
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
-open FSharp.Compiler.ErrorLogger
 
 type ParsingInfo =
     {
@@ -13,8 +11,6 @@ type ParsingInfo =
         LexResourceManager: Lexhelp.LexResourceManager
         FilePath: string
     }
-
-type ParseResult = ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
 
 [<RequireQualifiedAccess>]
 module Parser =

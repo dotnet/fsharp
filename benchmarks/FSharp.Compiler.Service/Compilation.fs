@@ -136,10 +136,6 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
           let! builderOpt =
            cancellable {
             try
-              //// Create the builder.         
-              //// Share intern'd strings across all lexing/parsing
-              //let resourceManager = new Lexhelp.LexResourceManager() 
-
               /// Create a type-check configuration
               let tcConfigB, sourceFilesNew = 
 
@@ -240,10 +236,27 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
                         }
                 }
 
+              let length = info.FilePaths |> Seq.length
+              let sources =
+                info.FilePaths
+                |> Seq.mapi (fun i filePath ->
+                    let isLastFile = length - 1 = i
+                    let parsingInfo =
+                        {
+                            TcConfig = tcConfig
+                            IsLastFileOrScript = isLastFile
+                            IsExecutable = info.Options.IsExecutable
+                            LexResourceManager = lexResourceManager
+                            FilePath = filePath
+                        }
+                    Source.Create parsingInfo
+                )
+                |> ImmutableArray.CreateRange
+
               let! checker = IncrementalChecker.Create initialInfo
               return
                 Some {
-                    checker = checker
+                    checker = checker.AddSources sources
                     options = info.Options
                 }
             with e -> 

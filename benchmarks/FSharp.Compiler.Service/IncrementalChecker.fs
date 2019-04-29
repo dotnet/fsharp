@@ -134,7 +134,7 @@ type IncrementalCheckerOptions =
 
 type CheckerFlags =
     | None = 0x0
-    | KeepResolutions = 0x1 
+    | ReturnResolutions = 0x1 
 
 [<Sealed>]
 type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, initialTcAcc: TcAccumulator, options: IncrementalCheckerOptions, state: IncrementalCheckerState) =
@@ -161,7 +161,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                 | CompilationResult.Parsed syntaxTree ->
                     eventually {
                         // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
-                        let! tcAcc = this.Check (syntaxTree, CheckerFlags.None, cancellationToken)
+                        let! tcAcc, _ = this.Check (syntaxTree, CheckerFlags.None, cancellationToken)
                         return (tcAcc, i, refResult)
                     }
                 | CompilationResult.Checked (_, tcAcc) ->
@@ -200,9 +200,17 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                 
                         /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                         let implFile = if options.keepAssemblyContents then implFile else None
-                        let tcResolutions = if options.keepAllBackgroundResolutions || (flags &&& CheckerFlags.KeepResolutions = CheckerFlags.KeepResolutions) then sink.GetResolutions() else TcResolutions.Empty
+                        let tcResolutions = if options.keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
                         let tcEnvAtEndOfFile = (if options.keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls)
                         let tcSymbolUses = sink.GetSymbolUses()
+
+                        let tcResolutionsOpt =
+                            if options.keepAllBackgroundResolutions then Some tcResolutions
+                            elif (flags &&& CheckerFlags.ReturnResolutions = CheckerFlags.ReturnResolutions) then
+                                Some (sink.GetResolutions ())
+                            else
+                                None
+                                
                     
                         let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
                         return {tcAcc with  tcState=tcState 
@@ -215,7 +223,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                                             tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcAcc.tcOpenDeclarationsRev
                                             tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                             tcModuleNamesDict = moduleNamesDict
-                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }
+                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, tcResolutionsOpt
                     }
 
                 // Run part of the Eventually<_> computation until a timeout is reached. If not complete, 
@@ -231,7 +239,8 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                                     // Reinstall the compilation globals each time we start or restart
                                     use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
                                     f ctok)
-                let! tcAcc = timeSlicedComputation
+
+                let! tcAcc, tcResolutionsOpt = timeSlicedComputation
 
                 // Since we have checked the source, we don't want to strongly hold onto the source and its parse result anymore.
                 // However, we still need it to do a re-type check, so re-parse if the source was already collected.
@@ -257,10 +266,10 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                             })
                     }
                 refResult := CompilationResult.Checked (syntaxTree, tcAcc)
-                return! timeSlicedComputation
+                return (tcAcc, tcResolutionsOpt)
                                        
             | _ ->
-                return tcAcc
+                return (tcAcc, None)
         }
 
 type InitialInfo =

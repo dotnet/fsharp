@@ -13,9 +13,9 @@ type Source =
     member this.GetParseResultAsync () =
         this.asyncLazyParseResult.GetValueAsync ()
 
-    static member Create (filePath, parsingInfo) =
+    static member Create (parsingInfo) =
         {
-            filePath = filePath
+            filePath = parsingInfo.FilePath
             asyncLazyParseResult =
                 AsyncLazy(async {
                     return Parser.Parse parsingInfo

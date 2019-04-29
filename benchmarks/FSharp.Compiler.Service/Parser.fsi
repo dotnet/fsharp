@@ -14,8 +14,6 @@ type internal ParsingInfo =
         FilePath: string
     }
 
-type ParseResult = ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
-
 [<RequireQualifiedAccess>]
 module internal Parser =
 
