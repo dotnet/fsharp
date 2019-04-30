@@ -14,7 +14,7 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.PrettyNaming
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
-// QUERY: This relation is approximate and not part of the language specification. 
+// Note: This relation is approximate and not part of the language specification. 
 //
 //  Some appropriate uses: 
 //     patcompile.fs: IsDiscrimSubsumedBy (approximate warning for redundancy of 'isinst' patterns)
@@ -25,37 +25,24 @@ open FSharp.Compiler.PrettyNaming
 let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 = 
   if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = " + (DebugPrint.showType ty1), m))
   if ty1 === ty2 then true 
-  // QUERY : quadratic
   elif typeEquiv g ty1 ty2 then true
   else
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
-    match ty1, ty2 with 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  ->  
-        List.lengthsEqAndForall2 (typeEquiv g) l1 l2
-    | TType_ucase (tc1, l1), TType_ucase (tc2, l2) when g.unionCaseRefEq tc1 tc2  ->  
-        List.lengthsEqAndForall2 (typeEquiv g) l1 l2
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)     -> 
-        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
-        List.lengthsEqAndForall2 (typeEquiv g) l1 l2 
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
-        typeEquiv g d1 d2 && typeEquiv g r1 r2
-    | TType_measure measure1, TType_measure measure2 ->
-        measureEquiv g measure1 measure2
-    | _ ->  
-        (typeEquiv g ty1 g.obj_ty && isRefTy g ty2) || (* F# reference types are subtypes of type 'obj' *)
-        (isAppTy g ty2 &&
-         isRefTy g ty2 && 
+    // F# reference types are subtypes of type 'obj'
+    (typeEquiv g ty1 g.obj_ty && isRefTy g ty2) ||
+    // Follow the supertype chain
+    (isAppTy g ty2 &&
+     isRefTy g ty2 && 
 
-         ((match GetSuperTypeOfType g amap m ty2 with 
-           | None -> false
-           | Some ty -> TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1 ty) ||
+     ((match GetSuperTypeOfType g amap m ty2 with 
+       | None -> false
+       | Some ty -> TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1 ty) ||
 
-           (isInterfaceTy g ty1 &&
-            ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
-                |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
-
-
+       // Follow the interface hierarchy
+       (isInterfaceTy g ty1 &&
+        ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
+            |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
 
 type CanCoerce = CanCoerce | NoCoerce
 
