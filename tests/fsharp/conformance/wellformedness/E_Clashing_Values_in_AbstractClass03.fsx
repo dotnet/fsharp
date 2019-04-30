@@ -1,6 +1,8 @@
 // #Regression #Conformance #TypeInference 
 // Regression test for FSHARP1.0:5939
 // With generics
+//<Expects status="error" span="(18,18-18,25)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: abstract member D\.M : 'T -> int, abstract member D\.M : 'U -> string$</Expects>
+//<Expects status="error" span="(19,18-19,25)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: abstract member D\.M : 'T -> int, abstract member D\.M : 'U -> string$</Expects>
 [<AbstractClass>]
 type D<'T,'U>() = 
     abstract M : 'T  -> int
