@@ -8,6 +8,9 @@ let directories =
     [
       "typecheck/sigs"
       "typecheck/overloads"
+      "conformance/expressions/syntacticsugar"
+      "conformance/inference"
+      "conformance/wellformedness"
       "typeProviders/negTests"
     ]
     |> List.map (fun d -> Path.Combine(__SOURCE_DIRECTORY__, d) |> DirectoryInfo)
@@ -19,10 +22,12 @@ for d in directories do
             let baseLineFile = FileInfo(Path.ChangeExtension(errFile.FullName, "bsl"))
             let baseLineFilePreProcess = FileInfo(Path.ChangeExtension(errFile.FullName, "bslpp"))
             if not baseLineFile.Exists then () else
-            if File.ReadAllText(errFile.FullName) <> File.ReadAllText(baseLineFile.FullName) then
-                let expectedFile =
-                    if baseLineFilePreProcess.Exists then baseLineFilePreProcess
-                    else baseLineFile
+            try
+                if File.ReadAllText(errFile.FullName) <> File.ReadAllText(baseLineFile.FullName) then
+                    let expectedFile =
+                        if baseLineFilePreProcess.Exists then baseLineFilePreProcess
+                        else baseLineFile
 
-                printfn "%s not matching, replacing with %s" expectedFile.FullName errFile.FullName
-                errFile.CopyTo(expectedFile.FullName, true) |> ignore
+                    printfn "%s not matching, replacing with %s" expectedFile.FullName errFile.FullName
+                    errFile.CopyTo(expectedFile.FullName, true) |> ignore
+            with e -> printfn "error, proceeding...\n%A" e
