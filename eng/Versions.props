@@ -168,6 +168,7 @@
     <MicroBuildPluginsSwixBuildPackageVersion>1.0.147</MicroBuildPluginsSwixBuildPackageVersion>
     <!-- other packages -->
     <FsCheckPackageVersion>3.0.0-alpha4</FsCheckPackageVersion>
+    <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
     <MicrosoftNetCompilersPackageVersion>2.7.0</MicrosoftNetCompilersPackageVersion>
