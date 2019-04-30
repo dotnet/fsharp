@@ -76,6 +76,18 @@ let testNonBlocking() =
 
 let failtest str = raise (TestException str)
 
+let tmp() =
+    let mutable y = 0
+    task {
+        try
+            do! Task.Delay(0)
+            ()
+            do! Task.Delay(100)
+        with e -> 
+            ()
+        y <- 1
+        }
+
 let testCatching1() =
     let mutable x = 0
     let mutable y = 0

@@ -28,7 +28,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
     module CodeGenHelpers = 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __codeWithEntryPoints<'T> (_x:int) (_f: unit -> 'T)  : 'T = Unchecked.defaultof<_> 
+        let __jumptable<'T> (_x:int) (_code: 'T)  : 'T = Unchecked.defaultof<_> 
+        
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        let __stateMachine<'T> (x: 'T) : 'T = x
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __newLabel() : int = 0
@@ -43,7 +46,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         let __label (_n: int) : unit = Unchecked.defaultof<_> 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __return () : 'T = Unchecked.defaultof<_> 
+        let __return (_v: 'T) : 'U = Unchecked.defaultof<_> 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __entryPoint<'T> (_n: int) (_f: unit -> 'T) : 'T = Unchecked.defaultof<_> 
@@ -77,8 +80,10 @@ type TaskStep<'T>(completed: bool) =
 [<AbstractClass>]
 type TaskStateMachine() =
     member val ResumptionPoint : int = 0 with get, set
-    member val Completion : ICriticalNotifyCompletion = null with get, set
     member val Current : obj = null with get, set
+
+    /// Await the given awaiter and resume at the given entry point
+    abstract Await: awaiter : ICriticalNotifyCompletion * pc: int -> unit 
 
 [<AbstractClass>]
 type TaskStateMachine<'T>() =
@@ -87,8 +92,15 @@ type TaskStateMachine<'T>() =
     let mutable methodBuilder = AsyncTaskMethodBuilder<Task<'T>>()
     
     /// Proceed to the next state or raise an exception
-    // CODEGEN: this is a jumptable into the generated code
     abstract Step : pc: int -> TaskStep<'T>
+
+    override sm.Await(awaiter, pc) = 
+        sm.ResumptionPoint <- pc
+        let mutable sm = sm
+        let mutable awaiter = awaiter
+        assert (not (isNull awaiter))
+        // Tell the builder to call us again when done.
+        methodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 
     interface IAsyncStateMachine with
 
@@ -98,12 +110,6 @@ type TaskStateMachine<'T>() =
                 if step.IsCompleted then 
                     let res = unbox<'T>(this.Current)
                     methodBuilder.SetResult(Task.FromResult res)
-                else 
-                    let mutable this = this
-                    let mutable await = this.Completion
-                    assert (not (isNull await))
-                    // Tell the builder to call us again when done.
-                    methodBuilder .AwaitUnsafeOnCompleted(&await, &this)
             with exn ->
                 methodBuilder.SetException exn
 
@@ -166,8 +172,7 @@ module TaskHelpers =
                     __entryPoint<TaskStep<'TResult2>> CONT (fun () -> 
                         continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter)))
                 else
-                    sm.ResumptionPoint <- CONT
-                    sm.Completion <- awaiter
+                    sm.Await(awaiter, CONT)
                     TaskStep<'TResult2>(false)
 
         static member inline GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
@@ -190,9 +195,7 @@ module TaskHelpers =
                 continuation (awaiter.GetResult())
             )
         else
-            // Await and continue later when a result is available.
-            sm.ResumptionPoint <- CONT
-            sm.Completion <- awaiter
+            sm.Await(awaiter, CONT)
             TaskStep<'TResult2>(false)
 
     /// Special case of the above for `Task<'TResult1>`, for the context-insensitive builder.
@@ -206,50 +209,49 @@ module TaskHelpers =
                 continuation (awaiter.GetResult())
             )
         else
-            // Await and continue later when a result is available.
-            sm.ResumptionPoint <- CONT
-            sm.Completion <- awaiter
+            sm.Await(awaiter, CONT)
             TaskStep<'TResult2>(false)
 
-type TaskBuild<'T> = TaskStateMachine -> TaskStep<'T>
+type TaskSpec<'T> = TaskStateMachine -> TaskStep<'T>
 
 // New style task builder.
 type TaskBuilder() =
     // These methods are consistent between all builders.
-    member inline __.Delay(f : unit -> TaskBuild<'T>) = (fun sm -> f () sm)
+    member inline __.Delay(f : unit -> TaskSpec<'T>) = (fun sm -> f () sm)
 
-    member inline __.Run(code : TaskBuild<'T>) = 
+    member inline __.Run(code : TaskSpec<'T>) = 
         let sm = 
-            { new TaskStateMachine<'T>() with 
-                member sm.Step(pc) = __codeWithEntryPoints pc (fun () -> code sm) }
+            __stateMachine
+                { new TaskStateMachine<'T>() with 
+                    member sm.Step(pc) = __jumptable pc (code sm) }
         sm.Start()
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
-    member inline __.Zero() : TaskBuild<unit> = (fun sm -> 
+    member inline __.Zero() : TaskSpec<unit> = (fun sm -> 
         sm.Current <- (box ())
         TaskStep<unit>(true))
 
-    member inline __.Return (x: 'T) : TaskBuild<'T> = (fun sm -> 
+    member inline __.Return (x: 'T) : TaskSpec<'T> = (fun sm -> 
         sm.Current <- (box x)
         TaskStep<'T>(true))
 
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
-    member inline __.Combine(step : TaskBuild<unit>, continuation: unit -> TaskBuild<'T>) : TaskBuild<'T> = (fun sm -> 
-        let step = step sm
+    member inline __.Combine(task1: TaskSpec<unit>, task2: TaskSpec<'T>) : TaskSpec<'T> = (fun sm -> 
+        let step = task1 sm
         if step.IsCompleted then 
-            continuation () sm
+            task2 sm
         else 
             TaskStep<'T>(false))
 
     /// Builds a step that executes the body while the condition predicate is true.
-    member inline __.While(condition : unit -> bool, body : unit -> TaskBuild<unit>) : TaskBuild<unit> = (fun sm -> 
+    member inline __.While(condition : unit -> bool, body : TaskSpec<unit>) : TaskSpec<unit> = (fun sm -> 
         let ENTRY = __newLabel()
         __label ENTRY
         let guard = __code condition
         if guard then
-            let step = __code (fun () -> body () sm)
+            let step = __code (fun () -> body sm)
             if step.IsCompleted then 
                 __goto<TaskStep<unit>> ENTRY
             else
@@ -260,15 +262,15 @@ type TaskBuilder() =
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    member inline __.TryWith(body : unit -> TaskBuild<'T>, catch : exn -> TaskBuild<'T>) : TaskBuild<'T> = (fun sm -> 
+    member inline __.TryWith(body : TaskSpec<'T>, catch : exn -> TaskSpec<'T>) : TaskSpec<'T> = (fun sm -> 
         try
             let CODE = __newLabel()
             __label CODE
-            __code<TaskStep<'T>> (fun () -> body () sm)
+            __code<TaskStep<'T>> (fun () -> body sm)
         with exn -> 
             catch exn sm)
 
-    member inline __.TryFinally(body : unit -> TaskBuild<'T>, compensation : unit -> unit) = (fun sm -> 
+    member inline __.TryFinally(body : TaskSpec<'T>, compensation : unit -> unit) = (fun sm -> 
         /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
         /// to retrieve the step, and in the continuation of the step (if any).
         // codegen
@@ -276,7 +278,7 @@ type TaskBuilder() =
             try
                 let CODE = __newLabel()
                 __label CODE
-                __code<TaskStep<'T>> (fun () -> body () sm)
+                __code<TaskStep<'T>> (fun () -> body sm)
             with _ ->
                 compensation()
                 reraise()
@@ -285,27 +287,27 @@ type TaskBuilder() =
             compensation()
         step)
 
-    member inline this.Using(disp : #IDisposable, body : #IDisposable -> TaskBuild<'T>) = 
+    member inline this.Using(disp : #IDisposable, body : #IDisposable -> TaskSpec<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
-            (fun () -> body disp),
+            (body disp),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline this.For(sequence : seq<'T>, body : 'T -> TaskBuild<unit>) : TaskBuild<unit> =
+    member inline this.For(sequence : seq<'T>, body : 'T -> TaskSpec<unit>) : TaskSpec<unit> =
         // A for loop is just a using statement on the sequence's enumerator...
         this.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
-            (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> body e.Current))))
+            (fun e -> this.While((fun () -> e.MoveNext()), this.Delay (fun () -> body e.Current))))
 
-    member inline __.ReturnFrom (task: Task<'T>) : TaskBuild<'T> = (fun sm -> 
+    member inline __.ReturnFrom (task: Task<'T>) : TaskSpec<'T> = (fun sm -> 
         let CONT = __newEntryPoint ()
         if task.IsCompleted then
             __entryPoint CONT (fun () -> 
                 sm.Current <- (box task.Result)
                 TaskStep<'T>(true))
         else
+            sm.Await(task.GetAwaiter(), CONT)
             sm.ResumptionPoint <- CONT
-            sm.Completion <- task.GetAwaiter()
             TaskStep<'T>(false))
 
 
@@ -350,10 +352,10 @@ module ContextSensitiveTasks =
     type TaskBuilder with
         member inline builder.Bind< ^TaskLike, ^TResult1, 'TResult2 
                                            when (Witnesses or  ^TaskLike): (static member CanBind: TaskStateMachine * Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
-                    (task: ^TaskLike, continuation: ^TResult1 -> TaskBuild<'TResult2>) : TaskBuild<'TResult2>
+                    (task: ^TaskLike, continuation: ^TResult1 -> TaskSpec<'TResult2>) : TaskSpec<'TResult2>
                   = (fun sm -> RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> sm Unchecked.defaultof<Witnesses> task (fun x -> continuation x sm))
 
-        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: TaskStateMachine * Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskBuild<'T> 
+        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: TaskStateMachine * Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskSpec<'T> 
                   = (fun sm -> RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> sm Unchecked.defaultof<Witnesses> task)
 
 
@@ -412,7 +414,7 @@ module ContextInsensitiveTasks =
     type TaskBuilder with
         member inline builder.Bind< ^TaskLike, ^TResult1, 'TResult2 
                                            when (Witnesses or  ^TaskLike): (static member CanBind: TaskStateMachine * Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
-                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep<'TResult2>) : TaskBuild<'TResult2>
+                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep<'TResult2>) : TaskSpec<'TResult2>
                   = (fun sm -> RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> sm Unchecked.defaultof<Witnesses> task continuation)
 (*
         member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: TaskStateMachine * Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 

@@ -16,13 +16,15 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type IPriority1 = interface inherit IPriority2 end
 
     module CodeGenHelpers = 
-        val __codeWithEntryPoints<'T> : int -> (unit -> 'T) -> 'T
+        val __jumptable : int -> 'T -> 'T
+        val __stateMachine : 'T -> 'T
         val __newLabel: unit -> int
         val __newEntryPoint: unit -> int
         val __entryPoint: int -> (unit -> 'T) -> 'T
         val __code: (unit -> 'T) -> 'T
+        val __return : 'T -> 'U
+        val __label: int -> unit
         val __goto : int -> 'T
-        val __return : unit -> 'T
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
@@ -45,8 +47,8 @@ type TaskStep<'T> =
 type TaskStateMachine =
     new : unit -> TaskStateMachine
     member ResumptionPoint : int with get, set
-    member Completion : ICriticalNotifyCompletion with get, set
     member Current : obj with get, set
+    abstract Await: awaiter : ICriticalNotifyCompletion * pc: int -> unit 
     
 [<AbstractClass>]
 type TaskStateMachine<'T> =
@@ -54,22 +56,24 @@ type TaskStateMachine<'T> =
     new : unit -> TaskStateMachine<'T>
     abstract Step : pc: int -> TaskStep<'T> 
     interface IAsyncStateMachine
+    override Await: awaiter : ICriticalNotifyCompletion * pc: int  -> unit 
+    member Start: unit -> Task<'T>
 
-type TaskBuild<'T> = TaskStateMachine -> TaskStep<'T>
+type TaskSpec<'T> = TaskStateMachine -> TaskStep<'T>
 
 type TaskBuilder =
     new: unit -> TaskBuilder
-    member inline Combine: step: TaskBuild<unit> * continuation: (unit -> TaskBuild<'T>) -> TaskBuild<'T>
-    member inline Delay: f: (unit -> TaskBuild<'T>) -> TaskBuild<'T>
-    member inline For: sequence: seq<'T> * body: ('T -> TaskBuild<unit>) -> TaskBuild<unit>
-    member inline Return: x: 'T -> TaskBuild<'T>
-    member inline ReturnFrom: task: Task<'T> -> TaskBuild<'T>
-    member inline Run: code: TaskBuild<'T> -> Task<'T>
-    member inline TryFinally: body: (unit -> TaskBuild<'T>) * fin: (unit -> unit) -> TaskBuild<'T>
-    member inline TryWith: body: (unit -> TaskBuild<'T>) * catch: (exn -> TaskBuild<'T>) -> TaskBuild<'T>
-    member inline Using: disp: 'Resource * body: ('Resource -> TaskBuild<'T>) -> TaskBuild<'T> when 'Resource :> IDisposable
-    member inline While: condition: (unit -> bool) * body: (unit -> TaskBuild<unit>) -> TaskBuild<unit>
-    member inline Zero: unit -> TaskBuild<unit>
+    member inline Combine: task1: TaskSpec<unit> * task2: TaskSpec<'T> -> TaskSpec<'T>
+    member inline Delay: f: (unit -> TaskSpec<'T>) -> TaskSpec<'T>
+    member inline For: sequence: seq<'T> * body: ('T -> TaskSpec<unit>) -> TaskSpec<unit>
+    member inline Return: x: 'T -> TaskSpec<'T>
+    member inline ReturnFrom: task: Task<'T> -> TaskSpec<'T>
+    member inline Run: code: TaskSpec<'T> -> Task<'T>
+    member inline TryFinally: body: TaskSpec<'T> * fin: (unit -> unit) -> TaskSpec<'T>
+    member inline TryWith: body: TaskSpec<'T> * catch: (exn -> TaskSpec<'T>) -> TaskSpec<'T>
+    member inline Using: disp: 'Resource * body: ('Resource -> TaskSpec<'T>) -> TaskSpec<'T> when 'Resource :> IDisposable
+    member inline While: condition: (unit -> bool) * body: TaskSpec<unit> -> TaskSpec<unit>
+    member inline Zero: unit -> TaskSpec<unit>
 
 [<AutoOpen>]
 module ContextSensitiveTasks = 
@@ -111,11 +115,11 @@ module ContextSensitiveTasks =
 
     type TaskBuilder with
       /// Provides the ability to bind to a variety of tasks, using context-sensitive semantics
-      member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskBuild<'TResult2>) -> TaskBuild<'TResult2>
+      member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskSpec<'TResult2>) -> TaskSpec<'TResult2>
           when (Witnesses or  ^TaskLike): (static member CanBind: TaskStateMachine * Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)
 
       /// Provides the ability to return results from a variety of tasks, using context-sensitive semantics
-      member inline ReturnFrom: a: ^TaskLike -> TaskBuild< 'TResult >
+      member inline ReturnFrom: a: ^TaskLike -> TaskSpec< 'TResult >
           when (Witnesses or  ^TaskLike): (static member CanReturnFrom: TaskStateMachine * Witnesses * ^TaskLike -> TaskStep<'TResult>)
 
 module ContextInsensitiveTasks = 
@@ -178,7 +182,7 @@ module ContextInsensitiveTasks =
     type TaskBuilder with
 
       /// Provides the ability to bind to a variety of tasks, using context-sensitive semantics
-      member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskStep<'TResult2>) -> TaskBuild<'TResult2>
+      member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskStep<'TResult2>) -> TaskSpec<'TResult2>
           when (Witnesses or  ^TaskLike): (static member CanBind: sm: TaskStateMachine * Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)
 
 (*

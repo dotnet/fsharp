@@ -2151,6 +2151,11 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
       GenSequenceExpr cenv cgbuf eenv info sequel
   | None ->
 
+  match LowerCallsAndSeqs.LowerStateMachineExpr g expr with
+  | Some (objExpr, ty, basev, basecall, overrides, interfaceImpls, stateVars, m) ->
+      GenObjectExpr cenv cgbuf eenv objExpr (ty, basev, basecall, overrides, interfaceImpls, stateVars, m) sequel
+  | None ->
+
   match expr with
   | Expr.Const (c, m, ty) ->
       GenConstant cenv cgbuf eenv (c, m, ty) sequel
@@ -2301,7 +2306,7 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | Expr.Obj (_, ty, _, _, [meth], [], m) when isDelegateTy g ty ->
       GenDelegateExpr cenv cgbuf eenv expr (meth, m) sequel
   | Expr.Obj (_, ty, basev, basecall, overrides, interfaceImpls, m) ->
-      GenObjectExpr cenv cgbuf eenv expr (ty, basev, basecall, overrides, interfaceImpls, m) sequel
+      GenObjectExpr cenv cgbuf eenv expr (ty, basev, basecall, overrides, interfaceImpls, [], m) sequel
 
   | Expr.Quote (ast, conv, _, m, ty) -> GenQuotation cenv cgbuf eenv (ast, conv, m, ty) sequel
   | Expr.Link _ -> failwith "Unexpected reclink"
@@ -4038,8 +4043,16 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
-and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, overrides, interfaceImpls, m) sequel =
+and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, overrides, interfaceImpls, stateVars: ValRef list, m) sequel =
     let g = cenv.g
+
+    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
+    let eenvouter = eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
+    
+    // Find the free variables of the closure, to make them fields of the object.
+    //
+    // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
+    // free variables of the expression.
     let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m false None eenvouter expr
 
     let cloAttribs = cloinfo.cloAttribs
@@ -4084,7 +4097,13 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, ove
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
     CountClosure()
-    GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
+    for fv in cloFreeVars do
+       /// State variables always get zero-initialized
+       if stateVarsSet.Contains fv then
+           GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
+       else
+           GenGetLocalVal cenv cgbuf eenvouter m fv None
+   
     CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [ EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
 
