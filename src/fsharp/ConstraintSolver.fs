@@ -2536,12 +2536,14 @@ and ResolveOverloading
                 | Some (fromTy, toTy) -> 
                     UnresolvedConversionOperator (denv, fromTy, toTy, m)
                 | None -> 
-                    let msg = 
-                        let formatOptions = FormatOptions.Default
-                        let getArgType =
-                            function | (Some argName), typeLayout -> sprintf "(%s) : %s" argName (Display.layout_to_string formatOptions typeLayout)
-                                     | _, typeLayout -> (Display.layout_to_string formatOptions typeLayout)
-
+                    // Otherwise collect a list of possible overloads
+                    let nl = System.Environment.NewLine
+                    let msg =
+                        let displayArgType (name , ttype) =
+                            let typeDisplay = NicePrint.prettyStringOfTy denv ttype
+                            match name with
+                            | Some name -> sprintf "(%s) : %s" name typeDisplay
+                            | None -> sprintf "%s" typeDisplay
                         let nl = System.Environment.NewLine
                         let argsMessage =
                             match callerArgs.LayoutArgumentTypes denv with
@@ -2619,7 +2621,7 @@ and ResolveOverloading
                                              reqdRetTyOpt 
                                              calledMeth) with 
                             | OkResult _ -> None
-                            | ErrorResult(_exns, exn) -> Some {methodSlot = calledMeth; amap = amap; error = exn })
+                            | ErrorResult(_, exn) -> Some {methodSlot = calledMeth; amap = amap; error = exn })
 
                 None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors))), NoTrace
 
@@ -2793,8 +2795,6 @@ and ResolveOverloading
                 match bestMethods with 
                 | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
-                    
-                    //let methodNames =
                     let methods = 
                         let getMethodSlotsAndErrors =
                           function | methodSlot, []      -> List.singleton {methodSlot = methodSlot; error = Unchecked.defaultof<exn>; amap = amap}
@@ -2812,11 +2812,8 @@ and ResolveOverloading
                             | m -> m |> List.map (fun (methodSlot, errors, _) -> getMethodSlotsAndErrors (methodSlot,errors))
                         | m -> m |> List.map (fun (methodSlot, errors, _) -> getMethodSlotsAndErrors (methodSlot,errors))
 
-
                     let methods = List.concat methods
-                    //|> List.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
-                    //|> List.sort
-                    
+
                     None, ErrorD (failOverloading (PossibleCandidates(methodName, methods))), NoTrace
 
     // If we've got a candidate solution: make the final checks - no undo here! 
