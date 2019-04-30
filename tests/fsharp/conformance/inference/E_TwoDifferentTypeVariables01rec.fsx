@@ -61,8 +61,3 @@ module M1Rec =
     let rec gB24    (x:'a) (y:'b) = C24.M(x,y) = Four    // expect: ambiguity error 
     let rec gC13    (x:'a) (y:'b) = C13.M<'a>(x,y)           // expect: ambiguity error (and note: both would instantiate 'a or 'b)
     let rec gD13    (x:'a) (y:'b) = C13.M<_>(x,y)            // expect: ambiguity error (and note: both would instantiate 'a or 'b)
-
-//<Expects status="error" span="(60,37-60,47)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>
-//<Expects status="error" span="(61,37-61,47)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C24\.M : x:'a \* y:'b -> Two, static member C24\.M : x:'a \* y:C -> Four$</Expects>
-//<Expects status="error" span="(62,37-62,51)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>
-//<Expects status="error" span="(63,37-63,50)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>

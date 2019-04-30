@@ -2,10 +2,6 @@
 // Regression test for FSHARP1.0:4758
 // Type Inference
 // Check Method Disambiguation When User Generic Variable Get Instantiated By Overload Resolution
-//<Expects status="error" span="(65,33-65,43)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>
-//<Expects status="error" span="(66,33-66,43)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C24\.M : x:'a \* y:'b -> Two, static member C24\.M : x:'a \* y:C -> Four$</Expects>
-//<Expects status="error" span="(67,33-67,47)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>
-//<Expects status="error" span="(68,33-68,46)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>
 
 // These different return types are used to determine which overload got chosen
 type One = | One

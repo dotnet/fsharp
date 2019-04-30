@@ -60,6 +60,3 @@ module M3 =
     let gB23    (x:'a) (y:int) = C23.M(x,y)           // expect: ambiguity error
     let gB123   (x:'a) (y:int) = C123.M(x,y)          // expect: ambiguous on 2,3
 
-//<Expects status="error" span="(60,34-60,44)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C23\.M : x:'a \* y:'b -> Two, static member C23\.M : x:'a \* y:int -> Three$</Expects>
-//<Expects status="error" span="(61,34-61,45)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C123\.M : x:'a \* y:'a -> One, static member C123\.M : x:'a \* y:'b -> Two, static member C123\.M : x:'a \* y:int -> Three$</Expects>
-

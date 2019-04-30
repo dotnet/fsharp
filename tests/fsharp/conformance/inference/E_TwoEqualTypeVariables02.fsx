@@ -64,11 +64,3 @@ module M2 =
     let gB123   (x:'a) (y:'a) = C123.M(x,y)          // expect: ambiguity error
     let gB1234  (x:'a) (y:'a) = C1234.M(x,y)         // expect: ambiguity error
     let gD14    (x:'a) (y:'a) = C14.M<_>(x,y) = One      // expect: ambiguity error
-
-//<Expects status="error" span="(61,33-61,43)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C12\.M : x:'a \* y:'a -> One, static member C12\.M : x:'a \* y:'b -> Two$</Expects>
-//<Expects status="error" span="(62,33-62,43)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C14\.M : x:'a \* y:'a -> One, static member C14\.M : x:'a \* y:C -> Four$</Expects>
-//<Expects status="error" span="(63,33-63,43)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C24\.M : x:'a \* y:'b -> Two, static member C24\.M : x:'a \* y:C -> Four$</Expects>
-//<Expects status="error" span="(64,33-64,44)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C123\.M : x:'a \* y:'a -> One, static member C123\.M : x:'a \* y:'b -> Two, static member C123\.M : x:'a \* y:int -> Three$</Expects>
-//<Expects status="error" span="(65,33-65,45)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C1234\.M : x:'a \* y:'a -> One, static member C1234\.M : x:'a \* y:'b -> Two, static member C1234\.M : x:'a \* y:C -> Four, static member C1234\.M : x:'a \* y:int -> Three$</Expects>
-//<Expects status="error" span="(66,33-66,46)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C14\.M : x:'a \* y:'a -> One, static member C14\.M : x:'a \* y:C -> Four$</Expects>
-
