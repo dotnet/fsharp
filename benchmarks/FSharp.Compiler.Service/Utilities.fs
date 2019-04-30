@@ -84,3 +84,27 @@ type AsyncLazy<'T> (computation: Async<'T>) =
                    computation <- Unchecked.defaultof<Async<'T>> // null out function since we have result, so we don't strongly hold onto more stuff
                    return result               
        }
+
+[<Sealed>]
+type AsyncLazyWeak<'T> (computation: Async<'T>) =
+
+   let gate = NonReentrantLock ()
+   let mutable cachedResult = WeakReference<_> None
+
+   member __.GetValueAsync () =
+       async {
+           match cachedResult.TryGetTarget () with
+           | true, Some result -> return result
+           | _ ->
+               let! cancellationToken = Async.CancellationToken
+               //use _semaphoreDisposer = gate.Wait cancellationToken
+
+               cancellationToken.ThrowIfCancellationRequested ()
+
+               match cachedResult.TryGetTarget () with
+               | true, Some result -> return result
+               | _ ->
+                   let! result = computation
+                   cachedResult <- WeakReference<_> (Some result)
+                   return result               
+       }

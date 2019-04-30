@@ -18,12 +18,13 @@
   <ItemGroup>
     <Compile Include="Utilities.fs" />
     <Compile Include="Abbreviations.fs" />
+    <Compile Include="Extensions.fs" />
     <Compile Include="FrameworkImportsCache.fsi" />
     <Compile Include="FrameworkImportsCache.fs" />
     <Compile Include="Parser.fsi" />
     <Compile Include="Parser.fs" />
-    <Compile Include="Source.fsi" />
-    <Compile Include="Source.fs" />
+    <Compile Include="SyntaxTree.fsi" />
+    <Compile Include="SyntaxTree.fs" />
     <Compile Include="VersionStamp.fsi" />
     <Compile Include="VersionStamp.fs" />
     <Compile Include="IncrementalChecker.fsi" />

@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.CompileOps
 
 open System
+open System.IO
 open System.Text
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL
@@ -693,6 +694,9 @@ val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * string list * str
 
 /// Parse one input source text
 val ParseOneInputSourceText: TcConfig * Lexhelp.LexResourceManager * string list * string * ISourceText * isLastCompiland: (bool * bool) * ErrorLogger -> ParsedInput option
+
+/// Parse one input stream
+val ParseOneInputStream: TcConfig * Lexhelp.LexResourceManager * string list * string * Stream * isLastCompiland: (bool * bool) * ErrorLogger -> ParsedInput option
 
 //----------------------------------------------------------------------------
 // Type checking and querying the type checking state

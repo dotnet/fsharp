@@ -77,7 +77,7 @@ type [<NoEquality;NoComparison>] CompilationInfo =
     }
 
 [<Sealed>]
-type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongSize) =
+type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongSize, workspace: Microsoft.CodeAnalysis.Workspace) =
     let ctok = CompilationThreadToken ()
     let gate = NonReentrantLock ()
 
@@ -94,7 +94,8 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
         }
 
     // Caches
-    let frameworkTcImportsCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize   
+    let frameworkTcImportsCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize
+    let temporaryStorageService = workspace.Services.TemporaryStorage
 
     member this.TryCreateCompilationAsync info =
         cancellable {
@@ -214,6 +215,7 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
               let initialInfo =
                 {
                     ctok = ctok
+                    temporaryStorageService = temporaryStorageService
                     tcConfig = tcConfig
                     tcConfigP = TcConfigProvider.Constant tcConfig
                     tcGlobals = tcGlobals
@@ -235,12 +237,13 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
                                     lexResourceManager = lexResourceManager
                                 }
                         }
+                    sources = info.Sources
                 }
 
               let! checker = IncrementalChecker.Create initialInfo
               return
                 Some {
-                    checker = checker.AddSources info.Sources
+                    checker = checker
                     options = info.Options
                 }
             with e -> 

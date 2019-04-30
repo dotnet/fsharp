@@ -3458,6 +3458,16 @@ let ParseOneInputSourceText (tcConfig: TcConfig, lexResourceManager, conditional
     try 
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf sourceText
         ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
+    with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None
+    
+let ParseOneInputStream (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, stream: Stream, isLastCompiland, errorLogger) =
+    try 
+        let streamReader = new StreamReader(stream) // don't dispose of stream reader
+        let lexbuf = 
+            UnicodeLexing.FunctionAsLexbuf (fun (chars, start, length) ->
+                streamReader.ReadBlock (chars, start, length)
+            )
+        ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None   
 
 [<Sealed>] 

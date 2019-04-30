@@ -1,6 +1,7 @@
 ﻿open System
 open System.IO
 open System.Text
+open System.Collections.Immutable
 open FSharp.Compiler
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
@@ -317,17 +318,8 @@ type CompilerService() =
     //        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     //        ClearAllILModuleReaderCache()
 
-    let service = FSharp.Compiler.Service.CompilerService (3, 8)
-
-    //let sources =
-    //    async {
-    //        let sources = ResizeArray ()
-    //        for file in Directory.EnumerateFiles("""C:\visualfsharp\src\fsharp""") do
-    //            if String.Equals (Path.GetExtension file, ".fs", StringComparison.OrdinalIgnoreCase) || String.Equals (Path.GetExtension file, ".fsi", StringComparison.OrdinalIgnoreCase) then
-    //                let! source = compilationManager.AddSourceAsync file
-    //                sources.Add source
-    //        return sources
-    //    } |> Async.RunSynchronously
+    let workspace = new Microsoft.CodeAnalysis.AdhocWorkspace ()
+    let service = FSharp.Compiler.Service.CompilerService (3, 8, workspace)
 
     //let compilationOptions = CompilationOptions.Create ("""C:\visualfsharp\src\fsharp\test.dll""", [], """C:\visualfsharp\src\fsharp""", false)
     //let compilationInfo = { Options = compilationOptions; ParseResults = []; CompilationReferences = [] }
@@ -335,23 +327,19 @@ type CompilerService() =
 
     [<Benchmark>]
     member __.Compilation() =
-        let tmpFilePath = Path.GetTempFileName ()
-        
-
-        try
-            File.WriteAllText (tmpFilePath, """
-module Test
-
-let x = 1
-"""
-            )
-
-            let compilationOptions = CompilationOptions.Create ("""C:\visualfsharp\src\fsharp\test.dll""", [], """C:\visualfsharp\src\fsharp""", false)
-            let compilationInfo = { Options = compilationOptions; FilePaths = [tmpFilePath]; CompilationReferences = [] }
-            let _compilation = service.TryCreateCompilationAsync compilationInfo |> Async.RunSynchronously
-            ()
-        finally
-            try File.Delete tmpFilePath with | _ -> ()
+        let sources =
+            async {
+                let sources = ResizeArray ()
+                for file in Directory.EnumerateFiles("""C:\visualfsharp\src\fsharp""") do
+                    if String.Equals (Path.GetExtension file, ".fs", StringComparison.OrdinalIgnoreCase) || String.Equals (Path.GetExtension file, ".fsi", StringComparison.OrdinalIgnoreCase) then
+                        sources.Add { FilePath = file; SourceTextOption = None } //Some (SourceText.From file) }
+                return sources
+            } |> Async.RunSynchronously
+            |> ImmutableArray.CreateRange
+        let compilationOptions = CompilationOptions.Create ("""C:\visualfsharp\src\fsharp\test.dll""", [], """C:\visualfsharp\src\fsharp""", false)
+        let compilationInfo = { Options = compilationOptions; Sources = sources; CompilationReferences = ImmutableArray.Empty }
+        let _compilation = service.TryCreateCompilationAsync compilationInfo |> Async.RunSynchronously
+        ()
         //let parsedFiles = 
         //    let sourceIds =
         //        sources

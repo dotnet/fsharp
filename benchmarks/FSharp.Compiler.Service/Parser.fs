@@ -1,8 +1,15 @@
 ﻿namespace FSharp.Compiler.Service
 
+open System.IO
+open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler
 open FSharp.Compiler.Text
 open FSharp.Compiler.CompileOps
+
+[<RequireQualifiedAccess>]
+type SourceValue =
+    | SourceText of SourceText
+    | Stream of Stream
 
 type ParsingInfo =
     {
@@ -10,14 +17,8 @@ type ParsingInfo =
         isLastFileOrScript: bool
         isExecutable: bool
         conditionalCompilationDefines: string list
-        sourceText: ISourceText
+        sourceValue: SourceValue
         filePath: string
-    }
-
-type internal SyntaxTree =
-    {
-        filePath: string
-        parseResult: ParseResult
     }
 
 [<RequireQualifiedAccess>]
@@ -27,8 +28,12 @@ module Parser =
         let tcConfig = info.tcConfig
         let filePath = info.filePath
         let errorLogger = CompilationErrorLogger("ParseFile", tcConfig.errorSeverityOptions)
-        let input = ParseOneInputSourceText (info.tcConfig, Lexhelp.LexResourceManager (), info.conditionalCompilationDefines, filePath, info.sourceText, (info.isLastFileOrScript, info.isExecutable), errorLogger)
-        {
-            filePath = filePath
-            parseResult = (input, errorLogger.GetErrors ())
-        }
+
+        let input =
+            match info.sourceValue with
+            | SourceValue.SourceText sourceText ->
+                ParseOneInputSourceText (info.tcConfig, Lexhelp.LexResourceManager (), info.conditionalCompilationDefines, filePath, sourceText.ToFSharpSourceText (), (info.isLastFileOrScript, info.isExecutable), errorLogger)
+            | SourceValue.Stream stream ->
+                //ParseOneInputStream (info.tcConfig, Lexhelp.LexResourceManager (), info.conditionalCompilationDefines, filePath, stream, (info.isLastFileOrScript, info.isExecutable), errorLogger)
+                None
+        (input, errorLogger.GetErrors ())

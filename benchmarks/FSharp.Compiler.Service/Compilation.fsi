@@ -54,6 +54,6 @@ type CompilationInfo =
 [<Sealed>]
 type CompilerService =
 
-    new: compilationCacheSize: int * keepStrongly: int -> CompilerService
+    new: compilationCacheSize: int * keepStrongly: int * Microsoft.CodeAnalysis.Workspace -> CompilerService
 
     member TryCreateCompilationAsync: CompilationInfo -> Async<Compilation option>

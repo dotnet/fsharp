@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Service
 
+open System.Threading
 open System.Collections.Immutable
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -28,13 +29,12 @@ type internal IncrementalChecker =
 
     member Version: VersionStamp
 
-    member AddSources: sources: ImmutableArray<Source> -> IncrementalChecker
-
     member ReplaceSource: source: Source -> IncrementalChecker
 
 type internal InitialInfo =
     {
         ctok: CompilationThreadToken
+        temporaryStorageService: Microsoft.CodeAnalysis.Host.ITemporaryStorageService
         tcConfig: TcConfig
         tcConfigP: TcConfigProvider
         tcGlobals: TcGlobals
@@ -47,6 +47,7 @@ type internal InitialInfo =
         loadClosureOpt: LoadClosure option
         projectDirectory: string
         checkerOptions: IncrementalCheckerOptions
+        sources: ImmutableArray<Source>
     }
 
 module internal IncrementalChecker =

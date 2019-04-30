@@ -1,8 +1,15 @@
 ﻿namespace FSharp.Compiler.Service
 
+open System.IO
+open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler
 open FSharp.Compiler.Text
 open FSharp.Compiler.CompileOps
+
+[<RequireQualifiedAccess>]
+type internal SourceValue =
+    | SourceText of SourceText
+    | Stream of Stream
 
 type internal ParsingInfo =
     {
@@ -10,17 +17,11 @@ type internal ParsingInfo =
         isLastFileOrScript: bool
         isExecutable: bool
         conditionalCompilationDefines: string list
-        sourceText: ISourceText
+        sourceValue: SourceValue
         filePath: string
-    }
-
-type internal SyntaxTree =
-    {
-        filePath: string
-        parseResult: ParseResult
     }
 
 [<RequireQualifiedAccess>]
 module internal Parser =
 
-    val Parse: ParsingInfo -> SyntaxTree
+    val Parse: ParsingInfo -> ParseResult
