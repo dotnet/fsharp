@@ -34,6 +34,5 @@ module Parser =
             | SourceValue.SourceText sourceText ->
                 ParseOneInputSourceText (info.tcConfig, Lexhelp.LexResourceManager (), info.conditionalCompilationDefines, filePath, sourceText.ToFSharpSourceText (), (info.isLastFileOrScript, info.isExecutable), errorLogger)
             | SourceValue.Stream stream ->
-                //ParseOneInputStream (info.tcConfig, Lexhelp.LexResourceManager (), info.conditionalCompilationDefines, filePath, stream, (info.isLastFileOrScript, info.isExecutable), errorLogger)
-                None
+                ParseOneInputStream (info.tcConfig, Lexhelp.LexResourceManager (), info.conditionalCompilationDefines, filePath, stream, (info.isLastFileOrScript, info.isExecutable), errorLogger)
         (input, errorLogger.GetErrors ())

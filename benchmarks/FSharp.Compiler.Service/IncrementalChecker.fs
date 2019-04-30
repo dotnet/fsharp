@@ -135,17 +135,23 @@ type IncrementalCheckerState =
         let indexLookup = Array.zeroCreate orderedSources.Length
 
         orderedResultsBuilder.Count <- orderedSources.Length
-                
-        Parallel.For (0, orderedSources.Length, fun i ->
+
+        let syntaxTrees = ResizeArray orderedSources.Length
+        for i = 0 to orderedSources.Length - 1 do
             let source = orderedSources.[i]
             let isLastFile = (orderedSources.Length - 1) = i
-            let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (temporaryStorageService, tcConfig, parsingOptions, isLastFile, source, cancellationToken) |> Async.RunSynchronously
+            IncrementalCheckerState.CreateSyntaxTree (temporaryStorageService, tcConfig, parsingOptions, isLastFile, source, cancellationToken) |> Async.RunSynchronously
+            |> syntaxTrees.Add
+
+        //Parallel.For(0, orderedSources.Length, fun i ->
+        orderedSources |> Seq.iteri (fun i _ ->
+            let syntaxTree = syntaxTrees.[i]
             let parseResult = Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
             let compilationResult = CompilationResult.Parsed (syntaxTree, parseResult)
-                
+            printfn "%A" parseResult
             orderedResultsBuilder.[i] <- ref compilationResult
             indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
-        ) |> ignore
+        )
 
         {
             temporaryStorageService = temporaryStorageService

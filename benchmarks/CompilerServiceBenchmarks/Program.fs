@@ -332,7 +332,7 @@ type CompilerService() =
                 let sources = ResizeArray ()
                 for file in Directory.EnumerateFiles("""C:\visualfsharp\src\fsharp""") do
                     if String.Equals (Path.GetExtension file, ".fs", StringComparison.OrdinalIgnoreCase) || String.Equals (Path.GetExtension file, ".fsi", StringComparison.OrdinalIgnoreCase) then
-                        sources.Add { FilePath = file; SourceTextOption = None } //Some (SourceText.From file) }
+                        sources.Add { FilePath = file; SourceTextOption = Some (SourceText.From file) }
                 return sources
             } |> Async.RunSynchronously
             |> ImmutableArray.CreateRange
