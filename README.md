@@ -1,6 +1,6 @@
 # The F# compiler, F# core library, and F# editor tools
 
-You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done anywhere [.NET Core](https://dotnet.microsoft.com/) is supported: Windows, macOS, and a variety of Linux distributions.
+You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET Core](https://dotnet.microsoft.com/).
 
 ## Contributing
 
@@ -91,7 +91,7 @@ This project is subject to the MIT License. A copy of this license is in [Licens
 
 ## Code of Conduct
 
-This project has adopts the [Contributor Covenant](http://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
+This project has adopted the [Contributor Covenant](http://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
 
 ## Get In Touch
 
