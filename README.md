@@ -28,6 +28,10 @@ After it's finished, open `FSharp.sln` in your editor of choice.
 
 See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) for more details on additional configurations for building and testing, how to update compiler error messages, and more.
 
+### No contribution is too small
+
+Even if you find a single-character typo, we're happy to take the change! Although the codebase can feel daunting for beginners, we and other contributors are happy to help you along.
+
 ## Build Status
 
 | Branch | Status |
