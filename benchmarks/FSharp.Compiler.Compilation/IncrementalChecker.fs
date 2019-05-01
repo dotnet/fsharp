@@ -171,11 +171,11 @@ type IncrementalCheckerState =
         | CompilationResult.Parsed (_, parseResult) -> parseResult
         | CompilationResult.Checked (syntaxTree, _) -> Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
 
-    //member this.ReplaceSource (source: Source) =
-    //    match this.resultCache.TryGetValue source.FilePath with
+    //member this.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
+    //    match this.indexLookup.TryGetValue sourceSnapshot.FilePath with
     //    | false, _ -> failwith "syntax tree does not exist in incremental checker"
-    //    | true, (_i, _) ->
-
+    //    | true, (i) ->
+    //        let orderedResultsBuilder = ImmutableArray.Crea
     //        let mutable resultCache = this.resultCache//this.resultCache.SetItem(source.FilePath, (i, ref (CompilationResult.Parsed source)))
 
     //        //for i = i + 1 to this.orderedFilePaths.Length - 1 do

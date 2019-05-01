@@ -360,26 +360,21 @@ module TestModule%i =
 
     [<Benchmark>]
     member __.Test() =
-     //   for i = 0 to 3 do
-       let parallelOptions = ParallelOptions()
-       parallelOptions.MaxDegreeOfParallelism <- 4
-       Parallel.For(0, 500, parallelOptions, fun i ->
-            let sourceSnapshots =
-                sources
-                |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
-                |> ImmutableArray.CreateRange
-            let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
-            let compilationInfo =
-                {
-                    Options = compilationOptions
-                    SourceSnapshots = sourceSnapshots
-                    CompilationReferences = ImmutableArray.Empty
-                }
+        let sourceSnapshots =
+            sources
+            |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
+            |> ImmutableArray.CreateRange
+        let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
+        let compilationInfo =
+            {
+                Options = compilationOptions
+                SourceSnapshots = sourceSnapshots
+                CompilationReferences = ImmutableArray.Empty
+            }
 
-            let compilation = compilationService.CreateCompilation compilationInfo
-            compilation.Check ("test1.fs", CancellationToken.None)
-            ()
-        ) |> ignore
+        let compilation = compilationService.CreateCompilation compilationInfo
+        compilation.Check ("test1.fs", CancellationToken.None)
+        ()
         
 
 [<EntryPoint>]

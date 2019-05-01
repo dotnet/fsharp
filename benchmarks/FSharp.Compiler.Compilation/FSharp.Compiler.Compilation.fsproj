@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Compiler.Compilation.Tests" />
+    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
   </ItemGroup>
 
   <ItemGroup>

@@ -70,53 +70,73 @@ and [<Struct>] private SemaphoreDisposer (semaphore: NonReentrantLock) =
 
        member __.Dispose () = semaphore.Release ()
 
+type private AsyncLazyWeakMessage<'T> =
+    | GetValue of AsyncReplyChannel<Result<'T, Exception>>
+
 [<Sealed>]
-type AsyncLazy<'T> (computation: Async<'T>) =
+type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
 
-   let mutable computation = computation
+    let gate = NonReentrantLock ()
+    let mutable requestCount = 0
+    let mutable cachedResult: WeakReference<'T> voption = ValueNone
 
-   let gate = NonReentrantLock ()
-   let mutable cachedResult = ValueNone
+    let tryGetResult () =
+        match cachedResult with
+        | ValueSome weak ->
+            match weak.TryGetTarget () with
+            | true, result -> ValueSome result
+            | _ -> ValueNone
+        | _ -> ValueNone
 
-   member __.GetValueAsync () =
+    let loop (agent: MailboxProcessor<AsyncLazyWeakMessage<'T>>) =
+        async {
+            while true do
+                match! agent.Receive() with
+                | GetValue replyChannel ->
+                    try
+                        match tryGetResult () with
+                        | ValueSome result ->
+                            replyChannel.Reply (Ok result)
+                        | _ ->
+                            let! result = computation
+                            cachedResult <- ValueSome (WeakReference<_> result)
+                            replyChannel.Reply (Ok result) 
+                    with 
+                    | ex ->
+                        replyChannel.Reply (Error ex)
+        }
+
+    let mutable agentInstance: (MailboxProcessor<AsyncLazyWeakMessage<'T>> * CancellationTokenSource) option = None
+
+    member __.GetValueAsync () =
        async {
-           match cachedResult with
+           match tryGetResult () with
            | ValueSome result -> return result
            | _ ->
                let! cancellationToken = Async.CancellationToken
+               let agent, cts =
+                    use _semaphoreDisposer = gate.Wait cancellationToken
+                    requestCount <- requestCount + 1
+                    match agentInstance with
+                    | Some agentInstance -> agentInstance
+                    | _ ->
+                        let cts = new CancellationTokenSource ()
+                        let agent = new MailboxProcessor<AsyncLazyWeakMessage<'T>>((fun x -> loop x), cancellationToken = cts.Token)
+                        let newAgentInstance = (agent, cts)
+                        agentInstance <- Some newAgentInstance
+                        agent.Start ()
+                        newAgentInstance
+                        
+               let! result = agent.PostAndAsyncReply (fun replyChannel -> GetValue replyChannel)
+
                use _semaphoreDisposer = gate.Wait cancellationToken
-
-               cancellationToken.ThrowIfCancellationRequested ()
-
-               match cachedResult with
-               | ValueSome result -> return result
-               | _ ->
-                   let! result = computation
-                   cachedResult <- ValueSome result
-                   computation <- Unchecked.defaultof<Async<'T>> // null out function since we have result, so we don't strongly hold onto more stuff
-                   return result               
-       }
-
-[<Sealed>]
-type AsyncLazyWeak<'T> (computation: Async<'T>) =
-
-   let gate = NonReentrantLock ()
-   let mutable cachedResult = WeakReference<_> None
-
-   member __.GetValueAsync () =
-       async {
-           match cachedResult.TryGetTarget () with
-           | true, Some result -> return result
-           | _ ->
-               let! cancellationToken = Async.CancellationToken
-               //use _semaphoreDisposer = gate.Wait cancellationToken
-
-               cancellationToken.ThrowIfCancellationRequested ()
-
-               match cachedResult.TryGetTarget () with
-               | true, Some result -> return result
-               | _ ->
-                   let! result = computation
-                   cachedResult <- WeakReference<_> (Some result)
-                   return result               
+               requestCount <- requestCount - 1
+               if requestCount = 0 then
+                    cts.Cancel ()
+                    (agent :> IDisposable).Dispose ()
+                    cts.Dispose ()
+                    agentInstance <- None
+               match result with
+               | Ok result -> return result
+               | Error ex -> return raise ex
        }
