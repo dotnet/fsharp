@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Service
+﻿namespace FSharp.Compiler.Compilation
 
 open System
 open System.IO
@@ -21,7 +21,7 @@ open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
-open FSharp.Compiler.Service.Utilities
+open FSharp.Compiler.Compilation.Utilities
 
 /// Accumulated results of type checking.
 [<NoEquality; NoComparison>]
@@ -73,7 +73,6 @@ type ParsingOptions =
 
 type IncrementalCheckerState =
     {
-        temporaryStorageService: Microsoft.CodeAnalysis.Host.ITemporaryStorageService
         tcConfig: TcConfig
         parsingOptions: ParsingOptions
         orderedResults: ImmutableArray<CompilationResult ref>
@@ -81,85 +80,75 @@ type IncrementalCheckerState =
         version: VersionStamp
     }
 
-    static member CreateSyntaxTree (temporaryStorageService: Microsoft.CodeAnalysis.Host.ITemporaryStorageService, tcConfig, parsingOptions, isLastFileOrScript, source, cancellationToken) =
-        async {
-            let filePath = source.FilePath
-            match source.SourceTextOption with
-            | Some sourceText ->
-                let storage = temporaryStorageService.CreateTemporaryTextStorage ()
-                do! storage.WriteTextAsync (sourceText, cancellationToken) |> Async.AwaitTask
-                return {
-                    filePath = filePath
-                    asyncLazyWeakGetParseResult =
-                        AsyncLazyWeak (async {
-                            let! cancellationToken = Async.CancellationToken
-                            let! sourceText = storage.ReadTextAsync cancellationToken |> Async.AwaitTask
-                            let parsingInfo =
-                                {
-                                    tcConfig = tcConfig
-                                    isLastFileOrScript = isLastFileOrScript
-                                    isExecutable = parsingOptions.isExecutable
-                                    conditionalCompilationDefines = []
-                                    sourceValue = SourceValue.SourceText sourceText
-                                    filePath = source.FilePath
-                                }
-                            return Parser.Parse parsingInfo
-                        })
-                }
-            | _ ->
-                let storage = temporaryStorageService.CreateTemporaryStreamStorage cancellationToken
-                use stream = FileSystem.FileStreamReadShim filePath
-                do! storage.WriteStreamAsync (stream, cancellationToken) |> Async.AwaitTask
-                return {
-                    filePath = filePath
-                    asyncLazyWeakGetParseResult =
-                        AsyncLazyWeak (async {
-                            let! cancellationToken = Async.CancellationToken
-                            use! stream = storage.ReadStreamAsync cancellationToken |> Async.AwaitTask
-                            let parsingInfo =
-                                {
-                                    tcConfig = tcConfig
-                                    isLastFileOrScript = isLastFileOrScript
-                                    isExecutable = parsingOptions.isExecutable
-                                    conditionalCompilationDefines = []
-                                    sourceValue = SourceValue.Stream stream
-                                    filePath = source.FilePath
-                                }
-                            return Parser.Parse parsingInfo
-                        })
-                }
+    /// Create a syntax tree.
+    static member CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, sourceSnapshot: SourceSnapshot) =
+        let filePath = sourceSnapshot.FilePath
+
+        let parsingInfo =
+            {
+                tcConfig = tcConfig
+                isLastFileOrScript = isLastFileOrScript
+                isExecutable = parsingOptions.isExecutable
+                conditionalCompilationDefines = []
+                filePath = filePath
             }
 
-    static member Create (temporaryStorageService, tcConfig, parsingOptions, orderedSources: ImmutableArray<Source>, cancellationToken) =
-        let orderedResultsBuilder = ImmutableArray.CreateBuilder orderedSources.Length
-        let indexLookup = Array.zeroCreate orderedSources.Length
+        let asyncLazyWeakGetParseResult =
+            AsyncLazyWeak (async {
+                use! sourceValue = sourceSnapshot.GetSourceValueAsync ()
+                return Parser.Parse parsingInfo sourceValue
+            })
 
-        orderedResultsBuilder.Count <- orderedSources.Length
+        SyntaxTree (filePath, parsingInfo, asyncLazyWeakGetParseResult)
 
-        let syntaxTrees = ResizeArray orderedSources.Length
-        for i = 0 to orderedSources.Length - 1 do
-            let source = orderedSources.[i]
-            let isLastFile = (orderedSources.Length - 1) = i
-            IncrementalCheckerState.CreateSyntaxTree (temporaryStorageService, tcConfig, parsingOptions, isLastFile, source, cancellationToken) |> Async.RunSynchronously
-            |> syntaxTrees.Add
+    static member Create (tcConfig, parsingOptions, orderedSourceSnapshots: ImmutableArray<SourceSnapshot>) =
+        cancellable {
+            let! cancellationToken = Cancellable.token ()
+            let length = orderedSourceSnapshots.Length
 
-        //Parallel.For(0, orderedSources.Length, fun i ->
-        orderedSources |> Seq.iteri (fun i _ ->
-            let syntaxTree = syntaxTrees.[i]
-            let parseResult = Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
-            let compilationResult = CompilationResult.Parsed (syntaxTree, parseResult)
-            printfn "%A" parseResult
-            orderedResultsBuilder.[i] <- ref compilationResult
-            indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
-        )
+            let orderedResultsBuilder = ImmutableArray.CreateBuilder length
+            let indexLookup = Array.zeroCreate length
 
-        {
-            temporaryStorageService = temporaryStorageService
-            tcConfig = tcConfig
-            parsingOptions = parsingOptions
-            orderedResults = orderedResultsBuilder.ToImmutableArray ()
-            indexLookup = ImmutableDictionary.CreateRange indexLookup
-            version = VersionStamp.Create ()
+            orderedResultsBuilder.Count <- length
+
+            // Build syntax trees.
+            let syntaxTrees = ResizeArray length
+
+            try
+                orderedSourceSnapshots
+                |> ImmutableArray.iteri (fun i sourceSnapshot ->
+                    let isLastFile = (orderedSourceSnapshots.Length - 1) = i
+                    let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, parsingOptions, isLastFile, sourceSnapshot)
+                    let sourceValue = Async.RunSynchronously (sourceSnapshot.GetSourceValueAsync (), cancellationToken = cancellationToken)
+                    syntaxTrees.Add (syntaxTree, sourceValue)
+                )
+
+                // We parallelize parsing here because reading from source snapshots are not truly asynchronous; memory mapped files are blocking, non-asynchronous calls.
+                orderedSourceSnapshots |> Seq.iteri (fun i _ ->
+               // Parallel.For(0, orderedSourceSnapshots.Length, fun i ->
+                    let syntaxTree, sourceValue = syntaxTrees.[i]
+                    let parseResult = Parser.Parse syntaxTree.ParsingInfo sourceValue
+                    let compilationResult = CompilationResult.Parsed (syntaxTree, parseResult)
+
+                    orderedResultsBuilder.[i] <- ref compilationResult
+                    indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
+                ) |> ignore
+
+            finally
+                syntaxTrees
+                |> Seq.iter (fun (_, sourceValue) -> 
+                    (sourceValue :> IDisposable).Dispose ()
+                )
+
+                cancellationToken.ThrowIfCancellationRequested ()
+
+            return {
+                tcConfig = tcConfig
+                parsingOptions = parsingOptions
+                orderedResults = orderedResultsBuilder.ToImmutableArray ()
+                indexLookup = ImmutableDictionary.CreateRange indexLookup
+                version = VersionStamp.Create ()
+            }
         }
 
     member this.GetIndex (filePath: string) =
@@ -223,7 +212,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
 
     member __.Version = state.version
 
-    member __.ReplaceSource (source: Source) =
+    member __.ReplaceSourceSnapshot (_sourceSnapshot: SourceSnapshot) =
         let newState = state
         IncrementalChecker (tcConfig, tcGlobals, tcImports, initialTcAcc, options, newState)
 
@@ -323,6 +312,10 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                 return (tcAcc, None)
         }
 
+        member this.Check (filePath: string, cancellationToken) =
+            let computation = this.Check (filePath, CheckerFlags.ReturnResolutions, cancellationToken)
+            Eventually.force (CompilationThreadToken ()) computation
+
 type InitialInfo =
     {
         ctok: CompilationThreadToken
@@ -339,7 +332,7 @@ type InitialInfo =
         loadClosureOpt: LoadClosure option
         projectDirectory: string
         checkerOptions: IncrementalCheckerOptions
-        sources: ImmutableArray<Source>
+        sourceSnapshots: ImmutableArray<SourceSnapshot>
     }
 
 module IncrementalChecker =
@@ -423,6 +416,8 @@ module IncrementalChecker =
               for r in nonFrameworkResolutions do 
                     yield  r.resolvedPath  ]
 
+        let! checkerState = IncrementalCheckerState.Create (tcConfig, info.checkerOptions.parsingOptions, info.sourceSnapshots)
+
         let tcAcc = 
             { tcState=tcState
               tcEnvAtEndOfFile=tcInitial
@@ -435,5 +430,5 @@ module IncrementalChecker =
               tcDependencyFiles=basicDependencies
               tcErrorsRev = [ initialErrors ] 
               tcModuleNamesDict = Map.empty }
-        return IncrementalChecker (tcConfig, tcGlobals, tcImports, tcAcc, info.checkerOptions, IncrementalCheckerState.Create (info.temporaryStorageService, tcConfig, info.checkerOptions.parsingOptions, info.sources, cancellationToken))
+        return IncrementalChecker (tcConfig, tcGlobals, tcImports, tcAcc, info.checkerOptions, checkerState)
         }

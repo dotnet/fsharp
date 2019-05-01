@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Service
+﻿namespace FSharp.Compiler.Compilation
 
 open System
 open Microsoft.CodeAnalysis.Text

@@ -1,8 +1,9 @@
-﻿namespace FSharp.Compiler.Service
+﻿namespace FSharp.Compiler.Compilation
 
 open System
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -20,7 +21,7 @@ open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
-open FSharp.Compiler.Service.Utilities
+open FSharp.Compiler.Compilation.Utilities
 
 [<NoEquality;NoComparison>]
 type CompilationOptions =
@@ -69,15 +70,20 @@ type [<NoEquality;NoComparison>] Compilation =
 
     member this.Version = this.checker.Version
 
+    member this.Check (filePath, cancellationToken) =
+        let tcAcc, tcResolutionsOpt = this.checker.Check (filePath, cancellationToken)
+      //  printfn "%A" (tcAcc.tcDependencyFiles)
+        ()
+
 type [<NoEquality;NoComparison>] CompilationInfo =
     {
         Options: CompilationOptions
-        Sources: ImmutableArray<Source>
+        SourceSnapshots: ImmutableArray<SourceSnapshot>
         CompilationReferences: ImmutableArray<Compilation>
     }
 
 [<Sealed>]
-type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongSize, workspace: Microsoft.CodeAnalysis.Workspace) =
+type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStrongSize, workspace: Microsoft.CodeAnalysis.Workspace) =
     let ctok = CompilationThreadToken ()
     let gate = NonReentrantLock ()
 
@@ -97,122 +103,132 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
     let frameworkTcImportsCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize
     let temporaryStorageService = workspace.Services.TemporaryStorage
 
-    member this.TryCreateCompilationAsync info =
-        cancellable {
-          let useSimpleResolutionSwitch = "--simpleresolution"
-          let commandLineArgs = info.Options.CommandLineArgs
-          let legacyReferenceResolver = info.Options.LegacyReferenceResolver
-          let defaultFSharpBinariesDir = info.Options.DefaultFSharpBinariesDir
-          let projectDirectory = info.Options.ProjectDirectory
-          let tryGetMetadataSnapshot = info.Options.TryGetMetadataSnapshot
-          let useScriptResolutionRules = info.Options.UseScriptResolutionRules
-          let loadClosureOpt : LoadClosure option = None // TODO:
+    member __.CreateSourceSnapshot (filePath, sourceText) =
+        let storage = temporaryStorageService.CreateTemporaryTextStorage ()
+        storage.WriteText sourceText
 
-          // Share intern'd strings across all lexing/parsing
-          let lexResourceManager = Lexhelp.LexResourceManager ()
+        match
+            temporaryStorageService.CreateSourceSnapshot (filePath, sourceText)
+            |> Cancellable.run CancellationToken.None with
+        | ValueOrCancelled.Value result -> result
+        | ValueOrCancelled.Cancelled ex -> raise ex
 
-          let projectReferences =
-              info.CompilationReferences
-              |> Seq.map (fun compilation ->
-                  { new IProjectReference with
+    member this.CreateCompilation info =
+        let useSimpleResolutionSwitch = "--simpleresolution"
+        let commandLineArgs = info.Options.CommandLineArgs
+        let legacyReferenceResolver = info.Options.LegacyReferenceResolver
+        let defaultFSharpBinariesDir = info.Options.DefaultFSharpBinariesDir
+        let projectDirectory = info.Options.ProjectDirectory
+        let tryGetMetadataSnapshot = info.Options.TryGetMetadataSnapshot
+        let useScriptResolutionRules = info.Options.UseScriptResolutionRules
+        let loadClosureOpt : LoadClosure option = None // TODO:
 
-                      member __.EvaluateRawContents _ctok =
-                          cancellable {
-                            return None
-                          }
+        // Share intern'd strings across all lexing/parsing
+        let lexResourceManager = Lexhelp.LexResourceManager ()
 
-                      member __.FileName = compilation.options.AssemblyPath
+        let projectReferences =
+            info.CompilationReferences
+            |> Seq.map (fun compilation ->
+                { new IProjectReference with
 
-                      member __.TryGetLogicalTimeStamp (_, _) =
-                          Some compilation.Version.DateTime                              
-                  }
-              )
-              |> List.ofSeq
+                    member __.EvaluateRawContents _ctok =
+                        cancellable {
+                        return None
+                        }
 
-          // Trap and report warnings and errors from creation.
-          let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
-          use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
-          use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+                    member __.FileName = compilation.options.AssemblyPath
 
-          let! builderOpt =
-           cancellable {
-            try
-              /// Create a type-check configuration
-              let tcConfigB, sourceFilesNew = 
+                    member __.TryGetLogicalTimeStamp (_, _) =
+                        Some compilation.Version.DateTime                              
+                }
+            )
+            |> List.ofSeq
 
-                  let getSwitchValue switchstring =
-                      match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal switchstring) with
-                      | Some idx -> Some(commandLineArgs.[idx].Substring(switchstring.Length))
-                      | _ -> None
+        // Trap and report warnings and errors from creation.
+        let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
+        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
-                  // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
-                  let tcConfigB = 
-                      TcConfigBuilder.CreateNew(legacyReferenceResolver, 
-                           defaultFSharpBinariesDir, 
-                           implicitIncludeDir=projectDirectory, 
-                           reduceMemoryUsage=ReduceMemoryFlag.Yes, 
-                           isInteractive=false, 
-                           isInvalidationSupported=true, 
-                           defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-                           tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
+        let builderOpt =
+            /// Create a type-check configuration
+            let tcConfigB, sourceFilesNew = 
 
-                  tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
+                let getSwitchValue switchstring =
+                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal switchstring) with
+                    | Some idx -> Some(commandLineArgs.[idx].Substring(switchstring.Length))
+                    | _ -> None
 
-                  tcConfigB.conditionalCompilationDefines <- 
-                      let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
-                      define :: tcConfigB.conditionalCompilationDefines
+                // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
+                let tcConfigB = 
+                    TcConfigBuilder.CreateNew(legacyReferenceResolver, 
+                        defaultFSharpBinariesDir, 
+                        implicitIncludeDir=projectDirectory, 
+                        reduceMemoryUsage=ReduceMemoryFlag.Yes, 
+                        isInteractive=false, 
+                        isInvalidationSupported=true, 
+                        defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
+                        tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
 
-                  tcConfigB.projectReferences <- projectReferences
+                tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
 
-                  tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
+                tcConfigB.conditionalCompilationDefines <- 
+                    let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
+                    define :: tcConfigB.conditionalCompilationDefines
 
-                  let sourceFiles =
-                    info.Sources
+                tcConfigB.projectReferences <- projectReferences
+
+                tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
+
+                let sourceFiles =
+                    info.SourceSnapshots
                     |> Seq.map (fun x -> x.FilePath)
                     |> List.ofSeq
 
-                  // Apply command-line arguments and collect more source files if they are in the arguments
-                  let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
+                // Apply command-line arguments and collect more source files if they are in the arguments
+                let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
 
-                  // Never open PDB files for the language service, even if --standalone is specified
-                  tcConfigB.openDebugInformationForLaterStaticLinking <- false
+                // Never open PDB files for the language service, even if --standalone is specified
+                tcConfigB.openDebugInformationForLaterStaticLinking <- false
 
-                  tcConfigB, sourceFilesNew
+                tcConfigB, sourceFilesNew
 
-              match loadClosureOpt with
-              | Some loadClosure ->
-                  let dllReferences =
-                      [for reference in tcConfigB.referencedDLLs do
-                          // If there's (one or more) resolutions of closure references then yield them all
-                          match loadClosure.References  |> List.tryFind (fun (resolved, _)->resolved=reference.Text) with
-                          | Some (resolved, closureReferences) -> 
-                              for closureReference in closureReferences do
-                                  yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
-                          | None -> yield reference]
-                  tcConfigB.referencedDLLs <- []
-                  // Add one by one to remove duplicates
-                  dllReferences |> List.iter (fun dllReference ->
-                      tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
-                  tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
-              | None -> ()
+            match loadClosureOpt with
+            | Some loadClosure ->
+                let dllReferences =
+                    [for reference in tcConfigB.referencedDLLs do
+                        // If there's (one or more) resolutions of closure references then yield them all
+                        match loadClosure.References  |> List.tryFind (fun (resolved, _)->resolved=reference.Text) with
+                        | Some (resolved, closureReferences) -> 
+                            for closureReference in closureReferences do
+                                yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
+                        | None -> yield reference]
+                tcConfigB.referencedDLLs <- []
+                // Add one by one to remove duplicates
+                dllReferences |> List.iter (fun dllReference ->
+                    tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
+                tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
+            | None -> ()
 
-              let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-              let niceNameGen = NiceNameGenerator()
-              let _outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
+            let tcConfig = TcConfig.Create(tcConfigB, validate=true)
+            let niceNameGen = NiceNameGenerator()
+            let _outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
 
-              // Resolve assemblies and create the framework TcImports. This is done when constructing the
-              // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
-              // included in these references. 
-              let! (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = frameworkTcImportsCache.Get(ctok, tcConfig)
+            // Resolve assemblies and create the framework TcImports. This is done when constructing the
+            // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
+            // included in these references. 
+            let (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = 
+                match Cancellable.run CancellationToken.None (frameworkTcImportsCache.Get(ctok, tcConfig)) with
+                | ValueOrCancelled.Value result -> result
+                | ValueOrCancelled.Cancelled ex -> raise ex
 
-              // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
-              // This is ok because not much can actually go wrong here.
-              let errorOptions = tcConfig.errorSeverityOptions
-              let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
-              // Return the disposable object that cleans up
-              use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
+            // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
+            // This is ok because not much can actually go wrong here.
+            let errorOptions = tcConfig.errorSeverityOptions
+            let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
+            // Return the disposable object that cleans up
+            use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
-              let initialInfo =
+            let initialInfo =
                 {
                     ctok = ctok
                     temporaryStorageService = temporaryStorageService
@@ -237,19 +253,16 @@ type CompilerService (_compilationCacheSize: int, frameworkTcImportsCacheStrongS
                                     lexResourceManager = lexResourceManager
                                 }
                         }
-                    sources = info.Sources
+                    sourceSnapshots = info.SourceSnapshots
                 }
 
-              let! checker = IncrementalChecker.Create initialInfo
-              return
-                Some {
-                    checker = checker
-                    options = info.Options
-                }
-            with e -> 
-              errorRecoveryNoRange e
-              return None
-           }
+            let checker = 
+                match IncrementalChecker.Create initialInfo |> Cancellable.run CancellationToken.None with
+                | ValueOrCancelled.Value result -> result
+                | ValueOrCancelled.Cancelled ex -> raise ex
+            {
+                checker = checker
+                options = info.Options
+            }
 
-          return builderOpt
-        } |> Cancellable.toAsync
+        builderOpt

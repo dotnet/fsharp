@@ -1,6 +1,8 @@
 ﻿open System
 open System.IO
 open System.Text
+open System.Threading
+open System.Threading.Tasks
 open System.Collections.Immutable
 open FSharp.Compiler
 open FSharp.Compiler.ErrorLogger
@@ -12,7 +14,8 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.CodeAnalysis.Text
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
-open FSharp.Compiler.Service
+open FSharp.Compiler.Compilation
+open Microsoft.CodeAnalysis
 
 module private SourceText =
 
@@ -318,7 +321,71 @@ type CompilerService() =
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             ClearAllILModuleReaderCache()
 
+[<MemoryDiagnoser>]
+type CompilationBenchmarks() =
+
+    let workspace = new AdhocWorkspace ()
+    let compilationService = CompilationService(3, 2, workspace)
+
+    let createTestModules name amount =
+        [
+            for i = 1 to amount do
+                yield
+                    sprintf
+                    """
+module TestModule%i =
+
+    type %s () =
+
+                    member val X = 1
+
+                    member val Y = 2
+
+                    member val Z = 3
+                    
+    let testFunction (x: %s) =
+                    x.X + x.Y + x.Z
+                    """ i name name
+        ]
+        |> List.reduce (+)
+
+    let createSource name amount =
+        (sprintf """namespace Test.%s""" name) + createTestModules name amount
+
+    let sources =
+        [
+            for i = 1 to 100 do
+                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 1))
+        ]
+
+    [<Benchmark>]
+    member __.Test() =
+     //   for i = 0 to 3 do
+       let parallelOptions = ParallelOptions()
+       parallelOptions.MaxDegreeOfParallelism <- 4
+       Parallel.For(0, 500, parallelOptions, fun i ->
+            let sourceSnapshots =
+                sources
+                |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
+                |> ImmutableArray.CreateRange
+            let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
+            let compilationInfo =
+                {
+                    Options = compilationOptions
+                    SourceSnapshots = sourceSnapshots
+                    CompilationReferences = ImmutableArray.Empty
+                }
+
+            let compilation = compilationService.CreateCompilation compilationInfo
+            compilation.Check ("test1.fs", CancellationToken.None)
+            ()
+        ) |> ignore
+        
+
 [<EntryPoint>]
 let main argv =
-    let _ = BenchmarkRunner.Run<CompilerService>()
+   // let _ = BenchmarkRunner.Run<CompilerService>()
+    let _ = BenchmarkRunner.Run<CompilationBenchmarks>()
+    //let test = CompilationBenchmarks ()
+    //test.Test ()
     0

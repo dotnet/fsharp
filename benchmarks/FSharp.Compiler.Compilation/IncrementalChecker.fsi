@@ -1,12 +1,57 @@
-﻿namespace FSharp.Compiler.Service
+﻿namespace FSharp.Compiler.Compilation
 
+open System
+open System.IO
 open System.Threading
+open System.Threading.Tasks
 open System.Collections.Immutable
+open System.Collections.Generic
+open System.Collections.Concurrent
+open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Driver
+open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.NameResolution
+open Internal.Utilities
+open FSharp.Compiler.Compilation.Utilities
+
+/// Accumulated results of type checking.
+[<NoEquality; NoComparison>]
+type internal TcAccumulator =
+    { tcState: TcState
+      tcEnvAtEndOfFile: TcEnv
+
+      /// Accumulated resolutions, last file first
+      tcResolutionsRev: TcResolutions list
+
+      /// Accumulated symbol uses, last file first
+      tcSymbolUsesRev: TcSymbolUses list
+
+      /// Accumulated 'open' declarations, last file first
+      tcOpenDeclarationsRev: OpenDeclaration[] list
+
+      topAttribs: TopAttribs option
+
+      /// Result of checking most recent file, if any
+      latestImplFile: TypedImplFile option
+
+      latestCcuSigForFile: ModuleOrNamespaceType option
+
+      tcDependencyFiles: string list
+
+      /// Disambiguation table for module names
+      tcModuleNamesDict: ModuleNamesDict
+
+      /// Accumulated errors, last file first
+      tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list }
 
 type internal ParsingOptions =
     {
@@ -29,7 +74,9 @@ type internal IncrementalChecker =
 
     member Version: VersionStamp
 
-    member ReplaceSource: source: Source -> IncrementalChecker
+    member ReplaceSourceSnapshot: sourceSnapshot: SourceSnapshot -> IncrementalChecker
+
+    member Check: filePath: string * cancellationToken: CancellationToken -> (TcAccumulator * TcResolutions option)
 
 type internal InitialInfo =
     {
@@ -47,7 +94,7 @@ type internal InitialInfo =
         loadClosureOpt: LoadClosure option
         projectDirectory: string
         checkerOptions: IncrementalCheckerOptions
-        sources: ImmutableArray<Source>
+        sourceSnapshots: ImmutableArray<SourceSnapshot>
     }
 
 module internal IncrementalChecker =

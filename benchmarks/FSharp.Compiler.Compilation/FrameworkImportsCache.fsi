@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Service
+﻿namespace FSharp.Compiler.Compilation
 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompileOps

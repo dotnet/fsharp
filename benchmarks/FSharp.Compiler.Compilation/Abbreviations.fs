@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Service
+﻿namespace FSharp.Compiler.Compilation
 
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger

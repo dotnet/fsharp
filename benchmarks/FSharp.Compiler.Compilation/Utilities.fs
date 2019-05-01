@@ -1,7 +1,8 @@
-﻿module internal FSharp.Compiler.Service.Utilities
+﻿module internal FSharp.Compiler.Compilation.Utilities
 
 open System
 open System.Threading
+open System.Collections.Immutable
 open FSharp.Compiler.AbstractIL.Internal.Library
 
 [<RequireQualifiedAccess>]
@@ -19,6 +20,17 @@ module Cancellable =
                | Choice1Of2 (ValueOrCancelled.Cancelled err) -> ccont err
                | Choice2Of2 err -> econt err) 
         }
+
+[<RequireQualifiedAccess>]
+module ImmutableArray =
+
+    let inline iter f (arr: ImmutableArray<_>) =
+        for i = 0 to arr.Length - 1 do
+            f arr.[i]
+
+    let inline iteri f (arr: ImmutableArray<_>) =
+        for i = 0 to arr.Length - 1 do
+            f i arr.[i]
 
 [<Sealed>]
 type NonReentrantLock () =

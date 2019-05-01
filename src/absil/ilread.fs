@@ -894,46 +894,52 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
     if lowMem then (fun f x -> f x) else
     let cache = ref null 
     let count = ref 0
+    let gate = obj ()
 #if STATISTICS
     addReport (fun oc -> if !count <> 0 then oc.WriteLine ((_inbase + string !count + " "+ _nm + " cache hits"): string))
 #endif
     fun f (idx: int32) ->
-        let cache = 
-            match !cache with
-            | null -> cache := new Dictionary<int32, _>(11)
-            | _ -> ()
-            !cache
-        let mutable res = Unchecked.defaultof<_>
-        let ok = cache.TryGetValue(idx, &res)
-        if ok then 
-            incr count 
-            res
-        else 
-            let res = f idx 
-            cache.[idx] <- res 
-            res 
+        lock gate (fun () ->
+            let cache = 
+                match !cache with
+                | null -> cache := new Dictionary<int32, _>(11)
+                | _ -> ()
+                !cache
+            let mutable res = Unchecked.defaultof<_>
+            let ok = cache.TryGetValue(idx, &res)
+            if ok then 
+                incr count 
+                res
+            else 
+                let res = f idx 
+                cache.[idx] <- res 
+                res
+        )
 
 let mkCacheGeneric lowMem _inbase _nm _sz =
     if lowMem then (fun f x -> f x) else
     let cache = ref null 
     let count = ref 0
+    let gate = obj ()
 #if STATISTICS
     addReport (fun oc -> if !count <> 0 then oc.WriteLine ((_inbase + string !count + " " + _nm + " cache hits"): string))
 #endif
     fun f (idx :'T) ->
-        let cache = 
-            match !cache with
-            | null -> cache := new Dictionary<_, _>(11 (* sz: int *) ) 
-            | _ -> ()
-            !cache
-        match cache.TryGetValue idx with
-        | true, v ->
-            incr count
-            v
-        | _ ->
-            let res = f idx
-            cache.[idx] <- res
-            res
+        lock gate (fun () ->
+            let cache = 
+                match !cache with
+                | null -> cache := new Dictionary<_, _>(11 (* sz: int *) ) 
+                | _ -> ()
+                !cache
+            match cache.TryGetValue idx with
+            | true, v ->
+                incr count
+                v
+            | _ ->
+                let res = f idx
+                cache.[idx] <- res
+                res
+        )
 
 //-----------------------------------------------------------------------
 // Polymorphic general helpers for searching for particular rows.

@@ -1,5 +1,6 @@
-﻿namespace FSharp.Compiler.Service
+﻿namespace FSharp.Compiler.Compilation
 
+open System
 open System.IO
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler
@@ -11,26 +12,32 @@ type SourceValue =
     | SourceText of SourceText
     | Stream of Stream
 
+    interface IDisposable with
+
+        member this.Dispose () =
+            match this with
+            | SourceValue.Stream stream -> stream.Dispose ()
+            | _ -> ()           
+
 type ParsingInfo =
     {
         tcConfig: TcConfig
         isLastFileOrScript: bool
         isExecutable: bool
         conditionalCompilationDefines: string list
-        sourceValue: SourceValue
         filePath: string
     }
 
 [<RequireQualifiedAccess>]
 module Parser =
 
-    let Parse (info: ParsingInfo) =
+    let Parse (info: ParsingInfo) sourceValue =
         let tcConfig = info.tcConfig
         let filePath = info.filePath
         let errorLogger = CompilationErrorLogger("ParseFile", tcConfig.errorSeverityOptions)
 
         let input =
-            match info.sourceValue with
+            match sourceValue with
             | SourceValue.SourceText sourceText ->
                 ParseOneInputSourceText (info.tcConfig, Lexhelp.LexResourceManager (), info.conditionalCompilationDefines, filePath, sourceText.ToFSharpSourceText (), (info.isLastFileOrScript, info.isExecutable), errorLogger)
             | SourceValue.Stream stream ->

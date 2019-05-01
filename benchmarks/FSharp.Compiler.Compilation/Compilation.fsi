@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Service
+﻿namespace FSharp.Compiler.Compilation
 
 open System
 open System.IO
@@ -20,7 +20,7 @@ open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
-open FSharp.Compiler.Service.Utilities
+open FSharp.Compiler.Compilation.Utilities
 
 [<NoEquality;NoComparison>]
 type CompilationOptions =
@@ -41,19 +41,23 @@ type CompilationOptions =
     static member Create: assemblyPath: string * commandLineArgs: string list * projectDirectory: string * isExecutable: bool -> CompilationOptions
 
 [<Sealed>]
-type Compilation
+type Compilation =
+
+    member Check: filePath: string * CancellationToken -> unit
 
 [<NoEquality;NoComparison>]
 type CompilationInfo =
     {
         Options: CompilationOptions
-        Sources: ImmutableArray<Source>
+        SourceSnapshots: ImmutableArray<SourceSnapshot>
         CompilationReferences: ImmutableArray<Compilation>
     }
 
 [<Sealed>]
-type CompilerService =
+type CompilationService =
 
-    new: compilationCacheSize: int * keepStrongly: int * Microsoft.CodeAnalysis.Workspace -> CompilerService
+    new: compilationCacheSize: int * keepStrongly: int * Microsoft.CodeAnalysis.Workspace -> CompilationService
 
-    member TryCreateCompilationAsync: CompilationInfo -> Async<Compilation option>
+    member CreateSourceSnapshot: filePath: string * Microsoft.CodeAnalysis.Text.SourceText -> SourceSnapshot
+
+    member CreateCompilation: CompilationInfo -> Compilation
