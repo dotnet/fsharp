@@ -355,7 +355,7 @@ module TestModule%i =
     let sources =
         [
             for i = 1 to 100 do
-                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 10))
+                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 1))
         ]
 
     let sourceSnapshots =
@@ -363,22 +363,42 @@ module TestModule%i =
         |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
         |> ImmutableArray.CreateRange
 
+    let cts = new CancellationTokenSource ()
+
+    let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
+    let compilationInfo =
+        {
+            Options = compilationOptions
+            SourceSnapshots = sourceSnapshots
+            CompilationReferences = ImmutableArray.Empty
+        }
+
+    let compilation = compilationService.CreateCompilation compilationInfo
+
     [<Benchmark>]
     member __.Test() =
-        use cts = new CancellationTokenSource ()
+        //use cts = new CancellationTokenSource ()
 
-        let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
-        let compilationInfo =
-            {
-                Options = compilationOptions
-                SourceSnapshots = sourceSnapshots
-                CompilationReferences = ImmutableArray.Empty
+        //let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
+        //let compilationInfo =
+        //    {
+        //        Options = compilationOptions
+        //        SourceSnapshots = sourceSnapshots
+        //        CompilationReferences = ImmutableArray.Empty
+        //    }
+
+        //let compilation = compilationService.CreateCompilation compilationInfo
+
+        let work =
+            async {
+                let! _result = compilation.CheckAsync ("test1.fs")
+                ()
             }
 
-        let compilation = compilationService.CreateCompilation compilationInfo
-
         try
-            Async.RunSynchronously (compilation.CheckAsync ("test10.fs"), cancellationToken = cts.Token)
+            Async.RunSynchronously (work, cancellationToken = cts.Token)
+           // GC.Collect(0, GCCollectionMode.Forced, true)
+          //  Async.RunSynchronously (work, cancellationToken = cts.Token)
         with :? OperationCanceledException ->
             printfn "cancelled"
         ()

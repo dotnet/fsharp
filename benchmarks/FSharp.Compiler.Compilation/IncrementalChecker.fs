@@ -205,16 +205,17 @@ type IncrementalCheckerOptions =
     }
 
 type CheckerFlags =
-    | None = 0x0
-    | ReturnResolutions = 0x1 
+    | None = 0x00
+    | ReturnResolutions = 0x01 
+    | Recheck = 0x1
 
 [<Sealed>]
-type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, initialTcAcc: TcAccumulator, options: IncrementalCheckerOptions, state: IncrementalCheckerState) as this =
+type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, initialTcAcc: TcAccumulator, options: IncrementalCheckerOptions, state: IncrementalCheckerState) =
 
     let gate = obj ()
     let maxTimeShareMilliseconds = 100L
 
-    let cacheResults = Array.zeroCreate state.orderedResults.Length
+    let cacheResults = Array.zeroCreate<(AsyncLazyWeak<TcAccumulator * TcResolutions option> * CheckerFlags) voption> state.orderedResults.Length
 
     member __.Version = state.version
 
@@ -226,6 +227,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
         async {
             match state.GetIndexAndCompilationResult filePath with
             | 0, cacheResult -> 
+                printfn "initial tcacc"
                 return (initialTcAcc, cacheResult)
 
             | (i, cacheResult) ->
@@ -233,7 +235,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                 match priorCacheResult.contents with
                 | CompilationResult.Parsed (syntaxTree, _) ->
                     // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
-                    let! tcAcc, _ = this.CheckAsync (syntaxTree.FilePath, CheckerFlags.None)
+                    let! tcAcc, _ = this.CheckAsyncLazy (syntaxTree.FilePath, CheckerFlags.None)
                     return (tcAcc, cacheResult)
                 | CompilationResult.CheckingInProgress (_, _) -> return failwith "not yet"
                 | CompilationResult.Checked (_, tcAcc) ->
@@ -242,6 +244,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
 
     member this.CheckAsync (filePath: string, flags: CheckerFlags) =
         async {
+            printfn "Checking %s" filePath
             let! cancellationToken = Async.CancellationToken
 
             let! (tcAcc, cacheResult) = this.GetTcAcc (filePath)
@@ -260,7 +263,6 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
 
                         let input, moduleNamesDict = DeduplicateParsedInputModuleName tcAcc.tcModuleNamesDict input
 
-                        printfn "type checking"
                         let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
                             TypeCheckOneInputEventually 
                                 ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
@@ -331,16 +333,24 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                 return (tcAcc, None)
         }
 
-        member this.CheckAsync (filePath: string) =
+        member this.CheckAsyncLazy (filePath: string, checkerFlags) =
             async {
                 let i = state.GetIndex filePath
+
                 lock gate <| fun () ->
                     match cacheResults.[i] with
-                    | ValueNone -> cacheResults.[i] <- ValueSome (AsyncLazy (this.CheckAsync (filePath, CheckerFlags.ReturnResolutions)))
+                    | ValueSome (current, currentCheckerFlags) when (checkerFlags &&& CheckerFlags.Recheck = CheckerFlags.Recheck) && not (checkerFlags = currentCheckerFlags) -> 
+                        current.CancelIfNotComplete ()
+                        cacheResults.[i] <- ValueSome (AsyncLazyWeak (this.CheckAsync (filePath, checkerFlags)), checkerFlags)
+                    | ValueNone ->
+                        cacheResults.[i] <- ValueSome (AsyncLazyWeak (this.CheckAsync (filePath, checkerFlags)), checkerFlags)
                     | _ -> ()
 
-                return! cacheResults.[i].Value.GetValueAsync ()
+                return! (fst cacheResults.[i].Value).GetValueAsync ()
             }
+
+        member this.CheckAsync filePath =
+            this.CheckAsyncLazy (filePath, CheckerFlags.ReturnResolutions ||| CheckerFlags.Recheck)
 
 type InitialInfo =
     {

@@ -104,6 +104,12 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                              agentInstance <- None
        }
 
+    member __.CancelIfNotComplete () =
+        lock gate <| fun () ->
+            match agentInstance with
+            | Some (_, cts) -> cts.Cancel ()
+            | _ -> ()
+
 type AsyncLazy<'T when 'T : not struct> (computation) =
     
     let weak = AsyncLazyWeak<'T> computation
@@ -118,3 +124,6 @@ type AsyncLazy<'T when 'T : not struct> (computation) =
                 cachedResult <- ValueSome result
                 return result
         }
+
+    member __.CancelIfNotComplete () =
+        weak.CancelIfNotComplete ()
