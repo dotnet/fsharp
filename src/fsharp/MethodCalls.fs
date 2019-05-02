@@ -318,18 +318,31 @@ type CalledMeth<'T>
       (infoReader: InfoReader,
        nameEnv: NameResolutionEnv option,
        isCheckingAttributeCall,
-       freshenMethInfo,             // a function to help generate fresh type variables the property setters methods in generic classes 
-       m,                           // range                           
-       ad,                          // the access domain of the place where the call is taking place
-       minfo: MethInfo,             // the method we're attempting to call 
-       calledTyArgs,                // the 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call 
-       callerTyArgs: TType list,    // the 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call 
-       pinfoOpt: PropInfo option,   // the property related to the method we're attempting to call, if any  
-       callerObjArgTys: TType list, // the types of the actual object argument, if any 
-       callerArgs: CallerArgs<'T>,  // the data about any arguments supplied by the caller 
-       allowParamArgs: bool,        // do we allow the use of a param args method in its "expanded" form?
-       allowOutAndOptArgs: bool,    // do we allow the use of the transformation that converts out arguments as tuple returns?
-       tyargsOpt : TType option)    // method parameters
+       /// a function to help generate fresh type variables the property setters methods in generic classes
+       freshenMethInfo,
+       /// range
+       m,
+       /// the access domain of the place where the call is taking place
+       ad,
+       /// the method we're attempting to call
+       minfo: MethInfo,
+       /// the 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call
+       calledTyArgs,
+       /// the 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call
+       // todo: consider CallerTypeArgs record
+       callerTyArgs: TType list,
+       /// the property related to the method we're attempting to call, if any
+       pinfoOpt: PropInfo option,
+       /// the types of the actual object argument, if any
+       callerObjArgTys: TType list,
+       /// the 'caller method arguments', i.e. a list of user-given parameter expressions, split between unnamed and named arguments
+       callerArgs: CallerArgs<'T>,
+       /// do we allow the use of a param args method in its "expanded" form?
+       allowParamArgs: bool,
+       /// do we allow the use of the transformation that converts out arguments as tuple returns?
+       allowOutAndOptArgs: bool,
+       /// method parameters
+       tyargsOpt : TType option)    
     =
     let g = infoReader.g
     let methodRetTy = minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
