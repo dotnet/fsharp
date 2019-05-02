@@ -42,6 +42,8 @@
     <Compile Include="IncrementalChecker.fs" />
     <Compile Include="Compilation.fsi" />
     <Compile Include="Compilation.fs" />
+    <Compile Include="CompilationService.fsi" />
+    <Compile Include="CompilationService.fs" />
   </ItemGroup>
 
   <ItemGroup>

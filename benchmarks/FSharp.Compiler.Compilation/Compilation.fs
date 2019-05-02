@@ -107,28 +107,13 @@ and [<Sealed>] Compilation (options: CompilationOptions, asyncLazyGetChecker: As
         async {
             let! checker = asyncLazyGetChecker.GetValueAsync ()
             let! tcAcc, tcResolutionsOpt = checker.CheckAsync (filePath)
+            printfn "%A" (tcAcc.tcErrorsRev)
             ()
         }
 
-    static member Create (options: CompilationOptions, frameworkTcImportsCache) =
+module Compilation =
+
+    let create (options: CompilationOptions) frameworkTcImportsCache =
         let asyncLazyGetChecker =
             AsyncLazy (CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> options.CreateIncrementalChecker frameworkTcImportsCache ctok))
         Compilation (options, asyncLazyGetChecker, VersionStamp.Create ())
-
-[<Sealed>]
-type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStrongSize, workspace: Microsoft.CodeAnalysis.Workspace) =
-    // Caches
-    let frameworkTcImportsCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize
-    let temporaryStorageService = workspace.Services.TemporaryStorage
-
-    member __.CreateSourceSnapshot (filePath, sourceText) =
-        let storage = temporaryStorageService.CreateTemporaryTextStorage ()
-        storage.WriteText sourceText
-
-        match
-            temporaryStorageService.CreateSourceSnapshot (filePath, sourceText)
-            |> Cancellable.run CancellationToken.None with
-        | ValueOrCancelled.Value result -> result
-        | ValueOrCancelled.Cancelled ex -> raise ex
-
-    member __.CreateCompilation options = Compilation.Create (options, frameworkTcImportsCache)

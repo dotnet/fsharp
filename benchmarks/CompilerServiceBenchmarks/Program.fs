@@ -354,8 +354,8 @@ module TestModule%i =
 
     let sources =
         [
-            for i = 1 to 1 do
-                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 10000))
+            for i = 1 to 100 do
+                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 100))
         ]
 
     let sourceSnapshots =
@@ -367,27 +367,20 @@ module TestModule%i =
     member __.Test() =
         use cts = new CancellationTokenSource ()
 
-        let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
-        let compilationInfo =
-            {
-                Options = compilationOptions
-                SourceSnapshots = sourceSnapshots
-                CompilationReferences = ImmutableArray.Empty
-            }
-
-        let compilation = compilationService.CreateCompilation compilationInfo
+        let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
+        let compilation = compilationService.CreateCompilation compilationOptions
 
         let work =
             async {
-                let! _result = compilation.CheckAsync ("test1.fs")
+                let! _result = compilation.CheckAsync ("test100.fs")
                 printfn "%A" (System.Diagnostics.Process.GetCurrentProcess().Threads.Count)
                 ()
             }
 
-        async {
-            do! Async.Sleep 5000
-            cts.Cancel ()
-        } |> Async.Start
+        //async {
+        //    do! Async.Sleep 5000
+        //    cts.Cancel ()
+        //} |> Async.Start
 
         try
             Async.RunSynchronously (work, cancellationToken = cts.Token)

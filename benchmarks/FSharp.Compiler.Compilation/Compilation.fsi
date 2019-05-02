@@ -28,11 +28,7 @@ and [<Sealed>] Compilation =
 
     member CheckAsync: filePath: string -> Async<unit>
 
-[<Sealed>]
-type CompilationService =
+[<RequireQualifiedAccess>]
+module internal Compilation =
 
-    new: compilationCacheSize: int * keepStrongly: int * Microsoft.CodeAnalysis.Workspace -> CompilationService
-
-    member CreateSourceSnapshot: filePath: string * Microsoft.CodeAnalysis.Text.SourceText -> SourceSnapshot
-
-    member CreateCompilation: CompilationOptions -> Compilation
+    val create: CompilationOptions -> FrameworkImportsCache -> Compilation
