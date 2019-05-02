@@ -32,51 +32,13 @@ module ImmutableArray =
         for i = 0 to arr.Length - 1 do
             f i arr.[i]
 
-[<Sealed>]
-type NonReentrantLock () =
-
-   let syncLock = obj ()
-   let mutable currentThreadId = 0
-
-   let isLocked () = currentThreadId <> 0
-
-   member this.Wait (cancellationToken: CancellationToken) =
-
-       if currentThreadId = Environment.CurrentManagedThreadId then
-           failwith "AsyncLazy tried to re-enter computation recursively."
-       
-       use _cancellationTokenRegistration = cancellationToken.Register((fun o -> lock o (fun () -> Monitor.PulseAll o |> ignore)), syncLock, useSynchronizationContext = false)
-
-       let spin = SpinWait ()
-       while isLocked () && not spin.NextSpinWillYield do
-           spin.SpinOnce ()
-
-       lock syncLock <| fun () ->
-           while isLocked () do
-               cancellationToken.ThrowIfCancellationRequested ()
-               Monitor.Wait syncLock |> ignore
-           currentThreadId <- Environment.CurrentManagedThreadId
-
-       new SemaphoreDisposer (this) :> IDisposable
-
-   member this.Release () =
-       lock syncLock <| fun() ->
-           currentThreadId <- 0
-           Monitor.Pulse syncLock |> ignore
-
-and [<Struct>] private SemaphoreDisposer (semaphore: NonReentrantLock) =
-
-   interface IDisposable with
-
-       member __.Dispose () = semaphore.Release ()
-
 type private AsyncLazyWeakMessage<'T> =
-    | GetValue of AsyncReplyChannel<Result<'T, Exception>>
+    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken
 
 [<Sealed>]
 type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
 
-    let gate = NonReentrantLock ()
+    let gate = obj ()
     let mutable requestCount = 0
     let mutable cachedResult: WeakReference<'T> voption = ValueNone
 
@@ -92,8 +54,9 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
         async {
             while true do
                 match! agent.Receive() with
-                | GetValue replyChannel ->
+                | GetValue (replyChannel, cancellationToken) ->
                     try
+                        cancellationToken.ThrowIfCancellationRequested ()
                         match tryGetResult () with
                         | ValueSome result ->
                             replyChannel.Reply (Ok result)
@@ -115,30 +78,30 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
            | _ ->
                let! cancellationToken = Async.CancellationToken
                let agent, cts =
-                    use _semaphoreDisposer = gate.Wait cancellationToken
-                    requestCount <- requestCount + 1
-                    match agentInstance with
-                    | Some agentInstance -> agentInstance
-                    | _ ->
-                        let cts = new CancellationTokenSource ()
-                        let agent = new MailboxProcessor<AsyncLazyWeakMessage<'T>>((fun x -> loop x), cancellationToken = cts.Token)
-                        let newAgentInstance = (agent, cts)
-                        agentInstance <- Some newAgentInstance
-                        agent.Start ()
-                        newAgentInstance
+                    lock gate <| fun() ->
+                        requestCount <- requestCount + 1
+                        match agentInstance with
+                        | Some agentInstance -> agentInstance
+                        | _ ->
+                            let cts = new CancellationTokenSource ()
+                            let agent = new MailboxProcessor<AsyncLazyWeakMessage<'T>>((fun x -> loop x), cancellationToken = cts.Token)
+                            let newAgentInstance = (agent, cts)
+                            agentInstance <- Some newAgentInstance
+                            agent.Start ()
+                            newAgentInstance
                         
-               let! result = agent.PostAndAsyncReply (fun replyChannel -> GetValue replyChannel)
-
-               use _semaphoreDisposer = gate.Wait cancellationToken
-               requestCount <- requestCount - 1
-               if requestCount = 0 then
-                    cts.Cancel ()
-                    (agent :> IDisposable).Dispose ()
-                    cts.Dispose ()
-                    agentInstance <- None
-               match result with
-               | Ok result -> return result
-               | Error ex -> return raise ex
+               try
+                   match! agent.PostAndAsyncReply (fun replyChannel -> GetValue (replyChannel, cancellationToken)) with
+                   | Ok result -> return result
+                   | Error ex -> return raise ex
+                finally
+                    lock gate <| fun () ->
+                        requestCount <- requestCount - 1
+                        if requestCount = 0 then
+                             cts.Cancel ()
+                             (agent :> IDisposable).Dispose ()
+                             cts.Dispose ()
+                             agentInstance <- None
        }
 
 type AsyncLazy<'T when 'T : not struct> (computation) =
