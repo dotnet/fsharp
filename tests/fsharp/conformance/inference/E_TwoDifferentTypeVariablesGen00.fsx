@@ -2,51 +2,7 @@
 // Regression test for FSHARP1.0:4758
 // Type Inference
 // Check Method Disambiguation When User Generic Variable Get Instantiated By Overload Resolution
-
-//<Expects id="FS0001" span="(104,48-104,49)" status="error">This expression was expected to have type.    ''a'    .but here has type.    ''b'</Expects>
-//<Expects id="FS0001" span="(105,48-105,49)" status="error">This expression was expected to have type.    'int'    .but here has type.    ''b'</Expects>
-//<Expects id="FS0001" span="(106,48-106,49)" status="error">A type parameter is missing a constraint 'when 'b :> C'</Expects>
-//<Expects id="FS0193" span="(106,48-106,49)" status="error">Type constraint mismatch. The type.+''b'.+is not compatible with type</Expects>
-//<Expects id="FS0041" span="(107,41-107,51)" status="error">No overloads match for method 'M'\. The available overloads are shown below\.</Expects>
-
-
-
-//<Expects id="FS0041" span="(108,41-108,51)" status="error">No overloads match for method 'M'\. The available overloads are shown below\.</Expects>
-
-
-
-//<Expects id="FS0001" span="(109,52-109,53)" status="error">This expression was expected to have type.    ''a'    .but here has type.    ''b'</Expects>
-//<Expects id="FS0001" span="(110,50-110,51)" status="error">This expression was expected to have type.    ''b'    .but here has type.    ''a'</Expects>
-//<Expects id="FS0001" span="(110,52-110,53)" status="error">This expression was expected to have type.    'int'    .but here has type.    ''b'</Expects>
-//<Expects id="FS0001" span="(111,52-111,53)" status="error">A type parameter is missing a constraint 'when 'b :> C'</Expects>
-//<Expects id="FS0193" span="(111,52-111,53)" status="error">Type constraint mismatch. The type.+''b'.+is not compatible with type</Expects>
-//<Expects id="FS0041" span="(112,41-112,55)" status="error">No overloads match for method 'M'\. The available overloads are shown below\.</Expects>
-
-
-
-
-//<Expects id="FS0041" span="(113,41-113,55)" status="error">No overloads match for method 'M'\. The available overloads are shown below\.</Expects>
-
-
-
-
-//<Expects id="FS0001" span="(114,51-114,52)" status="error">This expression was expected to have type.    ''a'    .but here has type.    ''b'</Expects>
-//<Expects id="FS0001" span="(115,51-115,52)" status="error">This expression was expected to have type.    'int'    .but here has type.    ''b'</Expects>
-//<Expects id="FS0001" span="(116,51-116,52)" status="error">A type parameter is missing a constraint 'when 'b :> C'</Expects>
-//<Expects id="FS0193" span="(116,51-116,52)" status="error">Type constraint mismatch. The type.+''b'.+is not compatible with type</Expects>
-//<Expects id="FS0041" span="(117,41-117,54)" status="error">No overloads match for method 'M'\. The available overloads are shown below\.</Expects>
-
-
-
-
-//<Expects id="FS0041" span="(118,41-118,54)" status="error">No overloads match for method 'M'\. The available overloads are shown below\.</Expects>
-
-
-
-
-//<Expects id="FS0001" span="(119,52-119,53)" status="error">A type parameter is missing a constraint 'when 'b :> C'</Expects>
-//<Expects id="FS0193" span="(119,52-119,53)" status="error">Type constraint mismatch. The type.+''b'.+is not compatible with type</Expects>
-
+module M
 // These different return types are used to determine which overload got chosen
 type One = | One
 type Two = | Two
@@ -100,21 +56,34 @@ type C1234 =
     static member M<'a>(x:'a,y:int) = Three
     static member M<'a>(x:'a,y:C) = Four
 
-module M0 =
-    let gB1     <'a,'b> (x:'a) (y:'b) = C1.M(x,y) = One      // expect: type error
-    let gB3     <'a,'b> (x:'a) (y:'b) = C3.M(x,y)  = Three   // expect: type error
-    let gB4     <'a,'b> (x:'a) (y:'b) = C4.M(x,y)  = Four    // expect: type error
-    let gB13    <'a,'b> (x:'a) (y:'b) = C13.M(x,y)           // expect: ambiguity error (and note: both would instantiate 'a or 'b)
-    let gB14    <'a,'b> (x:'a) (y:'b) = C14.M(x,y) = Four    // expect: ambiguity error 
-    let gC1     <'a,'b> (x:'a) (y:'b) = C1.M<'a>(x,y) = One      // expect: type error
-    let gC3     <'a,'b> (x:'a) (y:'b) = C3.M<'b>(x,y)  = Three   // expect: type error
-    let gC4     <'a,'b> (x:'a) (y:'b) = C4.M<'a>(x,y)  = Four    // expect: type error
-    let gC13    <'a,'b> (x:'a) (y:'b) = C13.M<'a>(x,y)           // expect: ambiguity error 
-    let gC14    <'a,'b> (x:'a) (y:'b) = C14.M<'a>(x,y)           // expect: ambiguity error 
-    let gD1     <'a,'b> (x:'a) (y:'b) = C1.M<_>(x,y) = One       // expect: type error
-    let gD3     <'a,'b> (x:'a) (y:'b) = C3.M<_>(x,y)  = Three    // expect: type error
-    let gD4     <'a,'b> (x:'a) (y:'b) = C4.M<_>(x,y)  = Four     // expect: type error
-    let gD13    <'a,'b> (x:'a) (y:'b) = C13.M<_>(x,y)            // expect: ambiguity error (and note: both would instantiate 'a or 'b)
-    let gD14    <'a,'b> (x:'a) (y:'b) = C14.M<_>(x,y)            // expect: type error
-    let gD24    <'a,'b> (x:'a) (y:'b) = C24.M<_>(x,y)            // expect: type error
+ 
+module M0Rec =
+    let rec      gB1<'a,'b> (x:'a) (y:'b) = C1.M(x,y) = One      // expect: type error
+    let rec      gB3<'a,'b> (x:'a) (y:'b) = C3.M(x,y)  = Three   // expect: type error
+    let rec     gB13<'a,'b> (x:'a) (y:'b) = C13.M(x,y)           // expect: ambiguity error (and note: both would instantiate 'a or 'b)
+    let rec      gC1<'a,'b> (x:'a) (y:'b) = C1.M<'a>(x,y) = One      // expect: error
+    let rec      gC3<'a,'b> (x:'a) (y:'b) = C3.M<'b>(x,y)  = Three   // expect: error
+    let rec     gC13<'a,'b> (x:'a) (y:'b) = C13.M<'a>(x,y)           // expect: ambiguity error 
+    let rec      gD1<'a,'b> (x:'a) (y:'b) = C1.M<_>(x,y) = One       // expect: type error
+    let rec     gD13<'a,'b> (x:'a) (y:'b) = C13.M<_>(x,y)            // expect: ambiguity error (and note: both would instantiate 'a or 'b)
+    let rec      gD3<'a,'b> (x:'a) (y:'b) = C3.M<_>(x,y)  = Three    // expect: error
 
+//<Expects spans="(60,52-60,53)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'a has been constrained to be type ''b'\.</Expects>
+//<Expects spans="(60,18-60,42)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'b has been constrained to be type ''a'\.</Expects>
+//<Expects spans="(60,18-60,42)" status="error" id="FS0043">The type ''b' does not match the type ''b0'</Expects>
+//<Expects spans="(61,52-61,53)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'b has been constrained to be type 'int'\.</Expects>
+//<Expects spans="(61,18-61,42)" status="error" id="FS0043">The type ''b' does not match the type 'int'</Expects>
+//<Expects status="error" span="(63,45-63,55)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>
+//<Expects spans="(63,56-63,57)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'a has been constrained to be type ''b'\.</Expects>
+//<Expects spans="(63,18-63,42)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'b has been constrained to be type ''a'\.</Expects>
+//<Expects spans="(63,18-63,42)" status="error" id="FS0043">The type ''b' does not match the type ''b0'</Expects>
+//<Expects spans="(64,54-64,55)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'b has been constrained to be type ''a'\.</Expects>
+//<Expects spans="(64,56-64,57)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'a has been constrained to be type 'int'\.</Expects>
+//<Expects spans="(64,18-64,42)" status="error" id="FS0043">The type ''a' does not match the type 'int'</Expects>
+//<Expects status="error" span="(66,45-66,59)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>
+//<Expects spans="(66,55-66,56)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'a has been constrained to be type ''b'\.</Expects>
+//<Expects spans="(66,18-66,42)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'b has been constrained to be type ''a'\.</Expects>
+//<Expects spans="(66,18-66,42)" status="error" id="FS0043">The type ''b' does not match the type ''b0'</Expects>
+//<Expects status="error" span="(68,45-68,58)" id="FS0041">A unique overload for method 'M' could not be determined based on type information prior to this program point\. A type annotation may be needed\. Candidates: static member C13\.M : x:'a \* y:'a -> One, static member C13\.M : x:'a \* y:int -> Three$</Expects>
+//<Expects spans="(68,55-68,56)" status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'b has been constrained to be type 'int'\.</Expects>
+//<Expects spans="(68,18-68,42)" status="error" id="FS0043">The type ''b' does not match the type 'int'</Expects>

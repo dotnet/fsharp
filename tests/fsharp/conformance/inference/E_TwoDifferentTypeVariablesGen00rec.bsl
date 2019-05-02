@@ -14,24 +14,16 @@ E_TwoDifferentTypeVariablesGen00rec.fsx(63,45,63,55): typecheck error FS0041: A 
 
 
 Arguments given:
-
  - 'a
 
  - 'b
 
 
 
-
-
-
-
 Candidates:
-
  - static member C13.M : x:'a * y:'a -> One
 
  - static member C13.M : x:'a * y:int -> Three
-
-
 
 E_TwoDifferentTypeVariablesGen00rec.fsx(64,56,64,57): typecheck error FS0064: This construct causes code to be less generic than indicated by the type annotations. The type variable 'a has been constrained to be type ''b'.
 
@@ -50,24 +42,16 @@ E_TwoDifferentTypeVariablesGen00rec.fsx(66,45,66,59): typecheck error FS0041: A 
 
 
 Arguments given:
-
  - 'a
 
  - 'b
 
 
 
-
-
-
-
 Candidates:
-
  - static member C13.M : x:'a * y:'a -> One
 
  - static member C13.M : x:'a * y:int -> Three
-
-
 
 E_TwoDifferentTypeVariablesGen00rec.fsx(67,55,67,56): typecheck error FS0064: This construct causes code to be less generic than indicated by the type annotations. The type variable 'a has been constrained to be type ''b'.
 
@@ -80,24 +64,16 @@ E_TwoDifferentTypeVariablesGen00rec.fsx(68,45,68,58): typecheck error FS0041: A 
 
 
 Arguments given:
-
  - 'a
 
  - 'b
 
 
 
-
-
-
-
 Candidates:
-
  - static member C13.M : x:'a * y:'a -> One
 
  - static member C13.M : x:'a * y:int -> Three
-
-
 
 E_TwoDifferentTypeVariablesGen00rec.fsx(69,55,69,56): typecheck error FS0064: This construct causes code to be less generic than indicated by the type annotations. The type variable 'b has been constrained to be type 'int'.
 

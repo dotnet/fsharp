@@ -8,19 +8,20 @@ E_RigidTypeAnnotation03.fsx(17,9,17,25): typecheck error FS0041: No overloads ma
 
 
 
-Argument given: sbyte Available overloads:
+Argument given: sbyte
 
- - static member T.M : a:string -> int
+
+
+Available overloads:
+ - static member T.M : a:byte -> int
 
  - static member T.M : a:decimal<Kg> -> int
 
- - static member T.M : a:float32<Kg> -> int
-
  - static member T.M : a:float -> int
 
- - static member T.M : a:byte -> int
+ - static member T.M : a:float32<Kg> -> int
 
-
+ - static member T.M : a:string -> int
 
 E_RigidTypeAnnotation03.fsx(18,13,18,19): typecheck error FS0001: This expression was expected to have type
     'float32'    
@@ -31,19 +32,20 @@ E_RigidTypeAnnotation03.fsx(18,9,18,30): typecheck error FS0041: No overloads ma
 
 
 
-Argument given: float32 Available overloads:
+Argument given: float32
 
- - static member T.M : a:string -> int
+
+
+Available overloads:
+ - static member T.M : a:byte -> int
 
  - static member T.M : a:decimal<Kg> -> int
 
- - static member T.M : a:float32<Kg> -> int
-
  - static member T.M : a:float -> int
 
- - static member T.M : a:byte -> int
+ - static member T.M : a:float32<Kg> -> int
 
-
+ - static member T.M : a:string -> int
 
 E_RigidTypeAnnotation03.fsx(19,13,19,20): typecheck error FS0001: This expression was expected to have type
     'float32<'u>'    
@@ -60,19 +62,20 @@ E_RigidTypeAnnotation03.fsx(20,9,20,39): typecheck error FS0041: No overloads ma
 
 
 
-Argument given: decimal<N s ^ 2> Available overloads:
+Argument given: decimal<N s ^ 2>
 
- - static member T.M : a:string -> int
+
+
+Available overloads:
+ - static member T.M : a:byte -> int
 
  - static member T.M : a:decimal<Kg> -> int
 
- - static member T.M : a:float32<Kg> -> int
-
  - static member T.M : a:float -> int
 
- - static member T.M : a:byte -> int
+ - static member T.M : a:float32<Kg> -> int
 
-
+ - static member T.M : a:string -> int
 
 E_RigidTypeAnnotation03.fsx(21,14,21,18): typecheck error FS0001: This expression was expected to have type
     'char'    
@@ -83,16 +86,17 @@ E_RigidTypeAnnotation03.fsx(21,9,21,27): typecheck error FS0041: No overloads ma
 
 
 
-Argument given: char Available overloads:
+Argument given: char
 
- - static member T.M : a:string -> int
+
+
+Available overloads:
+ - static member T.M : a:byte -> int
 
  - static member T.M : a:decimal<Kg> -> int
 
- - static member T.M : a:float32<Kg> -> int
-
  - static member T.M : a:float -> int
 
- - static member T.M : a:byte -> int
+ - static member T.M : a:float32<Kg> -> int
 
-
+ - static member T.M : a:string -> int
