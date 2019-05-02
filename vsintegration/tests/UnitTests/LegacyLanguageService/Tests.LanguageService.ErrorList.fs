@@ -207,15 +207,13 @@ let g (t : T) = t.Count()
         X(1.0)
         """
 
-        let expectedMessages =
-            [ """No overloads match for method 'X'.
+        let expectedMessages = [ """No overloads match for method 'X'.
 
 Argument given: float
 
 Available overloads:
  - new : bool -> X
- - new : int -> X""" 
-            ]
+ - new : int -> X""" ]
 
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
             
@@ -294,8 +292,7 @@ let x =
         let content = """
         System.Console.WriteLine(null)
         """
-        let expectedMessages = [
-"""A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
+        let expectedMessages = [ """A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Argument given: 'a when 'a : null
 
@@ -303,8 +300,7 @@ Candidates:
  - System.Console.WriteLine(buffer: char []) : unit
  - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit
  - System.Console.WriteLine(value: obj) : unit
- - System.Console.WriteLine(value: string) : unit"""
-        ]
+ - System.Console.WriteLine(value: string) : unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test>]
@@ -319,8 +315,7 @@ type B() =
 let b = B()
 b.Do(1, 1)
         """
-        let expectedMessages = [
-"""A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed.
+        let expectedMessages = [ """A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Arguments given:
  - int
@@ -328,8 +323,7 @@ Arguments given:
 
 Candidates:
  - member A.Do : a:int * b:'T -> unit
- - member A.Do : a:int * b:int -> unit"""        
-        ]
+ - member A.Do : a:int * b:int -> unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test; Category("Expensive")>]
