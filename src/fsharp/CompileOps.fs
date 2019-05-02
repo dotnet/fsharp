@@ -188,7 +188,6 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | NameClash(_, _, _, m, _, _, _) 
       | UnresolvedOverloading(_, _, _, m) 
       | UnresolvedConversionOperator (_, _, _, m)
-      | PossibleOverload(_, _, m) 
       | VirtualAugmentationOnNullValuedType m
       | NonVirtualAugmentationOnNullValuedType m
       | NonRigidTypar(_, _, _, _, _, m)
@@ -449,7 +448,6 @@ let ErrorFromApplyingDefault2E() = DeclareResourceString("ErrorFromApplyingDefau
 let ErrorsFromAddingSubsumptionConstraintE() = DeclareResourceString("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
 let UpperCaseIdentifierInPatternE() = DeclareResourceString("UpperCaseIdentifierInPattern", "")
 let NotUpperCaseConstructorE() = DeclareResourceString("NotUpperCaseConstructor", "")
-let PossibleOverloadE() = DeclareResourceString("PossibleOverload", "%s%s")
 let FunctionExpectedE() = DeclareResourceString("FunctionExpected", "")
 let BakedInMemberConstraintNameE() = DeclareResourceString("BakedInMemberConstraintName", "%s")
 let BadEventTransformationE() = DeclareResourceString("BadEventTransformation", "")
