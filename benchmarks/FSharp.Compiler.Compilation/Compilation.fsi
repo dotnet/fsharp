@@ -43,7 +43,7 @@ type CompilationOptions =
 [<Sealed>]
 type Compilation =
 
-    member Check: filePath: string * CancellationToken -> unit
+    member CheckAsync: filePath: string -> Async<unit>
 
 [<NoEquality;NoComparison>]
 type CompilationInfo =

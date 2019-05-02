@@ -140,3 +140,18 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                | Ok result -> return result
                | Error ex -> return raise ex
        }
+
+type AsyncLazy<'T when 'T : not struct> (computation) =
+    
+    let weak = AsyncLazyWeak<'T> computation
+    let mutable cachedResult = ValueNone // hold strongly
+
+    member __.GetValueAsync () =
+        async {
+            match cachedResult with
+            | ValueSome result -> return result
+            | _ ->
+                let! result = weak.GetValueAsync ()
+                cachedResult <- ValueSome result
+                return result
+        }

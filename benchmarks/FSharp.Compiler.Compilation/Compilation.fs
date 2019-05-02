@@ -62,18 +62,22 @@ type CompilationOptions =
             KeepAllBackgroundResolutions = false
         }
 
-type [<NoEquality;NoComparison>] Compilation =
-    {
-        checker: IncrementalChecker
-        options: CompilationOptions
-    }
+[<Sealed>]
+type Compilation (options: CompilationOptions, asyncLazyGetChecker: AsyncLazy<IncrementalChecker>, version: VersionStamp) =
 
-    member this.Version = this.checker.Version
+    member this.Version = version
 
-    member this.Check (filePath, cancellationToken) =
-        let tcAcc, tcResolutionsOpt = this.checker.Check (filePath, cancellationToken)
-      //  printfn "%A" (tcAcc.tcDependencyFiles)
-        ()
+    member this.Options = options
+
+    member this.CheckAsync (filePath) =
+        async {
+            let! checker = asyncLazyGetChecker.GetValueAsync ()
+            let! tcAcc, tcResolutionsOpt = checker.CheckAsync (filePath)
+            ()
+        }
+
+    static member Create (options, asyncLazyGetChecker) =
+        Compilation (options, asyncLazyGetChecker, VersionStamp.Create ())
 
 type [<NoEquality;NoComparison>] CompilationInfo =
     {
@@ -84,21 +88,6 @@ type [<NoEquality;NoComparison>] CompilationInfo =
 
 [<Sealed>]
 type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStrongSize, workspace: Microsoft.CodeAnalysis.Workspace) =
-    let ctok = CompilationThreadToken ()
-    let gate = NonReentrantLock ()
-
-    let _takeLock () =
-        async {
-            let! cancellationToken = Async.CancellationToken
-            return gate.Wait cancellationToken
-        }
-
-    let _takeLockCancellable () =
-        cancellable {
-            let! cancellationToken = Cancellable.token ()
-            return gate.Wait cancellationToken
-        }
-
     // Caches
     let frameworkTcImportsCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize
     let temporaryStorageService = workspace.Services.TemporaryStorage
@@ -113,7 +102,7 @@ type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStro
         | ValueOrCancelled.Value result -> result
         | ValueOrCancelled.Cancelled ex -> raise ex
 
-    member this.CreateCompilation info =
+    member this.CreateIncrementalChecker info ctok cancellationToken =
         let useSimpleResolutionSwitch = "--simpleresolution"
         let commandLineArgs = info.Options.CommandLineArgs
         let legacyReferenceResolver = info.Options.LegacyReferenceResolver
@@ -136,7 +125,7 @@ type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStro
                         return None
                         }
 
-                    member __.FileName = compilation.options.AssemblyPath
+                    member __.FileName = compilation.Options.AssemblyPath
 
                     member __.TryGetLogicalTimeStamp (_, _) =
                         Some compilation.Version.DateTime                              
@@ -230,8 +219,6 @@ type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStro
 
             let initialInfo =
                 {
-                    ctok = ctok
-                    temporaryStorageService = temporaryStorageService
                     tcConfig = tcConfig
                     tcConfigP = TcConfigProvider.Constant tcConfig
                     tcGlobals = tcGlobals
@@ -256,13 +243,18 @@ type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStro
                     sourceSnapshots = info.SourceSnapshots
                 }
 
-            let checker = 
-                match IncrementalChecker.Create initialInfo |> Cancellable.run CancellationToken.None with
-                | ValueOrCancelled.Value result -> result
-                | ValueOrCancelled.Cancelled ex -> raise ex
-            {
-                checker = checker
-                options = info.Options
-            }
+            match IncrementalChecker.create initialInfo ctok |> Cancellable.run cancellationToken with
+            | ValueOrCancelled.Value result -> result
+            | ValueOrCancelled.Cancelled ex -> raise ex
 
         builderOpt
+
+    member this.CreateCompilation info =
+        let asyncLazyGetChecker =
+            AsyncLazy (
+                async {
+                    let! cancellationToken = Async.CancellationToken
+                    return! CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> async { return this.CreateIncrementalChecker info ctok cancellationToken })
+                }
+            )
+        Compilation.Create (info.Options, asyncLazyGetChecker)

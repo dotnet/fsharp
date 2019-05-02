@@ -29,7 +29,7 @@ type CompilationWorkerInstance () =
     do
         agent.Start ()
 
-    member __.EnqueueAsync (work: CompilationThreadToken -> Async<'T>) =
+    member __.EnqueueAndAwaitAsync (work: CompilationThreadToken -> Async<'T>) =
         async {
             match! agent.PostAndAsyncReply (fun replyChannel -> Work ((fun ctok -> async { let! result = work ctok in return (result :> obj) }), replyChannel)) with
             | Result.Ok result -> return (result :?> 'T)
@@ -40,4 +40,4 @@ module CompilationWorker =
 
     let instance = CompilationWorkerInstance ()
 
-    let EnqueueAsync work = instance.EnqueueAsync work
+    let EnqueueAndAwaitAsync work = instance.EnqueueAndAwaitAsync work

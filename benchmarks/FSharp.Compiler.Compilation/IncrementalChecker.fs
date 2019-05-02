@@ -216,28 +216,28 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
         let newState = state
         IncrementalChecker (tcConfig, tcGlobals, tcImports, initialTcAcc, options, newState)
 
-    member this.GetTcAcc (filePath: string, cancellationToken) =
-        match state.GetIndexAndCompilationResult filePath with
-        | 0, cacheResult -> 
-            Eventually.Done (initialTcAcc, cacheResult)
+    member this.GetTcAcc (filePath: string) =
+        async {
+            match state.GetIndexAndCompilationResult filePath with
+            | 0, cacheResult -> 
+                return (initialTcAcc, cacheResult)
 
-        | (i, cacheResult) ->
-            let priorCacheResult = state.GetCompilationResultByIndex (i - 1)
-            match priorCacheResult.contents with
-            | CompilationResult.Parsed (syntaxTree, _) ->
-                eventually {
+            | (i, cacheResult) ->
+                let priorCacheResult = state.GetCompilationResultByIndex (i - 1)
+                match priorCacheResult.contents with
+                | CompilationResult.Parsed (syntaxTree, _) ->
                     // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
-                    let! tcAcc, _ = this.Check (syntaxTree.FilePath, CheckerFlags.None, cancellationToken)
+                    let! tcAcc, _ = this.CheckAsync (syntaxTree.FilePath, CheckerFlags.None)
                     return (tcAcc, cacheResult)
-                }
-            | CompilationResult.Checked (_, tcAcc) ->
-                Eventually.Done (tcAcc, cacheResult)
+                | CompilationResult.Checked (_, tcAcc) ->
+                    return (tcAcc, cacheResult)
+        }
 
-    member this.Check (filePath: string, flags: CheckerFlags, cancellationToken: CancellationToken) =
-        eventually {
-            cancellationToken.ThrowIfCancellationRequested ()
+    member this.CheckAsync (filePath: string, flags: CheckerFlags) =
+        async {
+            let! cancellationToken = Async.CancellationToken
 
-            let! (tcAcc, cacheResult) = this.GetTcAcc (filePath, cancellationToken)
+            let! (tcAcc, cacheResult) = this.GetTcAcc (filePath)
             let syntaxTree = cacheResult.contents.SyntaxTree
             let (inputOpt, parseErrors) = Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
             match inputOpt with
@@ -253,6 +253,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
 
                         let input, moduleNamesDict = DeduplicateParsedInputModuleName tcAcc.tcModuleNamesDict input
 
+                        printfn "type checking"
                         let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
                             TypeCheckOneInputEventually 
                                 ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
@@ -275,7 +276,6 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                             else
                                 None
                                 
-                    
                         let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
                         return {tcAcc with  tcState=tcState 
                                             tcEnvAtEndOfFile=tcEnvAtEndOfFile
@@ -304,22 +304,22 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                                     use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
                                     f ctok)
 
-                let! tcAcc, tcResolutionsOpt = timeSlicedComputation
-                cacheResult := CompilationResult.Checked (syntaxTree, tcAcc)
-                return (tcAcc, tcResolutionsOpt)
+                match! timeSlicedComputation |> Eventually.forceAsync (fun eventuallyWork -> CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> async { return (eventuallyWork ctok) })) with
+                | Some (tcAcc, tcResolutionsOpt) -> 
+                    cacheResult := CompilationResult.Checked (syntaxTree, tcAcc)
+                    return (tcAcc, tcResolutionsOpt)
+                | _ ->
+                    return failwith "computation failed"
                                        
             | _ ->
                 return (tcAcc, None)
         }
 
-        member this.Check (filePath: string, cancellationToken) =
-            let computation = this.Check (filePath, CheckerFlags.ReturnResolutions, cancellationToken)
-            Eventually.force (CompilationThreadToken ()) computation
+        member this.CheckAsync (filePath: string) =
+            this.CheckAsync (filePath, CheckerFlags.ReturnResolutions)
 
 type InitialInfo =
     {
-        ctok: CompilationThreadToken
-        temporaryStorageService: Microsoft.CodeAnalysis.Host.ITemporaryStorageService
         tcConfig: TcConfig
         tcConfigP: TcConfigProvider
         tcGlobals: TcGlobals
@@ -339,8 +339,7 @@ module IncrementalChecker =
 
     let rangeStartup = FSharp.Compiler.Range.rangeN "startup" 1
 
-    let Create (info: InitialInfo) =
-      let ctok = info.ctok
+    let create (info: InitialInfo) ctok =
       let tcConfig = info.tcConfig
       let tcConfigP = info.tcConfigP
       let tcGlobals = info.tcGlobals
@@ -354,8 +353,6 @@ module IncrementalChecker =
       let projectDirectory = info.projectDirectory
 
       cancellable {
-        let! cancellationToken = Cancellable.token ()
-
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)

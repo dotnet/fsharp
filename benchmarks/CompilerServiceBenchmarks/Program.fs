@@ -355,15 +355,18 @@ module TestModule%i =
     let sources =
         [
             for i = 1 to 100 do
-                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 1))
+                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 10))
         ]
+
+    let sourceSnapshots =
+        sources
+        |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
+        |> ImmutableArray.CreateRange
 
     [<Benchmark>]
     member __.Test() =
-        let sourceSnapshots =
-            sources
-            |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
-            |> ImmutableArray.CreateRange
+        use cts = new CancellationTokenSource ()
+
         let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
         let compilationInfo =
             {
@@ -373,7 +376,11 @@ module TestModule%i =
             }
 
         let compilation = compilationService.CreateCompilation compilationInfo
-        compilation.Check ("test1.fs", CancellationToken.None)
+
+        try
+            Async.RunSynchronously (compilation.CheckAsync ("test10.fs"), cancellationToken = cts.Token)
+        with :? OperationCanceledException ->
+            printfn "cancelled"
         ()
         
 

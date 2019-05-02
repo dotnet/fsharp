@@ -76,12 +76,10 @@ type internal IncrementalChecker =
 
     member ReplaceSourceSnapshot: sourceSnapshot: SourceSnapshot -> IncrementalChecker
 
-    member Check: filePath: string * cancellationToken: CancellationToken -> (TcAccumulator * TcResolutions option)
+    member CheckAsync: filePath: string -> Async<(TcAccumulator * TcResolutions option)>
 
 type internal InitialInfo =
     {
-        ctok: CompilationThreadToken
-        temporaryStorageService: Microsoft.CodeAnalysis.Host.ITemporaryStorageService
         tcConfig: TcConfig
         tcConfigP: TcConfigProvider
         tcGlobals: TcGlobals
@@ -99,4 +97,4 @@ type internal InitialInfo =
 
 module internal IncrementalChecker =
 
-    val Create: InitialInfo -> Cancellable<IncrementalChecker>    
+    val create: InitialInfo -> CompilationThreadToken -> Cancellable<IncrementalChecker>    
