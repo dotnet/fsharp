@@ -209,9 +209,12 @@ type CheckerFlags =
     | ReturnResolutions = 0x1 
 
 [<Sealed>]
-type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, initialTcAcc: TcAccumulator, options: IncrementalCheckerOptions, state: IncrementalCheckerState) =
+type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, initialTcAcc: TcAccumulator, options: IncrementalCheckerOptions, state: IncrementalCheckerState) as this =
 
+    let gate = obj ()
     let maxTimeShareMilliseconds = 100L
+
+    let cacheResults = Array.zeroCreate state.orderedResults.Length
 
     member __.Version = state.version
 
@@ -303,12 +306,21 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                             Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled 
                                 maxTimeShareMilliseconds
                                 cancellationToken
-                                (fun ctok f -> 
-                                    // Reinstall the compilation globals each time we start or restart
-                                    use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
-                                    f ctok)
+                                (fun ctok f -> f ctok)
 
-                match! timeSlicedComputation |> Eventually.forceAsync (fun eventuallyWork -> CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> async { return (eventuallyWork ctok) })) with
+                let timeSlicedComputationAsync =
+                    timeSlicedComputation
+                    |> Eventually.forceAsync (fun eventuallyWork ->
+                        CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->
+                            // Reinstall the compilation globals each time we start or restart
+                            use _unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
+                            async { 
+                                return (eventuallyWork ctok) 
+                            }
+                        )
+                    )
+
+                match! timeSlicedComputationAsync with
                 | Some (tcAcc, tcResolutionsOpt) -> 
                     cacheResult := CompilationResult.Checked (syntaxTree, tcAcc)
                     return (tcAcc, tcResolutionsOpt)
@@ -320,7 +332,15 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
         }
 
         member this.CheckAsync (filePath: string) =
-            this.CheckAsync (filePath, CheckerFlags.ReturnResolutions)
+            async {
+                let i = state.GetIndex filePath
+                lock gate <| fun () ->
+                    match cacheResults.[i] with
+                    | ValueNone -> cacheResults.[i] <- ValueSome (AsyncLazy (this.CheckAsync (filePath, CheckerFlags.ReturnResolutions)))
+                    | _ -> ()
+
+                return! cacheResults.[i].Value.GetValueAsync ()
+            }
 
 type InitialInfo =
     {
