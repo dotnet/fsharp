@@ -4,7 +4,7 @@ open System
 open FSharp.Compiler.AbstractIL.Internal.Library
 
 type CompilationWorkerMessage =
-    | Work of (CompilationThreadToken -> Async<obj>) * AsyncReplyChannel<Result<obj, Exception>>
+    | Work of (CompilationThreadToken -> obj) * AsyncReplyChannel<Result<obj, Exception>>
 
 [<Sealed>]
 type CompilationWorkerInstance () =
@@ -17,8 +17,7 @@ type CompilationWorkerInstance () =
                 match! agent.Receive() with
                 | Work (work, replyChannel) ->
                     try
-                        let! result = work ctok
-                        replyChannel.Reply (Result.Ok result)
+                        replyChannel.Reply (Result.Ok (work ctok))
                     with 
                     | ex ->
                         replyChannel.Reply (Result.Error ex)
@@ -29,9 +28,9 @@ type CompilationWorkerInstance () =
     do
         agent.Start ()
 
-    member __.EnqueueAndAwaitAsync (work: CompilationThreadToken -> Async<'T>) =
+    member __.EnqueueAndAwaitAsync (work: CompilationThreadToken -> 'T) =
         async {
-            match! agent.PostAndAsyncReply (fun replyChannel -> Work ((fun ctok -> async { let! result = work ctok in return (result :> obj) }), replyChannel)) with
+            match! agent.PostAndAsyncReply (fun replyChannel -> Work ((fun ctok -> (work ctok) :> obj), replyChannel)) with
             | Result.Ok result -> return (result :?> 'T)
             | Result.Error ex -> return raise ex
         }

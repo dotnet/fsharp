@@ -23,35 +23,17 @@ open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
 
-/// Accumulated results of type checking.
-[<NoEquality; NoComparison>]
-type TcAccumulator =
-    { tcState: TcState
-      tcEnvAtEndOfFile: TcEnv
+type internal CheckerParsingOptions =
+    {
+        isExecutable: bool
+    }
 
-      /// Accumulated resolutions, last file first
-      tcResolutionsRev: TcResolutions list
-
-      /// Accumulated symbol uses, last file first
-      tcSymbolUsesRev: TcSymbolUses list
-
-      /// Accumulated 'open' declarations, last file first
-      tcOpenDeclarationsRev: OpenDeclaration[] list
-
-      topAttribs: TopAttribs option
-
-      /// Result of checking most recent file, if any
-      latestImplFile: TypedImplFile option
-
-      latestCcuSigForFile: ModuleOrNamespaceType option
-
-      tcDependencyFiles: string list
-
-      /// Disambiguation table for module names
-      tcModuleNamesDict: ModuleNamesDict
-
-      /// Accumulated errors, last file first
-      tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list }
+type internal CheckerOptions =
+    {
+        keepAssemblyContents: bool
+        keepAllBackgroundResolutions: bool
+        parsingOptions: CheckerParsingOptions
+    }
 
 [<RequireQualifiedAccess>]
 type CompilationResult =
@@ -67,16 +49,10 @@ type CompilationResult =
         | CompilationResult.CheckingInProgress (syntaxTree, _) -> syntaxTree
         | CompilationResult.Checked (syntaxTree, _) -> syntaxTree
 
-type ParsingOptions =
-    {
-        isExecutable: bool
-        lexResourceManager: Lexhelp.LexResourceManager
-    }
-
 type IncrementalCheckerState =
     {
         tcConfig: TcConfig
-        parsingOptions: ParsingOptions
+        parsingOptions: CheckerParsingOptions
         orderedResults: ImmutableArray<CompilationResult ref>
         indexLookup: ImmutableDictionary<string, int>
         version: VersionStamp
@@ -174,43 +150,13 @@ type IncrementalCheckerState =
         | CompilationResult.CheckingInProgress (syntaxTree, _) -> Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
         | CompilationResult.Checked (syntaxTree, _) -> Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
 
-    //member this.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
-    //    match this.indexLookup.TryGetValue sourceSnapshot.FilePath with
-    //    | false, _ -> failwith "syntax tree does not exist in incremental checker"
-    //    | true, (i) ->
-    //        let orderedResultsBuilder = ImmutableArray.Crea
-    //        let mutable resultCache = this.resultCache//this.resultCache.SetItem(source.FilePath, (i, ref (CompilationResult.Parsed source)))
-
-    //        //for i = i + 1 to this.orderedFilePaths.Length - 1 do
-    //        //    let filePath = this.orderedFilePaths.[i]
-    //        //    match this.resultCache.TryGetValue filePath with
-    //        //    | false, _ -> failwith "should not happen"
-    //        //    | true, (i, refResult) ->
-    //        //        let syntaxTree =
-    //        //            match refResult.contents with
-    //        //            | CompilationResult.Parsed syntaxTree -> syntaxTree
-    //        //            | CompilationResult.Checked (syntaxTree, _) -> syntaxTree
-    //        //        resultCache <- resultCache.SetItem(syntaxTree.FilePath, (i, ref (CompilationResult.Parsed syntaxTree)))
-
-    //        { this with
-    //            resultCache = resultCache
-    //            version = this.version.NewVersionStamp ()
-    //        }
-
-type IncrementalCheckerOptions =
-    {
-        keepAssemblyContents: bool
-        keepAllBackgroundResolutions: bool
-        parsingOptions: ParsingOptions
-    }
-
 type CheckerFlags =
     | None = 0x00
     | ReturnResolutions = 0x01 
     | Recheck = 0x1
 
 [<Sealed>]
-type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, initialTcAcc: TcAccumulator, options: IncrementalCheckerOptions, state: IncrementalCheckerState) =
+type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, initialTcAcc: TcAccumulator, options: CheckerOptions, state: IncrementalCheckerState) =
 
     let gate = obj ()
     let maxTimeShareMilliseconds = 100L
@@ -227,7 +173,6 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
         async {
             match state.GetIndexAndCompilationResult filePath with
             | 0, cacheResult -> 
-                printfn "initial tcacc"
                 return (initialTcAcc, cacheResult)
 
             | (i, cacheResult) ->
@@ -244,7 +189,6 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
 
     member this.CheckAsync (filePath: string, flags: CheckerFlags) =
         async {
-            printfn "Checking %s" filePath
             let! cancellationToken = Async.CancellationToken
 
             let! (tcAcc, cacheResult) = this.GetTcAcc (filePath)
@@ -307,7 +251,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                         fullComputation |> 
                             Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled 
                                 maxTimeShareMilliseconds
-                                cancellationToken
+                                CancellationToken.None
                                 (fun ctok f -> f ctok)
 
                 let timeSlicedComputationAsync =
@@ -316,9 +260,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                         CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->
                             // Reinstall the compilation globals each time we start or restart
                             use _unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
-                            async { 
-                                return (eventuallyWork ctok) 
-                            }
+                            eventuallyWork ctok
                         )
                     )
 
@@ -352,114 +294,10 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
         member this.CheckAsync filePath =
             this.CheckAsyncLazy (filePath, CheckerFlags.ReturnResolutions ||| CheckerFlags.Recheck)
 
-type InitialInfo =
-    {
-        tcConfig: TcConfig
-        tcConfigP: TcConfigProvider
-        tcGlobals: TcGlobals
-        frameworkTcImports: TcImports
-        nonFrameworkResolutions: AssemblyResolution list
-        unresolvedReferences: UnresolvedAssemblyReference list
-        importsInvalidated: Event<string>
-        assemblyName: string
-        niceNameGen: NiceNameGenerator
-        loadClosureOpt: LoadClosure option
-        projectDirectory: string
-        checkerOptions: IncrementalCheckerOptions
-        sourceSnapshots: ImmutableArray<SourceSnapshot>
-    }
-
 module IncrementalChecker =
 
-    let rangeStartup = FSharp.Compiler.Range.rangeN "startup" 1
-
-    let create (info: InitialInfo) ctok =
-      let tcConfig = info.tcConfig
-      let tcConfigP = info.tcConfigP
-      let tcGlobals = info.tcGlobals
-      let frameworkTcImports = info.frameworkTcImports
-      let nonFrameworkResolutions = info.nonFrameworkResolutions
-      let unresolvedReferences = info.unresolvedReferences
-      let importsInvalidated = info.importsInvalidated
-      let assemblyName = info.assemblyName
-      let niceNameGen = info.niceNameGen
-      let loadClosureOpt = info.loadClosureOpt
-      let projectDirectory = info.projectDirectory
-
-      cancellable {
-        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
-        // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
-
-        let! tcImports = 
-          cancellable {
-            try
-                let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences)  
-    #if !NO_EXTENSIONTYPING
-                tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 
-                    // When a CCU reports an invalidation, merge them together and just report a 
-                    // general "imports invalidated". This triggers a rebuild.
-                    //
-                    // We are explicit about what the handler closure captures to help reason about the
-                    // lifetime of captured objects, especially in case the type provider instance gets leaked
-                    // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
-                    //
-                    // The handler only captures
-                    //    1. a weak reference to the importsInvalidated event.  
-                    //
-                    // The IncrementalBuilder holds the strong reference the importsInvalidated event.
-                    //
-                    // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to 
-                    // be collected if, for some reason, a TP instance is not disposed or not GC'd.
-                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidated)
-                    ccu.Deref.InvalidateEvent.Add(fun msg -> 
-                        match capturedImportsInvalidated.TryGetTarget() with 
-                        | true, tg -> tg.Trigger msg
-                        | _ -> ()))
-    #endif
-
-                return tcImports
-            with e -> 
-                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
-                errorLogger.Warning e
-                return frameworkTcImports           
-          }
-
-        let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
-        let loadClosureErrors = 
-           [ match loadClosureOpt with 
-             | None -> ()
-             | Some loadClosure -> 
-                for inp in loadClosure.Inputs do
-                    for (err, isError) in inp.MetaCommandDiagnostics do 
-                        yield err, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
-
-        let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetErrors())
-
-        let basicDependencies = 
-            [ for (UnresolvedAssemblyReference(referenceText, _))  in unresolvedReferences do
-                // Exclude things that are definitely not a file name
-                if not(FileSystem.IsInvalidPathShim referenceText) then 
-                    let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectDirectory, referenceText) 
-                    yield file 
-
-              for r in nonFrameworkResolutions do 
-                    yield  r.resolvedPath  ]
-
-        let! checkerState = IncrementalCheckerState.Create (tcConfig, info.checkerOptions.parsingOptions, info.sourceSnapshots)
-
-        let tcAcc = 
-            { tcState=tcState
-              tcEnvAtEndOfFile=tcInitial
-              tcResolutionsRev=[]
-              tcSymbolUsesRev=[]
-              tcOpenDeclarationsRev=[]
-              topAttribs=None
-              latestImplFile=None
-              latestCcuSigForFile=None
-              tcDependencyFiles=basicDependencies
-              tcErrorsRev = [ initialErrors ] 
-              tcModuleNamesDict = Map.empty }
-        return IncrementalChecker (tcConfig, tcGlobals, tcImports, tcAcc, info.checkerOptions, checkerState)
+    let create tcConfig tcGlobals tcImports tcAcc (checkerOptions: CheckerOptions) sourceSnapshots =
+        cancellable {
+            let! state = IncrementalCheckerState.Create (tcConfig, checkerOptions.parsingOptions, sourceSnapshots)
+            return IncrementalChecker (tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, state)
         }

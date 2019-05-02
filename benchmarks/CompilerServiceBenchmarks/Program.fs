@@ -354,8 +354,8 @@ module TestModule%i =
 
     let sources =
         [
-            for i = 1 to 100 do
-                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 1))
+            for i = 1 to 1 do
+                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 10000))
         ]
 
     let sourceSnapshots =
@@ -363,37 +363,31 @@ module TestModule%i =
         |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
         |> ImmutableArray.CreateRange
 
-    let cts = new CancellationTokenSource ()
-
-    let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
-    let compilationInfo =
-        {
-            Options = compilationOptions
-            SourceSnapshots = sourceSnapshots
-            CompilationReferences = ImmutableArray.Empty
-        }
-
-    let compilation = compilationService.CreateCompilation compilationInfo
-
     [<Benchmark>]
     member __.Test() =
-        //use cts = new CancellationTokenSource ()
+        use cts = new CancellationTokenSource ()
 
-        //let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
-        //let compilationInfo =
-        //    {
-        //        Options = compilationOptions
-        //        SourceSnapshots = sourceSnapshots
-        //        CompilationReferences = ImmutableArray.Empty
-        //    }
+        let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", [], """C:\""", false)
+        let compilationInfo =
+            {
+                Options = compilationOptions
+                SourceSnapshots = sourceSnapshots
+                CompilationReferences = ImmutableArray.Empty
+            }
 
-        //let compilation = compilationService.CreateCompilation compilationInfo
+        let compilation = compilationService.CreateCompilation compilationInfo
 
         let work =
             async {
                 let! _result = compilation.CheckAsync ("test1.fs")
+                printfn "%A" (System.Diagnostics.Process.GetCurrentProcess().Threads.Count)
                 ()
             }
+
+        async {
+            do! Async.Sleep 5000
+            cts.Cancel ()
+        } |> Async.Start
 
         try
             Async.RunSynchronously (work, cancellationToken = cts.Token)

@@ -76,7 +76,7 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
            match tryGetResult () with
            | ValueSome result -> return result
            | _ ->
-               let! cancellationToken = Async.CancellationToken
+               let cancellationToken = CancellationToken.None //Async.CancellationToken
                let agent, cts =
                     lock gate <| fun() ->
                         requestCount <- requestCount + 1
