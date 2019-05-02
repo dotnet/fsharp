@@ -216,7 +216,7 @@ exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: Disp
 exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * ContextInfo * range
 exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
 exception PossibleOverload                      of displayEnv: DisplayEnv * overload: OverloadInformation * range
-exception UnresolvedOverloading                 of displayEnv: DisplayEnv * prefixMessage: string * overloads: PossibleOverload list * range
+exception UnresolvedOverloading                 of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
 exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
 
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
@@ -2316,16 +2316,16 @@ and MustUnify csenv ndeep trace cxsln ty1 ty2 =
 and MustUnifyInsideUndo csenv ndeep trace cxsln ty1 ty2 = 
     SolveTypeEqualsTypeWithReport csenv ndeep csenv.m (WithTrace trace) cxsln ty1 ty2
 
-and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledArg (CallerArg(callerArgTy, m, _, _) as callerArg) = 
-    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint true calledArg callerArg
-    SolveTypeSubsumesTypeWithReport csenv ndeep  m (WithTrace trace) cxsln calledArgTy callerArgTy 
+and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledArg callerArg = 
+    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
+    SolveTypeSubsumesTypeWithReport csenv ndeep callerArg.Range (WithTrace trace) cxsln calledArgTy callerArg.ArgumentType 
 
 and TypesMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
 
-and ArgsEquivInsideUndo (csenv: ConstraintSolverEnv) isConstraint calledArg (CallerArg(callerArgTy, m, _, _) as callerArg) = 
-    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint true calledArg callerArg
-    if typeEquiv csenv.g calledArgTy callerArgTy then CompleteD else ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(), m))
+and ArgsEquivInsideUndo (csenv: ConstraintSolverEnv) isConstraint calledArg callerArg = 
+    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
+    if typeEquiv csenv.g calledArgTy callerArg.ArgumentType then CompleteD else ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(), callerArg.Range))
 
 and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nNamedCallerArgs) methodName ad (calledMethGroup: CalledMeth<_> list) isSequential =
 
@@ -2536,71 +2536,8 @@ and ResolveOverloading
                 | Some (fromTy, toTy) -> 
                     UnresolvedConversionOperator (denv, fromTy, toTy, m)
                 | None -> 
-                    // Otherwise collect a list of possible overloads
-                    let msg =
-                        let displayArgType (name , ttype) =
-                            let typeDisplay = NicePrint.prettyStringOfTy denv ttype
-                            match name with
-                            | Some name -> sprintf "(%s) : %s" name typeDisplay
-                            | None -> sprintf "%s" typeDisplay
-                        let nl = System.Environment.NewLine
-                        let argsMessage =
-                            match callerArgs.LayoutArgumentTypes denv with
-                            | [] -> System.String.Empty
-                            | [item] -> nl + (item |> getArgType |> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular)
-                            | items -> 
-                                let args = 
-                                    items 
-                                    |> List.map (getArgType >> FSComp.SR.formatDashItem)
-                                    |> List.toArray
-                                    |> String.concat nl
-
-                                nl + nl
-                                + (FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural()) 
-                                + nl
-                                + args
-                                + nl + nl
-
-  
-                        //printfn "%A" argsMessage
-                        match overloadResolutionFailure with
-                        | NoOverloadsFound (methodName, _) -> FSComp.SR.csNoOverloadsFound methodName + argsMessage
-                        | PossibleCandidates (methodName, methodNames) ->
-                            let msg = FSComp.SR.csMethodIsOverloaded methodName
-                            match methodNames with
-                            | [] -> msg
-                            | names -> 
-                                let overloads =
-
-                                    FSComp.SR.csCandidates ()
-                                    + nl +
-                                    (
-                                    names 
-                                    |> List.map (fun overload -> NicePrint.stringOfMethInfo amap m denv overload.methodSlot.Method)
-                                    |> List.sort
-                                    |> List.map FSComp.SR.formatDashItem
-                                    |> String.concat nl)
-                                    
-
-                                msg 
-                                + nl
-                                + argsMessage  
-                                + nl
-                                + nl
-                                + overloads
-                                
-
-                    let overloads =
-                        overloadResolutionFailure
-                        |> function | NoOverloadsFound (_, candidates) -> candidates
-                                    | PossibleCandidates _ -> []
-                        |> List.map (fun overload -> 
-                            PossibleOverload(denv, overload, m)  :?> _ // F# Spec: 8.11 Exception Definitions: The identifier identcan be used to generate values of type exn
-                        )
-                    
-                    // if list of overloads is not empty - append line with "The available overloads are shown below..."
-                    let msg = if isNil overloads then msg else sprintf "%s %s" msg (FSComp.SR.csSeeAvailableOverloads ())
-                    UnresolvedOverloading (denv, msg, overloads, m)
+                    // Otherwise pass the overload resolution failure for error printing in CompileOps
+                    UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
             match applicable with 
             | [] ->

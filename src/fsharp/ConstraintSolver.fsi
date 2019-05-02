@@ -114,12 +114,12 @@ exception ConstraintSolverError                         of string * range * rang
 exception ConstraintSolverRelatedInformation            of string option * range * exn
 
 exception ErrorFromApplyingDefault              of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * range
+exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actual: TType * expected: TType * exn * range
 exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * ContextInfo * range
 exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
 exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
 exception PossibleOverload                      of displayEnv: DisplayEnv * overload: OverloadInformation * range
-exception UnresolvedOverloading                 of displayEnv: DisplayEnv * prefixMessage: string * overloads: PossibleOverload list * range
+exception UnresolvedOverloading                 of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
 exception NonRigidTypar                         of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.

@@ -767,11 +767,47 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(e.ContextualErrorMessage) |> ignore
 #endif
 
-      | UnresolvedOverloading(denv, mtext, overloads, m) ->
-          os.AppendLine mtext |> ignore
-          overloads
-          |> List.map (fun e -> e.overload.OverloadMethodInfo denv m |> FSComp.SR.formatDashItem)
-          |> List.iter (os.AppendLine >> ignore)
+      | UnresolvedOverloading(denv, callerArgs, failure, m) ->
+          let nl = System.Environment.NewLine
+          let displayArgType (name, ttype) =
+              let typeDisplay = NicePrint.prettyStringOfTy denv ttype
+              match name with
+              | Some name -> sprintf "(%s) : %s" name typeDisplay
+              | None -> sprintf "%s" typeDisplay
+          let argsMessage =
+              let prefix = nl + nl
+              let suffix = nl + nl
+              match callerArgs.ArgumentNamesAndTypes with
+              | [] -> nl + nl
+              | [item] -> prefix + (item |> displayArgType |> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular) + suffix
+              | items -> 
+                  let args = 
+                      items 
+                      |> List.map (displayArgType >> FSComp.SR.formatDashItem) // consider if --flaterrors is on, we may like commas better in this case
+                      |> List.toArray
+                      |> String.concat nl
+          
+                  prefix + (FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural args) + suffix
+          let formatOverloads (overloads: OverloadInformation list) =
+              overloads
+              |> List.map (fun overload -> overload.OverloadMethodInfo denv m)
+              |> List.sort
+              |> List.map FSComp.SR.formatDashItem
+              |> String.concat nl
+          
+          let msg =
+              match failure with
+              | NoOverloadsFound (methodName, overloads) -> FSComp.SR.csNoOverloadsFound methodName + argsMessage + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
+              | PossibleCandidates (methodName, methodNames) ->
+                  let msg = FSComp.SR.csMethodIsOverloaded methodName
+                  match methodNames with
+                  | [] -> msg
+                  | names -> 
+                      let overloads = FSComp.SR.csCandidates (formatOverloads names)
+                      msg 
+                      + argsMessage
+                      + overloads
+          os.Append msg |> ignore
 
       | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
