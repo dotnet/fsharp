@@ -57,12 +57,14 @@ type TcAccumulator =
 type CompilationResult =
    // | NotParsed of Source
     | Parsed of SyntaxTree * ParseResult
+    | CheckingInProgress of SyntaxTree * CancellationTokenSource
    // | SignatureChecked of SyntaxTree * TcAccumulator // is an impl file, but only checked its signature file (.fsi)
     | Checked of SyntaxTree * TcAccumulator
 
     member this.SyntaxTree =
         match this with
         | CompilationResult.Parsed (syntaxTree, _) -> syntaxTree
+        | CompilationResult.CheckingInProgress (syntaxTree, _) -> syntaxTree
         | CompilationResult.Checked (syntaxTree, _) -> syntaxTree
 
 type ParsingOptions =
@@ -169,6 +171,7 @@ type IncrementalCheckerState =
     member this.GetParseResult (filePath: string, cancellationToken) =
         match this.GetCompilationResult(filePath).contents with
         | CompilationResult.Parsed (_, parseResult) -> parseResult
+        | CompilationResult.CheckingInProgress (syntaxTree, _) -> Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
         | CompilationResult.Checked (syntaxTree, _) -> Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
 
     //member this.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
@@ -229,6 +232,7 @@ type IncrementalChecker (tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: Tc
                     // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
                     let! tcAcc, _ = this.CheckAsync (syntaxTree.FilePath, CheckerFlags.None)
                     return (tcAcc, cacheResult)
+                | CompilationResult.CheckingInProgress (_, _) -> return failwith "not yet"
                 | CompilationResult.Checked (_, tcAcc) ->
                     return (tcAcc, cacheResult)
         }
