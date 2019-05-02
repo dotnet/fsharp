@@ -6,7 +6,6 @@ neg106.fs(13,18,13,72): typecheck error FS0041: No overloads match for method 'C
 
 
 Arguments given:
-
  - inref<int>
 
  - int
@@ -16,22 +15,19 @@ Arguments given:
 
 
 Available overloads:
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<int64>, value: int64, comparand: int64) : int64
-
  - System.Threading.Interlocked.CompareExchange(location1: byref<float32>, value: float32, comparand: float32) : float32
 
  - System.Threading.Interlocked.CompareExchange(location1: byref<float>, value: float, comparand: float) : float
 
- - System.Threading.Interlocked.CompareExchange(location1: byref<obj>, value: obj, comparand: obj) : obj
+ - System.Threading.Interlocked.CompareExchange(location1: byref<int64>, value: int64, comparand: int64) : int64
+
+ - System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int
 
  - System.Threading.Interlocked.CompareExchange(location1: byref<nativeint>, value: nativeint, comparand: nativeint) : nativeint
 
+ - System.Threading.Interlocked.CompareExchange(location1: byref<obj>, value: obj, comparand: obj) : obj
+
  - System.Threading.Interlocked.CompareExchange<'T when 'T : not struct>(location1: byref<'T>, value: 'T, comparand: 'T) : 'T
-
-
 
 neg106.fs(17,59,17,61): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
@@ -40,7 +36,6 @@ neg106.fs(17,14,17,68): typecheck error FS0041: No overloads match for method 'C
 
 
 Arguments given:
-
  - inref<int>
 
  - int
@@ -50,22 +45,19 @@ Arguments given:
 
 
 Available overloads:
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<int64>, value: int64, comparand: int64) : int64
-
  - System.Threading.Interlocked.CompareExchange(location1: byref<float32>, value: float32, comparand: float32) : float32
 
  - System.Threading.Interlocked.CompareExchange(location1: byref<float>, value: float, comparand: float) : float
 
- - System.Threading.Interlocked.CompareExchange(location1: byref<obj>, value: obj, comparand: obj) : obj
+ - System.Threading.Interlocked.CompareExchange(location1: byref<int64>, value: int64, comparand: int64) : int64
+
+ - System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int
 
  - System.Threading.Interlocked.CompareExchange(location1: byref<nativeint>, value: nativeint, comparand: nativeint) : nativeint
 
+ - System.Threading.Interlocked.CompareExchange(location1: byref<obj>, value: obj, comparand: obj) : obj
+
  - System.Threading.Interlocked.CompareExchange<'T when 'T : not struct>(location1: byref<'T>, value: 'T, comparand: 'T) : 'T
-
-
 
 neg106.fs(23,35,23,39): typecheck error FS0001: Type mismatch. Expecting a
     'byref<int>'    
@@ -84,7 +76,6 @@ neg106.fs(40,18,40,32): typecheck error FS0041: No overloads match for method 'M
 
 
 Arguments given:
-
  - string
 
  - inref<int>
@@ -92,19 +83,15 @@ Arguments given:
 
 
 Available overloads:
-
- - static member C.M : a:string * x:byref<int> -> unit
-
  - static member C.M : a:int * x:byref<int> -> unit
 
-
+ - static member C.M : a:string * x:byref<int> -> unit
 
 neg106.fs(41,19,41,31): typecheck error FS0041: No overloads match for method 'M'.
 
 
 
 Arguments given:
-
  - int
 
  - inref<int>
@@ -112,12 +99,9 @@ Arguments given:
 
 
 Available overloads:
-
- - static member C.M : a:string * x:byref<int> -> unit
-
  - static member C.M : a:int * x:byref<int> -> unit
 
-
+ - static member C.M : a:string * x:byref<int> -> unit
 
 neg106.fs(49,22,49,26): typecheck error FS0001: Type mismatch. Expecting a
     'byref<int>'    

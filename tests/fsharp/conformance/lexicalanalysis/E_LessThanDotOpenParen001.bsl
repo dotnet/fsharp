@@ -7,7 +7,11 @@ E_LessThanDotOpenParen001.fsx(18,27,18,30): typecheck error FS1198: The generic 
 
 E_LessThanDotOpenParen001.fsx(18,19,18,67): typecheck error FS0670: This code is not sufficiently generic. The type variable  ^T when  ^T : (static member ( + ) :  ^T *  ^T ->  ^a) could not be generalized because it would escape its scope.
 
-E_LessThanDotOpenParen001.fsx(31,12,31,15): typecheck error FS0043: No overloads match for method 'op_PlusPlusPlus'.Available overloads:
+E_LessThanDotOpenParen001.fsx(31,12,31,15): typecheck error FS0043: No overloads match for method 'op_PlusPlusPlus'.
+
+
+
+Available overloads:
  - static member TestType.( +++ ) : a:'T * b:TestType<'T,'S> -> 'T
 
  - static member TestType.( +++ ) : a:(int -> 'T) * b:TestType<'T,int> ->  ^a when  ^T1 : (static member ( + ) :  ^T1 *  ^T1 ->  ^a)
