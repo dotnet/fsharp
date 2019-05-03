@@ -23,6 +23,13 @@ open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
 
+[<Struct>]
+type CompilationId private (guid: Guid) =
+
+    member private __.Guid = guid
+
+    static member Create () = CompilationId (Guid.NewGuid ())
+
 type CompilationOptions =
     {
         LegacyReferenceResolver: ReferenceResolver.Resolver
@@ -97,13 +104,15 @@ type CompilationOptions =
         IncrementalChecker.create tcInitial.tcConfig tcInitial.tcGlobals tcImports tcAcc checkerOptions options.SourceSnapshots
         |> Cancellable.runWithoutCancellation
 
-and [<Sealed>] Compilation (options: CompilationOptions, asyncLazyGetChecker: AsyncLazy<IncrementalChecker>, version: VersionStamp) =
+and [<Sealed>] Compilation (id: CompilationId, options: CompilationOptions, asyncLazyGetChecker: AsyncLazy<IncrementalChecker>, version: VersionStamp) =
 
-    member this.Version = version
+    member __.Id = id
 
-    member this.Options = options
+    member __.Version = version
 
-    member this.CheckAsync (filePath) =
+    member __.Options = options
+
+    member __.CheckAsync (filePath) =
         async {
             let! checker = asyncLazyGetChecker.GetValueAsync ()
             let! tcAcc, tcResolutionsOpt = checker.CheckAsync (filePath)
@@ -116,4 +125,4 @@ module Compilation =
     let create (options: CompilationOptions) frameworkTcImportsCache =
         let asyncLazyGetChecker =
             AsyncLazy (CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> options.CreateIncrementalChecker frameworkTcImportsCache ctok))
-        Compilation (options, asyncLazyGetChecker, VersionStamp.Create ())
+        Compilation (CompilationId.Create (), options, asyncLazyGetChecker, VersionStamp.Create ())

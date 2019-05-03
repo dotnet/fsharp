@@ -4,6 +4,8 @@ open System.Collections.Immutable
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 
+type internal CompilationId = struct end
+
 [<NoEquality;NoComparison>]
 type CompilationOptions =
     {
@@ -25,6 +27,10 @@ type CompilationOptions =
     static member Create: assemblyPath: string * projectDirectory: string * ImmutableArray<SourceSnapshot> * ImmutableArray<Compilation> -> CompilationOptions
 
 and [<Sealed>] Compilation =
+
+    member internal Id: CompilationId
+
+    member Options: CompilationOptions
 
     member CheckAsync: filePath: string -> Async<unit>
 
