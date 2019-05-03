@@ -3,6 +3,7 @@
 open System
 open System.Threading
 open System.Collections.Immutable
+open System.Collections.Generic
 open FSharp.Compiler.AbstractIL.Internal.Library
 
 [<RequireQualifiedAccess>]
@@ -110,6 +111,7 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
             | Some (_, cts) -> cts.Cancel ()
             | _ -> ()
 
+[<Sealed>]
 type AsyncLazy<'T when 'T : not struct> (computation) =
     
     let weak = AsyncLazyWeak<'T> computation
@@ -125,5 +127,86 @@ type AsyncLazy<'T when 'T : not struct> (computation) =
                 return result
         }
 
-    member __.CancelIfNotComplete () =
-        weak.CancelIfNotComplete ()
+[<StructuralEquality; NoComparison>]
+type internal ValueStrength<'T when 'T : not struct> =
+   | Strong of 'T
+   | Weak of WeakReference<'T>
+
+[<Sealed>]
+type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakReferenceSize: int, equalityComparer: IEqualityComparer<'Key>) =
+
+    let gate = obj ()
+
+    let mutable mruIndex = -1
+    let mutable mruKey = Unchecked.defaultof<'Key>
+    let mutable mruValue = Unchecked.defaultof<'Value>
+    let mutable cacheCount = 0
+    let cache = Array.zeroCreate<'Key * 'Value> cacheSize
+
+    let mutable weakReferencesIndex = 0
+    let weakReferences = Array.zeroCreate<'Key * WeakReference<'Value>> maxWeakReferenceSize
+
+    let keyEquality key1 key2 =
+        equalityComparer.GetHashCode key1 = equalityComparer.GetHashCode key2 && equalityComparer.Equals (key1, key2)
+
+    let setWeakReference key value =
+        weakReferences.[weakReferencesIndex] <- (key, WeakReference<_> value)
+        weakReferencesIndex <- weakReferencesIndex + 1
+        if weakReferencesIndex >= maxWeakReferenceSize then
+            weakReferencesIndex <- 0
+
+    let tryFindWeakReference key =
+        let mutable value = ValueNone
+        let mutable count = 0
+        while count <> maxWeakReferenceSize do
+            let i = 
+                let i = weakReferencesIndex - count
+                if i < 0 then
+                    maxWeakReferenceSize - 1
+                else
+                    i
+            count <- count + 1
+            let weakItem = weakReferences.[i]
+            if not (obj.ReferenceEquals (weakItem, null)) then
+                match (snd weakItem).TryGetTarget () with
+                | true, v ->
+                    if keyEquality key (fst weakItem) then
+                        if value.IsNone then
+                            value <- ValueSome v
+                        else
+                            // remove possible duplicate
+                            weakReferences.[i] <- Unchecked.defaultof<_>
+                | _ ->
+                    weakReferences.[i] <- Unchecked.defaultof<_>
+
+        value
+
+    member this.Set (key, value) =
+        lock gate <| fun () ->
+            // TODO: Remove allocation.
+            match cache |> Array.tryFindIndex (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquality key (fst pair)) with
+            | Some index -> 
+                mruIndex <- index
+            | _ ->
+                if cacheCount = cacheSize then
+                    setWeakReference mruKey mruValue
+                    cache.[mruIndex] <- (key, value)
+                else
+                    cache.[cacheCount] <- (key, value)
+                    mruIndex <- cacheCount
+                    cacheCount <- cacheCount + 1
+
+            mruKey <- key
+            mruValue <- value
+
+    member this.TryGetValue key =
+        lock gate <| fun () ->
+            // fast path
+            if not (obj.ReferenceEquals (mruKey, null)) && keyEquality mruKey key then
+                ValueSome mruValue
+            else
+                // TODO: Remove allocation.
+                match cache |> Array.tryFind (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquality key (fst pair)) with
+                | Some (_, value) -> ValueSome value
+                | _ ->
+                    tryFindWeakReference key
