@@ -12,6 +12,7 @@ type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStro
     let frameworkTcImportsCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize
     let temporaryStorageService = workspace.Services.TemporaryStorage
     let incrementalCheckerMruCache = 
+        // Is a Mru algorithm really the right cache for these? A Lru might be better.
         MruCache<CompilationId, IncrementalChecker> (
             cacheSize = 3, 
             maxWeakReferenceSize = 1000, 

@@ -23,7 +23,7 @@ type CompilationWorkerInstance () =
                         replyChannel.Reply (Result.Error ex)
         }
 
-    let agent = new MailboxProcessor<CompilationWorkerMessage>(fun x -> loop x)
+    let agent = new MailboxProcessor<CompilationWorkerMessage> (fun x -> loop x)
 
     do
         agent.Start ()

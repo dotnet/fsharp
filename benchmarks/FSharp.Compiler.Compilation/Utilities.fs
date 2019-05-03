@@ -34,7 +34,7 @@ module ImmutableArray =
             f i arr.[i]
 
 type private AsyncLazyWeakMessage<'T> =
-    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken
+    | GetValue of CancellationToken * AsyncReplyChannel<Result<'T, Exception>>
 
 [<Sealed>]
 type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
@@ -55,7 +55,7 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
         async {
             while true do
                 match! agent.Receive() with
-                | GetValue (replyChannel, cancellationToken) ->
+                | GetValue (cancellationToken, replyChannel) ->
                     try
                         cancellationToken.ThrowIfCancellationRequested ()
                         match tryGetResult () with
@@ -63,6 +63,7 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                             replyChannel.Reply (Ok result)
                         | _ ->
                             let! result = computation
+                            cancellationToken.ThrowIfCancellationRequested ()
                             cachedResult <- ValueSome (WeakReference<_> result)
                             replyChannel.Reply (Ok result) 
                     with 
@@ -77,7 +78,7 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
            match tryGetResult () with
            | ValueSome result -> return result
            | _ ->
-               let cancellationToken = CancellationToken.None //Async.CancellationToken
+               let! cancellationToken = Async.CancellationToken
                let agent, cts =
                     lock gate <| fun() ->
                         requestCount <- requestCount + 1
@@ -92,24 +93,18 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                             newAgentInstance
                         
                try
-                   match! agent.PostAndAsyncReply (fun replyChannel -> GetValue (replyChannel, cancellationToken)) with
+                   use! _onCancel = Async.OnCancel (fun () -> cts.Cancel ())
+                   match! agent.PostAndAsyncReply (fun replyChannel -> GetValue (cancellationToken, replyChannel)) with
                    | Ok result -> return result
                    | Error ex -> return raise ex
                 finally
                     lock gate <| fun () ->
                         requestCount <- requestCount - 1
                         if requestCount = 0 then
-                             cts.Cancel ()
                              (agent :> IDisposable).Dispose ()
                              cts.Dispose ()
                              agentInstance <- None
        }
-
-    member __.CancelIfNotComplete () =
-        lock gate <| fun () ->
-            match agentInstance with
-            | Some (_, cts) -> cts.Cancel ()
-            | _ -> ()
 
 [<Sealed>]
 type AsyncLazy<'T when 'T : not struct> (computation) =
@@ -146,7 +141,7 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
     let mutable weakReferencesIndex = 0
     let weakReferences = Array.zeroCreate<'Key * WeakReference<'Value>> maxWeakReferenceSize
 
-    let keyEquality key1 key2 =
+    let keyEquals key1 key2 =
         equalityComparer.GetHashCode key1 = equalityComparer.GetHashCode key2 && equalityComparer.Equals (key1, key2)
 
     let setWeakReference key value =
@@ -160,7 +155,7 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
         let mutable count = 0
         while count <> maxWeakReferenceSize do
             let i = 
-                let i = weakReferencesIndex - count
+                let i = weakReferencesIndex - count // go back to find the most recent key in the array
                 if i < 0 then
                     maxWeakReferenceSize - 1
                 else
@@ -170,7 +165,7 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
             if not (obj.ReferenceEquals (weakItem, null)) then
                 match (snd weakItem).TryGetTarget () with
                 | true, v ->
-                    if keyEquality key (fst weakItem) then
+                    if keyEquals key (fst weakItem) then
                         if value.IsNone then
                             value <- ValueSome v
                         else
@@ -184,7 +179,7 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
     member this.Set (key, value) =
         lock gate <| fun () ->
             // TODO: Remove allocation.
-            match cache |> Array.tryFindIndex (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquality key (fst pair)) with
+            match cache |> Array.tryFindIndex (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquals key (fst pair)) with
             | Some index -> 
                 mruIndex <- index
             | _ ->
@@ -202,11 +197,11 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
     member this.TryGetValue key =
         lock gate <| fun () ->
             // fast path
-            if not (obj.ReferenceEquals (mruKey, null)) && keyEquality mruKey key then
+            if not (obj.ReferenceEquals (mruKey, null)) && keyEquals mruKey key then
                 ValueSome mruValue
             else
                 // TODO: Remove allocation.
-                match cache |> Array.tryFind (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquality key (fst pair)) with
+                match cache |> Array.tryFind (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquals key (fst pair)) with
                 | Some (_, value) -> ValueSome value
                 | _ ->
                     tryFindWeakReference key

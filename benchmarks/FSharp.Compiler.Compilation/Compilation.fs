@@ -116,7 +116,13 @@ and [<Sealed>] Compilation (id: CompilationId, options: CompilationOptions, cach
 
     member __.Options = options
 
-    member __.CheckAsync (filePath) =
+    member __.SetOptions (newOptions: CompilationOptions) =
+        let newAsyncLazyGetChecker = AsyncLazy (CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
+            newOptions.CreateIncrementalChecker (caches.frameworkTcImportsCache, ctok)
+        ))
+        Compilation (id, newOptions, caches, newAsyncLazyGetChecker, version.NewVersionStamp ())
+
+    member __.CheckAsync filePath =
         async {
             let! checker = asyncLazyGetChecker.GetValueAsync ()
             let! tcAcc, tcResolutionsOpt = checker.CheckAsync filePath
