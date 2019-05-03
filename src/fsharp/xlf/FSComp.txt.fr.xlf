@@ -6928,7 +6928,7 @@
         <note />
       </trans-unit>
       <trans-unit id="notAFunction">
-        <source>This value is not a function and cannot be applied.</source>
+        <source>Incompatible arguments. Are you accidentally passing in too many arguments to a function, or arguments to a simple value? Alternatively, you might need to supply parenthesis to tell the compiler the order of execution e.g. 'add 1 add 2 3' might need to be rewritten as 'add 1 (add 2 3)'.</source>
         <target state="translated">Cette valeur n'est pas une fonction et ne peut pas être appliquée.</target>
         <note />
       </trans-unit>

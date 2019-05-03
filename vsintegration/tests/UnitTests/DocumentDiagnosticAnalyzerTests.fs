@@ -266,7 +266,7 @@ let x = 3
 let y = (*start*)x(*end*) 4
 let arr = [| 1; 2; 3 |]
             """,
-            expectedMessage = "This value is not a function and cannot be applied.")
+            expectedMessage = "Incompatible arguments. Are you accidentally passing in too many arguments to a function, or arguments to a simple value? Alternatively, you might need to supply parenthesis to tell the compiler the order of execution e.g. 'add 1 add 2 3' might need to be rewritten as 'add 1 (add 2 3)'.")
 
     [<Test>]
     member public this.Multiline_Bug5449() =
@@ -275,7 +275,7 @@ let arr = [| 1; 2; 3 |]
 let f x = x + 1
 let r = (*start*)f 3(*end*) 4
             """,
-            expectedMessage = "This value is not a function and cannot be applied.")
+            expectedMessage = "Incompatible arguments. Are you accidentally passing in too many arguments to a function, or arguments to a simple value? Alternatively, you might need to supply parenthesis to tell the compiler the order of execution e.g. 'add 1 add 2 3' might need to be rewritten as 'add 1 (add 2 3)'.")
 
     [<Test>]
     member public this.InComputationExpression_Bug6095_A() =
