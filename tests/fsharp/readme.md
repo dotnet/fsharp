@@ -1,4 +1,4 @@
-# F# Compiler & FSharp.Core Test Suite
+# F# Compiler Cross-Platform Test Suite
 
 ## Layout
 
@@ -12,4 +12,4 @@ When many tests fail due to a change being worked on, the [update.base.line.with
 
 After editing the folder list, evaluating the script should replace the .bsl files with actual .err/.vserr, after which the same test is supposed to pass.
 
-Tests are organized under modules as functions bearing NUnit `[<Test>]` attribute and can be run from an IDE.
+Tests are organized under modules as functions bearing NUnit `[<Test>]` attribute and can be run from an IDE or the command line (see the [Test Guide](../../TESTGUIDE.MD)).
