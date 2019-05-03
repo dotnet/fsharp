@@ -6928,7 +6928,7 @@
         <note />
       </trans-unit>
       <trans-unit id="notAFunction">
-        <source>Incompatible arguments. Are you accidentally passing in too many arguments to a function, or arguments to a simple value? Alternatively, you might need to supply parenthesis to tell the compiler the order of execution e.g. 'add 1 add 2 3' might need to be rewritten as 'add 1 (add 2 3)'.</source>
+        <source>Incompatible arguments. Are you accidentally passing in too many arguments to a function, or arguments to a simple value? Alternatively, you might need to supply parentheses to tell the compiler the order of execution e.g. 'add 1 add 2 3' might need to be rewritten as 'add 1 (add 2 3)'.</source>
         <target state="translated">Tato hodnota není funkcí a nedá se použít.</target>
         <note />
       </trans-unit>
