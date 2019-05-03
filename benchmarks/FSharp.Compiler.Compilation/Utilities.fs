@@ -80,20 +80,20 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
            | _ ->
                let! cancellationToken = Async.CancellationToken
                let agent, cts =
-                    lock gate <| fun() ->
+                    lock gate <| fun () ->
                         requestCount <- requestCount + 1
                         match agentInstance with
                         | Some agentInstance -> agentInstance
                         | _ ->
                             let cts = new CancellationTokenSource ()
-                            let agent = new MailboxProcessor<AsyncLazyWeakMessage<'T>>((fun x -> loop x), cancellationToken = cts.Token)
+                            let agent = new MailboxProcessor<AsyncLazyWeakMessage<'T>> ((fun x -> loop x), cancellationToken = cts.Token)
                             let newAgentInstance = (agent, cts)
                             agentInstance <- Some newAgentInstance
                             agent.Start ()
                             newAgentInstance
                         
                try
-                   use! _onCancel = Async.OnCancel (fun () -> cts.Cancel ())
+                   use! _onCancel = Async.OnCancel cts.Cancel
                    match! agent.PostAndAsyncReply (fun replyChannel -> GetValue (cancellationToken, replyChannel)) with
                    | Ok result -> return result
                    | Error ex -> return raise ex
@@ -122,15 +122,14 @@ type AsyncLazy<'T when 'T : not struct> (computation) =
                 return result
         }
 
-[<StructuralEquality; NoComparison>]
-type internal ValueStrength<'T when 'T : not struct> =
-   | Strong of 'T
-   | Weak of WeakReference<'T>
-
+/// Thread safe.
 [<Sealed>]
 type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakReferenceSize: int, equalityComparer: IEqualityComparer<'Key>) =
 
     let gate = obj ()
+
+    let isKeyRef = not typeof<'Key>.IsValueType
+    let isValueRef = not typeof<'Value>.IsValueType
 
     let mutable mruIndex = -1
     let mutable mruKey = Unchecked.defaultof<'Key>
@@ -168,15 +167,20 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
                     if keyEquals key (fst weakItem) then
                         if value.IsNone then
                             value <- ValueSome v
-                        else
-                            // remove possible duplicate
-                            weakReferences.[i] <- Unchecked.defaultof<_>
+
+                        weakReferences.[i] <- Unchecked.defaultof<_>
                 | _ ->
                     weakReferences.[i] <- Unchecked.defaultof<_>
 
         value
 
-    member this.Set (key, value) =
+    member __.Set (key, value) =
+        if isKeyRef && obj.ReferenceEquals (key, null) then
+            nullArg "key"
+
+        if isValueRef && obj.ReferenceEquals (value, null) then
+            nullArg "value"
+
         lock gate <| fun () ->
             // TODO: Remove allocation.
             match cache |> Array.tryFindIndex (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquals key (fst pair)) with
@@ -194,14 +198,28 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
             mruKey <- key
             mruValue <- value
 
-    member this.TryGetValue key =
+    member __.TryGetValue key =
+        if isKeyRef && obj.ReferenceEquals (key, null) then
+            nullArg "key"
+
         lock gate <| fun () ->
             // fast path
-            if not (obj.ReferenceEquals (mruKey, null)) && keyEquals mruKey key then
+            if mruIndex <> -1 && keyEquals mruKey key then
                 ValueSome mruValue
             else
                 // TODO: Remove allocation.
-                match cache |> Array.tryFind (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquals key (fst pair)) with
-                | Some (_, value) -> ValueSome value
+                match cache |> Array.tryFindIndex (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquals key (fst pair)) with
+                | Some index -> 
+                    let value = snd cache.[index]
+                    mruKey <- key
+                    mruValue <- value
+                    mruIndex <- index
+                    ValueSome mruValue
                 | _ ->
-                    tryFindWeakReference key
+                    match tryFindWeakReference key with
+                    | ValueSome value ->
+                        cache.[mruIndex] <- (key, value)
+                        mruKey <- key
+                        mruValue <- value
+                        ValueSome mruValue
+                    | ValueNone -> ValueNone

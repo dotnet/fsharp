@@ -4,6 +4,7 @@ open System.Text
 open System.Threading
 open System.Threading.Tasks
 open System.Collections.Immutable
+open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
