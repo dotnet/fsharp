@@ -2972,4 +2972,5 @@ module OverloadResolution =
         let [<Test>] ``neg_System.Threading.Tasks.Task.Run.OverloadList``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Threading.Tasks.Task.Run.OverloadList"
     module ``ad hoc code overload error messages``=
         let [<Test>] ``neg_many_many_overloads`` () = singleNegTest (testConfig "typecheck/overloads") "neg_many_many_overloads"
+        let [<Test>] ``neg_interface_generics`` () = singleNegTest (testConfig "typecheck/overloads") "neg_interface_generics"
 #endif
