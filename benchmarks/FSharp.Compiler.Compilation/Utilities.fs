@@ -145,21 +145,17 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
 
     let setWeakReference key value =
         weakReferences.[weakReferencesIndex] <- (key, WeakReference<_> value)
-        weakReferencesIndex <- weakReferencesIndex + 1
-        if weakReferencesIndex >= maxWeakReferenceSize then
-            weakReferencesIndex <- 0
+        weakReferencesIndex <- weakReferencesIndex - 1
+        if weakReferencesIndex < 0 then
+            weakReferencesIndex <- maxWeakReferenceSize - 1
 
+    // This will also purge any weak references.
     let tryFindWeakReference key =
         let mutable value = ValueNone
-        let mutable count = 0
-        while count <> maxWeakReferenceSize do
-            let i = 
-                let i = weakReferencesIndex - count // go back to find the most recent key in the array
-                if i < 0 then
-                    maxWeakReferenceSize - 1
-                else
-                    i
-            count <- count + 1
+
+        // We set `i` to 1 so we don't look at the current index first.
+        for count = 1 to maxWeakReferenceSize do
+            let i = (weakReferencesIndex + count) % maxWeakReferenceSize
             let weakItem = weakReferences.[i]
             if not (obj.ReferenceEquals (weakItem, null)) then
                 match (snd weakItem).TryGetTarget () with
