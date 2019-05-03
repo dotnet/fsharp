@@ -24,11 +24,15 @@ open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
 
 [<Struct>]
-type CompilationId private (guid: Guid) =
-
-    member private __.Guid = guid
+type CompilationId private (_guid: Guid) =
 
     static member Create () = CompilationId (Guid.NewGuid ())
+
+type CompilationCaches =
+    {
+        incrementalCheckerCache: MruCache<CompilationId, IncrementalChecker>
+        frameworkTcImportsCache: FrameworkImportsCache
+    }
 
 type CompilationOptions =
     {
@@ -72,7 +76,7 @@ type CompilationOptions =
             CompilationReferences = compilationReferences
         }
 
-    member options.CreateTcInitial frameworkTcImportsCache ctok =
+    member options.CreateTcInitial (frameworkTcImportsCache, ctok) =
         let tcInitialOptions =
             {
                 frameworkTcImportsCache = frameworkTcImportsCache
@@ -92,8 +96,8 @@ type CompilationOptions =
             }
         TcInitial.create tcInitialOptions ctok
 
-    member options.CreateIncrementalChecker frameworkTcImportsCache ctok =
-        let tcInitial = options.CreateTcInitial frameworkTcImportsCache ctok
+    member options.CreateIncrementalChecker (frameworkTcImportsCache, ctok) =
+        let tcInitial = options.CreateTcInitial (frameworkTcImportsCache, ctok)
         let tcImports, tcAcc = TcAccumulator.createInitial tcInitial ctok |> Cancellable.runWithoutCancellation
         let checkerOptions =
             {
@@ -104,7 +108,7 @@ type CompilationOptions =
         IncrementalChecker.create tcInitial.tcConfig tcInitial.tcGlobals tcImports tcAcc checkerOptions options.SourceSnapshots
         |> Cancellable.runWithoutCancellation
 
-and [<Sealed>] Compilation (id: CompilationId, options: CompilationOptions, asyncLazyGetChecker: AsyncLazy<IncrementalChecker>, version: VersionStamp) =
+and [<Sealed>] Compilation (id: CompilationId, options: CompilationOptions, caches: CompilationCaches, asyncLazyGetChecker: AsyncLazy<IncrementalChecker>, version: VersionStamp) =
 
     member __.Id = id
 
@@ -115,14 +119,16 @@ and [<Sealed>] Compilation (id: CompilationId, options: CompilationOptions, asyn
     member __.CheckAsync (filePath) =
         async {
             let! checker = asyncLazyGetChecker.GetValueAsync ()
-            let! tcAcc, tcResolutionsOpt = checker.CheckAsync (filePath)
+            let! tcAcc, tcResolutionsOpt = checker.CheckAsync filePath
             printfn "%A" (tcAcc.tcErrorsRev)
             ()
         }
 
 module Compilation =
 
-    let create (options: CompilationOptions) frameworkTcImportsCache =
+    let create (options: CompilationOptions) (caches: CompilationCaches) =
         let asyncLazyGetChecker =
-            AsyncLazy (CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> options.CreateIncrementalChecker frameworkTcImportsCache ctok))
-        Compilation (CompilationId.Create (), options, asyncLazyGetChecker, VersionStamp.Create ())
+                AsyncLazy (CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
+                    options.CreateIncrementalChecker (caches.frameworkTcImportsCache, ctok)
+                ))
+        Compilation (CompilationId.Create (), options, caches, asyncLazyGetChecker, VersionStamp.Create ())

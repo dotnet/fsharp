@@ -2,9 +2,18 @@
 
 open System.Collections.Immutable
 open FSharp.Compiler
+open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 type internal CompilationId = struct end
+
+[<NoEquality;NoComparison>]
+type internal CompilationCaches =
+    {
+        incrementalCheckerCache: MruCache<CompilationId, IncrementalChecker>
+        frameworkTcImportsCache: FrameworkImportsCache
+    }
 
 [<NoEquality;NoComparison>]
 type CompilationOptions =
@@ -37,4 +46,4 @@ and [<Sealed>] Compilation =
 [<RequireQualifiedAccess>]
 module internal Compilation =
 
-    val create: CompilationOptions -> FrameworkImportsCache -> Compilation
+    val create: CompilationOptions -> CompilationCaches -> Compilation

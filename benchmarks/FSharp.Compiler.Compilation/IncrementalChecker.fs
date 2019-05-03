@@ -37,8 +37,7 @@ type internal CheckerOptions =
 
 type CheckFlags =
     | None = 0x00
-    | ReturnResolutions = 0x01 
-    | Recheck = 0x1
+    | ReturnResolutions = 0x01
 
 type CompilationResult =
    // | NotParsed of Source
@@ -123,6 +122,7 @@ type IncrementalCheckerState =
             finally
                 syntaxTrees
                 |> Seq.iter (fun (_, sourceValue) -> 
+                    // TODO: We should moving disposing of a stream in the Parser.
                     (sourceValue :> IDisposable).Dispose ()
                 )
 
@@ -276,33 +276,14 @@ type IncrementalCheckerState =
 [<Sealed>]
 type IncrementalChecker (state: IncrementalCheckerState) =
 
-    let gate = obj ()
-    let cacheResults = Array.zeroCreate<(AsyncLazyWeak<TcAccumulator * TcResolutions option> * CheckFlags) voption> state.orderedResults.Length
-
     member __.Version = state.version
 
     member __.ReplaceSourceSnapshot (_sourceSnapshot: SourceSnapshot) =
         let newState = state
         IncrementalChecker newState
 
-    member this.CheckAsyncLazy (filePath: string, checkFlags) =
-        async {
-            let i = state.GetIndex filePath
-
-            lock gate <| fun () ->
-                match cacheResults.[i] with
-                | ValueSome (current, currentCheckFlags) when (checkFlags &&& CheckFlags.Recheck = CheckFlags.Recheck) && not (checkFlags = currentCheckFlags) -> 
-                    current.CancelIfNotComplete ()
-                    cacheResults.[i] <- ValueSome (AsyncLazyWeak (state.CheckAsync (filePath, checkFlags)), checkFlags)
-                | ValueNone ->
-                    cacheResults.[i] <- ValueSome (AsyncLazyWeak (state.CheckAsync (filePath, checkFlags)), checkFlags)
-                | _ -> ()
-
-            return! (fst cacheResults.[i].Value).GetValueAsync ()
-        }
-
-    member this.CheckAsync (filePath: string) =
-        this.CheckAsyncLazy (filePath, CheckFlags.ReturnResolutions ||| CheckFlags.Recheck)
+    member this.CheckAsync filePath =
+        state.CheckAsync (filePath, CheckFlags.ReturnResolutions)
 
 module IncrementalChecker =
 

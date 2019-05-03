@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Compiler.Compilation
 
 open System.Threading
+open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Compilation.Utilities
@@ -10,6 +11,12 @@ type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStro
     // Caches
     let frameworkTcImportsCache = FrameworkImportsCache frameworkTcImportsCacheStrongSize
     let temporaryStorageService = workspace.Services.TemporaryStorage
+    let incrementalCheckerMruCache = 
+        MruCache<CompilationId, IncrementalChecker> (
+            cacheSize = 3, 
+            maxWeakReferenceSize = 1000, 
+            equalityComparer = EqualityComparer<CompilationId>.Default
+        ) 
 
     member __.CreateSourceSnapshot (filePath, sourceText) =
         let storage = temporaryStorageService.CreateTemporaryTextStorage ()
@@ -21,4 +28,9 @@ type CompilationService (_compilationCacheSize: int, frameworkTcImportsCacheStro
         | ValueOrCancelled.Value result -> result
         | ValueOrCancelled.Cancelled ex -> raise ex
 
-    member __.CreateCompilation options = Compilation.create options frameworkTcImportsCache
+    member __.CreateCompilation (options: CompilationOptions) = 
+        Compilation.create options 
+            { 
+                frameworkTcImportsCache = frameworkTcImportsCache
+                incrementalCheckerCache = incrementalCheckerMruCache
+            }
