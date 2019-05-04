@@ -11,7 +11,7 @@ type internal CompilationId = struct end
 [<NoEquality;NoComparison>]
 type internal CompilationCaches =
     {
-        incrementalCheckerCache: MruCache<CompilationId, IncrementalChecker>
+        incrementalCheckerCache: MruCache<struct (CompilationId * VersionStamp), IncrementalChecker>
         frameworkTcImportsCache: FrameworkImportsCache
     }
 

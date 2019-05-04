@@ -30,7 +30,7 @@ type CompilationId private (_guid: Guid) =
 
 type CompilationCaches =
     {
-        incrementalCheckerCache: MruCache<CompilationId, IncrementalChecker>
+        incrementalCheckerCache: MruCache<struct (CompilationId * VersionStamp), IncrementalChecker>
         frameworkTcImportsCache: FrameworkImportsCache
     }
 
@@ -116,15 +116,25 @@ and [<Sealed>] Compilation (id: CompilationId, options: CompilationOptions, cach
 
     member __.Options = options
 
+    member __.GetCheckerAsync () =
+        async {
+            match caches.incrementalCheckerCache.TryGetValue struct (id, version) with
+            | ValueSome checker -> return checker
+            | _ -> 
+                let! checker = asyncLazyGetChecker.GetValueAsync ()
+                caches.incrementalCheckerCache.Set (struct (id, version), checker)
+                return checker
+        }
+
     member __.SetOptions (newOptions: CompilationOptions) =
         let newAsyncLazyGetChecker = AsyncLazy (CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
             newOptions.CreateIncrementalChecker (caches.frameworkTcImportsCache, ctok)
         ))
         Compilation (id, newOptions, caches, newAsyncLazyGetChecker, version.NewVersionStamp ())
 
-    member __.CheckAsync filePath =
+    member this.CheckAsync filePath =
         async {
-            let! checker = asyncLazyGetChecker.GetValueAsync ()
+            let! checker = this.GetCheckerAsync ()
             let! tcAcc, tcResolutionsOpt = checker.CheckAsync filePath
             printfn "%A" (tcAcc.tcErrorsRev)
             ()
