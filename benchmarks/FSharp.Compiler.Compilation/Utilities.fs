@@ -2,6 +2,7 @@
 
 open System
 open System.Threading
+open System.Collections
 open System.Collections.Immutable
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -178,15 +179,25 @@ type private Lru<'Key, 'Value when 'Key : equality and 'Value : not struct> (siz
                 ValueNone
 
     member __.Remove key =
-        match dataLookup.TryGetValue key with
-        | true, node ->
-            dataLookup.Remove key |> ignore
-            data.Remove node
-            true
-        | _ ->
-            false
+        if isKeyRef && obj.ReferenceEquals (key, null) then
+            nullArg "key"
+
+        lock gate <| fun () ->
+            match dataLookup.TryGetValue key with
+            | true, node ->
+                dataLookup.Remove key |> ignore
+                data.Remove node
+                true
+            | _ ->
+                false
 
     member __.Count = data.Count
+
+    interface IEnumerable<KeyValuePair<'Key, 'Value>> with
+
+        member __.GetEnumerator () : IEnumerator<KeyValuePair<'Key, 'Value>> = (data :> IEnumerable<KeyValuePair<'Key, 'Value>>).GetEnumerator ()
+
+        member __.GetEnumerator () : IEnumerator = (data :> IEnumerable).GetEnumerator ()
 
 /// Thread safe.
 [<Sealed>]
@@ -236,7 +247,7 @@ type MruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheS
     let shrinkCache key =
         if cacheLookup.Count = cacheSize && not (keyEquals key mruKey) then
             if maxWeakReferenceSize > 0 then
-                weakReferenceLookup.[mruKey] <- WeakReference<_> mruValue
+                weakReferenceLookup.Set (mruKey, WeakReference<_> mruValue)
             cacheLookup.Remove mruKey |> ignore
 
     member __.Set (key, value) =
