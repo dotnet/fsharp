@@ -371,9 +371,10 @@ module TestModule%i =
             testCache.Set (i, obj ())
     [<Benchmark>]
     member __.Test() =
-        for i = 0 to 10000 do
-            testCache.Set (i, obj ())
-        for i = 0 to 10000 do
+        printfn "%A" testCache.WeakReferenceCount
+        //for i = 0 to 10000 do
+        //    testCache.Set (i, obj ())
+        for i = 0 to 10005 do
             match testCache.TryGetValue i with
             | ValueSome _ -> () //printfn "got it"
             | _ -> ()
