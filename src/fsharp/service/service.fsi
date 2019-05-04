@@ -82,32 +82,6 @@ type public SemanticClassificationType =
     | Operator
     | Disposable
 
-/// A TypeCheckInfo represents everything we get back from the typecheck of a file.
-/// It acts like an in-memory database about the file.
-/// It is effectively immutable and not updated: when we re-typecheck we just drop the previous
-/// scope object on the floor and make a new one.
-[<Sealed>]
-type internal TypeCheckInfo =
-
-    new: 
-        _sTcConfig: TcConfig * 
-        g: TcGlobals *
-        ccuSigForFile: ModuleOrNamespaceType *
-        thisCcu: CcuThunk *
-        tcImports: TcImports *
-        tcAccessRights: FSharp.Compiler.AccessibilityLogic.AccessorDomain *
-        projectFileName: string *
-        mainInputFileName: string *
-        sResolutions: TcResolutions *
-        sSymbolUses: TcSymbolUses *
-        sFallback: NameResolutionEnv *
-        loadClosure: LoadClosure option *
-        reactorOps: IReactorOperations *
-        checkAlive: (unit -> bool) *
-        textSnapshotInfo: obj option *
-        implFileOpt: TypedImplFile option *
-        openDeclarations: OpenDeclaration [] -> TypeCheckInfo
-
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type public FSharpCheckFileResults =
