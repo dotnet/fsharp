@@ -124,51 +124,18 @@ type AsyncLazy<'T when 'T : not struct> (computation) =
 
 /// Thread safe.
 [<Sealed>]
-type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakReferenceSize: int, equalityComparer: IEqualityComparer<'Key>) =
+type private Lru<'Key, 'Value when 'Key : equality and 'Value : not struct> (size: int, equalityComparer: IEqualityComparer<'Key>) =
 
     let gate = obj ()
 
     let isKeyRef = not typeof<'Key>.IsValueType
     let isValueRef = not typeof<'Value>.IsValueType
 
-    let mutable mruIndex = -1
-    let mutable mruKey = Unchecked.defaultof<'Key>
-    let mutable mruValue = Unchecked.defaultof<'Value>
-    let mutable cacheCount = 0
-    let cache = Array.zeroCreate<'Key * 'Value> cacheSize
-
-    let mutable weakReferencesIndex = 0
-    let weakReferences = Array.zeroCreate<'Key * WeakReference<'Value>> maxWeakReferenceSize
+    let data = LinkedList<KeyValuePair<'Key, 'Value>> ()
+    let dataLookup = Dictionary<'Key, LinkedListNode<KeyValuePair<'Key, 'Value>>> (equalityComparer)
 
     let keyEquals key1 key2 =
         equalityComparer.GetHashCode key1 = equalityComparer.GetHashCode key2 && equalityComparer.Equals (key1, key2)
-
-    let setWeakReference key value =
-        weakReferences.[weakReferencesIndex] <- (key, WeakReference<_> value)
-        weakReferencesIndex <- weakReferencesIndex - 1
-        if weakReferencesIndex < 0 then
-            weakReferencesIndex <- maxWeakReferenceSize - 1
-
-    // This will also purge any weak references.
-    let tryFindWeakReference key =
-        let mutable value = ValueNone
-
-        // We set `i` to 1 so we don't look at the current index first.
-        for count = 1 to maxWeakReferenceSize do
-            let i = (weakReferencesIndex + count) % maxWeakReferenceSize
-            let weakItem = weakReferences.[i]
-            if not (obj.ReferenceEquals (weakItem, null)) then
-                match (snd weakItem).TryGetTarget () with
-                | true, v ->
-                    if keyEquals key (fst weakItem) then
-                        if value.IsNone then
-                            value <- ValueSome v
-
-                        weakReferences.[i] <- Unchecked.defaultof<_>
-                | _ ->
-                    weakReferences.[i] <- Unchecked.defaultof<_>
-
-        value
 
     member __.Set (key, value) =
         if isKeyRef && obj.ReferenceEquals (key, null) then
@@ -178,21 +145,114 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
             nullArg "value"
 
         lock gate <| fun () ->
-            // TODO: Remove allocation.
-            match cache |> Array.tryFindIndex (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquals key (fst pair)) with
-            | Some index -> 
-                mruIndex <- index
+            let pair = KeyValuePair (key, value)
+
+            match dataLookup.TryGetValue key with
+            | true, existingNode ->
+                if existingNode <> data.First then
+                    data.Remove existingNode
+                    dataLookup.[key] <- data.AddFirst pair
             | _ ->
-                if cacheCount = cacheSize then
-                    setWeakReference mruKey mruValue
-                    cache.[mruIndex] <- (key, value)
+                if data.Count = size then
+                    dataLookup.Remove data.Last.Value.Key |> ignore
+                    data.RemoveLast ()
+                dataLookup.[key] <- data.AddFirst pair
+
+    member __.TryGetValue key =
+        if isKeyRef && obj.ReferenceEquals (key, null) then
+            nullArg "key"
+
+        lock gate <| fun () ->
+            if data.Count > 0 then
+                if keyEquals data.First.Value.Key key then
+                    ValueSome data.First.Value.Value
                 else
-                    cache.[cacheCount] <- (key, value)
-                    mruIndex <- cacheCount
-                    cacheCount <- cacheCount + 1
+                    match dataLookup.TryGetValue key with
+                    | true, existingNode ->
+                        data.Remove existingNode
+                        dataLookup.[key] <- data.AddFirst existingNode.Value
+                        ValueSome existingNode.Value.Value
+                    | _ ->
+                        ValueNone
+            else
+                ValueNone
+
+    member __.Remove key =
+        match dataLookup.TryGetValue key with
+        | true, node ->
+            dataLookup.Remove key |> ignore
+            data.Remove node
+            true
+        | _ ->
+            false
+
+    member __.Count = data.Count
+
+/// Thread safe.
+[<Sealed>]
+type MruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheSize: int, maxWeakReferenceSize: int, equalityComparer: IEqualityComparer<'Key>) =
+
+    let gate = obj ()
+
+    let isKeyRef = not typeof<'Key>.IsValueType
+    let isValueRef = not typeof<'Value>.IsValueType
+
+    let cacheLookup = Dictionary<'Key, 'Value> (equalityComparer)
+    let weakReferenceLookup = Lru<'Key, WeakReference<'Value>> (maxWeakReferenceSize, equalityComparer)
+    let mutable mruKey = Unchecked.defaultof<'Key>
+    let mutable mruValue = Unchecked.defaultof<'Value>
+
+    let keyEquals key1 key2 =
+        equalityComparer.GetHashCode key1 = equalityComparer.GetHashCode key2 && equalityComparer.Equals (key1, key2)
+
+    let tryFindWeakReferenceCacheValue key =
+        match weakReferenceLookup.TryGetValue key with
+        | ValueSome value -> 
+            match value.TryGetTarget () with
+            | true, value ->
+                ValueSome value
+            | _ -> 
+                weakReferenceLookup.Remove key |> ignore
+                ValueNone
+        | _ -> ValueNone
+
+    let tryFindCacheValue key =
+        match cacheLookup.TryGetValue key with
+        | true, value -> ValueSome value
+        | _ -> ValueNone
+
+    let purgeWeakReferenceCache () =
+        if weakReferenceLookup.Count > maxWeakReferenceSize then
+            let arr = ResizeArray weakReferenceLookup.Count
+            for pair in weakReferenceLookup do
+                match pair.Value.TryGetTarget () with
+                | false, _ -> arr.Add pair.Key
+                | _ -> ()
+
+            for i = 0 to arr.Count - 1 do
+                let key = arr.[i]
+                weakReferenceLookup.Remove key |> ignore
+
+    let shrinkCache key =
+        if cacheLookup.Count = cacheSize && not (keyEquals key mruKey) then
+            if maxWeakReferenceSize > 0 then
+                weakReferenceLookup.[mruKey] <- WeakReference<_> mruValue
+            cacheLookup.Remove mruKey |> ignore
+
+    member __.Set (key, value) =
+        if isKeyRef && obj.ReferenceEquals (key, null) then
+            nullArg "key"
+
+        if isValueRef && obj.ReferenceEquals (value, null) then
+            nullArg "value"
+
+        lock gate <| fun () ->
+            shrinkCache key
+            purgeWeakReferenceCache ()
 
             mruKey <- key
             mruValue <- value
+            cacheLookup.[key] <- value
 
     member __.TryGetValue key =
         if isKeyRef && obj.ReferenceEquals (key, null) then
@@ -200,22 +260,21 @@ type MruCache<'Key, 'Value when 'Value : not struct> (cacheSize: int, maxWeakRef
 
         lock gate <| fun () ->
             // fast path
-            if mruIndex <> -1 && keyEquals mruKey key then
+            if cacheLookup.Count > 0 && keyEquals mruKey key then
                 ValueSome mruValue
             else
-                // TODO: Remove allocation.
-                match cache |> Array.tryFindIndex (fun pair -> not (obj.ReferenceEquals (pair, null)) && keyEquals key (fst pair)) with
-                | Some index -> 
-                    let value = snd cache.[index]
+                match tryFindCacheValue key with
+                | ValueSome value ->
+                    shrinkCache key
                     mruKey <- key
                     mruValue <- value
-                    mruIndex <- index
-                    ValueSome mruValue
+                    ValueSome value
                 | _ ->
-                    match tryFindWeakReference key with
+                    match tryFindWeakReferenceCacheValue key with
                     | ValueSome value ->
-                        cache.[mruIndex] <- (key, value)
+                        shrinkCache key
                         mruKey <- key
                         mruValue <- value
-                        ValueSome mruValue
-                    | ValueNone -> ValueNone
+                        ValueSome value
+                    | _ ->
+                        ValueNone
