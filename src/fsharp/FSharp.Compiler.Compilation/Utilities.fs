@@ -35,7 +35,14 @@ module ImmutableArray =
             f i arr.[i]
 
 type private AsyncLazyWeakMessage<'T> =
-    | GetValue of CancellationToken * AsyncReplyChannel<Result<'T, Exception>>
+    | GetValue of AsyncReplyChannel<Result<'T, Exception>>
+
+type private AgentInstance<'T> = (MailboxProcessor<AsyncLazyWeakMessage<'T>> * CancellationTokenSource)
+
+[<RequireQualifiedAccess>]
+type private AgentAction<'T> =
+    | GetValue of AgentInstance<'T>
+    | CachedValue of 'T
 
 [<Sealed>]
 type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
@@ -56,15 +63,13 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
         async {
             while true do
                 match! agent.Receive() with
-                | GetValue (cancellationToken, replyChannel) ->
+                | GetValue replyChannel ->
                     try
-                        cancellationToken.ThrowIfCancellationRequested ()
                         match tryGetResult () with
                         | ValueSome result ->
                             replyChannel.Reply (Ok result)
                         | _ ->
                             let! result = computation
-                            cancellationToken.ThrowIfCancellationRequested ()
                             cachedResult <- ValueSome (WeakReference<_> result)
                             replyChannel.Reply (Ok result) 
                     with 
@@ -76,56 +81,72 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
 
     member __.GetValueAsync () =
        async {
+           // fast path
            match tryGetResult () with
            | ValueSome result -> return result
            | _ ->
-               let! cancellationToken = Async.CancellationToken
-               let agent, cts =
+               let action =
                     lock gate <| fun () ->
-                        requestCount <- requestCount + 1
-                        match agentInstance with
-                        | Some agentInstance -> agentInstance
+                        // We try to get the cached result after the lock so we don't spin up a new mailbox processor.
+                        match tryGetResult () with
+                        | ValueSome result -> AgentAction<'T>.CachedValue result
                         | _ ->
-                            let cts = new CancellationTokenSource ()
-                            let agent = new MailboxProcessor<AsyncLazyWeakMessage<'T>> ((fun x -> loop x), cancellationToken = cts.Token)
-                            let newAgentInstance = (agent, cts)
-                            agentInstance <- Some newAgentInstance
-                            agent.Start ()
-                            newAgentInstance
+                            requestCount <- requestCount + 1
+                            match agentInstance with
+                            | Some agentInstance -> AgentAction<'T>.GetValue agentInstance
+                            | _ ->
+                                let cts = new CancellationTokenSource ()
+                                let agent = new MailboxProcessor<AsyncLazyWeakMessage<'T>> ((fun x -> loop x), cancellationToken = cts.Token)
+                                let newAgentInstance = (agent, cts)
+                                agentInstance <- Some newAgentInstance
+                                agent.Start ()
+                                AgentAction<'T>.GetValue newAgentInstance
+
+               match action with
+               | AgentAction.CachedValue result -> return result
+               | AgentAction.GetValue (agent, cts) ->
                         
-               try
-                   use! _onCancel = Async.OnCancel cts.Cancel
-                   match! agent.PostAndAsyncReply (fun replyChannel -> GetValue (cancellationToken, replyChannel)) with
-                   | Ok result -> return result
-                   | Error ex -> return raise ex
-                finally
-                    lock gate <| fun () ->
-                        requestCount <- requestCount - 1
-                        if requestCount = 0 then
-                             (agent :> IDisposable).Dispose ()
-                             cts.Dispose ()
-                             agentInstance <- None
+                   try
+                       match! agent.PostAndAsyncReply GetValue with
+                       | Ok result -> return result
+                       | Error ex -> return raise ex
+                    finally
+                        lock gate <| fun () ->
+                            requestCount <- requestCount - 1
+                            if requestCount = 0 then
+                                 cts.Cancel () // cancel computation when all requests are cancelled
+                                 (agent :> IDisposable).Dispose ()
+                                 cts.Dispose ()
+                                 agentInstance <- None
        }
 
 [<Sealed>]
 type AsyncLazy<'T when 'T : not struct> (computation) =
     
-    let weak = AsyncLazyWeak<'T> computation
+    let gate = obj ()
+    let mutable asyncLazyWeak = ValueSome (AsyncLazyWeak<'T> computation)
     let mutable cachedResult = ValueNone // hold strongly
 
     member __.GetValueAsync () =
         async {
-            match cachedResult with
-            | ValueSome result -> return result
-            | _ ->
+            // fast path
+            match cachedResult, asyncLazyWeak with
+            | ValueSome result, _ -> return result
+            | _, ValueSome weak ->
                 let! result = weak.GetValueAsync ()
-                cachedResult <- ValueSome result
+                lock gate <| fun () ->
+                    // Make sure we set it only once.
+                    if cachedResult.IsNone then
+                        cachedResult <- ValueSome result
+                        asyncLazyWeak <- ValueNone
                 return result
+            | _ -> 
+                return failwith "should not happen"
         }
 
 /// Thread safe.
 [<Sealed>]
-type private Lru<'Key, 'Value when 'Key : equality and 'Value : not struct> (size: int, equalityComparer: IEqualityComparer<'Key>) =
+type LruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (size: int, equalityComparer: IEqualityComparer<'Key>) =
 
     let size = if size <= 0 then invalidArg "size" "Size cannot be less than or equal to zero." else size
     let gate = obj ()
@@ -151,9 +172,8 @@ type private Lru<'Key, 'Value when 'Key : equality and 'Value : not struct> (siz
 
             match dataLookup.TryGetValue key with
             | true, existingNode ->
-                if existingNode <> data.First then
-                    data.Remove existingNode
-                    dataLookup.[key] <- data.AddFirst pair
+                data.Remove existingNode
+                dataLookup.[key] <- data.AddFirst pair
             | _ ->
                 if data.Count = size then
                     dataLookup.Remove data.Last.Value.Key |> ignore
@@ -171,6 +191,7 @@ type private Lru<'Key, 'Value when 'Key : equality and 'Value : not struct> (siz
                 else
                     match dataLookup.TryGetValue key with
                     | true, existingNode ->
+                        data.Remove existingNode
                         dataLookup.[key] <- data.AddFirst existingNode.Value
                         ValueSome existingNode.Value.Value
                     | _ ->
@@ -201,7 +222,7 @@ type private Lru<'Key, 'Value when 'Key : equality and 'Value : not struct> (siz
 
 /// Thread safe.
 [<Sealed>]
-type MruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheSize: int, maxWeakReferenceSize: int, equalityComparer: IEqualityComparer<'Key>) =
+type MruWeakCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheSize: int, maxWeakReferenceSize: int, equalityComparer: IEqualityComparer<'Key>) =
 
     let gate = obj ()
 
@@ -209,7 +230,7 @@ type MruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheS
     let isValueRef = not typeof<'Value>.IsValueType
 
     let cacheLookup = Dictionary<'Key, 'Value> (equalityComparer)
-    let weakReferenceLookup = Lru<'Key, WeakReference<'Value>> (maxWeakReferenceSize, equalityComparer)
+    let weakReferenceLookup = LruCache<'Key, WeakReference<'Value>> (maxWeakReferenceSize, equalityComparer)
     let mutable mruKey = Unchecked.defaultof<'Key>
     let mutable mruValue = Unchecked.defaultof<'Value>
 
@@ -232,10 +253,14 @@ type MruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheS
         | true, value -> ValueSome value
         | _ -> ValueNone
 
-    let shrinkCache key =
-        if cacheLookup.Count = cacheSize && not (keyEquals key mruKey) then
+    let setMru key value =
+        if cacheLookup.Count = cacheSize && (not (keyEquals key mruKey) && not (cacheLookup.ContainsKey key)) then
             weakReferenceLookup.Set (mruKey, WeakReference<_> mruValue)
             cacheLookup.Remove mruKey |> ignore
+            weakReferenceLookup.Remove key |> ignore
+        mruKey <- key
+        mruValue <- value
+        cacheLookup.[key] <- value
 
     member __.Set (key, value) =
         if isKeyRef && obj.ReferenceEquals (key, null) then
@@ -245,11 +270,7 @@ type MruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheS
             nullArg "value"
 
         lock gate <| fun () ->
-            shrinkCache key
-
-            mruKey <- key
-            mruValue <- value
-            cacheLookup.[key] <- value
+            setMru key value
 
     member __.TryGetValue key =
         if isKeyRef && obj.ReferenceEquals (key, null) then
@@ -262,18 +283,12 @@ type MruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheS
             else
                 match tryFindCacheValue key with
                 | ValueSome value ->
-                    shrinkCache key
-                    mruKey <- key
-                    mruValue <- value
-                    cacheLookup.[key] <- value
+                    setMru key value
                     ValueSome value
                 | _ ->
                     match tryFindWeakReferenceCacheValue key with
                     | ValueSome value ->
-                        shrinkCache key
-                        mruKey <- key
-                        mruValue <- value
-                        cacheLookup.[key] <- value
+                        setMru key value
                         ValueSome value
                     | _ ->
                         ValueNone

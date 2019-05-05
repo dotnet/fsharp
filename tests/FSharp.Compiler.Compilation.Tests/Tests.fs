@@ -2,7 +2,9 @@ namespace FSharp.Compiler.Compilation.Tests
 
 open System
 open System.Collections.Immutable
+open System.Collections.Generic
 open FSharp.Compiler.Compilation
+open FSharp.Compiler.Compilation.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open NUnit.Framework
@@ -36,7 +38,7 @@ module TestModule%i =
         (sprintf """namespace Test.%s""" name) + createTestModules name amount
 
 [<TestFixture>]
-type CompilationTests() =
+type CompilationTests () =
 
     [<Test>]
     member __.``Basic Check``() =
@@ -57,4 +59,115 @@ type CompilationTests() =
         let c = compilationService.CreateCompilation options
 
         c.CheckAsync "test3.fs" |> Async.RunSynchronously |> ignore
-        Assert.Throws (fun () -> c.CheckAsync "badfile.fs" |> Async.RunSynchronously) |> ignore
+        Assert.Throws<Exception> (fun () -> c.CheckAsync "badfile.fs" |> Async.RunSynchronously) |> ignore
+
+[<TestFixture>]
+type UtilitiesTest () =
+
+    [<Test>]
+    member __.``Lru Cache Validation`` () =
+        let lru = LruCache<int, obj> (5, Collections.Generic.EqualityComparer.Default)
+
+        Assert.Throws<ArgumentNullException> (fun () -> lru.Set (1, null)) |> ignore
+
+        let o1 = obj ()
+        lru.Set (1, o1)
+
+        Assert.AreEqual (1, lru.Count)
+
+        match lru.TryGetValue 1 with
+        | ValueSome o -> Assert.AreSame (o1, o)
+        | _ -> failwith "couldn't find object in Lru"
+
+        lru.Set (1, obj ())
+
+        match lru.TryGetValue 1 with
+        | ValueSome o -> Assert.AreNotSame (o1, o)
+        | _ -> failwith "couldn't find object in Lru"
+
+        lru.Set (2, obj ())
+        lru.Set (3, obj ())
+        lru.Set (4, obj ())
+        lru.Set (5, obj ())
+
+        Assert.AreEqual (5, lru.Count)
+
+        lru.Set (6, obj ())
+
+        Assert.AreEqual (5, lru.Count)
+
+        Assert.True ((lru.TryGetValue 1).IsNone)
+
+        lru.TryGetValue 2 |> ignore
+
+        lru.Set (7, obj ())
+
+        // Because we tried to acess 2 before setting 7, it put 3 at the back.
+        Assert.True ((lru.TryGetValue 3).IsNone)
+
+        Assert.True ((lru.TryGetValue 2).IsSome)
+
+        Assert.AreEqual (5, lru.Count)
+
+        Assert.True ((lru.TryGetValue 1).IsNone)
+        Assert.True ((lru.TryGetValue 2).IsSome)
+        Assert.True ((lru.TryGetValue 3).IsNone)
+        Assert.True ((lru.TryGetValue 4).IsSome)
+        Assert.True ((lru.TryGetValue 5).IsSome)
+        Assert.True ((lru.TryGetValue 6).IsSome)
+
+    [<Test>]
+    member __.``Mru Weak Cache Validation`` () =
+        let mru = MruWeakCache<int, obj> (5, 10, Collections.Generic.EqualityComparer.Default)
+
+        Assert.Throws<ArgumentNullException> (fun () -> mru.Set (1, null)) |> ignore
+
+        let stackF () =
+            let o1 = obj ()
+            mru.Set (1, o1)
+
+            Assert.AreEqual (1, mru.Count)
+            Assert.AreEqual (0, mru.WeakReferenceCount)
+
+            match mru.TryGetValue 1 with
+            | ValueSome o -> Assert.AreSame (o1, o)
+            | _ -> failwith "couldn't find object in mru"
+
+            mru.Set (2, obj ())
+            mru.Set (3, obj ())
+            mru.Set (4, obj ())
+
+            let o5 = obj ()
+            mru.Set (5, o5)
+
+            Assert.AreEqual (5, mru.Count)
+            Assert.AreEqual (0, mru.WeakReferenceCount)
+
+            let o6 = obj ()
+            mru.Set (6, o6)
+
+            Assert.AreEqual (5, mru.Count)
+            Assert.AreEqual (1, mru.WeakReferenceCount)
+
+            Assert.True ((mru.TryGetValue 5) = ValueSome o5)
+            Assert.True ((mru.TryGetValue 6) = ValueSome o6)
+
+            Assert.AreEqual (5, mru.Count)
+            Assert.AreEqual (1, mru.WeakReferenceCount)
+
+        stackF ()
+        GC.Collect ()
+
+        Assert.AreEqual (5, mru.Count)
+        Assert.AreEqual (1, mru.WeakReferenceCount)
+
+        Assert.True ((mru.TryGetValue 5).IsNone)
+        Assert.True ((mru.TryGetValue 6).IsSome)
+        Assert.True ((mru.TryGetValue 4).IsSome)
+        Assert.True ((mru.TryGetValue 3).IsSome)
+        Assert.True ((mru.TryGetValue 2).IsSome)
+        Assert.True ((mru.TryGetValue 1).IsSome)
+
+        Assert.AreEqual (5, mru.Count)
+        Assert.AreEqual (0, mru.WeakReferenceCount)
+        ()

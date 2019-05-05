@@ -30,7 +30,7 @@ type CompilationId private (_guid: Guid) =
 
 type CompilationCaches =
     {
-        incrementalCheckerCache: MruCache<struct (CompilationId * VersionStamp), IncrementalChecker>
+        incrementalCheckerCache: MruWeakCache<struct (CompilationId * VersionStamp), IncrementalChecker>
         frameworkTcImportsCache: FrameworkImportsCache
     }
 
