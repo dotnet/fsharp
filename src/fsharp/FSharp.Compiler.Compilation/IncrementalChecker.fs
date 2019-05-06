@@ -188,7 +188,7 @@ type IncrementalCheckerState =
             )
         { this with orderedResults = orderedResults }
 
-    member this.CheckAsync (filePath: string, flags: CheckFlags) =
+    member this.CheckAsync (filePath: string, flags: CheckFlags) : Async<TcAccumulator * CheckerSink option> =
         let tcConfig = this.tcConfig
         let tcGlobals = this.tcGlobals
         let tcImports = this.tcImports

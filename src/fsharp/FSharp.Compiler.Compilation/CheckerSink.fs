@@ -28,8 +28,8 @@ open FSharp.Compiler.Compilation.Utilities
 type LinesStorage () =
 
     // TODO: Yes a dictionary is bad, but quick for now.
-    let lines = Dictionary<int, ResizeArray<CapturedNameResolution>> ()
-    let linesMethodGroup = Dictionary<int, ResizeArray<CapturedNameResolution>> ()
+    let lines = Dictionary<int, ResizeArray<TcSymbolUseData>> ()
+    let linesMethodGroup = Dictionary<int, ResizeArray<TcSymbolUseData>> ()
 
     let getTableList (dic: Dictionary<_, ResizeArray<_>>) key =
         match dic.TryGetValue key with
@@ -39,13 +39,13 @@ type LinesStorage () =
             dic.[key] <- child
             child
 
-    member __.Add (cnr, m: range) =
+    member __.Add (cnr: CapturedNameResolution, m: range) =
         let symbols = getTableList lines m.EndLine
-        symbols.Add cnr
+        symbols.Add { Item = cnr.Item; ItemOccurence = cnr.ItemOccurence; DisplayEnv = cnr.DisplayEnv; Range = cnr.Range }
 
-    member __.AddMethodGroup (cnr, m: range) =
+    member __.AddMethodGroup (cnr: CapturedNameResolution, m: range) =
         let symbols = getTableList linesMethodGroup m.EndLine
-        symbols.Add cnr
+        symbols.Add  { Item = cnr.Item; ItemOccurence = cnr.ItemOccurence; DisplayEnv = cnr.DisplayEnv; Range = cnr.Range }
 
     member __.RemoveAll (m: range) =
         for pair in lines do
