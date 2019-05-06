@@ -82,6 +82,7 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
     member __.GetValueAsync () =
        async {
            // fast path
+           // TODO: Perhaps we could make the fast path non-allocating since we create a new async everytime.
            match tryGetResult () with
            | ValueSome result -> return result
            | _ ->
@@ -130,6 +131,7 @@ type AsyncLazy<'T when 'T : not struct> (computation) =
     member __.GetValueAsync () =
         async {
             // fast path
+            // TODO: Perhaps we could make the fast path non-allocating since we create a new async everytime.
             match cachedResult, asyncLazyWeak with
             | ValueSome result, _ -> return result
             | _, ValueSome weak ->
@@ -138,17 +140,18 @@ type AsyncLazy<'T when 'T : not struct> (computation) =
                     // Make sure we set it only once.
                     if cachedResult.IsNone then
                         cachedResult <- ValueSome result
-                        asyncLazyWeak <- ValueNone
-                return result
+                        asyncLazyWeak <- ValueNone // null out computation function so we don't strongly hold onto any references once we finished computing.
+                return cachedResult.Value
             | _ -> 
                 return failwith "should not happen"
         }
 
 /// Thread safe.
 [<Sealed>]
-type LruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (size: int, equalityComparer: IEqualityComparer<'Key>) =
+type LruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheSize: int, equalityComparer: IEqualityComparer<'Key>) =
 
-    let size = if size <= 0 then invalidArg "size" "Size cannot be less than or equal to zero." else size
+    let size = if cacheSize <= 0 then invalidArg "cacheSize" "Cache size cannot be less than or equal to zero." else cacheSize
+
     let gate = obj ()
 
     let isKeyRef = not typeof<'Key>.IsValueType
@@ -221,8 +224,13 @@ type LruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (size: 
         member __.GetEnumerator () : IEnumerator = (data :> IEnumerable).GetEnumerator ()
 
 /// Thread safe.
+/// Same as MruCache, but when it evicts an item out of the cache, it turns the value into a weak reference and puts it into a LruCache.
+/// If a weak reference item is still alive and the MruWeakCache touches it, then the item is promoted to Mru and removed from the LruCache; no longer a weak reference.
 [<Sealed>]
-type MruWeakCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheSize: int, maxWeakReferenceSize: int, equalityComparer: IEqualityComparer<'Key>) =
+type MruWeakCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheSize: int, weakReferenceCacheSize: int, equalityComparer: IEqualityComparer<'Key>) =
+
+    let cacheSize = if cacheSize <= 0 then invalidArg "cacheSize" "Cache size cannot be less than or equal to zero." else cacheSize
+    let weakReferenceCacheSize = if weakReferenceCacheSize <= 0 then invalidArg "weakReferenceCacheSize" "Weak reference cache size cannot be less than or equal to zero." else cacheSize
 
     let gate = obj ()
 
@@ -230,7 +238,7 @@ type MruWeakCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (ca
     let isValueRef = not typeof<'Value>.IsValueType
 
     let cacheLookup = Dictionary<'Key, 'Value> (equalityComparer)
-    let weakReferenceLookup = LruCache<'Key, WeakReference<'Value>> (maxWeakReferenceSize, equalityComparer)
+    let weakReferenceLookup = LruCache<'Key, WeakReference<'Value>> (weakReferenceCacheSize, equalityComparer)
     let mutable mruKey = Unchecked.defaultof<'Key>
     let mutable mruValue = Unchecked.defaultof<'Value>
 

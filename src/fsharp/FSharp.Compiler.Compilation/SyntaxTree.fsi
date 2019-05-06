@@ -20,12 +20,13 @@ type internal ITemporaryStorageServiceExtensions =
     static member CreateSourceSnapshot: ITemporaryStorageService * filePath: string * SourceText -> Cancellable<SourceSnapshot>
 
 [<Sealed>]
-type internal SyntaxTree =
+type SyntaxTree =
 
-    new: filePath: string * ParsingInfo * AsyncLazyWeak<ParseResult> -> SyntaxTree
+    internal new: filePath: string * ParsingInfo * AsyncLazyWeak<ParseResult> -> SyntaxTree
 
     member FilePath: string
 
-    member ParsingInfo: ParsingInfo
+    /// TODO: Make this public when we have a better way to handling ParsingInfo, perhaps have a better ParsingOptions?
+    member internal ParsingInfo: ParsingInfo
 
     member GetParseResultAsync: unit -> Async<ParseResult>

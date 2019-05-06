@@ -16,11 +16,18 @@ type internal CompilationCaches =
     }
 
 [<NoEquality;NoComparison>]
-type CompilationOptions =
+type CompilationGlobalOptions =
     {
         LegacyReferenceResolver: ReferenceResolver.Resolver
         DefaultFSharpBinariesDir: string
         TryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+    }
+
+    static member Create: unit -> CompilationGlobalOptions
+
+[<NoEquality;NoComparison>]
+type CompilationOptions =
+    {
         SuggestNamesForErrors: bool
         CommandLineArgs: string list
         ProjectDirectory: string
@@ -41,9 +48,11 @@ and [<Sealed>] Compilation =
 
     member Options: CompilationOptions
 
-    member CheckAsync: filePath: string -> Async<unit>
+    member ReplaceSourceSnapshot: SourceSnapshot -> Compilation
+
+    member GetSemanticModel: filePath: string -> SemanticModel
 
 [<RequireQualifiedAccess>]
 module internal Compilation =
 
-    val create: CompilationOptions -> CompilationCaches -> Compilation
+    val create: CompilationOptions -> CompilationGlobalOptions -> CompilationCaches -> Compilation

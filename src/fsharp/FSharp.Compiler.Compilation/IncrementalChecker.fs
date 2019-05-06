@@ -37,20 +37,19 @@ type internal CheckerOptions =
 
 type CheckFlags =
     | None = 0x00
-    | ReturnResolutions = 0x01
 
-type CompilationResult =
-   // | NotParsed of Source
+type PartialCheckResult =
+    | NotParsed of SyntaxTree
     | Parsed of SyntaxTree * ParseResult
-    | CheckingInProgress of SyntaxTree * CancellationTokenSource
-   // | SignatureChecked of SyntaxTree * TcAccumulator // is an impl file, but only checked its signature file (.fsi)
+    /// Is an impl file, but only checked its signature file (.fsi). This is a performance optimization.
+   // | SignatureChecked of SyntaxTree * TcAccumulator
     | Checked of SyntaxTree * TcAccumulator
 
     member this.SyntaxTree =
         match this with
-        | CompilationResult.Parsed (syntaxTree, _) -> syntaxTree
-        | CompilationResult.CheckingInProgress (syntaxTree, _) -> syntaxTree
-        | CompilationResult.Checked (syntaxTree, _) -> syntaxTree
+        | PartialCheckResult.NotParsed syntaxTree -> syntaxTree
+        | PartialCheckResult.Parsed (syntaxTree, _) -> syntaxTree
+        | PartialCheckResult.Checked (syntaxTree, _) -> syntaxTree
 
 [<NoEquality;NoComparison>]
 type IncrementalCheckerState =
@@ -60,13 +59,15 @@ type IncrementalCheckerState =
         tcImports: TcImports
         initialTcAcc: TcAccumulator
         options: CheckerOptions
-        orderedResults: CompilationResult []
+        /// Mutable item, used for caching results. Gets copied when new state gets built.
+        orderedResults: PartialCheckResult []
         indexLookup: ImmutableDictionary<string, int>
-        version: VersionStamp
     }
 
+    // TODO: This should be moved out of the checker (possibly to Compilation), but we have a dependency on tcConfig; which gets built and passed to the checker.
+    //       The checker should not be thinking about source snapshots and only be thinking about consuming syntax trees.
     /// Create a syntax tree.
-    static member CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, sourceSnapshot: SourceSnapshot) =
+    static member private CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, sourceSnapshot: SourceSnapshot) =
         let filePath = sourceSnapshot.FilePath
 
         let parsingInfo =
@@ -113,7 +114,7 @@ type IncrementalCheckerState =
                // Parallel.For(0, orderedSourceSnapshots.Length, fun i ->
                     let syntaxTree, sourceValue = syntaxTrees.[i]
                     let parseResult = Parser.Parse syntaxTree.ParsingInfo sourceValue
-                    let compilationResult = CompilationResult.Parsed (syntaxTree, parseResult)
+                    let compilationResult = PartialCheckResult.Parsed (syntaxTree, parseResult)
 
                     orderedResultsBuilder.[i] <- compilationResult
                     indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
@@ -136,29 +137,19 @@ type IncrementalCheckerState =
                 options = options
                 orderedResults = orderedResultsBuilder.ToArray ()
                 indexLookup = ImmutableDictionary.CreateRange indexLookup
-                version = VersionStamp.Create ()
             }
         }
 
-    member this.GetIndex (filePath: string) =
+    member private this.GetIndex (filePath: string) =
         match this.indexLookup.TryGetValue filePath with
         | false, _ -> failwith "source does not exist in incremental checker"
         | true, index -> index
 
-    member private this.GetCompilationResult (filePath: string) =
-        this.orderedResults.[this.GetIndex filePath]
-
-    member private this.GetCompilationResultByIndex index =
+    member private this.GetPartialCheckResultByIndex index =
         this.orderedResults.[index]
 
-    member private this.SetCompilationResultByIndex (index, result) =
+    member private this.SetPartialCheckResultByIndex (index, result) =
         this.orderedResults.[index] <- result
-
-    member this.GetParseResult (filePath: string, cancellationToken) =
-        match this.GetCompilationResult(filePath) with
-        | CompilationResult.Parsed (_, parseResult) -> parseResult
-        | CompilationResult.CheckingInProgress (syntaxTree, _) -> Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
-        | CompilationResult.Checked (syntaxTree, _) -> Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
 
     member private this.GetPriorTcAccumulatorAsync (filePath: string) =
         async {
@@ -166,16 +157,36 @@ type IncrementalCheckerState =
             | 0 -> return (this.initialTcAcc, 0) // first file
 
             | cacheIndex ->
-                let priorCacheResult = this.GetCompilationResultByIndex (cacheIndex - 1)
+                let priorCacheResult = this.GetPartialCheckResultByIndex (cacheIndex - 1)
                 match priorCacheResult with
-                | CompilationResult.Parsed (syntaxTree, _) ->
+                | PartialCheckResult.NotParsed syntaxTree
+                | PartialCheckResult.Parsed (syntaxTree, _) ->
                     // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
                     let! tcAcc, _ = this.CheckAsync (syntaxTree.FilePath, CheckFlags.None)
                     return (tcAcc, cacheIndex)
-                | CompilationResult.CheckingInProgress (_, _) -> return failwith "not yet"
-                | CompilationResult.Checked (_, tcAcc) ->
+                | PartialCheckResult.Checked (_, tcAcc) ->
                     return (tcAcc, cacheIndex)
         }
+
+    // TODO: While we keep results above the source snapshot, we don't keep an inprocess *running* result. 
+    //       This way we don't try to restart already computing results that would be valid on the next state.
+    // TODO: The above TODO applies, but should be changed to a syntax tree.
+    member this.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
+        let index = this.GetIndex sourceSnapshot.FilePath
+        let orderedResults =
+            this.orderedResults
+            |> Array.mapi (fun i result ->
+                // invalidate compilation results of the source and all sources below it.
+                if i = index then
+                    let isLastFile = (this.orderedResults.Length - 1) = i
+                    let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (this.tcConfig, this.options.parsingOptions, isLastFile, sourceSnapshot)
+                    PartialCheckResult.NotParsed syntaxTree
+                elif i > index then
+                    PartialCheckResult.NotParsed result.SyntaxTree
+                else
+                    result
+            )
+        { this with orderedResults = orderedResults }
 
     member this.CheckAsync (filePath: string, flags: CheckFlags) =
         let tcConfig = this.tcConfig
@@ -187,8 +198,8 @@ type IncrementalCheckerState =
             let! cancellationToken = Async.CancellationToken
 
             let! (tcAcc, cacheIndex) = this.GetPriorTcAccumulatorAsync (filePath)
-            let syntaxTree = (this.GetCompilationResultByIndex cacheIndex).SyntaxTree
-            let (inputOpt, parseErrors) = Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
+            let syntaxTree = (this.GetPartialCheckResultByIndex cacheIndex).SyntaxTree
+            let! (inputOpt, parseErrors) = syntaxTree.GetParseResultAsync ()
             match inputOpt with
             | Some input ->
                 let capturingErrorLogger = CompilationErrorLogger("CheckAsync", tcConfig.errorSeverityOptions)
@@ -197,7 +208,7 @@ type IncrementalCheckerState =
                 let fullComputation = 
                     eventually {                    
                         ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filePath) |> ignore
-                        let sink = TcResultsSinkImpl(tcGlobals)
+                        let sink = CheckerSink tcGlobals
                         let hadParseErrors = not (Array.isEmpty parseErrors)
 
                         let input, moduleNamesDict = DeduplicateParsedInputModuleName tcAcc.tcModuleNamesDict input
@@ -213,16 +224,7 @@ type IncrementalCheckerState =
                 
                         /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                         let implFile = if options.keepAssemblyContents then implFile else None
-                        let tcResolutions = if options.keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
                         let tcEnvAtEndOfFile = (if options.keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls)
-                        let tcSymbolUses = sink.GetSymbolUses()
-
-                        let tcResolutionsOpt =
-                            if options.keepAllBackgroundResolutions then Some tcResolutions
-                            elif (flags &&& CheckFlags.ReturnResolutions = CheckFlags.ReturnResolutions) then
-                                Some (sink.GetResolutions ())
-                            else
-                                None
                                 
                         let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
                         return {tcAcc with  tcState=tcState 
@@ -230,12 +232,9 @@ type IncrementalCheckerState =
                                             topAttribs=Some topAttribs
                                             latestImplFile=implFile
                                             latestCcuSigForFile=Some ccuSigForFile
-                                            tcResolutionsRev=tcResolutions :: tcAcc.tcResolutionsRev
-                                            tcSymbolUsesRev=tcSymbolUses :: tcAcc.tcSymbolUsesRev
-                                            tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcAcc.tcOpenDeclarationsRev
                                             tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                             tcModuleNamesDict = moduleNamesDict
-                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, tcResolutionsOpt
+                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, Some sink
                     }
 
                 // No one has ever changed this value, although a bit arbitrary.
@@ -249,7 +248,7 @@ type IncrementalCheckerState =
                         fullComputation |> 
                             Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled 
                                 maxTimeShareMilliseconds
-                                CancellationToken.None
+                                cancellationToken
                                 (fun ctok f -> f ctok)
 
                 let timeSlicedComputationAsync =
@@ -263,9 +262,9 @@ type IncrementalCheckerState =
                     )
 
                 match! timeSlicedComputationAsync with
-                | Some (tcAcc, tcResolutionsOpt) -> 
-                    this.SetCompilationResultByIndex (cacheIndex, CompilationResult.Checked (syntaxTree, tcAcc))
-                    return (tcAcc, tcResolutionsOpt)
+                | Some (tcAcc, Some checkerSink) -> 
+                    this.SetPartialCheckResultByIndex (cacheIndex, PartialCheckResult.Checked (syntaxTree, tcAcc))
+                    return (tcAcc, Some checkerSink)
                 | _ ->
                     return failwith "computation failed"
                                        
@@ -276,14 +275,12 @@ type IncrementalCheckerState =
 [<Sealed>]
 type IncrementalChecker (state: IncrementalCheckerState) =
 
-    member __.Version = state.version
+    // TODO: Should be a syntax tree.
+    member __.ReplaceSourceSnapshot sourceSnapshot =
+        IncrementalChecker (state.ReplaceSourceSnapshot sourceSnapshot)
 
-    member __.ReplaceSourceSnapshot (_sourceSnapshot: SourceSnapshot) =
-        let newState = state
-        IncrementalChecker newState
-
-    member this.CheckAsync filePath =
-        state.CheckAsync (filePath, CheckFlags.ReturnResolutions)
+    member __.CheckAsync filePath =
+        state.CheckAsync (filePath, CheckFlags.None)
 
 module IncrementalChecker =
 

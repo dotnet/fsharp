@@ -24,8 +24,6 @@
     <Compile Include="Parser.fs" />
     <Compile Include="SyntaxTree.fsi" />
     <Compile Include="SyntaxTree.fs" />
-    <Compile Include="VersionStamp.fsi" />
-    <Compile Include="VersionStamp.fs" />
     <Compile Include="CompilationWorker.fsi" />
     <Compile Include="CompilationWorker.fs" />
     <Compile Include="FrameworkImportsCache.fsi" />
@@ -34,8 +32,14 @@
     <Compile Include="TcInitial.fs" />
     <Compile Include="TcAccumulator.fsi" />
     <Compile Include="TcAccumulator.fs" />
+    <Compile Include="CheckerSink.fsi" />
+    <Compile Include="CheckerSink.fs" />
     <Compile Include="IncrementalChecker.fsi" />
     <Compile Include="IncrementalChecker.fs" />
+    <Compile Include="SemanticModel.fsi" />
+    <Compile Include="SemanticModel.fs" />
+    <Compile Include="VersionStamp.fsi" />
+    <Compile Include="VersionStamp.fs" />
     <Compile Include="Compilation.fsi" />
     <Compile Include="Compilation.fs" />
     <Compile Include="CompilationService.fsi" />

@@ -260,6 +260,9 @@ val ItemsAreEffectivelyEqualHash : TcGlobals -> Item -> int
 
 [<Class>]
 type internal CapturedNameResolution = 
+    
+    new: p: pos * i: Item * tpinst: TyparInst * io: ItemOccurence * de: DisplayEnv * nre: NameResolutionEnv * ad: AccessorDomain * m: range -> CapturedNameResolution
+
     /// line and column
     member Pos : pos
 

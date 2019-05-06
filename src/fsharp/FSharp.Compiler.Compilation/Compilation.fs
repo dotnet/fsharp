@@ -34,11 +34,29 @@ type CompilationCaches =
         frameworkTcImportsCache: FrameworkImportsCache
     }
 
-type CompilationOptions =
+type CompilationGlobalOptions =
     {
         LegacyReferenceResolver: ReferenceResolver.Resolver
         DefaultFSharpBinariesDir: string
         TryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+    }
+
+    static member Create () =
+        let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+        
+        // TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
+        let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharp.Compiler.CompileOps.TcState>.Assembly.Location)).Value
+        
+        let tryGetMetadataSnapshot = (fun _ -> None)
+        
+        {
+            LegacyReferenceResolver = legacyReferenceResolver
+            DefaultFSharpBinariesDir = defaultFSharpBinariesDir
+            TryGetMetadataSnapshot = tryGetMetadataSnapshot
+        }
+
+type CompilationOptions =
+    {
         SuggestNamesForErrors: bool
         CommandLineArgs: string list
         ProjectDirectory: string
@@ -52,18 +70,9 @@ type CompilationOptions =
     }
 
     static member Create (assemblyPath, projectDirectory, sourceSnapshots, compilationReferences) =
-        let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
-
-        // TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
-        let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<TcState>.Assembly.Location)).Value
-
-        let tryGetMetadataSnapshot = (fun _ -> None)
         let suggestNamesForErrors = false
         let useScriptResolutionRules = false
         {
-            LegacyReferenceResolver = legacyReferenceResolver
-            DefaultFSharpBinariesDir = defaultFSharpBinariesDir
-            TryGetMetadataSnapshot = tryGetMetadataSnapshot
             SuggestNamesForErrors = suggestNamesForErrors
             CommandLineArgs = []
             ProjectDirectory = projectDirectory
@@ -76,13 +85,13 @@ type CompilationOptions =
             CompilationReferences = compilationReferences
         }
 
-    member options.CreateTcInitial (frameworkTcImportsCache, ctok) =
+    member options.CreateTcInitial (frameworkTcImportsCache, globalOptions, ctok) =
         let tcInitialOptions =
             {
                 frameworkTcImportsCache = frameworkTcImportsCache
-                legacyReferenceResolver = options.LegacyReferenceResolver
-                defaultFSharpBinariesDir = options.DefaultFSharpBinariesDir
-                tryGetMetadataSnapshot = options.TryGetMetadataSnapshot
+                legacyReferenceResolver = globalOptions.LegacyReferenceResolver
+                defaultFSharpBinariesDir = globalOptions.DefaultFSharpBinariesDir
+                tryGetMetadataSnapshot = globalOptions.TryGetMetadataSnapshot
                 suggestNamesForErrors = options.SuggestNamesForErrors
                 sourceFiles = options.SourceSnapshots |> Seq.map (fun x -> x.FilePath) |> List.ofSeq
                 commandLineArgs = options.CommandLineArgs
@@ -96,8 +105,8 @@ type CompilationOptions =
             }
         TcInitial.create tcInitialOptions ctok
 
-    member options.CreateIncrementalChecker (frameworkTcImportsCache, ctok) =
-        let tcInitial = options.CreateTcInitial (frameworkTcImportsCache, ctok)
+    member options.CreateIncrementalChecker (frameworkTcImportsCache, globalOptions, ctok) =
+        let tcInitial = options.CreateTcInitial (frameworkTcImportsCache, globalOptions, ctok)
         let tcImports, tcAcc = TcAccumulator.createInitial tcInitial ctok |> Cancellable.runWithoutCancellation
         let checkerOptions =
             {
@@ -108,43 +117,97 @@ type CompilationOptions =
         IncrementalChecker.create tcInitial.tcConfig tcInitial.tcGlobals tcImports tcAcc checkerOptions options.SourceSnapshots
         |> Cancellable.runWithoutCancellation
 
-and [<Sealed>] Compilation (id: CompilationId, options: CompilationOptions, caches: CompilationCaches, asyncLazyGetChecker: AsyncLazy<IncrementalChecker>, version: VersionStamp) =
+and [<NoEquality; NoComparison>] CompilationState =
+    {
+        filePathIndexMap: ImmutableDictionary<string, int>
+        caches: CompilationCaches
+        options: CompilationOptions
+        globalOptions: CompilationGlobalOptions
+        asyncLazyGetChecker: AsyncLazy<IncrementalChecker>
+    }
+
+    static member Create (options, globalOptions, caches: CompilationCaches) =
+        let sourceSnapshots = options.SourceSnapshots
+
+        let filePathIndexMapBuilder = ImmutableDictionary.CreateBuilder (StringComparer.OrdinalIgnoreCase)
+        for i = 0 to sourceSnapshots.Length - 1 do
+            let sourceSnapshot = sourceSnapshots.[i]
+            if filePathIndexMapBuilder.ContainsKey sourceSnapshot.FilePath then
+                failwithf "Duplicate file path when creating a compilation. File path: %s" sourceSnapshot.FilePath
+            else
+                filePathIndexMapBuilder.Add (sourceSnapshot.FilePath, i)
+
+        let asyncLazyGetChecker =
+            AsyncLazy (async {
+                return! CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
+                    options.CreateIncrementalChecker (caches.frameworkTcImportsCache, globalOptions, ctok)
+                )
+            })
+
+        {
+            filePathIndexMap = filePathIndexMapBuilder.ToImmutableDictionary ()
+            caches = caches
+            options = options
+            globalOptions = globalOptions
+            asyncLazyGetChecker = asyncLazyGetChecker
+        }
+
+    member this.SetOptions options =
+        CompilationState.Create (options, this.globalOptions, this.caches)
+
+    member this.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
+        match this.filePathIndexMap.TryGetValue sourceSnapshot.FilePath with
+        | false, _ -> failwith "source snapshot does not exist in compilation"
+        | _, filePathIndex ->
+
+            let sourceSnapshotsBuilder = this.options.SourceSnapshots.ToBuilder ()
+
+            sourceSnapshotsBuilder.[filePathIndex] <- sourceSnapshot
+
+            let options = { this.options with SourceSnapshots = sourceSnapshotsBuilder.MoveToImmutable () }
+
+            let asyncLazyGetChecker =
+                AsyncLazy (async {
+                    let! checker = this.asyncLazyGetChecker.GetValueAsync ()
+                    return checker.ReplaceSourceSnapshot sourceSnapshot
+                })
+
+            { this with options = options; asyncLazyGetChecker = asyncLazyGetChecker }
+
+and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version: VersionStamp) =
+
+    let asyncLazyGetChecker =
+        AsyncLazy (async {
+            match state.caches.incrementalCheckerCache.TryGetValue struct (id, version) with
+            | ValueSome checker -> return checker
+            | _ -> 
+                let! checker = state.asyncLazyGetChecker.GetValueAsync ()
+                state.caches.incrementalCheckerCache.Set (struct (id, version), checker)
+                return checker
+        })
+
+    let checkFilePath filePath =
+        if not (state.filePathIndexMap.ContainsKey filePath) then
+            failwithf "File path does not exist in compilation. File path: %s" filePath
 
     member __.Id = id
 
     member __.Version = version
 
-    member __.Options = options
+    member __.Options = state.options
 
-    member __.GetCheckerAsync () =
-        async {
-            match caches.incrementalCheckerCache.TryGetValue struct (id, version) with
-            | ValueSome checker -> return checker
-            | _ -> 
-                let! checker = asyncLazyGetChecker.GetValueAsync ()
-                caches.incrementalCheckerCache.Set (struct (id, version), checker)
-                return checker
-        }
+    member __.SetOptions (options: CompilationOptions) =
+        Compilation (id, state.SetOptions options, version.NewVersionStamp ())
 
-    member __.SetOptions (newOptions: CompilationOptions) =
-        let newAsyncLazyGetChecker = AsyncLazy (CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
-            newOptions.CreateIncrementalChecker (caches.frameworkTcImportsCache, ctok)
-        ))
-        Compilation (id, newOptions, caches, newAsyncLazyGetChecker, version.NewVersionStamp ())
+    member __.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
+        checkFilePath sourceSnapshot.FilePath
+        Compilation (id, state.ReplaceSourceSnapshot sourceSnapshot, version.NewVersionStamp ())
 
-    member this.CheckAsync filePath =
-        async {
-            let! checker = this.GetCheckerAsync ()
-            let! tcAcc, tcResolutionsOpt = checker.CheckAsync filePath
-            printfn "%A" (tcAcc.tcErrorsRev)
-            ()
-        }
+    member __.GetSemanticModel filePath =
+        checkFilePath filePath
+        SemanticModel asyncLazyGetChecker
 
 module Compilation =
 
-    let create (options: CompilationOptions) (caches: CompilationCaches) =
-        let asyncLazyGetChecker =
-                AsyncLazy (CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
-                    options.CreateIncrementalChecker (caches.frameworkTcImportsCache, ctok)
-                ))
-        Compilation (CompilationId.Create (), options, caches, asyncLazyGetChecker, VersionStamp.Create ())
+    let create options globalOptions caches =
+        Compilation (CompilationId.Create (), CompilationState.Create (options, globalOptions, caches), VersionStamp.Create ())

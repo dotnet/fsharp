@@ -24,18 +24,10 @@ open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
 
 /// Accumulated results of type checking.
-type TcAccumulator =
+[<NoEquality; NoComparison>]
+type internal TcAccumulator =
     { tcState: TcState
       tcEnvAtEndOfFile: TcEnv
-
-      /// Accumulated resolutions, last file first
-      tcResolutionsRev: TcResolutions list
-
-      /// Accumulated symbol uses, last file first
-      tcSymbolUsesRev: TcSymbolUses list
-
-      /// Accumulated 'open' declarations, last file first
-      tcOpenDeclarationsRev: OpenDeclaration[] list
 
       topAttribs: TopAttribs option
 
@@ -133,9 +125,6 @@ module TcAccumulator =
         let tcAcc = 
             { tcState=tcState
               tcEnvAtEndOfFile=tcInitial
-              tcResolutionsRev=[]
-              tcSymbolUsesRev=[]
-              tcOpenDeclarationsRev=[]
               topAttribs=None
               latestImplFile=None
               latestCcuSigForFile=None

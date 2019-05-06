@@ -13,15 +13,6 @@ type internal TcAccumulator =
     { tcState: TcState
       tcEnvAtEndOfFile: TcEnv
 
-      /// Accumulated resolutions, last file first
-      tcResolutionsRev: TcResolutions list
-
-      /// Accumulated symbol uses, last file first
-      tcSymbolUsesRev: TcSymbolUses list
-
-      /// Accumulated 'open' declarations, last file first
-      tcOpenDeclarationsRev: OpenDeclaration[] list
-
       topAttribs: TopAttribs option
 
       /// Result of checking most recent file, if any

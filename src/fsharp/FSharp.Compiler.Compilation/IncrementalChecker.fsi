@@ -26,11 +26,9 @@ type internal CheckerOptions =
 [<Sealed>]
 type internal IncrementalChecker =
 
-    member Version: VersionStamp
-
     member ReplaceSourceSnapshot: sourceSnapshot: SourceSnapshot -> IncrementalChecker
 
-    member CheckAsync: filePath: string -> Async<(TcAccumulator * TcResolutions option)>
+    member CheckAsync: filePath: string -> Async<(TcAccumulator * CheckerSink option)>
 
 [<RequireQualifiedAccess>]
 module internal IncrementalChecker =

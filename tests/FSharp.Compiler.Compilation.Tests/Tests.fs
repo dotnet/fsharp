@@ -48,7 +48,7 @@ type CompilationTests () =
                     yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 1))
             ]
         let workspace = new AdhocWorkspace ()
-        let compilationService = CompilationService (3, 8, workspace)
+        let compilationService = CompilationService (CompilationServiceOptions.Create workspace)
 
         let sourceSnapshots =
             sources
@@ -58,8 +58,42 @@ type CompilationTests () =
         let options = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
         let c = compilationService.CreateCompilation options
 
-        c.CheckAsync "test3.fs" |> Async.RunSynchronously |> ignore
-        Assert.Throws<Exception> (fun () -> c.CheckAsync "badfile.fs" |> Async.RunSynchronously) |> ignore
+        c.GetSemanticModel "test3.fs" |> ignore
+        Assert.Throws<Exception> (fun () -> c.GetSemanticModel "badfile.fs" |> ignore) |> ignore
+
+    [<Test>]
+    member __.``Find Symbol - Basic`` () =
+        let sources =
+            [
+                "test1.fs",
+                """
+module TestModule =
+
+    type TestType () =
+
+        member val X = 1
+
+        member val Y = 2
+
+        member val Z = 3
+                    
+    let testFunction (x: TestType) =
+        x.X + x.Y + x.Z
+                """ |> SourceText.From
+            ]
+        let workspace = new AdhocWorkspace ()
+        let compilationService = CompilationService (CompilationServiceOptions.Create workspace)
+
+        let sourceSnapshots =
+            sources
+            |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
+            |> ImmutableArray.CreateRange
+
+        let options = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
+        let c = compilationService.CreateCompilation options
+        let semanticModel = c.GetSemanticModel "test1.fs"
+        let symbol = semanticModel.TryFindSymbolAsync (4, 9) |> Async.RunSynchronously
+        Assert.True (symbol.IsSome)
 
 [<TestFixture>]
 type UtilitiesTest () =
@@ -150,6 +184,8 @@ type UtilitiesTest () =
             Assert.AreEqual (1, mru.WeakReferenceCount)
 
             Assert.True ((mru.TryGetValue 5) = ValueSome o5)
+
+            // trying to get 6, evicts 5 out of the cache and into the weak reference cache.
             Assert.True ((mru.TryGetValue 6) = ValueSome o6)
 
             Assert.AreEqual (5, mru.Count)

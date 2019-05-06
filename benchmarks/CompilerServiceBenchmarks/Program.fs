@@ -326,7 +326,7 @@ type CompilerService() =
 type CompilationBenchmarks() =
 
     let workspace = new AdhocWorkspace ()
-    let compilationService = CompilationService(3, 2, workspace)
+    let compilationService = CompilationService (CompilationServiceOptions.Create workspace)
 
     let createTestModules name amount =
         [
@@ -364,39 +364,17 @@ module TestModule%i =
         |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
         |> ImmutableArray.CreateRange
 
+    let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
+    let compilation = compilationService.CreateCompilation compilationOptions
 
     [<Benchmark>]
     member __.Test() =
-        use cts = new CancellationTokenSource ()
-
-        let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
-        let compilation = compilationService.CreateCompilation compilationOptions
-
-        let work =
-            async {
-                let! _result = compilation.CheckAsync ("test100.fs")
-                printfn "%A" (System.Diagnostics.Process.GetCurrentProcess().Threads.Count)
-                ()
-            }
-
-        //async {
-        //    do! Async.Sleep 5000
-        //    cts.Cancel ()
-        //} |> Async.Start
-
-        try
-            Async.RunSynchronously (work, cancellationToken = cts.Token)
-           // GC.Collect(0, GCCollectionMode.Forced, true)
-          //  Async.RunSynchronously (work, cancellationToken = cts.Token)
-        with :? OperationCanceledException ->
-            printfn "cancelled"
-        ()
-        
+        for i = 1 to 10000 do
+            let compilation = compilation.ReplaceSourceSnapshot sourceSnapshots.[99]
+            compilation.GetSemanticModel "test100.fs" |> ignore
 
 [<EntryPoint>]
 let main argv =
    // let _ = BenchmarkRunner.Run<CompilerService>()
     let _ = BenchmarkRunner.Run<CompilationBenchmarks>()
-    //let test = CompilationBenchmarks ()
-    //test.Test ()
     0
