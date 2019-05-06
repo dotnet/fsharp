@@ -27,17 +27,18 @@ open FSharp.Compiler.Compilation.Utilities
 
 type LinesStorage () =
 
-    // TODO: Yes a dictionary is bad, but quick for now.
-    let lines = Dictionary<int, ResizeArray<TcSymbolUseData>> ()
-    let linesMethodGroup = Dictionary<int, ResizeArray<TcSymbolUseData>> ()
+    let lines = ImmutableArray.CreateBuilder<ImmutableArray.Builder<TcSymbolUseData>> ()
+    let linesMethodGroup = ImmutableArray.CreateBuilder<ImmutableArray.Builder<TcSymbolUseData>> ()
 
-    let getTableList (dic: Dictionary<_, ResizeArray<_>>) key =
-        match dic.TryGetValue key with
-        | true, child -> child
-        | _ ->
-            let child = ResizeArray ()
-            dic.[key] <- child
-            child
+    let getTableList (dic: ImmutableArray.Builder<ImmutableArray.Builder<_>>) line =
+        let lineIndex = line - 1
+        if lineIndex >= dic.Count then
+            dic.Count <- lineIndex + 1
+
+        if dic.[lineIndex] = null then
+            dic.[lineIndex] <- ImmutableArray.CreateBuilder ()
+
+        dic.[lineIndex]
 
     member __.Add (cnr: CapturedNameResolution, m: range) =
         let symbols = getTableList lines m.EndLine
@@ -48,25 +49,43 @@ type LinesStorage () =
         symbols.Add  { Item = cnr.Item; ItemOccurence = cnr.ItemOccurence; DisplayEnv = cnr.DisplayEnv; Range = cnr.Range }
 
     member __.RemoveAll (m: range) =
-        for pair in lines do
-            pair.Value.RemoveAll (fun cnr -> Range.equals cnr.Range m) |> ignore
+        for i = 0 to lines.Count - 1 do
+            let symbols = lines.[i]
+            if symbols <> null then
+                let removalQueue = Queue ()
+                for i = 0 to symbols.Count - 1 do
+                    let symbol = symbols.[i]
+                    if Range.equals symbol.Range m then
+                        removalQueue.Enqueue i
+                while removalQueue.Count > 0 do
+                    let i = removalQueue.Dequeue ()
+                    symbols.RemoveAt i
 
     member __.RemoveAllMethodGroup (m: range) =
-        for pair in linesMethodGroup do
-            pair.Value.RemoveAll (fun cnr -> Range.equals cnr.Range m) |> ignore
+        for i = 0 to linesMethodGroup.Count - 1 do
+            let symbols = lines.[i]
+            if symbols <> null then
+                let removalQueue = Queue ()
+                for i = 0 to symbols.Count - 1 do
+                    let symbol = symbols.[i]
+                    if Range.equals symbol.Range m then
+                        removalQueue.Enqueue i
+                while removalQueue.Count > 0 do
+                    let i = removalQueue.Dequeue ()
+                    symbols.RemoveAt i
 
-    member __.TryFind (line: int, column: int) =
-        match lines.TryGetValue line with
-        | false, _ -> None
-        | _, symbols ->
-            let mutable result = None
-            let mutable i = 0
-            while i < symbols.Count && result.IsNone do
-                let symbol = symbols.[i]
-                if Range.rangeContainsPos symbol.Range (mkPos line column) then
-                    result <- Some symbol
-                i <- i + 1
-            result
+    member __.Lines = lines
+
+    member __.GetAllSymbolUseData () =
+        let builder = ImmutableArray.CreateBuilder (lines.Count)
+        builder.Count <- lines.Count
+        for i = 0 to lines.Count - 1 do
+            if lines.[i] <> null then
+                builder.[i] <- lines.[i].ToImmutable ()
+            else
+                builder.[i] <- ImmutableArray.Empty
+
+        builder.ToImmutable ()
 
 [<Sealed>]
 type CheckerSink (g: TcGlobals) =
@@ -91,8 +110,7 @@ type CheckerSink (g: TcGlobals) =
 
     let linesStorage = LinesStorage ()
 
-    member __.TryFindSymbolUseData (line: int, column: int) =
-        linesStorage.TryFind (line, column)
+    member __.Lines = linesStorage.Lines
 
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m, nenv, ad) =

@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System.Collections.Immutable
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.NameResolution
 
@@ -8,6 +9,6 @@ type internal CheckerSink =
 
     new: TcGlobals -> CheckerSink
 
-    member TryFindSymbolUseData: line: int * column: int -> TcSymbolUseData option
+    member Lines: ImmutableArray.Builder<ImmutableArray.Builder<TcSymbolUseData>>
 
     interface ITypecheckResultsSink

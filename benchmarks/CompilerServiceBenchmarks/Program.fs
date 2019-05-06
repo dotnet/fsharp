@@ -369,9 +369,10 @@ module TestModule%i =
 
     [<Benchmark>]
     member __.Test() =
-        let semanticModel = compilation.GetSemanticModel "test100.fs"
-        semanticModel.TryFindSymbolAsync (1, 1) |> Async.RunSynchronously |> ignore
-        compilation <- compilation.ReplaceSourceSnapshot sourceSnapshots.[0]
+        let compilation = compilationService.CreateCompilation compilationOptions
+        for i = 1 to 100 do
+            let semanticModel = compilation.GetSemanticModel (sprintf "test%i.fs" i)
+            semanticModel.TryFindSymbolAsync (1, 1) |> Async.RunSynchronously |> ignore
 
 [<EntryPoint>]
 let main argv =
