@@ -31,6 +31,13 @@ type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
     member __.TryFindSymbolAsync (line: int, column: int) : Async<FSharpSymbol option> =
         async {
             let! checker = asyncLazyChecker.GetValueAsync ()
-            let! result = checker.CheckAsync filePath
-            return None
+            let! tcAcc, sink = checker.CheckAsync filePath
+            match sink with
+            | None -> return None
+            | Some (sink: CheckerSink, symbolEnv) ->
+                match sink.TryFindSymbolUseData (line, column) with
+                | None -> return None
+                | Some symbolUseData ->
+                    return Some (FSharpSymbol.Create (symbolEnv, symbolUseData.Item))
+                
         }

@@ -188,7 +188,7 @@ type IncrementalCheckerState =
             )
         { this with orderedResults = orderedResults }
 
-    member this.CheckAsync (filePath: string, flags: CheckFlags) : Async<TcAccumulator * CheckerSink option> =
+    member this.CheckAsync (filePath: string, flags: CheckFlags) =
         let tcConfig = this.tcConfig
         let tcGlobals = this.tcGlobals
         let tcImports = this.tcImports
@@ -225,6 +225,8 @@ type IncrementalCheckerState =
                         /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                         let implFile = if options.keepAssemblyContents then implFile else None
                         let tcEnvAtEndOfFile = (if options.keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls)
+
+                        let symbolEnv = SymbolEnv (tcGlobals, tcState.Ccu, Some ccuSigForFile, tcImports)
                                 
                         let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
                         return {tcAcc with  tcState=tcState 
@@ -234,7 +236,7 @@ type IncrementalCheckerState =
                                             latestCcuSigForFile=Some ccuSigForFile
                                             tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                             tcModuleNamesDict = moduleNamesDict
-                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, Some sink
+                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, Some (sink, symbolEnv)
                     }
 
                 // No one has ever changed this value, although a bit arbitrary.

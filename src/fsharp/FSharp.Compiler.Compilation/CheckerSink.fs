@@ -55,18 +55,18 @@ type LinesStorage () =
         for pair in linesMethodGroup do
             pair.Value.RemoveAll (fun cnr -> Range.equals cnr.Range m) |> ignore
 
-    //member __.ForEach (m: range, f) =
-    //    match lines.TryGetValue line with
-    //    | false, _ -> None
-    //    | true, symbols ->
-    //        let mutable result = None
-    //        let mutable i = 0
-    //        while i < symbols.Count && result.IsNone do
-    //            let symbol = symbols.[i]
-    //            if Range.rangeContainsPos symbol.Range (mkPos line column) then
-    //                result <- Some symbol
-    //            i <- i + 1
-    //        result
+    member __.TryFind (line: int, column: int) =
+        match lines.TryGetValue line with
+        | false, _ -> None
+        | _, symbols ->
+            let mutable result = None
+            let mutable i = 0
+            while i < symbols.Count && result.IsNone do
+                let symbol = symbols.[i]
+                if Range.rangeContainsPos symbol.Range (mkPos line column) then
+                    result <- Some symbol
+                i <- i + 1
+            result
 
 [<Sealed>]
 type CheckerSink (g: TcGlobals) =
@@ -90,6 +90,9 @@ type CheckerSink (g: TcGlobals) =
                     member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual g item1 item2 } )
 
     let linesStorage = LinesStorage ()
+
+    member __.TryFindSymbolUseData (line: int, column: int) =
+        linesStorage.TryFind (line, column)
 
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m, nenv, ad) =

@@ -8,4 +8,6 @@ type internal CheckerSink =
 
     new: TcGlobals -> CheckerSink
 
+    member TryFindSymbolUseData: line: int * column: int -> TcSymbolUseData option
+
     interface ITypecheckResultsSink
