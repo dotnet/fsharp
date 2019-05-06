@@ -53,7 +53,7 @@ type LinesStorage () =
 
     member __.RemoveAllMethodGroup (m: range) =
         for pair in linesMethodGroup do
-            pair.Value.RemoveAll (fun cnr -> printfn "doot"; Range.equals cnr.Range m) |> ignore
+            pair.Value.RemoveAll (fun cnr -> Range.equals cnr.Range m) |> ignore
 
     //member __.ForEach (m: range, f) =
     //    match lines.TryGetValue line with
