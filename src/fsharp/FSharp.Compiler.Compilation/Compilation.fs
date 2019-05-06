@@ -205,7 +205,7 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
 
     member __.GetSemanticModel filePath =
         checkFilePath filePath
-        SemanticModel asyncLazyGetChecker
+        SemanticModel (filePath, asyncLazyGetChecker)
 
 module Compilation =
 

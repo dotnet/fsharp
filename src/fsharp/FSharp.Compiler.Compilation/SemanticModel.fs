@@ -26,9 +26,11 @@ open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
 
 [<Sealed>]
-type SemanticModel (asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
+type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
 
     member __.TryFindSymbolAsync (line: int, column: int) : Async<FSharpSymbol option> =
         async {
+            let! checker = asyncLazyChecker.GetValueAsync ()
+            let! result = checker.CheckAsync filePath
             return None
         }

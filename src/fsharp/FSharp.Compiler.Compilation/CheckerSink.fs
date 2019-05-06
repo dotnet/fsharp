@@ -27,6 +27,7 @@ open FSharp.Compiler.Compilation.Utilities
 
 type LinesStorage () =
 
+    // TODO: Yes a dictionary is bad, but quick for now.
     let lines = Dictionary<int, ResizeArray<CapturedNameResolution>> ()
     let linesMethodGroup = Dictionary<int, ResizeArray<CapturedNameResolution>> ()
 
@@ -38,9 +39,21 @@ type LinesStorage () =
             dic.[key] <- child
             child
 
-    member __.Add (cnn, cnnMethodGroup, m: range) =
+    member __.Add (cnr, m: range) =
         let symbols = getTableList lines m.EndLine
-        symbols.Add cnn
+        symbols.Add cnr
+
+    member __.AddMethodGroup (cnr, m: range) =
+        let symbols = getTableList linesMethodGroup m.EndLine
+        symbols.Add cnr
+
+    member __.RemoveAll (m: range) =
+        for pair in lines do
+            pair.Value.RemoveAll (fun cnr -> Range.equals cnr.Range m) |> ignore
+
+    member __.RemoveAllMethodGroup (m: range) =
+        for pair in linesMethodGroup do
+            pair.Value.RemoveAll (fun cnr -> printfn "doot"; Range.equals cnr.Range m) |> ignore
 
     //member __.ForEach (m: range, f) =
     //    match lines.TryGetValue line with
@@ -57,6 +70,10 @@ type LinesStorage () =
 
 [<Sealed>]
 type CheckerSink (g: TcGlobals) =
+    let capturedEnvs = ResizeArray<_>()
+    let capturedExprTypings = ResizeArray<_>()
+    let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
+    let capturedFormatSpecifierLocations = ResizeArray<_>()
 
     let allowedRange (m: Range.range) = not m.IsSynthetic
 
@@ -77,11 +94,11 @@ type CheckerSink (g: TcGlobals) =
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m, nenv, ad) =
             if allowedRange m then
-                () // TODO:
+                capturedEnvs.Add((m, nenv, ad))
 
         member sink.NotifyExprHasType(endPos, ty, denv, nenv, ad, m) =
             if allowedRange m then
-                () // TODO:
+                capturedExprTypings.Add((endPos, ty, denv, nenv, ad, m))
 
         member sink.NotifyNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, denv, nenv, ad, m, replace) =
             // Desugaring some F# constructs (notably computation expressions with custom operators)
@@ -89,9 +106,8 @@ type CheckerSink (g: TcGlobals) =
             // for the same identifier at the same location.
             if allowedRange m then
                 if replace then 
-                    ()
-                   // capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
-                   // capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
+                    linesStorage.RemoveAll m
+                    linesStorage.RemoveAllMethodGroup m
                 else
                     let alreadyDone =
                         match item with
@@ -111,14 +127,15 @@ type CheckerSink (g: TcGlobals) =
                     if not alreadyDone then
                         let cnr = CapturedNameResolution(endPos, item, tpinst, occurenceType, denv, nenv, ad, m)
                         let cnrMethodGroup = CapturedNameResolution(endPos, itemMethodGroup, [], occurenceType, denv, nenv, ad, m)
-                        linesStorage.Add (cnr, cnrMethodGroup, m)
+                        linesStorage.Add (cnr, m)
+                        linesStorage.Add (cnrMethodGroup, m)
 
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
-            ()
+            capturedFormatSpecifierLocations.Add((m, numArgs))
 
         member sink.NotifyOpenDeclaration openDeclaration =
-            ()
+            capturedOpenDeclarations.Add openDeclaration
 
         member sink.CurrentSourceText = None
 

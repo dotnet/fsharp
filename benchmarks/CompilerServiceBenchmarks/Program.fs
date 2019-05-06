@@ -365,13 +365,13 @@ module TestModule%i =
         |> ImmutableArray.CreateRange
 
     let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
-    let compilation = compilationService.CreateCompilation compilationOptions
+    let mutable compilation = compilationService.CreateCompilation compilationOptions
 
     [<Benchmark>]
     member __.Test() =
-        for i = 1 to 10000 do
-            let compilation = compilation.ReplaceSourceSnapshot sourceSnapshots.[99]
-            compilation.GetSemanticModel "test100.fs" |> ignore
+        let semanticModel = compilation.GetSemanticModel "test100.fs"
+        semanticModel.TryFindSymbolAsync (1, 1) |> Async.RunSynchronously |> ignore
+        compilation <- compilation.ReplaceSourceSnapshot sourceSnapshots.[0]
 
 [<EntryPoint>]
 let main argv =
