@@ -238,7 +238,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         base.Initialize()
 
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.FSharpCompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
+        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.FSharpServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()

@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.SolutionCrawler
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
@@ -24,9 +25,9 @@ open FSharp.Compiler.Range
 // saves to the file system. This is different to the versions of the files active in the editor.  This results in out-of-sync error
 // messages while files are being edited
 
-[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+[<Shared>]
+[<ExportLanguageService(typeof<IFSharpProjectDiagnosticAnalyzer>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpProjectDiagnosticAnalyzer() =
-    inherit ProjectDiagnosticAnalyzer()
 
     static member GetDiagnostics(options: FSharpProjectOptions) = async {
         let! checkProjectResults = FSharpLanguageService.Checker.ParseAndCheckProject(options) 
@@ -42,13 +43,13 @@ type internal FSharpProjectDiagnosticAnalyzer() =
           |> Seq.toImmutableArray
         return results
       }
-        
-    override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
-    override this.AnalyzeProjectAsync(project: Project, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
-        async {
-            match FSharpLanguageService.GetOptionsForProject(project.Id) with
-            | Some options -> return! FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)
-            | None -> return ImmutableArray<Diagnostic>.Empty
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+    interface IFSharpProjectDiagnosticAnalyzer with
+
+        member this.AnalyzeProjectAsync(project: Project, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            async {
+                match FSharpLanguageService.GetOptionsForProject(project.Id) with
+                | Some options -> return! FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)
+                | None -> return ImmutableArray<Diagnostic>.Empty
+            } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 #endif

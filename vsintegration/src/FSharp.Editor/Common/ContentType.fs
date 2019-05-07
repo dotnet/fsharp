@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 module FSharpStaticTypeDefinitions = 
     [<Export>]
     [<Name(FSharpConstants.FSharpContentTypeName)>]
-    [<BaseDefinition(ContentTypeNames.RoslynContentType)>]
+    [<BaseDefinition(FSharpContentTypeNames.RoslynContentType)>]
     let FSharpContentTypeDefinition = ContentTypeDefinition()
 
     [<Export>]
