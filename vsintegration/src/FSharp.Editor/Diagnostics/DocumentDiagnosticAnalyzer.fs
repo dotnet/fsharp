@@ -24,8 +24,7 @@ type internal DiagnosticsType =
     | Syntax
     | Semantic
 
-[<Shared>]
-[<ExportLanguageService(typeof<IFSharpDocumentDiagnosticAnalyzer>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
 type internal FSharpDocumentDiagnosticAnalyzer() =
 
     static let userOpName = "DocumentDiagnosticAnalyzer"

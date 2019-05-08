@@ -15,8 +15,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-[<Shared>]
-[<ExportLanguageService(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>)>]
 type internal UnusedDeclarationsAnalyzer() =
     
     static let userOpName = "UnusedDeclarationsAnalyzer"

@@ -25,8 +25,7 @@ open FSharp.Compiler.Range
 // saves to the file system. This is different to the versions of the files active in the editor.  This results in out-of-sync error
 // messages while files are being edited
 
-[<Shared>]
-[<ExportLanguageService(typeof<IFSharpProjectDiagnosticAnalyzer>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpProjectDiagnosticAnalyzer>)>]
 type internal FSharpProjectDiagnosticAnalyzer() =
 
     static member GetDiagnostics(options: FSharpProjectOptions) = async {

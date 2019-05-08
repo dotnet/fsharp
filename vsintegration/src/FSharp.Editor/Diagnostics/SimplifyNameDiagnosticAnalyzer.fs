@@ -22,8 +22,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 type private TextVersionHash = int
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
 
-[<Shared>]
-[<ExportLanguageService(typeof<IFSharpSimplifyNameDiagnosticAnalyzer>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpSimplifyNameDiagnosticAnalyzer>)>]
 type internal SimplifyNameDiagnosticAnalyzer() =
 
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"

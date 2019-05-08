@@ -20,8 +20,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Symbols
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-[<Shared>]
-[<ExportLanguageService(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
 type internal UnusedOpensDiagnosticAnalyzer() =
 
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
