@@ -222,17 +222,3 @@ type internal FSharpSignatureHelpProvider
             } 
             |> Async.map Option.toObj
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
-
-open System.ComponentModel.Composition
-open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Text.Classification
-open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHelp.Presentation
-
-// Enable colorized signature help for F# buffers
-
-[<Export(typeof<IClassifierProvider>)>]
-[<ContentType(FSharpConstants.FSharpSignatureHelpContentTypeName)>]
-type internal FSharpSignatureHelpClassifierProvider [<ImportingConstructor>] (typeMap) =
-    interface IClassifierProvider with
-        override __.GetClassifier (buffer: ITextBuffer) =
-            buffer.Properties.GetOrCreateSingletonProperty(fun _ -> FSharpSignatureHelpClassifier(buffer, typeMap) :> _)
