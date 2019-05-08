@@ -89,17 +89,22 @@ type TaskStateMachine<'T>() =
         let mutable awaiter = awaiter
         assert (not (isNull awaiter))
         // Tell the builder to call us again when done.
+        Console.WriteLine("[{0}] AwaitUnsafeOnCompleted", sm.GetHashCode())
         methodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 
     interface IAsyncStateMachine with
 
         member this.MoveNext() =
             try
+                Console.WriteLine("[{0}] step from {1}", this.GetHashCode(), resumptionPoint)
                 let step = this.Step resumptionPoint
                 if (# "" step : bool #) then 
+                    Console.WriteLine("[{0}] unboxing result", this.GetHashCode())
                     let res = unbox<'T>(this.Current)
+                    Console.WriteLine("[{0}] SetResult {1}", this.GetHashCode(), res)
                     methodBuilder.SetResult(Task.FromResult res)
             with exn ->
+                Console.WriteLine("[{0}] exception {1}", this.GetHashCode(), exn)
                 methodBuilder.SetException exn
 
         member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
@@ -107,9 +112,12 @@ type TaskStateMachine<'T>() =
     member this.Start() =
         let mutable machine = this 
         try
+            Console.WriteLine("[{0}] start", this.GetHashCode())
             methodBuilder.Start(&machine)
+            Console.WriteLine("[{0}] unwrap", this.GetHashCode())
             methodBuilder.Task.Unwrap()
         with exn ->
+            Console.WriteLine("[{0}] start exception", this.GetHashCode())
             // Any exceptions should go on the task, rather than being thrown from this call.
             // This matches C# behavior where you won't see an exception until awaiting the task,
             // even if it failed before reaching the first "await".
@@ -221,17 +229,22 @@ type TaskBuilder() =
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
-    member inline __.Combine(_step: TaskStep<unit>, __expand_task2: unit -> TaskStep<'T>) : TaskStep<'T> =
-        // _step is ignored, as elsewhere, we only get here is the step completed
-        __expand_task2()
+    member inline __.Combine(``__machine_step$cont``: TaskStep<unit>, __expand_task2: unit -> TaskStep<'T>) : TaskStep<'T> =
+        if (# "" ``__machine_step$cont`` : bool #) then 
+            __expand_task2()
+        else
+            (# "" ``__machine_step$cont`` : TaskStep<'T> #)
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> TaskStep<unit>) : TaskStep<unit> =
-        while __expand_condition() do
-            let _step = __expand_body ()
-            ()
+        let mutable step = (# "" true : TaskStep<unit> #)
+        while (# "" step : bool #) && __expand_condition() do
+            step <- (# "" false : TaskStep<unit> #)
+            let ``__machine_step$cont`` = __expand_body ()
+            // If we make it to the assignment we prove we've made a step 
+            step <- ``__machine_step$cont``
         __machine<TaskStateMachine>.Current <- (box ())
-        (# "" true : TaskStep<unit> #)
+        step
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -245,15 +258,19 @@ type TaskBuilder() =
         /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
         /// to retrieve the step, and in the continuation of the step (if any).
         // codegen
+        let mutable step = (# "" false : TaskStep<'T> #)
         try
-            let _step = __expand_body ()
-            ()
+            let ``__machine_step$cont`` = __expand_body ()
+            // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
+            // may skip this step.
+            step <- ``__machine_step$cont``
         with _ ->
             compensation()
             reraise()
 
-        compensation()
-        (# "" true : TaskStep<'T> #)
+        if (# "" step : bool #) then 
+            compensation()
+        step
 
     member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> TaskStep<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.

@@ -3778,13 +3778,13 @@ module DebugPrint =
                     |> wrap
             | Expr.Op (TOp.Array, [_], xs, _) -> 
                 leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
-            | Expr.Op (TOp.While _, [], [x1;x2], _) -> 
+            | Expr.Op (TOp.While _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
                 wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do") ^^ exprL x2 ^^ rightL(tagText "}")
-            | Expr.Op (TOp.For _, [], [x1;x2;x3], _) -> 
+            | Expr.Op (TOp.For _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
                 wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
-            | Expr.Op (TOp.TryCatch _, [_], [x1;x2], _) -> 
-                wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "with") ^^ exprL x2 ^^ rightL(tagText "}")
-            | Expr.Op (TOp.TryFinally _, [_], [x1;x2], _) -> 
+            | Expr.Op (TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) -> 
+                wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "with-filter") ^^ exprL xf ^^ wordL(tagText "with") ^^ exprL xh ^^ rightL(tagText "}")
+            | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
                 wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "finally") ^^ exprL x2 ^^ rightL(tagText "}")
             | Expr.Op (TOp.Bytes _, _, _, _) -> 
                 wordL(tagText "bytes++")

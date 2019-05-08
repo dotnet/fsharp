@@ -917,15 +917,16 @@ let LowerStateMachineExpr g overallExpr =
         | _ ->
             (env, expr)
 
-    let (|SequentialCode|_|) expr = 
+    let (|SequentialStateMachineCode|_|) expr = 
         match expr with
 
         // e1; e2
         | Expr.Sequential(e1, e2, NormalSeq, _, m) ->
             Some (e1, e2, m, (fun e1 e2 -> mkCompGenSequential m e1 e2))
 
-        // let _step = e1 in e2
-        | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName = "_step" -> // TODO this is way too adhoc
+        // let __machine_step$cont = e1 in e2
+        // The $cont is used to prevent elimination in Optimizer.fs
+        | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName = "__machine_step$cont" ->
             Some (bind.Expr, e2, m, (fun e1 e2 -> mkLet bind.SequencePointInfo m bind.Var e1 e2))
 
         | _ -> None
@@ -1020,7 +1021,7 @@ let LowerStateMachineExpr g overallExpr =
         // control-flow sequential
         // let _step = e1 in e2
         // e1; e2
-        | SequentialCode(e1, e2, _m, recreate) ->
+        | SequentialStateMachineCode(e1, e2, _m, recreate) ->
             // printfn "found sequential"
             let res1 = Lower env pcExpr e1
             let res2 = Lower env pcExpr e2
@@ -1172,18 +1173,19 @@ let LowerStateMachineExpr g overallExpr =
         printfn "%s" (DebugPrint.showExpr overallExprR)
         printfn "----------- CHECKING ----------------------"
         let mutable failed = false
-        let _expr =  
-            overallExprR |> RewriteExpr 
-                { PreIntercept = None
-                  PostTransform = (fun e ->
-                        match e with
-                        | Expr.Val(vref, _, _) when isMustExpandVar vref.Deref -> 
-                            System.Diagnostics.Debug.Assert(false, "FAILED: unexpected expand var")
-                            failed <- true
-                            None
-                        | _ -> None) 
-                  PreInterceptBinding = None
-                  IsUnderQuotations=true } 
+        //let _expr =  
+        //    overallExprR |> RewriteExpr 
+        //        { PreIntercept = None
+        //          PostTransform = (fun e ->
+        //                match e with
+        //                | Expr.Val(vref, _, _) when isMustExpandVar vref.Deref -> 
+        //                    System.Diagnostics.Debug.Assert(false, "FAILED: unexpected expand var")
+        //                    failed <- true
+        //                    None
+        //                | _ -> None) 
+        //          PreInterceptBinding = None
+        //          IsUnderQuotations=true } 
+        printfn "----------- DONE ----------------------"
         if failed then None else Some overallExprR
     | _ -> None
 

@@ -70,7 +70,7 @@ let t3a() =
         return 1 + x
     }
 
-printfn "t3a().Result = %A" (t3a().Result)
+//printfn "t3a().Result = %A" (t3a().Result)
 
 let t3b() =
     task {
@@ -80,7 +80,7 @@ let t3b() =
         return 1 + x
     }
 
-printfn "t3b().Result = %A" (t3b().Result)
+//printfn "t3b().Result = %A" (t3b().Result)
 
 let t3c() =
     task {
@@ -90,7 +90,7 @@ let t3c() =
         return 1 
     }
 
-printfn "t3c().Result = %A" (t3c().Result)
+//printfn "t3c().Result = %A" (t3c().Result)
 
 exception TestException of string
 
@@ -275,6 +275,7 @@ let testTryFinallyCaught() =
         }
     require (t.Result = 2) "wrong return"
     require ran "never ran"
+
 (*
 let testUsing() =
     let mutable disposed = false
@@ -776,10 +777,10 @@ let main argv =
         testNonBlocking()
         testCatching1()
         testCatching2()
-        //testNestedCatching()
-        //testTryFinallyHappyPath()
-        //testTryFinallySadPath()
-        //testTryFinallyCaught()
+        testNestedCatching()
+        testTryFinallyHappyPath()
+        testTryFinallySadPath()
+        testTryFinallyCaught()
         //testUsing()
         //testUsingFromTask()
         //testUsingSadPath()
@@ -804,6 +805,9 @@ let main argv =
         //printfn "Passed all tests!"
     with exn ->
         eprintfn "Exception: %O" exn
-    printfn "Tests passed ok..."
+    printfn "Tests passed ok..., sleeping a bit in case there are background delayed exceptions"
+    Thread.Sleep(500)
+    printfn "Exiting..."
+    //System.Console.ReadLine()
     0
 
