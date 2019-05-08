@@ -114,7 +114,7 @@ type CallerNamedArg<'T> =
     member x.CallerArg = (let (CallerNamedArg(_, a)) = x in a)
 
 /// Represents the list of unnamed / named arguments at method call site
-// todo: figure out / document why we are using list²
+// todo: figure out / document why we are using listÂ²
 [<Struct>]
 type CallerArgs<'T> = 
     { Unnamed: CallerArg<'T> list list
@@ -1006,7 +1006,10 @@ let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgE
 
 // Handle adhoc argument conversions
 let AdjustCallerArgExprForCoercions (g: TcGlobals) amap infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
-
+   // todo after rebase:
+   // code review on the `coerceExpr` function from @tihan, we can discard first `isOutArg` argument as the only
+   // hardcoded usage was guarded by `error` when the value is true, and passing an explicit false which is now
+   // guaranteed equivalent to `callerArg.IsOptional`
    if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
        None, Expr.Op (TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
 
