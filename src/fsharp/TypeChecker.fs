@@ -2174,7 +2174,7 @@ module GeneralizationHelpers =
         
         | Expr.App (e1, _, _, [], _) -> IsGeneralizableValue g e1
         | Expr.TyChoose (_, b, _) -> IsGeneralizableValue g b
-        | Expr.Obj (_, ty, _, _, _, _, _) -> isInterfaceTy g ty || isDelegateTy g ty
+        | Expr.Obj (_, ty, _, _, _, _, _, _) -> isInterfaceTy g ty || isDelegateTy g ty
         | Expr.Link eref -> IsGeneralizableValue g !eref
 
         | _ -> false  
@@ -3771,7 +3771,7 @@ let EliminateInitializationGraphs
             // because of type inference, which makes it reasonable to check generic bindings strictly.
             | Expr.TyLambda (_, _, b, _, _) -> CheckExpr st b
 
-            | Expr.Obj (_, ty, _, e, overrides, extraImpls, _) ->
+            | Expr.Obj (_, ty, _, e, overrides, extraImpls, _, _) ->
                 // NOTE: we can't fixup recursive references inside delegates since the closure delegee of a delegate is not accessible 
                 // from outside. Object expressions implementing interfaces can, on the other hand, be fixed up. See FSharp 1.0 bug 1469 
                 if isInterfaceTy g ty then 

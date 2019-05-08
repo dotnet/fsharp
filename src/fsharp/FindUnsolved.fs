@@ -52,7 +52,7 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
         accExpr cenv env ast
         accTy cenv env ty
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _m) -> 
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, _m) -> 
         accTy cenv env ty
         accExpr cenv env basecall
         accMethods cenv env basev overrides 

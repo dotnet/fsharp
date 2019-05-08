@@ -1119,14 +1119,14 @@ module Pass4_RewriteAssembly =
             TransExpr penv z (!r)
 
         // ilobj - has implicit lambda exprs and recursive/base references
-        | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) ->
-            let basecall, z  = TransExpr penv                            z basecall
-            let overrides, z = List.mapFold (TransMethod penv)                  z overrides
-            let (iimpls:(TType*ObjExprMethod list)list), (z: RewriteState)    =
-                List.mapFold (fun z (tType, objExprs) ->
+        | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, stateVars, m) ->
+            let basecall, z  = TransExpr penv z basecall
+            let overrides, z = List.mapFold (TransMethod penv) z overrides
+            let iimpls, z =
+                (z, iimpls) ||> List.mapFold (fun z (tType, objExprs) ->
                     let objExprs', z' = List.mapFold (TransMethod penv) z objExprs
-                    (tType, objExprs'), z') z iimpls
-            let expr = Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m)
+                    (tType, objExprs'), z') 
+            let expr = Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, stateVars, m)
             let pds, z = ExtractPreDecs z
             MakePreDecs m pds expr, z (* if TopLevel, lift preDecs over the ilobj expr *)
 

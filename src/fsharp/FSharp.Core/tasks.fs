@@ -28,31 +28,22 @@ namespace Microsoft.FSharp.Core.CompilerServices
     module CodeGenHelpers = 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __jumptable<'T> (_x:int) (_code: 'T)  : 'T = Unchecked.defaultof<_> 
+        let __jumptable<'T> (_x:int) (_code: unit -> 'T)  : 'T = Unchecked.defaultof<_> 
         
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __stateMachine<'T> (x: 'T) : 'T = x
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __newLabel() : int = 0
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __newEntryPoint() : int = 0
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __code<'T> (_f: unit -> 'T) : 'T = Unchecked.defaultof<_> 
+        let __machine<'T> : 'T = Unchecked.defaultof<'T>
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __label (_n: int) : unit = Unchecked.defaultof<_> 
+        let __entryPoint (_n: int) : unit= Unchecked.defaultof<_> 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __return (_v: 'T) : 'U = Unchecked.defaultof<_> 
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __entryPoint<'T> (_n: int) (_f: unit -> 'T) : 'T = Unchecked.defaultof<_> 
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __goto<'T> (_n: int) : 'T = Unchecked.defaultof<_> 
+        let __return<'T> (_v: 'T) : 'T = Unchecked.defaultof<_> 
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
@@ -73,13 +64,10 @@ open Microsoft.FSharp.Collections
 //
 // Uses a struct-around-single-reference to allow future changes in representation (the representation is
 // not revealed in the signature)
-[<Struct; NoComparison; NoEquality>]
-type TaskStep<'T>(completed: bool) =
-    member __.IsCompleted = completed
+type TaskStep<'T> = (# "bool" #)
 
 [<AbstractClass>]
 type TaskStateMachine() =
-    member val ResumptionPoint : int = 0 with get, set
     member val Current : obj = null with get, set
 
     /// Await the given awaiter and resume at the given entry point
@@ -88,14 +76,15 @@ type TaskStateMachine() =
 [<AbstractClass>]
 type TaskStateMachine<'T>() =
     inherit TaskStateMachine()
+    let mutable resumptionPoint = 0 
 
     let mutable methodBuilder = AsyncTaskMethodBuilder<Task<'T>>()
     
     /// Proceed to the next state or raise an exception
     abstract Step : pc: int -> TaskStep<'T>
 
-    override sm.Await(awaiter, pc) = 
-        sm.ResumptionPoint <- pc
+    override sm.Await (awaiter, pc) = 
+        resumptionPoint <- pc
         let mutable sm = sm
         let mutable awaiter = awaiter
         assert (not (isNull awaiter))
@@ -106,8 +95,8 @@ type TaskStateMachine<'T>() =
 
         member this.MoveNext() =
             try
-                let step = this.Step this.ResumptionPoint
-                if step.IsCompleted then 
+                let step = this.Step resumptionPoint
+                if (# "" step : bool #) then 
                     let res = unbox<'T>(this.Current)
                     methodBuilder.SetResult(Task.FromResult res)
             with exn ->
@@ -116,7 +105,7 @@ type TaskStateMachine<'T>() =
         member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
 
     member this.Start() =
-        let mutable machine = (this :> IAsyncStateMachine)
+        let mutable machine = this 
         try
             methodBuilder.Start(&machine)
             methodBuilder.Task.Unwrap()
@@ -138,15 +127,15 @@ module TaskHelpers =
     //    else agg :> Exception
 
     /// Used to return a value.
-    let inline ret<'T> (sm: TaskStateMachine) (x : 'T) = 
-        sm.Current <- (box x)
-        TaskStep<'T>(true)
+    let inline ret<'T> (x : 'T) = 
+        __machine<TaskStateMachine>.Current <- (box x)
+        (# "" true : TaskStep<'T> #)
 
-    let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2 when (^Priority or ^TaskLike): (static member CanBind : TaskStateMachine * ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>) > (sm: TaskStateMachine) (x: ^Priority) (y: ^TaskLike) k = 
-        ((^Priority or ^TaskLike): (static member CanBind : TaskStateMachine * ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>) (sm, x, y, k))
+    let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2 when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>) > (x: ^Priority) (y: ^TaskLike) __expand_continuation = 
+        ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>) (x, y, __expand_continuation))
 
-    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom: TaskStateMachine * ^Priority * ^TaskLike -> TaskStep<'T>)> (sm: TaskStateMachine) (x: ^Priority) (y: ^TaskLike) = 
-        ((^Priority or ^TaskLike): (static member CanReturnFrom : TaskStateMachine * ^Priority * ^TaskLike -> TaskStep<'T>) (sm, x, y))
+    let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom: ^Priority * ^TaskLike -> TaskStep<'T>)> (x: ^Priority) (y: ^TaskLike) = 
+        ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskStep<'T>) (x, y))
 
     type TaskLikeBind<'TResult2> =
         // We put the output generic parameter up here at the class level, so it doesn't get subject to
@@ -165,15 +154,15 @@ module TaskHelpers =
                                             and ^Awaiter :> ICriticalNotifyCompletion 
                                             and ^Awaiter : (member get_IsCompleted : unit -> bool)
                                             and ^Awaiter : (member GetResult : unit -> ^TResult1) >
-            (sm: TaskStateMachine, awaitable : ^Awaitable, continuation : ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
+            (awaitable : ^Awaitable, __expand_continuation : ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
                 let awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable)) // get an awaiter from the awaitable
                 let CONT = __newEntryPoint () 
                 if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then // shortcut to continue immediately
-                    __entryPoint<TaskStep<'TResult2>> CONT (fun () -> 
-                        continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter)))
+                    __entryPoint CONT
+                    __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
                 else
-                    sm.Await(awaiter, CONT)
-                    TaskStep<'TResult2>(false)
+                    __machine<TaskStateMachine>.Await (awaiter, CONT)
+                    __return (# "" false : TaskStep<'TResult2> #)
 
         static member inline GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
@@ -181,135 +170,112 @@ module TaskHelpers =
                                                         and ^Awaiter :> ICriticalNotifyCompletion 
                                                         and ^Awaiter : (member get_IsCompleted : unit -> bool)
                                                         and ^Awaiter : (member GetResult : unit -> ^TResult1) >
-            (sm, task : ^TaskLike, continuation : ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
+            (task : ^TaskLike, __expand_continuation : ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2> =
                 let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
-                TaskLikeBind<'TResult2>.GenericAwait(sm, awaitable, continuation)
+                TaskLikeBind<'TResult2>.GenericAwait(awaitable, __expand_continuation)
 
     /// Special case of the above for `Task<'TResult1>`. Have to write this T by hand to avoid confusing the compiler
     /// trying to decide between satisfying the constraints with `Task` or `Task<'TResult1>`.
-    let inline bindTask (sm: TaskStateMachine) (task : Task<'TResult1>) (continuation : 'TResult1 -> TaskStep<'TResult2>) =
+    let inline bindTask (task : Task<'TResult1>) (__expand_continuation : 'TResult1 -> TaskStep<'TResult2>) =
         let CONT = __newEntryPoint()
         let awaiter = task.GetAwaiter()
         if awaiter.IsCompleted then 
-            __entryPoint<TaskStep<'TResult2>> CONT (fun () -> 
-                continuation (awaiter.GetResult())
-            )
+            __entryPoint CONT
+            __expand_continuation (awaiter.GetResult())
         else
-            sm.Await(awaiter, CONT)
-            TaskStep<'TResult2>(false)
+            __machine<TaskStateMachine>.Await (awaiter, CONT)
+            __return (# "" false : TaskStep<'TResult2> #)
 
     /// Special case of the above for `Task<'TResult1>`, for the context-insensitive builder.
     /// Have to write this T by hand to avoid confusing the compiler thinking our built-in bind method
     /// defined on the builder has fancy generic constraints on inp and T parameters.
-    let inline bindTaskConfigureFalse (sm: TaskStateMachine) (task : Task<'TResult1>) (continuation : 'TResult1 -> TaskStep<'TResult2>) =
+    let inline bindTaskConfigureFalse (task : Task<'TResult1>) (__expand_continuation : 'TResult1 -> TaskStep<'TResult2>) =
         let CONT = __newEntryPoint ()
         let awaiter = task.ConfigureAwait(false).GetAwaiter()
         if awaiter.IsCompleted then
-            __entryPoint<TaskStep<'TResult2>> CONT (fun () -> 
-                continuation (awaiter.GetResult())
-            )
+            __entryPoint CONT
+            __expand_continuation (awaiter.GetResult())
         else
-            sm.Await(awaiter, CONT)
-            TaskStep<'TResult2>(false)
-
-type TaskSpec<'T> = TaskStateMachine -> TaskStep<'T>
+            __machine<TaskStateMachine>.Await (awaiter, CONT)
+            __return (# "" false : TaskStep<'TResult2> #)
 
 // New style task builder.
 type TaskBuilder() =
-    // These methods are consistent between all builders.
-    member inline __.Delay(f : unit -> TaskSpec<'T>) = (fun sm -> f () sm)
+    
+    member inline __.Delay(__expand_f : unit -> TaskStep<'T>) = __expand_f
 
-    member inline __.Run(code : TaskSpec<'T>) = 
-        let sm = 
-            __stateMachine
-                { new TaskStateMachine<'T>() with 
-                    member sm.Step(pc) = __jumptable pc (code sm) }
-        sm.Start()
+    member inline __.Run(__expand_code : unit -> TaskStep<'T>) : Task<'T> = 
+        (__stateMachine
+            { new TaskStateMachine<'T>() with 
+                member __.Step pc = __jumptable pc __expand_code }).Start()
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
-    member inline __.Zero() : TaskSpec<unit> = (fun sm -> 
-        sm.Current <- (box ())
-        TaskStep<unit>(true))
+    member inline __.Zero() : TaskStep<unit> =
+        __machine<TaskStateMachine>.Current <- (box ())
+        (# "" true : TaskStep<unit> #)
 
-    member inline __.Return (x: 'T) : TaskSpec<'T> = (fun sm -> 
-        sm.Current <- (box x)
-        TaskStep<'T>(true))
+    member inline __.Return (x: 'T) : TaskStep<'T> =
+        __machine<TaskStateMachine>.Current <- (box x)
+        (# "" true : TaskStep<'T> #)
 
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
-    member inline __.Combine(task1: TaskSpec<unit>, task2: TaskSpec<'T>) : TaskSpec<'T> = (fun sm -> 
-        let step = task1 sm
-        if step.IsCompleted then 
-            task2 sm
-        else 
-            TaskStep<'T>(false))
+    member inline __.Combine(_step: TaskStep<unit>, __expand_task2: unit -> TaskStep<'T>) : TaskStep<'T> =
+        // _step is ignored, as elsewhere, we only get here is the step completed
+        __expand_task2()
 
     /// Builds a step that executes the body while the condition predicate is true.
-    member inline __.While(condition : unit -> bool, body : TaskSpec<unit>) : TaskSpec<unit> = (fun sm -> 
-        let ENTRY = __newLabel()
-        __label ENTRY
-        let guard = __code condition
-        if guard then
-            let step = __code (fun () -> body sm)
-            if step.IsCompleted then 
-                __goto<TaskStep<unit>> ENTRY
-            else
-                TaskStep<unit>(false)
-        else
-            sm.Current <- (box ())
-            TaskStep<unit>(true))
+    member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> TaskStep<unit>) : TaskStep<unit> =
+        while __expand_condition() do
+            let _step = __expand_body ()
+            ()
+        __machine<TaskStateMachine>.Current <- (box ())
+        (# "" true : TaskStep<unit> #)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    member inline __.TryWith(body : TaskSpec<'T>, catch : exn -> TaskSpec<'T>) : TaskSpec<'T> = (fun sm -> 
+    member inline __.TryWith(__expand_body : unit -> TaskStep<'T>, __expand_catch : exn -> TaskStep<'T>) : TaskStep<'T> =
         try
-            let CODE = __newLabel()
-            __label CODE
-            __code<TaskStep<'T>> (fun () -> body sm)
+            __expand_body()
         with exn -> 
-            catch exn sm)
+            __expand_catch exn
 
-    member inline __.TryFinally(body : TaskSpec<'T>, compensation : unit -> unit) = (fun sm -> 
+    member inline __.TryFinally(__expand_body: unit -> TaskStep<'T>, compensation : unit -> unit) : TaskStep<'T> =
         /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
         /// to retrieve the step, and in the continuation of the step (if any).
         // codegen
-        let step =
-            try
-                let CODE = __newLabel()
-                __label CODE
-                __code<TaskStep<'T>> (fun () -> body sm)
-            with _ ->
-                compensation()
-                reraise()
-
-        if step.IsCompleted then 
+        try
+            let _step = __expand_body ()
+            ()
+        with _ ->
             compensation()
-        step)
+            reraise()
 
-    member inline this.Using(disp : #IDisposable, body : #IDisposable -> TaskSpec<'T>) = 
+        compensation()
+        (# "" true : TaskStep<'T> #)
+
+    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> TaskStep<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
-            (body disp),
+            (fun () -> __expand_body disp),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline this.For(sequence : seq<'T>, body : 'T -> TaskSpec<unit>) : TaskSpec<unit> =
+    member inline this.For(sequence : seq<'T>, __expand_body : 'T -> TaskStep<unit>) : TaskStep<unit> =
         // A for loop is just a using statement on the sequence's enumerator...
         this.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
-            (fun e -> this.While((fun () -> e.MoveNext()), this.Delay (fun () -> body e.Current))))
+            (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> __expand_body e.Current))))
 
-    member inline __.ReturnFrom (task: Task<'T>) : TaskSpec<'T> = (fun sm -> 
+    member inline __.ReturnFrom (task: Task<'T>) : TaskStep<'T> =
         let CONT = __newEntryPoint ()
         if task.IsCompleted then
-            __entryPoint CONT (fun () -> 
-                sm.Current <- (box task.Result)
-                TaskStep<'T>(true))
+            __entryPoint CONT
+            __machine<TaskStateMachine>.Current <- box task.Result
+            (# "" true : TaskStep<'T> #)
         else
-            sm.Await(task.GetAwaiter(), CONT)
-            sm.ResumptionPoint <- CONT
-            TaskStep<'T>(false))
-
+            __machine<TaskStateMachine>.Await(task.GetAwaiter(), CONT)
+            __return (# "" false : TaskStep<'T> #)
 
 [<AutoOpen>]
 module ContextSensitiveTasks =
@@ -328,14 +294,14 @@ module ContextSensitiveTasks =
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>(sm, _priority: IPriority2, taskLike : ^TaskLike, k: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
-                  = TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (sm, taskLike, k)
+                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>(_priority: IPriority2, taskLike : ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+                  = TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (taskLike, __expand_continuation)
 
-        static member inline CanBind (sm, _priority: IPriority1, task: Task<'TResult1>, k: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
-                  = bindTask sm task k                      
+        static member inline CanBind (_priority: IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+                  = bindTask task __expand_continuation                      
 
-        static member inline CanBind (sm, _priority: IPriority1, computation  : Async<'TResult1>, k: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> 
-                  = bindTask sm (Async.StartAsTask computation) k     
+        static member inline CanBind (_priority: IPriority1, computation  : Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> 
+                  = bindTask (Async.StartAsTask computation) __expand_continuation     
 
         // Give the type arguments explicitly to make it match the signature precisely
         static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T
@@ -343,21 +309,20 @@ module ContextSensitiveTasks =
                                            and ^Awaiter :> ICriticalNotifyCompletion
                                            and ^Awaiter: (member get_IsCompleted: unit -> bool)
                                            and ^Awaiter: (member GetResult: unit ->  ^T)> 
-              (sm, _priority: IPriority1, taskLike: ^TaskLike) : TaskStep< ^T > 
-                  = TaskLikeBind< ^T >.GenericAwait< ^TaskLike, ^Awaiter, ^T> (sm, taskLike, ret< ^T > sm)
+              (_priority: IPriority1, taskLike: ^TaskLike) : TaskStep< ^T > 
+                  = TaskLikeBind< ^T >.GenericAwait< ^TaskLike, ^Awaiter, ^T> (taskLike, ret< ^T >)
 
-        static member inline CanReturnFrom (sm, _priority: IPriority1, computation : Async<'T>) 
-                  = bindTask sm (Async.StartAsTask computation) (ret< 'T > sm) : TaskStep<'T>
+        static member inline CanReturnFrom (_priority: IPriority1, computation : Async<'T>) 
+                  = bindTask (Async.StartAsTask computation) (ret< 'T >) : TaskStep<'T>
 
     type TaskBuilder with
         member inline builder.Bind< ^TaskLike, ^TResult1, 'TResult2 
-                                           when (Witnesses or  ^TaskLike): (static member CanBind: TaskStateMachine * Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
-                    (task: ^TaskLike, continuation: ^TResult1 -> TaskSpec<'TResult2>) : TaskSpec<'TResult2>
-                  = (fun sm -> RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> sm Unchecked.defaultof<Witnesses> task (fun x -> continuation x sm))
+                                           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
+                    (task: ^TaskLike, __expand_continuation: ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2>
+                  = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> Unchecked.defaultof<Witnesses> task __expand_continuation
 
-        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: TaskStateMachine * Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskSpec<'T> 
-                  = (fun sm -> RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> sm Unchecked.defaultof<Witnesses> task)
-
+        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
+                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> Unchecked.defaultof<Witnesses> task
 
 module ContextInsensitiveTasks =
 
@@ -373,51 +338,51 @@ module ContextInsensitiveTasks =
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)> (sm, _priority: IPriority3, taskLike: ^TaskLike, k: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
-              = TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (sm, taskLike, k)
+                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1)> (_priority: IPriority3, taskLike: ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+              = TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1> (taskLike, __expand_continuation)
 
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaitable, ^Awaiter 
                                             when  ^TaskLike: (member ConfigureAwait:  bool ->  ^Awaitable)
                                             and ^Awaitable: (member GetAwaiter: unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                            and ^Awaiter: (member GetResult: unit -> ^TResult1)> (sm, _priority: IPriority2, configurableTaskLike: ^TaskLike, k: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
-              = TaskLikeBind<'TResult2>.GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1> (sm, configurableTaskLike, k)
+                                            and ^Awaiter: (member GetResult: unit -> ^TResult1)> (_priority: IPriority2, configurableTaskLike: ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+              = TaskLikeBind<'TResult2>.GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1> (configurableTaskLike, __expand_continuation)
 
-        static member inline CanBind (sm, _priority :IPriority1, task: Task<'TResult1>, k: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
-              = bindTaskConfigureFalse sm task k
+        static member inline CanBind (_priority :IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+              = bindTaskConfigureFalse task __expand_continuation
 
-        static member inline CanBind (sm, _priority: IPriority1, computation : Async<'TResult1>, k: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
-              = bindTaskConfigureFalse sm (Async.StartAsTask computation) k
+        static member inline CanBind (_priority: IPriority1, computation : Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2>
+              = bindTaskConfigureFalse (Async.StartAsTask computation) __expand_continuation
 
 (*
         static member inline CanReturnFrom< ^Awaitable, ^Awaiter, ^T
                                     when ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
                                     and ^Awaiter :> ICriticalNotifyCompletion 
                                     and ^Awaiter : (member get_IsCompleted : unit -> bool)
-                                    and ^Awaiter : (member GetResult : unit -> ^T) > (sm, _priority: IPriority2, taskLike: ^Awaitable) 
-                            = TaskLikeBind< ^T >.GenericAwait< ^Awaitable, ^Awaiter, ^T >(sm, taskLike, ret)
+                                    and ^Awaiter : (member GetResult : unit -> ^T) > (_priority: IPriority2, taskLike: ^Awaitable) 
+                            = TaskLikeBind< ^T >.GenericAwait< ^Awaitable, ^Awaiter, ^T >(taskLike, ret)
         
         static member inline CanReturnFrom< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
                                                         and ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
                                                         and ^Awaiter :> ICriticalNotifyCompletion 
                                                         and ^Awaiter : (member get_IsCompleted : unit -> bool)
-                                                        and ^Awaiter : (member GetResult : unit -> ^TResult1) > (sm, _: IPriority1, configurableTaskLike: ^TaskLike)
-                            = TaskLikeBind< ^TResult1 >.GenericAwaitConfigureFalse(sm, configurableTaskLike, ret)
+                                                        and ^Awaiter : (member GetResult : unit -> ^TResult1) > (_: IPriority1, configurableTaskLike: ^TaskLike)
+                            = TaskLikeBind< ^TResult1 >.GenericAwaitConfigureFalse(configurableTaskLike, ret)
 
 
-        static member inline CanReturnFrom (sm, _priority: IPriority1, computation: Async<'T>) 
+        static member inline CanReturnFrom (_priority: IPriority1, computation: Async<'T>) 
                             = bindTaskConfigureFalse sm (Async.StartAsTask computation) ret
 *)
 
     type TaskBuilder with
         member inline builder.Bind< ^TaskLike, ^TResult1, 'TResult2 
-                                           when (Witnesses or  ^TaskLike): (static member CanBind: TaskStateMachine * Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
-                    (task: ^TaskLike, continuation: ^TResult1 -> TaskStep<'TResult2>) : TaskSpec<'TResult2>
-                  = (fun sm -> RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> sm Unchecked.defaultof<Witnesses> task continuation)
+                                           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>)> 
+                    (task: ^TaskLike, __expand_continuation: ^TResult1 -> TaskStep<'TResult2>) : TaskStep<'TResult2>
+                  = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2> Unchecked.defaultof<Witnesses> task __expand_continuation
 (*
-        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: TaskStateMachine * Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
+        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
                   = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> builder.TaskStateMachine Unchecked.defaultof<Witnesses> task
 *)
 #endif

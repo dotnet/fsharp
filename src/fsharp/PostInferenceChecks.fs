@@ -954,7 +954,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         CheckTypeNoByrefs cenv env m ty
         NoLimit
 
-    | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, m) -> 
+    | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, _stateVars, m) -> 
         CheckExprNoByrefs cenv env superInitCall
         CheckMethods cenv env basev overrides 
         CheckInterfaceImpls cenv env basev iimpls

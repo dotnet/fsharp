@@ -93,7 +93,7 @@ type LoweredSeqFirstPhaseResult =
      phase2 : ((* pc: *) ValRef * (* current: *) ValRef * (* nextVar: *) ValRef * Map<ILCodeLabel, int> -> Expr * Expr * Expr)
 
      /// The labels allocated for one portion of the sequence expression
-     labels : int list
+     entryPoints : int list
 
      /// Indicates if any actual work is done in dispose, i.e. is there a 'try-finally' (or 'use') in the computation.
      significantClose : bool
@@ -267,7 +267,7 @@ let LowerSeqExpr g amap overallExpr =
                                 (Expr.Op (TOp.Label label, [], [], m))
                                 (Expr.Op (TOp.Return, [], [mkBool g m (not (noDisposeContinuationLabel = currentDisposeContinuationLabel))], m))
                         generate, dispose, checkDispose)
-                   labels=[label]
+                   entryPoints=[label]
                    stateVars=[]
                    significantClose = false
                    capturedVars = emptyFreeVars
@@ -286,7 +286,7 @@ let LowerSeqExpr g amap overallExpr =
             | Some res1, Some res2 ->
 
                 let capturedVars =
-                    if res1.labels.IsEmpty then
+                    if res1.entryPoints.IsEmpty then
                         res2.capturedVars
                     else
                         // All of 'e2' is needed after resuming at any of the labels
@@ -301,7 +301,7 @@ let LowerSeqExpr g amap overallExpr =
                             let dispose = mkCompGenSequential m dispose2 dispose1
                             let checkDispose = mkCompGenSequential m checkDispose2 checkDispose1
                             generate, dispose, checkDispose)
-                       labels= res1.labels @ res2.labels
+                       entryPoints= res1.entryPoints @ res2.entryPoints
                        stateVars = res1.stateVars @ res2.stateVars
                        significantClose = res1.significantClose || res2.significantClose
                        capturedVars = capturedVars }
@@ -314,8 +314,8 @@ let LowerSeqExpr g amap overallExpr =
             match resBody with
             | Some res2  ->
                 let capturedVars =
-                    if res2.labels.IsEmpty then
-                        res2.capturedVars  // the whole loopis synchronous, no labels
+                    if res2.entryPoints.IsEmpty then
+                        res2.capturedVars  // the whole loop is synchronous, no labels
                     else
                         freeInExpr CollectLocals expr // everything is needed on subsequent iterations
 
@@ -325,7 +325,7 @@ let LowerSeqExpr g amap overallExpr =
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate, dispose, checkDispose)
-                       labels = res2.labels
+                       entryPoints = res2.entryPoints
                        stateVars = res2.stateVars
                        significantClose = res2.significantClose
                        capturedVars = capturedVars }
@@ -401,7 +401,7 @@ let LowerSeqExpr g amap overallExpr =
                                         (Expr.Op (TOp.Return, [], [mkTrue g m (* yes, we must dispose!!! *) ], m)))
 
                             generate, dispose, checkDispose)
-                       labels = innerDisposeContinuationLabel :: res1.labels
+                       entryPoints = innerDisposeContinuationLabel :: res1.entryPoints
                        stateVars = res1.stateVars
                        significantClose = true
                        capturedVars = capturedVars }
@@ -415,7 +415,7 @@ let LowerSeqExpr g amap overallExpr =
                             let dispose = Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)
                             let checkDispose = Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)
                             generate, dispose, checkDispose)
-                   labels = []
+                   entryPoints = []
                    stateVars = []
                    significantClose = false
                    capturedVars = emptyFreeVars }
@@ -489,12 +489,12 @@ let LowerSeqExpr g amap overallExpr =
             if tglArray |> Array.forall Option.isSome then
                 let tglArray = Array.map Option.get tglArray
                 let tgl = Array.toList tglArray
-                let labs = tgl |> List.collect (fun res -> res.labels)
+                let labs = tgl |> List.collect (fun res -> res.entryPoints)
                 let (capturedVars, _) =
                     ((emptyFreeVars, false), Array.zip targets tglArray)
                     ||> Array.fold (fun (fvs, seenLabel) ((TTarget(_vs, e, _spTarget)), res) ->
                         if seenLabel then unionFreeVars fvs (freeInExpr CollectLocals e), true
-                        else res.capturedVars, not res.labels.IsEmpty)
+                        else res.capturedVars, not res.entryPoints.IsEmpty)
                 let stateVars = tgl |> List.collect (fun res -> res.stateVars)
                 let significantClose = tgl |> List.exists (fun res -> res.significantClose)
                 Some { phase2 = (fun ctxt ->
@@ -509,7 +509,7 @@ let LowerSeqExpr g amap overallExpr =
                             let dispose = if isNil disposals then mkUnit g m else List.reduce (mkCompGenSequential m) disposals
                             let checkDispose = if isNil checkDisposes then mkFalse g m else List.reduce (mkCompGenSequential m) checkDisposes
                             generate, dispose, checkDispose)
-                       labels=labs
+                       entryPoints=labs
                        stateVars = stateVars
                        significantClose = significantClose
                        capturedVars = capturedVars }
@@ -569,7 +569,7 @@ let LowerSeqExpr g amap overallExpr =
                                             (Expr.Op (TOp.Label label, [], [], m))
                                             (Expr.Op (TOp.Return, [], [mkFalse g m], m))
                                     generate, dispose, checkDispose)
-                               labels=[label]
+                               entryPoints=[label]
                                stateVars=[]
                                significantClose = false
                                capturedVars = emptyFreeVars }
@@ -590,7 +590,7 @@ let LowerSeqExpr g amap overallExpr =
         | Some res ->
             
             // After phase1, create the variables for the state machine and work out a program counter for each label.
-            let labs = res.labels
+            let labs = res.entryPoints
             let stateVars = res.stateVars
             // printfn "successfully lowered, found %d state variables and %d labels!" stateVars.Length labs.Length
             let pcVar, pcExpr = mkMutableCompGenLocal m "pc" g.int32_ty
@@ -783,10 +783,10 @@ type LoweredStateMachineFirstPhaseResult =
      /// The second phase of the transformation.  It is run after all code labels and their mapping to program counters have been determined
      /// after the first phase. 
      ///
-     phase2 : (Map<ILCodeLabel, int> -> Expr)
+     phase2 : (Map<int, ILCodeLabel> -> Expr)
 
-     /// The labels allocated for one portion of the sequence expression
-     labels : int list
+     /// The labels allocated for this portion of the computation
+     entryPoints : int list
 
      /// The state variables allocated for one portion of the sequence expression (i.e. the local let-bound variables which become state variables)
      stateVars: ValRef list
@@ -798,420 +798,392 @@ type LoweredStateMachineFirstPhaseResult =
 
 
 
-let (|StateMachine|_|) g expr =
+let (|StateMachineExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh_stateMachine_vref (_, [e], _m) -> Some e
     | _ -> None
 
-let (|JumpTable|_|) g expr =
+let (|NewEntryPointExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh_newEntryPoint_vref (_, [_], _m) -> Some ()
+    | _ -> None
+
+let (|ReturnExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh_return_vref (_, [e], m) -> Some (e, m)
+    | _ -> None
+
+let (|MachineExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh_machine_vref ([ty], _, m) -> Some (ty, m)
+    | _ -> None
+
+let (|EntryPointExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh_entryPoint_vref (_, [e], m) -> Some (e, m)
+    | _ -> None
+
+let (|JumpTableExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh_jumptable_vref (_, [pcExpr; codeExpr], _m) -> Some (pcExpr, codeExpr)
     | _ -> None
 
+/// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
+let RepresentBindingAsLiftedOrLocal (bind: Binding) (res2: LoweredStateMachineFirstPhaseResult) m =
+    // printfn "LowerSeq: found local variable %s" bind.Var.DisplayName
+    { res2 with
+        phase2 = (fun ctxt -> mkLetBind m bind (res2.phase2 ctxt)) }
+
+/// Implement a decision to represent a 'let' binding as a state machine variable
+let RepresentBindingAsStateVar (bind: Binding) (res2: LoweredStateMachineFirstPhaseResult) m =
+    // printfn "LowerSeq: found state variable %s" bind.Var.DisplayName
+    let (TBind(v, e, sp)) = bind
+    let sp, spm =
+        match sp with
+        | SequencePointAtBinding m -> SequencePointsAtSeq, m
+        | _ -> SuppressSequencePointOnExprOfSequential, e.Range
+    let vref = mkLocalValRef v
+    { res2 with
+        phase2 = (fun ctxt ->
+            let generate2 = res2.phase2 ctxt
+            let generate =
+                //mkCompGenSequential m
+                    (mkSequential sp m
+                        (mkValSet spm vref e)
+                        generate2)
+                    // TODO: zero out the current value to free up its memory - but return type is not unit...
+                  //  (mkValSet m vref (mkDefault (m, vref.Type)))
+            generate )
+        stateVars = vref :: res2.stateVars }
+
+// We look ahead one binding to find the binding of the code
+//
+// GIVEN:
+//   member inline __.Run(code : unit -> TaskStep<'T>) = 
+//       (__stateMachine
+//           { new TaskStateMachine<'T>() with 
+//               member __.Step(pc) = __jumptable pc code }).Start()
+//
+// THEN
+//    task { ... }
+//
+// IN DEBUG:
+//
+//    let builder@ = task
+//    let code = 
+//        let builder@ = task
+//        (fun ....)
+//    (__stateMachine code).Start()
+//
+// IN RELEASE:
+//
+//    let code = (fun ...)
+//    (__stateMachine code).Start()
+
+// TODO: this is too adhoc
+let isMustExpandVar (v: Val) = 
+    let nm = v.LogicalName
+    nm.StartsWith "__expand_" 
+    || nm.StartsWith "builder@" 
+    || (v.BaseOrThisInfo = MemberThisVal)
+
+let isExpandVar (v: Val) = 
+    isMustExpandVar v
+    || (v.BaseOrThisInfo = MemberThisVal)
+
+
 let LowerStateMachineExpr g overallExpr =
 
-    let rec Lower expr = 
-                Some { phase2 = (fun _ctxt -> expr)
-                       labels=[]
-                       stateVars = []
-                       capturedVars = emptyFreeVars }
+    let mutable pcCount = 0
+    let genPC() =
+        pcCount <- pcCount + 1
+        pcCount
 
-(*    let rec Lower
-                 isWholeExpr
-                 isTailCall // is this sequence in tailcall position?
-                 noDisposeContinuationLabel // represents the label for the code where there is effectively nothing to do to dispose the iterator for the current state
-                 currentDisposeContinuationLabel // represents the label for the code we have to run to dispose the iterator given the current state
-                 expr =
+    // Evaluate __expand_ABC and __newEntryPoint bindings at compile-time
+    let rec BindExpansions g (env: ValMap<_>) expr = 
 
         match expr with
-        | SeqYield(e, m) ->
-            // printfn "found Seq.singleton"
-                 //this.pc <- NEXT
-                 //curr <- e
-                 //return true
-                 //NEXT:
-            let label = IL.generateCodeLabel()
-            Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
-                        let generate =
-                            mkCompGenSequential m
-                                (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                (mkSequential SequencePointsAtSeq m
-                                    (mkValSet m currVar e)
-                                    (mkCompGenSequential m
-                                        (Expr.Op (TOp.Return, [], [mkOne g m], m))
-                                        (Expr.Op (TOp.Label label, [], [], m))))
-                        let dispose =
-                            mkCompGenSequential m
-                                (Expr.Op (TOp.Label label, [], [], m))
-                                (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
-                        let checkDispose =
-                            mkCompGenSequential m
-                                (Expr.Op (TOp.Label label, [], [], m))
-                                (Expr.Op (TOp.Return, [], [mkBool g m (not (noDisposeContinuationLabel = currentDisposeContinuationLabel))], m))
-                        generate, dispose, checkDispose)
-                   labels=[label]
-                   stateVars=[]
-                   significantClose = false
-                   capturedVars = emptyFreeVars
-                  }
+        // Bind 'let __expand_ABC = bindExpr in bodyExpr'
+        | Expr.Let (bind, bodyExpr, _, _) when isExpandVar bind.Var -> 
+            let envR = env.Add bind.Var bind.Expr
+            BindExpansions g envR bodyExpr
 
-        | SeqDelay(delayedExpr, _elemTy) ->
-            // printfn "found Seq.delay"
-            // note, using 'isWholeExpr' here prevents 'seq { yield! e }' and 'seq { 0 .. 1000 }' from being compiled
-            Lower isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel delayedExpr
+        // Bind 'let CODE = __newEntryPoint() in bodyExpr'
+        | Expr.Let (TBind(v, NewEntryPointExpr g (), _sp), bodyExpr, m, _) ->
+            printfn "found __newEntryPoint()"
+            let envR = env.Add v (mkInt g m (genPC()))
+            BindExpansions g envR bodyExpr
 
-        | SeqAppend(e1, e2, m) ->
-            // printfn "found Seq.append"
-            let res1 = Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel e1
-            let res2 = Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2
-            match res1, res2 with
-            | Some res1, Some res2 ->
+        | _ ->
+            (env, expr)
 
-                let capturedVars =
-                    if res1.labels.IsEmpty then
-                        res2.capturedVars
-                    else
-                        // All of 'e2' is needed after resuming at any of the labels
-                        unionFreeVars res1.capturedVars (freeInExpr CollectLocals e2)
+    let (|SequentialCode|_|) expr = 
+        match expr with
 
-                Some { phase2 = (fun ctxt ->
-                            let generate1, dispose1, checkDispose1 = res1.phase2 ctxt
-                            let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkCompGenSequential m generate1 generate2
-                            // Order shouldn't matter here, since disposals actions are linked together by goto's  (each ends in a goto).
-                            // However leaving as is for now.
-                            let dispose = mkCompGenSequential m dispose2 dispose1
-                            let checkDispose = mkCompGenSequential m checkDispose2 checkDispose1
-                            generate, dispose, checkDispose)
-                       labels= res1.labels @ res2.labels
-                       stateVars = res1.stateVars @ res2.stateVars
-                       significantClose = res1.significantClose || res2.significantClose
-                       capturedVars = capturedVars }
-            | _ ->
-                None
+        // e1; e2
+        | Expr.Sequential(e1, e2, NormalSeq, _, m) ->
+            Some (e1, e2, m, (fun e1 e2 -> mkCompGenSequential m e1 e2))
 
-        | SeqWhile(guardExpr, bodyExpr, m) ->
-            // printfn "found Seq.while"
-            let resBody = Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
-            match resBody with
-            | Some res2  ->
-                let capturedVars =
-                    if res2.labels.IsEmpty then
-                        res2.capturedVars  // the whole loopis synchronous, no labels
-                    else
-                        freeInExpr CollectLocals expr // everything is needed on subsequent iterations
+        // let _step = e1 in e2
+        | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName = "_step" -> // TODO this is way too adhoc
+            Some (bind.Expr, e2, m, (fun e1 e2 -> mkLet bind.SequencePointInfo m bind.Var e1 e2))
 
-                Some { phase2 = (fun ctxt ->
-                            let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkWhile g (SequencePointAtWhileLoop guardExpr.Range, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
-                            let dispose = dispose2
-                            let checkDispose = checkDispose2
-                            generate, dispose, checkDispose)
-                       labels = res2.labels
-                       stateVars = res2.stateVars
-                       significantClose = res2.significantClose
-                       capturedVars = capturedVars }
-            | _ ->
-                None
+        | _ -> None
 
-        | SeqUsing(resource, v, body, elemTy, m) ->
-            // printfn "found Seq.using"
-            let reduction =
-                mkLet (SequencePointAtBinding body.Range) m v resource
-                    (mkCallSeqFinally g m elemTy body
-                        (mkUnitDelayLambda g m
-                            (mkCallDispose g m v.Type (exprForVal m v))))
-            Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel reduction
+    let rec (|ApplyExpansions|) g (env: ValMap<_>) expr = 
+        let env, expr = BindExpansions g env expr
+        match expr with
+        // __machine --> ldarg.0
+        | MachineExpr g (ty, m) -> 
+            mkGetArg0 m ty
 
-        | SeqFor(inp, v, body, genElemTy, m) ->
-            // printfn "found Seq.for"
-            let inpElemTy = v.Type
-            let inpEnumTy = mkIEnumeratorTy g inpElemTy
-            let enumv, enume = mkCompGenLocal m "enum" inpEnumTy
-            // [[ use enum = inp.GetEnumerator()
-            //    while enum.MoveNext() do
-            //       let v = enum.Current
-            //       body ]]
-            let reduction =
-                mkCallSeqUsing g m inpEnumTy genElemTy (callNonOverloadedMethod g amap m "GetEnumerator" (mkSeqTy g inpElemTy) [inp])
-                    (mkLambdaNoType g m enumv
-                       (mkCallSeqGenerated g m genElemTy (mkUnitDelayLambda g m (callNonOverloadedMethod g amap m "MoveNext" inpEnumTy [enume]))
-                          (mkInvisibleLet m v (callNonOverloadedMethod g amap m "get_Current" inpEnumTy [enume])
-                              (mkCoerceIfNeeded g (mkSeqTy g genElemTy) (tyOfExpr g body) body))))
-            Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel reduction
+        // __expand_code --> [expand_code]
+        | Expr.Val (vref, _, _) when env.ContainsVal vref.Deref ->
+            let expandedExpr = env.[vref.Deref]
+            printfn "expanded %A --> %A..." expr expandedExpr
+            (|ApplyExpansions|) g env expandedExpr
 
-        | SeqTryFinally(e1, compensation, m) ->
-            // printfn "found Seq.try/finally"
-            let innerDisposeContinuationLabel = IL.generateCodeLabel()
-            let resBody = Lower false false noDisposeContinuationLabel innerDisposeContinuationLabel e1
-            match resBody with
-            | Some res1  ->
-                let capturedVars = unionFreeVars res1.capturedVars (freeInExpr CollectLocals compensation)
-                Some { phase2 = (fun ((pcVar, _currv, _, pcMap) as ctxt) ->
-                            let generate1, dispose1, checkDispose1 = res1.phase2 ctxt
-                            let generate =
-                                // copy the compensation expression - one copy for the success continuation and one for the exception
-                                let compensation = copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated compensation
-                                mkCompGenSequential m
-                                    // set the PC to the inner finally, so that if an exception happens we run the right finally
-                                    (mkCompGenSequential m
-                                        (mkValSet m pcVar (mkInt32 g m pcMap.[innerDisposeContinuationLabel]))
-                                        generate1 )
-                                    // set the PC past the try/finally before trying to run it, to make sure we only run it once
-                                    (mkCompGenSequential m
-                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
-                                        (mkCompGenSequential m
-                                            (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
-                                            compensation))
-                            let dispose =
-                                // generate inner try/finallys, then outer try/finallys
-                                mkCompGenSequential m
-                                    dispose1
-                                    // set the PC past the try/finally before trying to run it, to make sure we only run it once
-                                    (mkCompGenSequential m
-                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
-                                        (mkCompGenSequential m
-                                            (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
-                                            (mkCompGenSequential m
-                                                compensation
-                                                (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)))))
-                            let checkDispose =
-                                mkCompGenSequential m
-                                    checkDispose1
-                                    (mkCompGenSequential m
-                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
-                                        (Expr.Op (TOp.Return, [], [mkTrue g m (* yes, we must dispose!!! *) ], m)))
+        // __expand_code x --> let arg = x in expand_code[arg/x]
+        | Expr.App (Expr.Val (vref, _, _), fty, [], args, m) when env.ContainsVal vref.Deref ->
+            let f0 = env.[vref.Deref]
+            let expandedExpr = MakeApplicationAndBetaReduce g (f0, fty, [], args, m)
+            printfn "expanded %A --> %A..." expr expandedExpr
+            (|ApplyExpansions|) g env expandedExpr
 
-                            generate, dispose, checkDispose)
-                       labels = innerDisposeContinuationLabel :: res1.labels
-                       stateVars = res1.stateVars
-                       significantClose = true
-                       capturedVars = capturedVars }
-            | _ ->
-                None
+        | _ -> expr
 
-        | SeqEmpty m ->
-            // printfn "found Seq.empty"
-            Some { phase2 = (fun _ ->
-                            let generate = mkUnit g  m
-                            let dispose = Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)
-                            let checkDispose = Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)
-                            generate, dispose, checkDispose)
-                   labels = []
-                   stateVars = []
-                   significantClose = false
-                   capturedVars = emptyFreeVars }
+    let rec (|StateMachineInContext|_|) g (env: ValMap<_>) overallExpr = 
+        let env, expr = BindExpansions g env overallExpr 
+        match expr with
+        | Expr.App (f0, f0ty, tyargsl, (StateMachineExpr g objExpr :: args), mApp) ->
+            Some (env, objExpr, (fun objExprR -> Expr.App (f0, f0ty, tyargsl, (objExprR :: args), mApp)))
+        | StateMachineExpr g objExpr ->
+            Some (env, objExpr, id)
+        | _ -> None
 
-        | Expr.Sequential (x1, x2, NormalSeq, ty, m) ->
-            match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel x2 with
-            | Some res2->
-                // printfn "found sequential execution"
-                Some { res2 with
-                        phase2 = (fun ctxt ->
-                            let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = Expr.Sequential (x1, generate2, NormalSeq, ty, m)
-                            let dispose = dispose2
-                            let checkDispose = checkDispose2
-                            generate, dispose, checkDispose) }
-            | None -> None
+    let (|SingleMethodStateMachineInContext|_|) g overallExpr = 
+        match overallExpr with
+        | StateMachineInContext g ValMap.Empty (env, objExpr, remake) ->
+            printfn "Found state machine..."
+            match objExpr with 
+            | Expr.Obj (objExprStamp, ty, basev, basecall, overrides, iimpls, stateVars, objExprRange) ->
+                printfn "Found state machine object..."
+                match overrides with 
+                | [ (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, 
+                         (JumpTableExpr g (pcExpr, ApplyExpansions g env (Expr.Lambda (_, _, _, [_dummyv], codeExpr, _, _)))), m)) ] ->
+                     Some (env, objExprStamp, objExprRange, remake, ty, basev, basecall, slotsig, attribs, methTyparsOfOverridingMethod, methodParams, pcExpr, codeExpr, iimpls, stateVars, m)
+                | _ -> None
+            | _ -> None
+        | _ -> None
 
+    // A utility to add a jump table an expression
+    let addPcJumpTable (g: TcGlobals) m (pcs: int list)  (pc2lab: Map<int, ILCodeLabel>) pcExpr expr =
+        if pcs.IsEmpty then 
+            expr
+        else
+            let initLabel = IL.generateCodeLabel()
+            let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m )
+            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), SuppressSequencePointAtTarget)
+            let dtree =
+                TDSwitch(pcExpr,
+                        [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
+                            for pc in pcs do
+                                yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc]) ],
+                        // The default is to go to pcInit
+                        Some(mkGotoLabelTarget initLabel),
+                        m)
+
+            let table = mbuilder.Close(dtree, m, g.int_ty)
+            mkCompGenSequential m table (mkCompGenSequential m (Expr.Op (TOp.Label initLabel, [], [], m)) expr)
+
+    let rec Lower env pcExpr  expr = 
+        printfn "Lowering %A" expr
+        let env, expr = BindExpansions g env expr
+        let expr = (|ApplyExpansions|) g env expr
+        printfn "Expanded to %A" expr
+        match expr with 
+        // __entryPoint --> label:
+        | EntryPointExpr g (ApplyExpansions g env (Int32Expr pc), m) ->
+            { phase2 = (fun pc2lab -> Expr.Op (TOp.Label pc2lab.[pc], [], [], m))
+              entryPoints=[pc]
+              stateVars = []
+              capturedVars = emptyFreeVars }
+
+        // __return v --> return
+        | ReturnExpr g (v, m) ->
+            let expr = Expr.Op (TOp.Return, [], [v], m)
+            { phase2 = (fun _ctxt -> expr)
+              entryPoints = []
+              stateVars = []
+              capturedVars = emptyFreeVars }
+
+        // control-flow sequential
+        // let _step = e1 in e2
+        // e1; e2
+        | SequentialCode(e1, e2, _m, recreate) ->
+            // printfn "found sequential"
+            let res1 = Lower env pcExpr e1
+            let res2 = Lower env pcExpr e2
+            let capturedVars =
+                if res1.entryPoints.IsEmpty then
+                    // res1 is synchronous
+                    res2.capturedVars
+                else
+                    // res1 is not synchronous. All of 'e2' is needed after resuming at any of the labels
+                    unionFreeVars res1.capturedVars (freeInExpr CollectLocals e2)
+
+            { phase2 = (fun ctxt ->
+                let generate1 = res1.phase2 ctxt
+                let generate2 = res2.phase2 ctxt
+                let generate = recreate generate1 generate2
+                generate)
+              entryPoints= res1.entryPoints @ res2.entryPoints
+              stateVars = res1.stateVars @ res2.stateVars
+              capturedVars = capturedVars }
+
+        //| TOp.While _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _)]  ->
+        //    exprF (exprF z e1) e2
+
+        //| TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
+        //    exprF (exprF z e1) e2
+
+        //| TOp.For (_), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+        //    exprF (exprF (exprF z e1) e2) e3
+
+        // Note: residue code of state machine implementations is allowed to use 'TryCatch'...
+        | Expr.Op (TOp.TryCatch (spTry, spWith), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)], m) -> 
+            let res1 = Lower env pcExpr e1
+            let resf = Lower env pcExpr ef
+            let resh = Lower env pcExpr eh
+            { phase2 = (fun ctxt -> 
+                // We can't jump into a try/catch block.  So we jump to the start of the try/catch and add a new jump table
+                let pcsAndLabs = ctxt |> Map.toList  
+                let innerPcs = res1.entryPoints 
+                if innerPcs.IsEmpty then 
+                    let e1R = res1.phase2 ctxt
+                    let efR = resf.phase2 ctxt
+                    let ehR = resh.phase2 ctxt
+                    mkTryWith g (e1R, vf, efR, vh, ehR, m, resty, spTry, spWith)
+                else
+                    let innerPcSet = innerPcs |> Set.ofList
+                    let outerLabsForInnerPcs = pcsAndLabs |> List.filter (fun (pc, _outerLab) -> innerPcSet.Contains pc) |> List.map snd
+                    // generate the inner labels
+                    let pcsAndInnerLabs = pcsAndLabs |> List.map (fun (pc, l) -> (pc, if innerPcSet.Contains pc then IL.generateCodeLabel() else l))
+                    let innerPc2Lab = Map.ofList pcsAndInnerLabs
+
+                    let e1R = res1.phase2 innerPc2Lab
+                    let efR = resf.phase2 ctxt
+                    let ehR = resh.phase2 ctxt
+
+                    let e1RWithJumpTable = addPcJumpTable g m innerPcs innerPc2Lab pcExpr e1R
+                    let coreExpr = mkTryWith g (e1RWithJumpTable, vf, efR, vh, ehR, m, resty, spTry, spWith)
+                    // place all the outer labels just before the try
+                    let labelledExpr = (coreExpr, outerLabsForInnerPcs) ||> List.fold (fun e l -> mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e)
+                
+
+                    //((pcInit, initLabel) :: List.zip pcs labs)
+
+                    labelledExpr)
+              entryPoints= res1.entryPoints @ resf.entryPoints @ resh.entryPoints 
+              stateVars = res1.stateVars @ resf.stateVars @ resh.stateVars
+              capturedVars = unionFreeVars res1.capturedVars (unionFreeVars(freeInExpr CollectLocals ef) (freeInExpr CollectLocals eh)) }
+
+        // control-flow match
+        | Expr.Match (spBind, exprm, pt, targets, m, ty) when targets |> Array.forall (fun (TTarget(vs, _e, _spTarget)) -> isNil vs) ->
+            // lower all the targets. abandon if any fail to lower
+            let tglArray = targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget)) -> Lower env pcExpr targetExpr)
+            // LIMITATION: non-trivial pattern matches involving or-patterns or active patterns where bindings can't be
+            // transferred to the r.h.s. are not yet compiled.
+            let tgl = Array.toList tglArray
+            let entyPoints = tgl |> List.collect (fun res -> res.entryPoints)
+            let (capturedVars, _) =
+                ((emptyFreeVars, false), Array.zip targets tglArray)
+                ||> Array.fold (fun (fvs, seenLabel) ((TTarget(_vs, e, _spTarget)), res) ->
+                    if seenLabel then unionFreeVars fvs (freeInExpr CollectLocals e), true
+                    else res.capturedVars, not res.entryPoints.IsEmpty)
+            let stateVars = tgl |> List.collect (fun res -> res.stateVars)
+            { phase2 = (fun ctxt ->
+                            let gtgs =
+                                (Array.toList targets, tgl)
+                                  ||> List.map2 (fun (TTarget(vs, _, spTarget)) res ->
+                                        let generate = res.phase2 ctxt
+                                        let gtg = TTarget(vs, generate, spTarget)
+                                        gtg)
+                            let generate = primMkMatch (spBind, exprm, pt, Array.ofList gtgs, m, ty)
+                            generate)
+              entryPoints=entyPoints
+              stateVars = stateVars
+              capturedVars = capturedVars }
+
+        // Non-control-flow let binding
         | Expr.Let (bind, bodyExpr, m, _)
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
               when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) ->
 
-            let resBody = Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
-            match resBody with
-            | Some res2 ->
-                if bind.Var.IsCompiledAsTopLevel then
-                    Some (RepresentBindingsAsLifted (mkLetBind m bind) res2)
-                elif not (res2.capturedVars.FreeLocals.Contains(bind.Var)) then
-                    // printfn "found state variable %s" bind.Var.DisplayName
-                    Some (RepresentBindingAsLocal bind res2 m)
-                else
-                    // printfn "found state variable %s" bind.Var.DisplayName
-                    Some (RepresentBindingAsStateMachineLocal bind res2 m)
-            | None ->
-                None
+            // Rewrite the expression on the r.h.s. of the binding
+            let bind = mkBind bind.SequencePointInfo bind.Var ((|ApplyExpansions|) g env bind.Expr)
 
-(*
-        | Expr.LetRec (binds, e2, m, _)
-              when  // Restriction: only limited forms of "let rec" in sequence expressions can be handled by assignment to state local values
-
-                    (let recvars = valsOfBinds binds  |> List.map (fun v -> (v, 0)) |> ValMap.OfList
-                     binds |> List.forall (fun bind ->
-                         // Rule 1 - IsCompiledAsTopLevel require no state local value
-                         bind.Var.IsCompiledAsTopLevel ||
-                         // Rule 2 - funky constrained local funcs not allowed
-                         not (IsGenericValWithGenericContraints g bind.Var)) &&
-                     binds |> List.count (fun bind ->
-                          // Rule 3 - Recursive non-lambda and repack values are allowed
-                          match stripExpr bind.Expr with
-                          | Expr.Lambda _
-                          | Expr.TyLambda _ -> false
-                          // "let v = otherv" bindings get produced for environment packing by InnerLambdasToTopLevelFuncs.fs, we can accept and compiler these ok
-                          | Expr.Val (v, _, _) when not (recvars.ContainsVal v.Deref) -> false
-                          | _ -> true) <= 1)  ->
-
-            match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with
-            | Some res2 ->
-                let topLevelBinds, nonTopLevelBinds = binds |> List.partition (fun bind -> bind.Var.IsCompiledAsTopLevel)
-                // Represent the closure-capturing values as state machine locals. They may still be recursively-referential
-                let res3 = (res2, nonTopLevelBinds) ||> List.fold (fun acc bind -> RepresentBindingAsStateMachineLocal bind acc m)
-                // Represent the non-closure-capturing values as ordinary bindings on the expression.
-                let res4 = if topLevelBinds.IsEmpty then res3 else RepresentBindingsAsLifted (mkLetRecBinds m topLevelBinds) res3
-                Some res4
-            | None ->
-                None
-*)
-        | Expr.Match (spBind, exprm, pt, targets, m, ty) when targets |> Array.forall (fun (TTarget(vs, _e, _spTarget)) -> isNil vs) ->
-            // lower all the targets. abandon if any fail to lower
-            let tglArray = targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel targetExpr)
-            // LIMITATION: non-trivial pattern matches involving or-patterns or active patterns where bindings can't be
-            // transferred to the r.h.s. are not yet compiled.
-            if tglArray |> Array.forall Option.isSome then
-                let tglArray = Array.map Option.get tglArray
-                let tgl = Array.toList tglArray
-                let labs = tgl |> List.collect (fun res -> res.labels)
-                let (capturedVars, _) =
-                    ((emptyFreeVars, false), Array.zip targets tglArray)
-                    ||> Array.fold (fun (fvs, seenLabel) ((TTarget(_vs, e, _spTarget)), res) ->
-                        if seenLabel then unionFreeVars fvs (freeInExpr CollectLocals e), true
-                        else res.capturedVars, not res.labels.IsEmpty)
-                let stateVars = tgl |> List.collect (fun res -> res.stateVars)
-                let significantClose = tgl |> List.exists (fun res -> res.significantClose)
-                Some { phase2 = (fun ctxt ->
-                            let gtgs, disposals, checkDisposes =
-                                (Array.toList targets, tgl)
-                                  ||> List.map2 (fun (TTarget(vs, _, spTarget)) res ->
-                                        let generate, dispose, checkDispose = res.phase2 ctxt
-                                        let gtg = TTarget(vs, generate, spTarget)
-                                        gtg, dispose, checkDispose)
-                                  |> List.unzip3
-                            let generate = primMkMatch (spBind, exprm, pt, Array.ofList gtgs, m, ty)
-                            let dispose = if isNil disposals then mkUnit g m else List.reduce (mkCompGenSequential m) disposals
-                            let checkDispose = if isNil checkDisposes then mkFalse g m else List.reduce (mkCompGenSequential m) checkDisposes
-                            generate, dispose, checkDispose)
-                       labels=labs
-                       stateVars = stateVars
-                       significantClose = significantClose
-                       capturedVars = capturedVars }
+            let resBody = Lower env pcExpr bodyExpr
+            if bind.Var.IsCompiledAsTopLevel || not (resBody.capturedVars.FreeLocals.Contains(bind.Var)) then
+                (RepresentBindingAsLiftedOrLocal bind resBody m)
             else
-                None
+                // printfn "found state variable %s" bind.Var.DisplayName
+                (RepresentBindingAsStateVar bind resBody m)
 
-        // yield! e ---> (for x in e -> x)
-        //
-        // Design choice: we compile 'yield! e' as 'for x in e do yield x'.
-        //
-        // Note, however, this leads to a loss of tailcalls: the case not
-        // handled correctly yet is sequence expressions that use yield! in the last position
-        // This can give rise to infinite iterator chains when implemented by the naive expansion to
-        // 'for x in e yield e'. For example consider this:
-        //
-        // let rec rwalk x = {  yield x
-        //                      yield! rwalk (x + rand()) }
-        //
-        // This is the moral equivalent of a tailcall optimization. These also don't compile well
-        // in the C# compilation model
-
-        | arbitrarySeqExpr ->
-            let m = arbitrarySeqExpr.Range
-            if isWholeExpr then
-                // printfn "FAILED - not worth compiling an unrecognized immediate yield! %s " (stringOfRange m)
-                None
-            else
-                let tyConfirmsToSeq g ty = isAppTy g ty && tyconRefEq g (tcrefOfAppTy g ty) g.tcref_System_Collections_Generic_IEnumerable
-                match SearchEntireHierarchyOfType (tyConfirmsToSeq g) g amap m (tyOfExpr g arbitrarySeqExpr) with
-                | None ->
-                    // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)
-                    None
-                | Some ty ->
-                    // printfn "found yield!"
-                    let inpElemTy = List.head (argsOfAppTy g ty)
-                    if isTailCall then
-                             //this.pc <- NEXT
-                             //nextEnumerator <- e
-                             //return 2
-                             //NEXT:
-                        let label = IL.generateCodeLabel()
-                        Some { phase2 = (fun (pcVar, _currv, nextVar, pcMap) ->
-                                    let generate =
-                                        mkCompGenSequential m
-                                            (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                            (mkSequential SequencePointsAtSeq m
-                                                (mkAddrSet m nextVar arbitrarySeqExpr)
-                                                (mkCompGenSequential m
-                                                    (Expr.Op (TOp.Return, [], [mkTwo g m], m))
-                                                    (Expr.Op (TOp.Label label, [], [], m))))
-                                    let dispose =
-                                        mkCompGenSequential m
-                                            (Expr.Op (TOp.Label label, [], [], m))
-                                            (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
-                                    let checkDispose =
-                                        mkCompGenSequential m
-                                            (Expr.Op (TOp.Label label, [], [], m))
-                                            (Expr.Op (TOp.Return, [], [mkFalse g m], m))
-                                    generate, dispose, checkDispose)
-                               labels=[label]
-                               stateVars=[]
-                               significantClose = false
-                               capturedVars = emptyFreeVars }
-                    else
-                        let v, ve = mkCompGenLocal m "v" inpElemTy
-                        Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel (mkCallSeqCollect g m inpElemTy inpElemTy (mkLambdaNoType g m v (mkCallSeqSingleton g m inpElemTy ve)) arbitrarySeqExpr)
-                        *)
-
+        // Arbitrary expression
+        | _ -> 
+            let expr =  
+                RewriteExpr { PreIntercept = None
+                              PostTransform = (fun e -> Some ((|ApplyExpansions|) g env e)) 
+                              PreInterceptBinding = None
+                              IsUnderQuotations=true } expr 
+            { phase2 = (fun _ctxt -> expr)
+              entryPoints=[]
+              stateVars = []
+              capturedVars = emptyFreeVars }
 
     match overallExpr with
-    | StateMachine g objExpr ->
-        printfn "Found state machine..."
-        match objExpr with 
-        | Expr.Obj (_, ty, basev, basecall, overrides, interfaceImpls, _m) ->
-            printfn "Found state machine object..."
-            match overrides with 
-            | [ (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, (JumpTable g (pcExpr, codeExpr)), m)) ] ->
-                printfn "Found state machine override method..."
-                // printfn "found seq { ... } or Seq.delay (fun () -> ...) in FSharp.Core.dll"
-                //let m = e.Range
-                let initLabel = IL.generateCodeLabel()
-                let noDisposeContinuationLabel = IL.generateCodeLabel()
+    // TODO: use appInfo
+    | SingleMethodStateMachineInContext g (env, objExprStamp, objExprRange, remake, ty, basev, basecall, slotsig, attribs, methTyparsOfOverridingMethod, methodParams, pcExpr, codeExpr, iimpls, origStateVars, m) ->
+        printfn "Found state machine override method and code expression..."
+        printfn "----------- BEFORE LOWER ----------------------"
+        printfn "%s" (DebugPrint.showExpr codeExpr)
+        printfn "----------- LOWER ----------------------"
+        // printfn "found seq { ... } or Seq.delay (fun () -> ...) in FSharp.Core.dll"
+        //let m = e.Range
 
-                // Perform phase1
-                match Lower codeExpr with
-                | Some res ->
-                    let labs = res.labels
-                    let stateVars = res.stateVars
-                    let pcs = labs |> List.mapi (fun i _ -> i + 1)
-                    let pcDone = labs.Length + 1
-                    let pcInit = 0
-                    let pc2lab  = Map.ofList ((pcInit, initLabel) :: (pcDone, noDisposeContinuationLabel) :: List.zip pcs labs)
-                    let lab2pc = Map.ofList ((initLabel, pcInit) :: (noDisposeContinuationLabel, pcDone) :: List.zip labs pcs)
+        // Perform phase1
+        let res = Lower env pcExpr codeExpr 
+        let pcs = [ 1 .. pcCount ]
+        let stateVars = res.stateVars
+        let labs = pcs |> List.map (fun _ -> IL.generateCodeLabel())
+        let pc2lab  = Map.ofList (List.zip pcs labs)
 
-                    // A utility to add a jump table to the three generated methods
-                    let addJumpTable pcExpr expr =
-                        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m )
-                        let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), SuppressSequencePointAtTarget)
-                        let dtree =
-                            TDSwitch(pcExpr,
-                                    [
-                                        // Yield one target for each PC, where the action of the target is to goto the appropriate label
-                                        for pc in pcs do
-                                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc])
-
-                                        // Yield one target for the 'done' program counter, where the action of the target is to continuation label
-                                        yield mkCase(DecisionTreeTest.Const(Const.Int32 pcDone), mkGotoLabelTarget noDisposeContinuationLabel) ],
-                                    Some(mkGotoLabelTarget pc2lab.[pcInit]),
-                                    m)
-
-                        let table = mbuilder.Close(dtree, m, g.int_ty)
-                        mkCompGenSequential m table (mkCompGenSequential m (Expr.Op (TOp.Label initLabel, [], [], m)) expr)
-
-                    // Execute phase2, building the core of the the GenerateNext, Dispose and CheckDispose methods
-                    let methodBodyExprR = res.phase2 lab2pc
-                    let methodBodyExprWithJumpTable = addJumpTable pcExpr methodBodyExprR
-                    let overrideR = TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, methodBodyExprWithJumpTable, m) 
-                    Some (objExpr, ty, basev, basecall, [overrideR], interfaceImpls, stateVars, m)
-                | None -> None
-            | _ -> None
-        | _ -> None
+        // Execute phase2, building the core of the method
+        printfn "----------- PHASE2 ----------------------"
+        let methodBodyExprR = res.phase2 pc2lab
+        printfn "----------- ADDING JUMP TABLE ----------------------"
+        let methodBodyExprWithJumpTable = addPcJumpTable g m pcs pc2lab pcExpr methodBodyExprR
+        let overrideR = TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, methodBodyExprWithJumpTable, m) 
+        let objExprR = Expr.Obj (objExprStamp, ty, basev, basecall, [overrideR], iimpls, origStateVars @ stateVars, objExprRange)
+        printfn "----------- REMAKE ----------------------"
+        let overallExprR = remake objExprR
+        printfn "----------- AFTER REWRITE ----------------------"
+        printfn "%s" (DebugPrint.showExpr overallExprR)
+        printfn "----------- CHECKING ----------------------"
+        let mutable failed = false
+        let _expr =  
+            overallExprR |> RewriteExpr 
+                { PreIntercept = None
+                  PostTransform = (fun e ->
+                        match e with
+                        | Expr.Val(vref, _, _) when isMustExpandVar vref.Deref -> 
+                            System.Diagnostics.Debug.Assert(false, "FAILED: unexpected expand var")
+                            failed <- true
+                            None
+                        | _ -> None) 
+                  PreInterceptBinding = None
+                  IsUnderQuotations=true } 
+        if failed then None else Some overallExprR
     | _ -> None
 

@@ -23,4 +23,4 @@ val LowerSeqExpr: g: TcGlobals -> amap: ImportMap -> overallExpr: Expr -> (ValRe
 
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind
 /// of object expression that uses special code generation constructs.
-val LowerStateMachineExpr: g: TcGlobals -> overallExpr: Expr -> (Expr * TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * ValRef list * range) option
+val LowerStateMachineExpr: g: TcGlobals -> overallExpr: Expr -> Expr option

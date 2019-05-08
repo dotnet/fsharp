@@ -692,15 +692,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))  
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
+  let v_cgh_machine_info           = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__machine"                            , None                 , None          , [vara],     ([[]], varaTy))
   let v_cgh_stateMachine_info      = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__stateMachine"                       , None                 , None          , [vara],     ([[varaTy]], varaTy))
   let v_cgh_jumptable_info         = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__jumptable"                          , None                 , None          , [vara],     ([[v_int_ty]; [v_unit_ty --> varaTy]], varaTy))
-  let v_cgh_newLabel_info          = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__newLabel"                           , None                 , None          , [],          ([[v_unit_ty]], v_int_ty))
-  let v_cgh_label_info             = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__label"                              , None                 , None          , [],          ([[v_int_ty]], v_unit_ty))
-  let v_cgh_newEntryPoint_info     = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__newEntryPoint"                      , None                 , None          , [],         ([[v_unit_ty]], v_int_ty))
+  let v_cgh_newEntryPoint_info     = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__newEntryPoint"                      , None                 , None          , [],          ([[v_unit_ty]], v_int_ty))
   let v_cgh_entryPoint_info        = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__entryPoint"                         , None                 , None          , [vara],     ([[v_int_ty]; [v_unit_ty --> varaTy]], varaTy))
-  let v_cgh_code_info              = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__code"                               , None                 , None          , [vara],     ([[v_unit_ty --> varaTy]], varaTy))
-  let v_cgh_goto_info              = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__goto"                               , None                 , None          , [vara],     ([[v_int_ty]], varaTy))
-  let v_cgh_return_info            = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__return"                             , None                 , None          , [vara;varb],([[varaTy]], varbTy))
+  let v_cgh_return_info            = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__return"                             , None                 , None          , [vara],     ([[varaTy]], varaTy))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -1433,15 +1430,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.quote_to_linq_lambda_info        = v_quote_to_linq_lambda_info
 
 
-  member val cgh_stateMachine_vref   = ValRefForIntrinsic v_cgh_stateMachine_info
-  member val cgh_jumptable_vref   = ValRefForIntrinsic v_cgh_jumptable_info
-  member val cgh_newLabel_vref          = ValRefForIntrinsic v_cgh_newLabel_info
-  member val cgh_label_vref          = ValRefForIntrinsic v_cgh_label_info
-  member val cgh_newEntryPoint_vref     = ValRefForIntrinsic v_cgh_newEntryPoint_info
-  member val cgh_entryPoint_vref        = ValRefForIntrinsic v_cgh_entryPoint_info
-  member val cgh_code_vref              = ValRefForIntrinsic v_cgh_code_info
-  member val cgh_goto_vref              = ValRefForIntrinsic v_cgh_goto_info
-  member val cgh_return_vref            = ValRefForIntrinsic v_cgh_return_info
+  member val cgh_machine_vref = ValRefForIntrinsic v_cgh_machine_info
+  member val cgh_stateMachine_vref = ValRefForIntrinsic v_cgh_stateMachine_info
+  member val cgh_jumptable_vref = ValRefForIntrinsic v_cgh_jumptable_info
+  member val cgh_newEntryPoint_vref = ValRefForIntrinsic v_cgh_newEntryPoint_info
+  member val cgh_entryPoint_vref = ValRefForIntrinsic v_cgh_entryPoint_info
+  member val cgh_return_vref = ValRefForIntrinsic v_cgh_return_info
 
   member val generic_hash_withc_tuple2_vref = ValRefForIntrinsic v_generic_hash_withc_tuple2_info
   member val generic_hash_withc_tuple3_vref = ValRefForIntrinsic v_generic_hash_withc_tuple3_info

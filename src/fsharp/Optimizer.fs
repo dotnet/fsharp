@@ -1874,7 +1874,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
 
-    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) -> 
+    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, _stateVars, m) -> 
         OptimizeObjectExpr cenv env (ty, basev, createExpr, overrides, iimpls, m)
 
     | Expr.Op (op, tyargs, args, m) -> 
@@ -1924,7 +1924,7 @@ and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m)
     let basecallR, basecallinfo = OptimizeExpr cenv env basecall
     let overridesR, overrideinfos = OptimizeMethods cenv env baseValOpt overrides
     let iimplsR, iimplsinfos = OptimizeInterfaceImpls cenv env baseValOpt iimpls
-    let exprR=mkObjExpr(ty, baseValOpt, basecallR, overridesR, iimplsR, m)
+    let exprR = mkObjExpr (ty, baseValOpt, basecallR, overridesR, iimplsR, m)
     exprR, { TotalSize=closureTotalSize + basecallinfo.TotalSize + AddTotalSizes overrideinfos + AddTotalSizes iimplsinfos
              FunctionSize=1 (* a newobj *) 
              HasEffect=true

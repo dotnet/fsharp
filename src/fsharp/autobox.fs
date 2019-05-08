@@ -78,7 +78,7 @@ let DecideExpr cenv exprF noInterceptF z expr  =
         let ty = mkForallTyIfNeeded tps rty 
         DecideLambda (Some exprF)  cenv topValInfo expr ty z
 
-    | Expr.Obj (_, _, baseValOpt, superInitCall, overrides, iimpls, _m) -> 
+    | Expr.Obj (_, _, baseValOpt, superInitCall, overrides, iimpls, _stateVars, _m) -> 
         let CheckMethod z (TObjExprMethod(_, _attribs, _tps, vs, body, _m)) = 
             let vs = List.concat vs
             let syntacticArgs = (match baseValOpt with Some x -> x :: vs | None -> vs)

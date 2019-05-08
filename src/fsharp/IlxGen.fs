@@ -795,6 +795,42 @@ and Mark =
     | Mark of ILCodeLabel
     member x.CodeLabel = (let (Mark lab) = x in lab)
 
+
+//--------------------------------------------------------------------------
+// We normally generate in the context of a "what to do next" continuation
+//--------------------------------------------------------------------------
+
+and sequel =
+  | EndFilter
+
+  /// Exit a 'handler' block. The integer says which local to save result in
+  | LeaveHandler of (bool (* finally? *) * int * Mark)
+
+  /// Branch to the given mark
+  | Br of Mark
+
+  /// Compare then branch to the given mark or continue
+  | CmpThenBrOrContinue of Pops * ILInstr list
+
+  /// Continue and leave the value on the IL computation stack
+  | Continue
+
+  /// The value then do something else
+  | DiscardThen of sequel
+
+  /// Return from the method
+  | Return
+
+  /// End a scope of local variables. Used at end of 'let' and 'let rec' blocks to get tail recursive setting
+  /// of end-of-scope marks
+  | EndLocalScope of sequel * Mark
+
+  /// Return from a method whose return type is void
+  | ReturnVoid
+
+and Pushes = ILType list
+and Pops = int
+
 /// The overall environment at a particular point in an expression tree.
 and IlxGenEnv =
     { /// The representation decisions for the (non-erased) type parameters that are in scope
@@ -808,6 +844,10 @@ and IlxGenEnv =
 
       /// Indicates the default "place" for stuff we're currently generating
       cloc: CompileLocation
+
+      /// The sequel to use for an "early exit" in a state machine, e.g. a return fro the middle of an 
+      /// async block
+      exitSequel: sequel
 
       /// Hiding information down the signature chain, used to compute what's public to the assembly
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list
@@ -829,6 +869,10 @@ and IlxGenEnv =
       /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
       withinSEH: bool
     }
+
+let discard = DiscardThen Continue
+
+let discardAndReturnVoid = DiscardThen ReturnVoid
 
 let ReplaceTyenv tyenv (eenv: IlxGenEnv) = {eenv with tyenv = tyenv }
 
@@ -1583,8 +1627,6 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
 /// Record the types of the things on the evaluation stack.
 /// Used for the few times we have to flush the IL evaluation stack and to compute maxStack.
-type Pushes = ILType list
-type Pops = int
 let pop (i: int) : Pops = i
 let Push tys: Pushes = tys
 let Push0 = Push []
@@ -1844,34 +1886,6 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data:'a[]) (wr
           (pop 2)
           Push0
           [ mkNormalCall (mkInitializeArrayMethSpec g) ]
-
-
-//--------------------------------------------------------------------------
-// We normally generate in the context of a "what to do next" continuation
-//--------------------------------------------------------------------------
-
-type sequel =
-  | EndFilter
-  /// Exit a 'handler' block
-  /// The integer says which local to save result in
-  | LeaveHandler of (bool (* finally? *) * int * Mark)
-  /// Branch to the given mark
-  | Br of Mark
-  | CmpThenBrOrContinue of Pops * ILInstr list
-  /// Continue and leave the value on the IL computation stack
-  | Continue
-  /// The value then do something else
-  | DiscardThen of sequel
-  /// Return from the method
-  | Return
-  /// End a scope of local variables. Used at end of 'let' and 'let rec' blocks to get tail recursive setting
-  /// of end-of-scope marks
-  | EndLocalScope of sequel * Mark
-  /// Return from a method whose return type is void
-  | ReturnVoid
-
-let discard = DiscardThen Continue
-let discardAndReturnVoid = DiscardThen ReturnVoid
 
 
 //-------------------------------------------------------------------------
@@ -2152,8 +2166,8 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | None ->
 
   match LowerCallsAndSeqs.LowerStateMachineExpr g expr with
-  | Some (objExpr, ty, basev, basecall, overrides, interfaceImpls, stateVars, m) ->
-      GenObjectExpr cenv cgbuf eenv objExpr (ty, basev, basecall, overrides, interfaceImpls, stateVars, m) sequel
+  | Some objExpr ->
+      GenExpr cenv cgbuf eenv sp objExpr sequel
   | None ->
 
   match expr with
@@ -2189,6 +2203,7 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
 
   | Expr.Lambda _ | Expr.TyLambda _ ->
       GenLambda cenv cgbuf eenv false None expr sequel
+
   | Expr.App (Expr.Val (vref, _, m) as v, _, tyargs, [], _) when
         List.forall (isMeasureTy g) tyargs &&
         (
@@ -2199,8 +2214,10 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
         ) ->
       // application of local type functions with type parameters = measure types and body = local value - inine the body
       GenExpr cenv cgbuf eenv sp v sequel
+
   | Expr.App (f,fty, tyargs, args, m) -> 
       GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel
+
   | Expr.Val (v, _, m) -> 
       GenGetVal cenv cgbuf eenv (v, m) sequel
 
@@ -2292,7 +2309,7 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
           CG.EmitInstr cgbuf (pop 0) Push0 (I_br label)
           // NOTE: discard sequel
       | TOp.Return, [e], _ ->
-         GenExpr cenv cgbuf eenv SPSuppress e Return
+         GenExpr cenv cgbuf eenv SPSuppress e eenv.exitSequel
          // NOTE: discard sequel
       | TOp.Return, [], _ ->
          GenSequel cenv eenv.cloc cgbuf ReturnVoid
@@ -2301,12 +2318,15 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
          cgbuf.SetMarkToHere (Mark label)
          GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
       | _ -> error(InternalError("Unexpected operator node expression", expr.Range))
+
   | Expr.StaticOptimization (constraints, e2, e3, m) ->
       GenStaticOptimization cenv cgbuf eenv (constraints, e2, e3, m) sequel
-  | Expr.Obj (_, ty, _, _, [meth], [], m) when isDelegateTy g ty ->
+
+  | Expr.Obj (_, ty, _, _, [meth], [], [], m) when isDelegateTy g ty ->
       GenDelegateExpr cenv cgbuf eenv expr (meth, m) sequel
-  | Expr.Obj (_, ty, basev, basecall, overrides, interfaceImpls, m) ->
-      GenObjectExpr cenv cgbuf eenv expr (ty, basev, basecall, overrides, interfaceImpls, [], m) sequel
+
+  | Expr.Obj (_, ty, basev, basecall, overrides, interfaceImpls, stateVars, m) ->
+      GenObjectExpr cenv cgbuf eenv expr (ty, basev, basecall, overrides, interfaceImpls, stateVars, m) sequel
 
   | Expr.Quote (ast, conv, _, m, ty) -> GenQuotation cenv cgbuf eenv (ast, conv, m, ty) sequel
   | Expr.Link _ -> failwith "Unexpected reclink"
@@ -2316,6 +2336,7 @@ and GenExprs cenv cgbuf eenv es =
     List.iter (fun e -> GenExpr cenv cgbuf eenv SPSuppress e Continue) es
 
 and CodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, alreadyUsedArgs, expr0, sequel0) =
+    let eenv = { eenv with exitSequel = sequel0 }
     let _, code =
         CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs,
                                    (fun cgbuf eenv -> GenExpr cenv cgbuf eenv spReq expr0 sequel0),
@@ -3223,17 +3244,19 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry) =
     let startTryMark = CG.GenerateMark cgbuf "startTryMark"
     let endTryMark = CG.GenerateDelayMark cgbuf "endTryMark"
     let afterHandler = CG.GenerateDelayMark cgbuf "afterHandler"
-    let eenvinner = {eenvinner with withinSEH = true}
     let ilResultTy = GenType cenv.amap m eenvinner.tyenv resty
 
     let whereToSave, _realloc, eenvinner =
         AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("tryres", m), ilResultTy, false) (startTryMark, endTryMark)
 
+    let exitSequel = LeaveHandler (false, whereToSave, afterHandler)
+    let eenvinner = {eenvinner with withinSEH = true; exitSequel = exitSequel}
+
     // Generate the body of the try. In the normal case (SequencePointAtTry) we generate a sequence point
     // both on the 'try' keyword and on the start of the expression in the 'try'. For inlined code and
     // compiler generated 'try' blocks (i.e. NoSequencePointAtTry, used for the try/finally implicit
     // in a 'use' or 'foreach'), we suppress the sequence point
-    GenExpr cenv cgbuf eenvinner sp e1 (LeaveHandler (false, whereToSave, afterHandler))
+    GenExpr cenv cgbuf eenvinner sp e1 exitSequel
     CG.SetMarkToHere cgbuf endTryMark
     let tryMarks = (startTryMark.CodeLabel, endTryMark.CodeLabel)
     whereToSave, eenvinner, stack, tryMarks, afterHandler, ilResultTy
@@ -3253,6 +3276,7 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
                let startOfFilter = CG.GenerateMark cgbuf "startOfFilter"
                let afterFilter = CG.GenerateDelayMark cgbuf "afterFilter"
                let (sequelOnBranches, afterJoin, stackAfterJoin, sequelAfterJoin) = GenJoinPoint cenv cgbuf "filter" eenv g.int_ty m EndFilter
+               let eenvinner = { eenvinner with exitSequel = sequelOnBranches }
                begin
                    // We emit the sequence point for the 'with' keyword span on the start of the filter
                    // block. However the targets of the filter block pattern matching should not get any
@@ -3310,7 +3334,9 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
 
                    GenStoreVal cgbuf eenvinner m vh
 
-                   GenExpr cenv cgbuf eenvinner SPAlways eh (LeaveHandler (false, whereToSave, afterHandler))
+                   let exitSequel = (LeaveHandler (false, whereToSave, afterHandler))
+                   let eenvinner = { eenvinner with exitSequel = exitSequel }
+                   GenExpr cenv cgbuf eenvinner SPAlways eh exitSequel
                end
                let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
                let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
@@ -4043,17 +4069,22 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
-and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, overrides, interfaceImpls, stateVars: ValRef list, m) sequel =
+and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, overrides, interfaceImpls, stateVars: ValRef list, m) sequel =
     let g = cenv.g
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
+
+    // State vars are only populated for state machine objects made via `__stateMachine` and LowerCallsAndSeqs.
+    //
+    // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
+    // considered true free variables that need to be passed to the constructor.
     let eenvouter = eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
     
-    // Find the free variables of the closure, to make them fields of the object.
+    // Find the free variables of the closure, to make them further fields of the object.
     //
     // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
     // free variables of the expression.
-    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m false None eenvouter expr
+    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m false None eenvouter objExpr
 
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
@@ -4096,9 +4127,10 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType, baseValOpt, basecall, ove
 
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
+
     CountClosure()
     for fv in cloFreeVars do
-       /// State variables always get zero-initialized
+       // State variables always get zero-initialized
        if stateVarsSet.Contains fv then
            GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
        else
@@ -4357,7 +4389,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     // Get a unique stamp for the closure. This must be stable for things that can be part of a let rec.
     let uniq =
         match expr with
-        | Expr.Obj (uniq, _, _, _, _, _, _)
+        | Expr.Obj (uniq, _, _, _, _, _, _, _)
         | Expr.Lambda (uniq, _, _, _, _, _, _)
         | Expr.TyLambda (uniq, _, _, _, _) -> uniq
         | _ -> newUnique()
@@ -4444,7 +4476,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
     let returnTy =
       match expr with
       | Expr.Lambda (_, _, _, _, _, _, returnTy) | Expr.TyLambda (_, _, _, _, returnTy) -> returnTy
-      | Expr.Obj (_, ty, _, _, _, _, _) -> ty
+      | Expr.Obj (_, ty, _, _, _, _, _, _) -> ty
       | _ -> failwith "GetIlxClosureInfo: not a lambda expression"
 
     // Determine the structure of the closure. We do this before analyzing free variables to
@@ -7457,6 +7489,7 @@ let GetEmptyIlxGenEnv (ilg: ILGlobals) ccu =
     let thisCompLoc = CompLocForCcu ccu
     { tyenv=TypeReprEnv.Empty
       cloc = thisCompLoc
+      exitSequel = Return
       valsInScope=ValMap<_>.Empty
       someTypeInThisAssembly=ilg.typ_Object (* dummy value *)
       isFinalFile = false
