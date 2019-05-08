@@ -34,7 +34,6 @@
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
-    <Compile Include="Common\ContentType.fs" />
     <Compile Include="Common\Vs.fs" />
     <Compile Include="Options\SettingsPersistence.fs" />
     <Compile Include="Options\UIHelpers.fs" />
