@@ -3659,7 +3659,7 @@ module DebugPrint =
         reprL
 
     and bindingL (TBind(v, repr, _)) =
-        valAtBindL v --- (wordL(tagText "=") ^^ exprL repr)
+        (valAtBindL v ^^ wordL(tagText "=")) @@-- exprL repr
 
     and exprL expr = exprWrapL false expr
 
@@ -3673,7 +3673,7 @@ module DebugPrint =
         (aboveListL eqnsL @@ bodyL) 
 
     and letL bind bodyL = 
-        let eqnL = wordL(tagText "let") ^^ bindingL bind ^^ wordL(tagText "in")
+        let eqnL = wordL(tagText "let") ^^ bindingL bind
         (eqnL @@ bodyL) 
 
     and exprWrapL isAtomic expr =
@@ -3694,8 +3694,8 @@ module DebugPrint =
             | Expr.Sequential (expr1, expr2, flag, _, _) -> 
                 let flag = 
                     match flag with
-                    | NormalSeq -> "; (*Seq*)"
-                    | ThenDoSeq -> "; (*ThenDo*)" 
+                    | NormalSeq -> ";"
+                    | ThenDoSeq -> "; ThenDo" 
                 ((exprL expr1 ^^ rightL (tagText flag)) @@ exprL expr2) |> wrap
             | Expr.Lambda (_, _, baseValOpt, argvs, body, _, _) -> 
                 let formalsL = spaceListL (List.map valAtBindL argvs) in
@@ -3770,22 +3770,22 @@ module DebugPrint =
                 let meth = ilMethRef.Name
                 wordL(tagText "ILCall") ^^
                    aboveListL 
-                      [ wordL(tagText "meth ") --- wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
-                        wordL(tagText "tinst ") --- listL typeL tinst
-                        wordL(tagText "minst ") --- listL typeL minst
-                        wordL(tagText "tyargs") --- listL typeL tyargs
-                        wordL(tagText "args ") --- listL exprL args ] 
+                      [ yield wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
+                        if not tinst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL tinst
+                        if not minst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL minst
+                        if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
+                        if not args.IsEmpty then yield listL exprL args ] 
                     |> wrap
             | Expr.Op (TOp.Array, [_], xs, _) -> 
                 leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
             | Expr.Op (TOp.While _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
-                wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do") ^^ exprL x2 ^^ rightL(tagText "}")
+                (wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")) @@-- exprL x2
             | Expr.Op (TOp.For _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
                 wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
             | Expr.Op (TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) -> 
-                wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "with-filter") ^^ exprL xf ^^ wordL(tagText "with") ^^ exprL xh ^^ rightL(tagText "}")
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh) 
             | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
-                wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "finally") ^^ exprL x2 ^^ rightL(tagText "}")
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
             | Expr.Op (TOp.Bytes _, _, _, _) -> 
                 wordL(tagText "bytes++")
             | Expr.Op (TOp.UInt16s _, _, _, _) -> wordL(tagText "uint16++")
@@ -3800,12 +3800,16 @@ module DebugPrint =
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Quote (a, _, _, _, _) -> leftL(tagText "<@") ^^ atomL a ^^ rightL(tagText "@>")
             | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _stateVars, _) -> 
-                wordL(tagText "OBJ:") ^^ 
-                aboveListL [typeL ty
-                            exprL ccall
-                            optionL valAtBindL basev
-                            aboveListL (List.map overrideL overrides)
-                            aboveListL (List.map iimplL iimpls)]
+                (leftL (tagText "{") 
+                 @@--
+                  ((wordL(tagText "new ") ++ typeL ty) 
+                   @@-- 
+                   aboveListL [exprL ccall
+                               optionL valAtBindL basev
+                               aboveListL (List.map tmethodL overrides)
+                               aboveListL (List.map iimplL iimpls)]))
+                @@
+                rightL (tagText "}")
 
             | Expr.StaticOptimization (_tcs, csx, x, _) -> 
                 (wordL(tagText "opt") @@- (exprL x)) @@--
@@ -3821,8 +3825,8 @@ module DebugPrint =
 
     and appL flayout tys args =
         let z = flayout
-        let z = z ^^ instL typeL tys
-        let z = z --- sepL(tagText "`") --- (spaceListL (List.map atomL args))
+        let z = if tys.Length > 0 then z ^^ instL typeL tys else z
+        let z = if args.Length > 0 then z --- spaceListL (List.map atomL args) else z
         z
        
     and implFileL (TImplFile (_, _, mexpr, _, _, _)) =
@@ -3890,12 +3894,11 @@ module DebugPrint =
     and flatValsL vs = vs |> List.map valL
 
     and tmethodL (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
-        (wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
-          (wordL(tagText "METH-LAM") --- angleBracketListL (List.map typarL tps) ^^ rightL(tagText ".")) ---
-          (wordL(tagText "meth-lam") --- tupleL (List.map (List.map valAtBindL >> tupleL) vs) ^^ rightL(tagText ".")) ---
+        ((wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
+         (angleBracketListL (List.map typarL tps) ^^ rightL(tagText ".")) ---
+         (tupleL (List.map (List.map valAtBindL >> tupleL) vs) ^^ rightL(tagText ".")))
+        @@--
           (atomL e) 
-
-    and overrideL tmeth = wordL(tagText "with") ^^ tmethodL tmeth 
 
     and iimplL (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map tmethodL tmeths) 
 

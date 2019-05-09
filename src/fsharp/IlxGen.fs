@@ -2160,12 +2160,12 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
       elif EmitHiddenCodeMarkerForWholeExpr g sp expr then
           cgbuf.EmitStartOfHiddenCode()
 
-  match (if compileSequenceExpressions then LowerCallsAndSeqs.LowerSeqExpr g cenv.amap expr else None) with
+  match (if compileSequenceExpressions then LowerCallsAndSeqs.ConvertSequenceExprToObject g cenv.amap expr else None) with
   | Some info ->
       GenSequenceExpr cenv cgbuf eenv info sequel
   | None ->
 
-  match LowerCallsAndSeqs.LowerStateMachineExpr g expr with
+  match LowerCallsAndSeqs.ConvertStateMachineExprToObject g expr with
   | Some objExpr ->
       GenExpr cenv cgbuf eenv sp objExpr sequel
   | None ->

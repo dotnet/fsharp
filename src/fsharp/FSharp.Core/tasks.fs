@@ -28,22 +28,22 @@ namespace Microsoft.FSharp.Core.CompilerServices
     module CodeGenHelpers = 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __jumptable<'T> (_x:int) (_code: unit -> 'T)  : 'T = Unchecked.defaultof<_> 
+        let __jumptable<'T> (_x:int) (_code: unit -> 'T)  : 'T = failwith "__jumptable should always be removed from compiled code"
         
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __stateMachine<'T> (x: 'T) : 'T = x
+        let __stateMachine<'T> (_x: 'T) : 'T = failwith "__stateMachine should always be removed from compiled code"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __newEntryPoint() : int = 0
+        let __newEntryPoint() : int = failwith "__newEntryPoint should always be removed from compiled code"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __machine<'T> : 'T = Unchecked.defaultof<'T>
+        let __machine<'T> : 'T = failwith "__machine should always be removed from compiled code"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __entryPoint (_n: int) : unit= Unchecked.defaultof<_> 
+        let __entryPoint (_n: int) : unit = failwith "__entryPoint should always be removed from compiled code" 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __return<'T> (_v: 'T) : 'T = Unchecked.defaultof<_> 
+        let __return<'T> (_v: 'T) : 'T = failwith "__return should always be removed from compiled code"
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
@@ -89,22 +89,22 @@ type TaskStateMachine<'T>() =
         let mutable awaiter = awaiter
         assert (not (isNull awaiter))
         // Tell the builder to call us again when done.
-        Console.WriteLine("[{0}] AwaitUnsafeOnCompleted", sm.GetHashCode())
+        //Console.WriteLine("[{0}] AwaitUnsafeOnCompleted", sm.GetHashCode())
         methodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 
     interface IAsyncStateMachine with
 
         member this.MoveNext() =
             try
-                Console.WriteLine("[{0}] step from {1}", this.GetHashCode(), resumptionPoint)
+                //Console.WriteLine("[{0}] step from {1}", this.GetHashCode(), resumptionPoint)
                 let step = this.Step resumptionPoint
                 if (# "" step : bool #) then 
-                    Console.WriteLine("[{0}] unboxing result", this.GetHashCode())
+                    //Console.WriteLine("[{0}] unboxing result", this.GetHashCode())
                     let res = unbox<'T>(this.Current)
-                    Console.WriteLine("[{0}] SetResult {1}", this.GetHashCode(), res)
+                    //Console.WriteLine("[{0}] SetResult {1}", this.GetHashCode(), res)
                     methodBuilder.SetResult(Task.FromResult res)
             with exn ->
-                Console.WriteLine("[{0}] exception {1}", this.GetHashCode(), exn)
+              //Console.WriteLine("[{0}] exception {1}", this.GetHashCode(), exn)
                 methodBuilder.SetException exn
 
         member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
@@ -112,12 +112,12 @@ type TaskStateMachine<'T>() =
     member this.Start() =
         let mutable machine = this 
         try
-            Console.WriteLine("[{0}] start", this.GetHashCode())
+          //Console.WriteLine("[{0}] start", this.GetHashCode())
             methodBuilder.Start(&machine)
-            Console.WriteLine("[{0}] unwrap", this.GetHashCode())
+          //Console.WriteLine("[{0}] unwrap", this.GetHashCode())
             methodBuilder.Task.Unwrap()
         with exn ->
-            Console.WriteLine("[{0}] start exception", this.GetHashCode())
+          //Console.WriteLine("[{0}] start exception", this.GetHashCode())
             // Any exceptions should go on the task, rather than being thrown from this call.
             // This matches C# behavior where you won't see an exception until awaiting the task,
             // even if it failed before reaching the first "await".
@@ -237,40 +237,56 @@ type TaskBuilder() =
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> TaskStep<unit>) : TaskStep<unit> =
-        let mutable step = (# "" true : TaskStep<unit> #)
-        while (# "" step : bool #) && __expand_condition() do
-            step <- (# "" false : TaskStep<unit> #)
+        let mutable completed = true 
+        while (# "" completed : bool #) && __expand_condition() do
+            completed <- false 
+            // The body of the 'while' may include an early exit, e.g. return from entire method
             let ``__machine_step$cont`` = __expand_body ()
             // If we make it to the assignment we prove we've made a step 
-            step <- ``__machine_step$cont``
+            completed <- (# "" ``__machine_step$cont`` : bool #)
         __machine<TaskStateMachine>.Current <- (box ())
-        step
+        (# "" completed : TaskStep<unit> #)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryWith(__expand_body : unit -> TaskStep<'T>, __expand_catch : exn -> TaskStep<'T>) : TaskStep<'T> =
+        let mutable completed = (# "" false : TaskStep<'T> #)
+        let mutable caught = false
+        let mutable savedExn = Unchecked.defaultof<_>
         try
-            __expand_body()
+            // The try block may contain resumption points.
+            // This is handled by the state machine rewriting 
+            let ``__machine_step$cont`` = __expand_body ()
+            // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
+            // may skip this step.
+            completed <- ``__machine_step$cont``
         with exn -> 
-            __expand_catch exn
+            // The catch block may not contain resumption points.
+            caught <- true
+            savedExn <- exn
 
+        if caught then 
+            // Place the catch code outside the catch block 
+            __expand_catch savedExn
+        else
+            completed
+
+    /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
+    /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryFinally(__expand_body: unit -> TaskStep<'T>, compensation : unit -> unit) : TaskStep<'T> =
-        /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
-        /// to retrieve the step, and in the continuation of the step (if any).
-        // codegen
-        let mutable step = (# "" false : TaskStep<'T> #)
+        let mutable completed = (# "" false : TaskStep<'T> #)
         try
             let ``__machine_step$cont`` = __expand_body ()
             // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
             // may skip this step.
-            step <- ``__machine_step$cont``
+            completed <- ``__machine_step$cont``
         with _ ->
             compensation()
             reraise()
 
-        if (# "" step : bool #) then 
+        if (# "" completed : bool #) then 
             compensation()
-        step
+        completed
 
     member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> TaskStep<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
@@ -288,7 +304,7 @@ type TaskBuilder() =
         let CONT = __newEntryPoint ()
         if task.IsCompleted then
             __entryPoint CONT
-            __machine<TaskStateMachine>.Current <- box task.Result
+            __machine<TaskStateMachine>.Current <- box (task.GetAwaiter().GetResult())
             (# "" true : TaskStep<'T> #)
         else
             __machine<TaskStateMachine>.Await(task.GetAwaiter(), CONT)
