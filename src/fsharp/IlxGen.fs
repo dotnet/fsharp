@@ -5513,12 +5513,13 @@ and GenParams cenv eenv (mspec: ILMethodSpec) (attribs: ArgReprInfo list) method
         let nmOpt, takenNames =
             match idOpt with
             | Some id ->
-                let nm = if takenNames.Contains(id.idText) then
-                    // Ensure that we have an g.CompilerGlobalState
-                    assert(g.CompilerGlobalState |> Option.isSome)
-                    g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName (id.idText, id.idRange)
-                else
-                    id.idText
+                let nm =
+                    if takenNames.Contains(id.idText) then
+                        // Ensure that we have an g.CompilerGlobalState
+                        assert(g.CompilerGlobalState |> Option.isSome)
+                        g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName (id.idText, id.idRange)
+                    else
+                        id.idText
                 Some nm, takenNames.Add nm
             | None ->
                 None, takenNames
