@@ -2879,7 +2879,7 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     ///   - If this is an implementation of an abstract slot then this may be a mangled name
     ///   - If this is an extension member then this will be a mangled name
     ///   - If this is an operator then this is 'op_Addition'
-    member x.CompiledName (state:CompilerGlobalState) =
+    member x.CompiledName (compilerGlobalState:CompilerGlobalState option) =
         let givenName = 
             match x.val_opt_data with 
             | Some { val_compiled_name = Some n } -> n
@@ -2898,10 +2898,10 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
         //         let dt = System.DateTime.Now - System.DateTime.Now // IsMemberOrModuleBinding = false, IsCompiledAsTopLevel = true, IsMember = false, CompilerGenerated=true
         //    
         // However we don't need this for CompilerGenerated members such as the implementations of IComparable
-        if x.IsCompiledAsTopLevel && not x.IsMember && (x.IsCompilerGenerated || not x.IsMemberOrModuleBinding) then
+        match compilerGlobalState with
+        | Some state when x.IsCompiledAsTopLevel && not x.IsMember && (x.IsCompilerGenerated || not x.IsMemberOrModuleBinding) ->
             state.StableNameGenerator.GetUniqueCompilerGeneratedName(givenName, x.Range, x.Stamp) 
-        else
-            givenName
+        | _ -> givenName
 
     /// The name of the property.
     /// - If this is a property then this is 'Foo' 
@@ -2977,7 +2977,7 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_defn = Some val_defn }
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
-    static member NewUnlinked : Val = 
+    static member NewUnlinked() : Val = 
         { val_logical_name = Unchecked.defaultof<_>
           val_range = Unchecked.defaultof<_>
           val_type = Unchecked.defaultof<_>
@@ -4552,7 +4552,7 @@ and
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = sprintf "TBind(%s, ...)" x.Var.CompiledName
+    override x.ToString() =  sprintf "TBind(%s, ...)" x.Var.CompiledName None
 
 /// Represents a reference to an active pattern element. The 
 /// integer indicates which choice in the target set is being selected by this item. 

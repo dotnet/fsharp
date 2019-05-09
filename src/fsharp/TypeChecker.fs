@@ -1559,7 +1559,7 @@ let InstanceMembersNeedSafeInitCheck cenv m thisTy =
         thisTy
         
 let MakeSafeInitField (g: TcGlobals) env m isStatic = 
-    let id = ident(g.CompilerGlobalState.NiceNameGenerator.FreshCompilerGeneratedName("init", m), m)
+    let id = ident(g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName("init", m), m)
     let taccess = TAccess [env.eAccessPath]
     NewRecdField isStatic None id false g.int_ty true true [] [] XmlDoc.Empty taccess true
 
@@ -13311,7 +13311,7 @@ module IncrClassChecking =
 
         let takenFieldNames = 
             [ for b in memberBinds do 
-                  yield b.Var.CompiledName 
+                  yield b.Var.CompiledName cenv.g.CompilerGlobalState
                   yield b.Var.DisplayName 
                   yield b.Var.CoreDisplayName 
                   yield b.Var.LogicalName ] 

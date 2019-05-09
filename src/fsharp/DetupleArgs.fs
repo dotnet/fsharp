@@ -485,7 +485,7 @@ let mkTransform g (f: Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list
     let tysrN = List.drop tyfringes.Length x1Ntys    (* types for remaining args *)
     let argtys = tys1r @ tysrN
     let fCty  = mkLambdaTy tps argtys rty                  
-    let transformedVal  = mkLocalVal f.Range (g.CompilerGlobalState.NiceNameGenerator.FreshCompilerGeneratedName (f.LogicalName, f.Range)) fCty topValInfo
+    let transformedVal  = mkLocalVal f.Range (g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName (f.LogicalName, f.Range)) fCty topValInfo
     { transformCallPattern = callPattern
       transformedFormals      = transformedFormals
       transformedVal         = transformedVal }
