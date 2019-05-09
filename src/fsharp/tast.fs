@@ -4552,7 +4552,7 @@ and
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() =  sprintf "TBind(%s, ...)" x.Var.CompiledName None
+    override x.ToString() =  sprintf "TBind(%s, ...)" (x.Var.CompiledName None)
 
 /// Represents a reference to an active pattern element. The 
 /// integer indicates which choice in the target set is being selected by this item. 
