@@ -8823,8 +8823,8 @@ let DetectAndOptimizeForExpression g option expr =
             //      let elem = str.[idx]
             //      body elem
 
-            let strVar, strExpr = mkCompGenLocal mEnumExpr "str" enumerableTy
-            let idxVar, idxExpr = mkCompGenLocal elemVar.Range "idx" g.int32_ty
+            let strVar, strExpr = mkCompGenLocal g mEnumExpr "str" enumerableTy
+            let idxVar, idxExpr = mkCompGenLocal g elemVar.Range "idx" g.int32_ty
 
             let lengthExpr = mkGetStringLength g mForLoop strExpr
             let charExpr = mkGetStringChar g mForLoop strExpr idxExpr
@@ -8897,7 +8897,6 @@ let BindUnitVars g (mvs: Val list, paramInfos: ArgReprInfo list, body) =
         [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
     | _ -> mvs, body
 
-
 let isThreadOrContextStatic g attrs = 
     HasFSharpAttributeOpt g g.attrib_ThreadStaticAttribute attrs ||
     HasFSharpAttributeOpt g g.attrib_ContextStaticAttribute attrs 
@@ -8905,5 +8904,3 @@ let isThreadOrContextStatic g attrs =
 let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
-
-

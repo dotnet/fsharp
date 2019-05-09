@@ -197,7 +197,7 @@ val mkCompGenLet : range -> Val -> Expr -> Expr -> Expr
 
 /// Make a let-expression that locally binds a compiler-generated value to an expression, where the expression
 /// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
-val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
+val mkCompGenLetIn: TcGlobals -> range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
 /// Make a let-expression that locally binds a value to an expression in an "invisible" way.
 /// Invisible bindings are not given a sequence point and should not have side effects.

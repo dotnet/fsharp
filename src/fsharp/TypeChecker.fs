@@ -1559,7 +1559,7 @@ let InstanceMembersNeedSafeInitCheck cenv m thisTy =
         thisTy
         
 let MakeSafeInitField (g: TcGlobals) env m isStatic = 
-    let id = ident(globalNng.FreshCompilerGeneratedName("init", m), m)
+    let id = ident(g.CompilerGlobalState.NiceNameGenerator.FreshCompilerGeneratedName("init", m), m)
     let taccess = TAccess [env.eAccessPath]
     NewRecdField isStatic None id false g.int_ty true true [] [] XmlDoc.Empty taccess true
 
@@ -3436,7 +3436,7 @@ let ConvertArbitraryExprToEnumerable cenv ty (env: TcEnv) (expr: Expr) =
         
         let expr = 
            mkCompGenLet m enumerableVar expr 
-               (mkCallSeqOfFunctions cenv.g m retTypeOfGetEnumerator enumElemTy 
+               (mkCallSeqOfFunctions cenv.g m retTypeOfGetEnumerator enumElemTy
                    (mkUnitDelayLambda cenv.g m getEnumExpr)
                    (mkLambda m enumeratorVar (guardExpr, guardTy)) 
                    (mkLambda m enumeratorVar (betterCurrentExpr, enumElemTy)))
@@ -7241,7 +7241,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
                 let elemAddrTy = if isReadOnlySpan then mkInByrefTy cenv.g elemTy else mkByrefTy cenv.g elemTy
 
                 // Evaluate the span index lookup
-                let bodyExprFixup elemVar bodyExpr = 
+                let bodyExprFixup elemVar bodyExpr =
                     let elemAddrVar, _ = mkCompGenLocal mForLoopStart "addr" elemAddrTy
                     let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemAddrVar)) bodyExpr
                     let getItemCallExpr, _ = BuildMethodCall tcVal cenv.g cenv.amap PossiblyMutates mWholeExpr true getItemMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] [ idxExpr ]
@@ -7251,7 +7251,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
                 let overallExprFixup overallExpr = mkCompGenLet mForLoopStart spanVar enumExpr overallExpr
 
                 let getLengthCallExpr, _ = BuildMethodCall tcVal cenv.g cenv.amap PossiblyMutates mWholeExpr true getLengthMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] []
-    
+
                 // Ask for a loop over integers for the given range
                 (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart getLengthCallExpr))
 
