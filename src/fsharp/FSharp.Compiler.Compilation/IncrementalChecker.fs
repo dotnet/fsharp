@@ -208,7 +208,7 @@ type IncrementalCheckerState =
                 let fullComputation = 
                     eventually {                    
                         ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filePath) |> ignore
-                        let sink = CheckerSink tcGlobals
+                        let sink = TcResultsSinkImpl tcGlobals
                         let hadParseErrors = not (Array.isEmpty parseErrors)
 
                         let input, moduleNamesDict = DeduplicateParsedInputModuleName tcAcc.tcModuleNamesDict input
@@ -236,7 +236,7 @@ type IncrementalCheckerState =
                                             latestCcuSigForFile=Some ccuSigForFile
                                             tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                             tcModuleNamesDict = moduleNamesDict
-                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, Some (sink, symbolEnv)
+                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, Some (sink.GetResolutions(), symbolEnv)
                     }
 
                 // No one has ever changed this value, although a bit arbitrary.

@@ -32,10 +32,9 @@
     <Compile Include="TcInitial.fs" />
     <Compile Include="TcAccumulator.fsi" />
     <Compile Include="TcAccumulator.fs" />
-    <Compile Include="CheckerSink.fsi" />
-    <Compile Include="CheckerSink.fs" />
     <Compile Include="IncrementalChecker.fsi" />
     <Compile Include="IncrementalChecker.fs" />
+    <Compile Include="Symbol.fs" />
     <Compile Include="SemanticModel.fsi" />
     <Compile Include="SemanticModel.fs" />
     <Compile Include="VersionStamp.fsi" />

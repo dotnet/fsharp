@@ -20,6 +20,9 @@ type internal SymbolEnv =
     new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
     member amap: ImportMap
     member g: TcGlobals
+    member thisCcu: CcuThunk
+    member thisCcuTy: ModuleOrNamespaceType option
+    member infoReader: InfoReader
 
 /// Indicates the accessibility of a symbol, as seen by the F# language
 type public FSharpAccessibility = 

@@ -65,21 +65,8 @@ type CompilationTests () =
     member __.``Find Symbol - Basic`` () =
         let sources =
             [
-                "test1.fs",
-                """
-module TestModule =
-
-    type TestType () =
-
-        member val X = 1
-
-        member val Y = 2
-
-        member val Z = 3
-                    
-    let testFunction (x: TestType) =
-        x.X + x.Y + x.Z
-                """ |> SourceText.From
+                for i = 1 to 3 do
+                    yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 100))
             ]
         let workspace = new AdhocWorkspace ()
         let compilationService = CompilationService (CompilationServiceOptions.Create workspace)

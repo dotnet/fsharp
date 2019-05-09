@@ -190,6 +190,8 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
         if not (state.filePathIndexMap.ContainsKey filePath) then
             failwithf "File path does not exist in compilation. File path: %s" filePath
 
+    let cachedSemanticModel = Dictionary ()
+
     member __.Id = id
 
     member __.Version = version
@@ -205,7 +207,12 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
 
     member __.GetSemanticModel filePath =
         checkFilePath filePath
-        SemanticModel (filePath, asyncLazyGetChecker)
+        match cachedSemanticModel.TryGetValue filePath with
+        | true, sm -> sm
+        | _ ->
+            let sm = SemanticModel (filePath, asyncLazyGetChecker)
+            cachedSemanticModel.[filePath] <- sm
+            sm
 
 module Compilation =
 
