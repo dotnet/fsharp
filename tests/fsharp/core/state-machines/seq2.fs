@@ -98,14 +98,6 @@ type SeqBuilder() =
             step <- ``__machine_step$cont``
         step
 
-    // Todo: async condition in while loop
-    //member inline __.While(__expand_condition : unit -> Task<bool>, __expand_body : unit -> SeqStep<'T>) : SeqStep<'T> =
-    //    let mutable step = SeqStep<'T>(DONE) 
-    //    while step.IsDone && __expand_condition() do
-    //        let ``__machine_step$cont`` = __expand_body ()
-    //        step <- ``__machine_step$cont``
-    //    step
-
     member inline __.TryWith(__expand_body : unit -> SeqStep<'T>, __expand_catch : exn -> SeqStep<'T>) : SeqStep<'T> =
         let mutable step = SeqStep<'T>(DONE)
         let mutable caught = false
