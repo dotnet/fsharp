@@ -238,7 +238,7 @@ type TaskBuilder() =
     /// Builds a step that executes the body while the condition predicate is true.
     member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> TaskStep<unit>) : TaskStep<unit> =
         let mutable completed = true 
-        while (# "" completed : bool #) && __expand_condition() do
+        while completed && __expand_condition() do
             completed <- false 
             // The body of the 'while' may include an early exit, e.g. return from entire method
             let ``__machine_step$cont`` = __expand_body ()
