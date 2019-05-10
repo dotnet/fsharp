@@ -13,7 +13,6 @@ let [<Literal>] DONE = 3
 
 [<Struct>]
 type TaskSeqStep<'T>(res: int) = 
-    member x.IsCompleted = (res <> 1)
     member x.IsYield = (res = 2)
     member x.IsDone = (res = 3)
 
@@ -89,8 +88,10 @@ type TaskSeqStateMachine<'T>() =
         try
             Console.WriteLine("[{0}] step from {1}", this.GetHashCode(), resumptionPoint)
             let step = this.Step resumptionPoint
-            if step.IsCompleted then 
-                tcs.SetResult (not step.IsDone)
+            if step.IsDone then 
+                tcs.SetResult false
+            elif step.IsYield then 
+                tcs.SetResult true
         with exn ->
             Console.WriteLine("[{0}] exception {1}", this.GetHashCode(), exn)
             tcs.SetException exn
@@ -180,7 +181,7 @@ type TaskSeqBuilder() =
             (fun () -> __expand_body disp),
             (fun () -> if not (isNull (box disp)) then disp.DisposeAsync() else Task.FromResult()))
 
-    member inline this.For(sequence : seq<'T>, __expand_body : 'T -> TaskSeqStep<unit>) : TaskSeqStep<unit> =
+    member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> TaskSeqStep<'T>) : TaskSeqStep<'T> =
         // A for loop is just a using statement on the sequence's enumerator...
         this.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
