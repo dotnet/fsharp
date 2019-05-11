@@ -115,16 +115,16 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, string[] * string[]>()
 
     let cache = Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
-    let singleFileCache = Dictionary<DocumentId, VersionStamp * DateTime * FSharpParsingOptions * FSharpProjectOptions>()
+    let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
-    let rec tryComputeOptionsByFile (document: Document) cancellationToken (loadTime: DateTime option) =
+    let rec tryComputeOptionsByFile (document: Document) =
         async {
+            let! cancellationToken = Async.CancellationToken
             let! fileStamp = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let loadTime = defaultArg loadTime DateTime.Now
-                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), loadTime)
+                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText())
                 let projectOptions =
                     if isScriptFile document.FilePath then
                         scriptProjectOptions
@@ -144,25 +144,23 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                             Stamp = Some(int64 (fileStamp.GetHashCode()))
                         }
 
-                cancellationToken.ThrowIfCancellationRequested()
-
                 checkerProvider.Checker.CheckProjectInBackground(projectOptions, userOpName="checkOptions")
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                singleFileCache.[document.Id] <- (fileStamp, loadTime, parsingOptions, projectOptions)
+                singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
 
                 return Some(parsingOptions, projectOptions)
 
-            | true, (fileStamp2, loadTime2, parsingOptions, projectOptions) ->
+            | true, (fileStamp2, parsingOptions, projectOptions) ->
                 if fileStamp <> fileStamp2 then
                     singleFileCache.Remove(document.Id) |> ignore
-                    return! tryComputeOptionsByFile document cancellationToken  (Some loadTime2)
+                    return! tryComputeOptionsByFile document
                 else
                     return Some(parsingOptions, projectOptions)
         }
     
-    let rec tryComputeOptions (project: Project) (cancellationToken: CancellationToken) =
+    let rec tryComputeOptions (project: Project) =
         async {
             let projectId = project.Id
             match cache.TryGetValue(projectId) with
@@ -178,7 +176,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     for projectReference in project.ProjectReferences do
                         let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
-                            match! tryComputeOptions referencedProject cancellationToken with
+                            match! tryComputeOptions referencedProject with
                             | None -> canBail <- true
                             | Some(_, projectOptions) -> referencedProjects.Add(referencedProject.OutputFilePath, projectOptions)
 
@@ -228,8 +226,6 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         Stamp = Some(int64 (project.Version.GetHashCode()))
                     }
 
-                cancellationToken.ThrowIfCancellationRequested()
-
                 // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
                 if Array.isEmpty projectOptions.SourceFiles then
                     return None
@@ -245,7 +241,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             | true, (oldProject, parsingOptions, projectOptions) ->
                 if isProjectInvalidated oldProject project settings then
                     cache.Remove(projectId) |> ignore
-                    return! tryComputeOptions project cancellationToken
+                    return! tryComputeOptions project
                 else
                     return Some(parsingOptions, projectOptions)
         }
@@ -255,29 +251,52 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             while true do
                 match! agent.Receive() with
                 | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, cancellationToken) ->
-                    try
-                        // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
-                        if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
-                            reply.Reply(None)
-                        elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                            let! options = tryComputeOptionsByFile document cancellationToken None
-                            reply.Reply(options)
-                        else
-                            let! options = tryComputeOptions document.Project cancellationToken
-                            reply.Reply(options)
-                    with
-                    | _ ->
-                        reply.Reply(None)
+                    if cancellationToken.IsCancellationRequested then
+                        reply.Reply None
+                    else
+                        let computation =
+                            async {
+                                try
+                                    // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
+                                    if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
+                                        reply.Reply(None)
+                                    elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                                        let! options = tryComputeOptionsByFile document
+                                        reply.Reply(options)
+                                    else
+                                        let! options = tryComputeOptions document.Project
+                                        reply.Reply(options)
+                                with
+                                | _ ->
+                                    reply.Reply(None)
+                            }
+
+                        do! Async.FromContinuations (fun (cont, exCont, cCont) -> 
+                            Async.StartWithContinuations (computation, cont, exCont, cCont, cancellationToken)
+                        )
+
                 | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, cancellationToken) ->
-                    try
-                        if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                            reply.Reply(None)
-                        else
-                            let! options = tryComputeOptions project cancellationToken
-                            reply.Reply(options)
-                    with
-                    | _ ->
+                    if cancellationToken.IsCancellationRequested then
                         reply.Reply(None)
+                    else
+                        let computation =
+                            async {
+                                try
+                                    if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                                        reply.Reply(None)
+                                    else
+                                        let! options = tryComputeOptions project
+                                        reply.Reply(options)
+                                with
+                                | _ ->
+                                    reply.Reply(None)
+                            }
+
+                      //  do! computation
+                        do! Async.FromContinuations (fun (cont, exCont, cCont) -> 
+                            Async.StartWithContinuations (computation, cont, exCont, cCont, cancellationToken)
+                        )
+
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     cache.Remove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
