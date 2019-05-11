@@ -4,6 +4,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
@@ -2265,6 +2266,23 @@ and FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
         attrib.NamedArguments 
         |> List.map (fun (ty, nm, isField, obj) -> FSharpType(cenv, ty), nm, isField, resolveArgObj obj)
         |> makeReadOnlyCollection
+
+    member __.Constructor =
+        protect <| fun () ->
+            match attrib with
+            | AttribInfo.FSAttribInfo(_, Attrib (tcref, attribKind, _, _, _, _, m)) ->
+                match attribKind with
+                | ILAttrib methodRef ->
+                    let mdef = resolveILMethodRef tcref.ILTyconRawMetadata methodRef 
+                    FSharpMemberOrFunctionOrValue(cenv, MethInfo.CreateILMeth(cenv.amap, m, generalizedTyconRef tcref, mdef))
+
+                | FSAttrib valRef ->
+                    FSharpMemberOrFunctionOrValue(cenv, valRef)
+
+            | AttribInfo.ILAttribInfo (_, amap, _, cattr, m) ->
+                let tcref = Import.ImportILTypeRef amap m cattr.Method.DeclaringType.TypeRef
+                let mdef = resolveILMethodRef tcref.ILTyconRawMetadata cattr.Method.MethodRef
+                FSharpMemberOrFunctionOrValue(cenv, MethInfo.CreateILMeth(amap, m, generalizedTyconRef tcref, mdef))
 
     member __.Format(denv: FSharpDisplayContext) = 
         protect <| fun () -> 

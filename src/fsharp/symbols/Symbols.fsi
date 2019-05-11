@@ -1025,6 +1025,9 @@ and [<Class>] public FSharpAttribute =
     /// The named arguments for the attribute
     member NamedArguments : IList<FSharpType * string * bool * obj>
 
+    /// The resolved attribute instance constructor.
+    member Constructor: FSharpMemberOrFunctionOrValue
+
     /// Indicates if the attribute type is in an unresolved assembly 
     member IsUnresolved : bool
 
