@@ -814,11 +814,10 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         match other with
         |   :? FSharpUnionCase as uc -> v === uc.V
         |   _ -> false
-    
+
     override x.GetHashCode() = hash v.CaseName
 
     override x.ToString() = x.CompiledName
-
 
 and FSharpFieldData = 
     | AnonField of AnonRecdTypeInfo * TTypes * int * range
@@ -1740,7 +1739,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.CompiledName = 
         checkIsResolved()
         match fsharpInfo() with 
-        | Some v -> v.CompiledName
+        | Some v -> v.CompiledName cenv.g.CompilerGlobalState
         | None -> x.LogicalName
 
     member __.LogicalName = 
@@ -2007,7 +2006,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     override x.ToString() = 
         try  
             let prefix = (if x.IsEvent then "event " elif x.IsProperty then "property " elif x.IsMember then "member " else "val ") 
-            prefix + x.LogicalName 
+            prefix + x.LogicalName
         with _  -> "??"
 
     member x.FormatLayout (denv:FSharpDisplayContext) =
