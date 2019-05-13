@@ -16,8 +16,8 @@
     <ArtifactsDir>$(MSBuildThisFileDirectory)..\artifacts</ArtifactsDir>
     <ArtifactsBinDir>$(ArtifactsDir)\bin</ArtifactsBinDir>
     <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
-    <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
-    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
+    <OutputPath>$(ArtifactsBinDir)\fcs\$(Configuration)</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs\$(Configuration)</IntermediateOutputPath>
     <DisableCompilerRedirection>true</DisableCompilerRedirection>
   </PropertyGroup>
 
