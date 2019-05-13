@@ -119,11 +119,10 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
     let rec tryComputeOptionsByFile (document: Document) =
         async {
-            let! cancellationToken = Async.CancellationToken
-            let! fileStamp = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+            let! fileStamp = document.GetTextVersionAsync() |> Async.AwaitTask
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync() |> Async.AwaitTask
                 let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText())
                 let projectOptions =
                     if isScriptFile document.FilePath then
@@ -254,48 +253,33 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     if cancellationToken.IsCancellationRequested then
                         reply.Reply None
                     else
-                        let computation =
-                            async {
-                                try
-                                    // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
-                                    if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
-                                        reply.Reply(None)
-                                    elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                                        let! options = tryComputeOptionsByFile document
-                                        reply.Reply(options)
-                                    else
-                                        let! options = tryComputeOptions document.Project
-                                        reply.Reply(options)
-                                with
-                                | _ ->
-                                    reply.Reply(None)
-                            }
-
-                        do! Async.FromContinuations (fun (cont, exCont, cCont) -> 
-                            Async.StartWithContinuations (computation, cont, exCont, cCont, cancellationToken)
-                        )
+                        try
+                            // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
+                            if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
+                                reply.Reply(None)
+                            elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                                let! options = tryComputeOptionsByFile document
+                                reply.Reply(options)
+                            else
+                                let! options = tryComputeOptions document.Project
+                                reply.Reply(options)
+                        with
+                        | _ ->
+                            reply.Reply(None)
 
                 | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, cancellationToken) ->
                     if cancellationToken.IsCancellationRequested then
                         reply.Reply(None)
                     else
-                        let computation =
-                            async {
-                                try
-                                    if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                                        reply.Reply(None)
-                                    else
-                                        let! options = tryComputeOptions project
-                                        reply.Reply(options)
-                                with
-                                | _ ->
-                                    reply.Reply(None)
-                            }
-
-                      //  do! computation
-                        do! Async.FromContinuations (fun (cont, exCont, cCont) -> 
-                            Async.StartWithContinuations (computation, cont, exCont, cCont, cancellationToken)
-                        )
+                        try
+                            if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                                reply.Reply(None)
+                            else
+                                let! options = tryComputeOptions project
+                                reply.Reply(options)
+                        with
+                        | _ ->
+                            reply.Reply(None)
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     cache.Remove(projectId) |> ignore
