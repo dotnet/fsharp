@@ -26,6 +26,7 @@ public static class TaskPerfCSharp
 
     public static async Task<int> AsyncTask()
     {
+        // This may be a bit unfair on C#, the F# one is doing just Task.Yield
         await Task.Yield();
         return 100;
     }
@@ -65,7 +66,7 @@ public static class TaskPerfCSharp
         return x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10;
     }
 
-    public static async Task<int> SingleTask_CSharp()
+    public static async Task<int> SingleSyncTask_CSharp()
     {
         return 1;
     }

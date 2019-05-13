@@ -204,22 +204,22 @@ type TaskPerfTests() =
     //         tenBindAsync_FSharpAsync() |> Async.RunSynchronously 
 
     [<Benchmark>]
-    member __.SingleTask_CSharpAsync() = 
+    member __.SingleSyncTask_CSharpAsync() = 
          for i in 1 .. manyIterations*500 do 
-             TaskPerfCSharp.SingleTask_CSharp().Wait() 
+             TaskPerfCSharp.SingleSyncTask_CSharp().Wait() 
 
     [<Benchmark>]
-    member __.SingleTask_Task() = 
+    member __.SingleSyncTask_Task() = 
          for i in 1 .. manyIterations*500 do 
              singleTask_Task().Wait() 
 
     [<Benchmark>]
-    member __.SingleTask_TaskBuilder() = 
+    member __.SingleSyncTask_TaskBuilder() = 
          for i in 1 .. manyIterations*500 do 
              singleTask_TaskBuilder().Wait() 
 
     [<Benchmark>]
-    member __.SingleTask_FSharpAsync() = 
+    member __.SingleSyncTask_FSharpAsync() = 
          for i in 1 .. manyIterations*500 do 
              singleTask_FSharpAsync() |> Async.RunSynchronously |> ignore
 
