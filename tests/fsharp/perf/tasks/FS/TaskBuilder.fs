@@ -9,7 +9,7 @@
 // You should have received a copy of the CC0 Public Domain Dedication along with this software.
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 
-namespace FSharp.Control.Tasks
+namespace TaskBuilderTasks
 open System
 open System.Threading.Tasks
 open System.Runtime.CompilerServices

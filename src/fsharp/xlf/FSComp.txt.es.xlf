@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores del mismo tipo. La primera rama devolvió un valor de tipo "{0}", pero esta rama devolvió un valor de tipo "\{1 \}".</target>
+        <target state="new">All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">

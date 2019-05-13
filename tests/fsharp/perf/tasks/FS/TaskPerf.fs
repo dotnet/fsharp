@@ -11,176 +11,21 @@ open System.Threading.Tasks
 open System.IO
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
+open TaskBuilderTasks.ContextSensitive // TaskBuilder.fs extension members
+open FSharp.Control.ContextSensitiveTasks // the default
 
-    [<Literal>]
-    let bufferSize = RepeatedAsyncWriteCSharp.BufferSize
-
-    let writeIterations() = RepeatedAsyncWriteCSharp.WriteIterations
-
-    [<Literal>]
-    let executionIterations = RepeatedAsyncWriteCSharp.ExecutionIterations
-
-    module TaskVersion =
-        let writeFile path =
-            task {
-                let junk = Array.zeroCreate bufferSize
-                use file = File.Create(path)
-                for i = 1 to writeIterations() do
-                    match RepeatedAsyncWriteCSharp.Operation with
-                    |  Operation.WRITE_ASYNC ->
-                        do! file.WriteAsync(junk, 0, junk.Length)
-                    | Operation.FROM_RESULT -> 
-                        let! v = Task.FromResult(100)
-                        () // file.WriteAsync(junk, 0, junk.Length)
-                    | _ -> ()
-            }
-
-        let readFile path =
-            task {
-                let buffer = Array.zeroCreate bufferSize
-                use file = File.OpenRead(path)
-                let mutable reading = true
-                while reading do
-                    let! countRead = file.ReadAsync(buffer, 0, buffer.Length)
-                    reading <- countRead > 0
-            }
-
-        let bench() =
-            let tmp = "tmp"
-            task {
-                let sw = Stopwatch()
-                sw.Start()
-                for i = 1 to executionIterations do
-                    do! writeFile tmp
-                    do! readFile tmp
-                sw.Stop()
-                printfn "task { .. } completed in %d ms" sw.ElapsedMilliseconds
-                File.Delete(tmp)
-            }
-
-    module TaskBuilderVersion =
-        open FSharp.Control.Tasks
-
-        let writeFile path =
-            task {
-                let junk = Array.zeroCreate bufferSize
-                use file = File.Create(path)
-                for i = 1 to writeIterations() do
-                    match RepeatedAsyncWriteCSharp.Operation with
-                    |  Operation.WRITE_ASYNC ->
-                        do! file.WriteAsync(junk, 0, junk.Length)
-                    | Operation.FROM_RESULT -> 
-                        let! v = Task.FromResult(100)
-                        () // file.WriteAsync(junk, 0, junk.Length)
-                    | _ -> ()
-            }
-
-        let readFile path =
-            task {
-                let buffer = Array.zeroCreate bufferSize
-                use file = File.OpenRead(path)
-                let mutable reading = true
-                while reading do
-                    let! countRead = file.ReadAsync(buffer, 0, buffer.Length)
-                    reading <- countRead > 0
-            }
-
-        
-        let bench() =
-            let tmp = "tmp"
-            task {
-                let sw = Stopwatch()
-                sw.Start()
-                for i = 1 to executionIterations do
-                    do! writeFile tmp
-                    do! readFile tmp
-                sw.Stop()
-                printfn "TaskBuilder task { .. } completed in %d ms" sw.ElapsedMilliseconds
-                File.Delete(tmp)
-            }
-
-    module FSharpAsyncVersion =
-        let writeFile path =
-            async {
-                let junk = Array.zeroCreate bufferSize
-                use file = File.Create(path)
-                for i = 1 to writeIterations() do
-                    match RepeatedAsyncWriteCSharp.Operation with
-                    |  Operation.WRITE_ASYNC ->
-                        do! file.AsyncWrite(junk, 0, junk.Length)
-                    | Operation.FROM_RESULT -> 
-                        let! v = async.Return 100
-                        ()
-                    | _ -> ()
-            }
-
-        let readFile path =
-            async {
-                let buffer = Array.zeroCreate bufferSize
-                use file = File.OpenRead(path)
-                let mutable reading = true
-                while reading do
-                    let! countRead = file.AsyncRead(buffer, 0, buffer.Length)
-                    reading <- countRead > 0
-            }
-
-        let bench() =
-            let tmp = "tmp"
-            async {
-                let sw = Stopwatch()
-                sw.Start()
-                for i = 1 to executionIterations do
-                    do! writeFile tmp
-                    do! readFile tmp
-                sw.Stop()
-                printfn "F# async completed in %d ms" sw.ElapsedMilliseconds
-                File.Delete(tmp)
-            }
-
-    module FSharpAsyncAwaitTaskVersion =
-        let writeFile path =
-            async {
-                let junk = Array.zeroCreate bufferSize
-                use file = File.Create(path)
-                for i = 1 to writeIterations() do
-                    match RepeatedAsyncWriteCSharp.Operation with
-                    |  Operation.WRITE_ASYNC ->
-                        do! Async.AwaitTask(file.WriteAsync(junk, 0, junk.Length))
-                    | Operation.FROM_RESULT -> 
-                        let! v = async.Return 100
-                        ()
-                    | _ -> ()
-            }
-
-        let readFile path =
-            async {
-                let buffer = Array.zeroCreate bufferSize
-                use file = File.OpenRead(path)
-                let mutable reading = true
-                while reading do
-                    let! countRead = Async.AwaitTask(file.ReadAsync(buffer, 0, buffer.Length))
-                    reading <- countRead > 0
-            }
-
-        let bench() =
-            let tmp = "tmp"
-            async {
-                let sw = Stopwatch()
-                sw.Start()
-                for i = 1 to executionIterations do
-                    do! writeFile tmp
-                    do! readFile tmp
-                sw.Stop()
-                printfn "F# async (AwaitTask) completed in %d ms" sw.ElapsedMilliseconds
-                File.Delete(tmp)
-            }
-
-module AllocTests = 
+//[<ShortRunJob>]
+type TaskPerfTests() =
+    let bufferSize = 128
+    let manyIterations = 10000
 
     let syncTask() = Task.FromResult 100
+    let syncTask_FSharpAsync() = async.Return 100
     let asyncTask() = Task.Yield()
 
-    let tenBindSynchronous() =
+    let taskBuilder = TaskBuilderTasks.ContextSensitive.task
+
+    let tenBindSync_Task() =
         task {
             let! res1 = syncTask()
             let! res2 = syncTask()
@@ -195,7 +40,37 @@ module AllocTests =
             return res1 + res2 + res3 + res4 + res5 + res6 + res7 + res8 + res9 + res10
          }
 
-    let tenBindAsynchronous() =
+    let tenBindSync_TaskBuilder() =
+        taskBuilder {
+            let! res1 = syncTask()
+            let! res2 = syncTask()
+            let! res3 = syncTask()
+            let! res4 = syncTask()
+            let! res5 = syncTask()
+            let! res6 = syncTask()
+            let! res7 = syncTask()
+            let! res8 = syncTask()
+            let! res9 = syncTask()
+            let! res10 = syncTask()
+            return res1 + res2 + res3 + res4 + res5 + res6 + res7 + res8 + res9 + res10
+         }
+
+    let tenBindSync_FSharpAsync() =
+        async {
+            let! res1 = syncTask_FSharpAsync()
+            let! res2 = syncTask_FSharpAsync()
+            let! res3 = syncTask_FSharpAsync()
+            let! res4 = syncTask_FSharpAsync()
+            let! res5 = syncTask_FSharpAsync()
+            let! res6 = syncTask_FSharpAsync()
+            let! res7 = syncTask_FSharpAsync()
+            let! res8 = syncTask_FSharpAsync()
+            let! res9 = syncTask_FSharpAsync()
+            let! res10 = syncTask_FSharpAsync()
+            return res1 + res2 + res3 + res4 + res5 + res6 + res7 + res8 + res9 + res10
+         }
+
+    let tenBindAsync_Task() =
         task {
             do! asyncTask()
             do! asyncTask()
@@ -209,37 +84,148 @@ module AllocTests =
             do! asyncTask()
          }
 
-    let singleTask() = task { return 1 }
+    let tenBindAsync_TaskBuilder() =
+        taskBuilder {
+            do! asyncTask()
+            do! asyncTask()
+            do! asyncTask()
+            do! asyncTask()
+            do! asyncTask()
+            do! asyncTask()
+            do! asyncTask()
+            do! asyncTask()
+            do! asyncTask()
+            do! asyncTask()
+         }
 
-    let numIterations = 10000
+(*
+     let tenBindAsync_FSharpAsync() =
+        taskBuilder {
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+            do! Async.Sleep(0)
+         }
+*)
 
-    let allocTestSyncBinds() = 
-         for i in 1 .. numIterations do 
-             tenBindSynchronous().Wait() 
+    let singleTask_Task() =
+        task { return 1 }
 
-    let allocTestAsyncBinds() = 
-         for i in 1 .. numIterations do 
-             tenBindAsynchronous().Wait() 
+    let singleTask_TaskBuilder() =
+        taskBuilder { return 1 }
 
-    let allocTestSingleTask() = 
-         for i in 1 .. numIterations*100 do 
-             singleTask().Wait() 
+    let singleTask_FSharpAsync() =
+        async { return 1 }
 
+    [<Benchmark>]
+    member __.ManyWriteFile_CSharpAsync () =
+        TaskPerfCSharp.ManyWriteFileAsync().Wait();
 
-[<EntryPoint>]
-let main argv = 
-    match argv.[0] with
-    | "allocSingleTask" -> AllocTests.allocTestSingleTask()
-    | "allocSyncBinds" -> AllocTests.allocTestSyncBinds()
-    | "allocAsyncBinds" -> AllocTests.allocTestAsyncBinds()
-    | _ ->
-        for (op, n) in [(Operation.WRITE_ASYNC, 5000); (Operation.FROM_RESULT, 300000)] do 
-            RepeatedAsyncWriteCSharp.Operation <- op
-            RepeatedAsyncWriteCSharp.WriteIterations <- n
-            printfn "-------- operation = %A ------" op
-            RepeatedAsyncWriteCSharp.Bench().Wait()
-            RepeatedAsyncWrite.TaskVersion.bench().Wait()
-            RepeatedAsyncWrite.TaskBuilderVersion.bench().Wait()
-            RepeatedAsyncWrite.FSharpAsyncVersion.bench() |> Async.RunSynchronously
-            RepeatedAsyncWrite.FSharpAsyncAwaitTaskVersion.bench() |> Async.RunSynchronously
-    0  
+    [<Benchmark>]
+    member __.ManyWriteFile_Task () =
+        let path = Path.GetTempFileName()
+        task {
+            let junk = Array.zeroCreate bufferSize
+            use file = File.Create(path)
+            for i = 1 to manyIterations do
+                do! file.WriteAsync(junk, 0, junk.Length)
+        }
+        |> fun t -> t.Wait()
+        File.Delete(path)
+
+    [<Benchmark>]
+    member __.ManyWriteFile_TaskBuilder () =
+        let path = Path.GetTempFileName()
+        TaskBuilderTasks.ContextSensitive.task {
+            let junk = Array.zeroCreate bufferSize
+            use file = File.Create(path)
+            for i = 1 to manyIterations do
+                do! file.WriteAsync(junk, 0, junk.Length)
+        }
+        |> fun t -> t.Wait()
+        File.Delete(path)
+
+    [<Benchmark>]
+    member __.ManyWriteFile_FSharpAsync () =
+        let path = Path.GetTempFileName()
+        async {
+            let junk = Array.zeroCreate bufferSize
+            use file = File.Create(path)
+            for i = 1 to manyIterations do
+                do! Async.AwaitTask(file.WriteAsync(junk, 0, junk.Length))
+        }
+        |> Async.RunSynchronously
+        File.Delete(path)
+
+    [<Benchmark>]
+    member __.SyncBinds_CSharpAsync() = 
+         for i in 1 .. manyIterations*100 do 
+             TaskPerfCSharp.TenBindsSync_CSharp().Wait() 
+
+    [<Benchmark>]
+    member __.SyncBinds_Task() = 
+        for i in 1 .. manyIterations*100 do 
+             tenBindSync_Task().Wait() 
+
+    [<Benchmark>]
+    member __.SyncBinds_TaskBuilder() = 
+        for i in 1 .. manyIterations*100 do 
+             tenBindSync_TaskBuilder().Wait() 
+
+    [<Benchmark>]
+    member __.SyncBinds_FSharpAsync() = 
+        for i in 1 .. manyIterations*100 do 
+             tenBindSync_FSharpAsync() |> Async.RunSynchronously |> ignore
+
+    [<Benchmark>]
+    member __.AsyncBinds_CSharpAsync() = 
+         for i in 1 .. manyIterations do 
+             TaskPerfCSharp.TenBindsAsync_CSharp().Wait() 
+
+    [<Benchmark>]
+    member __.AsyncBinds_Task() = 
+         for i in 1 .. manyIterations do 
+             tenBindAsync_Task().Wait() 
+
+    [<Benchmark>]
+    member __.AsyncBinds_TaskBuilder() = 
+         for i in 1 .. manyIterations do 
+             tenBindAsync_TaskBuilder().Wait() 
+
+    //[<Benchmark>]
+    //member __.AsyncBinds_FSharpAsync() = 
+    //     for i in 1 .. manyIterations do 
+    //         tenBindAsync_FSharpAsync() |> Async.RunSynchronously 
+
+    [<Benchmark>]
+    member __.SingleTask_CSharpAsync() = 
+         for i in 1 .. manyIterations*500 do 
+             TaskPerfCSharp.SingleTask_CSharp().Wait() 
+
+    [<Benchmark>]
+    member __.SingleTask_Task() = 
+         for i in 1 .. manyIterations*500 do 
+             singleTask_Task().Wait() 
+
+    [<Benchmark>]
+    member __.SingleTask_TaskBuilder() = 
+         for i in 1 .. manyIterations*500 do 
+             singleTask_TaskBuilder().Wait() 
+
+    [<Benchmark>]
+    member __.SingleTask_FSharpAsync() = 
+         for i in 1 .. manyIterations*500 do 
+             singleTask_FSharpAsync() |> Async.RunSynchronously |> ignore
+
+module Main = 
+
+    [<EntryPoint>]
+    let main argv = 
+        let summary = BenchmarkRunner.Run<TaskPerfTests>();
+        0  
