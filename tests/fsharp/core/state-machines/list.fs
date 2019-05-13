@@ -17,23 +17,23 @@ type ListStep<'T>(res: int) =
 type ListStateMachine<'T>() =
     let res = ResizeArray<'T>()
 
-    abstract Compute : unit -> ListStep<'T>
+    abstract Populate : unit -> ListStep<'T>
 
     member __.Yield (v: 'T) = res.Add(v)
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     member this.StartAsResizeArray() = 
-        this.Compute(0)
+        this.Populate() |> ignore
         res
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     member this.StartAsList() = 
-        this.Compute(0)
+        this.Populate() |> ignore
         Seq.toList res
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     member this.StartAsArray() = 
-        this.Compute(0)
+        this.Populate() |> ignore
         res.ToArray()
     
 type ResizeArrayBuilderBase() =
@@ -50,13 +50,14 @@ type ResizeArrayBuilderBase() =
         while __expand_condition() do
             let ``__machine_step$cont`` = __expand_body ()
             ()
+        ListStep<'T>(DONE)
 
     member inline __.TryWith(__expand_body : unit -> ListStep<'T>, __expand_catch : exn -> ListStep<'T>) : ListStep<'T> =
         try
-            let ``__machine_step$cont`` = __expand_body ()
-            ()
+            __expand_body ()
         with exn -> 
-            __expand_catch savedExn
+            __expand_catch exn
+        ListStep<'T>(DONE)
 
     member inline __.TryFinally(__expand_body: unit -> ListStep<'T>, compensation : unit -> unit) : ListStep<'T> =
         try
@@ -67,6 +68,7 @@ type ResizeArrayBuilderBase() =
             reraise()
 
         compensation()
+        ListStep<'T>(DONE)
 
     member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> ListStep<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
@@ -80,16 +82,17 @@ type ResizeArrayBuilderBase() =
 
     member inline __.Yield (``__machine_step$cont``: 'T) : ListStep<'T> =
         __machine<ListStateMachine<'T>>.Yield(``__machine_step$cont``)
+        ListStep<'T>(DONE)
 
     member inline this.YieldFrom (source: IEnumerable<'T>) : ListStep<'T> =
         this.For(source, (fun ``__machine_step$cont`` -> this.Yield(``__machine_step$cont``)))
 
 type ResizeArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
-    member inline __.Run(__expand_code : unit -> ListStep<'T>) : IEnumerable<'T> = 
+    member inline __.Run(__expand_code : unit -> ListStep<'T>) : ResizeArray<'T> = 
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member __.Compute () = __jumptable 0 __expand_code }).StartAsResizeArray()
+                member __.Populate () = __jumptable 0 __expand_code }).StartAsResizeArray()
 
 let rsarray = ResizeArrayBuilder()
 
@@ -98,7 +101,7 @@ type ListBuilder() =
     member inline __.Run(__expand_code : unit -> ListStep<'T>) : 'T list = 
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member __.Compute () = __jumptable 0 __expand_code }).StartAsList()
+                member __.Populate () = __jumptable 0 __expand_code }).StartAsList()
         
 let list = ListBuilder()
 
@@ -107,7 +110,7 @@ type ArrayBuilder() =
     member inline __.Run(__expand_code : unit -> ListStep<'T>) : 'T[] = 
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member __.Compute () = __jumptable 0 __expand_code }).StartAsArray()
+                member __.Populate () = __jumptable 0 __expand_code }).StartAsArray()
         
 let array = ArrayBuilder()
 
@@ -133,6 +136,45 @@ module Examples =
            yield "f"
         }
 
+    let perf1 () = 
+        for i in 1 .. 1000000 do
+            list {
+               yield "a"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "c"
+            } |> Seq.length |> ignore
+
+    let perf2 () = 
+        for i in 1 .. 1000000 do
+            [
+               yield "a"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "b"
+               yield "c"
+            ] |> Seq.length |> ignore
+
+    let perf s f = 
+        let t = System.Diagnostics.Stopwatch()
+        t.Start()
+        f()
+        t.Stop()
+        printfn "PERF: %s : %d" s t.ElapsedMilliseconds
+
+    perf "perf1" perf1 
+    perf "perf2" perf2 
     let dumpSeq (t: IEnumerable<_>) = 
         let e = t.GetEnumerator()
         while e.MoveNext() do 

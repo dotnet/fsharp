@@ -64,7 +64,9 @@ open Microsoft.FSharp.Collections
 //
 // Uses a struct-around-single-reference to allow future changes in representation (the representation is
 // not revealed in the signature)
-type TaskStep<'T> = (# "bool" #)
+[<Struct; NoComparison; NoEquality>]
+type TaskStep<'T>(completed: bool) = 
+    member x.IsCompleted = completed
 
 [<AbstractClass>]
 type TaskStateMachine() =
@@ -83,6 +85,7 @@ type TaskStateMachine<'T>() =
     /// Proceed to the next state or raise an exception
     abstract Step : pc: int -> TaskStep<'T>
 
+    [<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
     override sm.Await (awaiter, pc) = 
         resumptionPoint <- pc
         let mutable sm = sm
@@ -94,11 +97,12 @@ type TaskStateMachine<'T>() =
 
     interface IAsyncStateMachine with
 
+        [<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
         member this.MoveNext() =
             try
                 //Console.WriteLine("[{0}] step from {1}", this.GetHashCode(), resumptionPoint)
                 let step = this.Step resumptionPoint
-                if (# "" step : bool #) then 
+                if step.IsCompleted then 
                     //Console.WriteLine("[{0}] unboxing result", this.GetHashCode())
                     let res = unbox<'T>(this.Current)
                     //Console.WriteLine("[{0}] SetResult {1}", this.GetHashCode(), res)
@@ -109,6 +113,7 @@ type TaskStateMachine<'T>() =
 
         member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
 
+    [<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
     member this.Start() =
         let mutable machine = this 
         try
@@ -137,7 +142,7 @@ module TaskHelpers =
     /// Used to return a value.
     let inline ret<'T> (x : 'T) = 
         __machine<TaskStateMachine>.Current <- (box x)
-        (# "" true : TaskStep<'T> #)
+        TaskStep<'T>(true)
 
     let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2 when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>) > (x: ^Priority) (y: ^TaskLike) __expand_continuation = 
         ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2>) -> TaskStep<'TResult2>) (x, y, __expand_continuation))
@@ -170,7 +175,7 @@ module TaskHelpers =
                     __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
                 else
                     __machine<TaskStateMachine>.Await (awaiter, CONT)
-                    __return (# "" false : TaskStep<'TResult2> #)
+                    __return (TaskStep<'TResult2>(false))
 
         static member inline GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
@@ -192,7 +197,7 @@ module TaskHelpers =
             __expand_continuation (awaiter.GetResult())
         else
             __machine<TaskStateMachine>.Await (awaiter, CONT)
-            __return (# "" false : TaskStep<'TResult2> #)
+            __return (TaskStep<'TResult2>(false))
 
     /// Special case of the above for `Task<'TResult1>`, for the context-insensitive builder.
     /// Have to write this T by hand to avoid confusing the compiler thinking our built-in bind method
@@ -205,7 +210,7 @@ module TaskHelpers =
             __expand_continuation (awaiter.GetResult())
         else
             __machine<TaskStateMachine>.Await (awaiter, CONT)
-            __return (# "" false : TaskStep<'TResult2> #)
+            __return (TaskStep<'TResult2>(false))
 
 // New style task builder.
 type TaskBuilder() =
@@ -220,20 +225,20 @@ type TaskBuilder() =
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     member inline __.Zero() : TaskStep<unit> =
         __machine<TaskStateMachine>.Current <- (box ())
-        (# "" true : TaskStep<unit> #)
+        TaskStep<unit>(true)
 
     member inline __.Return (x: 'T) : TaskStep<'T> =
         __machine<TaskStateMachine>.Current <- (box x)
-        (# "" true : TaskStep<'T> #)
+        TaskStep<'T>(true)
 
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
     member inline __.Combine(``__machine_step$cont``: TaskStep<unit>, __expand_task2: unit -> TaskStep<'T>) : TaskStep<'T> =
-        if (# "" ``__machine_step$cont`` : bool #) then 
+        if ``__machine_step$cont``.IsCompleted then 
             __expand_task2()
         else
-            (# "" ``__machine_step$cont`` : TaskStep<'T> #)
+            TaskStep<'T>(``__machine_step$cont``.IsCompleted)
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> TaskStep<unit>) : TaskStep<unit> =
@@ -243,14 +248,14 @@ type TaskBuilder() =
             // The body of the 'while' may include an early exit, e.g. return from entire method
             let ``__machine_step$cont`` = __expand_body ()
             // If we make it to the assignment we prove we've made a step 
-            completed <- (# "" ``__machine_step$cont`` : bool #)
+            completed <- ``__machine_step$cont``.IsCompleted
         __machine<TaskStateMachine>.Current <- (box ())
-        (# "" completed : TaskStep<unit> #)
+        TaskStep<unit>(completed)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryWith(__expand_body : unit -> TaskStep<'T>, __expand_catch : exn -> TaskStep<'T>) : TaskStep<'T> =
-        let mutable completed = (# "" false : TaskStep<'T> #)
+        let mutable completed = TaskStep<'T>(false)
         let mutable caught = false
         let mutable savedExn = Unchecked.defaultof<_>
         try
@@ -274,7 +279,7 @@ type TaskBuilder() =
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryFinally(__expand_body: unit -> TaskStep<'T>, compensation : unit -> unit) : TaskStep<'T> =
-        let mutable completed = (# "" false : TaskStep<'T> #)
+        let mutable completed = TaskStep<'T>(false)
         try
             let ``__machine_step$cont`` = __expand_body ()
             // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
@@ -284,7 +289,7 @@ type TaskBuilder() =
             compensation()
             reraise()
 
-        if (# "" completed : bool #) then 
+        if completed.IsCompleted then 
             compensation()
         completed
 
@@ -305,10 +310,10 @@ type TaskBuilder() =
         if task.IsCompleted then
             __entryPoint CONT
             __machine<TaskStateMachine>.Current <- box (task.GetAwaiter().GetResult())
-            (# "" true : TaskStep<'T> #)
+            TaskStep<'T>(true)
         else
             __machine<TaskStateMachine>.Await(task.GetAwaiter(), CONT)
-            __return (# "" false : TaskStep<'T> #)
+            __return (TaskStep<'T>(false))
 
 [<AutoOpen>]
 module ContextSensitiveTasks =

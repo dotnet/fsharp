@@ -47,7 +47,10 @@ open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
 /// Represents the result of a computation, a value of true indicates completion
-type TaskStep<'T> = (# "bool" #)
+[<Struct; NoComparison; NoEquality>]
+type TaskStep<'T> =
+    new : completed: bool -> TaskStep<'T>
+    member IsCompleted: bool
 
 [<AbstractClass>]
 type TaskStateMachine =
