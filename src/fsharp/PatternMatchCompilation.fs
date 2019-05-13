@@ -348,6 +348,7 @@ let rec CombineRefutations g r1 r2 =
 
 let ShowCounterExample g denv m refuted =
     try
+        let exprL expr = exprL g expr
         let refutations = refuted |> List.collect (function RefutedWhenClause -> [] | (RefutedInvestigation(path, discrim)) -> [RefuteDiscrimSet g m path discrim])
         let counterExample, enumCoversKnown =
             match refutations with

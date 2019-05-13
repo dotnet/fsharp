@@ -353,6 +353,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fs">
       <Link>TypedAST/QuotationPickler.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/CompilerGlobalState.fs">
+      <Link>TypedAST/CompilerGlobalState.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tast.fs">
       <Link>TypedAST/tast.fs</Link>
     </Compile>
