@@ -117,9 +117,10 @@ type CallerNamedArg<'T> =
 // todo: figure out / document why we are using list²
 [<Struct>]
 type CallerArgs<'T> = 
-    { Unnamed: CallerArg<'T> list list
-      Named: CallerNamedArg<'T> list list }
-with
+    { 
+        Unnamed: CallerArg<'T> list list
+        Named: CallerNamedArg<'T> list list 
+    }
     static member Empty : CallerArgs<'T> = { Unnamed = List.empty; Named = List.empty }
     member x.CallerArgCounts = (List.length x.Unnamed, List.length x.Named)
     member x.CurriedCallerArgs = List.zip x.Unnamed x.Named
