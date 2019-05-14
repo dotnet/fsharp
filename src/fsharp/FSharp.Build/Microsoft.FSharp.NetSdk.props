@@ -94,7 +94,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </ItemGroup>
 
   <ItemGroup Condition="'$(DisableImplicitFSharpCoreReference)' != 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)" />
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)" IsImplicitlyDefined="true" />
   </ItemGroup>
 
 </Project>
