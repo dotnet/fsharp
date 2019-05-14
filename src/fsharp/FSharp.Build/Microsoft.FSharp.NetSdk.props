@@ -69,7 +69,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
                         and ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp')
                         and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0' )">
-    <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" />
+    <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" IsImplicitlyDefined="true" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -90,7 +90,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
                                      '$(_TargetFrameworkVersionWithoutV)' == '4.6.1' or
                                      '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
                                      '$(_TargetFrameworkVersionWithoutV)' == '4.7')) ">
-    <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" />
+    <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" IsImplicitlyDefined="true" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(DisableImplicitFSharpCoreReference)' != 'true'">
