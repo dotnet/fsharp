@@ -92,12 +92,12 @@ type ContextInfo =
 
 /// Captures relevant information for a particular failed overload resolution.
 [<Struct>]
-type OverloadInformation = {
-  methodSlot: CalledMeth<Expr>
-  amap : ImportMap
-  error: exn
-}
-with
+type OverloadInformation = 
+    {
+        methodSlot: CalledMeth<Expr>
+        amap : ImportMap
+        error: exn
+    }
     member OverloadMethodInfo : displayEnv: DisplayEnv -> m: range -> string
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.

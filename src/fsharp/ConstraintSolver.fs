@@ -184,12 +184,12 @@ type ContextInfo =
 
 /// Captures relevant information for a particular failed overload resolution.
 [<Struct>]
-type OverloadInformation = {
-  methodSlot: CalledMeth<Expr>
-  amap : ImportMap
-  error: exn
-}
-with
+type OverloadInformation = 
+    {
+        methodSlot: CalledMeth<Expr>
+        amap : ImportMap
+        error: exn
+    }
     member x.OverloadMethodInfo displayEnv m = NicePrint.stringOfMethInfo x.amap m displayEnv x.methodSlot.Method
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
@@ -2730,21 +2730,21 @@ and ResolveOverloading
                 | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methods = 
-                        let getMethodSlotsAndErrors =
-                          function | methodSlot, []      -> List.singleton {methodSlot = methodSlot; error = Unchecked.defaultof<exn>; amap = amap}
-                                   | methodSlot, [error] -> List.singleton {methodSlot = methodSlot; error = error; amap = amap}
-                                   | methodSlot, errors  -> errors |> List.map (fun error -> {methodSlot = methodSlot; error = error; amap = amap})
-                                   // not totally sure about what's going on with last case, so making cartesian product in case we have several exceptions
+                        let getMethodSlotsAndErrors methodSlot errors =
+                            [ match errors with
+                              | [] -> yield { methodSlot = methodSlot; error = Unchecked.defaultof<exn>; amap = amap }
+                              | errors -> for error in errors do yield { methodSlot = methodSlot; error = error; amap = amap } ]
+
 
                         // use the most precise set
                         // - if after filtering bestMethods still contains something - use it
                         // - otherwise use applicableMeths or initial set of candidate methods
-                        match bestMethods with
-                        | [] -> 
-                            match applicableMeths with
-                            | [] -> candidates |> List.map (fun methodSlot -> getMethodSlotsAndErrors (methodSlot, []))
-                            | m -> m |> List.map (fun (methodSlot, errors, _) -> getMethodSlotsAndErrors (methodSlot,errors))
-                        | m -> m |> List.map (fun (methodSlot, errors, _) -> getMethodSlotsAndErrors (methodSlot,errors))
+                        [ match bestMethods with
+                          | [] -> 
+                              match applicableMeths with
+                              | [] -> for methodSlot in candidates do yield getMethodSlotsAndErrors methodSlot []
+                              | m -> for (methodSlot, errors, _) in m do yield getMethodSlotsAndErrors methodSlot errors
+                          | m -> for (methodSlot, errors, _) in m do yield getMethodSlotsAndErrors methodSlot errors ]
 
                     let methods = List.concat methods
 
