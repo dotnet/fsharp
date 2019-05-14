@@ -14,8 +14,8 @@ open BenchmarkDotNet.Running
 open TaskBuilderTasks.ContextSensitive // TaskBuilder.fs extension members
 open FSharp.Control.ContextSensitiveTasks // the default
 
-//[<ShortRunJob>]
-type TaskPerfTests() =
+[<AutoOpen>]
+module Helpers =
     let bufferSize = 128
     let manyIterations = 10000
 
@@ -123,7 +123,8 @@ type TaskPerfTests() =
     let singleTask_FSharpAsync() =
         async { return 1 }
 
-    [<Benchmark>]
+type ManyWriteFile() =
+    [<Benchmark(Baseline=true)>]
     member __.ManyWriteFile_CSharpAsync () =
         TaskPerfCSharp.ManyWriteFileAsync().Wait();
 
@@ -163,7 +164,8 @@ type TaskPerfTests() =
         |> Async.RunSynchronously
         File.Delete(path)
 
-    [<Benchmark>]
+type SyncBinds() =
+    [<Benchmark(Baseline=true)>]
     member __.SyncBinds_CSharpAsync() = 
          for i in 1 .. manyIterations*100 do 
              TaskPerfCSharp.TenBindsSync_CSharp().Wait() 
@@ -183,7 +185,8 @@ type TaskPerfTests() =
         for i in 1 .. manyIterations*100 do 
              tenBindSync_FSharpAsync() |> Async.RunSynchronously |> ignore
 
-    [<Benchmark>]
+type AsyncBinds() =
+    [<Benchmark(Baseline=true)>]
     member __.AsyncBinds_CSharpAsync() = 
          for i in 1 .. manyIterations do 
              TaskPerfCSharp.TenBindsAsync_CSharp().Wait() 
@@ -203,7 +206,8 @@ type TaskPerfTests() =
     //     for i in 1 .. manyIterations do 
     //         tenBindAsync_FSharpAsync() |> Async.RunSynchronously 
 
-    [<Benchmark>]
+type SingleSyncTask() =
+    [<Benchmark(Baseline=true)>]
     member __.SingleSyncTask_CSharpAsync() = 
          for i in 1 .. manyIterations*500 do 
              TaskPerfCSharp.SingleSyncTask_CSharp().Wait() 
@@ -227,5 +231,24 @@ module Main =
 
     [<EntryPoint>]
     let main argv = 
-        let summary = BenchmarkRunner.Run<TaskPerfTests>();
+        ManyWriteFile().ManyWriteFile_CSharpAsync()
+        ManyWriteFile().ManyWriteFile_Task ()
+        ManyWriteFile().ManyWriteFile_TaskBuilder ()
+        ManyWriteFile().ManyWriteFile_FSharpAsync ()
+        SyncBinds().SyncBinds_CSharpAsync() 
+        SyncBinds().SyncBinds_Task() 
+        SyncBinds().SyncBinds_TaskBuilder() 
+        SyncBinds().SyncBinds_FSharpAsync() 
+        AsyncBinds().AsyncBinds_CSharpAsync() 
+        AsyncBinds().AsyncBinds_Task() 
+        AsyncBinds().AsyncBinds_TaskBuilder() 
+        SingleSyncTask().SingleSyncTask_CSharpAsync()
+        SingleSyncTask().SingleSyncTask_Task() 
+        SingleSyncTask().SingleSyncTask_TaskBuilder() 
+        SingleSyncTask().SingleSyncTask_FSharpAsync()
+
+        let summary = BenchmarkRunner.Run<ManyWriteFile>()
+        let summary = BenchmarkRunner.Run<SyncBinds>()
+        let summary = BenchmarkRunner.Run<AsyncBinds>()
+        let summary = BenchmarkRunner.Run<SingleSyncTask>()
         0  

@@ -848,7 +848,7 @@ let (|JumpTableExpr|_|) g expr =
     | ValApp g g.cgh_jumptable_vref (_, [pcExpr; codeExpr], _m) -> Some (pcExpr, codeExpr)
     | _ -> None
 
-let sm_verbose = true
+let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMachineVerbose") <> null with _ -> false
 
 /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
 let RepresentBindingAsLiftedOrLocal (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) m =
