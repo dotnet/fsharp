@@ -2,8 +2,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
 
 public static class TaskPerfCSharp
 {
@@ -71,5 +69,15 @@ public static class TaskPerfCSharp
         return 1;
     }
 
+    public static async Task<int> SingleSyncExceptionTask_CSharp()
+    {
+        throw (new System.Exception("fail"));
+    }
+#if MAIN
+    public static void Main() { 
+        var t = SingleSyncExceptionTask_CSharp();
+        System.Console.WriteLine("t = {0}", t);
+    }
+#endif
 }
 

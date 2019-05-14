@@ -11,6 +11,7 @@
 // Updates:
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+#if FSHARP_CORE
 namespace Microsoft.FSharp.Core.CompilerServices
 
     open System.Runtime.CompilerServices
@@ -44,6 +45,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __return<'T> (_v: 'T) : 'T = failwith "__return should always be removed from compiled code"
+#endif
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
@@ -80,20 +82,20 @@ type TaskStateMachine<'T>() =
     inherit TaskStateMachine()
     let mutable resumptionPoint = 0 
 
-    let mutable methodBuilder = AsyncTaskMethodBuilder<Task<'T>>()
+    let mutable methodBuilder = AsyncTaskMethodBuilder<'T>.Create()
     
     /// Proceed to the next state or raise an exception
     abstract Step : pc: int -> TaskStep<'T>
 
     [<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
-    override sm.Await (awaiter, pc) = 
+    override this.Await (awaiter, pc) = 
         resumptionPoint <- pc
-        let mutable sm = sm
+        let mutable this = this
         let mutable awaiter = awaiter
         assert (not (isNull awaiter))
         // Tell the builder to call us again when done.
         //Console.WriteLine("[{0}] AwaitUnsafeOnCompleted", sm.GetHashCode())
-        methodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+        methodBuilder.AwaitUnsafeOnCompleted(&awaiter, &this)
 
     interface IAsyncStateMachine with
 
@@ -106,29 +108,22 @@ type TaskStateMachine<'T>() =
                     //Console.WriteLine("[{0}] unboxing result", this.GetHashCode())
                     let res = unbox<'T>(this.Current)
                     //Console.WriteLine("[{0}] SetResult {1}", this.GetHashCode(), res)
-                    methodBuilder.SetResult(Task.FromResult res)
+                    methodBuilder.SetResult(res)
             with exn ->
               //Console.WriteLine("[{0}] exception {1}", this.GetHashCode(), exn)
                 methodBuilder.SetException exn
 
-        member __.SetStateMachine(_) = () // Doesn't really apply since we're a reference type.
+        member __.SetStateMachine(_machine) = 
+            ()
+            //methodBuilder.SetStateMachine(machine) // Doesn't apply since we're a reference type.
 
     [<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
     member this.Start() =
         let mutable machine = this 
-        try
-          //Console.WriteLine("[{0}] start", this.GetHashCode())
-            methodBuilder.Start(&machine)
-          //Console.WriteLine("[{0}] unwrap", this.GetHashCode())
-            methodBuilder.Task.Unwrap()
-        with exn ->
-          //Console.WriteLine("[{0}] start exception", this.GetHashCode())
-            // Any exceptions should go on the task, rather than being thrown from this call.
-            // This matches C# behavior where you won't see an exception until awaiting the task,
-            // even if it failed before reaching the first "await".
-            let src = new TaskCompletionSource<_>()
-            src.SetException exn
-            src.Task
+        //Console.WriteLine("[{0}] start", this.GetHashCode())
+        methodBuilder.Start(&machine)
+        //Console.WriteLine("[{0}] unwrap", this.GetHashCode())
+        methodBuilder.Task
 
 
 [<AutoOpen>]
