@@ -117,12 +117,12 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let cache = Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
     let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
-    let rec tryComputeOptionsByFile (document: Document) =
+    let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) =
         async {
-            let! fileStamp = document.GetTextVersionAsync() |> Async.AwaitTask
+            let! fileStamp = document.GetTextVersionAsync(ct) |> Async.AwaitTask
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
-                let! sourceText = document.GetTextAsync() |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
                 let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText())
                 let projectOptions =
                     if isScriptFile document.FilePath then
@@ -154,7 +154,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             | true, (fileStamp2, parsingOptions, projectOptions) ->
                 if fileStamp <> fileStamp2 then
                     singleFileCache.Remove(document.Id) |> ignore
-                    return! tryComputeOptionsByFile document
+                    return! tryComputeOptionsByFile document ct
                 else
                     return Some(parsingOptions, projectOptions)
         }
@@ -249,37 +249,37 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         async {
             while true do
                 match! agent.Receive() with
-                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, cancellationToken) ->
-                    if cancellationToken.IsCancellationRequested then
+                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct) ->
+                    if ct.IsCancellationRequested then
                         reply.Reply None
                     else
                         try
                             // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
-                                reply.Reply(None)
+                                reply.Reply None
                             elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                                let! options = tryComputeOptionsByFile document
-                                reply.Reply(options)
+                                let! options = tryComputeOptionsByFile document ct
+                                reply.Reply options
                             else
                                 let! options = tryComputeOptions document.Project
-                                reply.Reply(options)
+                                reply.Reply options
                         with
                         | _ ->
-                            reply.Reply(None)
+                            reply.Reply None
 
-                | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, cancellationToken) ->
-                    if cancellationToken.IsCancellationRequested then
-                        reply.Reply(None)
+                | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct) ->
+                    if ct.IsCancellationRequested then
+                        reply.Reply None
                     else
                         try
                             if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                                reply.Reply(None)
+                                reply.Reply None
                             else
                                 let! options = tryComputeOptions project
-                                reply.Reply(options)
+                                reply.Reply options
                         with
                         | _ ->
-                            reply.Reply(None)
+                            reply.Reply None
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     cache.Remove(projectId) |> ignore
@@ -289,11 +289,11 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
 
-    member __.TryGetOptionsByProjectAsync(project, cancellationToken) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, cancellationToken))
+    member __.TryGetOptionsByProjectAsync(project, ct) =
+        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct))
 
-    member __.TryGetOptionsByDocumentAsync(document, cancellationToken) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, cancellationToken))
+    member __.TryGetOptionsByDocumentAsync(document, ct) =
+        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct))
 
     member __.ClearOptionsByProjectId(projectId) =
         agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
