@@ -18,8 +18,8 @@
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.4</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
+    <FSPackageMajorVersion>10.5</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
