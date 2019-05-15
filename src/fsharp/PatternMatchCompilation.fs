@@ -1063,7 +1063,7 @@ let CompilePatternBasic
                  // Project a successful edge through the frontiers.
                  let investigation = Investigation(i', discrim, path)
 
-                 let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSucccessfulInvestigation inpExprOpt resPostBindOpt investigation)
+                 let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSuccessfulInvestigation inpExprOpt resPostBindOpt investigation)
                  let tree = InvestigateFrontiers refuted frontiers
                  // Bind the resVar for the union case, if we have one
                  let tree =
@@ -1104,7 +1104,7 @@ let CompilePatternBasic
 
     // Build a new frontier that represents the result of a successful investigation
     // at rule point (i', discrim, path)
-    and GenerateNewFrontiersAfterSucccessfulInvestigation inpExprOpt resPostBindOpt (Investigation(i', discrim, path)) (Frontier (i, active, valMap) as frontier) =
+    and GenerateNewFrontiersAfterSuccessfulInvestigation inpExprOpt resPostBindOpt (Investigation(i', discrim, path)) (Frontier (i, active, valMap) as frontier) =
 
         if (isMemOfActives path active) then
             let (SubExpr(accessf, ve)), pat = lookupActive path active
@@ -1238,7 +1238,7 @@ let CompilePatternBasic
                 | _ ->
                     [frontier]
 
-            | _ -> failwith "pattern compilation: GenerateNewFrontiersAfterSucccessfulInvestigation"
+            | _ -> failwith "pattern compilation: GenerateNewFrontiersAfterSuccessfulInvestigation"
         else [frontier]
 
     and BindProjectionPattern (Active(path, subExpr, p) as inp) ((accActive, accValMap) as s) =
