@@ -937,7 +937,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             (env, expr)
 
     // Detect sequencing constructs in state machine code
-    let (|SequentialStateMachineCode|_|) expr = 
+    let (|SequentialStateMachineCode|_|) (g: TcGlobals) expr = 
         match expr with
 
         // e1; e2
@@ -946,7 +946,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
         // let __machine_step$cont = e1 in e2
         // The $cont is used to prevent elimination in Optimizer.fs
-        | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName = "__machine_step$cont" ->
+        | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName(g.CompilerGlobalState) = "__machine_step$cont" ->
             Some (bind.Expr, e2, m, (fun e1 e2 -> mkLet bind.SequencePointInfo m bind.Var e1 e2))
 
         | _ -> None
@@ -1044,13 +1044,13 @@ let ConvertStateMachineExprToObject g overallExpr =
     let rec ConvertStateMachineCode env pcExpr  expr = 
         if sm_verbose then 
             printfn "---------"
-            printfn "ConvertStateMachineCodeing %s" (DebugPrint.showExpr expr)
+            printfn "ConvertStateMachineCodeing %s" (DebugPrint.showExpr g expr)
             printfn "---------"
         
         let env, expr = RepeatBindAndApplyExpansions g env expr
         
         if sm_verbose then 
-            printfn "Expanded to %s" (DebugPrint.showExpr expr)
+            printfn "Expanded to %s" (DebugPrint.showExpr g expr)
             printfn "---------"
 
         // Detect the different permitted constructs in the expanded state machine
@@ -1089,7 +1089,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             // A binding 'let .. = ... in ... ' is considered part of the state machine logic 
             // if it uses a binding variable name of precisely '__machine_step$cont'.
             // If this case 'e1' becomes part of the state machine too.
-            | SequentialStateMachineCode(e1, e2, _m, recreate) ->
+            | SequentialStateMachineCode g (e1, e2, _m, recreate) ->
                 // printfn "found sequential"
                 let res1 = ConvertStateMachineCode env pcExpr e1
                 let res2 = ConvertStateMachineCode env pcExpr e2
@@ -1259,8 +1259,8 @@ let ConvertStateMachineExprToObject g overallExpr =
                   asyncVars = emptyFreeVars }
         if sm_verbose then 
             printfn "-------------------"
-            printfn "Phase 1 Done for %s" (DebugPrint.showExpr res.phase1)
-            printfn "Phase 1 Done, asyncVars = %A" (res.asyncVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName) |> String.concat ",")
+            printfn "Phase 1 Done for %s" (DebugPrint.showExpr g res.phase1)
+            printfn "Phase 1 Done, asyncVars = %A" (res.asyncVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
             printfn "-------------------"
         res
 
@@ -1270,7 +1270,7 @@ let ConvertStateMachineExprToObject g overallExpr =
         if sm_verbose then 
             printfn "Found state machine override method and code expression..."
             printfn "----------- BEFORE LOWER ----------------------"
-            printfn "%s" (DebugPrint.showExpr codeExpr)
+            printfn "%s" (DebugPrint.showExpr g codeExpr)
             printfn "----------- LOWER ----------------------"
     
         // Perform phase1 of the conversion
@@ -1302,7 +1302,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
         if sm_verbose then 
             printfn "----------- AFTER REWRITE ----------------------"
-            printfn "%s" (DebugPrint.showExpr overallExprR)
+            printfn "%s" (DebugPrint.showExpr g overallExprR)
         
         //printfn "----------- CHECKING ----------------------"
         //let mutable failed = false

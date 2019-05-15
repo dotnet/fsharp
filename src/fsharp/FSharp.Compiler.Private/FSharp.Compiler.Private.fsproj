@@ -366,6 +366,9 @@
     <Compile Include="..\QuotationPickler.fs">
       <Link>TypedAST\QuotationPickler.fs</Link>
     </Compile>
+    <Compile Include="..\CompilerGlobalState.fs">
+      <Link>TypedAST\CompilerGlobalState.fs</Link>
+    </Compile>
     <Compile Include="..\tast.fs">
       <Link>TypedAST\tast.fs</Link>
     </Compile>
@@ -693,36 +696,36 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildPackageVersion)" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildPackageVersion)" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildPackageVersion)" />
-    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionPackageVersion)" />
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.Startswith('netstandard'))">
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
-    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourcePackageVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
-    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsPackageVersion)" />
-    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
-    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityPackageVersion)" />
-    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
-    <PackageReference Include="System.Runtime" Version="$(SystemRuntimePackageVersion)" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesPackageVersion)" />
-    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsPackageVersion)" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsPackageVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalPackageVersion)" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourceVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
+    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
+    <PackageReference Include="System.Runtime" Version="$(SystemRuntimeVersion)" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesVersion)" />
+    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsVersion)" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
   </ItemGroup>
 
 </Project>

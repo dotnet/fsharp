@@ -1733,7 +1733,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                     let _, _, argExprs = qscope.Close()
                     if not (isNil argExprs) then 
                         errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
-                    QuotationTranslator.ConvMethodBase qscope env (v.CompiledName, v) |> ignore
+                    QuotationTranslator.ConvMethodBase qscope env (v.CompiledName g.CompilerGlobalState, v) |> ignore
                 with 
                   | QuotationTranslator.InvalidQuotedTerm e -> 
                           errorR e
@@ -1855,12 +1855,12 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
             check false v.CoreDisplayName
             check false v.DisplayName
-            check false v.CompiledName
+            check false (v.CompiledName cenv.g.CompilerGlobalState)
 
             // Check if an F# extension member clashes
             if v.IsExtensionMember then 
                 tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
-                    if v2.IsExtensionMember && not (valEq v v2) && v.CompiledName = v2.CompiledName then
+                    if v2.IsExtensionMember && not (valEq v v2) && (v.CompiledName cenv.g.CompilerGlobalState) = (v2.CompiledName cenv.g.CompilerGlobalState) then
                         let minfo1 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
                         let minfo2 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
                         if tyconRefEq g v.MemberApparentEntity v2.MemberApparentEntity && 
@@ -1896,8 +1896,8 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
     let m = rfield.Range
     let fieldTy = stripTyEqns cenv.g rfield.FormalType
     let isHidden = 
-        IsHiddenTycon env.sigToImplRemapInfo tycon || 
-        IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
+        IsHiddenTycon cenv.g env.sigToImplRemapInfo tycon || 
+        IsHiddenTyconRepr cenv.g env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.Name) access m fieldTy
@@ -2159,7 +2159,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             uc.RecdFieldsArray |> Array.iter (CheckRecdField true cenv env tycon))
 
     // Access checks
-    let access =  AdjustAccess (IsHiddenTycon env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
+    let access =  AdjustAccess (IsHiddenTycon g env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
     let visitType ty = CheckTypeForAccess cenv env (fun () -> tycon.DisplayNameWithStaticParametersAndUnderscoreTypars) access tycon.Range ty    
 
     abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> visitType) 

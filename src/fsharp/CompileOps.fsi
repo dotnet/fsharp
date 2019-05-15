@@ -708,7 +708,7 @@ val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlo
 [<Sealed>]
 /// Represents the incremental type checking state for a set of inputs
 type TcState =
-    member NiceNameGenerator: Ast.NiceNameGenerator
+    member NiceNameGenerator: NiceNameGenerator
 
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
@@ -729,7 +729,7 @@ type TcState =
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: 
-    range * string * TcConfig * TcGlobals * TcImports * Ast.NiceNameGenerator * TcEnv -> TcState
+    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
 
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
