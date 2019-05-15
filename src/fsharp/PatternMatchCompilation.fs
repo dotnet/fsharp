@@ -589,7 +589,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 
     // All these should also always have default cases
     | (TCase(DecisionTreeTest.Const ConstNeedsDefaultCase, _) :: _), None ->
-        error(InternalError("inexhaustive match - need a default cases!", m))
+        error(InternalError("inexhaustive match - need a default case!", m))
 
     // Split string, float, uint64, int64, unativeint, nativeint matches into serial equality tests
     | TCase((DecisionTreeTest.ArrayLength _ | DecisionTreeTest.Const (Const.Single _ | Const.Double _ | Const.String _ | Const.Decimal _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _)), _) :: _, Some dflt ->
