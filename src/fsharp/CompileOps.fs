@@ -770,7 +770,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           let displayArgType (name, ttype) =
               let typeDisplay = NicePrint.prettyStringOfTy denv ttype
               match name with
-              | Some name -> sprintf "(%s) : %s" name typeDisplay
+              | Some name -> sprintf "%s: %s" name typeDisplay
               | None -> sprintf "%s" typeDisplay
           let argsMessage =
               let prefix = nl + nl
@@ -781,9 +781,8 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | items -> 
                   let args = 
                       items 
-                      |> List.map (displayArgType >> FSComp.SR.formatDashItem) // consider if --flaterrors is on, we may like commas better in this case
-                      |> List.toArray
-                      |> String.concat nl
+                      |> List.map displayArgType
+                      |> String.concat " * "
           
                   prefix + (FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural args) + suffix
           let formatOverloads (overloads: OverloadInformation list) =

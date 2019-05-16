@@ -3,7 +3,7 @@ neg_many_many_overloads.fsx(123,1,123,13): typecheck error FS0041: A unique over
 
 
 
-Argument given: 'a when 'a : null
+Known type of argument: 'a when 'a : null
 
 
 
@@ -156,7 +156,7 @@ neg_many_many_overloads.fsx(124,1,124,34): typecheck error FS0041: No overloads 
 
 
 
-Argument given: Type
+Known type of argument: Type
 
 
 
@@ -333,7 +333,7 @@ neg_many_many_overloads.fsx(125,1,125,25): typecheck error FS0041: No overloads 
 
 
 
-Argument given: Guid
+Known type of argument: Guid
 
 
 
@@ -510,7 +510,7 @@ neg_many_many_overloads.fsx(126,1,126,48): typecheck error FS0041: No overloads 
 
 
 
-Argument given: DayOfWeek
+Known type of argument: DayOfWeek
 
 
 

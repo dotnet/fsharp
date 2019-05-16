@@ -3,7 +3,7 @@ E_LeftToRightOverloadResolution01.fsx(7,23,7,51): typecheck error FS0041: A uniq
 
 
 
-Argument given: 'a
+Known type of argument: 'a
 
 
 
@@ -38,7 +38,7 @@ E_LeftToRightOverloadResolution01.fsx(9,23,9,51): typecheck error FS0041: A uniq
 
 
 
-Argument given: 'a
+Known type of argument: 'a
 
 
 

@@ -3,7 +3,7 @@ neg_System.Threading.Tasks.Task.Run.OverloadList.fsx(5,11,5,35): typecheck error
 
 
 
-Argument given: (unit -> Task<int>)
+Known type of argument: (unit -> Task<int>)
 
 
 
@@ -16,7 +16,7 @@ neg_System.Threading.Tasks.Task.Run.OverloadList.fsx(6,11,6,44): typecheck error
 
 
 
-Argument given: Func<Task<int>>
+Known type of argument: Func<Task<int>>
 
 
 
@@ -29,7 +29,7 @@ neg_System.Threading.Tasks.Task.Run.OverloadList.fsx(7,11,7,47): typecheck error
 
 
 
-Argument given: Func<Task<int>>
+Known type of argument: Func<Task<int>>
 
 
 
@@ -42,7 +42,7 @@ neg_System.Threading.Tasks.Task.Run.OverloadList.fsx(8,21,8,57): typecheck error
 
 
 
-Argument given: Func<Task<int>>
+Known type of argument: Func<Task<int>>
 
 
 
@@ -55,7 +55,7 @@ neg_System.Threading.Tasks.Task.Run.OverloadList.fsx(9,11,9,50): typecheck error
 
 
 
-Argument given: Func<Task<int>>
+Known type of argument: Func<Task<int>>
 
 
 
@@ -68,7 +68,7 @@ neg_System.Threading.Tasks.Task.Run.OverloadList.fsx(10,11,10,52): typecheck err
 
 
 
-Argument given: Func<Task<int>>
+Known type of argument: Func<Task<int>>
 
 
 

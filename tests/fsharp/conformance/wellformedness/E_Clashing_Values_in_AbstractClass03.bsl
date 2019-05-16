@@ -3,7 +3,7 @@ E_Clashing_Values_in_AbstractClass03.fsx(16,18,16,25): typecheck error FS0041: A
 
 
 
-Argument given: int
+Known type of argument: int
 
 
 
@@ -16,7 +16,7 @@ E_Clashing_Values_in_AbstractClass03.fsx(17,18,17,25): typecheck error FS0041: A
 
 
 
-Argument given: int
+Known type of argument: int
 
 
 

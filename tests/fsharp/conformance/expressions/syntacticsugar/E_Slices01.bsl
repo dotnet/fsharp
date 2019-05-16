@@ -3,12 +3,7 @@ E_Slices01.fsx(15,9,15,19): typecheck error FS0041: A unique overload for method
 
 
 
-Arguments given:
- - int
-
- - int option
-
- - 'a option
+Known types of arguments: int * int option * 'a option
 
 
 
@@ -21,12 +16,7 @@ E_Slices01.fsx(16,9,16,17): typecheck error FS0041: A unique overload for method
 
 
 
-Arguments given:
- - int
-
- - 'a option
-
- - 'a option
+Known types of arguments: int * 'a option * 'a option
 
 
 
@@ -39,12 +29,7 @@ E_Slices01.fsx(17,9,17,19): typecheck error FS0041: A unique overload for method
 
 
 
-Arguments given:
- - 'a option
-
- - int option
-
- - int
+Known types of arguments: 'a option * int option * int
 
 
 
@@ -57,12 +42,7 @@ E_Slices01.fsx(18,9,18,17): typecheck error FS0041: A unique overload for method
 
 
 
-Arguments given:
- - 'a option
-
- - 'a option
-
- - int
+Known types of arguments: 'a option * 'a option * int
 
 
 

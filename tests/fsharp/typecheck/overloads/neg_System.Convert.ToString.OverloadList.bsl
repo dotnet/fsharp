@@ -3,10 +3,7 @@ neg_System.Convert.ToString.OverloadList.fsx(1,1,1,31): typecheck error FS0041: 
 
 
 
-Arguments given:
- - char
-
- - int
+Known types of arguments: char * int
 
 
 
@@ -55,10 +52,7 @@ neg_System.Convert.ToString.OverloadList.fsx(2,1,2,47): typecheck error FS0041: 
 
 
 
-Arguments given:
- - (provider) : char
-
- - (value) : int
+Known types of arguments: provider: char * value: int
 
 
 
@@ -99,10 +93,7 @@ neg_System.Convert.ToString.OverloadList.fsx(3,1,3,48): typecheck error FS0041: 
 
 
 
-Arguments given:
- - (provider) : 'a when 'a : null
-
- - (value) : int
+Known types of arguments: provider: 'a when 'a : null * value: int
 
 
 

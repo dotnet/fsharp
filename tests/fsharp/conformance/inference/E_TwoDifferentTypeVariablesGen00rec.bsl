@@ -13,10 +13,7 @@ E_TwoDifferentTypeVariablesGen00rec.fsx(63,45,63,55): typecheck error FS0041: A 
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
@@ -41,10 +38,7 @@ E_TwoDifferentTypeVariablesGen00rec.fsx(66,45,66,59): typecheck error FS0041: A 
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
@@ -63,10 +57,7 @@ E_TwoDifferentTypeVariablesGen00rec.fsx(68,45,68,58): typecheck error FS0041: A 
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 

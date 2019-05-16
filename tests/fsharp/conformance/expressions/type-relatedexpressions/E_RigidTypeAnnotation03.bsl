@@ -8,7 +8,7 @@ E_RigidTypeAnnotation03.fsx(17,9,17,25): typecheck error FS0041: No overloads ma
 
 
 
-Argument given: sbyte
+Known type of argument: sbyte
 
 
 
@@ -32,7 +32,7 @@ E_RigidTypeAnnotation03.fsx(18,9,18,30): typecheck error FS0041: No overloads ma
 
 
 
-Argument given: float32
+Known type of argument: float32
 
 
 
@@ -62,7 +62,7 @@ E_RigidTypeAnnotation03.fsx(20,9,20,39): typecheck error FS0041: No overloads ma
 
 
 
-Argument given: decimal<N s ^ 2>
+Known type of argument: decimal<N s ^ 2>
 
 
 
@@ -86,7 +86,7 @@ E_RigidTypeAnnotation03.fsx(21,9,21,27): typecheck error FS0041: No overloads ma
 
 
 
-Argument given: char
+Known type of argument: char
 
 
 

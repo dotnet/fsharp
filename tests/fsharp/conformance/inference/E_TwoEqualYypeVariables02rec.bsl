@@ -3,10 +3,7 @@ E_TwoEqualYypeVariables02rec.fsx(60,37,60,47): typecheck error FS0041: A unique 
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -19,10 +16,7 @@ E_TwoEqualYypeVariables02rec.fsx(61,37,61,47): typecheck error FS0041: A unique 
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -35,10 +29,7 @@ E_TwoEqualYypeVariables02rec.fsx(62,37,62,47): typecheck error FS0041: A unique 
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -51,10 +42,7 @@ E_TwoEqualYypeVariables02rec.fsx(63,37,63,48): typecheck error FS0041: A unique 
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -69,10 +57,7 @@ E_TwoEqualYypeVariables02rec.fsx(64,37,64,49): typecheck error FS0041: A unique 
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -89,10 +74,7 @@ E_TwoEqualYypeVariables02rec.fsx(65,37,65,50): typecheck error FS0041: A unique 
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 

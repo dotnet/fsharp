@@ -3,10 +3,7 @@ E_OneTypeVariable03rec.fsx(60,38,60,48): typecheck error FS0041: A unique overlo
 
 
 
-Arguments given:
- - 'a
-
- - int
+Known types of arguments: 'a * int
 
 
 
@@ -19,10 +16,7 @@ E_OneTypeVariable03rec.fsx(61,38,61,49): typecheck error FS0041: A unique overlo
 
 
 
-Arguments given:
- - 'a
-
- - int
+Known types of arguments: 'a * int
 
 
 

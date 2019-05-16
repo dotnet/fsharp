@@ -5,10 +5,7 @@ neg_interface_generics.fsx(20,9,20,27): typecheck error FS0041: No overloads mat
 
 
 
-Arguments given:
- - string
-
- - XmlReader
+Known types of arguments: string * XmlReader
 
 
 

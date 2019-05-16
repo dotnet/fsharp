@@ -3,10 +3,7 @@ E_TwoDifferentTypeVariables01.fsx(61,33,61,43): typecheck error FS0041: A unique
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
@@ -19,10 +16,7 @@ E_TwoDifferentTypeVariables01.fsx(62,33,62,43): typecheck error FS0041: A unique
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
@@ -35,10 +29,7 @@ E_TwoDifferentTypeVariables01.fsx(63,33,63,47): typecheck error FS0041: A unique
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
@@ -51,10 +42,7 @@ E_TwoDifferentTypeVariables01.fsx(64,33,64,46): typecheck error FS0041: A unique
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 

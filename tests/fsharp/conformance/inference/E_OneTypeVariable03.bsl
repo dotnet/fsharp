@@ -3,10 +3,7 @@ E_OneTypeVariable03.fsx(60,34,60,44): typecheck error FS0041: A unique overload 
 
 
 
-Arguments given:
- - 'a
-
- - int
+Known types of arguments: 'a * int
 
 
 
@@ -19,10 +16,7 @@ E_OneTypeVariable03.fsx(61,34,61,45): typecheck error FS0041: A unique overload 
 
 
 
-Arguments given:
- - 'a
-
- - int
+Known types of arguments: 'a * int
 
 
 

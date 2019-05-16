@@ -3,10 +3,7 @@ E_TwoEqualTypeVariables02.fsx(61,33,61,43): typecheck error FS0041: A unique ove
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -19,10 +16,7 @@ E_TwoEqualTypeVariables02.fsx(62,33,62,43): typecheck error FS0041: A unique ove
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -35,10 +29,7 @@ E_TwoEqualTypeVariables02.fsx(63,33,63,43): typecheck error FS0041: A unique ove
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -51,10 +42,7 @@ E_TwoEqualTypeVariables02.fsx(64,33,64,44): typecheck error FS0041: A unique ove
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -69,10 +57,7 @@ E_TwoEqualTypeVariables02.fsx(65,33,65,45): typecheck error FS0041: A unique ove
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 
@@ -89,10 +74,7 @@ E_TwoEqualTypeVariables02.fsx(66,33,66,46): typecheck error FS0041: A unique ove
 
 
 
-Arguments given:
- - 'a
-
- - 'a
+Known types of arguments: 'a * 'a
 
 
 

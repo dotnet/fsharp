@@ -3,10 +3,7 @@ E_TwoDifferentTypeVariables01rec.fsx(60,37,60,47): typecheck error FS0041: A uni
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
@@ -19,10 +16,7 @@ E_TwoDifferentTypeVariables01rec.fsx(61,37,61,47): typecheck error FS0041: A uni
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
@@ -35,10 +29,7 @@ E_TwoDifferentTypeVariables01rec.fsx(62,37,62,51): typecheck error FS0041: A uni
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
@@ -51,10 +42,7 @@ E_TwoDifferentTypeVariables01rec.fsx(63,37,63,50): typecheck error FS0041: A uni
 
 
 
-Arguments given:
- - 'a
-
- - 'b
+Known types of arguments: 'a * 'b
 
 
 
