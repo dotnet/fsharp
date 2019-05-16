@@ -11,6 +11,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <NGenBinary>true</NGenBinary>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
@@ -21,11 +22,14 @@
     <Compile Include="..\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
-    <None Include="app.config" />
     <None Include="..\..\windows\default.win32manifest">
       <Link>default.win32manifest</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <CopyAndSubstituteText Include="fsc.exe.config">
+      <Pattern1>{{FSCoreVersion}}</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </CopyAndSubstituteText>
   </ItemGroup>
 
   <ItemGroup>

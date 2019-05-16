@@ -13,6 +13,7 @@
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
     <NGenBinary>true</NGenBinary>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -22,7 +23,10 @@
   <ItemGroup>
     <Compile Include="..\fsi\console.fs" />
     <Compile Include="..\fsi\fsimain.fs" />
-    <None Include="..\fsi\app.config" />
+    <CopyAndSubstituteText Include="fsiAnyCpu.exe.config">
+      <Pattern1>{{FSCoreVersion}}</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </CopyAndSubstituteText>
   </ItemGroup>
 
   <ItemGroup>

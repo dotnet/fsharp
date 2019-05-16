@@ -15,6 +15,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <IsTestProject>true</IsTestProject>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
   </PropertyGroup>
 
   <ItemGroup>
@@ -165,12 +166,10 @@
     <Compile Include="DocumentHighlightsServiceTests.fs">
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
-    <None Include="App.config" />
-    <None Include="app.runsettings">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <!-- <None Include="App.config" /> -->
-    <None Include="App.config" CopyToOutputDirectory="PreserveNewest" />
+    <CopyAndSubstituteText Include="VisualFSharp.UnitTests.dll.config">
+      <Pattern1>{{FSCoreVersion}}</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </CopyAndSubstituteText>
     <None Include="app.runsettings" />
   </ItemGroup>
   <ItemGroup>

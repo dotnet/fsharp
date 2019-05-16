@@ -29,6 +29,7 @@
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
     <CopyAndSubstituteText Include="Microsoft.FSharp.NetSdk.props">
+      <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
       <Pattern1>{{FSharpCoreShippedPackageVersion}}</Pattern1>
       <Replacement1>$(FSharpCoreShippedPackageVersion)</Replacement1>
       <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
