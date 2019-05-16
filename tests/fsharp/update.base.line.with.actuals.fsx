@@ -10,6 +10,7 @@ let directories =
       "typecheck/overloads"
       "conformance/expressions/syntacticsugar"
       "conformance/expressions/type-relatedexpressions"
+      "typecheck/sigs"
       "conformance/inference"
       "conformance/wellformedness"
       "typeProviders/negTests"

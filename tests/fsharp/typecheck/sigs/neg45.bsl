@@ -57,7 +57,7 @@ neg45.fs(89,26,89,40): typecheck error FS0041: A unique overload for method 'M' 
 
 
 
-Argument given: R1
+Known type of argument: R1
 
 
 
@@ -70,7 +70,7 @@ neg45.fs(97,26,97,55): typecheck error FS0041: A unique overload for method 'M' 
 
 
 
-Argument given: (R1 * R1)
+Known type of argument: (R1 * R1)
 
 
 
@@ -83,7 +83,7 @@ neg45.fs(104,26,104,31): typecheck error FS0041: A unique overload for method 'M
 
 
 
-Argument given: int
+Known type of argument: int
 
 
 

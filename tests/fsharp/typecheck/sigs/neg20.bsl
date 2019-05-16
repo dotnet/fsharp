@@ -163,10 +163,7 @@ neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'O
 
 
 
-Arguments given:
- - string
-
- - obj
+Known types of arguments: string * obj
 
 
 
@@ -207,10 +204,7 @@ neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method '
 
 
 
-Arguments given:
- - string
-
- - obj
+Known types of arguments: string * obj
 
 
 
@@ -268,10 +262,7 @@ neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method '
 
 
 
-Arguments given:
- - string
-
- - obj
+Known types of arguments: string * obj
 
 
 
@@ -405,7 +396,7 @@ neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'S
 
 
 
-Argument given: 'a
+Known type of argument: 'a
 
 
 
@@ -420,7 +411,7 @@ neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'G
 
 
 
-Argument given: 'a
+Known type of argument: 'a
 
 
 

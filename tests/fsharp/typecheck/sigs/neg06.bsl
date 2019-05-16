@@ -142,7 +142,7 @@ neg06.fs(382,13,382,19): typecheck error FS0041: A unique overload for method 'M
 
 
 
-Argument given: 'a
+Known type of argument: 'a
 
 
 

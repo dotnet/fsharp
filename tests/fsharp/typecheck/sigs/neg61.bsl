@@ -87,7 +87,7 @@ neg61.fs(174,22,174,23): typecheck error FS0041: No overloads match for method '
 
 
 
-Argument given: int
+Known type of argument: int
 
 
 
