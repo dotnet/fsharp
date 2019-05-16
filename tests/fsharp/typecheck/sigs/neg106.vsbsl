@@ -5,12 +5,7 @@ neg106.fs(13,18,13,72): typecheck error FS0041: No overloads match for method 'C
 
 
 
-Arguments given:
- - inref<int>
-
- - int
-
- - int
+Known types of arguments: inref<int> * int * int
 
 
 
@@ -35,12 +30,7 @@ neg106.fs(17,14,17,68): typecheck error FS0041: No overloads match for method 'C
 
 
 
-Arguments given:
- - inref<int>
-
- - int
-
- - int
+Known types of arguments: inref<int> * int * int
 
 
 
@@ -75,10 +65,7 @@ neg106.fs(40,18,40,32): typecheck error FS0041: No overloads match for method 'M
 
 
 
-Arguments given:
- - string
-
- - inref<int>
+Known types of arguments: string * inref<int>
 
 
 
@@ -91,10 +78,7 @@ neg106.fs(41,19,41,31): typecheck error FS0041: No overloads match for method 'M
 
 
 
-Arguments given:
- - int
-
- - inref<int>
+Known types of arguments: int * inref<int>
 
 
 
