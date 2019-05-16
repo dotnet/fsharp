@@ -26,10 +26,7 @@ E_LessThanDotOpenParen001.fsx(33,10,33,45): typecheck error FS0041: No overloads
 
 
 
-Arguments given:
- - (string -> int)
-
- - TestType<int,string>
+Known types of arguments: (string -> int) * TestType<int,string>
 
 
 
@@ -53,10 +50,7 @@ E_LessThanDotOpenParen001.fsx(34,10,34,68): typecheck error FS0041: No overloads
 
 
 
-Arguments given:
- - (int -> 'a)
-
- - TestType<int,string>
+Known types of arguments: (int -> 'a) * TestType<int,string>
 
 
 

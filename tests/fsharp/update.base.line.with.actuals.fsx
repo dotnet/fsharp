@@ -13,6 +13,7 @@ let directories =
       "conformance/inference"
       "conformance/wellformedness"
       "typeProviders/negTests"
+      "conformance/lexicalanalysis"
     ]
     |> List.map (fun d -> Path.Combine(__SOURCE_DIRECTORY__, d) |> DirectoryInfo)
 
