@@ -52,11 +52,17 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
+  <!-- When the developer specifies UseFSharpPreview=true then resolve the highest preview package from the F# myget feed -->
+  <PropertyGroup Condition="'$(UseFSharpPreview)' == 'true'">
+    <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePreviewPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <RestoreSources>$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
+  </PropertyGroup>
+
   <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
       <FSharpToolsDirectory Condition = " '$(FSharpToolsDirectory)' == '' ">tools</FSharpToolsDirectory>
-    </PropertyGroup>
+    </PropertyGroup> 
 
     <Error Text="'$(FSharpToolsDirectory)' is an invalid value for 'FSharpToolsDirectory' valid values are 'typeproviders' and 'tools'." Condition="'$(FSharpToolsDirectory)' != 'typeproviders' and '$(FSharpToolsDirectory)' != 'tools'" />
     <Error Text="The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'" Condition="'$(FSharpDesignTimeProtocol)' != 'fsharp41'" />

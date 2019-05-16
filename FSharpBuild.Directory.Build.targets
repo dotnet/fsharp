@@ -4,21 +4,22 @@
   <Import Project="eng\targets\NGenBinaries.targets" />
   <Import Project="FSharp.Profiles.props" />
 
-  <PropertyGroup>
-    <CompileDependsOn>$(CompileDependsOn);CopyAndSubstituteTextFiles</CompileDependsOn>
-  </PropertyGroup>
-
   <Target Name="CopyAndSubstituteTextFiles"
           Inputs="@(CopyAndSubstituteText)"
-          Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')">
+          Outputs="@(CopyAndSubstituteText->'$(OutDir)%(Filename)%(Extension)')"
+          BeforeTargets="BeforeBuild">
+
     <PropertyGroup>
       <_ReplacementText>$([System.IO.File]::ReadAllText('%(CopyAndSubstituteText.FullPath)'))</_ReplacementText>
       <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern1)', '%(CopyAndSubstituteText.Replacement1)'))</_ReplacementText>
       <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern2)', '%(CopyAndSubstituteText.Replacement2)'))</_ReplacementText>
     </PropertyGroup>
-    <WriteLinesToFile File="$(OutDir)%(CopyAndSubstituteText.TargetFilename)" Lines="$(_ReplacementText)" Overwrite="true" />
+    <WriteLinesToFile File="@(CopyAndSubstituteText->'$(OutDir)%(Filename)%(Extension)')" Lines="$(_ReplacementText)" Overwrite="true" />
     <!-- Make sure it will get cleaned  -->
-    <CreateItem Include="$(OutDir)%(CopyAndSubstituteText.TargetFilename)">
+    <ItemGroup>
+        <None Include="@(CopyAndSubstituteText->'$(OutDir)%(Filename)%(Extension)')" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+    <CreateItem Include="@(CopyAndSubstituteText->'$(OutDir)%(Filename)%(Extension)')">
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
   </Target>
