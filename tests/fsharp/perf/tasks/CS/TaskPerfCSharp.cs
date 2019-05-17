@@ -22,11 +22,9 @@ public static class TaskPerfCSharp
         File.Delete(path);
     }
 
-    public static async Task<int> AsyncTask()
+    public static System.Runtime.CompilerServices.YieldAwaitable AsyncTask()
     {
-        // This may be a bit unfair on C#, the F# one is doing just Task.Yield
-        await Task.Yield();
-        return 100;
+        return Task.Yield();
     }
 
     public static Task<int> SyncTask()
@@ -51,17 +49,17 @@ public static class TaskPerfCSharp
 
     public static async Task<int> TenBindsAsync_CSharp()
     {
-        var x1 = await AsyncTask();
-        var x2 = await AsyncTask();
-        var x3 = await AsyncTask();
-        var x4 = await AsyncTask();
-        var x5 = await AsyncTask();
-        var x6 = await AsyncTask();
-        var x7 = await AsyncTask();
-        var x8 = await AsyncTask();
-        var x9 = await AsyncTask();
-        var x10 = await AsyncTask();
-        return x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10;
+        await AsyncTask();
+        await AsyncTask();
+        await AsyncTask();
+        await AsyncTask();
+        await AsyncTask();
+        await AsyncTask();
+        await AsyncTask();
+        await AsyncTask();
+        await AsyncTask();
+        await AsyncTask();
+        return 100;
     }
 
     public static async Task<int> SingleSyncTask_CSharp()

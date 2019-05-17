@@ -378,7 +378,19 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden =
 
 /// Indicates how type parameters are mapped to IL type variables
 [<NoEquality; NoComparison>]
-type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
+type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (TyconRef * ILType * TyparInst) option) =
+
+    /// Get the template replacement information used when using struct types for state machines based on a "template" struct
+    ///
+    /// When generating code for tasks, the mapping is
+    ///     TaskStateMachineTemplate<int32> --> NewStructClosureType<clo-typars>
+    /// When processing the copied metadata of TaskStateMachineTemplate:
+    ///    TaskStateMachineTemplate<...> --> NewStructClosureType<clo-typars>
+    ///    T --> int32
+    ///    AsyncTaskMethodBuilder<T> --> AsyncTaskMethodBuilder<int32>
+    member __.TemplateReplacement = templateReplacement
+
+    member __.WithTemplateReplacement(tcref, ilty, tpinst) = TypeReprEnv(reprs, count, Some (tcref, ilty, tpinst)) 
 
     /// Lookup a type parameter
     member __.Item (tp: Typar, m: range) =
@@ -392,7 +404,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
     /// then it is ignored, since it doesn't corespond to a .NET type parameter.
     member tyenv.AddOne (tp: Typar) =
         if IsNonErasedTypar tp then
-            TypeReprEnv(reprs.Add (tp.Stamp, uint16 count), count + 1)
+            TypeReprEnv(reprs.Add (tp.Stamp, uint16 count), count + 1, templateReplacement)
         else
             tyenv
 
@@ -405,7 +417,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
 
     /// Get the empty environment, where no type parameters are in scope.
     static member Empty =
-        TypeReprEnv(count = 0, reprs = Map.empty)
+        TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
 
     /// Get the environment for a fixed set of type parameters
     static member ForTypars tps =
@@ -486,10 +498,12 @@ and GenILTyAppAux amap m tyenv (tref, boxity, ilTypeOpt) tinst =
     | Some ilType ->
         ilType // monomorphic types include a cached ilType to avoid reallocation of an ILType node
 
-and GenNamedTyAppAux (amap: ImportMap) m tyenv ptrsOK tcref tinst =
+and GenNamedTyAppAux (amap: ImportMap) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
     let g = amap.g
+    match tyenv.TemplateReplacement with
+    | Some (tcref2, ilty, _) when tyconRefEq g tcref tcref2 -> ilty
+    | _ ->
     let tinst = DropErasedTyargs tinst
-
     // See above note on ptrsOK
     if ptrsOK = PtrTypesOK && tyconRefEq g tcref g.nativeptr_tcr && (freeInTypes CollectTypars tinst).FreeTypars.IsEmpty then
         GenNamedTyAppAux amap m tyenv ptrsOK g.ilsigptr_tcr tinst
@@ -655,9 +669,18 @@ let GenFieldSpecForStaticField (isInteractive, g, ilContainerTy, vspec: Val, nm,
         let ilFieldContainerTy = mkILTyForCompLoc (CompLocForInitClass cloc)
         mkILFieldSpecInTy (ilFieldContainerTy, fieldName, ilTy)
 
-let GenRecdFieldRef m cenv tyenv (rfref: RecdFieldRef) tyargs =
-    let tyenvinner = TypeReprEnv.ForTycon rfref.Tycon
-    mkILFieldSpecInTy(GenTyApp cenv.amap m tyenv rfref.TyconRef.CompiledRepresentation tyargs,
+
+let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
+    // Fixup references to the fields of a struct machine template
+    match tyenv.TemplateReplacement with
+    | Some (tcref2, ilty, inst) when tyconRefEq cenv.g rfref.TyconRef tcref2 -> 
+        mkILFieldSpecInTy(ilty,
+                      ComputeFieldName rfref.Tycon rfref.RecdField,
+                      GenType cenv.amap m tyenv (instType inst rfref.RecdField.FormalType))
+    | _ -> 
+        let tyenvinner = TypeReprEnv.ForTycon rfref.Tycon
+        let ilty = GenTyApp cenv.amap m tyenv rfref.TyconRef.CompiledRepresentation tyargs
+        mkILFieldSpecInTy(ilty,
                       ComputeFieldName rfref.Tycon rfref.RecdField,
                       GenType cenv.amap m tyenvinner rfref.RecdField.FormalType)
 
@@ -921,6 +944,8 @@ let AddStorageForVal (g: TcGlobals) (v, s) eenv =
         eenv
 
 let AddStorageForLocalVals g vals eenv = List.foldBack (fun (v, s) acc -> AddStorageForVal g (v, notlazy s) acc) vals eenv
+
+let AddTemplateReplacement eenv (tcref, ilty, inst) = { eenv with tyenv = eenv.tyenv.WithTemplateReplacement (tcref, ilty, inst) }
 
 //--------------------------------------------------------------------------
 // Lookup eenv
@@ -2164,8 +2189,11 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | None ->
 
   match LowerCallsAndSeqs.ConvertStateMachineExprToObject g expr with
-  | Some objExpr ->
-      GenExpr cenv cgbuf eenv sp objExpr sequel
+  | Some res ->
+      match res with 
+      | Choice1Of2 objExpr -> GenExpr cenv cgbuf eenv sp objExpr sequel
+      | Choice2Of2 (structTy, stateVars, methodBodyExprWithJumpTable, meth2Expr, machineAddrVar, startExpr) -> 
+           GenStructStateMachine cenv cgbuf eenv (structTy, methodBodyExprWithJumpTable, stateVars, meth2Expr, machineAddrVar, startExpr) sequel
   | None ->
 
   match expr with
@@ -4077,6 +4105,174 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
+and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, stateVars, setStateMachineExpr, machineAddrVar, startExpr) sequel =
+
+    let m = startExpr.Range
+    let g = cenv.g
+
+    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
+
+    // State vars are only populated for state machine objects made via `__stateMachine` and LowerCallsAndSeqs.
+    //
+    // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
+    // considered true free variables that need to be passed to the constructor.
+    let eenvouter = eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
+    
+    // Find the free variables of the closure, to make them further fields of the object.
+    //
+    // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
+    // free variables of the expression.
+    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m false None eenvouter moveNextExpr
+
+    let cloAttribs = cloinfo.cloAttribs
+    let cloFreeVars = cloinfo.cloFreeVars
+    //let ilCloLambdas = cloinfo.ilCloLambdas
+    //let cloName = cloinfo.cloName
+
+    //let ilxCloSpec = cloinfo.cloSpec
+    let ilCloFreeVars = cloinfo.cloILFreeVars
+    let ilCloGenericFormals = cloinfo.cloILGenericParams
+    assert (isNil cloinfo.localTypeFuncDirectILGenericParams)
+    let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
+    //let ilCloRetTy = cloinfo.cloILFormalRetTy
+    let ilCloTypeRef = cloinfo.cloSpec.TypeRef
+    let ilCloTy = mkILValueTy ilCloTypeRef ilCloGenericActuals
+
+    // The closure implements what ever interfaces the template implements. TODO: currently limiting to precisely 1 for tasks
+    let interfaceTy = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy |> List.head
+    // genMethodAndOptionalMethodImpl tmethod true 
+
+    let ilInterfaceTy = GenType cenv.amap m eenvinner.tyenv interfaceTy
+    let attrs = GenAttrs cenv eenvinner cloAttribs
+
+    let super = g.iltyp_ValueType
+
+    let templateTyconRef, templateTypeArgs = destAppTy g templateStructTy
+    let templateTypeInst = mkTyconRefInst templateTyconRef templateTypeArgs
+    let eenvinner = AddTemplateReplacement eenvinner (templateTyconRef, ilCloTy, templateTypeInst)
+
+    //let cloInfo =
+    //    { cloFreeVars=ilCloFreeVars
+    //      cloStructure=ilCloLambdas
+    //      cloCode=notlazy ilCtorBody }
+
+    let infoReader = InfoReader.InfoReader(g, cenv.amap)
+    let moveNextMethod =
+        let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "MoveNext", eenvinner, 1, moveNextExpr, discardAndReturnVoid)
+        mkILNonGenericVirtualMethod("MoveNext", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL ilCode)
+
+    let setStateMachineMethod =
+        let v, e = match setStateMachineExpr with  Expr.Lambda (_, _, _, [v], e, _, _) -> v,e | _ -> failwith "invalid setStateMachineExpr, expected a lambda of one var"
+        let meth = 
+            InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere "SetStateMachine" interfaceTy
+            |> List.head
+        let argTys = meth.GetParamTypes(cenv.amap, m, [])
+        let ilArgTys = argTys |> List.concat |> GenTypes cenv.amap m eenvinner.tyenv
+        let eenvinner = AddStorageForLocalVals g [(v, Arg 1)] eenvinner
+        let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "SetStateMachine", eenvinner, 1, e, discardAndReturnVoid)
+        let ilParams = ilArgTys |> List.map (fun ty -> mkILParamNamed("machine", ty))
+        mkILNonGenericVirtualMethod("SetStateMachine", ILMemberAccess.Public, ilParams, mkILReturn ILType.Void, MethodBody.IL ilCode)
+
+    let mdefs = [moveNextMethod; setStateMachineMethod]
+
+    let moveNextMethImpl =
+        let ilOverrideMethRef = mkILMethRef(ilInterfaceTy.TypeRef, ILCallingConv.Instance, "MoveNext", 0, [], ILType.Void)
+        let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, "MoveNext", [], ILType.Void, [])
+        { Overrides = OverridesSpec(ilOverrideMethRef, ilInterfaceTy)
+          OverrideBy = ilOverrideBy }
+
+    let setStateMachineMethImpl =
+        let ilOverrideMethRef = mkILMethRef(ilInterfaceTy.TypeRef, ILCallingConv.Instance, "SetStateMachine", 0, setStateMachineMethod.ParameterTypes, ILType.Void)
+        let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, "SetStateMachine", setStateMachineMethod.ParameterTypes, ILType.Void, [])
+        { Overrides = OverridesSpec(ilOverrideMethRef, ilInterfaceTy)
+          OverrideBy = ilOverrideBy }
+
+    let mimpls = [moveNextMethImpl; setStateMachineMethImpl]
+
+    let fdefs =
+        [ // Fields copied from the template struct
+          for templateFld in infoReader.GetRecordOrClassFieldsOfType (None, AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere, m, templateStructTy) do
+              let access = ComputeMemberAccess false
+              let fty = GenType cenv.amap m eenvinner.tyenv templateFld.FieldType
+              let fdef =
+                  ILFieldDef(name = templateFld.Name, fieldType = fty, attributes = enum 0, data = None, literalValue = None, offset = None, marshal = None, customAttrs = mkILCustomAttrs [])
+                      .WithAccess(access)
+                      .WithStatic(false)
+              yield fdef 
+                
+          // Fields for captured variables
+          for ilCloFreeVar in ilCloFreeVars do
+              let access = ComputeMemberAccess false
+              let fdef =
+                  ILFieldDef(name = ilCloFreeVar.fvName, fieldType = ilCloFreeVar.fvType, attributes = enum 0,
+                             data = None, literalValue = None, offset = None, marshal = None, customAttrs = mkILCustomAttrs [])
+                      .WithAccess(access)
+                      .WithStatic(false)
+              yield fdef ]
+
+    let cloTypeDef =
+        ILTypeDef(name = ilCloTypeRef.Name,
+                  layout = ILTypeDefLayout.Auto,
+                  attributes = enum 0,
+                  genericParams = ilCloGenericFormals,
+                  customAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ]),
+                  fields = mkILFields fdefs,
+                  events= emptyILEvents,
+                  properties = emptyILProperties,
+                  methods= mkILMethods mdefs,
+                  methodImpls= mkILMethodImpls mimpls,
+                  nestedTypes=emptyILTypeDefs,
+                  implements = [ilInterfaceTy],
+                  extends= Some super,
+                  securityDecls= emptyILSecurityDecls)
+            .WithSealed(true)
+            .WithSpecialName(true)
+            .WithAccess(ComputeTypeAccess ilCloTypeRef true)
+            .WithLayout(ILTypeDefLayout.Auto)
+            .WithEncoding(ILDefaultPInvokeEncoding.Auto)
+            .WithInitSemantics(ILTypeInit.BeforeField)
+
+    cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
+
+    CountClosure()
+    LocalScope "machine" cgbuf (fun scopeMarks ->
+        let ilMachineAddrTy = ILType.Byref ilCloTy
+
+        // The local for the state machine
+        let locIdx, realloc, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("machine", m), ilCloTy, false) scopeMarks
+
+        // The local for the state machine address
+        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (machineAddrVar.DisplayName, m), ILType.Byref ilCloTy, false) scopeMarks
+
+        // Zero-initialize the machine if necessary
+        if realloc then 
+            EmitInitLocal cgbuf ilCloTy locIdx
+
+        // Initialize the address-of-machine local
+        CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca (uint16 locIdx) )
+        CG.EmitInstr cgbuf (pop 1) (Push [ ]) (I_stloc (uint16 locIdx2) )
+
+        let eenvinner = AddStorageForLocalVals g [(machineAddrVar, Local (locIdx2, realloc, None)) ] eenvinner
+
+        // Initialize the closure variables
+        for (fv, ilv) in Seq.zip cloFreeVars cloinfo.cloILFreeVars do
+            if stateVarsSet.Contains fv then
+                // zero-initialize the state var
+                if realloc then 
+                    CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc (uint16 locIdx2) )
+                    GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
+                    CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
+            else
+                // initialize the captured var
+                CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc (uint16 locIdx2) )
+                GenGetLocalVal cenv cgbuf eenvouter m fv None
+                CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
+
+        // Generate the start expression - eenvinner is used as it contains the binding for machineAddrVar
+        GenExpr cenv cgbuf eenvinner SPSuppress startExpr sequel
+   
+    )
+
 and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, overrides, interfaceImpls, stateVars: ValRef list, m) sequel =
     let g = cenv.g
 
@@ -4488,7 +4684,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
       match expr with
       | Expr.Lambda (_, _, _, _, _, _, returnTy) | Expr.TyLambda (_, _, _, _, returnTy) -> returnTy
       | Expr.Obj (_, ty, _, _, _, _, _, _) -> ty
-      | _ -> failwith "GetIlxClosureInfo: not a lambda expression"
+      | _ -> tyOfExpr g expr //failwith "GetIlxClosureInfo: not a lambda expression"
 
     // Determine the structure of the closure. We do this before analyzing free variables to
     // determine the taken argument names.

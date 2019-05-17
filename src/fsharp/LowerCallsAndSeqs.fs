@@ -808,9 +808,14 @@ type StateMachineConversionFirstPhaseResult =
 
 
 
-let (|StateMachineExpr|_|) g expr =
+let (|RefStateMachineExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh_stateMachine_vref (_, [e], _m) -> Some e
+    | _ -> None
+
+let (|StructStateMachineExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh_stateMachineStruct_vref ([templateStructTy; _ty2; _ty3; _afterTy], [meth1Expr; meth2Expr; afterExpr], _m) -> Some (templateStructTy, meth1Expr, meth2Expr, afterExpr)
     | _ -> None
 
 let (|NewEntryPointExpr|_|) g expr =
@@ -828,6 +833,11 @@ let (|MachineExpr|_|) g expr =
     | ValApp g g.cgh_machine_vref ([ty], _, m) -> Some (ty, m)
     | _ -> None
 
+let (|MachineAddrExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh_machineAddr_vref ([ty], _, m) -> Some (ty, m)
+    | _ -> None
+
 let (|EntryPointExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh_entryPoint_vref (_, [e], m) -> Some (e, m)
@@ -838,7 +848,7 @@ let (|JumpTableExpr|_|) g expr =
     | ValApp g g.cgh_jumptable_vref (_, [pcExpr; codeExpr], _m) -> Some (pcExpr, codeExpr)
     | _ -> None
 
-let sm_verbose = false
+let sm_verbose = true
 
 /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
 let RepresentBindingAsLiftedOrLocal (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) m =
@@ -909,6 +919,11 @@ let isExpandVar (v: Val) =
     isMustExpandVar v
     || (v.BaseOrThisInfo = MemberThisVal)
 
+type env = 
+    { Macros: ValMap<Expr>
+      MachineAddrExpr: Expr option }
+
+    static member Empty = { Macros = ValMap.Empty; MachineAddrExpr = None }
 
 let ConvertStateMachineExprToObject g overallExpr =
 
@@ -919,18 +934,18 @@ let ConvertStateMachineExprToObject g overallExpr =
 
     // Evaluate __expand_ABC and __newEntryPoint bindings at compile-time. 
     // Here we record definitions for later use in TryApplyExpansions
-    let rec BindExpansions g (env: ValMap<_>) expr = 
+    let rec BindExpansions g (env: env) expr = 
 
         match expr with
         // Bind 'let __expand_ABC = bindExpr in bodyExpr'
         | Expr.Let (bind, bodyExpr, _, _) when isExpandVar bind.Var -> 
-            let envR = env.Add bind.Var bind.Expr
+            let envR = { env with Macros = env.Macros.Add bind.Var bind.Expr }
             BindExpansions g envR bodyExpr
 
         // Bind 'let CODE = __newEntryPoint() in bodyExpr'
         | Expr.Let (TBind(v, NewEntryPointExpr g (), _sp), bodyExpr, m, _) ->
             if sm_verbose then printfn "found __newEntryPoint()"
-            let envR = env.Add v (mkInt g m (genPC()))
+            let envR = { env with Macros = env.Macros.Add v (mkInt g m (genPC())) }
             BindExpansions g envR bodyExpr
 
         | _ ->
@@ -952,22 +967,27 @@ let ConvertStateMachineExprToObject g overallExpr =
         | _ -> None
 
     // Apply a single expansion of __expand_ABC and __newEntryPoint in an arbitrary expression
-    let TryApplyExpansions g (env: ValMap<_>) expr = 
+    let TryApplyExpansions g (env: env) expr = 
         match expr with
         // __machine --> ldarg.0
         | MachineExpr g (ty, m) -> 
             Some (mkGetArg0 m ty)
 
+        | MachineAddrExpr g (ty, m) -> 
+            match env.MachineAddrExpr with 
+            | None -> Some (mkGetArg0 m (mkByrefTy g ty))
+            | Some e -> Some e
+
         // __expand_code --> [expand_code]
-        | Expr.Val (vref, _, _) when env.ContainsVal vref.Deref ->
-            let expandedExpr = env.[vref.Deref]
+        | Expr.Val (vref, _, _) when env.Macros.ContainsVal vref.Deref ->
+            let expandedExpr = env.Macros.[vref.Deref]
             if sm_verbose then printfn "expanded %A --> %A..." expr expandedExpr
             Some expandedExpr
 
         // __expand_code x --> let arg = x in expand_code[arg/x]
-        | Expr.App (Expr.Val (vref, _, _), fty, [], args, m) when env.ContainsVal vref.Deref ->
-            let f0 = env.[vref.Deref]
-            let expandedExpr = MakeApplicationAndBetaReduce g (f0, fty, [], args, m)
+        | Expr.App (Expr.Val (vref, _, _), fty, tyargs, args, m) when env.Macros.ContainsVal vref.Deref ->
+            let f0 = env.Macros.[vref.Deref]
+            let expandedExpr = MakeApplicationAndBetaReduce g (f0, fty, [tyargs], args, m)
             if sm_verbose then printfn "expanded %A --> %A..." expr expandedExpr
             Some expandedExpr
 
@@ -980,7 +1000,7 @@ let ConvertStateMachineExprToObject g overallExpr =
         | None -> expr
 
     // Repeatedly find bindings and apply expansions 
-    let rec RepeatBindAndApplyExpansions g env expr = 
+    let rec RepeatBindAndApplyExpansions g (env: env) expr = 
         let env, expr = BindExpansions g env expr
         match TryApplyExpansions g env expr with 
         | Some res -> RepeatBindAndApplyExpansions g env res
@@ -988,20 +1008,34 @@ let ConvertStateMachineExprToObject g overallExpr =
 
     let (|ExpandsTo|) g env e = ApplyExpansions g env e
 
-    // Detect a state machine or an application of a state machine to an method
-    let rec (|StateMachineInContext|_|) g (env: ValMap<_>) overallExpr = 
+    let ConvertStateMachineLeafExpression g (env: env) expr = 
+        expr |> RewriteExpr { PreIntercept = Some (fun cont e -> match TryApplyExpansions g env e with Some e2 -> Some (cont e2) | None -> None)
+                              PostTransform = (fun _ -> None)
+                              PreInterceptBinding = None
+                              IsUnderQuotations=true } 
+
+    // Detect a reference-type state machine (or an application of a reference type state machine to a method)
+    let rec (|RefStateMachineInContext|_|) g (env: env) overallExpr = 
         let env, expr = BindExpansions g env overallExpr 
         match expr with
-        | Expr.App (f0, f0ty, tyargsl, (StateMachineExpr g objExpr :: args), mApp) ->
+        | Expr.App (f0, f0ty, tyargsl, (RefStateMachineExpr g objExpr :: args), mApp) ->
             Some (env, objExpr, (fun objExprR -> Expr.App (f0, f0ty, tyargsl, (objExprR :: args), mApp)))
-        | StateMachineExpr g objExpr ->
+        | RefStateMachineExpr g objExpr ->
             Some (env, objExpr, id)
+        | _ -> None
+
+    // Detect a struct-type state machine (or an application of a reference type state machine to a method)
+    let rec (|StructStateMachineInContext|_|) g (env: env) overallExpr = 
+        let env, expr = BindExpansions g env overallExpr 
+        match expr with
+        | StructStateMachineExpr g (templateStructTy, meth1Expr, meth2Expr, afterExpr) ->
+            Some (env, templateStructTy, meth1Expr, meth2Expr, afterExpr)
         | _ -> None
 
     // Detect a state machine with a single method override
     let (|SingleMethodStateMachineInContext|_|) g overallExpr = 
         match overallExpr with
-        | StateMachineInContext g ValMap.Empty (env, objExpr, remake) ->
+        | RefStateMachineInContext g env.Empty (env, objExpr, remake) ->
             if sm_verbose then printfn "Found state machine..."
             match objExpr with 
             | Expr.Obj (objExprStamp, ty, basev, basecall, overrides, iimpls, stateVars, objExprRange) ->
@@ -1014,10 +1048,44 @@ let ConvertStateMachineExprToObject g overallExpr =
                     match codeLambdaExpr with
                     | Expr.Lambda (_, _, _, [_dummyv], codeExpr, _, _) ->
                         if sm_verbose then printfn "Found code lambda..."
-                        Some (env, objExprStamp, objExprRange, remake, ty, basev, basecall, slotsig, attribs, methTyparsOfOverridingMethod, methodParams, pcExpr, codeExpr, iimpls, stateVars, m)
+
+                        let remake2 (methodBodyExprWithJumpTable, furtherStateVars) = 
+                            let overrideR = TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, methodBodyExprWithJumpTable, m) 
+                            let objExprR = Expr.Obj (objExprStamp, ty, basev, basecall, [overrideR], iimpls, stateVars @ furtherStateVars, objExprRange)
+                            let overallExprR = remake objExprR
+                            if sm_verbose then 
+                                printfn "----------- AFTER REWRITE ----------------------"
+                                printfn "%s" (DebugPrint.showExpr g overallExprR)
+
+                            Choice1Of2 overallExprR
+
+                        Some (env, remake2, pcExpr, codeExpr, m)
                     | _ -> None
                 | _ -> None
             | _ -> None
+
+        | StructStateMachineInContext g env.Empty (env, templateStructTy, meth1Expr, meth2Expr, afterExpr) ->
+            if sm_verbose then printfn "Found struct machine call..."
+            match meth1Expr, afterExpr with 
+            | Expr.Lambda (_, _, _, [_], meth1BodyExpr, _, _), Expr.Lambda (_, _, _, [_], startExpr, _, _) ->
+                if sm_verbose then printfn "Found struct machine lambda..."
+                match meth1BodyExpr with 
+                | JumpTableExpr g (pcExpr, codeLambdaExpr) ->
+                    if sm_verbose then printfn "Found struct machine jump table call..."
+                    let env, codeLambdaExpr = RepeatBindAndApplyExpansions g env codeLambdaExpr
+                    match codeLambdaExpr with
+                    | Expr.Lambda (_, _, _, [_dummyv], codeExpr, m, _) ->
+                        if sm_verbose then printfn "Found code lambda..."
+                        let meth2ExprR = ConvertStateMachineLeafExpression g env meth2Expr
+                        let machineAddrVar, machineAddrExpr = mkCompGenLocal m "machineAddr" (mkByrefTy g templateStructTy)
+                        let startExprR = ConvertStateMachineLeafExpression g { env with MachineAddrExpr = Some machineAddrExpr } startExpr
+                        let remake2 (methodBodyExprWithJumpTable, stateVars) = 
+                            Choice2Of2 (templateStructTy, stateVars, methodBodyExprWithJumpTable, meth2ExprR, machineAddrVar, startExprR)
+                        Some (env, remake2, pcExpr, codeExpr, m)
+                    | _ -> None 
+                | _ -> None
+            | _ -> None
+
         | _ -> None
 
     // A utility to add a jump table an expression
@@ -1043,8 +1111,8 @@ let ConvertStateMachineExprToObject g overallExpr =
     /// Detect constructs allowed in state machines
     let rec ConvertStateMachineCode env pcExpr  expr = 
         if sm_verbose then 
-            printfn "---------"
-            printfn "ConvertStateMachineCodeing %s" (DebugPrint.showExpr g expr)
+            printfn "---------ConvertStateMachineCode"
+            printfn "%s" (DebugPrint.showExpr g expr)
             printfn "---------"
         
         let env, expr = RepeatBindAndApplyExpansions g env expr
@@ -1246,17 +1314,13 @@ let ConvertStateMachineExprToObject g overallExpr =
 
             // Arbitrary expression
             | _ -> 
-                // Reqrite all macro expansions
-                let expr =  
-                    expr |> RewriteExpr { PreIntercept = Some (fun cont e -> match TryApplyExpansions g env e with Some e2 -> Some (cont e2) | None -> None)
-                                          PostTransform = (fun _ -> None)
-                                          PreInterceptBinding = None
-                                          IsUnderQuotations=true } 
-                { phase1 = expr
-                  phase2 = (fun _ctxt -> expr)
+                let exprR = ConvertStateMachineLeafExpression g env expr
+                { phase1 = exprR
+                  phase2 = (fun _ctxt -> exprR)
                   entryPoints=[]
                   stateVars = []
                   asyncVars = emptyFreeVars }
+
         if sm_verbose then 
             printfn "-------------------"
             printfn "Phase 1 Done for %s" (DebugPrint.showExpr g res.phase1)
@@ -1266,7 +1330,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
     // Detect a state machine and convert it
     match overallExpr with
-    | SingleMethodStateMachineInContext g (env, objExprStamp, objExprRange, remake, ty, basev, basecall, slotsig, attribs, methTyparsOfOverridingMethod, methodParams, pcExpr, codeExpr, iimpls, origStateVars, m) ->
+    | SingleMethodStateMachineInContext g (env, remake, pcExpr, codeExpr, m) ->
         if sm_verbose then 
             printfn "Found state machine override method and code expression..."
             printfn "----------- BEFORE LOWER ----------------------"
@@ -1278,7 +1342,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
         // Work out the initial mapping of pcs to labels
         let pcs = [ 1 .. pcCount ]
-        let stateVars = res.stateVars
+        let furtherStateVars = res.stateVars
         let labs = pcs |> List.map (fun _ -> IL.generateCodeLabel())
         let pc2lab  = Map.ofList (List.zip pcs labs)
 
@@ -1295,15 +1359,9 @@ let ConvertStateMachineExprToObject g overallExpr =
         
         if sm_verbose then printfn "----------- REMAKE ----------------------"
 
-        // Rebuild the object expression
-        let overrideR = TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, methodBodyExprWithJumpTable, m) 
-        let objExprR = Expr.Obj (objExprStamp, ty, basev, basecall, [overrideR], iimpls, origStateVars @ stateVars, objExprRange)
-        let overallExprR = remake objExprR
+        // Build the result
+        Some (remake (methodBodyExprWithJumpTable, furtherStateVars))
 
-        if sm_verbose then 
-            printfn "----------- AFTER REWRITE ----------------------"
-            printfn "%s" (DebugPrint.showExpr g overallExprR)
-        
         //printfn "----------- CHECKING ----------------------"
         //let mutable failed = false
         //let _expr =  
@@ -1318,9 +1376,9 @@ let ConvertStateMachineExprToObject g overallExpr =
         //                | _ -> None) 
         //          PreInterceptBinding = None
         //          IsUnderQuotations=true } 
-        if sm_verbose then printfn "----------- DONE ----------------------"
+        //if sm_verbose then printfn "----------- DONE ----------------------"
         
-        Some overallExprR
+        //Some overallExprR
 
     | _ -> None
 

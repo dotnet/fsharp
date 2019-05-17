@@ -693,6 +693,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))  
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
   let v_cgh_machine_info           = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__machine"                            , None                 , None          , [vara],     ([[]], varaTy))
+  let v_cgh_machineAddr_info       = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__machineAddr"                        , None                 , None          , [vara],     ([[]], mkByrefTy varaTy))
+  let v_cgh_stateMachineStruct_info = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                       "__stateMachineStruct"                 , None                 , None          , [vara; varb; varc; vard],     ([[varbTy; varcTy; (v_unit_ty --> vardTy)]], vardTy))
   let v_cgh_stateMachine_info      = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__stateMachine"                       , None                 , None          , [vara],     ([[varaTy]], varaTy))
   let v_cgh_jumptable_info         = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__jumptable"                          , None                 , None          , [vara],     ([[v_int_ty]; [v_unit_ty --> varaTy]], varaTy))
   let v_cgh_newEntryPoint_info     = makeIntrinsicValRef(fslib_MFCodeGenHelpers_nleref,                        "__newEntryPoint"                      , None                 , None          , [],          ([[v_unit_ty]], v_int_ty))
@@ -1430,6 +1432,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
 
   member val cgh_machine_vref = ValRefForIntrinsic v_cgh_machine_info
+  member val cgh_machineAddr_vref = ValRefForIntrinsic v_cgh_machineAddr_info
+  member val cgh_stateMachineStruct_vref = ValRefForIntrinsic v_cgh_stateMachineStruct_info
   member val cgh_stateMachine_vref = ValRefForIntrinsic v_cgh_stateMachine_info
   member val cgh_jumptable_vref = ValRefForIntrinsic v_cgh_jumptable_info
   member val cgh_newEntryPoint_vref = ValRefForIntrinsic v_cgh_newEntryPoint_info
