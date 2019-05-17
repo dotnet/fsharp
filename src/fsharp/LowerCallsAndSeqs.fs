@@ -1008,11 +1008,17 @@ let ConvertStateMachineExprToObject g overallExpr =
 
     let (|ExpandsTo|) g env e = ApplyExpansions g env e
 
-    let ConvertStateMachineLeafExpression g (env: env) expr = 
-        expr |> RewriteExpr { PreIntercept = Some (fun cont e -> match TryApplyExpansions g env e with Some e2 -> Some (cont e2) | None -> None)
-                              PostTransform = (fun _ -> None)
-                              PreInterceptBinding = None
-                              IsUnderQuotations=true } 
+    let makeRewriteEnv (env: env) = 
+        { PreIntercept = Some (fun cont e -> match TryApplyExpansions g env e with Some e2 -> Some (cont e2) | None -> None)
+          PostTransform = (fun _ -> None)
+          PreInterceptBinding = None
+          IsUnderQuotations=true } 
+
+    let ConvertStateMachineLeafExpression (env: env) expr = 
+        expr |> RewriteExpr (makeRewriteEnv env)
+
+    let ConvertStateMachineLeafDecisionTree (env: env) expr = 
+        expr |> RewriteDecisionTree (makeRewriteEnv env)
 
     // Detect a reference-type state machine (or an application of a reference type state machine to a method)
     let rec (|RefStateMachineInContext|_|) g (env: env) overallExpr = 
@@ -1076,10 +1082,17 @@ let ConvertStateMachineExprToObject g overallExpr =
                     match codeLambdaExpr with
                     | Expr.Lambda (_, _, _, [_dummyv], codeExpr, m, _) ->
                         if sm_verbose then printfn "Found code lambda..."
-                        let meth2ExprR = ConvertStateMachineLeafExpression g env meth2Expr
+                        let meth2ExprR = ConvertStateMachineLeafExpression env meth2Expr
                         let machineAddrVar, machineAddrExpr = mkCompGenLocal m "machineAddr" (mkByrefTy g templateStructTy)
-                        let startExprR = ConvertStateMachineLeafExpression g { env with MachineAddrExpr = Some machineAddrExpr } startExpr
+                        let startExprR = ConvertStateMachineLeafExpression { env with MachineAddrExpr = Some machineAddrExpr } startExpr
                         let remake2 (methodBodyExprWithJumpTable, stateVars) = 
+                            if sm_verbose then 
+                                printfn "----------- AFTER REWRITE methodBodyExprWithJumpTable ----------------------"
+                                printfn "%s" (DebugPrint.showExpr g methodBodyExprWithJumpTable)
+                                printfn "----------- AFTER REWRITE meth2ExprR ----------------------"
+                                printfn "%s" (DebugPrint.showExpr g meth2ExprR)
+                                printfn "----------- AFTER REWRITE startExprR ----------------------"
+                                printfn "%s" (DebugPrint.showExpr g startExprR)
                             Choice2Of2 (templateStructTy, stateVars, methodBodyExprWithJumpTable, meth2ExprR, machineAddrVar, startExprR)
                         Some (env, remake2, pcExpr, codeExpr, m)
                     | _ -> None 
@@ -1270,8 +1283,9 @@ let ConvertStateMachineExprToObject g overallExpr =
                   asyncVars = unionFreeVars resBody.asyncVars (unionFreeVars(freeInExpr CollectLocals resFilter.phase1) (freeInExpr CollectLocals resHandler.phase1)) }
 
             // control-flow match
-            | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
+            | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
                 // lower all the targets. 
+                let dtreeR = ConvertStateMachineLeafDecisionTree env dtree 
                 let tglArray = targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget)) -> ConvertStateMachineCode env pcExpr targetExpr)
                 let tgl = Array.toList tglArray
                 let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
@@ -1282,10 +1296,10 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let stateVars = tgl |> List.collect (fun res -> res.stateVars)
                 { phase1 = 
                       let gtgs = (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget)) res -> TTarget(vs, res.phase1, spTarget))
-                      primMkMatch (spBind, exprm, pt, gtgs, m, ty)
+                      primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
                   phase2 = (fun ctxt ->
                                 let gtgs = (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget)) res -> TTarget(vs, res.phase2 ctxt, spTarget))
-                                let generate = primMkMatch (spBind, exprm, pt, gtgs, m, ty)
+                                let generate = primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
                                 generate)
                   entryPoints = entryPoints
                   stateVars = stateVars
@@ -1314,7 +1328,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
             // Arbitrary expression
             | _ -> 
-                let exprR = ConvertStateMachineLeafExpression g env expr
+                let exprR = ConvertStateMachineLeafExpression env expr
                 { phase1 = exprR
                   phase2 = (fun _ctxt -> exprR)
                   entryPoints=[]
@@ -1331,6 +1345,8 @@ let ConvertStateMachineExprToObject g overallExpr =
     // Detect a state machine and convert it
     match overallExpr with
     | SingleMethodStateMachineInContext g (env, remake, pcExpr, codeExpr, m) ->
+        let pcExprR = ConvertStateMachineLeafExpression env pcExpr
+        
         if sm_verbose then 
             printfn "Found state machine override method and code expression..."
             printfn "----------- BEFORE LOWER ----------------------"
@@ -1338,7 +1354,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             printfn "----------- LOWER ----------------------"
     
         // Perform phase1 of the conversion
-        let res = ConvertStateMachineCode env pcExpr codeExpr 
+        let res = ConvertStateMachineCode env pcExprR codeExpr 
 
         // Work out the initial mapping of pcs to labels
         let pcs = [ 1 .. pcCount ]
@@ -1355,7 +1371,7 @@ let ConvertStateMachineExprToObject g overallExpr =
         if sm_verbose then printfn "----------- ADDING JUMP TABLE ----------------------"
 
         // Add the jump table
-        let methodBodyExprWithJumpTable = addPcJumpTable g m pcs pc2lab pcExpr methodBodyExprR
+        let methodBodyExprWithJumpTable = addPcJumpTable g m pcs pc2lab pcExprR methodBodyExprR
         
         if sm_verbose then printfn "----------- REMAKE ----------------------"
 

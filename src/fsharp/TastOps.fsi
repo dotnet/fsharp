@@ -2202,6 +2202,8 @@ type ExprRewritingEnv =
       PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option
       IsUnderQuotations: bool }    
 
+val RewriteDecisionTree : ExprRewritingEnv -> DecisionTree -> DecisionTree
+
 val RewriteExpr : ExprRewritingEnv -> Expr -> Expr
 
 val RewriteImplFile : ExprRewritingEnv -> TypedImplFile -> TypedImplFile

@@ -8256,7 +8256,7 @@ and rewriteExprStructure env expr =
       mkTypeLambda m argtyvs (body, rty)
 
   | Expr.Match (spBind, exprm, dtree, targets, m, ty) -> 
-      let dtree' = rewriteDecisionTree env dtree
+      let dtree' = RewriteDecisionTree env dtree
       let targets' = rewriteTargets env targets
       mkAndSimplifyMatch spBind exprm m ty dtree' targets'
 
@@ -8305,7 +8305,7 @@ and rewriteLinearExpr env expr contf =
                 else rebuildLinearOpExpr (op, tyargs, argsFront', argLast', m)))
 
         | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, sp2, m2, ty) ->
-            let dtree = rewriteDecisionTree env dtree
+            let dtree = RewriteDecisionTree env dtree
             let tg1' = rewriteTarget env tg1
             // tailcall
             rewriteLinearExpr env expr2 (contf << (fun expr2' ->
@@ -8318,7 +8318,7 @@ and rewriteExprs env exprs = List.mapq (RewriteExpr env) exprs
 
 and rewriteFlatExprs env exprs = List.mapq (RewriteExpr env) exprs
 
-and rewriteDecisionTree env x =
+and RewriteDecisionTree env x =
   match x with 
   | TDSuccess (es, n) -> 
       let es' = rewriteFlatExprs env es
@@ -8327,13 +8327,13 @@ and rewriteDecisionTree env x =
 
   | TDSwitch (e, cases, dflt, m) ->
       let e' = RewriteExpr env e
-      let cases' = List.map (fun (TCase(discrim, e)) -> TCase(discrim, rewriteDecisionTree env e)) cases
-      let dflt' = Option.map (rewriteDecisionTree env) dflt
+      let cases' = List.map (fun (TCase(discrim, e)) -> TCase(discrim, RewriteDecisionTree env e)) cases
+      let dflt' = Option.map (RewriteDecisionTree env) dflt
       TDSwitch (e', cases', dflt', m)
 
   | TDBind (bind, body) ->
       let bind' = rewriteBind env bind
-      let body = rewriteDecisionTree env body
+      let body = RewriteDecisionTree env body
       TDBind (bind', body)
 
 and rewriteTarget env (TTarget(vs, e, spTarget)) = TTarget(vs, RewriteExpr env e, spTarget)
