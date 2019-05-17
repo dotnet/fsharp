@@ -11,6 +11,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <NGenBinary>true</NGenBinary>
+    <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

@@ -13,12 +13,13 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
-    <FSCoreMajorVersion>4.6</FSCoreMajorVersion>
+    <FSLanguageVersion>4.6</FSLanguageVersion>
+    <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
     <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
     <FSharpCoreShippedPackageVersion>4.6.2</FSharpCoreShippedPackageVersion>                                <!-- The current published nuget package -->
-    <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-beta.*</FSharpCorePreviewPackageVersion>         <!-- The pattern for specifying the preview package -->
+    <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>         <!-- The pattern for specifying the preview package -->
   </PropertyGroup>
 
   <PropertyGroup>
