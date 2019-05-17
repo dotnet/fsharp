@@ -231,6 +231,7 @@ module Main =
 
     [<EntryPoint>]
     let main argv = 
+        printfn "Testing that the tests run..."
         ManyWriteFile().ManyWriteFile_CSharpAsync()
         ManyWriteFile().ManyWriteFile_Task ()
         ManyWriteFile().ManyWriteFile_TaskBuilder ()
@@ -246,9 +247,15 @@ module Main =
         SingleSyncTask().SingleSyncTask_Task() 
         SingleSyncTask().SingleSyncTask_TaskBuilder() 
         SingleSyncTask().SingleSyncTask_FSharpAsync()
+        printfn "Running becnhmarks..."
 
-        let summary = BenchmarkRunner.Run<ManyWriteFile>()
-        let summary = BenchmarkRunner.Run<SyncBinds>()
-        let summary = BenchmarkRunner.Run<AsyncBinds>()
-        let summary = BenchmarkRunner.Run<SingleSyncTask>()
+        let manyWriteFileResult = BenchmarkRunner.Run<ManyWriteFile>()
+        let syncBindsResult = BenchmarkRunner.Run<SyncBinds>()
+        let asyncBindsResult = BenchmarkRunner.Run<AsyncBinds>()
+        let singleTaskResult = BenchmarkRunner.Run<SingleSyncTask>()
+
+        printfn "%A" manyWriteFileResult
+        printfn "%A" syncBindsResult
+        printfn "%A" asyncBindsResult
+        printfn "%A" singleTaskResult
         0  
