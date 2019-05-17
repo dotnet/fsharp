@@ -17,8 +17,7 @@ This will remove any files that are not under version control. This is necessary
 Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
 
 - [Developing the F# Compiler (Windows)](#developing-the-f-compiler-windows)
-- [Developing the F# Compiler (Linux)](#developing-the-f-compiler-linux)
-- [Developing the F# Compiler (macOS)](#developing-the-f-compiler-macos)
+- [Developing the F# Compiler (Linux/macOS)](#developing-the-f-compiler-linuxmacos)
 - [Developing the Visual F# IDE Tools (Windows Only)](#developing-the-visual-f-ide-tools-windows-only)
 - [Notes and Resources](#notes)
 

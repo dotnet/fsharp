@@ -36,9 +36,7 @@ Even if you find a single-character typo, we're happy to take the change! Althou
 
 | Branch | Status |
 |:------:|:------:|
-|master|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=master)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
-|dev15.9|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev15.9)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
-|dev16.0|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev16.0)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
+|master|[![Build Status](https://dev.azure.com/dnceng/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=master)](https://dev.azure.com/dnceng/public/_build/latest?definitionId=496&branchName=master)|
 
 ## Using nightly releases in Visual Studio
 
