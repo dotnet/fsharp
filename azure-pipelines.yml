@@ -38,8 +38,9 @@ jobs:
       jobs:
       - job: Full_Signed
         pool:
-          name: NetCoreInternal-Pool
-          queue: buildpool.windows.10.amd64.vs2017
+          name: NetCoreInternal-Int-Pool
+          queue: buildpool.windows.10.amd64.vs2019
+        timeoutInMinutes: 300
         variables:
         - group: DotNet-Blob-Feed
         - group: DotNet-Symbol-Server-Pats
@@ -54,7 +55,6 @@ jobs:
                   -configuration $(_BuildConfig)
                   -prepareMachine
                   -testAll
-                  -warnaserror:0
                   /p:SignType=$(_SignType)
                   /p:DotNetSignType=$(_SignType)
                   /p:MicroBuild_SigningEnabled=true
