@@ -14,6 +14,9 @@
       <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern2)', '%(CopyAndSubstituteText.Replacement2)'))</_ReplacementText>
     </PropertyGroup>
 
+    <MakeDir
+      Directories="$(IntermediateOutputPath)"
+      Condition="!Exists('$(IntermediateOutputPath)')" />
     <WriteLinesToFile File="$(__TargetFilePath)" Lines="$(_ReplacementText)" Overwrite="true" />
 
     <!-- Make sure it will get cleaned  -->
@@ -40,6 +43,9 @@
       <_BuildPropertyLines Include="let fsLanguageVersion = &quot;$(FSLANGUAGEVERSION)&quot;" />
     </ItemGroup>
 
+    <MakeDir
+      Directories="$(IntermediateOutputPath)"
+      Condition="!Exists('$(IntermediateOutputPath)')" />
     <WriteLinesToFile File="$(IntermediateOutputPath)$(ProjectName)\buildproperties.fs" Lines="@(_BuildPropertyLines)" Overwrite="true" />
 
     <!-- Make sure it will get cleaned  -->
