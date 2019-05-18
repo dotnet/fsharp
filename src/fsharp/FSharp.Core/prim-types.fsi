@@ -1503,8 +1503,6 @@ namespace Microsoft.FSharp.Core
         /// <returns>'U</returns>
         abstract member Invoke : func:'T -> 'U
 
-#if !FX_NO_CONVERTER
-
         /// <summary>Convert an F# first class function value to a value of type <c>System.Converter</c></summary>
         /// <param name="func">The input function.</param>
         /// <returns>A System.Converter of the function type.</returns>
@@ -1524,7 +1522,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="converter">The input System.Converter.</param>
         /// <returns>An F# function of the same type.</returns>
         static member FromConverter : converter:System.Converter<'T,'U> -> ('T -> 'U)
-#endif
 
         /// <summary>Invoke an F# first class function value with five curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -1575,12 +1572,10 @@ namespace Microsoft.FSharp.Core
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
 
-#if !FX_NO_CONVERTER
         /// <summary>Convert the given Converter delegate object to an F# function value</summary>
         /// <param name="converter">The input Converter delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : converter:Converter<'T,'U>          -> ('T -> 'U)
-#endif
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         /// <param name="func">The input Action delegate.</param>
