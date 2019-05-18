@@ -1686,18 +1686,6 @@ module Patterns =
 
     let decodedTopResources = new Dictionary<Assembly * string, int>(10, HashIdentity.Structural)
 
-#if !FX_NO_REFLECTION_METADATA_TOKENS
-#if FX_NO_REFLECTION_MODULE_HANDLES // not available on Silverlight
-    [<StructuralEquality;StructuralComparison>]
-    type ModuleHandle = ModuleHandle of string * string
-    type System.Reflection.Module with
-        member x.ModuleHandle = ModuleHandle(x.Assembly.FullName, x.Name)
-#else
-    type ModuleHandle = System.ModuleHandle
-#endif
-#endif
-
-
 #if FX_NO_REFLECTION_METADATA_TOKENS // not available on Compact Framework
     [<StructuralEquality; NoComparison>]
     type ReflectedDefinitionTableKey =

@@ -2960,7 +2960,6 @@ namespace Microsoft.FSharp.Core
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit(func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
 
-#if !FX_NO_CONVERTER
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
 
@@ -2970,7 +2969,6 @@ namespace Microsoft.FSharp.Core
         static member FromConverter (converter: System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
 
         static member ToConverter (func: ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
-#endif
 
         static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
 
@@ -2986,9 +2984,7 @@ namespace Microsoft.FSharp.Core
 
         static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 
-#if !FX_NO_CONVERTER
         static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
-#endif
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.

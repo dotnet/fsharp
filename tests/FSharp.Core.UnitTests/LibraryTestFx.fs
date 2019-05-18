@@ -61,7 +61,6 @@ let sleep(n : int32) =
     System.Threading.Thread.Sleep(n)
 #endif
 
-#if VERIFY_SURFACEAREA
 module SurfaceArea =
     open System.Reflection
     open System
@@ -173,4 +172,4 @@ module SurfaceArea =
             sb.ToString ()
 
         Assert.Fail msg
-#endif
+        ()
