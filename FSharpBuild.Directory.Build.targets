@@ -30,7 +30,8 @@
 
   <Target Name="_GenerateBuildPropertiesFile"
           Outputs="$(IntermediateOutputPath)buildproperties.fs"
-          BeforeTargets="BeforeBuild">
+          BeforeTargets="BeforeBuild"
+          Condition="'$(Language)'=='F#'">
 
     <ItemGroup>
       <_BuildPropertyLines Remove="@(_BuildPropertyLines)" />

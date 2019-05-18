@@ -9,6 +9,7 @@
     <OtherFlags>$(OtherFlags) --staticlink:FSharp.Core</OtherFlags>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <IsPackable>false</IsPackable>
+    <!-- fcs build gets a stack overflow without this-->
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ProjectCrackerOptions.fs" />
