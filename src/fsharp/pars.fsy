@@ -4980,7 +4980,7 @@ colonOrEquals:
   | COLON { mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState); }
   | EQUALS { } 
 
-/* A literal string or a string fromm a keyword like __SOURCE_FILE__ */
+/* A literal string or a string from a keyword like __SOURCE_FILE__ */
 stringOrKeywordString:
   | STRING { $1 }
   | KEYWORD_STRING { $1 }
