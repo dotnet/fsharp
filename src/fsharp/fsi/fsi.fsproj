@@ -12,7 +12,6 @@
     <OtherFlags>$(OtherFlags)  --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
     <NGenBinary>true</NGenBinary>
-    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
@@ -23,7 +22,7 @@
   <ItemGroup>
     <Compile Include="console.fs" />
     <Compile Include="fsimain.fs" />
-    <CopyAndSubstituteText Include="fsi.exe.config">
+    <CopyAndSubstituteText Include="App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
     </CopyAndSubstituteText>

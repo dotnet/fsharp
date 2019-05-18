@@ -9,7 +9,6 @@
     <UsingToolSymbolUploader>true</UsingToolSymbolUploader>
     <UsingToolVSSDK>true</UsingToolVSSDK>
   </PropertyGroup>
-
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
@@ -18,17 +17,17 @@
     <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
-    <FSharpCoreShippedPackageVersion>4.6.2</FSharpCoreShippedPackageVersion>                                <!-- The current published nuget package -->
-    <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>         <!-- The pattern for specifying the preview package -->
+    <!-- The current published nuget package -->
+    <FSharpCoreShippedPackageVersion>4.6.2</FSharpCoreShippedPackageVersion>
+    <!-- The pattern for specifying the preview package -->
+    <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <FSPackageMajorVersion>10.4</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
     <VSMinorVersion>0</VSMinorVersion>
@@ -36,7 +35,6 @@
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
   </PropertyGroup>
-
   <!-- version number assignment -->
   <PropertyGroup>
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
@@ -46,7 +44,6 @@
     <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix).0</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
-
   <PropertyGroup>
     <!--
     The F# tools inserted into the RTM version of dev16 is 16.0.20190320.5, but due to a change in version number

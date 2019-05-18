@@ -6,25 +6,26 @@
 
   <Target Name="CopyAndSubstituteTextFiles"
           Inputs="@(CopyAndSubstituteText)"
-          Outputs="@(CopyAndSubstituteText->'$(OutDir)%(Filename)%(Extension)')"
+          Outputs="@(CopyAndSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
           BeforeTargets="BeforeBuild">
 
     <PropertyGroup>
+      <__TargetFilePath>@(CopyAndSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')</__TargetFilePath>
+      <__TargetFileName>@(CopyAndSubstituteText->'%(Filename)%(Extension)')</__TargetFileName>
+
       <_ReplacementText>$([System.IO.File]::ReadAllText('%(CopyAndSubstituteText.FullPath)'))</_ReplacementText>
       <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern1)', '%(CopyAndSubstituteText.Replacement1)'))</_ReplacementText>
       <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern2)', '%(CopyAndSubstituteText.Replacement2)'))</_ReplacementText>
     </PropertyGroup>
 
-    <WriteLinesToFile File="@(CopyAndSubstituteText->'$(OutDir)%(Filename)%(Extension)')" Lines="$(_ReplacementText)" Overwrite="true" />
+    <WriteLinesToFile File="$(__TargetFilePath)" Lines="$(_ReplacementText)" Overwrite="true" />
 
     <!-- Make sure it will get cleaned  -->
-    <ItemGroup>
-        <None Include="@(CopyAndSubstituteText->'$(OutDir)%(Filename)%(Extension)')" CopyToOutputDirectory="PreserveNewest" />
+    <ItemGroup >
+      <None Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' == 'App.config'" CopyToOutputDirectory="Never" />
+      <None Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' != 'App.config'" CopyToOutputDirectory="PreserveNewest" />
+      <FileWrites Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' != 'App.config'" />
     </ItemGroup>
-
-    <CreateItem Include="@(CopyAndSubstituteText->'$(OutDir)%(Filename)%(Extension)')">
-      <Output TaskParameter="Include" ItemName="FileWrites" />
-    </CreateItem>
   </Target>
 
   <Target Name="_GenerateBuildPropertiesFile"
@@ -46,7 +47,8 @@
 
     <!-- Make sure it will get cleaned  -->
     <ItemGroup>
-      <CompileBefore Include="$(IntermediateOutputPath)buildproperties.fs" CopyToOutputDirectory="PreserveNewest" />
+      <FileWrites Include="$(IntermediateOutputPath)buildproperties.fs" />
+      <CompileBefore Include="$(IntermediateOutputPath)buildproperties.fs" />
     </ItemGroup>
   </Target>
 
