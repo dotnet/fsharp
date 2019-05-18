@@ -44,8 +44,8 @@
     </ItemGroup>
 
     <MakeDir
-      Directories="$(IntermediateOutputPath)"
-      Condition="!Exists('$(IntermediateOutputPath)')" />
+      Directories="$(IntermediateOutputPath)$(ProjectName)"
+      Condition="!Exists('$(IntermediateOutputPath)$(ProjectName)')" />
     <WriteLinesToFile File="$(IntermediateOutputPath)$(ProjectName)\buildproperties.fs" Lines="@(_BuildPropertyLines)" Overwrite="true" />
 
     <!-- Make sure it will get cleaned  -->
