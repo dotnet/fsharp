@@ -559,6 +559,7 @@ let testExceptionAttachedToTaskWithoutAwait() =
     require caught "didn't catch"
 
 let testExceptionAttachedToTaskWithAwait() =
+    printfn "running testExceptionAttachedToTaskWithAwait"
     let mutable ranA = false
     let mutable ranB = false
     let t =
@@ -591,6 +592,7 @@ let testExceptionAttachedToTaskWithAwait() =
     require caught "didn't catch"
     
 let testExceptionThrownInFinally() =
+    printfn "running testExceptionThrownInFinally"
     let mutable ranInitial = false
     let mutable ranNext = false
     let mutable ranFinally = 0
@@ -616,6 +618,7 @@ let testExceptionThrownInFinally() =
     require (ranFinally = 1) "didn't run finally exactly once"
 
 let test2ndExceptionThrownInFinally() =
+    printfn "running test2ndExceptionThrownInFinally"
     let mutable ranInitial = false
     let mutable ranNext = false
     let mutable ranFinally = 0
@@ -642,6 +645,7 @@ let test2ndExceptionThrownInFinally() =
     require (ranFinally = 1) "didn't run finally exactly once"
     
 let testFixedStackWhileLoop() =
+    printfn "running testFixedStackWhileLoop"
     let t =
         task {
             let mutable maxDepth = Nullable()
@@ -660,6 +664,7 @@ let testFixedStackWhileLoop() =
     require (t.Result = BIG) "didn't get to big number"
 
 let testFixedStackForLoop() =
+    printfn "running testFixedStackForLoop"
     let mutable ran = false
     let t =
         task {
@@ -690,6 +695,7 @@ let testTypeInference() =
     t2.Wait()
 
 let testNoStackOverflowWithImmediateResult() =
+    printfn "running testNoStackOverflowWithImmediateResult"
     let longLoop =
         task {
             let mutable n = 0
@@ -700,6 +706,7 @@ let testNoStackOverflowWithImmediateResult() =
     longLoop.Wait()
     
 let testNoStackOverflowWithYieldResult() =
+    printfn "running testNoStackOverflowWithYieldResult"
     let longLoop =
         task {
             let mutable n = 0
@@ -715,6 +722,7 @@ let testNoStackOverflowWithYieldResult() =
     longLoop.Wait()
 
 let testSmallTailRecursion() =
+    printfn "running testSmallTailRecursion"
     let rec loop n =
         task {
             // larger N would stack overflow on Mono, eat heap mem on MS .NET
@@ -732,6 +740,7 @@ let testSmallTailRecursion() =
     shortLoop.Wait()
     
 let testTryOverReturnFrom() =
+    printfn "running testTryOverReturnFrom"
     let inner() =
         task {
             do! Task.Yield()
@@ -749,6 +758,7 @@ let testTryOverReturnFrom() =
     require (t.Result = 2) "didn't catch"
 
 let testTryFinallyOverReturnFromWithException() =
+    printfn "running testTryFinallyOverReturnFromWithException"
     let inner() =
         task {
             do! Task.Yield()
@@ -771,6 +781,7 @@ let testTryFinallyOverReturnFromWithException() =
     require (m = 1) "didn't run finally"
     
 let testTryFinallyOverReturnFromWithoutException() =
+    printfn "running testTryFinallyOverReturnFromWithoutException"
     let inner() =
         task {
             do! Task.Yield()
@@ -862,22 +873,38 @@ let main argv =
         testCatching2()
         testNestedCatching()
         testWhileLoopSync()
-        testWhileLoopAsync()
-        testTryFinallyHappyPath()
-        testTryFinallySadPath()
-        testTryFinallyCaught()
-        testUsing()
-        testUsingFromTask()
-        testUsingSadPath()
-        testForLoopA()
-        testForLoopSadPath()
-        testForLoopSadPathComplex()
-        testExceptionAttachedToTaskWithoutAwait()
-        testExceptionAttachedToTaskWithAwait()
-        testExceptionThrownInFinally()
-        test2ndExceptionThrownInFinally()
-        testFixedStackWhileLoop()
-        testFixedStackForLoop()
+        for i in 1 .. 100 do 
+            testWhileLoopAsync()
+        for i in 1 .. 5 do 
+            testTryFinallyHappyPath()
+        for i in 1 .. 5 do 
+            testTryFinallySadPath()
+        for i in 1 .. 5 do 
+            testTryFinallyCaught()
+        for i in 1 .. 5 do 
+            testUsing()
+        for i in 1 .. 5 do 
+            testUsingFromTask()
+        for i in 1 .. 5 do 
+            testUsingSadPath()
+        for i in 1 .. 100 do 
+            testForLoopA()
+        for i in 1 .. 5 do 
+            testForLoopSadPath()
+        for i in 1 .. 5 do 
+            testForLoopSadPathComplex()
+        for i in 1 .. 5 do 
+            testExceptionAttachedToTaskWithoutAwait()
+        for i in 1 .. 5 do 
+            testExceptionAttachedToTaskWithAwait()
+        for i in 1 .. 5 do 
+            testExceptionThrownInFinally()
+        for i in 1 .. 5 do 
+            test2ndExceptionThrownInFinally()
+        for i in 1 .. 100 do 
+            testFixedStackWhileLoop()
+        for i in 1 .. 100 do 
+            testFixedStackForLoop()
         testTypeInference()
         testNoStackOverflowWithImmediateResult()
         testNoStackOverflowWithYieldResult()

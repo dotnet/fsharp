@@ -1316,7 +1316,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let bind = mkBind bind.SequencePointInfo bind.Var (ApplyExpansions g env bind.Expr)
 
                 let resBody = ConvertStateMachineCode env pcExpr bodyExpr
-                if bind.Var.IsCompiledAsTopLevel || not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) then
+                if bind.Var.IsCompiledAsTopLevel || not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) || bind.Var.LogicalName.StartsWith "__stack_" then
                     (RepresentBindingAsLiftedOrLocal bind resBody m)
                 else
                     // printfn "found state variable %s" bind.Var.DisplayName

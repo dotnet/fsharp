@@ -104,9 +104,8 @@ module Helpers =
         sm.MethodBuilder.Task
 
     [<NoDynamicInvocation>]
-    let inline Await (sm: byref<TaskStateMachineTemplate<'T>>) (awaiter: ('Awaiter :> ICriticalNotifyCompletion), pc) =
+    let inline Await (sm: byref<TaskStateMachineTemplate<'T>>) (awaiter: byref<('Awaiter :> ICriticalNotifyCompletion)>, pc) =
         sm.ResumptionPoint <- pc
-        let mutable awaiter = awaiter
         //assert (not (isNull awaiter))
         // Tell the builder to call us again when done.
         //Console.WriteLine("[{0}] AwaitUnsafeOnCompleted", sm.GetHashCode())
@@ -157,13 +156,13 @@ module TaskHelpers =
                                             and ^Awaiter : (member get_IsCompleted : unit -> bool)
                                             and ^Awaiter : (member GetResult : unit -> ^TResult1) >
             (awaitable : ^Awaitable, __expand_continuation : ^TResult1 -> TaskStep<'TResult2, 'TOverall>) : TaskStep<'TResult2, 'TOverall> =
-                let awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable)) // get an awaiter from the awaitable
+                let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable)) // get an awaiter from the awaitable
                 let CONT = __newEntryPoint () 
                 if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then // shortcut to continue immediately
                     __entryPoint CONT
                     __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
                 else
-                    Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (awaiter, CONT)
+                    Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (&awaiter, CONT)
                     TaskStep<'TResult2, 'TOverall>(false)
 
         [<NoDynamicInvocation>]
@@ -182,12 +181,12 @@ module TaskHelpers =
     [<NoDynamicInvocation>]
     let inline bindTask (task : Task<'TResult1>) (__expand_continuation : 'TResult1 -> TaskStep<'TResult2, 'TOverall>) =
         let CONT = __newEntryPoint()
-        let awaiter = task.GetAwaiter()
+        let mutable awaiter = task.GetAwaiter()
         if awaiter.IsCompleted then 
             __entryPoint CONT
             __expand_continuation (awaiter.GetResult())
         else
-            Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (awaiter, CONT)
+            Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (&awaiter, CONT)
             TaskStep<'TResult2, 'TOverall>(false)
 
     /// Special case of the above for `Task<'TResult1>`, for the context-insensitive builder.
@@ -196,12 +195,12 @@ module TaskHelpers =
     [<NoDynamicInvocation>]
     let inline bindTaskConfigureFalse (task : Task<'TResult1>) (__expand_continuation : 'TResult1 -> TaskStep<'TResult2, 'TOverall>) =
         let CONT = __newEntryPoint ()
-        let awaiter = task.ConfigureAwait(false).GetAwaiter()
+        let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
         if awaiter.IsCompleted then
             __entryPoint CONT
             __expand_continuation (awaiter.GetResult())
         else
-            Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (awaiter, CONT)
+            Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (&awaiter, CONT)
             TaskStep<'TResult2, 'TOverall>(false)
 
 // New style task builder.
@@ -257,57 +256,57 @@ type TaskBuilder() =
     /// Builds a step that executes the body while the condition predicate is true.
     [<NoDynamicInvocation>]
     member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> TaskStep<unit, 'TOverall>) : TaskStep<unit, 'TOverall> =
-        let mutable completed = true 
-        while completed && __expand_condition() do
-            completed <- false 
+        let mutable __stack_completed = true 
+        while __stack_completed && __expand_condition() do
+            __stack_completed <- false 
             // The body of the 'while' may include an early exit, e.g. return from entire method
             let ``__machine_step$cont`` = __expand_body ()
             // If we make it to the assignment we prove we've made a step 
-            completed <- ``__machine_step$cont``.IsCompleted
-        TaskStep<unit, 'TOverall>(completed)
+            __stack_completed <- ``__machine_step$cont``.IsCompleted
+        TaskStep<unit, 'TOverall>(__stack_completed)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     [<NoDynamicInvocation>]
     member inline __.TryWith(__expand_body : unit -> TaskStep<'T, 'TOverall>, __expand_catch : exn -> TaskStep<'T, 'TOverall>) : TaskStep<'T, 'TOverall> =
-        let mutable completed = TaskStep<'T, 'TOverall>(false)
-        let mutable caught = false
-        let mutable savedExn = Unchecked.defaultof<_>
+        let mutable __stack_completed = false
+        let mutable __stack_caught = false
+        let mutable __stack_savedExn = Unchecked.defaultof<_>
         try
             // The try block may contain resumption points.
             // This is handled by the state machine rewriting 
             let ``__machine_step$cont`` = __expand_body ()
             // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
             // may skip this step.
-            completed <- ``__machine_step$cont``
+            __stack_completed <- ``__machine_step$cont``.IsCompleted
         with exn -> 
             // The catch block may not contain resumption points.
-            caught <- true
-            savedExn <- exn
+            __stack_caught <- true
+            __stack_savedExn <- exn
 
-        if caught then 
+        if __stack_caught then 
             // Place the catch code outside the catch block 
-            __expand_catch savedExn
+            __expand_catch __stack_savedExn
         else
-            completed
+            TaskStep<'T, 'TOverall>(__stack_completed)
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     [<NoDynamicInvocation>]
     member inline __.TryFinally(__expand_body: unit -> TaskStep<'T, 'TOverall>, compensation : unit -> unit) : TaskStep<'T, 'TOverall> =
-        let mutable completed = TaskStep<'T, 'TOverall>(false)
+        let mutable __stack_completed = false
         try
             let ``__machine_step$cont`` = __expand_body ()
             // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
             // may skip this step.
-            completed <- ``__machine_step$cont``
+            __stack_completed <- ``__machine_step$cont``.IsCompleted
         with _ ->
             compensation()
             reraise()
 
-        if completed.IsCompleted then 
+        if __stack_completed then 
             compensation()
-        completed
+        TaskStep<'T, 'TOverall>(__stack_completed)
 
     [<NoDynamicInvocation>]
     member inline builder.Using(disp : #IDisposable, __expand_body : #IDisposable -> TaskStep<'T, 'TOverall>) = 
@@ -326,12 +325,12 @@ type TaskBuilder() =
     [<NoDynamicInvocation>]
     member inline __.ReturnFrom (task: Task<'T>) : TaskStep<'T, 'T> =
         let CONT = __newEntryPoint ()
-        let awaiter = task.GetAwaiter()
+        let mutable awaiter = task.GetAwaiter()
         if task.IsCompleted then
             __entryPoint CONT
             ret (awaiter.GetResult())
         else
-            Helpers.Await __machineAddr<TaskStateMachineTemplate<'T>> (awaiter, CONT)
+            Helpers.Await __machineAddr<TaskStateMachineTemplate<'T>> (&awaiter, CONT)
             TaskStep<'T, 'T>(false)
 
 [<AutoOpen>]
