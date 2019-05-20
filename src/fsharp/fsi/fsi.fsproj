@@ -22,7 +22,10 @@
   <ItemGroup>
     <Compile Include="console.fs" />
     <Compile Include="fsimain.fs" />
-    <None Include="app.config" />
+    <CopyAndSubstituteText Include="App.config">
+      <Pattern1>{{FSCoreVersion}}</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </CopyAndSubstituteText>
   </ItemGroup>
 
   <ItemGroup>
