@@ -420,7 +420,7 @@ namespace Microsoft.FSharp.Collections
             | [] -> ValueNone
             | h :: t ->
                 match chooser h with
-                | ValueNone -> tryPick chooser t
+                | ValueNone -> tryPickV chooser t
                 | r -> r
 
         [<CompiledName("Pick")>]
