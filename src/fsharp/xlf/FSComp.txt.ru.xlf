@@ -7,6 +7,11 @@
         <target state="new">State machine constructs may only be used inlined code whose composition forms a valid state machine.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="new">{0} for F# {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">Пространство имен "{0}" не определено.</target>
