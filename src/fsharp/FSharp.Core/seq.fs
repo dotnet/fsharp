@@ -717,8 +717,8 @@ namespace Microsoft.FSharp.Collections
         let pickV chooser source =
             checkNonNull "source" source
             match tryPickV chooser source with
-            | None -> indexNotFound()
-            | Some x -> x
+            | ValueNone -> indexNotFound()
+            | ValueSome x -> x
 
         [<CompiledName("TryFind")>]
         let tryFind predicate (source : seq<'T>)  =
