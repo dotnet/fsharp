@@ -464,6 +464,18 @@ namespace Microsoft.FSharp.Collections
                     | None -> loop(i+1)
                     | Some res -> res
             loop 0 
+            
+        [<CompiledName("PickV")>]
+        let pickV chooser (array: _[]) = 
+            checkNonNull "array" array
+            let rec loop i = 
+                if i >= array.Length then 
+                    indexNotFound()
+                else 
+                    match chooser array.[i] with 
+                    | ValueNone -> loop(i+1)
+                    | ValueSome res -> res
+            loop 0 
 
         [<CompiledName("TryPick")>]
         let tryPick chooser (array: _[]) = 
@@ -472,6 +484,16 @@ namespace Microsoft.FSharp.Collections
                 if i >= array.Length then None else 
                 match chooser array.[i] with 
                 | None -> loop(i+1)
+                | res -> res
+            loop 0 
+            
+        [<CompiledName("TryPickV")>]
+        let tryPickV chooser (array: _[]) = 
+            checkNonNull "array" array
+            let rec loop i = 
+                if i >= array.Length then ValueNone else 
+                match chooser array.[i] with 
+                | ValueNone -> loop(i+1)
                 | res -> res
             loop 0 
         
@@ -511,6 +533,53 @@ namespace Microsoft.FSharp.Collections
                         | None -> ()
                         | Some b -> chunk2.[count] <- b
                                     count <- count + 1                            
+                        i <- i + 1
+
+                    let res: 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (chunk1.Length + count)
+                    Array.Copy(chunk1, res, chunk1.Length)
+                    Array.Copy(chunk2, 0, res, chunk1.Length, count)
+                    res
+                else
+                    Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count chunk1                
+            else
+                empty
+                
+        [<CompiledName("ChooseV")>]
+        let chooseV (chooser: 'T -> 'U ValueOption) (array: 'T[]) =             
+            checkNonNull "array" array                    
+            
+            let mutable i = 0
+            let mutable first = Unchecked.defaultof<'U>
+            let mutable found = false
+            while i < array.Length && not found do
+                let element = array.[i]
+                match chooser element with 
+                | ValueNone -> i <- i + 1
+                | ValueSome b -> first <- b; found <- true                            
+                
+            if i <> array.Length then
+
+                let chunk1: 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked ((array.Length >>> 2) + 1)
+                chunk1.[0] <- first
+                let mutable count = 1            
+                i <- i + 1                                
+                while count < chunk1.Length && i < array.Length do
+                    let element = array.[i]                                
+                    match chooser element with
+                    | ValueNone -> ()
+                    | ValueSome b -> chunk1.[count] <- b
+                                     count <- count + 1                            
+                    i <- i + 1
+                
+                if i < array.Length then                            
+                    let chunk2: 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length-i)                        
+                    count <- 0
+                    while i < array.Length do
+                        let element = array.[i]                                
+                        match chooser element with
+                        | ValueNone -> ()
+                        | ValueSome b -> chunk2.[count] <- b
+                                         count <- count + 1                            
                         i <- i + 1
 
                     let res: 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (chunk1.Length + count)
@@ -860,6 +929,18 @@ namespace Microsoft.FSharp.Collections
                 match generator state with
                 | None -> ()
                 | Some (x, s') ->
+                    res.Add(x)
+                    loop s'
+            loop state
+            res.ToArray()
+            
+        [<CompiledName("UnfoldV")>]
+        let unfoldV<'T, 'State> (generator: 'State -> ('T*'State) voption) (state: 'State) =
+            let res = ResizeArray<_>()
+            let rec loop state =
+                match generator state with
+                | ValueNone -> ()
+                | ValueSome (x, s') ->
                     res.Add(x)
                     loop s'
             loop state

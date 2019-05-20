@@ -151,6 +151,13 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The first result.</returns>
         [<CompiledName("TryPick")>]
         val tryPick: chooser:('Key -> 'T -> 'U option) -> table:Map<'Key,'T> -> 'U option
+        
+        /// <summary>Searches the map looking for the first element where the given function returns a <c>ValueSome</c> value.</summary>
+        /// <param name="chooser">The function to generate options from the key/value pairs.</param>
+        /// <param name="table">The input map.</param>
+        /// <returns>The first result.</returns>
+        [<CompiledName("TryPickV")>]
+        val tryPickV: chooser:('Key -> 'T -> 'U voption) -> table:Map<'Key,'T> -> 'U voption
 
         /// <summary>Searches the map looking for the first element where the given function returns a <c>Some</c> value</summary>
         /// <param name="chooser">The function to generate options from the key/value pairs.</param>
@@ -158,6 +165,13 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The first result.</returns>
         [<CompiledName("Pick")>]
         val pick: chooser:('Key -> 'T -> 'U option) -> table:Map<'Key,'T> -> 'U 
+        
+        /// <summary>Searches the map looking for the first element where the given function returns a <c>ValueSome</c> value</summary>
+        /// <param name="chooser">The function to generate options from the key/value pairs.</param>
+        /// <param name="table">The input map.</param>
+        /// <returns>The first result.</returns>
+        [<CompiledName("PickV")>]
+        val pickV: chooser:('Key -> 'T -> 'U voption) -> table:Map<'Key,'T> -> 'U 
 
         /// <summary>Folds over the bindings in the map.</summary>
         /// <param name="folder">The function to update the state given the input key/value pairs.</param>

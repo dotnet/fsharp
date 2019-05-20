@@ -37,6 +37,12 @@ namespace Microsoft.FSharp.Control
             let ev = new Event<_>() 
             sourceEvent.Add(fun x -> match chooser x with None -> () | Some r -> ev.Trigger r)
             ev.Publish
+            
+        [<CompiledName("ChooseV")>]
+        let chooseV chooser (sourceEvent: IEvent<'Delegate,'T>) =
+            let ev = new Event<_>() 
+            sourceEvent.Add(fun x -> match chooser x with ValueNone -> () | ValueSome r -> ev.Trigger r)
+            ev.Publish
 
         [<CompiledName("Scan")>]
         let scan collector state (sourceEvent: IEvent<'Delegate,'T>) =

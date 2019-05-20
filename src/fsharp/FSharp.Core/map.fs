@@ -248,9 +248,25 @@ module MapTree =
             | Some _ as res -> res 
             | None -> 
             tryPickOpt f r
+            
+    let rec tryPickOptV (f: OptimizedClosures.FSharpFunc<_, _, _>) m =
+        match m with 
+        | MapEmpty -> ValueNone
+        | MapOne (k2, v2) -> f.Invoke (k2, v2) 
+        | MapNode (k2, v2, l, r, _) -> 
+            match tryPickOptV f l with 
+            | ValueSome _ as res -> res 
+            | ValueNone -> 
+            match f.Invoke (k2, v2) with 
+            | ValueSome _ as res -> res 
+            | ValueNone -> 
+            tryPickOptV f r
 
     let tryPick f m =
         tryPickOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
+        
+    let tryPickV f m =
+        tryPickOptV (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
     let rec existsOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) m = 
         match m with 
@@ -530,6 +546,9 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 
     member m.TryPick f =
         MapTree.tryPick f tree 
+        
+    member m.TryPickV f =
+        MapTree.tryPickV f tree 
 
     member m.Exists predicate =
         MapTree.exists predicate tree 
@@ -756,12 +775,22 @@ module Map =
     [<CompiledName("TryPick")>]
     let tryPick chooser (table: Map<_, _>) =
         table.TryPick chooser
+        
+    [<CompiledName("TryPickV")>]
+    let tryPickV chooser (table: Map<_, _>) =
+        table.TryPickV chooser
 
     [<CompiledName("Pick")>]
     let pick chooser (table: Map<_, _>) =
         match tryPick chooser table with
         | None -> raise (KeyNotFoundException())
         | Some res -> res
+        
+    [<CompiledName("PickV")>]
+    let pickV chooser (table: Map<_, _>) =
+        match tryPickV chooser table with
+        | ValueNone -> raise (KeyNotFoundException())
+        | ValueSome res -> res
 
     [<CompiledName("Exists")>]
     let exists predicate (table: Map<_, _>) =

@@ -161,6 +161,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Choose")>]
         let choose chooser list = Microsoft.FSharp.Primitives.Basics.List.choose chooser list
+        
+        [<CompiledName("ChooseV")>]
+        let chooseV chooser list = Microsoft.FSharp.Primitives.Basics.List.chooseV chooser list
 
         [<CompiledName("SplitAt")>]
         let splitAt index (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.splitAt index list
@@ -410,6 +413,15 @@ namespace Microsoft.FSharp.Collections
                 match chooser h with
                 | None -> tryPick chooser t
                 | r -> r
+                
+        [<CompiledName("TryPickV")>]
+        let rec tryPickV chooser list =
+            match list with
+            | [] -> ValueNone
+            | h :: t ->
+                match chooser h with
+                | ValueNone -> tryPick chooser t
+                | r -> r
 
         [<CompiledName("Pick")>]
         let rec pick chooser list =
@@ -419,6 +431,15 @@ namespace Microsoft.FSharp.Collections
                 match chooser h with
                 | None -> pick chooser t
                 | Some r -> r
+                
+        [<CompiledName("PickV")>]
+        let rec pickV chooser list =
+            match list with
+            | [] -> indexNotFound()
+            | h :: t ->
+                match chooser h with
+                | ValueNone -> pick chooser t
+                | ValueSome r -> r
 
         [<CompiledName("Filter")>]
         let filter predicate list = Microsoft.FSharp.Primitives.Basics.List.filter predicate list
@@ -700,3 +721,6 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Unfold")>]
         let unfold<'T, 'State> (generator:'State -> ('T*'State) option) (state:'State) = Microsoft.FSharp.Primitives.Basics.List.unfold generator state
+        
+        [<CompiledName("UnfoldV")>]
+        let unfoldV<'T, 'State> (generator:'State -> ('T*'State) voption) (state:'State) = Microsoft.FSharp.Primitives.Basics.List.unfoldV generator state

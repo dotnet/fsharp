@@ -58,6 +58,14 @@ namespace Microsoft.FSharp.Control
         /// <returns>An event that fires only when the chooser returns Some.</returns>
         [<CompiledName("Choose")>]
         val choose: chooser:('T -> 'U option) -> sourceEvent:IEvent<'Del,'T> -> IEvent<'U>
+        
+        /// <summary>Returns a new event which fires on a selection of messages from the original event.
+        /// The selection function takes an original message to an optional new message.</summary>
+        /// <param name="chooser">The function to select and transform event values to pass on.</param>
+        /// <param name="sourceEvent">The input event.</param>
+        /// <returns>An event that fires only when the chooser returns ValueSome.</returns>
+        [<CompiledName("ChooseV")>]
+        val chooseV: chooser:('T -> 'U voption) -> sourceEvent:IEvent<'Del,'T> -> IEvent<'U>
 
         [<CompiledName("Scan")>]
         /// <summary>Returns a new event consisting of the results of applying the given accumulating function

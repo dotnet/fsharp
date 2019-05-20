@@ -86,6 +86,17 @@ namespace Microsoft.FSharp.Control
         [<CompiledName("Choose")>]
         val choose: chooser:('T -> 'U option) -> source:IObservable<'T> -> IObservable<'U>
 
+        /// <summary>Returns an observable which chooses a projection of observations from the source 
+        /// using the given function. The returned object will trigger observations <c>x</c>
+        /// for which the splitter returns <c>ValueSome x</c>. The returned object also propagates 
+        /// all errors arising from the source and completes when the source completes.</summary>
+        /// <param name="chooser">The function that returns ValueSome for observations to be propagated
+        /// and ValueNone for observations to ignore.</param>
+        /// <param name="source">The input Observable.</param>
+        /// <returns>An Observable that only propagates some of the observations from the source.</returns>
+        [<CompiledName("ChooseV")>]
+        val chooseV: chooser:('T -> 'U voption) -> source:IObservable<'T> -> IObservable<'U>
+
         /// <summary>Returns an observable which, for each observer, allocates an item of state
         /// and applies the given accumulating function to successive values arising from
         /// the input. The returned object will trigger observations for each computed 

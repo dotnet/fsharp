@@ -181,6 +181,29 @@ namespace Microsoft.FSharp.Collections
                 member __.Reset() = noReset()
             interface System.IDisposable with
                 member __.Dispose() = e.Dispose()  }
+                
+      let chooseV f (e : IEnumerator<'T>) =
+          let started = ref false
+          let curr = ref ValueNone
+          let get() = 
+              check !started
+              match !curr with 
+              | ValueNone -> alreadyFinished() 
+              | ValueSome x -> x
+
+          { new IEnumerator<'U> with
+                member __.Current = get()
+            interface IEnumerator with
+                member __.Current = box (get())
+                member __.MoveNext() =
+                    if not !started then started := true
+                    curr := ValueNone
+                    while ((!curr).IsNone && e.MoveNext()) do
+                        curr := f e.Current
+                    ValueOption.isSome !curr
+                member __.Reset() = noReset()
+            interface System.IDisposable with
+                member __.Dispose() = e.Dispose()  }
 
       let filter f (e : IEnumerator<'T>) =
           let started = ref false
@@ -207,6 +230,20 @@ namespace Microsoft.FSharp.Collections
                         match f !state with
                         |   None -> false
                         |   Some (r,s) ->
+                                curr <- r
+                                state := s
+                                true
+                    member __.Dispose() = ()
+              }
+              
+      let unfold f x : IEnumerator<_> =
+          let state = ref x
+          upcast
+              { new MapEnumerator<_>() with
+                    member __.DoMoveNext curr =
+                        match f !state with
+                        |   ValueNone -> false
+                        |   ValueSome (r,s) ->
                                 curr <- r
                                 state := s
                                 true
@@ -468,6 +505,7 @@ namespace Microsoft.FSharp.Collections
 
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
         let mkUnfoldSeq f x = mkSeq (fun () -> IEnumerator.unfold f x)
+        let mkUnfoldVSeq f x = mkSeq (fun () -> IEnumerator.unfoldV f x)
         let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
         [<CompiledName("Delay")>]
@@ -475,6 +513,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Unfold")>]
         let unfold generator state = mkUnfoldSeq generator state
+        
+        [<CompiledName("UnfoldV")>]
+        let unfoldV generator state = mkUnfoldVSeq generator state
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
@@ -618,6 +659,11 @@ namespace Microsoft.FSharp.Collections
         let choose chooser source =
             checkNonNull "source" source
             revamp (IEnumerator.choose chooser) source
+            
+        [<CompiledName("ChooseV")>]
+        let chooseV chooser source =
+            checkNonNull "source" source
+            revamp (IEnumerator.chooseV chooser) source
 
         [<CompiledName("Indexed")>]
         let indexed source =
@@ -650,11 +696,27 @@ namespace Microsoft.FSharp.Collections
             while (Option.isNone res && e.MoveNext()) do
                 res <- chooser e.Current
             res
+            
+        [<CompiledName("TryPickV")>]
+        let tryPickV chooser (source : seq<'T>) =
+            checkNonNull "source" source
+            use e = source.GetEnumerator()
+            let mutable res = ValueNone
+            while (ValueOption.isNone res && e.MoveNext()) do
+                res <- chooser e.Current
+            res
 
         [<CompiledName("Pick")>]
         let pick chooser source =
             checkNonNull "source" source
             match tryPick chooser source with
+            | None -> indexNotFound()
+            | Some x -> x
+            
+        [<CompiledName("PickV")>]
+        let pickV chooser source =
+            checkNonNull "source" source
+            match tryPickV chooser source with
             | None -> indexNotFound()
             | Some x -> x
 

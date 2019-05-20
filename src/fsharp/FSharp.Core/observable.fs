@@ -70,6 +70,20 @@ namespace Microsoft.FSharp.Control
                              member x.Error(e) = observer.OnError(e)
 
                              member x.Completed() = observer.OnCompleted() } }
+                             
+        [<CompiledName("ChooseV")>]
+        let chooseV chooser (source: IObservable<'T>) =
+            { new IObservable<'U> with 
+                 member x.Subscribe(observer) =
+                     source.Subscribe 
+                         { new BasicObserver<'T>() with  
+
+                             member x.Next(v) = 
+                                 protect (fun () -> chooser v) (function ValueNone -> () | ValueSome v2 -> observer.OnNext v2) observer.OnError
+
+                             member x.Error(e) = observer.OnError(e)
+
+                             member x.Completed() = observer.OnCompleted() } }
 
         [<CompiledName("Filter")>]
         let filter predicate (source: IObservable<'T>) =
