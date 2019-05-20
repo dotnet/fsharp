@@ -9,9 +9,9 @@ assignees: ''
 
 Please provide a succinct description of the issue.
 
-#### Repro steps
+**Repro steps**
 
-Provide the steps required to reproduce the problem
+Provide the steps required to reproduce the problem:
 
 1. Step A
 2. Step B
@@ -19,19 +19,19 @@ Provide the steps required to reproduce the problem
 If possible attach a zip file with the repro case. This often makes it easier for others to reproduce.
 The zip file should ideally represent the situation just before the call/step that is problematic.
 
-#### Expected behavior
+**Expected behavior**
 
-Provide a description of the expected behaviour.
+Provide a description of the expected behavior.
 
-#### Actual behavior
+**Actual behavior**
 
 Provide a description of the actual behaviour observed. 
 
-#### Known workarounds
+**Known workarounds**
 
 Provide a description of any known workarounds.
 
-#### Related information 
+**Related information**
 
 Provide any related information (optional):
 
