@@ -6,6 +6,8 @@ trigger:
 pr:
 - master
 - dev16.1
+- fsharp47
+- fsharp5
 - release/*
 
 variables:
