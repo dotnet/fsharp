@@ -438,7 +438,7 @@ namespace Microsoft.FSharp.Collections
             | [] -> indexNotFound()
             | h :: t ->
                 match chooser h with
-                | ValueNone -> pick chooser t
+                | ValueNone -> pickV chooser t
                 | ValueSome r -> r
 
         [<CompiledName("Filter")>]
