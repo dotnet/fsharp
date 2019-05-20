@@ -123,6 +123,7 @@ module Helpers =
     let singleTask_FSharpAsync() =
         async { return 1 }
 
+[<MemoryDiagnoser>]
 type ManyWriteFile() =
     [<Benchmark(Baseline=true)>]
     member __.ManyWriteFile_CSharpAsync () =
@@ -164,6 +165,7 @@ type ManyWriteFile() =
         |> Async.RunSynchronously
         File.Delete(path)
 
+[<MemoryDiagnoser>]
 type SyncBinds() =
     [<Benchmark(Baseline=true)>]
     member __.SyncBinds_CSharpAsync() = 
@@ -185,6 +187,7 @@ type SyncBinds() =
         for i in 1 .. manyIterations*100 do 
              tenBindSync_FSharpAsync() |> Async.RunSynchronously |> ignore
 
+[<MemoryDiagnoser>]
 type AsyncBinds() =
     [<Benchmark(Baseline=true)>]
     member __.AsyncBinds_CSharpAsync() = 
@@ -206,6 +209,7 @@ type AsyncBinds() =
     //     for i in 1 .. manyIterations do 
     //         tenBindAsync_FSharpAsync() |> Async.RunSynchronously 
 
+[<MemoryDiagnoser>]
 type SingleSyncTask() =
     [<Benchmark(Baseline=true)>]
     member __.SingleSyncTask_CSharpAsync() = 

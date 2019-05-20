@@ -61,8 +61,8 @@ type TaskStep<'T, 'TOverall> =
 [<Struct; NoComparison; NoEquality>]
 /// This is used by the compiler as a template for creating state machine structs
 type TaskStateMachineTemplate<'T> =
-    [<DefaultValue>]
-    val mutable Current : obj 
+    [<DefaultValue(false)>]
+    val mutable Result : 'T
 
     [<DefaultValue>]
     val mutable ResumptionPoint : int
@@ -77,8 +77,8 @@ type TaskBuilder =
     member inline Combine: task1: TaskStep<unit, 'TOverall> * task2: (unit -> TaskStep<'T, 'TOverall>) -> TaskStep<'T, 'TOverall>
     member inline Delay: f: (unit -> TaskStep<'T, 'TOverall>) -> (unit -> TaskStep<'T, 'TOverall>)
     member inline For: sequence: seq<'T> * body: ('T -> TaskStep<unit, 'TOverall>) -> TaskStep<unit, 'TOverall>
-    member inline Return: x: 'T -> TaskStep<'T, 'TOverall>
-    member inline ReturnFrom: task: Task<'T> -> TaskStep<'T, 'TOverall>
+    member inline Return: x: 'T -> TaskStep<'T, 'T>
+    member inline ReturnFrom: task: Task<'T> -> TaskStep<'T, 'T>
     member inline Run: code: (unit -> TaskStep<'T, 'T>) -> Task<'T>
     member inline TryFinally: body: (unit -> TaskStep<'T, 'TOverall>) * fin: (unit -> unit) -> TaskStep<'T, 'TOverall>
     member inline TryWith: body: (unit -> TaskStep<'T, 'TOverall>) * catch: (exn -> TaskStep<'T, 'TOverall>) -> TaskStep<'T, 'TOverall>
@@ -115,14 +115,14 @@ module ContextSensitiveTasks =
         static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * k: ('TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
 
         /// Provides evidence that task-like types can be used in 'return' in a task workflow
-        static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T, 'TOverall> : priority: IPriority1 * taskLike: ^TaskLike -> TaskStep< ^T, 'TOverall > 
+        static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T> : priority: IPriority1 * taskLike: ^TaskLike -> TaskStep< ^T, ^T > 
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted: unit -> bool)
                                             and ^Awaiter: (member GetResult: unit ->  ^T)
 
         /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
-        static member inline CanReturnFrom: IPriority1 * computation: Async<'T> -> TaskStep<'T, 'TOverall>
+        static member inline CanReturnFrom: IPriority1 * computation: Async<'T> -> TaskStep<'T, 'T>
 
     type TaskBuilder with
       /// Provides the ability to bind to a variety of tasks, using context-sensitive semantics
@@ -130,8 +130,8 @@ module ContextSensitiveTasks =
           when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>)
 
       /// Provides the ability to return results from a variety of tasks, using context-sensitive semantics
-      member inline ReturnFrom: a: ^TaskLike -> TaskStep< 'TResult, 'TOverall >
-          when (Witnesses or  ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'TResult, 'TOverall>)
+      member inline ReturnFrom: a: ^TaskLike -> TaskStep< 'T, 'T >
+          when (Witnesses or  ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T, 'T>)
 
 module ContextInsensitiveTasks = 
 
