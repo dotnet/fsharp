@@ -43,7 +43,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         let __newEntryPoint() : int = failwith "__newEntryPoint should always be removed from compiled code"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __machine<'T> : 'T = failwith "__newEntryPoint should always be removed from compiled code"
+        let __machine<'T> : 'T = failwith "__machine should always be removed from compiled code"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __machineAddr<'T> : byref<'T> = (# "ldnull throw" : byref<'T> #)
@@ -95,6 +95,7 @@ type TaskStateMachineTemplate<'T> =
         member this.SetStateMachine(_machine) = failwith "template"
 
 module Helpers =
+    [<NoDynamicInvocation>]
     let inline Start (sm: byref<TaskStateMachineTemplate<'T>>) = 
         //Console.WriteLine("[{0}] start", sm.GetHashCode())
         sm.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
@@ -102,14 +103,16 @@ module Helpers =
         //Console.WriteLine("[{0}] unwrap", sm.GetHashCode())
         sm.MethodBuilder.Task
 
-    let inline Await (sm: byref<TaskStateMachineTemplate<'T>>) (awaiter, pc) =
+    [<NoDynamicInvocation>]
+    let inline Await (sm: byref<TaskStateMachineTemplate<'T>>) (awaiter: ('Awaiter :> ICriticalNotifyCompletion), pc) =
         sm.ResumptionPoint <- pc
         let mutable awaiter = awaiter
-        assert (not (isNull awaiter))
+        //assert (not (isNull awaiter))
         // Tell the builder to call us again when done.
         //Console.WriteLine("[{0}] AwaitUnsafeOnCompleted", sm.GetHashCode())
         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 
+    [<NoDynamicInvocation>]
     let inline SetResult (sm: byref<TaskStateMachineTemplate<'T>>) (v: 'T) = 
         sm.Result <- v
 
@@ -122,13 +125,16 @@ module TaskHelpers =
     //    else agg :> Exception
 
     /// Used to return a value.
+    [<NoDynamicInvocation>]
     let inline ret<'T> (x : 'T) = 
         Helpers.SetResult __machineAddr<TaskStateMachineTemplate<'T>> x
         TaskStep<'T, 'T>(true)
 
+    [<NoDynamicInvocation>]
     let inline RequireCanBind< ^Priority, ^TaskLike, ^TResult1, 'TResult2, 'TOverall when (^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>) > (x: ^Priority) (y: ^TaskLike) __expand_continuation = 
         ((^Priority or ^TaskLike): (static member CanBind : ^Priority * ^TaskLike * (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>) (x, y, __expand_continuation))
 
+    [<NoDynamicInvocation>]
     let inline RequireCanReturnFrom< ^Priority, ^TaskLike, 'T when (^Priority or ^TaskLike): (static member CanReturnFrom: ^Priority * ^TaskLike -> TaskStep<'T, 'T>)> (x: ^Priority) (y: ^TaskLike) = 
         ((^Priority or ^TaskLike): (static member CanReturnFrom : ^Priority * ^TaskLike -> TaskStep<'T, 'T>) (x, y))
 
@@ -144,6 +150,7 @@ module TaskHelpers =
         //         return x
         //     }
 
+        [<NoDynamicInvocation>]
         static member inline GenericAwait< ^Awaitable, ^Awaiter, ^TResult1, 'TOverall
                                             when ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion 
@@ -156,9 +163,10 @@ module TaskHelpers =
                     __entryPoint CONT
                     __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
                 else
-                    Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> ((awaiter :> ICriticalNotifyCompletion), CONT)
+                    Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (awaiter, CONT)
                     TaskStep<'TResult2, 'TOverall>(false)
 
+        [<NoDynamicInvocation>]
         static member inline GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1, 'TOverall
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
                                                         and ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
@@ -171,6 +179,7 @@ module TaskHelpers =
 
     /// Special case of the above for `Task<'TResult1>`. Have to write this T by hand to avoid confusing the compiler
     /// trying to decide between satisfying the constraints with `Task` or `Task<'TResult1>`.
+    [<NoDynamicInvocation>]
     let inline bindTask (task : Task<'TResult1>) (__expand_continuation : 'TResult1 -> TaskStep<'TResult2, 'TOverall>) =
         let CONT = __newEntryPoint()
         let awaiter = task.GetAwaiter()
@@ -178,12 +187,13 @@ module TaskHelpers =
             __entryPoint CONT
             __expand_continuation (awaiter.GetResult())
         else
-            Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> ((awaiter :> ICriticalNotifyCompletion), CONT)
+            Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (awaiter, CONT)
             TaskStep<'TResult2, 'TOverall>(false)
 
     /// Special case of the above for `Task<'TResult1>`, for the context-insensitive builder.
     /// Have to write this T by hand to avoid confusing the compiler thinking our built-in bind method
     /// defined on the builder has fancy generic constraints on inp and T parameters.
+    [<NoDynamicInvocation>]
     let inline bindTaskConfigureFalse (task : Task<'TResult1>) (__expand_continuation : 'TResult1 -> TaskStep<'TResult2, 'TOverall>) =
         let CONT = __newEntryPoint ()
         let awaiter = task.ConfigureAwait(false).GetAwaiter()
@@ -191,14 +201,16 @@ module TaskHelpers =
             __entryPoint CONT
             __expand_continuation (awaiter.GetResult())
         else
-            Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> ((awaiter :> ICriticalNotifyCompletion), CONT)
+            Helpers.Await __machineAddr<TaskStateMachineTemplate<'TOverall>> (awaiter, CONT)
             TaskStep<'TResult2, 'TOverall>(false)
 
 // New style task builder.
 type TaskBuilder() =
     
+    [<NoDynamicInvocation>]
     member inline __.Delay(__expand_f : unit -> TaskStep<'T, 'TOverall>) = __expand_f
 
+    [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : unit -> TaskStep<'T, 'T>) : Task<'T> = 
         __stateMachineStruct<TaskStateMachineTemplate<'T>, (unit -> unit), (IAsyncStateMachine -> unit), Task<'T>>
             // MoveNext
@@ -209,9 +221,8 @@ type TaskBuilder() =
                         try
                             //Console.WriteLine("[{0}] step from {1}", sm.GetHashCode(), resumptionPoint)
                             let ``__machine_step$cont`` = __expand_code()
-                            let v = __machineAddr<TaskStateMachineTemplate<'T>>
                             if ``__machine_step$cont``.IsCompleted then 
-                                //Console.WriteLine("[{0}] unboxing result", sm.GetHashCode())
+                                let v = __machineAddr<TaskStateMachineTemplate<'T>>
                                 //Console.WriteLine("[{0}] SetResult {1}", sm.GetHashCode(), res)
                                 v.MethodBuilder.SetResult(v.Result)
                         with exn ->
@@ -227,13 +238,16 @@ type TaskBuilder() =
         
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
+    [<NoDynamicInvocation; DefaultValue>]
     member inline __.Zero() : TaskStep<unit, 'TOverall> = TaskStep<unit, 'TOverall>(true)
 
+    [<NoDynamicInvocation>]
     member inline __.Return (x: 'T) : TaskStep<'T, 'T> = ret x
 
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
+    [<NoDynamicInvocation>]
     member inline __.Combine(``__machine_step$cont``: TaskStep<unit, 'TOverall>, __expand_task2: unit -> TaskStep<'T, 'TOverall>) : TaskStep<'T, 'TOverall> =
         if ``__machine_step$cont``.IsCompleted then 
             __expand_task2()
@@ -241,6 +255,7 @@ type TaskBuilder() =
             TaskStep<'T, 'TOverall>(``__machine_step$cont``.IsCompleted)
 
     /// Builds a step that executes the body while the condition predicate is true.
+    [<NoDynamicInvocation>]
     member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> TaskStep<unit, 'TOverall>) : TaskStep<unit, 'TOverall> =
         let mutable completed = true 
         while completed && __expand_condition() do
@@ -253,6 +268,7 @@ type TaskBuilder() =
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
+    [<NoDynamicInvocation>]
     member inline __.TryWith(__expand_body : unit -> TaskStep<'T, 'TOverall>, __expand_catch : exn -> TaskStep<'T, 'TOverall>) : TaskStep<'T, 'TOverall> =
         let mutable completed = TaskStep<'T, 'TOverall>(false)
         let mutable caught = false
@@ -277,6 +293,7 @@ type TaskBuilder() =
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
+    [<NoDynamicInvocation>]
     member inline __.TryFinally(__expand_body: unit -> TaskStep<'T, 'TOverall>, compensation : unit -> unit) : TaskStep<'T, 'TOverall> =
         let mutable completed = TaskStep<'T, 'TOverall>(false)
         try
@@ -292,25 +309,29 @@ type TaskBuilder() =
             compensation()
         completed
 
+    [<NoDynamicInvocation>]
     member inline builder.Using(disp : #IDisposable, __expand_body : #IDisposable -> TaskStep<'T, 'TOverall>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         builder.TryFinally(
             (fun () -> __expand_body disp),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
+    [<NoDynamicInvocation>]
     member inline builder.For(sequence : seq<'T>, __expand_body : 'T -> TaskStep<unit, 'TOverall>) : TaskStep<unit, 'TOverall> =
         // A for loop is just a using statement on the sequence's enumerator...
         builder.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
             (fun e -> builder.While((fun () -> e.MoveNext()), (fun () -> __expand_body e.Current))))
 
+    [<NoDynamicInvocation>]
     member inline __.ReturnFrom (task: Task<'T>) : TaskStep<'T, 'T> =
         let CONT = __newEntryPoint ()
+        let awaiter = task.GetAwaiter()
         if task.IsCompleted then
             __entryPoint CONT
-            ret (task.GetAwaiter().GetResult())
+            ret (awaiter.GetResult())
         else
-            Helpers.Await __machineAddr<TaskStateMachineTemplate<'T>> ((task.GetAwaiter() :> ICriticalNotifyCompletion), CONT)
+            Helpers.Await __machineAddr<TaskStateMachineTemplate<'T>> (awaiter, CONT)
             TaskStep<'T, 'T>(false)
 
 [<AutoOpen>]
@@ -326,6 +347,7 @@ module ContextSensitiveTasks =
         interface IPriority3
 
         // Give the type arguments explicitly to make it match the signature precisely
+        [<NoDynamicInvocation>]
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
@@ -333,13 +355,16 @@ module ContextSensitiveTasks =
                                             and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>(_priority: IPriority2, taskLike : ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2, 'TOverall>)) : TaskStep<'TResult2, 'TOverall>
                   = TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1, 'TOverall> (taskLike, __expand_continuation)
 
+        [<NoDynamicInvocation>]
         static member inline CanBind (_priority: IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2, 'TOverall>)) : TaskStep<'TResult2, 'TOverall>
                   = bindTask task __expand_continuation                      
 
+        [<NoDynamicInvocation>]
         static member inline CanBind (_priority: IPriority1, computation  : Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2, 'TOverall>)) : TaskStep<'TResult2, 'TOverall> 
                   = bindTask (Async.StartAsTask computation) __expand_continuation     
 
         // Give the type arguments explicitly to make it match the signature precisely
+        [<NoDynamicInvocation>]
         static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T
                                            when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                            and ^Awaiter :> ICriticalNotifyCompletion
@@ -348,16 +373,19 @@ module ContextSensitiveTasks =
               (_priority: IPriority1, taskLike: ^TaskLike) : TaskStep< ^T, ^T > 
                   = TaskLikeBind< ^T >.GenericAwait< ^TaskLike, ^Awaiter, ^T, ^T > (taskLike, ret< ^T >)
 
+        [<NoDynamicInvocation>]
         static member inline CanReturnFrom (_priority: IPriority1, computation : Async<'T>) 
                   = bindTask (Async.StartAsTask computation) (ret<'T>) : TaskStep<'T, 'T>
 
     type TaskBuilder with
-        member inline builder.Bind< ^TaskLike, ^TResult1, 'TResult2 , 'TOverall
+        [<NoDynamicInvocation>]
+        member inline __.Bind< ^TaskLike, ^TResult1, 'TResult2 , 'TOverall
                                            when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>)> 
                     (task: ^TaskLike, __expand_continuation: ^TResult1 -> TaskStep<'TResult2, 'TOverall>) : TaskStep<'TResult2, 'TOverall>
                   = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2, 'TOverall> Unchecked.defaultof<Witnesses> task __expand_continuation
 
-        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T, 'T>) > (task: ^TaskLike) : TaskStep<'T, 'T> 
+        [<NoDynamicInvocation>]
+        member inline __.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T, 'T>) > (task: ^TaskLike) : TaskStep<'T, 'T> 
                   = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> Unchecked.defaultof<Witnesses> task
 
 module ContextInsensitiveTasks =
@@ -370,6 +398,7 @@ module ContextInsensitiveTasks =
         interface IPriority2
         interface IPriority3
 
+        [<NoDynamicInvocation>]
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
@@ -377,6 +406,7 @@ module ContextInsensitiveTasks =
                                             and ^Awaiter: (member GetResult:  unit ->  ^TResult1)> (_priority: IPriority3, taskLike: ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2, 'TOverall>)) : TaskStep<'TResult2, 'TOverall>
               = TaskLikeBind<'TResult2>.GenericAwait< ^TaskLike, ^Awaiter, ^TResult1, 'TOverall> (taskLike, __expand_continuation)
 
+        [<NoDynamicInvocation>]
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaitable, ^Awaiter , 'TOverall
                                             when  ^TaskLike: (member ConfigureAwait:  bool ->  ^Awaitable)
                                             and ^Awaitable: (member GetAwaiter: unit ->  ^Awaiter)
@@ -385,40 +415,43 @@ module ContextInsensitiveTasks =
                                             and ^Awaiter: (member GetResult: unit -> ^TResult1)> (_priority: IPriority2, configurableTaskLike: ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2, 'TOverall>)) : TaskStep<'TResult2, 'TOverall>
               = TaskLikeBind<'TResult2>.GenericAwaitConfigureFalse< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1, 'TOverall> (configurableTaskLike, __expand_continuation)
 
+        [<NoDynamicInvocation>]
         static member inline CanBind (_priority :IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2, 'TOverall>)) : TaskStep<'TResult2, 'TOverall>
               = bindTaskConfigureFalse task __expand_continuation
 
+        [<NoDynamicInvocation>]
         static member inline CanBind (_priority: IPriority1, computation : Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2, 'TOverall>)) : TaskStep<'TResult2, 'TOverall>
               = bindTaskConfigureFalse (Async.StartAsTask computation) __expand_continuation
 
-(*
+        [<NoDynamicInvocation>]
         static member inline CanReturnFrom< ^Awaitable, ^Awaiter, ^T
                                     when ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
                                     and ^Awaiter :> ICriticalNotifyCompletion 
                                     and ^Awaiter : (member get_IsCompleted : unit -> bool)
                                     and ^Awaiter : (member GetResult : unit -> ^T) > (_priority: IPriority2, taskLike: ^Awaitable) 
-                            = TaskLikeBind< ^T >.GenericAwait< ^Awaitable, ^Awaiter, ^T >(taskLike, ret)
+                            = TaskLikeBind< ^T >.GenericAwait< ^Awaitable, ^Awaiter, ^T, ^T >(taskLike, ret< ^T > )
         
-        static member inline CanReturnFrom< ^TaskLike, ^Awaitable, ^Awaiter, ^TResult1
+        [<NoDynamicInvocation>]
+        static member inline CanReturnFrom< ^TaskLike, ^Awaitable, ^Awaiter, ^T
                                                         when ^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)
                                                         and ^Awaitable : (member GetAwaiter : unit -> ^Awaiter)
                                                         and ^Awaiter :> ICriticalNotifyCompletion 
                                                         and ^Awaiter : (member get_IsCompleted : unit -> bool)
-                                                        and ^Awaiter : (member GetResult : unit -> ^TResult1) > (_: IPriority1, configurableTaskLike: ^TaskLike)
-                            = TaskLikeBind< ^TResult1 >.GenericAwaitConfigureFalse(configurableTaskLike, ret)
+                                                        and ^Awaiter : (member GetResult : unit -> ^T ) > (_: IPriority1, configurableTaskLike: ^TaskLike)
+                            = TaskLikeBind< ^T >.GenericAwaitConfigureFalse(configurableTaskLike, ret< ^T >)
 
-
+        [<NoDynamicInvocation>]
         static member inline CanReturnFrom (_priority: IPriority1, computation: Async<'T>) 
-                            = bindTaskConfigureFalse sm (Async.StartAsTask computation) ret
-*)
+                            = bindTaskConfigureFalse (Async.StartAsTask computation) ret
 
     type TaskBuilder with
-        member inline builder.Bind< ^TaskLike, ^TResult1, 'TResult2 , 'TOverall
+        [<NoDynamicInvocation>]
+        member inline __.Bind< ^TaskLike, ^TResult1, 'TResult2 , 'TOverall
                                            when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>)> 
                     (task: ^TaskLike, __expand_continuation: ^TResult1 -> TaskStep<'TResult2, 'TOverall>) : TaskStep<'TResult2, 'TOverall>
                   = RequireCanBind< Witnesses, ^TaskLike, ^TResult1, 'TResult2, 'TOverall> Unchecked.defaultof<Witnesses> task __expand_continuation
-(*
-        member inline builder.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T>) > (task: ^TaskLike) : TaskStep<'T> 
-                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> builder.TaskStateMachineTemplate Unchecked.defaultof<Witnesses> task
-*)
+
+        [<NoDynamicInvocation>]
+        member inline __.ReturnFrom< ^TaskLike, 'T  when (Witnesses or ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T, 'T>) > (task: ^TaskLike) : TaskStep<'T, 'T> 
+                  = RequireCanReturnFrom< Witnesses, ^TaskLike, 'T> Unchecked.defaultof<Witnesses> task
 #endif

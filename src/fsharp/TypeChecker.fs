@@ -8338,17 +8338,21 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | None -> 
             // This only occurs in final position in a sequence
             match comp with 
+
             // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided or as { let! () = expr in zero } otherwise
             | SynExpr.DoBang (rhsExpr, m) -> 
                 let mUnit = rhsExpr.Range
                 let rhsExpr = mkSourceExpr rhsExpr
                 if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), m))
                 let bodyExpr =
-                    if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Return" builderTy) then
-                        SynExpr.ImplicitZero m
-                    else
-                        SynExpr.YieldOrReturn ((false, true), SynExpr.Const (SynConst.Unit, m), m)
+                    match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Return" builderTy with
+                    | [] -> SynExpr.ImplicitZero m
+                    | _ -> 
+                        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy with
+                        | minfo :: _ when MethInfoHasAttribute cenv.g m cenv.g.attrib_DefaultValueAttribute minfo -> SynExpr.ImplicitZero m
+                        | _ -> SynExpr.YieldOrReturn ((false, true), SynExpr.Const (SynConst.Unit, m), m)
                 trans true q varSpace (SynExpr.LetOrUseBang (NoSequencePointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, bodyExpr, m)) translatedCtxt
+
             // "expr;" in final position is treated as { expr; zero }
             // Suppress the sequence point on the "zero"
             | _ -> 
@@ -10768,7 +10772,18 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
 
-        if HasFSharpAttribute cenv.g cenv.g.attrib_DefaultValueAttribute valAttribs then 
+        let isZeroMethod =
+            match declKind, pat with
+            | ModuleOrMemberBinding, SynPat.Named(_, name, _, _, _) when name.idText = "Zero" -> 
+                match memberFlagsOpt with
+                | Some memberFlags ->
+                    match memberFlags.MemberKind with
+                    | MemberKind.Member -> true
+                    | _ -> false
+                | _ -> false 
+            | _ -> false
+
+        if HasFSharpAttribute cenv.g cenv.g.attrib_DefaultValueAttribute valAttribs && not isZeroMethod then 
             errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
         
         let isThreadStatic = isThreadOrContextStatic cenv.g valAttribs

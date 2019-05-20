@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
+#pragma warning disable 1998
+
 public static class TaskPerfCSharp
 {
     public const int BufferSize = 128;

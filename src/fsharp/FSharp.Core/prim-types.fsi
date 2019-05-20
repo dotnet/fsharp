@@ -437,7 +437,7 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a field declaration means that the field is 
     /// not initialized. During type checking a constraint is asserted that the field type supports 'null'. 
     /// If the 'check' value is false then the constraint is not asserted. </summary>
-    [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field|||AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute =
         inherit Attribute

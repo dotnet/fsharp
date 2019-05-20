@@ -2989,6 +2989,17 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel =
       CG.EmitInstr cgbuf (pop 2) (Push [g.ilg.typ_Bool]) AI_ceq
       GenSequel cenv eenv.cloc cgbuf sequel
 
+  | Expr.Val (v, _, m), _, _ 
+      when valRefEq g v g.cgh_entryPoint_vref || 
+           valRefEq g v g.cgh_jumptable_vref || 
+           valRefEq g v g.cgh_machine_vref || 
+           valRefEq g v g.cgh_machineAddr_vref || 
+           valRefEq g v g.cgh_newEntryPoint_vref || 
+           valRefEq g v g.cgh_return_vref || 
+           valRefEq g v g.cgh_stateMachineStruct_vref|| 
+           valRefEq g v g.cgh_stateMachine_vref ->
+                errorR(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(), m))
+
   // Emit "methodhandleof" calls as ldtoken instructions
   //
   // The token for the "GenericMethodDefinition" is loaded
