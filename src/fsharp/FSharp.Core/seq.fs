@@ -236,7 +236,7 @@ namespace Microsoft.FSharp.Collections
                     member __.Dispose() = ()
               }
               
-      let unfold f x : IEnumerator<_> =
+      let unfoldV f x : IEnumerator<_> =
           let state = ref x
           upcast
               { new MapEnumerator<_>() with
