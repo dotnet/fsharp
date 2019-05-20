@@ -3,12 +3,20 @@
 namespace Microsoft.FSharp.Core
 
 type PrintfFormat<'Printer,'State,'Residue,'Result>(value:string) =
-        member x.Value = value
+        
+        internal new(value, caps) as this = 
+            PrintfFormat<_,_,_,_>(value)
+            then this.Captures <- caps
 
+        member x.Value = value
+        member val internal Captures: obj[] = [||] with get, set
         override __.ToString() = value
     
 type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value:string) = 
     inherit PrintfFormat<'Printer,'State,'Residue,'Result>(value)
+    internal new(value, caps) as this =
+        PrintfFormat<_,_,_,_,_>(value)
+        then this.Captures <- caps
 
 type Format<'Printer,'State,'Residue,'Result> = PrintfFormat<'Printer,'State,'Residue,'Result>
 type Format<'Printer,'State,'Residue,'Result,'Tuple> = PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>
@@ -1406,7 +1414,7 @@ module internal PrintfImpl =
             else
                 buildPlainFinal(plainArgs, plainTypes)
 
-        let rec parseFromFormatSpecifier (prefix: string) (s: string) (funcTy: Type) i: int = 
+        let rec parseFromFormatSpecifier (prefix: string) (s: string) (funcTy: Type) (i: int) (caps: obj[]) = 
             
             if i >= s.Length then 0
             else
@@ -1430,15 +1438,16 @@ module internal PrintfImpl =
                         else 2
                     else 1
 
-                let n = if spec.TypeChar = '%' then n - 1 else n
-                
-                System.Diagnostics.Debug.Assert(n <> 0, "n <> 0")
+                if spec.TypeChar = '{' then [||] // immediate specifier takes no args
+                else
 
+                let n = if spec.TypeChar = '%' then n - 1 else n
+                System.Diagnostics.Debug.Assert(n <> 0, "n <> 0")
                 extractCurriedArguments funcTy n
 
             let retTy = argTys.[argTys.Length - 1]
 
-            let numberOfArgs = parseFromFormatSpecifier suffix s retTy next
+            let numberOfArgs = parseFromFormatSpecifier suffix s retTy next caps
 
             if spec.TypeChar = 'a' || spec.TypeChar = 't' || spec.IsStarWidth || spec.IsStarPrecision then
                 if numberOfArgs = ContinuationOnStack then
@@ -1498,7 +1507,7 @@ module internal PrintfImpl =
                     else 
                         numberOfArgs + 1
 
-        let parseFormatString (s: string) (funcTy: System.Type) : obj = 
+        let parseFormatString (s: string) (funcTy: System.Type) (caps: obj[]): obj = 
             optimizedArgCount <- 0
             let prefixPos, prefix = FormatString.findNextFormatSpecifier s 0
             if prefixPos = s.Length then 
@@ -1508,7 +1517,7 @@ module internal PrintfImpl =
                     env.Finish()
                     )
             else
-                let n = parseFromFormatSpecifier prefix s funcTy prefixPos
+                let n = parseFromFormatSpecifier prefix s funcTy prefixPos caps
                 
                 if n = ContinuationOnStack || n = 0 then
                     builderStack.PopValueUnsafe()
@@ -1516,7 +1525,9 @@ module internal PrintfImpl =
                     buildPlain n prefix
 
         member __.Build<'T>(s: string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
-            parseFormatString s typeof<'T> :?> _, (2 * count + 1) - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
+            parseFormatString s typeof<'T> [||] :?> _, (2 * count + 1) - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
+        member __.Build<'T>(s: string, caps: obj[]) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
+            parseFormatString s typeof<'T> caps :?> _, (2 * count + 1) - optimizedArgCount 
 
     /// Type of element that is stored in cache 
     /// Pair: factory for the printer + number of text blocks that printer will produce (used to preallocate buffers)
