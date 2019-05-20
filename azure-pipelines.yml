@@ -81,6 +81,24 @@ jobs:
                   /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                   /p:PublishToSymbolServer=true
                   /p:VisualStudioDropName=$(VisualStudioDropName)
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Packages
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+            ArtifactName: 'Packages'
+          condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact VSSetup
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+            ArtifactName: 'VSSetup'
+          condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Nightly
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpFull.vsix'
+            ArtifactName: 'Nightly'
+          condition: succeeded()
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                     PR builds                                                       #
