@@ -637,9 +637,7 @@ module internal ExtensionTyping =
 
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedMethodInfo.Create ctxt)
         member __.Handle = x
-#if !FX_NO_REFLECTION_METADATA_TOKENS
         member __.MetadataToken = x.MetadataToken
-#endif
         override __.Equals y = assert false; match y with :? ProvidedMethodInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
 

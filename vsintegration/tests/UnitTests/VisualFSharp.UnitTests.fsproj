@@ -165,12 +165,10 @@
     <Compile Include="DocumentHighlightsServiceTests.fs">
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
-    <None Include="App.config" />
-    <None Include="app.runsettings">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <!-- <None Include="App.config" /> -->
-    <None Include="App.config" CopyToOutputDirectory="PreserveNewest" />
+    <CopyAndSubstituteText Include="App.config">
+      <Pattern1>{{FSCoreVersion}}</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </CopyAndSubstituteText>
     <None Include="app.runsettings" />
   </ItemGroup>
   <ItemGroup>
