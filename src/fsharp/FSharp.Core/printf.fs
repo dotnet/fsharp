@@ -44,6 +44,10 @@ module internal PrintfImpl =
     /// with just one reflection call
     /// 2. we can make combinable parts independent from particular printf implementation. Thus final result can be cached and shared. 
     /// i.e when first call to printf "%s %s" will trigger creation of the specialization. Subsequent calls will pick existing specialization
+    /// Note, immediate specifiers will break the aggregation of arguments. For example:
+    /// - function that corresponds to %s%s%{123}%s%s%s (string -> string -> string -> string -> string -> T) will have to be broken into
+    ///   three parts: chained3 -> chainedImm1 -> final2
+    /// TODO shall we also aggregate the immediates?
     open System
     open System.IO
     open System.Text
