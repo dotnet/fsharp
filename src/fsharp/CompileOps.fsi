@@ -210,6 +210,16 @@ type ResolvedExtensionReference = ResolvedExtensionReference of string * Assembl
 #endif
 
 [<RequireQualifiedAccess>]
+type LanguageFeature =
+    | LanguageVersion47 = 0
+    | Nullness = 1000
+    | ScriptingPackageManagement = 1001
+
+type LanguageVersion =
+    new: string -> LanguageVersion
+    member SupportsFeature: LanguageFeature-> bool
+
+[<RequireQualifiedAccess>]
 type CompilerTarget = 
     | WinExe 
     | ConsoleExe 
@@ -375,6 +385,8 @@ type TcConfigBuilder =
       mutable noConditionalErasure: bool
 
       mutable pathMap : PathMap
+
+      mutable langVersion : LanguageVersion
     }
 
     static member Initial: TcConfigBuilder
