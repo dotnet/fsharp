@@ -464,12 +464,13 @@ type internal FSharpProjectOptionsManager
             | true, project -> project.Id
             | false, _ -> workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
         let project =  workspace.ProjectTracker.GetProject(projectId)
-        let path = project.ProjectFilePath
-        let fullPath p =
-            if Path.IsPathRooted(p) || path = null then p
-            else Path.Combine(Path.GetDirectoryName(path), p)
-        let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
+        if project <> null then
+            let path = project.ProjectFilePath
+            let fullPath p =
+                if Path.IsPathRooted(p) || path = null then p
+                else Path.Combine(Path.GetDirectoryName(path), p)
+            let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
 
-        reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
+            reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
 
     member __.Checker = checkerProvider.Checker
