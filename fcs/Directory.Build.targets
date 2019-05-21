@@ -17,7 +17,7 @@
     <MakeDir
       Directories="$(IntermediateOutputPath)"
       Condition="!Exists('$(IntermediateOutputPath)')" />
-    <WriteLinesToFile File="$(__TargetFilePath)" Lines="$(_ReplacementText)" Overwrite="true" />
+    <WriteLinesToFile File="$(__TargetFilePath)" Lines="$(_ReplacementText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
     <!-- Make sure it will get cleaned  -->
     <ItemGroup >
@@ -46,7 +46,7 @@
     <MakeDir
       Directories="$(IntermediateOutputPath)$(ProjectName)"
       Condition="!Exists('$(IntermediateOutputPath)$(ProjectName)')" />
-    <WriteLinesToFile File="$(IntermediateOutputPath)$(ProjectName)\buildproperties.fs" Lines="@(_BuildPropertyLines)" Overwrite="true" />
+    <WriteLinesToFile File="$(IntermediateOutputPath)$(ProjectName)\buildproperties.fs" Lines="@(_BuildPropertyLines)" Overwrite="true"  WriteOnlyWhenDifferent="true" />
 
     <!-- Make sure it will get cleaned  -->
     <ItemGroup>
