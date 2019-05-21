@@ -83,12 +83,11 @@ module private FSharpProjectOptionsHelpers =
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken
     | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken
+    | SetSolution of Solution
     | Reset
 
 [<Sealed>]
 type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, settings: EditorOptions, serviceProvider, checkerProvider: FSharpCheckerProvider) =
-    let gate = obj ()
-
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
@@ -125,25 +124,24 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         checkerProvider.Checker.InvalidateAll ()
 
     let setSolution (solution: Solution) =
-        lock gate (fun () ->
-            match currentSolution with
-            | Some oldSolution when solution.Id <> oldSolution.Id ->
-                clearAllCaches ()
+        match currentSolution with
+        | Some oldSolution when solution.Id <> oldSolution.Id ->
+            clearAllCaches ()
 
-                // This is to specially handle cps command line options. It will go away when we remove HandleCommandLineChanges.
-                // We don't just clear the cps command line options as a callback could have occured from HandleCommandLineChanges that is for the new solution.
-                oldSolution.Projects
-                |> Seq.iter (fun project ->
-                    cpsCommandLineOptions.TryRemove project.Id |> ignore
-                )
+            // This is to specially handle cps command line options. It will go away when we remove HandleCommandLineChanges.
+            // We don't just clear the cps command line options as a callback could have occured from HandleCommandLineChanges that is for the new solution.
+            oldSolution.Projects
+            |> Seq.iter (fun project ->
+                cpsCommandLineOptions.TryRemove project.Id |> ignore
+            )
 
-            | Some oldSolution when solution.Version <> oldSolution.Version ->
-                let changes = solution.GetChanges oldSolution
-                for removedProject in changes.GetRemovedProjects() do
-                    invalidateProject removedProject.Id
-            | _ -> ()
+        | Some oldSolution when solution.Version <> oldSolution.Version ->
+            let changes = solution.GetChanges oldSolution
+            for removedProject in changes.GetRemovedProjects() do
+                invalidateProject removedProject.Id
+        | _ -> ()
 
-            currentSolution <- Some solution)
+        currentSolution <- Some solution
 
     let checkProject (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
         async {
@@ -345,6 +343,9 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         | _ ->
                             reply.Reply None
 
+                | FSharpProjectOptionsMessage.SetSolution solution ->
+                    setSolution solution
+
                 | FSharpProjectOptionsMessage.Reset ->
                     clearAllCaches ()
         }
@@ -365,7 +366,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         cpsCommandLineOptions.[projectId] <- (sourcePaths, options)
 
     member __.SetSolution solution =
-        setSolution solution
+        agent.Post(FSharpProjectOptionsMessage.SetSolution solution)
 
     member __.TryGetCachedOptionsByProjectId(projectId) =
         match cache.TryGetValue(projectId) with
