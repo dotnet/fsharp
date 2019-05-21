@@ -1,45 +1,51 @@
 
-module Sync
+module Tests.SyncBuilder
 
 open System
 open FSharp.Core.CompilerServices.CodeGenHelpers
 
-type SyncStep<'T> = 'T
-
 [<AbstractClass>]
 type SyncMachine<'T>() =
     
-    abstract Step : unit -> SyncStep<'T>
+    abstract Step : unit -> 'T
 
     member this.Start() = this.Step()
 
 type SyncBuilder() =
     
-    member inline __.Delay(__expand_f : unit -> SyncStep<'T>) = __expand_f
+    [<NoDynamicInvocation>]
+    member inline __.Delay(__expand_f : unit -> 'T) = __expand_f
 
-    member inline __.Run(__expand_code : unit -> SyncStep<'T>) : 'T = 
+    [<NoDynamicInvocation>]
+    member inline __.Run(__expand_code : unit -> 'T) : 'T = 
         (__stateMachine
             { new SyncMachine<'T>() with 
                 member __.Step ()  = __jumptable 0 __expand_code }).Start()
 
-    member inline __.Zero() : SyncStep<unit> = ()
+    [<NoDynamicInvocation>]
+    member inline __.Zero() : unit = ()
 
-    member inline __.Return (x: 'T) : SyncStep<'T> = x
+    [<NoDynamicInvocation>]
+    member inline __.Return (x: 'T) : 'T = x
 
-    member inline __.Combine(``__machine_step$cont``: SyncStep<unit>, __expand_step2: unit -> SyncStep<'T>) : SyncStep<'T> =
+    [<NoDynamicInvocation>]
+    member inline __.Combine(``__machine_step$cont``: unit, __expand_step2: unit -> 'T) : 'T =
         __expand_step2()
 
-    member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> SyncStep<unit>) : SyncStep<unit> =
+    [<NoDynamicInvocation>]
+    member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> unit) : unit =
         while __expand_condition() do
             __expand_body ()
 
-    member inline __.TryWith(__expand_body : unit -> SyncStep<'T>, __expand_catch : exn -> SyncStep<'T>) : SyncStep<'T> =
+    [<NoDynamicInvocation>]
+    member inline __.TryWith(__expand_body : unit -> 'T, __expand_catch : exn -> 'T) : 'T =
         try
             __expand_body ()
         with exn -> 
             __expand_catch exn
 
-    member inline __.TryFinally(__expand_body: unit -> SyncStep<'T>, compensation : unit -> unit) : SyncStep<'T> =
+    [<NoDynamicInvocation>]
+    member inline __.TryFinally(__expand_body: unit -> 'T, compensation : unit -> unit) : 'T =
         let ``__machine_step$cont`` = 
             try
                 __expand_body ()
@@ -49,19 +55,23 @@ type SyncBuilder() =
         compensation()
         ``__machine_step$cont``
 
-    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> SyncStep<'T>) = 
+    [<NoDynamicInvocation>]
+    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> 'T) = 
         this.TryFinally(
             (fun () -> __expand_body disp),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
-    member inline this.For(sequence : seq<'T>, __expand_body : 'T -> SyncStep<unit>) : SyncStep<unit> =
+    [<NoDynamicInvocation>]
+    member inline this.For(sequence : seq<'T>, __expand_body : 'T -> unit) : unit =
         this.Using (sequence.GetEnumerator(), 
             (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> __expand_body e.Current))))
 
-    member inline __.ReturnFrom (value: 'T) : SyncStep<'T> =
+    [<NoDynamicInvocation>]
+    member inline __.ReturnFrom (value: 'T) : 'T =
          value
 
-    member inline __.Bind (value: 'TResult1, __expand_continuation: ^TResult1 -> SyncStep<'TResult2>) =
+    [<NoDynamicInvocation>]
+    member inline __.Bind (value: 'TResult1, __expand_continuation: 'TResult1 -> 'TResult2) =
          __expand_continuation value
 
 let sync = SyncBuilder()

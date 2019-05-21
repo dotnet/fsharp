@@ -2211,7 +2211,7 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
      let startScope, endScope as scopeMarks = StartDelayedLocalScope "let" cgbuf
      let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
      let spBind = GenSequencePointForBind cenv cgbuf bind
-     GenBindingAfterSequencePoint cenv cgbuf eenv spBind bind (Some startScope)
+     GenBindingAfterSequencePoint cenv cgbuf eenv spBind bind false (Some startScope)
 
      // Work out if we need a sequence point for the body. For any "user" binding then the body gets SPAlways.
      // For invisible compiler-generated bindings we just use "sp", unless its body is another invisible binding
@@ -2914,7 +2914,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
         let bind = mkCompGenBind locv expr
         LocalScope "untuple" cgbuf (fun scopeMarks ->
             let eenvinner = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-            GenBinding cenv cgbuf eenvinner bind
+            GenBinding cenv cgbuf eenvinner bind false
             let tys = destRefTupleTy g ty
             assert (tys.Length = numRequiredExprs)
             // TODO - tupInfoRef
@@ -5050,7 +5050,7 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree
        let startScope, endScope as scopeMarks = StartDelayedLocalScope "dtreeBind" cgbuf
        let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
        let sp = GenSequencePointForBind cenv cgbuf bind
-       GenBindingAfterSequencePoint cenv cgbuf eenv sp bind (Some startScope)
+       GenBindingAfterSequencePoint cenv cgbuf eenv sp bind false (Some startScope)
        // We don't get the scope marks quite right for dtree-bound variables. This is because
        // we effectively lose an EndLocalScope for all dtrees that go to the same target
        // So we just pretend that the variable goes out of scope here.
@@ -5068,9 +5068,9 @@ and GetTarget (targets:_[]) n =
     targets.[n]
 
 and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel =
-    let (TTarget(vs, successExpr, spTarget)) = GetTarget targets targetIdx
+    let (TTarget(vs, successExpr, spTarget, flags)) = GetTarget targets targetIdx
     match TryFindTargetInfo targetInfos targetIdx with
-    | Some (_, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _, _) ->
+    | Some (_, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _, _, _) ->
 
         // If not binding anything we can go directly to the targetMarkAfterBinds point
         // This is useful to avoid lots of branches e.g. in match A | B | C -> e
@@ -5082,11 +5082,17 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         else
             match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab
             repeatSP()
-            // It would be better not to emit any expressions here, and instead push these assignments into the postponed target
-            // However not all targets are currently postponed (we only postpone in debug code), pending further testing of the performance
-            // impact of postponing.
-            (vs, es) ||> List.iter2 (GenBindingRhs cenv cgbuf eenv SPSuppress)
-            vs |> List.rev |> List.iter (fun v -> GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
+
+            (vs, es) ||> List.iter2 (fun v e -> 
+
+                GetStoreValCtxt cenv cgbuf eenvAtTarget v
+                // Emit the expression
+                GenBindingRhs cenv cgbuf eenv SPSuppress v e)
+
+            vs |> List.rev |> List.iter (fun v -> 
+               // Store the results
+               GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
+
             CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
 
         targetInfos
@@ -5097,9 +5103,16 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         let targetMarkBeforeBinds = CG.GenerateDelayMark cgbuf "targetBeforeBinds"
         let targetMarkAfterBinds = CG.GenerateDelayMark cgbuf "targetAfterBinds"
         let startScope, endScope as scopeMarks = StartDelayedLocalScope "targetBinds" cgbuf
-        let binds = mkInvisibleBinds vs es
+        // Allocate storage for variables (except those lifted to be state machine variables)
+        let binds = 
+            match flags with 
+            | None -> mkInvisibleBinds vs es
+            | Some stateVarFlags -> 
+                 (vs, es, stateVarFlags) 
+                 |||> List.zip3 
+                 |> List.choose (fun (v, e, flag) -> if flag then None else Some (mkInvisibleBind v e))
         let eenvAtTarget = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
-        let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, binds, startScope, endScope)
+        let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, es, flags, startScope, endScope)
     
         // In debug mode push all decision tree targets to after the switching
         let isTargetPostponed =
@@ -5119,7 +5132,7 @@ and GenPostponedDecisionTreeTargets cenv cgbuf stackAtTargets targetInfos sequel
         if isTargetPostponed then
             GenDecisionTreeTarget cenv cgbuf stackAtTargets targetIdx targetInfo sequel
 
-and GenDecisionTreeTarget cenv cgbuf stackAtTargets _targetIdx (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, binds, startScope, endScope) sequel =
+and GenDecisionTreeTarget cenv cgbuf stackAtTargets _targetIdx (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, es, flags, startScope, endScope) sequel =
     CG.SetMarkToHere cgbuf targetMarkBeforeBinds
     let spExpr = (match spTarget with SequencePointAtTarget -> SPAlways | SuppressSequencePointAtTarget _ -> SPSuppress)
 
@@ -5137,11 +5150,11 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets _targetIdx (targetMarkBefore
        | SuppressSequencePointAtTarget -> cgbuf.EmitStartOfHiddenCode()
 
     CG.SetMarkToHere cgbuf startScope
-    GenBindings cenv cgbuf eenvAtTarget binds
+    let binds = mkInvisibleBinds vs es
+    GenBindings cenv cgbuf eenvAtTarget binds flags
     CG.SetMarkToHere cgbuf targetMarkAfterBinds
     CG.SetStack cgbuf stackAtTargets
     GenExpr cenv cgbuf eenvAtTarget spExpr successExpr (EndLocalScope(sequel, endScope))
-
 
 and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defaultTargetOpt switchm targets repeatSP targetInfos sequel =
     let g = cenv.g
@@ -5289,12 +5302,12 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
       TDSuccess(es2, n2) when
          isNil es1 && isNil es2 &&
          (match GetTarget targets n1, GetTarget targets n2 with
-          | TTarget(_, BoolExpr b1, _), TTarget(_, BoolExpr b2, _) -> b1 = not b2
+          | TTarget(_, BoolExpr b1, _, _), TTarget(_, BoolExpr b2, _, _) -> b1 = not b2
           | _ -> false) ->
 
              match GetTarget targets n1, GetTarget targets n2 with
 
-             | TTarget(_, BoolExpr b1, _), _ ->
+             | TTarget(_, BoolExpr b1, _, _), _ ->
                  GenExpr cenv cgbuf eenv SPSuppress e Continue
                  match tester with
                  | Some (pops, pushes, i) ->
@@ -5387,7 +5400,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
     // Generate the actual bindings
     let _ =
         (recursiveVars, allBinds) ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
-            GenBinding cenv cgbuf eenv bind
+            GenBinding cenv cgbuf eenv bind false
             // Record the variable as defined
             let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
             // Execute and discard any fixups that can now be committed
@@ -5410,9 +5423,9 @@ and GenSequencePointForBind cenv cgbuf bind =
     pt |> Option.iter (CG.EmitSeqPoint cgbuf)
     sp
 
-and GenBinding cenv cgbuf eenv bind =
+and GenBinding cenv cgbuf eenv (bind: Binding) (isStateVar: bool) =
     let sp = GenSequencePointForBind cenv cgbuf bind
-    GenBindingAfterSequencePoint cenv cgbuf eenv sp bind None
+    GenBindingAfterSequencePoint cenv cgbuf eenv sp bind isStateVar None
 
 and ComputeMemberAccessRestrictedBySig eenv vspec =
     let isHidden =
@@ -5428,16 +5441,16 @@ and ComputeMethodAccessRestrictedBySig eenv vspec =
         vspec.IsIncrClassGeneratedMember              // compiler generated members for class function 'let' bindings get assembly visibility
     ComputeMemberAccess isHidden
 
-and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) startScopeMarkOpt =
+and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) isStateVar startScopeMarkOpt =
     let g = cenv.g
 
     // Record the closed reflection definition if publishing
     // There is no real reason we're doing this so late in the day
     match vspec.PublicPath, vspec.ReflectedDefinition with
-    | Some _, Some e -> cgbuf.mgbuf.AddReflectedDefinition(vspec, e)
+    | Some _, Some e when not isStateVar -> cgbuf.mgbuf.AddReflectedDefinition(vspec, e)
     | _ -> ()
 
-    let eenv = {eenv with letBoundVars= (mkLocalValRef vspec) :: eenv.letBoundVars}
+    let eenv = if isStateVar then eenv else {eenv with letBoundVars= (mkLocalValRef vspec) :: eenv.letBoundVars} 
 
     let access = ComputeMethodAccessRestrictedBySig eenv vspec
 
@@ -5458,19 +5471,19 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         CommitStartScope cgbuf startScopeMarkOpt
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
-    | _ when vspec.IsClassConstructor && isNil vspec.TopValDeclaringEntity.TyparsNoRange ->
+    | _ when vspec.IsClassConstructor && isNil vspec.TopValDeclaringEntity.TyparsNoRange && not isStateVar ->
         let tps, _, _, _, cctorBody, _ = IteratedAdjustArityOfLambda g cenv.amap vspec.ValReprInfo.Value rhsExpr
         let eenv = EnvForTypars tps eenv
         CommitStartScope cgbuf startScopeMarkOpt
         GenExpr cenv cgbuf eenv SPSuppress cctorBody discard
     
-    | Method (topValInfo, _, mspec, _, paramInfos, methodArgTys, retInfo) ->
+    | Method (topValInfo, _, mspec, _, paramInfos, methodArgTys, retInfo) when not isStateVar ->
         let tps, ctorThisValOpt, baseValOpt, vsl, body', bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo rhsExpr
         let methodVars = List.concat vsl
         CommitStartScope cgbuf startScopeMarkOpt
         GenMethodForBinding cenv cgbuf eenv (vspec, mspec, access, paramInfos, retInfo) (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty)
 
-    | StaticProperty (ilGetterMethSpec, optShadowLocal) ->
+    | StaticProperty (ilGetterMethSpec, optShadowLocal) when not isStateVar ->
 
         let ilAttribs = GenAttrs cenv eenv vspec.Attribs
         let ilTy = ilGetterMethSpec.FormalReturnType
@@ -5586,9 +5599,16 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc ->
             CommitStartScope cgbuf startScopeMarkOpt
         | _ ->
+            GetStoreValCtxt cenv cgbuf eenv vspec
             GenBindingRhs cenv cgbuf eenv SPSuppress vspec rhsExpr
             CommitStartScope cgbuf startScopeMarkOpt
             GenStoreVal cenv cgbuf eenv vspec.Range vspec
+
+and GetStoreValCtxt cenv cgbuf eenv (vspec: Val) =
+    // Emit the ldarg0 if needed
+    match StorageForVal cenv.g vspec.Range vspec eenv with
+    | Env (ilCloTy, _, _, _) -> CG.EmitInstr cgbuf (pop 0) (Push [ilCloTy]) mkLdarg0
+    | _ -> ()
 
 //-------------------------------------------------------------------------
 // Generate method bindings
@@ -6165,7 +6185,12 @@ and GenPInvokeMethod (nm, dll, namedArgs) =
         ThrowOnUnmappableChar= if (decoder.FindBool "ThrowOnUnmappableChar" false) then PInvokeThrowOnUnmappableChar.Enabled else PInvokeThrowOnUnmappableChar.UseAssembly
         CharBestFit=if (decoder.FindBool "BestFitMapping" false) then PInvokeCharBestFit.Enabled else PInvokeCharBestFit.UseAssembly }
   
-and GenBindings cenv cgbuf eenv binds = List.iter (GenBinding cenv cgbuf eenv) binds
+and GenBindings cenv cgbuf eenv binds flags =
+    match flags with 
+    | None -> 
+        binds |> List.iter (fun bind -> GenBinding cenv cgbuf eenv bind false)
+    | Some flags -> 
+        (binds, flags) ||> List.iter2 (fun bind flag -> GenBinding cenv cgbuf eenv bind flag)
 
 //-------------------------------------------------------------------------
 // Generate locals and other storage of values
@@ -6173,11 +6198,7 @@ and GenBindings cenv cgbuf eenv binds = List.iter (GenBinding cenv cgbuf eenv) b
 
 and GenSetVal cenv cgbuf eenv (vref, e, m) sequel =
     let storage = StorageForValRef cenv.g m vref eenv
-    match storage with
-    | Env (ilCloTy, _, _, _) ->
-        CG.EmitInstr cgbuf (pop 0) (Push [ilCloTy]) mkLdarg0
-    | _ ->
-        ()
+    GetStoreValCtxt cenv cgbuf eenv vref.Deref
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     GenSetStorage vref.Range cgbuf storage
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
@@ -6634,7 +6655,7 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
         mbinds |> List.iter (GenModuleBinding cenv cgbuf qname lazyInitInfo eenv m)
 
     | TMDefLet(bind, _) ->
-        GenBindings cenv cgbuf eenv [bind]
+        GenBindings cenv cgbuf eenv [bind] None
 
     | TMDefDo(e, _) ->
         GenExpr cenv cgbuf eenv SPAlways e discard

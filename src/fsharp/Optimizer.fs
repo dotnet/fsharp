@@ -1482,7 +1482,7 @@ let (|TDBoolSwitch|_|) dtree =
 /// Check target that have a constant bool value
 let (|ConstantBoolTarget|_|) target =
     match target with
-    | TTarget([], Expr.Const (Const.Bool b,_,_),_) -> Some b
+    | TTarget([], Expr.Const (Const.Bool b, _, _), _, _) -> Some b
     | _ -> None
 
 /// Is this a tree, where each decision is a two-way switch (to prevent later duplication of trees), and each branch returns or true/false,
@@ -1496,7 +1496,7 @@ let rec CountBoolLogicTree ((targets: DecisionTreeTarget[], costOuterCaseTree, c
     | TDSuccess([], idx) -> 
         match targets.[idx] with
         | ConstantBoolTarget result -> (if result = testBool then costOuterCaseTree else costOuterDefaultTree), 0
-        | TTarget([], _exp, _) -> costOuterCaseTree + costOuterDefaultTree, 10
+        | TTarget([], _exp, _, _) -> costOuterCaseTree + costOuterDefaultTree, 10
         | _ -> 100, 100 
     | _ -> 100, 100
 
@@ -1512,7 +1512,7 @@ let rec RewriteBoolLogicTree ((targets: DecisionTreeTarget[], outerCaseTree, out
     | TDSuccess([], idx) -> 
         match targets.[idx] with 
         | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
-        | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
+        | TTarget([], exp, _, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
         | _ -> failwith "CountBoolLogicTree should exclude this case"
     | _ -> failwith "CountBoolLogicTree should exclude this case"
 
@@ -1742,10 +1742,10 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
 
     // match --> match
     | Expr.Match (spBind, exprm, pt, targets, m, _ty) ->
-        let targets = targets |> Array.map (fun (TTarget(vs, e, spTarget)) -> match tryRewriteToSeqCombinators g e with None -> None | Some e -> Some(TTarget(vs, e, spTarget)))
+        let targets = targets |> Array.map (fun (TTarget(vs, e, spTarget, flags)) -> match tryRewriteToSeqCombinators g e with None -> None | Some e -> Some(TTarget(vs, e, spTarget, flags)))
         if targets |> Array.forall Option.isSome then 
             let targets = targets |> Array.map Option.get
-            let ty = targets |> Array.pick (fun (TTarget(_, e, _)) -> Some(tyOfExpr g e))
+            let ty = targets |> Array.pick (fun (TTarget(_, e, _, _)) -> Some(tyOfExpr g e))
             Some (Expr.Match (spBind, exprm, pt, targets, m, ty))
         else
             None
@@ -2340,7 +2340,7 @@ and OptimizeLinearExpr cenv env expr contf =
              // This ConsiderSplitToMethod is performed because it is present in OptimizeDecisionTreeTarget
              let e2, e2info = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (e2, e2info) 
              let tinfos = [tg1info; e2info]
-             let targetsR = [tg1; TTarget([], e2, spTarget2)]
+             let targetsR = [tg1; TTarget([], e2, spTarget2, None)]
              OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty)))
 
     | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
@@ -3060,12 +3060,12 @@ and RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos) =
      expr, einfo
 
 /// Optimize/analyze a target of a decision tree
-and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, spTarget)) = 
+and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, spTarget, flags)) = 
     let env = BindInternalValsToUnknown cenv vs env 
     let exprR, einfo = OptimizeExpr cenv env expr 
     let exprR, einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (exprR, einfo) 
     let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
-    TTarget(vs, exprR, spTarget), 
+    TTarget(vs, exprR, spTarget, flags), 
     { TotalSize=einfo.TotalSize 
       FunctionSize=einfo.FunctionSize
       HasEffect=einfo.HasEffect

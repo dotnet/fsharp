@@ -4548,7 +4548,7 @@ and
 and 
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     DecisionTreeTarget = 
-    | TTarget of Vals * Expr * SequencePointInfoForTarget
+    | TTarget of Val list * Expr * SequencePointInfoForTarget * isStateVarFlags: bool list option
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()

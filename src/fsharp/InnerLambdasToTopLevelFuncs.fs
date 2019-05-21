@@ -1275,11 +1275,11 @@ module Pass4_RewriteAssembly =
            let dflt, z  = Option.mapFold (TransDecisionTree penv)      z dflt
            TDSwitch (e, cases, dflt, m), z
 
-    and TransDecisionTreeTarget penv z (TTarget(vs, e, spTarget)) =
+    and TransDecisionTreeTarget penv z (TTarget(vs, e, spTarget, flags)) =
         let z = EnterInner z
         let e, z = TransExpr penv z e
         let z = ExitInner z
-        TTarget(vs, e, spTarget), z
+        TTarget(vs, e, spTarget, flags), z
 
     and TransValBinding penv z bind = TransBindingRhs penv z bind
     and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds

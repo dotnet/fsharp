@@ -1,6 +1,7 @@
 
-module Seq
+module Tests.Seq2
 
+#nowarn "42"
 open System
 open System.Collections
 open System.Collections.Generic
@@ -75,22 +76,27 @@ type SeqStateMachine<'T>() =
     
 type SeqBuilder() =
     
+    [<NoDynamicInvocation>]
     member inline __.Delay(__expand_f : unit -> SeqStep<'T>) = __expand_f
 
+    [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : unit -> SeqStep<'T>) : IEnumerable<'T> = 
         (__stateMachine
             { new SeqStateMachine<'T>() with 
                 member __.Step pc = __jumptable pc __expand_code }).Start()
 
+    [<NoDynamicInvocation>]
     member inline __.Zero() : SeqStep<'T> =
         SeqStep<'T>(DONE)
 
+    [<NoDynamicInvocation>]
     member inline __.Combine(``__machine_step$cont``: SeqStep<'T>, __expand_task2: unit -> SeqStep<'T>) : SeqStep<'T> =
         if ``__machine_step$cont``.IsDone then 
             __expand_task2()
         else
             ``__machine_step$cont``
             
+    [<NoDynamicInvocation>]
     member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> SeqStep<'T>) : SeqStep<'T> =
         let mutable step = SeqStep<'T>(DONE) 
         while step.IsDone && __expand_condition() do
@@ -98,6 +104,7 @@ type SeqBuilder() =
             step <- ``__machine_step$cont``
         step
 
+    [<NoDynamicInvocation>]
     member inline __.TryWith(__expand_body : unit -> SeqStep<'T>, __expand_catch : exn -> SeqStep<'T>) : SeqStep<'T> =
         let mutable step = SeqStep<'T>(DONE)
         let mutable caught = false
@@ -114,6 +121,7 @@ type SeqBuilder() =
         else
             step
 
+    [<NoDynamicInvocation>]
     member inline __.TryFinally(__expand_body: unit -> SeqStep<'T>, compensation : unit -> unit) : SeqStep<'T> =
         let mutable step = SeqStep<'T>(DONE)
         __machine<SeqStateMachine<'T>>.PushDispose compensation
@@ -132,18 +140,21 @@ type SeqBuilder() =
             compensation()
         step
 
+    [<NoDynamicInvocation>]
     member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> SeqStep<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
             (fun () -> __expand_body disp),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
+    [<NoDynamicInvocation>]
     member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> SeqStep<'T>) : SeqStep<'T> =
         // A for loop is just a using statement on the sequence's enumerator...
         this.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
             (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> __expand_body e.Current))))
 
+    [<NoDynamicInvocation>]
     member inline __.Yield (``__machine_step$cont``: 'T) : SeqStep<'T> =
         let CONT = __newEntryPoint()
         // A dummy to allow us to lay down the code for the continuation
@@ -155,6 +166,7 @@ type SeqBuilder() =
         else
             __machine<SeqStateMachine<'T>>.Yield(``__machine_step$cont``, CONT)
 
+    [<NoDynamicInvocation>]
     member inline this.YieldFrom (source: IEnumerable<'T>) : SeqStep<'T> =
         this.For(source, (fun ``__machine_step$cont`` -> this.Yield(``__machine_step$cont``)))
 

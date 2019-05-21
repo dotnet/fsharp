@@ -491,25 +491,33 @@ let ConvertSequenceExprToObject g amap overallExpr =
         // transferred to the r.h.s. are not yet compiled.
         //
         // TODO: remove this limitation
-        | Expr.Match (spBind, exprm, pt, targets, m, ty) when targets |> Array.forall (fun (TTarget(vs, _e, _spTarget)) -> isNil vs) ->
+        | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
             // lower all the targets. abandon if any fail to lower
-            let tglArray = targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget)) -> ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel targetExpr)
+            let tglArray = targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget, _)) -> ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel targetExpr)
             if tglArray |> Array.forall Option.isSome then
                 let tglArray = Array.map Option.get tglArray
                 let tgl = Array.toList tglArray
                 let labs = tgl |> List.collect (fun res -> res.entryPoints)
+
                 let asyncVars =
                     (emptyFreeVars, Array.zip targets tglArray)
-                    ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget)), res) ->
+                    ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
                         if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.asyncVars)
-                let stateVars = tgl |> List.collect (fun res -> res.stateVars)
+
+                let stateVars = 
+                    (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
+                        let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
+                        stateVars @ res.stateVars)
+
                 let significantClose = tgl |> List.exists (fun res -> res.significantClose)
+
                 Some { phase2 = (fun ctxt ->
                             let gtgs, disposals, checkDisposes =
                                 (Array.toList targets, tgl)
-                                  ||> List.map2 (fun (TTarget(vs, _, spTarget)) res ->
+                                  ||> List.map2 (fun (TTarget(vs, _, spTarget, _)) res ->
+                                        let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
                                         let generate, dispose, checkDispose = res.phase2 ctxt
-                                        let gtg = TTarget(vs, generate, spTarget)
+                                        let gtg = TTarget(vs, generate, spTarget, Some flags)
                                         gtg, dispose, checkDispose)
                                   |> List.unzip3
                             let generate = primMkMatch (spBind, exprm, pt, Array.ofList gtgs, m, ty)
@@ -1286,21 +1294,34 @@ let ConvertStateMachineExprToObject g overallExpr =
             | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
                 // lower all the targets. 
                 let dtreeR = ConvertStateMachineLeafDecisionTree env dtree 
-                let tglArray = targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget)) -> ConvertStateMachineCode env pcExpr targetExpr)
+                let tglArray = 
+                    targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget, _)) -> 
+                        ConvertStateMachineCode env pcExpr targetExpr)
                 let tgl = Array.toList tglArray
                 let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
                 let asyncVars =
                     (emptyFreeVars, Array.zip targets tglArray)
-                    ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget)), res) ->
+                    ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
                         if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.asyncVars)
-                let stateVars = tgl |> List.collect (fun res -> res.stateVars)
+                let stateVars = 
+                    (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
+                        let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
+                        stateVars @ res.stateVars)
                 { phase1 = 
-                      let gtgs = (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget)) res -> TTarget(vs, res.phase1, spTarget))
-                      primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
+                    let gtgs =
+                        (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res -> 
+                            let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
+                            TTarget(vs, res.phase1, spTarget, Some flags))
+                    primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
+
                   phase2 = (fun ctxt ->
-                                let gtgs = (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget)) res -> TTarget(vs, res.phase2 ctxt, spTarget))
+                                let gtgs =
+                                    (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res ->
+                                        let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
+                                        TTarget(vs, res.phase2 ctxt, spTarget, Some flags))
                                 let generate = primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
                                 generate)
+
                   entryPoints = entryPoints
                   stateVars = stateVars
                   asyncVars = asyncVars }

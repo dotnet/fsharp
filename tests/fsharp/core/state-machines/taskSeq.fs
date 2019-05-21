@@ -1,20 +1,21 @@
 
-module TaskSeq
+module Tests.TaskSeqBuilder
 
+#nowarn "42"
 open System
 open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Core.CompilerServices.CodeGenHelpers
 
-let [<Literal>] AWAIT = 1
-let [<Literal>] YIELD = 2
-let [<Literal>] DONE = 3
+let [<Literal>] AWAIT = 1uy
+let [<Literal>] YIELD = 2uy
+let [<Literal>] DONE = 3uy
 
 [<Struct>]
-type TaskSeqStep<'T>(res: int) = 
-    member x.IsYield = (res = 2)
-    member x.IsDone = (res = 3)
+type TaskSeqStep<'T>(res: byte) = 
+    member x.IsYield = (res = YIELD)
+    member x.IsDone = (res = DONE)
 
 type IAsyncDisposable =
     abstract DisposeAsync: unit -> Task<unit>
@@ -101,22 +102,27 @@ type TaskSeqStateMachine<'T>() =
     
 type TaskSeqBuilder() =
     
+    [<NoDynamicInvocation>]
     member inline __.Delay(__expand_f : unit -> TaskSeqStep<'T>) = __expand_f
 
+    [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : unit -> TaskSeqStep<'T>) : IAsyncEnumerable<'T> = 
         (__stateMachine
             { new TaskSeqStateMachine<'T>() with 
                 member __.Step pc = __jumptable pc __expand_code }).Start()
 
+    [<NoDynamicInvocation>]
     member inline __.Zero() : TaskSeqStep<'T> =
         TaskSeqStep<'T>(DONE)
 
+    [<NoDynamicInvocation>]
     member inline __.Combine(``__machine_step$cont``: TaskSeqStep<'T>, __expand_task2: unit -> TaskSeqStep<'T>) : TaskSeqStep<'T> =
         if ``__machine_step$cont``.IsDone then 
             __expand_task2()
         else
             ``__machine_step$cont``
             
+    [<NoDynamicInvocation>]
     member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> TaskSeqStep<'T>) : TaskSeqStep<'T> =
         let mutable step = TaskSeqStep<'T>(DONE) 
         while step.IsDone && __expand_condition() do
@@ -132,6 +138,7 @@ type TaskSeqBuilder() =
     //        step <- ``__machine_step$cont``
     //    step
 
+    [<NoDynamicInvocation>]
     member inline __.TryWith(__expand_body : unit -> TaskSeqStep<'T>, __expand_catch : exn -> TaskSeqStep<'T>) : TaskSeqStep<'T> =
         let mutable step = TaskSeqStep<'T>(DONE)
         let mutable caught = false
@@ -148,6 +155,7 @@ type TaskSeqBuilder() =
         else
             step
 
+    [<NoDynamicInvocation>]
     member inline __.TryFinallyAsync(__expand_body: unit -> TaskSeqStep<'T>, compensation : unit -> Task<unit>) : TaskSeqStep<'T> =
         let mutable step = TaskSeqStep<'T>(DONE)
         __machine<TaskSeqStateMachine<'T>>.PushDispose compensation
@@ -166,27 +174,32 @@ type TaskSeqBuilder() =
             compensation().Result // TODO: async execution of this
         step
 
+    [<NoDynamicInvocation>]
     member inline this.TryFinally(__expand_body: unit -> TaskSeqStep<'T>, compensation : unit -> unit) : TaskSeqStep<'T> =
         this.TryFinallyAsync(__expand_body, fun () -> Task.FromResult(compensation()))
 
+    [<NoDynamicInvocation>]
     member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> TaskSeqStep<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
             (fun () -> __expand_body disp),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
+    [<NoDynamicInvocation>]
     member inline this.UsingAsync(disp : #IAsyncDisposable, __expand_body : #IAsyncDisposable -> TaskSeqStep<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinallyAsync(
             (fun () -> __expand_body disp),
             (fun () -> if not (isNull (box disp)) then disp.DisposeAsync() else Task.FromResult()))
 
+    [<NoDynamicInvocation>]
     member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> TaskSeqStep<'T>) : TaskSeqStep<'T> =
         // A for loop is just a using statement on the sequence's enumerator...
         this.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
             (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> __expand_body e.Current))))
 
+    [<NoDynamicInvocation>]
     member inline this.For(source : IAsyncEnumerable<'TElement>, __expand_body : 'TElement -> TaskSeqStep<'T>) : TaskSeqStep<'T> =
         let mutable ct = Unchecked.defaultof<_>
         ct <- __machine<TaskSeqStateMachine<'T>>.CancellationToken
@@ -194,6 +207,7 @@ type TaskSeqBuilder() =
             // TODO: This should call WhileAsync
             (fun e -> this.While((fun () -> e.MoveNextAsync().Result), (fun () -> __expand_body e.Current))))
 
+    [<NoDynamicInvocation>]
     member inline __.Yield (``__machine_step$cont``: 'T) : TaskSeqStep<'T> =
         let CONT = __newEntryPoint()
         // A dummy to allow us to lay down the code for the continuation
@@ -205,9 +219,11 @@ type TaskSeqBuilder() =
         else
             __machine<TaskSeqStateMachine<'T>>.Yield(``__machine_step$cont``, CONT)
 
+    [<NoDynamicInvocation>]
     member inline this.YieldFrom (source: IAsyncEnumerable<'T>) : TaskSeqStep<'T> =
         this.For(source, (fun ``__machine_step$cont`` -> this.Yield(``__machine_step$cont``)))
 
+    [<NoDynamicInvocation>]
     member inline __.Bind (task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskSeqStep<'T>)) : TaskSeqStep<'T> =
         let CONT = __newEntryPoint()
         let awaiter = task.GetAwaiter()

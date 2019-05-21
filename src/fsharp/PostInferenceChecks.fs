@@ -1526,7 +1526,7 @@ and CheckDecisionTreeTargets cenv env targets context =
     |> Array.map (CheckDecisionTreeTarget cenv env context) 
     |> (CombineLimits << List.ofArray)
 
-and CheckDecisionTreeTarget cenv env context (TTarget(vs, e, _)) = 
+and CheckDecisionTreeTarget cenv env context (TTarget(vs, e, _, _)) = 
     BindVals cenv env vs 
     vs |> List.iter (CheckValSpec PermitByRefType.All cenv env)
     CheckExpr cenv env e context 

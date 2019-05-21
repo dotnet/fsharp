@@ -2384,7 +2384,7 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.ArrayLength (n, ty)       -> p_byte 4 st; p_tup2 p_int p_ty (n, ty) st
     | DecisionTreeTest.ActivePatternCase _                   -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
 
-and p_target (TTarget(a, b, _)) st = p_tup2 p_Vals p_expr (a, b) st
+and p_target (TTarget(a, b, _, _)) st = p_tup2 p_Vals p_expr (a, b) st
 and p_bind (TBind(a, b, _)) st = p_tup2 p_Val p_expr (a, b) st
 
 and p_lval_op_kind x st =
@@ -2415,7 +2415,7 @@ and u_dtree_discrim st =
     | 4 -> u_tup2 u_int u_ty st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim"
 
-and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, SuppressSequencePointAtTarget))
+and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, SuppressSequencePointAtTarget, None))
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, NoSequencePointAtStickyBinding)
 

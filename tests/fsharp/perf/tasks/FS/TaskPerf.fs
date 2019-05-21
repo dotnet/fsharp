@@ -13,6 +13,7 @@ open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 open TaskBuilderTasks.ContextSensitive // TaskBuilder.fs extension members
 open FSharp.Control.ContextSensitiveTasks // the default
+open Tests.SyncBuilder
 
 [<AutoOpen>]
 module Helpers =
@@ -166,24 +167,24 @@ type ManyWriteFile() =
         File.Delete(path)
 
 [<MemoryDiagnoser>]
-type SyncBinds() =
+type NonAsyncBinds() =
     [<Benchmark(Baseline=true)>]
-    member __.SyncBinds_CSharpAsync() = 
+    member __.NonAsyncBinds_CSharpAsync() = 
          for i in 1 .. manyIterations*100 do 
              TaskPerfCSharp.TenBindsSync_CSharp().Wait() 
 
     [<Benchmark>]
-    member __.SyncBinds_Task() = 
+    member __.NonAsyncBinds_Task() = 
         for i in 1 .. manyIterations*100 do 
              tenBindSync_Task().Wait() 
 
     [<Benchmark>]
-    member __.SyncBinds_TaskBuilder() = 
+    member __.NonAsyncBinds_TaskBuilder() = 
         for i in 1 .. manyIterations*100 do 
              tenBindSync_TaskBuilder().Wait() 
 
     [<Benchmark>]
-    member __.SyncBinds_FSharpAsync() = 
+    member __.NonAsyncBinds_FSharpAsync() = 
         for i in 1 .. manyIterations*100 do 
              tenBindSync_FSharpAsync() |> Async.RunSynchronously |> ignore
 
@@ -231,6 +232,22 @@ type SingleSyncTask() =
          for i in 1 .. manyIterations*500 do 
              singleTask_FSharpAsync() |> Async.RunSynchronously |> ignore
 
+[<MemoryDiagnoser>]
+type SyncBuilderLoop() =
+    [<Benchmark(Baseline=true)>]
+    member __.SyncBuilderLoop_NormalCode() = 
+        for i in 1 .. manyIterations do 
+                    let mutable res = 0
+                    for i in Seq.init 1000 id do
+                       res <- i + res
+
+    [<Benchmark>]
+    member __.SyncBuilderLoop_WorkflowCode() = 
+        for i in 1 .. manyIterations do 
+             sync { let mutable res = 0
+                    for i in Seq.init 1000 id do
+                       res <- i + res }
+
 module Main = 
 
     [<EntryPoint>]
@@ -240,10 +257,10 @@ module Main =
         ManyWriteFile().ManyWriteFile_Task ()
         ManyWriteFile().ManyWriteFile_TaskBuilder ()
         ManyWriteFile().ManyWriteFile_FSharpAsync ()
-        SyncBinds().SyncBinds_CSharpAsync() 
-        SyncBinds().SyncBinds_Task() 
-        SyncBinds().SyncBinds_TaskBuilder() 
-        SyncBinds().SyncBinds_FSharpAsync() 
+        NonAsyncBinds().NonAsyncBinds_CSharpAsync() 
+        NonAsyncBinds().NonAsyncBinds_Task() 
+        NonAsyncBinds().NonAsyncBinds_TaskBuilder() 
+        NonAsyncBinds().NonAsyncBinds_FSharpAsync() 
         AsyncBinds().AsyncBinds_CSharpAsync() 
         AsyncBinds().AsyncBinds_Task() 
         AsyncBinds().AsyncBinds_TaskBuilder() 
@@ -253,13 +270,14 @@ module Main =
         SingleSyncTask().SingleSyncTask_FSharpAsync()
         printfn "Running becnhmarks..."
 
-        let manyWriteFileResult = BenchmarkRunner.Run<ManyWriteFile>()
-        let syncBindsResult = BenchmarkRunner.Run<SyncBinds>()
-        let asyncBindsResult = BenchmarkRunner.Run<AsyncBinds>()
-        let singleTaskResult = BenchmarkRunner.Run<SingleSyncTask>()
+        //let manyWriteFileResult = BenchmarkRunner.Run<ManyWriteFile>()
+        //let syncBindsResult = BenchmarkRunner.Run<NonAsyncBinds>()
+        //let asyncBindsResult = BenchmarkRunner.Run<AsyncBinds>()
+        //let singleTaskResult = BenchmarkRunner.Run<SingleSyncTask>()
 
-        printfn "%A" manyWriteFileResult
-        printfn "%A" syncBindsResult
-        printfn "%A" asyncBindsResult
-        printfn "%A" singleTaskResult
+        //printfn "%A" manyWriteFileResult
+        //printfn "%A" syncBindsResult
+        //printfn "%A" asyncBindsResult
+        //printfn "%A" singleTaskResult
+        let syncBuilderLoopResult = BenchmarkRunner.Run<SyncBuilderLoop>()
         0  
