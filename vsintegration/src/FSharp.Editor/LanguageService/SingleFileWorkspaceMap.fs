@@ -45,7 +45,7 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
             if document.Project.Language = FSharpConstants.FSharpLanguageName && document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName then
                 match files.TryRemove(document.FilePath) with
                 | true, projectContext ->
-                    optionsManager.ClearSingleFileOptionsCache(document.Id)
+                    optionsManager.RemoveSingleFile(document.Id)
                     projectContext.Dispose()
                 | _ -> ()
         )
@@ -54,7 +54,7 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
             let document = args.Document
             match files.TryRemove(document.FilePath) with
             | true, projectContext ->
-                optionsManager.ClearSingleFileOptionsCache(document.Id)
+                optionsManager.RemoveSingleFile(document.Id)
                 projectContext.Dispose()
             | _ -> ()
         )
@@ -93,7 +93,7 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                         match documentOpt with
                         | None -> ()
                         | Some(document) ->                           
-                            optionsManager.ClearSingleFileOptionsCache(document.Id)
+                            optionsManager.RemoveSingleFile(document.Id)
                             projectContext.Dispose()
                             files.[pszMkDocumentNew] <- createProjectContext pszMkDocumentNew
                     else

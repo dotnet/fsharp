@@ -79,7 +79,7 @@ type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
     interface IVsSolutionEvents with
 
         member __.OnAfterCloseSolution(_) =
-            projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            projectManager.Reset ()
             VSConstants.S_OK
 
         member __.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL

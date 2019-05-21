@@ -137,7 +137,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
             site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                             AdviseProjectSiteChanges(fun () -> 
-                                            projectInfoManager.ClearInfoForProject(projectContext.Id)
+                                            projectInfoManager.RemoveProject(projectContext.Id)
                                             optionsAssociation.Remove(projectContext) |> ignore
                                             projectContext.Dispose()))
 

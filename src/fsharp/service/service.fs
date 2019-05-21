@@ -2896,6 +2896,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 if startBackgroundCompileIfAlreadySeen then 
                    bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
 
+    member bc.ClearProjectCache(options: FSharpProjectOptions, userOpName) =
+        reactor.EnqueueOp(userOpName, "ClearProjectCache: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
+            incrementalBuildersCache.RemoveAnySimilar (ctok, options))
+
     member bc.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
          cancellable {
@@ -2951,6 +2955,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             incrementalBuildersCache.Clear ctok
             frameworkTcImportsCache.Clear ctok
             scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Clear ltok)
+            ILBinaryReader.ClearAllILModuleReaderCache ()
             cancellable.Return ())
 
     member bc.DownsizeCaches(userOpName) =
@@ -3174,6 +3179,11 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     member ic.InvalidateConfiguration(options: FSharpProjectOptions, ?startBackgroundCompile, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
+
+    /// Clear a project from the cache.
+    member ic.ClearProjectCache(options, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.ClearProjectCache(options, userOpName)
 
     /// This function is called when a project has been cleaned, and thus type providers should be refreshed.
     member ic.NotifyProjectCleaned(options: FSharpProjectOptions, ?userOpName: string) =
