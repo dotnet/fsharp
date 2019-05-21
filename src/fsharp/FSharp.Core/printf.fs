@@ -25,13 +25,13 @@ module internal PrintfImpl =
 
     /// Basic idea of implementation:
     /// Every Printf.* family should returns curried function that collects arguments and then somehow prints them.
-    /// Idea - instead of building functions on fly argument by argument we instead introduce some predefined parts and then construct functions from these parts
+    /// Idea - instead of building functions on the fly argument by argument we instead introduce some predefined parts and then construct functions from these parts
     /// Parts include:
     /// Plain ones:
     /// 1. Final pieces (1..5) - set of functions with arguments number 1..5. 
     /// Primary characteristic - these functions produce final result of the *printf* operation
     /// 2. Chained pieces (1..5) - set of functions with arguments number 1..5. 
-    /// Primary characteristic - these functions doesn not produce final result by itself, instead they tailed with some another piece (chained or final).
+    /// Primary characteristic - these functions do not produce final result by itself, instead they are tailed with another piece (chained or final).
     /// Plain parts correspond to simple format specifiers (that are projected to just one parameter of the function, say %d or %s). However we also have 
     /// format specifiers that can be projected to more than one argument (i.e %a, %t or any simple format specified with * width or precision). 
     /// For them we add special cases (both chained and final to denote that they can either return value themselves or continue with some other piece)
@@ -183,6 +183,9 @@ module internal PrintfImpl =
                     let c = s.[i]
                     if c = '%' then
                         if i + 1 < s.Length then
+                            if s.[i+1] = '{' 
+                            then i, buf.ToString()
+                            else
                             let _, i1 = parseFlags s (i + 1)
                             let w, i2 = parseWidth s i1
                             let p, i3 = parsePrecision s i2
