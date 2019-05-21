@@ -204,8 +204,8 @@ type internal FSharpPackage() as this =
                     let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
                     let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
-                    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectInfoManager, projectContextFactory, rdt)
-                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
+                    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectContextFactory, rdt)
+                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectContextFactory)
                     ()
                 let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
                 if awaiter.IsCompleted then

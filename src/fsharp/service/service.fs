@@ -2896,8 +2896,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 if startBackgroundCompileIfAlreadySeen then 
                    bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
 
-    member bc.ClearProjectCache(options: FSharpProjectOptions, userOpName) =
-        reactor.EnqueueOp(userOpName, "ClearProjectCache: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
+    member bc.InvalidateProject(options: FSharpProjectOptions, userOpName) =
+        reactor.EnqueueOp(userOpName, "InvalidateProject: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
             incrementalBuildersCache.RemoveAnySimilar (ctok, options))
 
     member bc.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
@@ -3180,10 +3180,10 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
 
-    /// Clear a project from the cache.
-    member ic.ClearProjectCache(options, ?userOpName: string) =
+    /// Invalidate a project. Removes it completely from the cache.
+    member ic.InvalidateProject(options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.ClearProjectCache(options, userOpName)
+        backgroundCompiler.InvalidateProject(options, userOpName)
 
     /// This function is called when a project has been cleaned, and thus type providers should be refreshed.
     member ic.NotifyProjectCleaned(options: FSharpProjectOptions, ?userOpName: string) =

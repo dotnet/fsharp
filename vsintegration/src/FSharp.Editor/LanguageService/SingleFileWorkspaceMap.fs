@@ -15,7 +15,6 @@ open Microsoft.VisualStudio.LanguageServices
 [<Sealed>]
 type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                                      miscFilesWorkspace: MiscellaneousFilesWorkspace,
-                                     optionsManager: FSharpProjectOptionsManager, 
                                      projectContextFactory: IWorkspaceProjectContextFactory,
                                      rdt: IVsRunningDocumentTable) as this =
 
@@ -45,7 +44,6 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
             if document.Project.Language = FSharpConstants.FSharpLanguageName && document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName then
                 match files.TryRemove(document.FilePath) with
                 | true, projectContext ->
-                    optionsManager.RemoveSingleFile(document.Id)
                     projectContext.Dispose()
                 | _ -> ()
         )
@@ -54,7 +52,6 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
             let document = args.Document
             match files.TryRemove(document.FilePath) with
             | true, projectContext ->
-                optionsManager.RemoveSingleFile(document.Id)
                 projectContext.Dispose()
             | _ -> ()
         )
@@ -84,20 +81,9 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
             // Handles renaming of a misc file
             if (grfAttribs &&& (uint32 __VSRDTATTRIB.RDTA_MkDocument)) <> 0u && files.ContainsKey(pszMkDocumentOld) then
                 match files.TryRemove(pszMkDocumentOld) with
-                | true, projectContext ->
-                    let project = workspace.CurrentSolution.GetProject(projectContext.Id)
-                    if project <> null then
-                        let documentOpt =
-                            project.Documents 
-                            |> Seq.tryFind (fun x -> String.Equals(x.FilePath, pszMkDocumentOld, StringComparison.OrdinalIgnoreCase))
-                        match documentOpt with
-                        | None -> ()
-                        | Some(document) ->                           
-                            optionsManager.RemoveSingleFile(document.Id)
-                            projectContext.Dispose()
-                            files.[pszMkDocumentNew] <- createProjectContext pszMkDocumentNew
-                    else
-                        projectContext.Dispose() // fallback, shouldn't happen, but in case it does let's dispose of the project context so we don't leak
+                | true, projectContext ->                 
+                    projectContext.Dispose()
+                    files.[pszMkDocumentNew] <- createProjectContext pszMkDocumentNew
                 | _ -> ()
             VSConstants.S_OK
 

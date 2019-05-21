@@ -19,8 +19,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 
 [<Sealed>]
-type internal LegacyProjectWorkspaceMap(solution: IVsSolution, 
-                                        projectInfoManager: FSharpProjectOptionsManager,
+type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
                                         projectContextFactory: IWorkspaceProjectContextFactory) as this =
 
     let invalidPathChars = set (Path.GetInvalidPathChars())
@@ -136,8 +135,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
                                             AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(projectContext, site)))
 
             site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                            AdviseProjectSiteChanges(fun () -> 
-                                            projectInfoManager.RemoveProject(projectContext.Id)
+                                            AdviseProjectSiteChanges(fun () ->
                                             optionsAssociation.Remove(projectContext) |> ignore
                                             projectContext.Dispose()))
 
