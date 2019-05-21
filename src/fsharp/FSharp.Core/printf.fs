@@ -9,7 +9,7 @@ type PrintfFormat<'Printer,'State,'Residue,'Result>(value:string) =
             then this.Captures <- caps
 
         member x.Value = value
-        member val internal Captures: obj[] = [||] with get, set
+        member val internal Captures: obj[] = Unchecked.defaultof<obj[]> with get, set
         override __.ToString() = value
     
 type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value:string) = 
@@ -91,6 +91,7 @@ module internal PrintfImpl =
             Precision: int
             Width: int
             Flags: FormatFlags
+            Capture: int option
         }
         member this.IsStarPrecision = this.Precision = StarValue
         member this.IsPrecisionSpecified = this.Precision <> NotSpecifiedValue
@@ -143,6 +144,36 @@ module internal PrintfImpl =
         
         let parseTypeChar (s: string) i = 
             s.[i], (i + 1)
+
+        let rec parseFormatSpecifier (s:string) (i:int) =
+
+            System.Diagnostics.Debug.Assert(s.[i] = '%', "s.[i] = '%'")
+
+            let isImm, i = if s.[i+1] = '{' 
+                           then true, i+1
+                           else false, i
+
+            if isImm then
+                let rbrace = s.IndexOf('}', i)
+                if rbrace < 0 then raise (ArgumentException("invalid immediate specifier"))
+                let colon  = s.IndexOf(':', i)
+                if colon < 0 || colon > rbrace 
+                then 
+                    // defaults to %A
+                    let cap, i = intFromString s i
+                    { TypeChar = 'A'; Precision = NotSpecifiedValue; Flags = FormatFlags.None; Width = NotSpecifiedValue; Capture = Some cap }, i
+                else
+                    let spec, i = parseFormatSpecifier s i
+                    System.Diagnostics.Debug.Assert((i = colon), "i = colon")
+                    let cap, i = intFromString s (i + 1)
+                    { spec with Capture = Some cap }, i
+            else
+                let flags, i     = parseFlags s (i + 1)
+                let width, i     = parseWidth s i
+                let precision, i = parsePrecision s i
+                let typeChar, i  = parseTypeChar s i
+                { TypeChar = typeChar; Precision = precision; Flags = flags; Width = width; Capture = None }, i
+
     
         let findNextFormatSpecifier (s: string) i = 
             let rec go i (buf: Text.StringBuilder) =
@@ -174,7 +205,8 @@ module internal PrintfImpl =
     [<AbstractClass>]
     type PrintfEnv<'State, 'Residue, 'Result> =
         val State: 'State
-        new(s: 'State) = { State = s }
+        val Captures: obj[]
+        new(s: 'State, caps: obj[]) = { State = s; Captures = caps }
         abstract Finish: unit -> 'Result
         abstract Write: string -> unit
         abstract WriteT: 'Residue -> unit
@@ -222,9 +254,10 @@ module internal PrintfImpl =
     [<Literal>]
     let MaxArgumentsInSpecialization = 5
 
-    /// Specializations are created via factory methods. These methods accepts 2 kinds of arguments
+    /// Specializations are created via factory methods. These methods accepts 3 kinds of arguments
     /// - parts of format string that corresponds to raw text
     /// - functions that can transform collected values to strings
+    /// - captured immediate indices
     /// basic shape of the signature of specialization
     /// <prefix-string> + <converter for arg1> + <suffix that comes after arg1> + ... <converter for arg-N> + <suffix that comes after arg-N>
     type Specializations<'State, 'Residue, 'Result> private ()=
@@ -237,6 +270,18 @@ module internal PrintfImpl =
                 (fun (a: 'A) ->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1)
+                    env.Finish()
+                )
+            )
+
+        static member Final1C<'A>
+            (
+                s0, conv1, s1, cap: 'A
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun () ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 cap), s1)
                     env.Finish()
                 )
             )
@@ -1186,7 +1231,7 @@ module internal PrintfImpl =
             raise (ArgumentException(SR.GetString(SR.printfBadFormatSpecifier)))
     
     let extractCurriedArguments (ty: Type) n = 
-        System.Diagnostics.Debug.Assert(n = 1 || n = 2 || n = 3, "n = 1 || n = 2 || n = 3")
+        System.Diagnostics.Debug.Assert(n = 0 || n = 1 || n = 2 || n = 3, "n = 0 || n = 1 || n = 2 || n = 3")
         let buf = Array.zeroCreate (n + 1)
         let rec go (ty: Type) i = 
             if i < n then
@@ -1223,6 +1268,7 @@ module internal PrintfImpl =
         member __.PopContinuationWithType() = 
             System.Diagnostics.Debug.Assert(args.Count = 1, "args.Count = 1")
             System.Diagnostics.Debug.Assert(types.Count = 1, "types.Count = 1")
+            // XXX ContinuationOnStack not updated here?
             
             let cont = args.Pop()
             let contTy = types.Pop()
@@ -1241,6 +1287,7 @@ module internal PrintfImpl =
                 "incorrect type"
                 )
 
+            // XXX ContinuationOnStack not updated here?
             this.PushArgumentWithType(cont, contTy)
 
         member __.PushArgument(value: obj) =
@@ -1419,15 +1466,10 @@ module internal PrintfImpl =
             if i >= s.Length then 0
             else
             
-            System.Diagnostics.Debug.Assert(s.[i] = '%', "s.[i] = '%'")
             count <- count + 1
 
-            let flags, i = FormatString.parseFlags s (i + 1)
-            let width, i = FormatString.parseWidth s i
-            let precision, i = FormatString.parsePrecision s i
-            let typeChar, i = FormatString.parseTypeChar s i
-            let spec = { TypeChar = typeChar; Precision = precision; Flags = flags; Width = width}
-            
+            let spec, i = FormatString.parseFormatSpecifier s i
+            let isImm, imm = spec.Capture.IsSome, Option.defaultValue -1 spec.Capture
             let next, suffix = FormatString.findNextFormatSpecifier s i
 
             let argTys = 
@@ -1438,12 +1480,18 @@ module internal PrintfImpl =
                         else 2
                     else 1
 
-                if spec.TypeChar = '{' then [||] // immediate specifier takes no args
-                else
+                // immediate spec doesn't get payload from arg
+                let n = if isImm then n - 1 else n
 
-                let n = if spec.TypeChar = '%' then n - 1 else n
-                System.Diagnostics.Debug.Assert(n <> 0, "n <> 0")
-                extractCurriedArguments funcTy n
+                System.Diagnostics.Debug.Assert(n >= 0, "n >= 0")
+                let argTys = extractCurriedArguments funcTy n
+                if isImm 
+                // insert captured value type back into argTys
+                then Array.ofSeq <| seq { 
+                    if argTys.Length > 1 then yield! argTys.[0..argTys.Length-2]
+                    yield caps.[imm].GetType()
+                    yield argTys.[argTys.Length-1] } 
+                else argTys
 
             let retTy = argTys.[argTys.Length - 1]
 
@@ -1525,7 +1573,7 @@ module internal PrintfImpl =
                     buildPlain n prefix
 
         member __.Build<'T>(s: string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
-            parseFormatString s typeof<'T> [||] :?> _, (2 * count + 1) - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
+            parseFormatString s (typeof<'T>) (Unchecked.defaultof<obj[]>) :?> _, (2 * count + 1) - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
         member __.Build<'T>(s: string, caps: obj[]) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
             parseFormatString s typeof<'T> caps :?> _, (2 * count + 1) - optimizedArgCount 
 
@@ -1556,8 +1604,8 @@ module internal PrintfImpl =
                 Cache<'T, 'State, 'Residue, 'Result>.last <- (key.Value, v)
                 v
 
-    type StringPrintfEnv<'Result>(k, n) = 
-        inherit PrintfEnv<unit, string, 'Result>(())
+    type StringPrintfEnv<'Result>(k, n, caps) = 
+        inherit PrintfEnv<unit, string, 'Result>((), caps)
 
         let buf: string[] = Array.zeroCreate n
         let mutable ptr = 0
@@ -1570,8 +1618,8 @@ module internal PrintfImpl =
             buf.[ptr] <- s
             ptr <- ptr + 1
 
-    type SmallStringPrintfEnv<'Result>(k) = 
-        inherit PrintfEnv<unit, string, 'Result>(())
+    type SmallStringPrintfEnv<'Result>(k, caps) = 
+        inherit PrintfEnv<unit, string, 'Result>((), caps)
         
         let mutable c = null
 
@@ -1579,21 +1627,21 @@ module internal PrintfImpl =
         override __.Write(s: string) = if isNull c then c <- s else c <- c + s
         override __.WriteT s = if isNull c then c <- s else c <- c + s
 
-    type StringBuilderPrintfEnv<'Result>(k, buf) = 
-        inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
+    type StringBuilderPrintfEnv<'Result>(k, buf, caps) = 
+        inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf, caps)
         override __.Finish() : 'Result = k ()
         override __.Write(s: string) = ignore(buf.Append s)
         override __.WriteT(()) = ()
 
-    type TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter) =
-        inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
+    type TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter, caps) =
+        inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw, caps)
         override __.Finish() : 'Result = k()
         override __.Write(s: string) = tw.Write s
         override __.WriteT(()) = ()
     
     let inline doPrintf fmt f = 
         let formatter, n = Cache<_, _, _, _>.Get fmt
-        let env() = f n
+        let env() = f n fmt.Captures
         formatter env
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -1613,20 +1661,20 @@ module Printf =
 
     [<CompiledName("PrintFormatToStringThen")>]
     let ksprintf continuation (format: StringFormat<'T, 'Result>) : 'T = 
-        doPrintf format (fun n ->
+        doPrintf format (fun n caps ->
             if n <= 2 then
-                SmallStringPrintfEnv continuation :> PrintfEnv<_, _, _>
+                SmallStringPrintfEnv(continuation, caps) :> PrintfEnv<_, _, _>
             else
-                StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
+                StringPrintfEnv(continuation, n, caps) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringThen")>]
     let sprintf (format: StringFormat<'T>) =
-        doPrintf format (fun n ->
+        doPrintf format (fun n caps ->
             if n <= 2 then
-                SmallStringPrintfEnv id :> PrintfEnv<_, _, _>
+                SmallStringPrintfEnv(id, caps) :> PrintfEnv<_, _, _>
             else
-                StringPrintfEnv(id, n) :> PrintfEnv<_, _, _>
+                StringPrintfEnv(id, n, caps) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatThen")>]
@@ -1634,14 +1682,14 @@ module Printf =
 
     [<CompiledName("PrintFormatToStringBuilderThen")>]
     let kbprintf continuation (builder: StringBuilder) format = 
-        doPrintf format (fun _ -> 
-            StringBuilderPrintfEnv(continuation, builder) :> PrintfEnv<_, _, _> 
+        doPrintf format (fun _ caps -> 
+            StringBuilderPrintfEnv(continuation, builder, caps) :> PrintfEnv<_, _, _> 
         )
     
     [<CompiledName("PrintFormatToTextWriterThen")>]
     let kfprintf continuation textWriter format =
-        doPrintf format (fun _ -> 
-            TextWriterPrintfEnv(continuation, textWriter) :> PrintfEnv<_, _, _>
+        doPrintf format (fun _ caps -> 
+            TextWriterPrintfEnv(continuation, textWriter, caps) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringBuilder")>]
