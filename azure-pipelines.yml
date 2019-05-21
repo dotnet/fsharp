@@ -2,10 +2,14 @@
 trigger:
 - master
 - dev16.1
+- fsharp47
+- fsharp5
 - release/*
 pr:
 - master
 - dev16.1
+- fsharp47
+- fsharp5
 - release/*
 
 variables:
@@ -19,6 +23,12 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+
+# Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
+# Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
+#variables:
+#- name: SkipTests
+#  defaultValue: false
 
 jobs:
 
@@ -55,6 +65,7 @@ jobs:
                   -configuration $(_BuildConfig)
                   -prepareMachine
                   -testAll
+                  -officialSkipTests $(SkipTests)
                   /p:SignType=$(_SignType)
                   /p:DotNetSignType=$(_SignType)
                   /p:MicroBuild_SigningEnabled=true
@@ -70,6 +81,24 @@ jobs:
                   /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                   /p:PublishToSymbolServer=true
                   /p:VisualStudioDropName=$(VisualStudioDropName)
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Packages
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+            ArtifactName: 'Packages'
+          condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact VSSetup
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+            ArtifactName: 'VSSetup'
+          condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Nightly
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpFull.vsix'
+            ArtifactName: 'Nightly'
+          condition: succeeded()
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                     PR builds                                                       #
