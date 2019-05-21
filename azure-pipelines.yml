@@ -2,14 +2,12 @@
 trigger:
 - master
 - dev16.1
-- fsharp47
-- fsharp5
+- feature/*
 - release/*
 pr:
 - master
 - dev16.1
-- fsharp47
-- fsharp5
+- feature/*
 - release/*
 
 variables:
