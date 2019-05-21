@@ -352,7 +352,6 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     removeSingleFile documentId
                 | FSharpProjectOptionsMessage.Reset ->
                     clearAllCaches ()
-                    cpsCommandLineOptions.Clear ()
                     currentSolution <- None
         }
 
@@ -371,6 +370,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         agent.Post(FSharpProjectOptionsMessage.RemoveSingleFile(documentId))
 
     member __.Reset () =
+        cpsCommandLineOptions.Clear ()
         agent.Post(FSharpProjectOptionsMessage.Reset)
 
     member __.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
@@ -415,7 +415,7 @@ type internal FSharpProjectOptionsManager
         reactor.RemoveSingleFile(documentId)
 
     /// Reset everything. Clears all caches. 
-    /// Be sure to call this when when are definitely not receiving callbacks from HandleCommandLineChanges, e.g. closing a solution.
+    /// Be sure to call this when we are definitely not receiving callbacks from HandleCommandLineChanges, e.g. closing a solution.
     /// If calling reset when we expect HandleCommandLineChanges to fire, we can potentially lose information that we will never be able to get again, therefore losing IDE features.
     /// When HandleCommandLineChanges is removed, this comment can go away.
     member this.Reset () =
