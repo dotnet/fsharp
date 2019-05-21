@@ -347,7 +347,6 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
                 | FSharpProjectOptionsMessage.Reset ->
                     clearAllCaches ()
-                    currentSolution <- None
         }
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
