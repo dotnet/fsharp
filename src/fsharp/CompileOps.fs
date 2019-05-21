@@ -1891,7 +1891,6 @@ type LanguageVersion (specifiedVersion) =
                 raiseError()
                 0m
 
-
     member __.SupportsFeature featureId =
         match features.TryGetValue(featureId) with
         | true, v -> v <= specified
