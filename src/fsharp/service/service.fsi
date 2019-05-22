@@ -374,6 +374,10 @@ type public FSharpChecker =
     /// <param name="tryGetMetadataSnapshot">An optional resolver to access the contents of .NET binaries in a memory-efficient way</param>
     static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * ?suggestNamesForErrors: bool -> FSharpChecker
 
+    /// For testing purposes, not for public consumption.
+    /// Tries to find if the given project exists in any kind of cache, whether it be incremental builder, check file, check file stale cache.
+    member internal ProjectExistsInAnyCache: options: FSharpProjectOptions * ?userOpName: string -> Async<bool>
+
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
     ///   Return an enumeration of the matching parenthetical tokens in the file.

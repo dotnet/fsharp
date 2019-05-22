@@ -25,58 +25,31 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
-    let mapCpsProjectToSite(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, cpsCommandLineOptions: IDictionary<ProjectId, string[] * string[]>) =
-        let hier = workspace.GetHierarchy(project.Id)
+    let mapCpsProjectToSite(project:Project, cpsCommandLineOptions: IDictionary<ProjectId, string[] * string[]>) =
         let sourcePaths, referencePaths, options =
             match cpsCommandLineOptions.TryGetValue(project.Id) with
             | true, (sourcePaths, options) -> sourcePaths, [||], options
             | false, _ -> [||], [||], [||]
-        {
-            new IProvideProjectSite with
-                member x.GetProjectSite() =
-                    let mutable errorReporter = 
-                        let reporter = ProjectExternalErrorReporter(project.Id, "FS", serviceProvider)
-                        Some(reporter:> IVsLanguageServiceBuildErrorReporter2)
+        let mutable errorReporter = Unchecked.defaultof<_> // we don't use this
 
-                    {
-                        new IProjectSite with
-                            member __.Description = project.Name
-                            member __.CompilationSourceFiles = sourcePaths
-                            member __.CompilationOptions =
-                                Array.concat [options; referencePaths |> Array.map(fun r -> "-r:" + r)]
-                            member __.CompilationReferences = referencePaths
-                            member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
-                            member __.ProjectFileName = project.FilePath
-                            member __.AdviseProjectSiteChanges(_,_) = ()
-                            member __.AdviseProjectSiteCleaned(_,_) = ()
-                            member __.AdviseProjectSiteClosed(_,_) = ()
-                            member __.IsIncompleteTypeCheckEnvironment = false
-                            member __.TargetFrameworkMoniker = ""
-                            member __.ProjectGuid =  project.Id.Id.ToString()
-                            member __.LoadTime = System.DateTime.Now
-                            member __.ProjectProvider = Some (x)
-                            member __.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
-                    }
-            interface IVsHierarchy with
-                member __.SetSite(psp) = hier.SetSite(psp)
-                member __.GetSite(psp) = hier.GetSite(ref psp)
-                member __.QueryClose(pfCanClose)= hier.QueryClose(ref pfCanClose)
-                member __.Close() = hier.Close()
-                member __.GetGuidProperty(itemid, propid, pguid) = hier.GetGuidProperty(itemid, propid, ref pguid)
-                member __.SetGuidProperty(itemid, propid, rguid) = hier.SetGuidProperty(itemid, propid, ref rguid)
-                member __.GetProperty(itemid, propid, pvar) = hier.GetProperty(itemid, propid, ref pvar) 
-                member __.SetProperty(itemid, propid, var)  = hier.SetProperty(itemid, propid, var)
-                member __.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = 
-                    hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
-                member __.GetCanonicalName(itemid, pbstrName) = hier.GetCanonicalName(itemid, ref pbstrName)
-                member __.ParseCanonicalName(pszName, pitemid) = hier.ParseCanonicalName(pszName, ref pitemid)
-                member __.Unused0() = hier.Unused0()
-                member __.AdviseHierarchyEvents(pEventSink, pdwCookie) = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
-                member __.UnadviseHierarchyEvents(dwCookie) = hier.UnadviseHierarchyEvents(dwCookie)
-                member __.Unused1() = hier.Unused1()
-                member __.Unused2() = hier.Unused2()
-                member __.Unused3() = hier.Unused3()
-                member __.Unused4() = hier.Unused4()
+        {
+            new IProjectSite with
+                member __.Description = project.Name
+                member __.CompilationSourceFiles = sourcePaths
+                member __.CompilationOptions =
+                    Array.concat [options; referencePaths |> Array.map(fun r -> "-r:" + r)]
+                member __.CompilationReferences = referencePaths
+                member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                member __.ProjectFileName = project.FilePath
+                member __.AdviseProjectSiteChanges(_,_) = ()
+                member __.AdviseProjectSiteCleaned(_,_) = ()
+                member __.AdviseProjectSiteClosed(_,_) = ()
+                member __.IsIncompleteTypeCheckEnvironment = false
+                member __.TargetFrameworkMoniker = ""
+                member __.ProjectGuid =  project.Id.Id.ToString()
+                member __.LoadTime = System.DateTime.Now
+                member __.ProjectProvider = None
+                member __.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
         }
 
 [<RequireQualifiedAccess>]
@@ -85,72 +58,88 @@ type private FSharpProjectOptionsMessage =
     | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken
     | SetSolution of Solution
 
-[<Sealed>]
-type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, settings: EditorOptions, serviceProvider, checkerProvider: FSharpCheckerProvider) =
-    let cancellationTokenSource = new CancellationTokenSource()
+[<RequireQualifiedAccess>]
+module internal FSharpCompilationHelpers =
+    
+    [<NoEquality; NoComparison>]
+    type cenv =
+        {
+            checker: FSharpChecker
+            cache:  Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>
+            // Hack to store command line options from HandleCommandLineChanges, remove it when HandleCommandLineChanges gets removed.
+            cpsCommandLineOptions: ConcurrentDictionary<ProjectId, string [] * string []>
+            enableInMemoryCrossProjectReferences: bool
+            workspace: Workspace
+            mutable currentSolution: Solution option
+        }
 
-    // Hack to store command line options from HandleCommandLineChanges
-    let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, string[] * string[]>()
+    let createCompilationEnv workspace checker enableInMemoryCrossProjectReferences =
+        {
+            checker = checker
+            cache = Dictionary ()
+            cpsCommandLineOptions = ConcurrentDictionary ()
+            enableInMemoryCrossProjectReferences = enableInMemoryCrossProjectReferences
+            workspace = workspace
+            currentSolution = None
+        }
 
-    let cache = Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
+    let invalidateProjectCache cenv projectId =
+        cenv.cache.Remove projectId |> ignore
 
-    let mutable currentSolution: Solution option = None
+    let setProjectCache cenv (project: Project) parsingOptions projectOptions =
+        cenv.cache.[project.Id] <- (project, parsingOptions, projectOptions)
 
-    let invalidateProjectCache projectId =
-        cache.Remove projectId |> ignore
-
-    let setProjectCache (project: Project) parsingOptions projectOptions =
-        cache.[project.Id] <- (project, parsingOptions, projectOptions)
-
-    let updateProject (project: Project) =
-        match cache.TryGetValue project.Id with
+    let updateProject cenv (project: Project) =
+        match cenv.cache.TryGetValue project.Id with
         | true, (_, parsingOptions, projectOptions) ->
-            setProjectCache project parsingOptions projectOptions
+            setProjectCache cenv project parsingOptions projectOptions
         | _ ->
             ()
 
-    let invalidateProject projectId =
-        match cache.TryGetValue projectId with
+    let invalidateProject cenv projectId =
+        match cenv.cache.TryGetValue projectId with
         | true, (_, _, projectOptions) ->
-            invalidateProjectCache projectId
-            checkerProvider.Checker.InvalidateProject projectOptions
+            invalidateProjectCache cenv projectId
+            cenv.checker.InvalidateProject projectOptions
         | _ -> ()
 
     /// This is to specially handle cps command line options. It will go away when we remove HandleCommandLineChanges.
     /// We don't just clear the cps command line options as a callback could have occured from HandleCommandLineChanges that is for the new solution.
-    let cleanupCpsCommandLineOptions (solution: Solution) =
-        let projectIds = cpsCommandLineOptions.Keys |> Array.ofSeq
+    let cleanupCpsCommandLineOptions cenv (solution: Solution) =
+        let projectIds = cenv.cpsCommandLineOptions.Keys |> Array.ofSeq
         for projectId in projectIds do
             if not (solution.ContainsProject projectId) then
-                cpsCommandLineOptions.TryRemove projectId |> ignore
+                cenv.cpsCommandLineOptions.TryRemove projectId |> ignore
 
-    let setSolution (solution: Solution) =
-        match currentSolution with
+    let setSolution cenv (solution: Solution) =
+        let cache = cenv.cache
+        let checker = cenv.checker
+        match cenv.currentSolution with
         | Some oldSolution when solution.Id <> oldSolution.Id ->
             cache.Clear ()
-            checkerProvider.Checker.StopBackgroundCompile ()
-            checkerProvider.Checker.InvalidateAll ()
-            cleanupCpsCommandLineOptions solution
+            checker.StopBackgroundCompile ()
+            checker.InvalidateAll ()
+            cleanupCpsCommandLineOptions cenv solution
 
         | Some oldSolution when solution.Version <> oldSolution.Version ->
-            checkerProvider.Checker.StopBackgroundCompile ()
+            checker.StopBackgroundCompile ()
             let changes = solution.GetChanges oldSolution
             for removedProject in changes.GetRemovedProjects() do
-                invalidateProject removedProject.Id
-            cleanupCpsCommandLineOptions solution
+                invalidateProject cenv removedProject.Id
+            cleanupCpsCommandLineOptions cenv solution
 
         | _ -> ()
 
-        currentSolution <- Some solution
+        cenv.currentSolution <- Some solution
 
-    let checkProject (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
+    let checkProject cenv (oldProject: Project) (newProject: Project) ct =
         async {
             Debug.Assert (oldProject.Id = newProject.Id)
 
             if oldProject.Version <> newProject.Version then
-                invalidateProjectCache oldProject.Id
+                invalidateProjectCache cenv oldProject.Id
                 return false
-            elif settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+            elif cenv.enableInMemoryCrossProjectReferences then
                 let! oldVersion = oldProject.GetDependentVersionAsync ct |> Async.AwaitTask
                 let! newVersion = newProject.GetDependentVersionAsync ct |> Async.AwaitTask
 
@@ -158,11 +147,11 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     // invalidate any project that depends on this project
                     newProject.Solution.GetProjectDependencyGraph().GetProjectsThatTransitivelyDependOnThisProject newProject.Id
                     |> Seq.iter (fun projectId ->
-                        invalidateProjectCache projectId
+                        invalidateProjectCache cenv projectId
                     )
 
                     // while we are not invalidated, we should update the project itself in the cache.
-                    updateProject newProject
+                    updateProject cenv newProject
                     return true
                 else
                     return true
@@ -170,15 +159,16 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                 return true
         }
 
-    let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) =
+    let rec tryComputeOptionsByFile cenv (document: Document) (ct: CancellationToken) =
         async {
             let isScript = isScriptFile document.FilePath
-            match cache.TryGetValue(document.Project.Id) with
+            match cenv.cache.TryGetValue(document.Project.Id) with
             | false, _ ->
+                let checker = cenv.checker
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
                 let! projectOptions, _ =
                     if isScript then
-                        checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText())
+                        checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText())
                     else
                         async {
                             return {
@@ -197,11 +187,11 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                             }, Unchecked.defaultof<_>
                         }
 
-                checkerProvider.Checker.CheckProjectInBackground(projectOptions, userOpName="checkOptions")
+                checker.CheckProjectInBackground(projectOptions, userOpName="checkOptions")
 
-                let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+                let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                setProjectCache document.Project parsingOptions projectOptions
+                setProjectCache cenv document.Project parsingOptions projectOptions
 
                 return Some(parsingOptions, projectOptions)
 
@@ -210,16 +200,16 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                 let! oldVersion = oldProject.GetDependentVersionAsync ct |> Async.AwaitTask
                 // Only recompute if it's a script.
                 if version <> oldVersion && isScript then
-                    invalidateProjectCache oldProject.Id
-                    return! tryComputeOptionsByFile document ct
+                    invalidateProjectCache cenv oldProject.Id
+                    return! tryComputeOptionsByFile cenv document ct
                 else
                     return Some(parsingOptions, projectOptions)
         }
     
-    let rec tryComputeOptions (project: Project) (ct: CancellationToken) =
+    let rec tryComputeOptions cenv (project: Project) (ct: CancellationToken) =
         async {
             let projectId = project.Id
-            match cache.TryGetValue(projectId) with
+            match cenv.cache.TryGetValue(projectId) with
             | false, _ ->
 
                 // Because this code can be kicked off before the hack, HandleCommandLineChanges, occurs,
@@ -228,11 +218,11 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             
                 let referencedProjects = ResizeArray()
 
-                if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+                if cenv.enableInMemoryCrossProjectReferences then
                     for projectReference in project.ProjectReferences do
                         let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
-                            match! tryComputeOptions referencedProject ct with
+                            match! tryComputeOptions cenv referencedProject ct with
                             | None -> canBail <- true
                             | Some(_, projectOptions) -> referencedProjects.Add(referencedProject.OutputFilePath, projectOptions)
 
@@ -240,15 +230,15 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     return None
                 else
 
-                let hier = workspace.GetHierarchy(projectId)
                 let projectSite = 
-                    match hier with
-                    // Legacy
-                    | (:? IProvideProjectSite as provideSite) -> provideSite.GetProjectSite()
-                    // Cps
-                    | _ -> 
-                        let provideSite = mapCpsProjectToSite(workspace, project, serviceProvider, cpsCommandLineOptions)
-                        provideSite.GetProjectSite()
+                    match cenv.workspace with
+                    | (:? VisualStudioWorkspace as workspace) ->
+                        match workspace.GetHierarchy (projectId) with
+                        // Legacy
+                        | (:? IProvideProjectSite as provideSite) -> provideSite.GetProjectSite()
+                        // Cps
+                        | _ ->  mapCpsProjectToSite(project, cenv.cpsCommandLineOptions)
+                    | _ -> mapCpsProjectToSite(project, cenv.cpsCommandLineOptions)
 
                 let otherOptions =
                     project.ProjectReferences
@@ -286,21 +276,28 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                 if Array.isEmpty projectOptions.SourceFiles then
                     return None
                 else
-                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = false, userOpName = "computeOptions")
+                    let checker = cenv.checker
+                    checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = false, userOpName = "computeOptions")
 
-                    let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+                    let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                    setProjectCache project parsingOptions projectOptions
+                    setProjectCache cenv project parsingOptions projectOptions
 
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                match! checkProject oldProject project settings ct with
+                match! checkProject cenv oldProject project ct with
                 | false ->
-                    return! tryComputeOptions project ct
+                    return! tryComputeOptions cenv project ct
                 | true ->
                     return Some(parsingOptions, projectOptions)
         }
+
+[<Sealed>]
+type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspace, settings: EditorOptions, checkerProvider: FSharpCheckerProvider) =
+    let cancellationTokenSource = new CancellationTokenSource()
+
+    let cenv = FSharpCompilationHelpers.createCompilationEnv workspace checkerProvider.Checker settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
 
     let loop (agent: MailboxProcessor<FSharpProjectOptionsMessage>) =
         async {
@@ -313,12 +310,12 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         try
                             // We only allow solutions from the VisualStudioWorkspace.
                             if obj.ReferenceEquals (document.Project.Solution.Workspace, workspace) then
-                                setSolution document.Project.Solution
+                                FSharpCompilationHelpers.setSolution cenv document.Project.Solution
                                 if document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                                    let! options = tryComputeOptionsByFile document ct
+                                    let! options = FSharpCompilationHelpers.tryComputeOptionsByFile cenv document ct
                                     reply.Reply options
                                 else
-                                    let! options = tryComputeOptions document.Project ct
+                                    let! options = FSharpCompilationHelpers.tryComputeOptions cenv document.Project ct
                                     reply.Reply options
                             else
                                 reply.Reply None
@@ -334,8 +331,8 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                             // We only allow solutions from the VisualStudioWorkspace.
                             // Do not process misc files here.
                             if obj.ReferenceEquals (project.Solution.Workspace, workspace) && not (project.Name = FSharpConstants.FSharpMiscellaneousFilesName) then
-                                setSolution project.Solution
-                                let! options = tryComputeOptions project ct
+                                FSharpCompilationHelpers.setSolution cenv project.Solution
+                                let! options = FSharpCompilationHelpers.tryComputeOptions cenv project ct
                                 reply.Reply options
                             else
                                 reply.Reply None
@@ -346,7 +343,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                 | FSharpProjectOptionsMessage.SetSolution solution ->
                     // We only allow solutions from the VisualStudioWorkspace.
                     if obj.ReferenceEquals (solution.Workspace, workspace) then
-                        setSolution solution
+                        FSharpCompilationHelpers.setSolution cenv solution
         }
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
@@ -361,10 +358,10 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         agent.Post(FSharpProjectOptionsMessage.SetSolution solution)
 
     member __.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
-        cpsCommandLineOptions.[projectId] <- (sourcePaths, options)
+        cenv.cpsCommandLineOptions.[projectId] <- (sourcePaths, options)
 
     member __.TryGetCachedOptionsByProjectId(projectId) =
-        match cache.TryGetValue(projectId) with
+        match cenv.cache.TryGetValue(projectId) with
         | true, result -> Some(result)
         | _ -> None
 
@@ -385,7 +382,6 @@ type internal FSharpProjectOptionsManager
     (
         checkerProvider: FSharpCheckerProvider,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl,
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
         settings: EditorOptions
     ) =
 
@@ -393,7 +389,7 @@ type internal FSharpProjectOptionsManager
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
-    let reactor = new FSharpProjectOptionsReactor(workspace, settings, serviceProvider, checkerProvider)
+    let reactor = new FSharpProjectOptionsReactor(workspace, settings, checkerProvider)
 
     do
         // We need to listen to this event for lifecycle purposes.

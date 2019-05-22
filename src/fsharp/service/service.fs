@@ -2505,6 +2505,22 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, 0, options))
         )
 
+    /// For testing purposes, not for public consumption.
+    /// Tries to find if the given project exists in any kind of cache, whether it be incremental builder, check file, check file stale cache.
+    member bc.ProjectExistsInAnyCache (options: FSharpProjectOptions, userOpName) =
+        reactor.EnqueueAndAwaitOpAsync(userOpName, "ProjectExistsInAnyCache", options.ProjectFileName, fun ctok -> 
+            let exists = 
+                incrementalBuildersCache.ContainsSimilarKey (ctok, options) ||
+                parseCacheLock.AcquireLock (fun ltok ->
+                    options.SourceFiles
+                    |> Array.exists (fun filename ->
+                        checkFileInProjectCachePossiblyStale.ContainsSimilarKey(ltok, (filename, options)) ||
+                        checkFileInProjectCache.ContainsSimilarKey(ltok, (filename, 0, options))
+                    )
+                )
+            cancellable.Return exists
+        )
+
     member bc.RecordTypeCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,sourceText) =        
         match checkAnswer with 
         | None
@@ -3026,6 +3042,12 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
         new FSharpChecker(legacyReferenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors)
 
     member ic.ReferenceResolver = legacyReferenceResolver
+
+    /// For testing purposes, not for public consumption.
+    /// Tries to find if the given project exists in any kind of cache, whether it be incremental builder, check file, check file stale cache.
+    member ic.ProjectExistsInAnyCache (options, ?userOpName) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.ProjectExistsInAnyCache (options, userOpName)
 
     member ic.MatchBraces(filename, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
