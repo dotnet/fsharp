@@ -1302,14 +1302,14 @@ module internal SymbolHelpers =
 #endif
 
     /// Get the "F1 Keyword" associated with an item, for looking up documentatio help indexes on the web
-    let rec GetF1Keyword g item = 
+    let rec GetF1Keyword (g: TcGlobals) item = 
 
         let getKeywordForMethInfo (minfo : MethInfo) =
             match minfo with 
             | FSMeth(_, _, vref, _) ->
                 match vref.DeclaringEntity with
                 | Parent tcref ->
-                    (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.CompiledName|> Some
+                    (tcref |> ticksAndArgCountTextOfTyconRef) + "." + vref.CompiledName g.CompilerGlobalState |> Some
                 | ParentNone -> None
                 
             | ILMeth (_, minfo, _) ->
@@ -1334,25 +1334,25 @@ module internal SymbolHelpers =
                     |   [] -> ""
                     |   l -> "``"+(List.length l).ToString() 
                 
-                sprintf "%s.%s%s" (tyconRef |> ticksAndArgCountTextOfTyconRef) v.CompiledName paramsString |> Some
+                sprintf "%s.%s%s" (tyconRef |> ticksAndArgCountTextOfTyconRef) (v.CompiledName g.CompilerGlobalState) paramsString |> Some
             else
                 None
 
-        | Item.ActivePatternCase apref -> 
+        | Item.ActivePatternCase apref ->
             GetF1Keyword g (Item.Value apref.ActivePatternVal)
 
-        | Item.UnionCase(ucinfo, _) -> 
-            (ucinfo.TyconRef |> ticksAndArgCountTextOfTyconRef)+"."+ucinfo.Name |> Some
+        | Item.UnionCase(ucinfo, _) ->
+            (ucinfo.TyconRef |> ticksAndArgCountTextOfTyconRef) + "."+ucinfo.Name |> Some
 
-        | Item.RecdField rfi -> 
-            (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef)+"."+rfi.Name |> Some
+        | Item.RecdField rfi ->
+            (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef) + "." + rfi.Name |> Some
         
-        | Item.AnonRecdField _ -> None 
+        | Item.AnonRecdField _ -> None
         
-        | Item.ILField finfo ->   
+        | Item.ILField finfo ->
              match finfo with 
              | ILFieldInfo(tinfo, fdef) -> 
-                 (tinfo.TyconRefOfRawMetadata |> ticksAndArgCountTextOfTyconRef)+"."+fdef.Name |> Some
+                 (tinfo.TyconRefOfRawMetadata |> ticksAndArgCountTextOfTyconRef) + "." + fdef.Name |> Some
 #if !NO_EXTENSIONTYPING
              | ProvidedField _ -> None
 #endif

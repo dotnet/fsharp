@@ -4639,13 +4639,13 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                      match scoref with
                      | ILScopeRef.Assembly aref -> Some aref
                      | ILScopeRef.Local | ILScopeRef.Module _ -> error(InternalError("not ILScopeRef.Assembly", rangeStartup)))
-                fslibCcuInfo.FSharpViewOfMetadata            
-                  
+                fslibCcuInfo.FSharpViewOfMetadata
+
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
-        let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu, 
-                                    tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
-                                    tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
-                                    tcConfig.noDebugData, tcConfig.pathMap)
+        let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
+                                  tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
+                                  tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
+                                  tcConfig.noDebugData, tcConfig.pathMap)
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing

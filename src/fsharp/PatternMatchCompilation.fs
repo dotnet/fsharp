@@ -348,6 +348,7 @@ let rec CombineRefutations g r1 r2 =
 
 let ShowCounterExample g denv m refuted =
     try
+        let exprL expr = exprL g expr
         let refutations = refuted |> List.collect (function RefutedWhenClause -> [] | (RefutedInvestigation(path, discrim)) -> [RefuteDiscrimSet g m path discrim])
         let counterExample, enumCoversKnown =
             match refutations with
@@ -588,7 +589,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 
     // All these should also always have default cases
     | (TCase(DecisionTreeTest.Const ConstNeedsDefaultCase, _) :: _), None ->
-        error(InternalError("inexhaustive match - need a default cases!", m))
+        error(InternalError("inexhaustive match - need a default case!", m))
 
     // Split string, float, uint64, int64, unativeint, nativeint matches into serial equality tests
     | TCase((DecisionTreeTest.ArrayLength _ | DecisionTreeTest.Const (Const.Single _ | Const.Double _ | Const.String _ | Const.Decimal _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _)), _) :: _, Some dflt ->
@@ -1062,7 +1063,7 @@ let CompilePatternBasic
                  // Project a successful edge through the frontiers.
                  let investigation = Investigation(i', discrim, path)
 
-                 let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSucccessfulInvestigation inpExprOpt resPostBindOpt investigation)
+                 let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSuccessfulInvestigation inpExprOpt resPostBindOpt investigation)
                  let tree = InvestigateFrontiers refuted frontiers
                  // Bind the resVar for the union case, if we have one
                  let tree =
@@ -1103,7 +1104,7 @@ let CompilePatternBasic
 
     // Build a new frontier that represents the result of a successful investigation
     // at rule point (i', discrim, path)
-    and GenerateNewFrontiersAfterSucccessfulInvestigation inpExprOpt resPostBindOpt (Investigation(i', discrim, path)) (Frontier (i, active, valMap) as frontier) =
+    and GenerateNewFrontiersAfterSuccessfulInvestigation inpExprOpt resPostBindOpt (Investigation(i', discrim, path)) (Frontier (i, active, valMap) as frontier) =
 
         if (isMemOfActives path active) then
             let (SubExpr(accessf, ve)), pat = lookupActive path active
@@ -1237,7 +1238,7 @@ let CompilePatternBasic
                 | _ ->
                     [frontier]
 
-            | _ -> failwith "pattern compilation: GenerateNewFrontiersAfterSucccessfulInvestigation"
+            | _ -> failwith "pattern compilation: GenerateNewFrontiersAfterSuccessfulInvestigation"
         else [frontier]
 
     and BindProjectionPattern (Active(path, subExpr, p) as inp) ((accActive, accValMap) as s) =

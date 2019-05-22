@@ -8,6 +8,7 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>$(DefineConstants);LOCALIZATION_FSCOMP</DefineConstants>
     <FsLexOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsLexOutputFolder>
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
@@ -353,6 +354,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fs">
       <Link>TypedAST/QuotationPickler.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/CompilerGlobalState.fs">
+      <Link>TypedAST/CompilerGlobalState.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tast.fs">
       <Link>TypedAST/tast.fs</Link>
     </Compile>
@@ -434,6 +438,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CheckFormatStrings.fs">
       <Link>Logic/CheckFormatStrings.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fsi">
+      <Link>Logic/FindUnsolved.fsi</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fs">
       <Link>Logic/FindUnsolved.fs</Link>
     </Compile>
@@ -473,8 +480,14 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize/InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fsi">
+      <Link>Optimize/LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fs">
       <Link>Optimize/LowerCallsAndSeqs.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fsi">
+      <Link>Optimize/autobox.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fs">
       <Link>Optimize/autobox.fs</Link>

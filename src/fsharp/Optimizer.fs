@@ -172,7 +172,8 @@ let braceL x = leftL (tagText "{") ^^ x ^^ rightL (tagText "}")
 let seqL xL xs = Seq.fold (fun z x -> z @@ xL x) emptyL xs
 let namemapL xL xmap = NameMap.foldBack (fun nm x z -> xL nm x @@ z) xmap emptyL
 
-let rec exprValueInfoL g exprVal = 
+let rec exprValueInfoL g exprVal =
+    let exprL expr = exprL g expr
     match exprVal with
     | ConstValue (x, ty) -> NicePrint.layoutConst g ty x
     | UnknownValue -> wordL (tagText "?")
@@ -1688,10 +1689,6 @@ let (|AnyQueryBuilderOpTrans|_|) g = function
           (match vref.ApparentEnclosingEntity with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
          Some (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
     | _ -> None
-
-let mkUnitDelayLambda (g: TcGlobals) m e =
-    let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
-    mkLambda m uv (e, tyOfExpr g e) 
 
 /// If this returns "Some" then the source is not IQueryable.
 //  <qexprInner> := 
