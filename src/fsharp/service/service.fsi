@@ -635,7 +635,7 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompileIfAlreadySeen: bool * ?userOpName: string -> unit
     
-    /// Invalidate a project. Removes it completely from the cache.
+    /// Invalidate a project. Clears all caches related to this project, including check files, stale check files, etc.
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateProject: options: FSharpProjectOptions * ?userOpName: string -> unit
 

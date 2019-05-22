@@ -2498,6 +2498,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         | Parser.TypeCheckAborted.Yes  ->  FSharpCheckFileAnswer.Aborted                
         | Parser.TypeCheckAborted.No scope -> FSharpCheckFileAnswer.Succeeded(MakeCheckFileResults(filename, options, builder, scope, dependencyFiles, creationErrors, parseErrors, tcErrors))
 
+    let ClearProjectFilesCache ltok (options: FSharpProjectOptions) =
+        options.SourceFiles
+        |> Array.iter (fun filename ->
+            checkFileInProjectCachePossiblyStale.RemoveAnySimilar(ltok, (filename, options))
+            checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, 0, options))
+        )
+
     member bc.RecordTypeCheckFileInProjectResults(filename,options,parsingOptions,parseResults,fileVersion,priorTimeStamp,checkAnswer,sourceText) =        
         match checkAnswer with 
         | None
@@ -2887,6 +2894,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             // will have the effect of releasing memory associated with the previous builder, but costs some time.
             if incrementalBuildersCache.ContainsSimilarKey (ctok, options) then
 
+                // Project is now invalid, clear any cache related to it.
+                parseCacheLock.AcquireLock (fun ltok -> ClearProjectFilesCache ltok options)
+
                 // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                 // including by incrementalBuildersCache.Set.
                 let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
@@ -2898,7 +2908,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member bc.InvalidateProject(options: FSharpProjectOptions, userOpName) =
         reactor.EnqueueOp(userOpName, "InvalidateProject: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
-            incrementalBuildersCache.RemoveAnySimilar (ctok, options))
+            incrementalBuildersCache.RemoveAnySimilar (ctok, options)
+            parseCacheLock.AcquireLock (fun ltok -> ClearProjectFilesCache ltok options))
 
     member bc.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
@@ -3180,7 +3191,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
 
-    /// Invalidate a project. Removes it completely from the cache.
+    /// Invalidate a project. Clears all caches related to this project, including check files, stale check files, etc.
     member ic.InvalidateProject(options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateProject(options, userOpName)
