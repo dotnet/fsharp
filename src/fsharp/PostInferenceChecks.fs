@@ -211,7 +211,7 @@ let IsValLocal env (v: Val) =
 /// Get the limit of the val.
 let GetLimitVal cenv env m (v: Val) =
     let limit =
-        match cenv.limitVals.TryGetValue(v.Stamp) with
+        match cenv.limitVals.TryGetValue v.Stamp with
         | true, limit -> limit
         | _ ->
             if IsValLocal env v then
@@ -285,6 +285,10 @@ let BindVal cenv env (v: Val) =
 
 let BindVals cenv env vs = List.iter (BindVal cenv env) vs
 
+let RecordAnonRecdInfo cenv (anonInfo: AnonRecdTypeInfo) =
+    if not (cenv.anonRecdTypes.ContainsKey anonInfo.Stamp) then 
+         cenv.anonRecdTypes <- cenv.anonRecdTypes.Add(anonInfo.Stamp, anonInfo)
+
 //--------------------------------------------------------------------------
 // approx walk of type
 //--------------------------------------------------------------------------
@@ -334,8 +338,7 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
     | TType_anon (anonInfo, tys) -> 
-        if not (cenv.anonRecdTypes.ContainsKey anonInfo.Stamp) then 
-             cenv.anonRecdTypes <- cenv.anonRecdTypes.Add(anonInfo.Stamp, anonInfo)
+        RecordAnonRecdInfo cenv anonInfo
         CheckTypesDeep cenv f g env tys
 
     | TType_ucase (_, tinst) -> CheckTypesDeep cenv f g env tinst
@@ -1011,8 +1014,8 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         CheckValRef cenv env baseVal m PermitByRefExpr.No
         CheckExprsPermitByRefLike cenv env rest
 
-    | Expr.Op (c, tyargs, args, m) ->
-        CheckExprOp cenv env (c, tyargs, args, m) context expr
+    | Expr.Op (op, tyargs, args, m) ->
+        CheckExprOp cenv env (op, tyargs, args, m) context expr
 
     // Allow 'typeof<System.Void>' calls as a special case, the only accepted use of System.Void! 
     | TypeOfExpr g ty when isVoidTy g ty ->
@@ -1115,7 +1118,14 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
     let ctorLimitedZoneCheck() = 
         if env.ctorLimitedZone then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
 
-    (* Special cases *)
+    // Ensure anonynous record type requirements are recorded
+    match op with
+    | TOp.AnonRecdGet (anonInfo, _) 
+    | TOp.AnonRecd anonInfo -> 
+        RecordAnonRecdInfo cenv anonInfo
+    | _ -> ()
+
+    // Special cases
     match op, tyargs, args with 
     // Handle these as special cases since mutables are allowed inside their bodies 
     | TOp.While _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _)]  ->
@@ -1723,7 +1733,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                     let _, _, argExprs = qscope.Close()
                     if not (isNil argExprs) then 
                         errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
-                    QuotationTranslator.ConvMethodBase qscope env (v.CompiledName, v) |> ignore
+                    QuotationTranslator.ConvMethodBase qscope env (v.CompiledName g.CompilerGlobalState, v) |> ignore
                 with 
                   | QuotationTranslator.InvalidQuotedTerm e -> 
                           errorR e
@@ -1845,12 +1855,12 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
             check false v.CoreDisplayName
             check false v.DisplayName
-            check false v.CompiledName
+            check false (v.CompiledName cenv.g.CompilerGlobalState)
 
             // Check if an F# extension member clashes
             if v.IsExtensionMember then 
                 tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
-                    if v2.IsExtensionMember && not (valEq v v2) && v.CompiledName = v2.CompiledName then
+                    if v2.IsExtensionMember && not (valEq v v2) && (v.CompiledName cenv.g.CompilerGlobalState) = (v2.CompiledName cenv.g.CompilerGlobalState) then
                         let minfo1 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
                         let minfo2 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
                         if tyconRefEq g v.MemberApparentEntity v2.MemberApparentEntity && 
@@ -1886,8 +1896,8 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
     let m = rfield.Range
     let fieldTy = stripTyEqns cenv.g rfield.FormalType
     let isHidden = 
-        IsHiddenTycon env.sigToImplRemapInfo tycon || 
-        IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
+        IsHiddenTycon cenv.g env.sigToImplRemapInfo tycon || 
+        IsHiddenTyconRepr cenv.g env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.Name) access m fieldTy
@@ -2149,7 +2159,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             uc.RecdFieldsArray |> Array.iter (CheckRecdField true cenv env tycon))
 
     // Access checks
-    let access =  AdjustAccess (IsHiddenTycon env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
+    let access =  AdjustAccess (IsHiddenTycon g env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
     let visitType ty = CheckTypeForAccess cenv env (fun () -> tycon.DisplayNameWithStaticParametersAndUnderscoreTypars) access tycon.Range ty    
 
     abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> visitType) 

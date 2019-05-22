@@ -1,9 +1,8 @@
 
 module M
 
-    let inline test (arg: ^T when ^T : struct) = 
-        (^T : (member Item1: _) (arg))
+    let foo x = x
 
-    let f () =
-        let a = test struct (1, 2)
-        ()
+    for i foo 12 = 1 to 20 do 
+        printfn "%d" i
+        
