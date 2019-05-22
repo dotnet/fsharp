@@ -46,10 +46,13 @@ param (
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
-    [switch]$testFSharpQA,
+    [switch]$testCambridge,
+    [switch]$testCompiler,
     [switch]$testFSharpCore,
+    [switch]$testFSharpQA,
     [switch]$testVs,
     [switch]$testAll,
+    [string]$officialSkipTests = "false",
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
 
@@ -75,11 +78,14 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Test actions"
     Write-Host "  -testAll                  Run all tests"
+    Write-Host "  -testCambridge            Run Cambridge tests"
+    Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
-    Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
+    Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
+    Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
     Write-Host "  -ci                       Set when running on CI server"
@@ -106,6 +112,17 @@ function Process-Arguments() {
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
         $script:testVs = $True
+    }
+
+    if ([System.Boolean]::Parse($script:officialSkipTests)) {
+        $script:testAll = $False
+        $script:testCambridge = $False
+        $script:testCompiler = $False
+        $script:testDesktop = $False
+        $script:testCoreClr = $False
+        $script:testFSharpCore = $False
+        $script:testFSharpQA = $False
+        $script:testVs = $False
     }
 
     if ($noRestore) {
@@ -229,6 +246,11 @@ try {
 
     if ($ci) {
         Prepare-TempDir
+
+        # enable us to build netcoreapp2.1 binaries
+        $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
+        InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
+        InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
     }
 
     if ($bootstrap) {
@@ -279,16 +301,21 @@ try {
     }
 
     if ($testFSharpCore) {
-        Write-Host "Environment Variables"
-        Get-Childitem Env:
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
+    if ($testCompiler) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
+    if ($testCambridge) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
+    }
 
     if ($testVs) {
-        Write-Host "Environment Variables"
-        Get-Childitem Env:
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework
     }

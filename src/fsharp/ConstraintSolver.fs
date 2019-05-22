@@ -155,21 +155,21 @@ type ContextInfo =
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
 
-exception ConstraintSolverTupleDiffLengths of DisplayEnv * TType list * TType list * range  * range 
-exception ConstraintSolverInfiniteTypes of ContextInfo * DisplayEnv * TType * TType * range * range
-exception ConstraintSolverTypesNotInEqualityRelation of DisplayEnv * TType * TType * range * range * ContextInfo
-exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range  * range 
-exception ConstraintSolverMissingConstraint of DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
-exception ConstraintSolverError of string * range * range
-exception ConstraintSolverRelatedInformation of string option * range * exn 
+exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range  * range
+exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
+exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
+exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * TType * TType * range  * range 
+exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
+exception ConstraintSolverError                         of string * range * range
+exception ConstraintSolverRelatedInformation            of string option * range * exn 
 
-exception ErrorFromApplyingDefault of TcGlobals * DisplayEnv * Tast.Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation of TcGlobals * DisplayEnv * TType * TType * exn * range
-exception ErrorsFromAddingSubsumptionConstraint of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
-exception ErrorFromAddingConstraint of  DisplayEnv * exn * range
-exception PossibleOverload of DisplayEnv * string * exn * range
-exception UnresolvedOverloading of DisplayEnv * exn list * string * range
-exception UnresolvedConversionOperator of DisplayEnv * TType * TType * range
+exception ErrorFromApplyingDefault              of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Tast.Typar * TType * exn * range
+exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * ContextInfo * range
+exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
+exception PossibleOverload                      of displayEnv: DisplayEnv * string * exn * range
+exception UnresolvedOverloading                 of displayEnv: DisplayEnv * exn list * string * range
+exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
 
 let GetPossibleOverloads  amap m denv (calledMethGroup: (CalledMeth<_> * exn) list) = 
     calledMethGroup |> List.map (fun (cmeth, e) -> PossibleOverload(denv, NicePrint.stringOfMethInfo amap m denv cmeth.Method, e, m))
@@ -385,7 +385,7 @@ let ShowAccessDomain ad =
 //-------------------------------------------------------------------------
 // Solve
 
-exception NonRigidTypar of DisplayEnv * string option * range * TType * TType * range
+exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TType * TType * range
 exception LocallyAbortOperationThatFailsToResolveOverload
 exception LocallyAbortOperationThatLosesAbbrevs 
 let localAbortD = ErrorD LocallyAbortOperationThatLosesAbbrevs
@@ -724,7 +724,7 @@ let rec SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optio
       // The types may still be equivalent due to abbreviations, which we are trying not to eliminate 
       if typeEquiv csenv.g ty1 ty then () else
       // The famous 'occursCheck' check to catch "infinite types" like 'a = list<'a> - see also https://github.com/Microsoft/visualfsharp/issues/1170
-      if occursCheck csenv.g r ty then return! ErrorD (ConstraintSolverInfiniteTypes(csenv.eContextInfo, csenv.DisplayEnv, ty1, ty, m, m2)) else
+      if occursCheck csenv.g r ty then return! ErrorD (ConstraintSolverInfiniteTypes(csenv.DisplayEnv, csenv.eContextInfo, ty1, ty, m, m2)) else
       // Note: warn _and_ continue! 
       do! CheckWarnIfRigid csenv ty1 r ty
       // Record the solution before we solve the constraints, since 

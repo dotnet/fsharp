@@ -76,21 +76,22 @@ type ContextInfo =
 /// The type equation comes from a sequence expression.
 | SequenceExpression of TType
 
-exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
-exception ConstraintSolverInfiniteTypes                 of ContextInfo * DisplayEnv * TType * TType * range * range
-exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range * ContextInfo
-exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range * range
-exception ConstraintSolverMissingConstraint             of DisplayEnv * Typar * TyparConstraint * range * range
+exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
+exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
+exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
+exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * TType * TType * range * range
+exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
 exception ConstraintSolverError                         of string * range * range
 exception ConstraintSolverRelatedInformation            of string option * range * exn
-exception ErrorFromApplyingDefault                      of TcGlobals * DisplayEnv * Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation                   of TcGlobals * DisplayEnv * TType * TType * exn * range
-exception ErrorsFromAddingSubsumptionConstraint         of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
-exception ErrorFromAddingConstraint                     of DisplayEnv * exn * range
-exception UnresolvedConversionOperator                  of DisplayEnv * TType * TType * range
-exception PossibleOverload                              of DisplayEnv * string * exn * range
-exception UnresolvedOverloading                         of DisplayEnv * exn list * string * range
-exception NonRigidTypar                                 of DisplayEnv * string option * range * TType * TType * range
+
+exception ErrorFromApplyingDefault              of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
+exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * ContextInfo * range
+exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
+exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
+exception PossibleOverload                      of displayEnv: DisplayEnv * string * exn * range
+exception UnresolvedOverloading                 of displayEnv: DisplayEnv * exn list * string * range
+exception NonRigidTypar                         of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)

@@ -771,6 +771,8 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 
        // dump
        if verboseTLR then
+           let bindingL bind = bindingL g bind
+
            dprintf "tlr: packEnv envVals =%s\n" (showL (listL valL env.ReqdVals))
            dprintf "tlr: packEnv envSubs =%s\n" (showL (listL valL env.ReqdSubEnvs))
            dprintf "tlr: packEnv vals    =%s\n" (showL (listL valL vals))
@@ -795,7 +797,8 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 //-------------------------------------------------------------------------
 
 #if DEBUG
-let DumpEnvPackM envPackM =
+let DumpEnvPackM g envPackM =
+    let bindingL bind = bindingL g bind
     for KeyValue(fc, packedReqdItems) in envPackM do
         dprintf "packedReqdItems: fc     = %A\n" fc
         dprintf "         reqdTypars   = %s\n" (showL (commaListL (List.map typarL packedReqdItems.ep_etps)))
@@ -817,7 +820,7 @@ let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
     if verboseTLR then dprintf "ChooseReqdItemPackings------\n"
     let envPackM = FlatEnvPacks g fclassM topValS  declist reqdItemsMap
 #if DEBUG
-    if verboseTLR then DumpEnvPackM envPackM
+    if verboseTLR then DumpEnvPackM g envPackM
 #endif
     envPackM
 
@@ -845,7 +848,10 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
             let newArgtys = List.map typeOfVal envp.ep_aenvs @ argtys
             mkLambdaTy newTps newArgtys res
         let fHatArity = MakeSimpleArityInfo newTps (envp.ep_aenvs.Length + wf)
-        let fHatName =  globalNng.FreshCompilerGeneratedName(name, m)
+        let fHatName =
+            // Ensure that we have an g.CompilerGlobalState
+            assert(g.CompilerGlobalState |> Option.isSome)
+            g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(name, m)
 
         let fHat = mkLocalNameTypeArity f.IsCompilerGenerated m fHatName fHatTy (Some fHatArity)
         fHat

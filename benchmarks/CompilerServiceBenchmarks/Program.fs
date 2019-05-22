@@ -7,7 +7,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Text
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 
@@ -80,6 +80,49 @@ type SourceText with
     member this.ToFSharpSourceText() =
         SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
+[<AutoOpen>]
+module Helpers =
+
+    let createProject name referencedProjects =
+        let tmpPath = Path.GetTempPath()
+        let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
+        {
+            ProjectFileName = Path.Combine(tmpPath, Path.ChangeExtension(name, ".dll"))
+            ProjectId = None
+            SourceFiles = [|file|]
+            OtherOptions = 
+                Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
+            ReferencedProjects =
+                referencedProjects
+                |> List.map (fun x -> (x.ProjectFileName, x))
+                |> Array.ofList
+            IsIncompleteTypeCheckEnvironment = false
+            UseScriptResolutionRules = false
+            LoadTime = DateTime()
+            UnresolvedReferences = None
+            OriginalLoadReferences = []
+            ExtraProjectInfo = None
+            Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
+        }
+
+    let generateSourceCode moduleName =
+        sprintf """
+module Benchmark.%s
+
+type %s =
+
+    val X : int
+
+    val Y : int
+
+    val Z : int
+
+let function%s (x: %s) =
+    let x = 1
+    let y = 2
+    let z = x + y
+    z""" moduleName moduleName moduleName moduleName
+
 [<MemoryDiagnoser>]
 type CompilerService() =
 
@@ -112,7 +155,7 @@ type CompilerService() =
     [<GlobalSetup>]
     member __.Setup() =
         match checkerOpt with
-        | None -> checkerOpt <- Some(FSharpChecker.Create())
+        | None -> checkerOpt <- Some(FSharpChecker.Create(projectCacheSize = 200))
         | _ -> ()
 
         match sourceOpt with
@@ -127,18 +170,9 @@ type CompilerService() =
                 |> Array.map (fun x -> (x.Location))
                 |> Some
         | _ -> ()
-    
-    [<IterationSetup(Target = "Parsing")>]
-    member __.ParsingSetup() =
-        match checkerOpt with
-        | None -> failwith "no checker"
-        | Some(checker) ->
-            checker.InvalidateAll()
-            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
 
     [<Benchmark>]
-    member __.Parsing() =
+    member __.ParsingTypeCheckerFs() =
         match checkerOpt, sourceOpt with
         | None, _ -> failwith "no checker"
         | _, None -> failwith "no source"
@@ -146,11 +180,15 @@ type CompilerService() =
             let results = checker.ParseFile("TypeChecker.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
             if results.ParseHadErrors then failwithf "parse had errors: %A" results.Errors
 
-    [<IterationSetup(Target = "ILReading")>]
-    member __.ILReadingSetup() =
-        // With caching, performance increases an order of magnitude when re-reading an ILModuleReader.
-        // Clear it for benchmarking.
-        ClearAllILModuleReaderCache()
+    [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
+    member __.ParsingTypeCheckerFsSetup() =
+        match checkerOpt with
+        | None -> failwith "no checker"
+        | Some(checker) ->
+            checker.InvalidateAll()
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
+            ClearAllILModuleReaderCache()
 
     [<Benchmark>]
     member __.ILReading() =
@@ -197,6 +235,85 @@ type CompilerService() =
                     )
                 )
             )
+
+    [<IterationCleanup(Target = "ILReading")>]
+    member __.ILReadingSetup() =
+        // With caching, performance increases an order of magnitude when re-reading an ILModuleReader.
+        // Clear it for benchmarking.
+        ClearAllILModuleReaderCache()
+
+    member val TypeCheckFileWith100ReferencedProjectsOptions =
+        createProject "MainProject"
+            [ for i = 1 to 100 do
+                yield 
+                    createProject ("ReferencedProject" + string i) []
+            ]
+
+    member this.TypeCheckFileWith100ReferencedProjectsRun() =
+        let options = this.TypeCheckFileWith100ReferencedProjectsOptions
+        let file = options.SourceFiles.[0]
+
+        match checkerOpt with
+        | None -> failwith "no checker"
+        | Some checker ->
+            let parseResult, checkResult =                                                                
+                checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
+                |> Async.RunSynchronously
+
+            if parseResult.Errors.Length > 0 then
+                failwithf "%A" parseResult.Errors
+
+            match checkResult with
+            | FSharpCheckFileAnswer.Aborted -> failwith "aborted"
+            | FSharpCheckFileAnswer.Succeeded checkFileResult ->
+
+                if checkFileResult.Errors.Length > 0 then
+                    failwithf "%A" checkFileResult.Errors
+
+    [<IterationSetup(Target = "TypeCheckFileWith100ReferencedProjects")>]
+    member this.TypeCheckFileWith100ReferencedProjectsSetup() =
+        this.TypeCheckFileWith100ReferencedProjectsOptions.SourceFiles
+        |> Seq.iter (fun file ->
+            File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
+        )
+
+        this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
+        |> Seq.iter (fun (_, referencedProjectOptions) ->
+            referencedProjectOptions.SourceFiles
+            |> Seq.iter (fun file ->
+                File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
+            )
+        )
+
+        this.TypeCheckFileWith100ReferencedProjectsRun()
+
+    [<Benchmark>]
+    member this.TypeCheckFileWith100ReferencedProjects() =
+        // Because the checker's projectcachesize is set to 200, this should be fast.
+        // If set to 3, it will be almost as slow as re-evaluating all project and it's projects references on setup; this could be a bug or not what we want.
+        this.TypeCheckFileWith100ReferencedProjectsRun()
+
+    [<IterationCleanup(Target = "TypeCheckFileWith100ReferencedProjects")>]
+    member this.TypeCheckFileWith100ReferencedProjectsCleanup() =
+        this.TypeCheckFileWith100ReferencedProjectsOptions.SourceFiles
+        |> Seq.iter (fun file ->
+            try File.Delete(file) with | _ -> ()
+        )
+
+        this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
+        |> Seq.iter (fun (_, referencedProjectOptions) ->
+            referencedProjectOptions.SourceFiles
+            |> Seq.iter (fun file ->
+                try File.Delete(file) with | _ -> ()
+            )
+        )
+
+        match checkerOpt with
+        | None -> failwith "no checker"
+        | Some(checker) ->
+            checker.InvalidateAll()
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            ClearAllILModuleReaderCache()
 
 [<EntryPoint>]
 let main argv =

@@ -179,7 +179,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       mlCompatibility: bool, isInteractive:bool, 
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
-                      emitDebugInfoInQuotations: bool, noDebugData: bool) =
+                      emitDebugInfoInQuotations: bool, noDebugData: bool,
+                      pathMap: PathMap) =
       
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -458,7 +459,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_struct_tuple5_tcr      = findSysTyconRef sys "ValueTuple`5" 
   let v_struct_tuple6_tcr      = findSysTyconRef sys "ValueTuple`6" 
   let v_struct_tuple7_tcr      = findSysTyconRef sys "ValueTuple`7" 
-  let v_struct_tuple8_tcr      = findSysTyconRef sys "ValueTuple`8" 
+  let v_struct_tuple8_tcr      = findSysTyconRef sys "ValueTuple`8"
   
   let v_choice2_tcr     = mk_MFCore_tcref fslibCcu "Choice`2" 
   let v_choice3_tcr     = mk_MFCore_tcref fslibCcu "Choice`3" 
@@ -651,13 +652,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_hash_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "hash"                                 , None                 , Some "Hash"   , [vara],     ([[varaTy]], v_int_ty))
   let v_box_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "box"                                  , None                 , Some "Box"    , [vara],     ([[varaTy]], v_obj_ty))
   let v_isnull_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNull"                               , None                 , Some "IsNull" , [vara],     ([[varaTy]], v_bool_ty))
-  let v_isnotnull_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNotNull"                            , None              , Some "IsNotNull" , [vara],     ([[varaTy]], v_bool_ty))
+  let v_isnotnull_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNotNull"                            , None                 , Some "IsNotNull" , [vara],  ([[varaTy]], v_bool_ty))
   let v_raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                , None                 , Some "Raise"  , [vara],     ([[mkSysNonGenericTy sys "Exception"]], varaTy))  
-  let v_failwith_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "failwith"                             , None               , Some "FailWith" , [vara],     ([[v_string_ty]], varaTy))  
-  let v_invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           , None             , Some "InvalidArg" , [vara],     ([[v_string_ty]; [v_string_ty]], varaTy))  
-  let v_null_arg_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nullArg"                              , None                , Some "NullArg" , [vara],     ([[v_string_ty]], varaTy))  
-  let v_invalid_op_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidOp"                            , None              , Some "InvalidOp" , [vara],     ([[v_string_ty]], varaTy))  
-  let v_failwithf_info             = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "failwithf"                       , None, Some "PrintFormatToStringThenFail" , [vara;varb], ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))  
+  let v_failwith_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "failwith"                             , None                 , Some "FailWith" , [vara],   ([[v_string_ty]], varaTy))  
+  let v_invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           , None                 , Some "InvalidArg" , [vara], ([[v_string_ty]; [v_string_ty]], varaTy))  
+  let v_null_arg_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nullArg"                              , None                 , Some "NullArg" , [vara],    ([[v_string_ty]], varaTy))  
+  let v_invalid_op_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidOp"                            , None                 , Some "InvalidOp" , [vara],  ([[v_string_ty]], varaTy))  
+  let v_failwithf_info             = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "failwithf"                            , None                 , Some "PrintFormatToStringThenFail" , [vara;varb], ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))  
   
   let v_reraise_info               = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "reraise"                              , None                 , Some "Reraise", [vara],     ([[v_unit_ty]], varaTy))
   let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_ty))  
@@ -696,9 +697,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_empty_info             = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "empty"                                , None                 , Some "Empty"                  , [vara],     ([], mkSeqTy varaTy))
   let v_new_format_info            = makeIntrinsicValRef(fslib_MFCore_nleref,                                  ".ctor"                                , Some "PrintfFormat`5", None                          , [vara;varb;varc;vard;vare], ([[v_string_ty]], mkPrintfFormatTy varaTy varbTy varcTy vardTy vareTy))  
   let v_sprintf_info               = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "sprintf"                              , None                 , Some "PrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))  
-  let v_lazy_force_info            = 
-    // Lazy\Value for > 4.0
-                                   makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Force"                                  , Some "Lazy`1"        , None                          , [vara],     ([[mkLazyTy varaTy]; []], varaTy))
+  let v_lazy_force_info            = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Force"                                , Some "Lazy`1"        , None                          , [vara],     ([[mkLazyTy varaTy]; []], varaTy))
   let v_lazy_create_info           = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Create"                               , Some "Lazy`1"        , None                          , [vara],     ([[v_unit_ty --> varaTy]], mkLazyTy varaTy))
 
   let v_seq_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "seq"                                  , None                 , Some "CreateSequence"         , [vara],     ([[mkSeqTy varaTy]], mkSeqTy varaTy))
@@ -728,7 +727,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fail_static_init_info      = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "FailStaticInit"                       , None                 , None                          , [],      ([[v_unit_ty]], v_unit_ty))
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
-    
+
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
 
@@ -736,6 +735,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mutable debuggerBrowsableNeverAttributeCache = None 
   let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
   let mkCompilerGeneratedAttribute () = mkILCustomAttribute ilg (tref_CompilerGeneratedAttribute, [], [], [])
+  let compilerGlobalState = CompilerGlobalState()
 
   // Requests attributes to be added to compiler generated methods.
   let addGeneratedAttrs (attrs: ILAttributes) = 
@@ -870,9 +870,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           TType_app (tcref, tinst)
       else
           let dict = getDecompileTypeDict()
-          let mutable builder = Unchecked.defaultof<_>
-          if dict.TryGetValue(tcref.Stamp, &builder) then builder tinst
-          else TType_app (tcref, tinst)
+          match dict.TryGetValue tcref.Stamp with
+          | true, builder -> builder tinst
+          | _ -> TType_app (tcref, tinst)
 
   /// For cosmetic purposes "improve" some .NET types, e.g. Int32 --> int32. 
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
@@ -880,14 +880,14 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let improveTy (tcref: EntityRef) tinst = 
         if compilingFslib then 
             let dict = getBetterTypeDict1()
-            let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.LogicalName, &builder) then builder tcref tinst
-            else TType_app (tcref, tinst)
+            match dict.TryGetValue tcref.LogicalName with
+            | true, builder -> builder tcref tinst
+            | _ -> TType_app (tcref, tinst)
         else
             let dict = getBetterTypeDict2()
-            let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.Stamp, &builder) then builder tinst
-            else TType_app (tcref, tinst)
+            match dict.TryGetValue tcref.Stamp with
+            | true, builder -> builder tinst
+            | _ -> TType_app (tcref, tinst)
 
 
   override x.ToString() = "<TcGlobals>"
@@ -901,6 +901,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.mlCompatibility                = mlCompatibility
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
+  member __.pathMap = pathMap
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu
@@ -1473,17 +1474,17 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             (if enableEnC then 4 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
         mkILCustomAttribute ilg 
-          (tref_DebuggableAttribute, [mkILNonGenericValueTy tref_DebuggableAttribute_DebuggingModes], 
+          (tref_DebuggableAttribute, [mkILNonGenericValueTy tref_DebuggableAttribute_DebuggingModes],
            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
            [ILAttribElem.Int32( debuggingMode )], [])
 
-  member __.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute () 
-     
-  member __.eraseClassUnionDef = EraseUnions.mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs, mkDebuggerTypeProxyAttribute) ilg
+  member internal __.CompilerGlobalState = Some compilerGlobalState
 
+  member __.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
+
+  member __.eraseClassUnionDef = EraseUnions.mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs, mkDebuggerTypeProxyAttribute) ilg
 
 #if DEBUG
 // This global is only used during debug output 
 let global_g = ref (None : TcGlobals option)
 #endif
-

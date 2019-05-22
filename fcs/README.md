@@ -28,7 +28,7 @@ There are subtle differences between FSharp.Compiler.Service and FSharp.Compiler
 FCS uses its own version number sequence for assemblies and packages, approximately following SemVer rules.
 To update the version number a global replace through fcs\... is currently needed, e.g.
 
-   fcs.props
+   Directory.Build.props
    nuget/FSharp.Compiler.Service.nuspec
    nuget/FSharp.Compiler.Service.MSBuild.v12.nuspec
    nuget/FSharp.Compiler.Service.ProjectCracker.nuspec
