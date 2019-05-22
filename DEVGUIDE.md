@@ -17,8 +17,7 @@ This will remove any files that are not under version control. This is necessary
 Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
 
 - [Developing the F# Compiler (Windows)](#developing-the-f-compiler-windows)
-- [Developing the F# Compiler (Linux)](#developing-the-f-compiler-linux)
-- [Developing the F# Compiler (macOS)](#developing-the-f-compiler-macos)
+- [Developing the F# Compiler (Linux/macOS)](#developing-the-f-compiler-linuxmacos)
 - [Developing the Visual F# IDE Tools (Windows Only)](#developing-the-visual-f-ide-tools-windows-only)
 - [Notes and Resources](#notes)
 
@@ -27,6 +26,7 @@ Follow the instructions below to build and develop the F# Compiler, Core Library
 Install
 
 - [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
+- [.NET Core 3 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.0)
 
 **NOTE on Windows:**
 
@@ -70,9 +70,7 @@ To build and test Visual F# IDE Tools, install these requirements:
 - Launch the Visual Studio Installer
   - Under the **"Windows"** workload, select **".NET desktop development"**
     - Select the optional component **"F# desktop language support"**
-  - Under the **"Mobile & Gaming"** workload, select **"Mobile development with .NET"**
   - Under the **"Other Toolsets"** workload, select **"Visual Studio extension development"**
-  - On the **"Individual Components"** tab, select **".NET Framework 4.7.2 SDK"** and **".NET Framework 4.7.2 targeting pack"**
 
 Steps to build:
 

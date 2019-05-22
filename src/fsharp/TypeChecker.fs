@@ -1559,7 +1559,10 @@ let InstanceMembersNeedSafeInitCheck cenv m thisTy =
         thisTy
         
 let MakeSafeInitField (g: TcGlobals) env m isStatic = 
-    let id = ident(globalNng.FreshCompilerGeneratedName("init", m), m)
+    let id =
+        // Ensure that we have an g.CompilerGlobalState
+        assert(g.CompilerGlobalState |> Option.isSome)
+        ident(g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName("init", m), m)
     let taccess = TAccess [env.eAccessPath]
     NewRecdField isStatic None id false g.int_ty true true [] [] XmlDoc.Empty taccess true
 
@@ -3436,7 +3439,7 @@ let ConvertArbitraryExprToEnumerable cenv ty (env: TcEnv) (expr: Expr) =
         
         let expr = 
            mkCompGenLet m enumerableVar expr 
-               (mkCallSeqOfFunctions cenv.g m retTypeOfGetEnumerator enumElemTy 
+               (mkCallSeqOfFunctions cenv.g m retTypeOfGetEnumerator enumElemTy
                    (mkUnitDelayLambda cenv.g m getEnumExpr)
                    (mkLambda m enumeratorVar (guardExpr, guardTy)) 
                    (mkLambda m enumeratorVar (betterCurrentExpr, enumElemTy)))
@@ -4673,11 +4676,11 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
     | SynType.AnonRecd(isStruct, args,m) ->   
         let tupInfo = mkTupInfo isStruct
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
-        let unsortedIds = args |> List.map fst |> List.toArray
-        let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, tupInfo, unsortedIds)
+        let unsortedFieldIds = args |> List.map fst |> List.toArray
+        let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, tupInfo, unsortedFieldIds)
         // Sort into canonical order
-        let sortedArgTys, sortedCheckedArgTys = List.zip args args' |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) |> List.map snd |> List.unzip
-        sortedArgTys |> List.iteri (fun i (x,_) -> 
+        let sortedFieldTys, sortedCheckedArgTys = List.zip args args' |> List.indexed |> List.sortBy (fun (i,_) -> unsortedFieldIds.[i].idText) |> List.map snd |> List.unzip
+        sortedFieldTys |> List.iteri (fun i (x,_) -> 
             let item = Item.AnonRecdField(anonInfo, sortedCheckedArgTys, i, x.idRange)
             CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.UseInType,env.DisplayEnv,env.eAccessRights))
         TType_anon(anonInfo, sortedCheckedArgTys),tpenv
@@ -5879,8 +5882,8 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         let expr = mkAnyTupled cenv.g m tupInfo args' argTys 
         expr, tpenv
 
-    | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedArgs, mWholeExpr) -> 
-        TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedArgs, mWholeExpr)
+    | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr) -> 
+        TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
 
     | SynExpr.ArrayOrList (isArray, args, m) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
@@ -7036,26 +7039,39 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
 
 // Check '{| .... |}'
-and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedArgs, mWholeExpr) =
+and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
+    let unsortedFieldSynExprsGiven = List.map snd unsortedFieldIdsAndSynExprsGiven
 
-    match optOrigExpr with 
+    match optOrigSynExpr with 
     | None -> 
-        let unsortedIds = unsortedArgs |> List.map fst |> List.toArray
-        let anonInfo, sortedArgTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedIds
+        let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map fst |> List.toArray
+        let anonInfo, sortedFieldTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIds
 
         // Sort into canonical order
-        let sortedIndexedArgs = unsortedArgs |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) 
-        let sigma = List.map fst sortedIndexedArgs |> List.toArray
-        let sortedArgs = List.map snd sortedIndexedArgs
-        sortedArgs |> List.iteri (fun j (x, _) -> 
-            let item = Item.AnonRecdField(anonInfo, sortedArgTys, j, x.idRange)
-            CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights))
-        let unsortedArgTys = sortedArgTys |> List.indexed |> List.sortBy (fun (j, _) -> sigma.[j]) |> List.map snd
-        let flexes = unsortedArgTys |> List.map (fun _ -> true)
-        let unsortedCheckedArgs, tpenv = TcExprs cenv env mWholeExpr tpenv flexes unsortedArgTys (List.map snd unsortedArgs)
-        let sortedCheckedArgs = unsortedCheckedArgs |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) |> List.map snd
+        let sortedIndexedArgs =
+            unsortedFieldIdsAndSynExprsGiven
+            |> List.indexed
+            |> List.sortBy (fun (i,_) -> unsortedFieldIds.[i].idText) 
 
-        mkAnonRecd cenv.g mWholeExpr anonInfo sortedCheckedArgs sortedArgTys, tpenv
+        // Map from sorted indexes to unsorted indexes
+        let sigma = List.map fst sortedIndexedArgs |> List.toArray
+        let sortedFieldExprs = List.map snd sortedIndexedArgs
+
+        sortedFieldExprs |> List.iteri (fun j (x, _) -> 
+            let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, x.idRange)
+            CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights))
+
+        let unsortedFieldTys =
+            sortedFieldTys
+            |> List.indexed
+            |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
+            |> List.map snd
+
+        let flexes = unsortedFieldTys |> List.map (fun _ -> true)
+
+        let unsortedCheckedArgs, tpenv = TcExprs cenv env mWholeExpr tpenv flexes unsortedFieldTys unsortedFieldSynExprsGiven
+
+        mkAnonRecd cenv.g mWholeExpr anonInfo unsortedFieldIds unsortedCheckedArgs unsortedFieldTys, tpenv
 
     | Some (origExpr, _) -> 
         // The fairly complex case '{| origExpr with X = 1; Y = 2 |}'
@@ -7088,7 +7104,7 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedArgs
         ///   - Choice1Of2 for a new binding
         ///   - Choice2Of2 for a binding coming from the original expression
         let unsortedIdAndExprsAll = 
-            [| for (id, e) in unsortedArgs do
+            [| for (id, e) in unsortedFieldIdsAndSynExprsGiven do
                     yield (id, Choice1Of2 e)
                match tryDestAnonRecdTy cenv.g origExprTy with
                | ValueSome (anonInfo, tinst) -> 
@@ -7104,32 +7120,61 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedArgs
                         error (Error (FSComp.SR.tcCopyAndUpdateNeedsRecordType(), mOrigExpr)) |]
             |> Array.distinctBy (fst >> textOfId)
 
-        let unsortedIdsAll = Array.map fst unsortedIdAndExprsAll
-        let anonInfo, sortedArgTysAll = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedIdsAll
-        let sortedIndexedArgsAll = unsortedIdAndExprsAll |> Array.indexed |> Array.sortBy (snd >> fst >> textOfId) 
-        let sigma = Array.map fst sortedIndexedArgsAll // map from sorted indexes to unsorted indexes
-        let sortedArgsAll = Array.map snd sortedIndexedArgsAll
-        sortedArgsAll |> Array.iteri (fun j (x, expr) -> 
+        let unsortedFieldIdsAll = Array.map fst unsortedIdAndExprsAll
+
+        let anonInfo, sortedFieldTysAll = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIdsAll
+
+        let sortedIndexedFieldsAll = unsortedIdAndExprsAll |> Array.indexed |> Array.sortBy (snd >> fst >> textOfId) 
+
+        // map from sorted indexes to unsorted indexes
+        let sigma = Array.map fst sortedIndexedFieldsAll
+
+        let sortedFieldsAll = Array.map snd sortedIndexedFieldsAll
+
+        // Report _all_ identifiers to name resolution. We should likely just report the ones
+        // that are explicit in source code.
+        sortedFieldsAll |> Array.iteri (fun j (x, expr) -> 
             match expr with 
             | Choice1Of2 _ -> 
-                let item = Item.AnonRecdField(anonInfo, sortedArgTysAll, j, x.idRange)
+                let item = Item.AnonRecdField(anonInfo, sortedFieldTysAll, j, x.idRange)
                 CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
             | Choice2Of2 _ -> ())
 
-        let unsortedArgTysNew = sortedArgTysAll |> List.indexed |> List.sortBy (fun (j, _) -> sigma.[j]) |> List.take unsortedArgs.Length |> List.map snd
-        let flexes = unsortedArgTysNew |> List.map (fun _ -> true)
+        let unsortedFieldTysAll =
+            sortedFieldTysAll
+            |> List.indexed
+            |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
+            |> List.map snd
 
-        let unsortedCheckedArgsNew, tpenv = TcExprs cenv env mWholeExpr tpenv flexes unsortedArgTysNew (List.map snd unsortedArgs)
-        let sortedArgTysAllArray = Array.ofList sortedArgTysAll
-        let unsortedCheckedArgsNewArray = unsortedCheckedArgsNew |> List.toArray
-        let sortedCheckedArgsAll = 
-            sortedArgsAll |> Array.mapi (fun j (_, expr) -> 
+        let unsortedFieldTysGiven =
+            unsortedFieldTysAll
+            |> List.take unsortedFieldIdsAndSynExprsGiven.Length
+
+        let flexes = unsortedFieldTysGiven |> List.map (fun _ -> true)
+
+        // Check the expressions in unsorted order
+        let unsortedFieldExprsGiven, tpenv =
+            TcExprs cenv env mWholeExpr tpenv flexes unsortedFieldTysGiven unsortedFieldSynExprsGiven
+
+        let unsortedFieldExprsGiven = unsortedFieldExprsGiven |> List.toArray
+
+        let unsortedFieldIds =
+            unsortedIdAndExprsAll
+            |> Array.map fst
+
+        let unsortedFieldExprs = 
+            unsortedIdAndExprsAll
+            |> Array.mapi (fun unsortedIdx (_, expr) -> 
                 match expr with 
-                | Choice1Of2 _ -> unsortedCheckedArgsNewArray.[sigma.[j]]
-                | Choice2Of2 subExpr -> UnifyTypes cenv env mOrigExpr (tyOfExpr cenv.g subExpr) sortedArgTysAllArray.[j]; subExpr) 
+                | Choice1Of2 _ -> unsortedFieldExprsGiven.[unsortedIdx]
+                | Choice2Of2 subExpr -> UnifyTypes cenv env mOrigExpr (tyOfExpr cenv.g subExpr) unsortedFieldTysAll.[unsortedIdx]; subExpr)
+            |> List.ofArray
 
-        let expr = mkAnonRecd cenv.g mWholeExpr anonInfo (List.ofArray sortedCheckedArgsAll) sortedArgTysAll
+        // Permute the expressions to sorted order in the TAST
+        let expr = mkAnonRecd cenv.g mWholeExpr anonInfo unsortedFieldIds unsortedFieldExprs unsortedFieldTysAll
         let expr = wrap expr
+
+        // Bind the original expression
         let expr = mkCompGenLet mOrigExpr oldv origExprChecked expr
         expr, tpenv
 
@@ -7199,7 +7244,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
                 let elemAddrTy = if isReadOnlySpan then mkInByrefTy cenv.g elemTy else mkByrefTy cenv.g elemTy
 
                 // Evaluate the span index lookup
-                let bodyExprFixup elemVar bodyExpr = 
+                let bodyExprFixup elemVar bodyExpr =
                     let elemAddrVar, _ = mkCompGenLocal mForLoopStart "addr" elemAddrTy
                     let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemAddrVar)) bodyExpr
                     let getItemCallExpr, _ = BuildMethodCall tcVal cenv.g cenv.amap PossiblyMutates mWholeExpr true getItemMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] [ idxExpr ]
@@ -7209,7 +7254,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
                 let overallExprFixup overallExpr = mkCompGenLet mForLoopStart spanVar enumExpr overallExpr
 
                 let getLengthCallExpr, _ = BuildMethodCall tcVal cenv.g cenv.amap PossiblyMutates mWholeExpr true getLengthMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] []
-    
+
                 // Ask for a loop over integers for the given range
                 (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart getLengthCallExpr))
 
@@ -10128,7 +10173,8 @@ and TcMethodApplication
                                     | CallerLineNumber, _ when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
                                         emptyPreBinder, Expr.Const (Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
                                     | CallerFilePath, _ when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
-                                        emptyPreBinder, Expr.Const (Const.String(FileSystem.GetFullPathShim(mMethExpr.FileName)), mMethExpr, currCalledArgTy)
+                                        let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply cenv.g.pathMap
+                                        emptyPreBinder, Expr.Const (Const.String fileName, mMethExpr, currCalledArgTy)
                                     | CallerMemberName, Some callerName when (typeEquiv cenv.g currCalledArgTy cenv.g.string_ty) ->
                                         emptyPreBinder, Expr.Const (Const.String callerName, mMethExpr, currCalledArgTy)
                                     | _ ->
@@ -10167,7 +10213,8 @@ and TcMethodApplication
                           let lineExpr = Expr.Const(Const.Int32 mMethExpr.StartLine, mMethExpr, calledNonOptTy)
                           emptyPreBinder, mkSome cenv.g calledNonOptTy lineExpr mMethExpr
                       | CallerFilePath, _ when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
-                          let filePathExpr = Expr.Const (Const.String (FileSystem.GetFullPathShim(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
+                          let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply cenv.g.pathMap
+                          let filePathExpr = Expr.Const (Const.String(fileName), mMethExpr, calledNonOptTy)
                           emptyPreBinder, mkSome cenv.g calledNonOptTy filePathExpr mMethExpr
                       | CallerMemberName, Some(callerName) when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
                           let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
@@ -12394,8 +12441,8 @@ module TcRecdUnionAndEnumDeclarations = begin
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
         for (sf, f) in List.zip synFields tastFields do
-            let mutable synField = Unchecked.defaultof<_>
-            if seen.TryGetValue(f.Name, &synField) then
+            match seen.TryGetValue f.Name with
+            | true, synField ->
                 match sf, synField with
                 | Field(_, _, Some id, _, _, _, _, _), Field(_, _, Some(_), _, _, _, _, _) ->
                     error(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(id.idText), id.idRange))
@@ -12403,7 +12450,7 @@ module TcRecdUnionAndEnumDeclarations = begin
                 | Field(_, _, None, _, _, _, _, _), Field(_, _, Some id, _, _, _, _, _) ->
                     error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
                 | _ -> assert false
-            else
+            | _ ->
                 seen.Add(f.Name, sf)
                 
     let TcUnionCaseDecl cenv env parent thisTy tpenv (UnionCase (synAttrs, id, args, xmldoc, vis, m)) =
@@ -13268,7 +13315,7 @@ module IncrClassChecking =
 
         let takenFieldNames = 
             [ for b in memberBinds do 
-                  yield b.Var.CompiledName 
+                  yield b.Var.CompiledName cenv.g.CompilerGlobalState
                   yield b.Var.DisplayName 
                   yield b.Var.CoreDisplayName 
                   yield b.Var.LogicalName ] 
