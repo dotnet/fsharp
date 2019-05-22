@@ -215,9 +215,7 @@ module internal ExtensionTyping =
         ProvidedMethodInfo = 
         inherit ProvidedMethodBase
         member ReturnType : ProvidedType
-#if !FX_NO_REFLECTION_METADATA_TOKENS
         member MetadataToken : int
-#endif
 
     and [<Sealed; Class>] 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE

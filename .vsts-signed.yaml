@@ -5,6 +5,12 @@ variables:
 - name: VisualStudioDropName
   value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
 
+# Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
+# Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
+#variables:
+#- name: SkipTests
+#  defaultValue: false
+
 jobs:
 - job: Full_Signed
   pool:
@@ -26,6 +32,7 @@ jobs:
   - script: eng\CIBuild.cmd
             -configuration $(BuildConfiguration)
             -testAll
+            -officialSkipTests $(SkipTests)
             /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
             /p:VisualStudioDropName=$(VisualStudioDropName)
             /p:DotNetSignType=$(SignType)
@@ -55,7 +62,7 @@ jobs:
       ArtifactName: 'Test Results'
       publishLocation: Container
     continueOnError: true
-    condition: succeededOrFailed()
+    condition: and(succeededOrFailed(), ne(variables['SkipTests'], 'true'))
 
   # Upload VSTS Drop
   - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1

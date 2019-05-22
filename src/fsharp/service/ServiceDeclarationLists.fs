@@ -630,7 +630,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
             
             let isActivePatternItem (items: CompletionItem list) =
                 match items |> List.map (fun x -> x.Item) with
-                | [Item.Value vref] -> IsActivePatternName vref.CompiledName
+                | [Item.Value vref] -> IsActivePatternName (vref.CompiledName infoReader.g.CompilerGlobalState)
                 | _ -> false
             
             items |> List.filter (fun (displayName, items) -> 

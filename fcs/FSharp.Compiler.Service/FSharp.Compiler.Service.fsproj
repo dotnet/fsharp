@@ -8,6 +8,7 @@
     <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>$(DefineConstants);LOCALIZATION_FSCOMP</DefineConstants>
     <FsLexOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsLexOutputFolder>
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
@@ -352,6 +353,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fs">
       <Link>TypedAST/QuotationPickler.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/CompilerGlobalState.fs">
+      <Link>TypedAST/CompilerGlobalState.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tast.fs">
       <Link>TypedAST/tast.fs</Link>

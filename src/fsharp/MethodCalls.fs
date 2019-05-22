@@ -657,7 +657,8 @@ let BuildObjCtorCall (g: TcGlobals) m =
 let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
     let arities =  (arityOfVal vref.Deref).AritiesOfArgs
     
-    let args3, (leftover, retTy) = 
+    let args3, (leftover, retTy) =
+        let exprL expr = exprL g expr
         ((args, vexprty), arities) ||> List.mapFold (fun (args, fty) arity -> 
             match arity, args with 
             | (0|1), [] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
@@ -731,7 +732,7 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
             match amap.g.knownFSharpCoreModules.TryGetValue declaringEntity.LogicalName with
             | true, modRef -> 
                 modRef.ModuleOrNamespaceType.AllValsByLogicalName 
-                |> Seq.tryPick (fun (KeyValue(_, v)) -> if v.CompiledName = methodName then Some (mkNestedValRef modRef v) else None)
+                |> Seq.tryPick (fun (KeyValue(_, v)) -> if (v.CompiledName amap.g.CompilerGlobalState) = methodName then Some (mkNestedValRef modRef v) else None)
             | _ -> None
         else
             None

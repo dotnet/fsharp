@@ -12,7 +12,15 @@ open System.Runtime.InteropServices
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-    let FSharpBannerVersion = "10.4.0 for F# 4.6"
+#if LOCALIZATION_FSBUILD
+    let FSharpBannerVersion = FSBuild.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
+#else
+#if LOCALIZATION_FSCOMP
+    let FSharpBannerVersion = FSComp.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
+#else
+    let FSharpBannerVersion = sprintf "%s for F# %s" (FSharp.BuildProperties.fsProductVersion) (FSharp.BuildProperties.fsLanguageVersion)
+#endif
+#endif
 
     let versionOf<'t> =
 #if FX_RESHAPED_REFLECTION

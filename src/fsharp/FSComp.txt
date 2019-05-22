@@ -1478,3 +1478,4 @@ csTypeHasNullAsExtraValue,"The type '%s' has 'null' as an extra value but a cons
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 optsCheckNulls,"Enable nullness declarations and checks"
 optsLangVersion,"Specify the language version"
+fSharpBannerVersion,"%s for F# %s"

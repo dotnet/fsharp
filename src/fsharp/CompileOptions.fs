@@ -1577,17 +1577,17 @@ let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, c
 //----------------------------------------------------------------------------
 
 let showTermFileCount = ref 0    
-let PrintWholeAssemblyImplementation (tcConfig:TcConfig) outfile header expr =
+let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then 
             let filename = outfile + ".terms"
             let n = !showTermFileCount
             showTermFileCount := n+1
             use f = System.IO.File.CreateText (filename + "-" + string n + "-" + header)
-            Layout.outL f (Layout.squashTo 192 (DebugPrint.implFilesL expr))
+            Layout.outL f (Layout.squashTo 192 (DebugPrint.implFilesL g expr))
         else 
             dprintf "\n------------------\nshowTerm: %s:\n" header
-            Layout.outL stderr (Layout.squashTo 192 (DebugPrint.implFilesL expr))
+            Layout.outL stderr (Layout.squashTo 192 (DebugPrint.implFilesL g expr))
             dprintf "\n------------------\n"
 
 //----------------------------------------------------------------------------
@@ -1685,13 +1685,13 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     // Always optimize once - the results of this step give the x-module optimization 
     // info.  Subsequent optimization steps choose representations etc. which we don't 
     // want to save in the x-module info (i.e. x-module info is currently "high level"). 
-    PrintWholeAssemblyImplementation tcConfig outfile "pass-start" implFiles
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-start" implFiles
 #if DEBUG
     if tcConfig.showOptimizationData then 
-        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL implFiles)))
+        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
     
     if tcConfig.showOptimizationData then 
-        dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.entityL ccu.Contents)))
+        dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.entityL tcGlobals ccu.Contents)))
 #endif
 
     let optEnv0 = optEnv
@@ -1773,11 +1773,9 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     let implFiles, implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
     let tassembly = TypedAssemblyAfterOptimization implFiles
-    PrintWholeAssemblyImplementation tcConfig outfile "pass-end" (List.map fst implFiles)
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (List.map fst implFiles)
     ReportTime tcConfig ("Ending Optimizations")
-
     tassembly, assemblyOptData, optEnvFirstLoop
-
 
 //----------------------------------------------------------------------------
 // ILX generation 

@@ -51,12 +51,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersPackageVersion)" />
-    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmPackageVersion)" />
-    <PackageReference Include="StrawberryPerl64" Version="$(StrawberryPerl64PackageVersion)" PrivateAssets="all" />
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryPackageVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
+    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+    <PackageReference Include="StrawberryPerl64" Version="$(StrawberryPerl64Version)" PrivateAssets="all" />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
   </ItemGroup>
 
 </Project>

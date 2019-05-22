@@ -44,14 +44,6 @@ type Stamp = int64
 //++GLOBAL MUTABLE STATE (concurrency-safe)
 let newStamp = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment i
 
-/// A global generator of compiler generated names
-// ++GLOBAL MUTABLE STATE (concurrency safe by locking inside NiceNameGenerator)
-let globalNng = NiceNameGenerator()
-
-/// A global generator of stable compiler generated names
-// ++GLOBAL MUTABLE STATE (concurrency safe by locking inside StableNiceNameGenerator)
-let globalStableNameGenerator = StableNiceNameGenerator ()
-
 type StampMap<'T> = Map<Stamp, 'T>
 
 //-------------------------------------------------------------------------
@@ -2552,8 +2544,7 @@ and
 and ValData = Val
 and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     Val = 
-    { 
-      /// Mutable for unpickle linkage
+    { /// Mutable for unpickle linkage
       mutable val_logical_name: string
 
       /// Mutable for unpickle linkage
@@ -2564,12 +2555,12 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
       /// Mutable for unpickle linkage
       mutable val_stamp: Stamp 
 
-      /// See vflags section further below for encoding/decodings here 
+      /// See vflags section further below for encoding/decodings here
       mutable val_flags: ValFlags
-      
-      mutable val_opt_data: ValOptionalData option } 
 
-    static member NewEmptyValOptData() = 
+      mutable val_opt_data: ValOptionalData option }
+
+    static member NewEmptyValOptData() =
         { val_compiled_name = None
           val_other_range = None
           val_const = None
@@ -2897,7 +2888,7 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     ///   - If this is an implementation of an abstract slot then this may be a mangled name
     ///   - If this is an extension member then this will be a mangled name
     ///   - If this is an operator then this is 'op_Addition'
-    member x.CompiledName =
+    member x.CompiledName (compilerGlobalState:CompilerGlobalState option) =
         let givenName = 
             match x.val_opt_data with 
             | Some { val_compiled_name = Some n } -> n
@@ -2916,10 +2907,10 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
         //         let dt = System.DateTime.Now - System.DateTime.Now // IsMemberOrModuleBinding = false, IsCompiledAsTopLevel = true, IsMember = false, CompilerGenerated=true
         //    
         // However we don't need this for CompilerGenerated members such as the implementations of IComparable
-        if x.IsCompiledAsTopLevel && not x.IsMember && (x.IsCompilerGenerated || not x.IsMemberOrModuleBinding) then 
-            globalStableNameGenerator.GetUniqueCompilerGeneratedName(givenName, x.Range, x.Stamp) 
-        else 
-            givenName
+        match compilerGlobalState with
+        | Some state when x.IsCompiledAsTopLevel && not x.IsMember && (x.IsCompilerGenerated || not x.IsMemberOrModuleBinding) ->
+            state.StableNameGenerator.GetUniqueCompilerGeneratedName(givenName, x.Range, x.Stamp) 
+        | _ -> givenName
 
     /// The name of the property.
     /// - If this is a property then this is 'Foo' 
@@ -4646,7 +4637,7 @@ and
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = sprintf "TBind(%s, ...)" x.Var.CompiledName
+    override x.ToString() =  sprintf "TBind(%s, ...)" (x.Var.CompiledName None)
 
 /// Represents a reference to an active pattern element. The 
 /// integer indicates which choice in the target set is being selected by this item. 
@@ -5910,16 +5901,16 @@ let NewVal
        (logicalName: string, m: range, compiledName, ty, isMutable, isCompGen, arity, access,
         recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc, isModuleOrMemberBinding,
         isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal,
-        konst, actualParent) : Val = 
+        konst, actualParent) : Val =
 
     let stamp = newStamp()
-    Val.New
-        { val_stamp = stamp
-          val_logical_name = logicalName
-          val_range = m
-          val_flags = ValFlags(recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal)
-          val_type = ty
-          val_opt_data =
+    Val.New {
+        val_stamp = stamp
+        val_logical_name = logicalName
+        val_range = m
+        val_flags = ValFlags(recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal)
+        val_type = ty
+        val_opt_data =
             match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
             | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
             | _ -> 
@@ -5934,11 +5925,9 @@ let NewVal
                          val_attribs = attribs }
         }
 
-
 /// Create the new contents of an overall assembly
 let NewCcuContents sref m nm mty =
     NewModuleOrNamespace (Some(CompPath(sref, []))) taccessPublic (ident(nm, m)) XmlDoc.Empty [] (MaybeLazy.Strict mty)
-      
 
 //--------------------------------------------------------------------------
 // Cloning and adjusting

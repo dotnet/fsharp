@@ -2938,3 +2938,20 @@ module GeneratedSignatureTests =
     [<Test>]
     let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
 #endif
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+module OverloadResolution =
+    module FSharpQAMigrated = 
+        let [<Test>] ``Conformance\Expressions\SyntacticSugar (E_Slices01.fs)`` () = singleNegTest (testConfig "conformance/expressions/syntacticsugar") "E_Slices01"
+        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_OneTypeVariable03.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03"
+        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_OneTypeVariable03rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03rec"
+        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariables01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01"
+        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariables01rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01rec"
+        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariablesGen00rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariablesGen00rec"
+        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoEqualTypeVariables02.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualTypeVariables02"
+        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoEqualYypeVariables02rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualYypeVariables02rec"
+        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_LeftToRightOverloadResolution01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_LeftToRightOverloadResolution01"
+        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass01.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass01"
+        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass03.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass03"
+        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass04.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass04"
+#endif
