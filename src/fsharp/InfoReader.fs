@@ -107,7 +107,7 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
     let props = new Dictionary<PropInfo, PropInfo>(hashIdentity)
 
     let add pinfo =
-        match props.TryGetValue(pinfo), pinfo with
+        match props.TryGetValue pinfo, pinfo with
         | (true, FSProp (_, ty, Some vref1, _)), FSProp (_, _, _, Some vref2)
         | (true, FSProp (_, ty, _, Some vref2)), FSProp (_, _, Some vref1, _) ->
             let pinfo = FSProp (g, ty, Some vref1, Some vref2)

@@ -67,6 +67,18 @@ module CrossAssemblyTestTupleStruct =
         check "svrknvio4" (let res = SampleAPITupleStruct.SampleFunctionReturningStructTuple() in match res with (x,y) -> x + y.Length) 4 
     tests()
 
+module TypeNotGeneratedBug = 
+    
+    let foo (_: obj) = ()
+    
+    let bar() = foo {| ThisIsUniqueToThisTest6353 = 1 |}
+    
+module FeasibleEqualityNotImplemented = 
+    type R = {| number: int |}
+    let e = Event< R>()
+    e.Trigger {|number = 3|}
+    e.Publish.Add (printfn "%A")    // error
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

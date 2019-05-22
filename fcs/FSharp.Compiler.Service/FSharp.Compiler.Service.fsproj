@@ -1,17 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
-  </PropertyGroup>
-  <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
- <PropertyGroup>
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+  <PropertyGroup>
+    <TargetFrameworks>$(FcsTargetNetFxFramework);netstandard2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>$(DefineConstants);LOCALIZATION_FSCOMP</DefineConstants>
     <FsLexOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsLexOutputFolder>
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
@@ -96,6 +93,12 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/prim-parsing.fs">
       <Link>LexYaccRuntime/prim-parsing.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/utils/PathMap.fsi">
+      <Link>Utilities/PathMap.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/utils/PathMap.fs">
+      <Link>Utilities/PathMap.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/ResizeArray.fsi">
       <Link>Utilities/ResizeArray.fsi</Link>
@@ -351,6 +354,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fs">
       <Link>TypedAST/QuotationPickler.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/CompilerGlobalState.fs">
+      <Link>TypedAST/CompilerGlobalState.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tast.fs">
       <Link>TypedAST/tast.fs</Link>
     </Compile>
@@ -432,6 +438,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CheckFormatStrings.fs">
       <Link>Logic/CheckFormatStrings.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fsi">
+      <Link>Logic/FindUnsolved.fsi</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fs">
       <Link>Logic/FindUnsolved.fs</Link>
     </Compile>
@@ -471,8 +480,14 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize/InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fsi">
+      <Link>Optimize/LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fs">
       <Link>Optimize/LowerCallsAndSeqs.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fsi">
+      <Link>Optimize/autobox.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fs">
       <Link>Optimize/autobox.fs</Link>
@@ -638,7 +653,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.6.2" />
+    <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
   </ItemGroup>
@@ -650,7 +665,7 @@
     <PackageReference Include="System.Runtime.Loader" Version="4.0.0" />
     <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+  <ItemGroup Condition="'$(TargetFramework)' == '$(FcsTargetNetFxFramework)'">
     <Reference Include="System.Runtime" />
     <Reference Include="System.IO" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />

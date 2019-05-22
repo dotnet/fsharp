@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Compiler.SourceCodeServices
 
@@ -814,11 +814,10 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         match other with
         |   :? FSharpUnionCase as uc -> v === uc.V
         |   _ -> false
-    
+
     override x.GetHashCode() = hash v.CaseName
 
     override x.ToString() = x.CompiledName
-
 
 and FSharpFieldData = 
     | AnonField of AnonRecdTypeInfo * TTypes * int * range
@@ -1394,7 +1393,12 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     let mkEventSym einfo = FSharpMemberOrFunctionOrValue(cenv, E einfo, Item.Event einfo)
 
     new (cenv, vref) = FSharpMemberFunctionOrValue(cenv, V vref, Item.Value vref)
-    new (cenv, minfo) =  FSharpMemberFunctionOrValue(cenv, M minfo, Item.MethodGroup(minfo.LogicalName, [minfo], None))
+
+    new (cenv, minfo: MethInfo) =
+        if minfo.IsConstructor || minfo.IsClassConstructor then
+            FSharpMemberFunctionOrValue(cenv, C minfo, Item.CtorGroup(minfo.LogicalName, [minfo]))
+        else
+            FSharpMemberFunctionOrValue(cenv, M minfo, Item.MethodGroup(minfo.LogicalName, [minfo], None))
 
     member __.IsUnresolved = 
         isUnresolved()
@@ -1408,16 +1412,22 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.Overloads matchParameterNumber =
         checkIsResolved()
         match d with
-        | M m ->
+        | M m | C m ->
             match item with
-            | Item.MethodGroup (_name, methodInfos, _) ->
+            | Item.MethodGroup (_, methodInfos, _)
+            | Item.CtorGroup (_, methodInfos) ->
+                let isConstructor = x.IsConstructor
                 let methods =
                     if matchParameterNumber then
                         methodInfos
                         |> List.filter (fun methodInfo -> not (methodInfo.NumArgs = m.NumArgs) )
                     else methodInfos
                 methods
-                |> List.map (fun mi -> FSharpMemberOrFunctionOrValue(cenv, M mi, item))
+                |> List.map (fun mi ->
+                    if isConstructor then
+                        FSharpMemberOrFunctionOrValue(cenv, C mi, item)
+                    else
+                        FSharpMemberOrFunctionOrValue(cenv, M mi, item))
                 |> makeReadOnlyCollection
                 |> Some
             | _ -> None
@@ -1740,7 +1750,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.CompiledName = 
         checkIsResolved()
         match fsharpInfo() with 
-        | Some v -> v.CompiledName
+        | Some v -> v.CompiledName cenv.g.CompilerGlobalState
         | None -> x.LogicalName
 
     member __.LogicalName = 
@@ -1998,7 +2008,8 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             match d, other.Data with 
             | E evt1, E evt2 -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2 
             | P p1, P p2 ->  PropInfo.PropInfosUseIdenticalDefinitions p1 p2
-            | M m1, M m2 ->  MethInfo.MethInfosUseIdenticalDefinitions m1 m2
+            | M m1, M m2
+            | C m1, C m2 ->  MethInfo.MethInfosUseIdenticalDefinitions m1 m2
             | V v1, V v2 -> valRefEq cenv.g v1 v2
             | _ -> false
         |   _ -> false
@@ -2007,7 +2018,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     override x.ToString() = 
         try  
             let prefix = (if x.IsEvent then "event " elif x.IsProperty then "property " elif x.IsMember then "member " else "val ") 
-            prefix + x.LogicalName 
+            prefix + x.LogicalName
         with _  -> "??"
 
     member x.FormatLayout (denv:FSharpDisplayContext) =

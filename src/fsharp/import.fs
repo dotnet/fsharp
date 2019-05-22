@@ -37,8 +37,6 @@ type AssemblyLoader =
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
 #endif
         
-
-
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
 //------------------------------------------------------------------------- 
@@ -134,7 +132,7 @@ let ImportILTypeRefUncached (env: ImportMap) m (tref: ILTypeRef) =
     
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
 let ImportILTypeRef (env: ImportMap) m (tref: ILTypeRef) =
-    match env.ILTypeRefToTyconRefCache.TryGetValue(tref) with
+    match env.ILTypeRefToTyconRefCache.TryGetValue tref with
     | true, tcref -> tcref
     | _ ->
         let tcref = ImportILTypeRefUncached  env m tref
@@ -436,7 +434,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
             | [] -> ()
             | key :: rest ->
                 buckets.[key] <-
-                    match buckets.TryGetValue(key) with
+                    match buckets.TryGetValue key with
                     | true, b -> (rest, v) :: b
                     | _ -> (rest, v) :: []
 

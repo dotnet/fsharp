@@ -1,45 +1,61 @@
-# The F# Language, Library, and  Visual F# Tools Repository
+# The F# compiler, F# core library, and F# editor tools
 
-You are invited to help produce future releases of the F# language compiler, library, and tools. This repository enables development on Linux, macOS and Windows, along with some automated CI testing for these.
+You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET Core](https://dotnet.microsoft.com/).
 
-* [About F#](http://fsharp.org)
-* [Testimonials](http://fsharp.org/testimonials)
-* [Contributing](#contributing)
-* [Using](#using)
+## Contributing
 
-The F# Compiler and Tools are also mirrored in [the corresponding repository](http://github.com/fsharp/fsharp) of the F# Software Foundation.
+### Quickstart on Windows
 
-Changes contributed here are eventually propagated to this repository and are included in all packagings of F# and open source F# editing tools. The process for doing this is explained in this guide by the [F# Core Engineering Group](https://fsharp.github.io/2014/06/18/fsharp-contributions.html). Currently, the F# community coordinates packaging [other editions of F#](https://github.com/fsharp/fsharp/) for use on Linux, macOS, Android, iOS, and other platforms, and Microsoft coordinates packaging this repository as part of the Visual F# Tools. 
+Build from the command line:
 
-For historical reasons this repository is called "visualfsharp" and currently also contains the Visual F# IDE Tools. The eventual plan is to split these repositories into "fsharp" and "visualfsharp".
+```bash
+build.cmd
+```
 
+After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
+
+### Quickstart on Linux or macOS
+
+Build from the command line:
+
+```bash
+sh ./build.sh
+```
+
+After it's finished, open `FSharp.sln` in your editor of choice.
+
+### More options and information
+
+See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) for more details on additional configurations for building and testing, how to update compiler error messages, and more.
+
+### No contribution is too small
+
+Even if you find a single-character typo, we're happy to take the change! Although the codebase can feel daunting for beginners, we and other contributors are happy to help you along.
 
 ## Build Status
 
 | Branch | Status |
 |:------:|:------:|
-|master|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=master)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
-|dev15.9|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev15.9)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
-|dev16.0|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev16.0)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
+|master|[![Build Status](https://dev.azure.com/dnceng/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=master)](https://dev.azure.com/dnceng/public/_build/latest?definitionId=496&branchName=master)|
 
-## Help improve the Quality of the Tools by Using the Nightly Releases of Visual F# Tools
-To setup Visual Studio to use the latest nightly releases of the Visual F# Tools:
+## Using nightly releases in Visual Studio
+
+You can use the latest `master` build of the F# compiler and tools for Visual Studio via our nightly releases if you are a Visual Studio user. See details on setup here:
+
 https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
 
+### Even more nightly than the nightly
 
-## Contributing
+Alternatively, if you _really_ want to live on the bleeding edge, you can set up a nightly feed for the Visual Studio preview releases, which use the latest commit in the preview branch. To do so, follow the same instructions as the above blog post, but instead with these links:
 
-See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) for details on build, development, and testing.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for general guidelines on the contribution process, also [how we label issues and PRs](https://github.com/dotnet/roslyn/wiki/Labels-used-for-issues)
-
-To contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
+* Set your feed to the preview feed: https://dotnet.myget.org/F/fsharp-preview/vsix
+* Install a VSIX manually from the preview feed: https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp
 
 ## Branches
 
 These are the branches in use:
 
-* `master` = Latest branch for OSS developers and nightly users.  
+* `master`
   - Most contributions go here.
   - Able to be built, installed and used in the latest public Visual Studio release.
   - May contain updated F# features and logic.
@@ -48,7 +64,7 @@ These are the branches in use:
   - Gets integrated into https://github.com/fsharp/FSharp.Compiler.Service to form the basis of FSharp.Compiler.Service releases
 
 * `dev15.9`
-  - Servicing branch for VS 2017 update 15.9. We do not expect to service that release, but if we do, that's where the changes would go.
+  - Long-term servicing branch for VS 2017 update 15.9.x. We do not expect to service that release, but if we do, that's where the changes will go.
   
 * `dev16.x`
   - Latest release branch for the particular point release of Visual Studio.
@@ -56,53 +72,40 @@ These are the branches in use:
   - May contain new features that depend on new things or fixes in the corresponding forthcoming Visual Studio release.
   - Gets integrated back into master once the corresponding Visual Studio release is made.
 
-### Technical Documentation
+## F# language and core library evolution
 
-* [The F# Language and Core Library RFC Process](http://fsharp.github.io/2016/09/26/fsharp-rfc-process.html)
+Evolution of the F# language and core library follows a process spanning two additional repositories. The process is as follows:
 
-* [The F# Language Specification](http://fsharp.org/specs/language-spec/)
+1. Use the [F# language suggestions repo](https://github.com/fsharp/fslang-suggestions/) to search for ideas, vote on ones you like, submit new ideas, and discuss details with the F# community.
+2. Ideas that are "approved in principle" are eligible for a new RFC in the [F# language design repo](https://github.com/fsharp/fslang-design). This is where the technical specification and discussion of approved suggestions go.
+3. Implementations and testing of an RFC are submitted to this repository.
+
+## Additional project documentation
+
+The following links can help you get an overview of some technical aspects of the F# language and compiler:
 
 * [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
-  maintained by contributors to this repository.  Please read
-  and contribute to that guide.
+* [The F# Language Specification](http://fsharp.org/specs/language-spec/)
 
-### License
+## License
 
-This project is subject to the MIT License. A copy of this license can be found in [License.txt](License.txt) at the root of this repo.
-
-
-## Using
-
-For typical installs of  F#, see http://fsharp.org.
-
-### Using Nightly Releases of Visual F# Tools
-
-To setup Visual Studio to use the latest nightly releases of the Visual F# Tools:
-
-https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
-
-If you wish to set up a *Preview* nightly atop Visual Studio preview builds, you can either [download a VSIX Manually from here](https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp) or set up a VSIX feed in visual studio from [here](https://dotnet.myget.org/F/fsharp-preview/vsix).
-
-### Using CI Builds
-
-To install F#, see http://fsharp.org.
-
-To download the bits for the latest CI builds see [these instructions](https://github.com/Microsoft/visualfsharp/wiki/Using-CI-Builds). This includes and ZIPs containing the F# compiler and VSIX installers for the Visual F# IDE Tools.
-
-### Using F# on a build server or computer without an F# installation
-
-If you wish to use the latest F# compiler on a computer without Visual Studio 2017 installed, you can add the nuget package ``FSharp.Compiler.Tools`` to your projects. This will replace the in-box compiler with the version contained in the package.
-The actual package is built in https://github.com/fsharp/fsharp.
-
-You will need to adjust the targets reference on your project file to use the targets file from the installed ``FSharp.Compiler.Tools`` package.
-See https://github.com/fsharp/fsharp/issues/676 for how to modify your project file.
+This project is subject to the MIT License. A copy of this license is in [License.txt](License.txt).
 
 ## Code of Conduct
 
-This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
+This project has adopted the [Contributor Covenant](http://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
 
 ## Get In Touch
 
-Follow [@VisualFSharp](https://twitter.com/VisualFSharp) and [@fsharporg](https://twitter.com/fsharporg) on twitter and subscribe to the [.NET Blog](https://blogs.msdn.microsoft.com/dotnet/).
+Members of the [F# Software Foundation](http://fsharp.org) are invited to the [FSSF Slack](http://fsharp.org/guides/slack/). You can find support from other contributors in the `#compiler` and `#editor-support` channels.
 
-Members of the F# Software Foundation can be invited to the "F# Software Foundation" discussion rooms on slack. More details at http://fsharp.org/guides/slack/.
+Additionally, you can use the `#fsharp` tag on Twitter if you have general F# questions, including about this repository. Chances are you'll get multiple responses.
+
+## About F#
+
+If you're curious about F# itself, check out these links:
+
+* [What is F#](https://docs.microsoft.com/dotnet/fsharp/what-is-fsharp)
+* [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
+* [F# Software Foundation](http://fsharp.org)
+* [F# Testimonials](http://fsharp.org/testimonials)

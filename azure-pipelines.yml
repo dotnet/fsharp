@@ -1,0 +1,237 @@
+# CI and PR triggers
+trigger:
+- master
+- dev16.1
+- feature/*
+- release/*
+pr:
+- master
+- dev16.1
+- feature/*
+- release/*
+
+variables:
+  - name: _TeamName
+    value: FSharp
+  - name: _BuildConfig
+    value: Release
+  - name: _PublishUsingPipelines
+    value: true
+  - name: _DotNetArtifactsCategory
+    value: .NETCore
+  - name: VisualStudioDropName
+    value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+
+# Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
+# Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
+#variables:
+#- name: SkipTests
+#  defaultValue: false
+
+jobs:
+
+#---------------------------------------------------------------------------------------------------------------------#
+#                                                   Signed build                                                      #
+#---------------------------------------------------------------------------------------------------------------------#
+- ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
+  - template: /eng/common/templates/jobs/jobs.yml
+    parameters:
+      enableMicrobuild: true
+      enablePublishBuildArtifacts: true
+      enablePublishTestResults: false
+      enablePublishBuildAssets: true
+      enablePublishUsingPipelines: $(_PublishUsingPipelines)
+      enableTelemetry: true
+      helixRepo: dotnet/fsharp
+      jobs:
+      - job: Full_Signed
+        pool:
+          name: NetCoreInternal-Int-Pool
+          queue: buildpool.windows.10.amd64.vs2019
+        timeoutInMinutes: 300
+        variables:
+        - group: DotNet-Blob-Feed
+        - group: DotNet-Symbol-Server-Pats
+        - name: _SignType
+          value: Real
+        - name: _DotNetPublishToBlobFeed
+          value: true
+        steps:
+        - checkout: self
+          clean: true
+        - script: eng\CIBuild.cmd
+                  -configuration $(_BuildConfig)
+                  -prepareMachine
+                  -testAll
+                  -officialSkipTests $(SkipTests)
+                  /p:SignType=$(_SignType)
+                  /p:DotNetSignType=$(_SignType)
+                  /p:MicroBuild_SigningEnabled=true
+                  /p:OverridePackageSource=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+                  /p:TeamName=$(_TeamName)
+                  /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
+                  /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+                  /p:DotNetPublishToBlobFeed=true
+                  /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
+                  /p:DotNetArtifactsCategory=$(_DotNetArtifactsCategory)
+                  /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
+                  /p:DotNetSymbolServerTokenSymWeb=$(symweb-symbol-server-pat)
+                  /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
+                  /p:PublishToSymbolServer=true
+                  /p:VisualStudioDropName=$(VisualStudioDropName)
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Packages
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+            ArtifactName: 'Packages'
+          condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact VSSetup
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+            ArtifactName: 'VSSetup'
+          condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Nightly
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpFull.vsix'
+            ArtifactName: 'Nightly'
+          condition: succeeded()
+
+#---------------------------------------------------------------------------------------------------------------------#
+#                                                     PR builds                                                       #
+#---------------------------------------------------------------------------------------------------------------------#
+- ${{ if eq(variables['System.TeamProject'], 'public') }}:
+  - template: /eng/common/templates/jobs/jobs.yml
+    parameters:
+      enableMicrobuild: true
+      enablePublishBuildArtifacts: true
+      enablePublishTestResults: false
+      enablePublishBuildAssets: true
+      enablePublishUsingPipelines: $(_PublishUsingPipelines)
+      enableTelemetry: true
+      helixRepo: dotnet/fsharp
+      jobs:
+
+      # Windows
+      - job: Windows
+        pool:
+          vmImage: windows-2019
+        timeoutInMinutes: 120
+        strategy:
+          maxParallel: 4
+          matrix:
+            desktop_release:
+              _configuration: Release
+              _testKind: testDesktop
+            coreclr_release:
+              _configuration: Release
+              _testKind: testCoreclr
+            fsharpqa_release:
+              _configuration: Release
+              _testKind: testFSharpQA
+            vs_release:
+              _configuration: Release
+              _testKind: testVs
+        steps:
+        - checkout: self
+          clean: true
+        - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
+          displayName: Build / Test
+
+      # Linux
+      - job: Linux
+        pool:
+          vmImage: ubuntu-16.04
+        variables:
+        - name: _SignType
+          value: Test
+        steps:
+        - checkout: self
+          clean: true
+        - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+          displayName: Build / Test
+
+      # MacOS
+      - job: MacOS
+        pool:
+          vmImage: macOS-10.13
+        variables:
+        - name: _SignType
+          value: Test
+        steps:
+        - checkout: self
+          clean: true
+        - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+          displayName: Build / Test
+
+      # Source Build Linux
+      - job: SourceBuild_Linux
+        pool:
+          vmImage: ubuntu-16.04
+        steps:
+        - checkout: self
+          clean: true
+        - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+          displayName: Build
+
+      # Source Build Windows
+      - job: SourceBuild_Windows
+        pool:
+          vmImage: windows-2019
+        steps:
+        - checkout: self
+          clean: true
+        - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+          displayName: Build
+
+#---------------------------------------------------------------------------------------------------------------------#
+#                                                    FCS builds                                                       #
+#---------------------------------------------------------------------------------------------------------------------#
+
+- ${{ if eq(variables['System.TeamProject'], 'public') }}:
+  - template: /eng/common/templates/jobs/jobs.yml
+    parameters:
+      enableMicrobuild: true
+      enablePublishTestResults: false
+      enablePublishBuildAssets: true
+      enablePublishUsingPipelines: false
+      enableTelemetry: true
+      helixRepo: dotnet/fsharp
+      jobs:
+
+      - job: Windows_FCS
+        pool:
+          vmImage: windows-2019
+        variables:
+        - name: _SignType
+          value: Test
+        steps:
+        - checkout: self
+          clean: true
+        - script: fcs\build.cmd TestAndNuget
+          displayName: Build / Test
+
+      - job: Linux_FCS
+        pool:
+          vmImage: ubuntu-16.04
+        variables:
+        - name: _SignType
+          value: Test
+        steps:
+        - checkout: self
+          clean: true
+        - script: ./fcs/build.sh Build
+          displayName: Build
+
+      - job: MacOS_FCS
+        pool:
+          vmImage: macOS-10.13
+        variables:
+        - name: _SignType
+          value: Test
+        steps:
+        - checkout: self
+          clean: true
+        - script: ./fcs/build.sh Build
+          displayName: Build

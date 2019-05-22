@@ -3,6 +3,7 @@
 /// The ILPdbWriter 
 module internal FSharp.Compiler.AbstractIL.ILPdbWriter 
 
+open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
@@ -82,10 +83,10 @@ type idd =
       iddData: byte[];
       iddChunk: BinaryChunk }
 
-val generatePortablePdb : embedAllSource:bool -> embedSourceList:string list -> sourceLink: string -> showTimes:bool -> info:PdbData -> isDeterministic:bool -> (int64 * BlobContentId * MemoryStream)
+val generatePortablePdb : embedAllSource:bool -> embedSourceList:string list -> sourceLink: string -> showTimes:bool -> info:PdbData -> isDeterministic:bool -> pathMap:PathMap -> (int64 * BlobContentId * MemoryStream)
 val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> (int64 * BlobContentId * MemoryStream)
 val embedPortablePdbInfo : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> pdbChunk:BinaryChunk -> idd[]
-val writePortablePdbInfo : contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> idd[]
+val writePortablePdbInfo : contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> pathMap:PathMap -> cvChunk:BinaryChunk -> idd[]
 
 #if !FX_NO_PDB_WRITER
 val writePdbInfo : showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> cvChunk:BinaryChunk -> idd[]
