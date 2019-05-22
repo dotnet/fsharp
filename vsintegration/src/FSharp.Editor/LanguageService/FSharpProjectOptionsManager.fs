@@ -173,7 +173,6 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) =
         async {
             let isScript = isScriptFile document.FilePath
-            let! version = document.Project.GetDependentVersionAsync ct |> Async.AwaitTask
             match cache.TryGetValue(document.Project.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
@@ -207,6 +206,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                 return Some(parsingOptions, projectOptions)
 
             | true, (oldProject, parsingOptions, projectOptions) ->
+                let! version = document.Project.GetDependentVersionAsync ct |> Async.AwaitTask
                 let! oldVersion = oldProject.GetDependentVersionAsync ct |> Async.AwaitTask
                 // Only recompute if it's a script.
                 if version <> oldVersion && isScript then
