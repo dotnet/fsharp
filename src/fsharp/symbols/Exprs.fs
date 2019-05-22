@@ -915,7 +915,7 @@ module FSharpExprConvert =
             let ccu = nlr.EnclosingEntity.nlr.Ccu
             let vName = nlr.ItemKey.PartialKey.LogicalName // this is actually compiled name
             let findByName =
-                enclosingEntity.MembersOfFSharpTyconSorted |> List.filter (fun v -> v.CompiledName = vName)
+                enclosingEntity.MembersOfFSharpTyconSorted |> List.filter (fun v -> (v.CompiledName cenv.g.CompilerGlobalState) = vName)
             match findByName with
             | [v] -> 
                 makeFSCall isMember v
@@ -925,7 +925,7 @@ module FSharpExprConvert =
                     let findModuleMemberByName = 
                         enclosingEntity.ModuleOrNamespaceType.AllValsAndMembers 
                         |> Seq.filter (fun v -> 
-                            v.CompiledName = vName &&
+                            (v.CompiledName cenv.g.CompilerGlobalState) = vName &&
                                 match v.DeclaringEntity with
                                 | Parent p -> p.PublicPath = enclosingEntity.PublicPath
                                 | _ -> false 
@@ -941,7 +941,7 @@ module FSharpExprConvert =
                             let name = PrettyNaming.ChopPropertyName vName          
                             let findByName =
                                 enclosingEntity.ModuleOrNamespaceType.AllValsAndMembers 
-                                |> Seq.filter (fun v -> v.CompiledName = name)
+                                |> Seq.filter (fun v -> (v.CompiledName cenv.g.CompilerGlobalState) = name)
                                 |> List.ofSeq
                             match findByName with
                             | [ v ] ->
@@ -989,14 +989,14 @@ module FSharpExprConvert =
                         match subClass with
                         | Some name ->
                             let ucref = UCRef(tcref, name)
-                            let mkR = ConvUnionCaseRef cenv ucref                                        
+                            let mkR = ConvUnionCaseRef cenv ucref
                             let objR = ConvLValueExpr cenv env callArgs.Head
                             let projR = FSharpField(cenv, ucref, ucref.Index)
                             E.UnionCaseGet(objR, typR, mkR, projR)
                         | _ ->
                             failwith "Failed to recognize union type member"
                 else
-                    let names = enclosingEntity.MembersOfFSharpTyconSorted |> List.map (fun v -> v.CompiledName) |> String.concat ", "
+                    let names = enclosingEntity.MembersOfFSharpTyconSorted |> List.map (fun v -> v.CompiledName cenv.g.CompilerGlobalState) |> String.concat ", "
                     failwithf "Member '%s' not found in type %s, found: %s" vName enclosingEntity.DisplayName names
             | _ -> // member is overloaded
                 match nlr.ItemKey.TypeForLinkage with

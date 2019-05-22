@@ -464,10 +464,9 @@ type MetadataTable<'T> =
 #if DEBUG
         tbl.lookups <- tbl.lookups + 1 
 #endif
-        let mutable res = Unchecked.defaultof<_>
-        let ok = tbl.dict.TryGetValue(x, &res)
-        if ok then res
-        else tbl.AddSharedEntry x
+        match tbl.dict.TryGetValue x with
+        | true, res -> res
+        | _ -> tbl.AddSharedEntry x
 
 
     /// This is only used in one special place - see further below. 
@@ -769,11 +768,12 @@ let rec GetTypeRefAsTypeRefRow cenv (tref: ILTypeRef) =
     SharedRow [| ResolutionScope (rs1, rs2); nelem; nselem |]
 
 and GetTypeRefAsTypeRefIdx cenv tref = 
-    let mutable res = 0
-    if cenv.trefCache.TryGetValue(tref, &res) then res else 
-    let res = FindOrAddSharedRow cenv TableNames.TypeRef (GetTypeRefAsTypeRefRow cenv tref)
-    cenv.trefCache.[tref] <- res
-    res
+    match cenv.trefCache.TryGetValue tref with
+    | true, res -> res
+    | _ ->
+        let res = FindOrAddSharedRow cenv TableNames.TypeRef (GetTypeRefAsTypeRefRow cenv tref)
+        cenv.trefCache.[tref] <- res
+        res
 
 and GetTypeDescAsTypeRefIdx cenv (scoref, enc, n) =  
     GetTypeRefAsTypeRefIdx cenv (mkILNestedTyRef (scoref, enc, n))
@@ -3515,8 +3515,8 @@ let writeDirectory os dict =
 let writeBytes (os: BinaryWriter) (chunk: byte[]) = os.Write(chunk, 0, chunk.Length)  
 
 let writeBinaryAndReportMappings (outfile, 
-                                  ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
-                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo )
+                                  ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB,
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo, pathMap)
                                   modul normalizeAssemblyRefs =
     // Store the public key from the signer into the manifest. This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -3671,7 +3671,7 @@ let writeBinaryAndReportMappings (outfile,
             match portablePDB with
             | true -> 
                 let (uncompressedLength, contentId, stream) as pdbStream = 
-                    generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
+                    generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic pathMap
 
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some pdbStream
@@ -4211,7 +4211,7 @@ let writeBinaryAndReportMappings (outfile,
                     if embeddedPDB then
                         embedPortablePdbInfo originalLength contentId stream showTimes fpdb debugDataChunk debugEmbeddedPdbChunk
                     else
-                        writePortablePdbInfo contentId stream showTimes fpdb debugDataChunk
+                        writePortablePdbInfo contentId stream showTimes fpdb pathMap debugDataChunk
                 | None ->
 #if FX_NO_PDB_WRITER
                     Array.empty<idd>
@@ -4284,10 +4284,11 @@ type options =
      emitTailcalls : bool
      deterministic : bool
      showTimes: bool
-     dumpDebugInfo: bool }
+     dumpDebugInfo: bool
+     pathMap: PathMap }
 
 let WriteILBinary (outfile, (args: options), modul, normalizeAssemblyRefs) =
     writeBinaryAndReportMappings (outfile, 
                                   args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
-                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul normalizeAssemblyRefs
+                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo, args.pathMap) modul normalizeAssemblyRefs
     |> ignore
