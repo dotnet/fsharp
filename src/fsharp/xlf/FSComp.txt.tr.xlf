@@ -6933,23 +6933,23 @@
         <note />
       </trans-unit>
       <trans-unit id="notAFunction">
-        <source>This value is not a function and cannot be applied.</source>
-        <target state="translated">Bu değer, bir işlev değil ve uygulanamaz.</target>
+        <source>This value is of type '{0}', which is not a function type. A value is being passed to it as an argument as if it were a function.</source>
+        <target state="new">This value is of type '{0}', which is not a function type. A value is being passed to it as an argument as if it were a function.</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via {0}.[index] instead?</source>
-        <target state="translated">Bu değer, bir işlev değil ve uygulanamaz. Dizin oluşturucuya bunun yerine {0}.[index] üzerinden erişmeye mi çalışıyordunuz?</target>
+        <source>This value is of type '{0}', which is not a function type. A value is being passed to it as an argument as if it were a function. Did you intend to access the indexer via {1}.[index] instead?</source>
+        <target state="new">This value is of type '{0}', which is not a function type. A value is being passed to it as an argument as if it were a function. Did you intend to access the indexer via {1}.[index] instead?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?</source>
-        <target state="translated">Bu ifade, bir işlev değil ve uygulanamaz. Dizin oluşturucuya bunun yerine expr.[index] üzerinden erişmeye mi çalışıyordunuz?</target>
+        <source>This value is of type '{0}', which is not a function type. A value is being passed to it as an argument as if it were a function. Did you intend to access the indexer via expr.[index] instead?</source>
+        <target state="new">This value is of type '{0}', which is not a function type. A value is being passed to it as an argument as if it were a function. Did you intend to access the indexer via expr.[index] instead?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">
-        <source>This value is not a function and cannot be applied. Did you forget to terminate a declaration?</source>
-        <target state="translated">Bu değer bir işlev değil ve uygulanamaz. Bir bildirimi sonlandırmayı mı unuttunuz?</target>
+        <source>This value is of type '{0}', which is not a function type. A value is being passed to it as an argument as if it were a function. Did you forget to terminate a declaration?</source>
+        <target state="new">This value is of type '{0}', which is not a function type. A value is being passed to it as an argument as if it were a function. Did you forget to terminate a declaration?</target>
         <note />
       </trans-unit>
       <trans-unit id="ArgumentsInSigAndImplMismatch">

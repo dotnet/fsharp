@@ -1,6 +1,6 @@
 // #Conformance #DeclarationElements #MemberDefinitions #Overloading 
 // https://github.com/Microsoft/visualfsharp/issues/351 - slow overlaod resolution
-//<Expects id="FS0003" status="error">This value is not a function and cannot be applied</Expects>
+//<Expects id="FS0003" status="error">This value is of type 'unit', which is not a function type. A value is being passed to it as an argument as if it were a function</Expects>
 type Switcher = Switcher
 
 let inline checker< ^s, ^r when (^s or ^r) : (static member pass : ^r -> unit)> (s : ^s) (r : ^r) = ()

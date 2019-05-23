@@ -3,8 +3,8 @@
 // Prefix only operators: !OP, ?OP, ~OP
 // Try to use !OP as an infix-op is an error
 // ?OP ~OP
-//<Expects id="FS0003" span="(14,11-14,20)" status="error">This value is not a function and cannot be applied</Expects>
-//<Expects id="FS0003" span="(15,12-15,21)" status="error">This value is not a function and cannot be applied</Expects>
+//<Expects id="FS0003" span="(14,11-14,20)" status="error">This value is of type 'int []', which is not a function type. A value is being passed to it as an argument as if it were a function</Expects>
+//<Expects id="FS0003" span="(15,12-15,21)" status="error">This value is of type 'int []', which is not a function type. A value is being passed to it as an argument as if it were a function</Expects>
 
 module M
 

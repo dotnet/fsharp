@@ -8646,15 +8646,15 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     if IsIndexerType cenv.g cenv.amap expr.Type then
                         match expr.Expr with
                         | Expr.Val (d, _, _) ->
-                            error (NotAFunctionButIndexer(denv, overallTy, Some d.DisplayName, mExpr, mArg))
+                            error (NotAFunctionButIndexer(denv, d.Type, Some d.DisplayName, mExpr, mArg))
                         | _ ->
-                            error (NotAFunctionButIndexer(denv, overallTy, None, mExpr, mArg))
+                            error (NotAFunctionButIndexer(denv, expr.Type, None, mExpr, mArg))
                     else
-                        error (NotAFunction(denv, overallTy, mExpr, mArg))
+                        error (NotAFunction(denv, exprty, mExpr, mArg))
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    error (NotAFunction(denv, overallTy, mExpr, mArg))
+                    error (NotAFunction(denv, exprty, mExpr, mArg))
 
     propagate false delayed expr.Range exprty
 
@@ -8748,7 +8748,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
             let bodyOfCompExpr, tpenv = TcComputationOrSequenceExpression cenv env overallTy mFunExpr (Some(expr.Expr, exprty)) tpenv comp
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed 
         | _ -> 
-            error (NotAFunction(denv, overallTy, mFunExpr, mArg)) 
+            error (NotAFunction(denv, exprty, mFunExpr, mArg))
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen: Typecheck "A.B.C<D>.E.F ... " constructs

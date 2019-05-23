@@ -11,4 +11,4 @@ neg111.fs(3,624,3,629): typecheck error FS0039: The value or constructor 'fail2'
 
    failwithf
 
-neg111.fs(5,538,5,540): typecheck error FS0003: This value is not a function and cannot be applied.
+neg111.fs(5,538,5,540): typecheck error FS0003: This value is of type 'unit', which is not a function type. A value is being passed to it as an argument as if it were a function.
