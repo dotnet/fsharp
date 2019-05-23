@@ -120,7 +120,7 @@ type ClassType2 =
      val someField2 : string
 
      override _.VirtualMethod1(s) = 2001
-     override _.VirtualMethod2(s1,s2) = s1.Length + s2.Length + String.length x.someField2
+     override x.VirtualMethod2(s1,s2) = s1.Length + s2.Length + String.length x.someField2
 
      new(s) = { inherit ClassType1(s); someField2 = s }
   end
