@@ -69,6 +69,9 @@ module internal FSharpCompilationHelpers =
             // Hack to store command line options from HandleCommandLineChanges, remove it when HandleCommandLineChanges gets removed.
             cpsCommandLineOptions: ConcurrentDictionary<ProjectId, string [] * string []>
             enableInMemoryCrossProjectReferences: bool
+            /// We only use the workspace directly when checking to see if something is from cps or legacy projects.
+            /// This will go away when cps and legacy are fully unified to the workspace, meaning we can get command line options and file ordered documents from a workspace project.
+            /// This will most likely be removed when 'cpsCommandLineOptions' gets removed.
             workspace: Workspace
             mutable currentSolution: Solution option
         }

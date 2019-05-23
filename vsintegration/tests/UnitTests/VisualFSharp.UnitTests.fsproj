@@ -110,6 +110,9 @@
     <Compile Include="..\..\..\tests\service\TreeVisitorTests.fs">
       <Link>CompilerService\TreeVisitorTests.fs</Link>
     </Compile>
+    <Compile Include="CacheTests.fs">
+      <Link>Roslyn\CacheTests.fs</Link>
+    </Compile>
     <Compile Include="ProjectOptionsBuilder.fs">
       <Link>Roslyn\ProjectOptionsBuilder.fs</Link>
     </Compile>
