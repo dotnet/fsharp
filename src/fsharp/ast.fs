@@ -1172,7 +1172,13 @@ and
             | None -> unionRanges e.Range m
             | Some x -> unionRanges (unionRanges e.Range m) x.Range
 
-and SynAttributes = SynAttribute list
+and
+    /// List of attributes enclosed in [< ... >].
+    SynAttributeList =
+    { Attributes: SynAttribute list
+      Range: range }
+
+and SynAttributes = SynAttributeList list
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -2118,6 +2124,18 @@ type SynExpr with
 type SynReturnInfo = SynReturnInfo of (SynType * SynArgInfo) * range: range
 
 
+let mkAttributeList attrs range =
+    [{ Attributes = attrs
+       Range = range }]
+
+let ConcatAttributesLists (attrsLists: SynAttributeList list) =
+    attrsLists
+    |> List.map (fun x -> x.Attributes)
+    |> List.concat
+
+let (|Attributes|) synAttributes =
+    ConcatAttributesLists synAttributes
+
 /// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
 ///
 /// Function and member definitions have strongly syntactically constrained arities.  We infer
@@ -2186,7 +2204,7 @@ module SynInfo =
     let AritiesOfArgs (SynValInfo(args, _)) = List.map List.length args
 
     /// Get the argument attributes from the syntactic information for an argument.
-    let AttribsOfArgData (SynArgInfo(attribs, _, _)) = attribs
+    let AttribsOfArgData (SynArgInfo(Attributes attribs, _, _)) = attribs
 
     /// Infer the syntactic argument info for a single argument from a simple pattern.
     let rec InferSynArgInfoFromSimplePat attribs p =
