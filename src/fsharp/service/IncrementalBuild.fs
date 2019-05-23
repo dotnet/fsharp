@@ -1211,7 +1211,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
 
     let tcConfigP = TcConfigProvider.Constant tcConfig
+#if !NO_EXTENSIONTYPING
     let importsInvalidated = new Event<string>()
+#endif
     let fileParsed = new Event<string>()
     let beforeFileChecked = new Event<string>()
     let fileChecked = new Event<string>()
@@ -1242,26 +1244,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
            for (_, f, _) in sourceFiles do
                 yield f |]
 
-    // The IncrementalBuilder needs to hold up to one item that needs to be disposed, which is the tcImports for the incremental
-    // build. 
-    let mutable cleanupItem = None: TcImports option
-    let disposeCleanupItem() =
-            match cleanupItem with 
-            | None -> ()
-            | Some item -> 
-                cleanupItem <- None
-                dispose item 
-
-    let setCleanupItem x = 
-            assert cleanupItem.IsNone
-            cleanupItem <- Some x
-
-    let mutable disposed = false
-    let assertNotDisposed() =
-        if disposed then  
-            System.Diagnostics.Debug.Assert(false, "IncrementalBuild object has already been disposed!")
-
-    let mutable referenceCount = 0
+#if !NO_EXTENSIONTYPING
+    let mutable isInvalidatedByTypeProviders = false
+#endif
 
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS 
@@ -1270,14 +1255,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     ///
     /// Get the timestamp of the given file name.
     let StampFileNameTask (cache: TimeStampCache) _ctok (_m: range, filename: string, _isLastCompiland) =
-        assertNotDisposed()
         cache.GetFileTimeStamp filename
 
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
     /// Parse the given file and return the given input.
     let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland) =
-        assertNotDisposed()
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
         let errorLogger = CompilationErrorLogger("ParseTask", tcConfig.errorSeverityOptions)
@@ -1300,7 +1283,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     ///
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let StampReferencedAssemblyTask (cache: TimeStampCache) ctok (_ref, timeStamper) =
-        assertNotDisposed()
         timeStamper cache ctok
                 
          
@@ -1309,7 +1291,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // Link all the assemblies together and produce the input typecheck accumulator               
     let CombineImportedAssembliesTask ctok _ : Cancellable<TypeCheckAccumulator> =
       cancellable {
-        assertNotDisposed()
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
@@ -1317,10 +1298,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let! tcImports = 
           cancellable {
             try
-                // We dispose any previous tcImports, for the case where a dependency changed which caused this part
-                // of the partial build to be re-evaluated.
-                disposeCleanupItem()
-
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences)  
 #if !NO_EXTENSIONTYPING
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 
@@ -1342,15 +1319,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     ccu.Deref.InvalidateEvent.Add(fun msg -> 
                         match capturedImportsInvalidated.TryGetTarget() with 
                         | true, tg -> tg.Trigger msg
-                        | _ -> ()))
+                        | _ -> ()))  
 #endif
-                    
-                    
-                // The tcImports must be cleaned up if this builder ever gets disposed. We also dispose any previous
-                // tcImports should we be re-creating an entry because a dependency changed which caused this part
-                // of the partial build to be re-evaluated.
-                setCleanupItem tcImports
-
                 return tcImports
             with e -> 
                 System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
@@ -1390,7 +1360,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     ///
     /// Type check all files.     
     let TypeCheckTask ctok (tcAcc: TypeCheckAccumulator) input: Eventually<TypeCheckAccumulator> =    
-        assertNotDisposed()
         match input with 
         | Some input, _sourceRange, filename, parseErrors->
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
@@ -1462,7 +1431,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask ctok (tcStates: TypeCheckAccumulator[]) = 
       cancellable {
-        assertNotDisposed()
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
@@ -1568,7 +1536,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // END OF BUILD DESCRIPTION
     // ---------------------------------------------------------------------------------------------            
 
-    do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
+    do 
+        IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
+#if !NO_EXTENSIONTYPING
+        importsInvalidated.Publish.Add (fun _ -> isInvalidatedByTypeProviders <- true)
+#endif
 
     let buildInputs = [ BuildInput.VectorInput (fileNamesNode, sourceFiles)
                         BuildInput.VectorInput (referencedAssembliesNode, nonFrameworkAssemblyInputs) ]
@@ -1581,21 +1553,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         partialBuild <- b
 
     let MaxTimeStampInDependencies cache (ctok: CompilationThreadToken) (output: INode) = 
-        IncrementalBuild.MaxTimeStampInDependencies cache ctok output.Name partialBuild 
+        IncrementalBuild.MaxTimeStampInDependencies cache ctok output.Name partialBuild
 
-    member this.IncrementUsageCount() = 
-        assertNotDisposed() 
-        System.Threading.Interlocked.Increment(&referenceCount) |> ignore
-        { new System.IDisposable with member __.Dispose() = this.DecrementUsageCount() }
-
-    member __.DecrementUsageCount() = 
-        assertNotDisposed()
-        let currentValue =  System.Threading.Interlocked.Decrement(&referenceCount)
-        if currentValue = 0 then 
-                disposed <- true
-                disposeCleanupItem()
-
-    member __.IsAlive = referenceCount > 0
+#if !NO_EXTENSIONTYPING
+    member __.IsInvalidatedByTypeProviders = isInvalidatedByTypeProviders
+#endif
 
     member __.TcConfig = tcConfig
 
@@ -1610,17 +1572,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
 
     member __.AllDependenciesDeprecated = allDependencies
-
-#if !NO_EXTENSIONTYPING
-    member __.ThereAreLiveTypeProviders = 
-        let liveTPs =
-            match cleanupItem with 
-            | None -> []
-            | Some tcImports -> [for ia in tcImports.GetImportedAssemblies() do yield! ia.TypeProviders]
-        match liveTPs with
-        | [] -> false
-        | _ -> true                
-#endif
 
     member __.Step (ctok: CompilationThreadToken) =  
       cancellable {
@@ -1887,11 +1838,3 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
         return builderOpt, diagnostics
       }
-
-    static member KeepBuilderAlive (builderOpt: IncrementalBuilder option) = 
-        match builderOpt with 
-        | Some builder -> builder.IncrementUsageCount() 
-        | None -> { new System.IDisposable with member __.Dispose() = () }
-
-    member __.IsBeingKeptAliveApartFromCacheEntry = (referenceCount >= 2)
-
