@@ -161,7 +161,6 @@ type TypeCheckInfo
            sFallback: NameResolutionEnv,
            loadClosure : LoadClosure option,
            reactorOps : IReactorOperations,
-           checkAlive : (unit -> bool),
            textSnapshotInfo:obj option,
            implFileOpt: TypedImplFile option,
            openDeclarations: OpenDeclaration[]) = 
@@ -937,7 +936,7 @@ type TypeCheckInfo
                         |> Option.bind (fun x -> x.ParseTree)
                         |> Option.map (fun parsedInput -> UntypedParseImpl.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
                     let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,isAttributeApplication,checkAlive))
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,isAttributeApplication))
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarations: '%s'" msg)
                 FSharpDeclarationListInfo.Error msg)
@@ -1616,8 +1615,6 @@ module internal Parser =
            // These are the errors and warnings seen by the background compiler for the entire antecedent 
            backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
            reactorOps: IReactorOperations,
-           // Used by 'FSharpDeclarationListInfo' to check the IncrementalBuilder is still alive.
-           checkAlive : (unit -> bool),
            textSnapshotInfo : obj option,
            userOpName: string,
            suggestNamesForErrors: bool) = 
@@ -1761,7 +1758,6 @@ module internal Parser =
                                       tcEnvAtEnd.NameEnv,
                                       loadClosure,
                                       reactorOps,
-                                      checkAlive,
                                       textSnapshotInfo,
                                       List.tryHead implFiles,
                                       sink.GetOpenDeclarations())     
@@ -1935,10 +1931,6 @@ type FSharpCheckProjectResults(projectFileName:string, tcConfigOption, keepAssem
     override info.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
 
 [<Sealed>]
-/// A live object of this type keeps the background corresponding background builder (and type providers) alive (through reference-counting).
-//
-// There is an important property of all the objects returned by the methods of this type: they do not require 
-// the corresponding background builder to be alive. That is, they are simply plain-old-data through pre-formatting of all result text.
 type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo option, dependencyFiles: string[], builderX: IncrementalBuilder option, reactorOpsX:IReactorOperations, keepAssemblyContents: bool) =
 
     // This may be None initially.
@@ -1950,11 +1942,6 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         match details with
         | None -> 
             return dflt
-#if !NO_EXTENSIONTYPING
-        | Some (_, Some builder, _) when not builder.IsInvalidatedByTypeProviders -> 
-            System.Diagnostics.Debug.Assert(false,"builder invalidated by type providers") 
-            return dflt
-#endif
         | Some (scope, _, reactor) -> 
             let! res = reactor.EnqueueAndAwaitOpAsync(userOpName, opName, filename, fun ctok ->  f ctok scope |> cancellable.Return)
             return res
@@ -2367,10 +2354,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         | None -> ()
         | Some builder -> 
 
+#if !NO_EXTENSIONTYPING
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
-            builder.ImportedCcusInvalidated.Add (fun _ -> 
+            builder.ImportsInvalidatedByTypeProvider.Add (fun _ -> 
                 self.InvalidateConfiguration(options, None, userOpName))
+#endif
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
             // errors or intellisense information).
@@ -2562,17 +2551,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | None ->
                         if beingCheckedFileTable.TryAdd(beingCheckedFileKey, ()) then
                             try
-#if !NO_EXTENSIONTYPING
-                                let checkIsAlive = (fun () -> not builder.IsInvalidatedByTypeProviders)
-#else
-                                let checkIsAlive = (fun () -> true)
-#endif
                                 // Get additional script #load closure information if applicable.
                                 // For scripts, this will have been recorded by GetProjectOptionsFromScript.
                                 let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
                                 let! tcErrors, tcFileResult = 
                                     Parser.CheckOneFile(parseResults, sourceText, fileName, options.ProjectFileName, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, 
-                                                        tcPrior.TcState, tcPrior.ModuleNamesDict, loadClosure, tcPrior.TcErrors, reactorOps, checkIsAlive, textSnapshotInfo, userOpName, suggestNamesForErrors)
+                                                        tcPrior.TcState, tcPrior.ModuleNamesDict, loadClosure, tcPrior.TcErrors, reactorOps, textSnapshotInfo, userOpName, suggestNamesForErrors)
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 let checkAnswer = MakeCheckFileAnswer(fileName, tcFileResult, options, builder, Array.ofList tcPrior.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                                 bc.RecordTypeCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, sourceText.GetHashCode())
@@ -2721,11 +2705,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 let tcErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, false, filename, tcProj.TcErrors, suggestNamesForErrors) |]
                 let parseResults = FSharpParseFileResults(errors = untypedErrors, input = parseTreeOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
                 let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options) )
-#if !NO_EXTENSIONTYPING
-                let checkIsAlive = (fun () -> not builder.IsInvalidatedByTypeProviders)
-#else
-                let checkIsAlive = (fun () -> true)
-#endif
                 let scope = 
                     TypeCheckInfo(tcProj.TcConfig, tcProj.TcGlobals, 
                                   Option.get tcProj.LastestCcuSigForFile, 
@@ -2734,7 +2713,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                   List.head tcProj.TcResolutionsRev, 
                                   List.head tcProj.TcSymbolUsesRev,
                                   tcProj.TcEnvAtEnd.NameEnv,
-                                  loadClosure, reactorOps, checkIsAlive, None, 
+                                  loadClosure, reactorOps, None, 
                                   tcProj.LatestImplementationFile,
                                   List.head tcProj.TcOpenDeclarationsRev)     
                 let typedResults = MakeCheckFileResults(filename, options, builder, scope, Array.ofList tcProj.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
@@ -3283,7 +3262,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
             let loadClosure = LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, tcConfig.useSdkRefs, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
-            let! tcErrors, tcFileResult =  Parser.CheckOneFile(parseResults, sourceText, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName, suggestNamesForErrors)
+            let! tcErrors, tcFileResult =  Parser.CheckOneFile(parseResults, sourceText, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, None, userOpName, suggestNamesForErrors)
 
             return
                 match tcFileResult with 

@@ -1211,13 +1211,13 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
 
     let tcConfigP = TcConfigProvider.Constant tcConfig
-#if !NO_EXTENSIONTYPING
-    let importsInvalidated = new Event<string>()
-#endif
     let fileParsed = new Event<string>()
     let beforeFileChecked = new Event<string>()
     let fileChecked = new Event<string>()
     let projectChecked = new Event<unit>()
+#if !NO_EXTENSIONTYPING
+    let importsInvalidatedByTypeProvider = new Event<string>()
+#endif
 
     // Check for the existence of loaded sources and prepend them to the sources list if present.
     let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
@@ -1243,10 +1243,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         [| yield! basicDependencies
            for (_, f, _) in sourceFiles do
                 yield f |]
-
-#if !NO_EXTENSIONTYPING
-    let mutable isInvalidatedByTypeProviders = false
-#endif
 
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS 
@@ -1315,7 +1311,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     //
                     // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to 
                     // be collected if, for some reason, a TP instance is not disposed or not GC'd.
-                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidated)
+                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidatedByTypeProvider)
                     ccu.Deref.InvalidateEvent.Add(fun msg -> 
                         match capturedImportsInvalidated.TryGetTarget() with 
                         | true, tg -> tg.Trigger msg
@@ -1536,11 +1532,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // END OF BUILD DESCRIPTION
     // ---------------------------------------------------------------------------------------------            
 
-    do 
-        IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
-#if !NO_EXTENSIONTYPING
-        importsInvalidated.Publish.Add (fun _ -> isInvalidatedByTypeProviders <- true)
-#endif
+    do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
     let buildInputs = [ BuildInput.VectorInput (fileNamesNode, sourceFiles)
                         BuildInput.VectorInput (referencedAssembliesNode, nonFrameworkAssemblyInputs) ]
@@ -1555,10 +1547,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let MaxTimeStampInDependencies cache (ctok: CompilationThreadToken) (output: INode) = 
         IncrementalBuild.MaxTimeStampInDependencies cache ctok output.Name partialBuild
 
-#if !NO_EXTENSIONTYPING
-    member __.IsInvalidatedByTypeProviders = isInvalidatedByTypeProviders
-#endif
-
     member __.TcConfig = tcConfig
 
     member __.FileParsed = fileParsed.Publish
@@ -1569,7 +1557,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     member __.ProjectChecked = projectChecked.Publish
 
-    member __.ImportedCcusInvalidated = importsInvalidated.Publish
+#if !NO_EXTENSIONTYPING
+    member __.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
+#endif
 
     member __.AllDependenciesDeprecated = allDependencies
 

@@ -80,11 +80,6 @@ type internal PartialCheckResults =
 [<Class>]
 type internal IncrementalBuilder = 
 
-#if !NO_EXTENSIONTYPING
-      /// Check if the builder is invalidated by type providers.
-      member IsInvalidatedByTypeProviders : bool
-#endif
-
       /// The TcConfig passed in to the builder creation.
       member TcConfig : TcConfig
 
@@ -106,8 +101,10 @@ type internal IncrementalBuilder =
       /// overall analysis results for the project will be quick.
       member ProjectChecked : IEvent<unit>
 
+#if !NO_EXTENSIONTYPING
       /// Raised when a type provider invalidates the build.
-      member ImportedCcusInvalidated : IEvent<string>
+      member ImportsInvalidatedByTypeProvider : IEvent<string>
+#endif
 
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
