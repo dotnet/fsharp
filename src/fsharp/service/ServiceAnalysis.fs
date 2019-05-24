@@ -115,7 +115,8 @@ module UnusedOpens =
              | :? FSharpUnionCase when su.IsFromDefinition -> 
                 false
 
-             | :? FSharpField ->
+             | :? FSharpField as field when
+                     field.DeclaringEntity.IsSome && field.DeclaringEntity.Value.IsFSharpRecord ->
                 // Record fields are used in name resolution
                 true
 
