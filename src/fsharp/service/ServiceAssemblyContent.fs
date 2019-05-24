@@ -765,9 +765,9 @@ module ParsedInput =
         and walkMember = function
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
-            | SynMemberDefn.ImplicitCtor (_, attrs, pats, _, _) ->
+            | SynMemberDefn.ImplicitCtor (_, attrs, SynSimplePats.SimplePats(simplePats, _), _, _) ->
                 List.iter walkAttribute attrs
-                List.iter walkSimplePat pats
+                List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) -> walkType t; walkExpr e
             | SynMemberDefn.LetBindings (bindings, _, _, _) -> List.iter walkBinding bindings
             | SynMemberDefn.Interface (t, members, _) ->

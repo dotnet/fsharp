@@ -1519,7 +1519,7 @@ and
     | Member of memberDefn: SynBinding * range: range
 
     /// implicit ctor args as a defn line, 'as' specification
-    | ImplicitCtor of accessiblity: SynAccess option * attributes: SynAttributes * ctorArgs: SynSimplePat list * selfIdentifier: Ident option * range: range
+    | ImplicitCtor of accessiblity: SynAccess option * attributes: SynAttributes * ctorArgs: SynSimplePats * selfIdentifier: Ident option * range: range
 
     /// inherit <typ>(args...) as base
     | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
