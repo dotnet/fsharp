@@ -2354,11 +2354,88 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     let scriptClosureCacheLock = Lock<ScriptClosureCacheToken>()
     let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
 
+    let parseCacheLock = Lock<ParseCacheLockToken>()
+    
+
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
+    let parseFileCache = MruCache<ParseCacheLockToken,_,_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
+
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCachePossiblyStale 
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCache
+    //
+    /// Cache which holds recently seen type-checks.
+    /// This cache may hold out-of-date entries, in two senses
+    ///    - there may be a more recent antecedent state available because the background build has made it available
+    ///    - the source for the file may have changed
+    
+    let checkFileInProjectCachePossiblyStale = 
+        MruCache<ParseCacheLockToken,string * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * int>
+            (keepStrongly=checkFileInProjectCacheSize,
+             areSame=AreSameForChecking2,
+             areSimilar=AreSubsumable2)
+
+    // Also keyed on source. This can only be out of date if the antecedent is out of date
+    let checkFileInProjectCache = 
+        MruCache<ParseCacheLockToken,FileName * SourceTextHash * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime>
+            (keepStrongly=checkFileInProjectCacheSize,
+             areSame=AreSameForChecking3,
+             areSimilar=AreSubsumable3)
+
+    /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interleaving chunck queued to Reactor).
+    let beingCheckedFileTable = 
+        ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>
+            (HashIdentity.FromFunctions
+                hash
+                (fun (f1, o1, v1) (f2, o2, v2) -> f1 = f2 && v1 = v2 && FSharpProjectOptions.AreSameForChecking(o1, o2)))
+
+    let clearProjectFilesCache ltok (options: FSharpProjectOptions) =
+        options.SourceFiles
+        |> Array.iter (fun filename ->
+            checkFileInProjectCachePossiblyStale.RemoveAnySimilar(ltok, (filename, options))
+            checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, 0, options))
+        )
+
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.incrementalBuildersCache. This root typically holds more 
+    // live information than anything else in the F# Language Service, since it holds up to 3 (projectCacheStrongSize) background project builds
+    // strongly.
+    // 
+    /// Cache of builds keyed by options.        
+    let incrementalBuildersCache = 
+        MruCache<CompilationThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpErrorInfo[] * IDisposable)>
+                (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
+                 areSame =  FSharpProjectOptions.AreSameForChecking, 
+                 areSimilar =  FSharpProjectOptions.UseSameProject,
+                 requiredToKeep=(fun (builderOpt,_,_) -> match builderOpt with None -> false | Some (b:IncrementalBuilder) -> b.IsBeingKeptAliveApartFromCacheEntry),
+                 onDiscard = (fun (_, _, decrement:IDisposable) -> decrement.Dispose()))
+
+    let invalidateProject ctok options =
+        incrementalBuildersCache.RemoveAnySimilar (ctok, options)
+        parseCacheLock.AcquireLock (fun ltok -> clearProjectFilesCache ltok options)
+
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    let CreateOneIncrementalBuilder (ctok, options:FSharpProjectOptions, userOpName) = 
+    let rec CreateOneIncrementalBuilder (ctok, options:FSharpProjectOptions, userOpName) : Cancellable<(IncrementalBuilder option * FSharpErrorInfo [] * IDisposable)> = 
       cancellable {
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
+
+        // When we creating a new incremental builder, it's going to invalidate everything in the cache.
+        // Therefore, let's invalidate everything.
+        invalidateProject ctok options
+        System.Diagnostics.Debug.WriteLine(sprintf "%A %A" options.ProjectFileName options.Stamp)
+        let! ct = Cancellable.token ()
+
+        let mutable didCancel = false
+        options.ReferencedProjects
+        |> Seq.iter (fun (_, referencedOptions) ->
+            match getOrCreateBuilderAndKeepAlive (ctok, referencedOptions, userOpName) |> Cancellable.run ct with
+            | ValueOrCancelled.Value (_, _, decrement: IDisposable) -> decrement.Dispose ()
+            | _ -> didCancel <- true
+        )
+
+        if didCancel then
+            return! Cancellable.canceled ()
+        else
+
         let projectReferences =  
             [ for (nm,opts) in options.ReferencedProjects do
                
@@ -2372,12 +2449,20 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     { new IProjectReference with 
                         member x.EvaluateRawContents(ctok) = 
                           cancellable {
-                            Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseAndCheckProjectImpl", nm)
-                            let! r = self.ParseAndCheckProjectImpl(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
-                            return r.RawFSharpAssemblyData 
+                            match incrementalBuildersCache.TryGet (ctok, opts) with
+                            | Some _ ->
+                                Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseAndCheckProjectImpl", nm)
+                                let! r = self.ParseAndCheckProjectImpl(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
+                                return r.RawFSharpAssemblyData
+                            | _ ->
+                                return None
                           }
                         member x.TryGetLogicalTimeStamp(cache, ctok) = 
-                            self.TryGetLogicalTimeStampForProject(cache, ctok, opts, userOpName + ".TimeStampReferencedProject("+nm+")")
+                            match incrementalBuildersCache.TryGet (ctok, opts) with
+                            | Some _ ->
+                                self.TryGetLogicalTimeStampForProject(cache, ctok, opts, userOpName + ".TimeStampReferencedProject("+nm+")")
+                            | _ ->
+                                None
                         member x.FileName = nm } ]
 
         let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
@@ -2413,20 +2498,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         return (builderOpt, diagnostics, decrement)
       }
 
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.incrementalBuildersCache. This root typically holds more 
-    // live information than anything else in the F# Language Service, since it holds up to 3 (projectCacheStrongSize) background project builds
-    // strongly.
-    // 
-    /// Cache of builds keyed by options.        
-    let incrementalBuildersCache = 
-        MruCache<CompilationThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpErrorInfo[] * IDisposable)>
-                (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
-                 areSame =  FSharpProjectOptions.AreSameForChecking, 
-                 areSimilar =  FSharpProjectOptions.UseSameProject,
-                 requiredToKeep=(fun (builderOpt,_,_) -> match builderOpt with None -> false | Some (b:IncrementalBuilder) -> b.IsBeingKeptAliveApartFromCacheEntry),
-                 onDiscard = (fun (_, _, decrement:IDisposable) -> decrement.Dispose()))
-
-    let getOrCreateBuilderAndKeepAlive (ctok, options, userOpName) =
+    and getOrCreateBuilderAndKeepAlive (ctok, options, userOpName) =
       cancellable {
           RequireCompilationThread ctok
           match incrementalBuildersCache.TryGet (ctok, options) with
@@ -2441,40 +2513,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
               let decrement = IncrementalBuilder.KeepBuilderAlive builderOpt
               return builderOpt, creationErrors, decrement
       }
-
-    let parseCacheLock = Lock<ParseCacheLockToken>()
-    
-
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
-    let parseFileCache = MruCache<ParseCacheLockToken,_,_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
-
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCachePossiblyStale 
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCache
-    //
-    /// Cache which holds recently seen type-checks.
-    /// This cache may hold out-of-date entries, in two senses
-    ///    - there may be a more recent antecedent state available because the background build has made it available
-    ///    - the source for the file may have changed
-    
-    let checkFileInProjectCachePossiblyStale = 
-        MruCache<ParseCacheLockToken,string * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * int>
-            (keepStrongly=checkFileInProjectCacheSize,
-             areSame=AreSameForChecking2,
-             areSimilar=AreSubsumable2)
-
-    // Also keyed on source. This can only be out of date if the antecedent is out of date
-    let checkFileInProjectCache = 
-        MruCache<ParseCacheLockToken,FileName * SourceTextHash * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime>
-            (keepStrongly=checkFileInProjectCacheSize,
-             areSame=AreSameForChecking3,
-             areSimilar=AreSubsumable3)
-
-    /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interleaving chunck queued to Reactor).
-    let beingCheckedFileTable = 
-        ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>
-            (HashIdentity.FromFunctions
-                hash
-                (fun (f1, o1, v1) (f2, o2, v2) -> f1 = f2 && v1 = v2 && FSharpProjectOptions.AreSameForChecking(o1, o2)))
 
     static let mutable foregroundParseCount = 0
     static let mutable foregroundTypeCheckCount = 0
@@ -2497,13 +2535,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         match tcFileResult with 
         | Parser.TypeCheckAborted.Yes  ->  FSharpCheckFileAnswer.Aborted                
         | Parser.TypeCheckAborted.No scope -> FSharpCheckFileAnswer.Succeeded(MakeCheckFileResults(filename, options, builder, scope, dependencyFiles, creationErrors, parseErrors, tcErrors))
-
-    let ClearProjectFilesCache ltok (options: FSharpProjectOptions) =
-        options.SourceFiles
-        |> Array.iter (fun filename ->
-            checkFileInProjectCachePossiblyStale.RemoveAnySimilar(ltok, (filename, options))
-            checkFileInProjectCache.RemoveAnySimilar(ltok, (filename, 0, options))
-        )
 
     /// For testing purposes, not for public consumption.
     /// Tries to find if the given project exists in any kind of cache, whether it be incremental builder, check file, check file stale cache.
@@ -2909,10 +2940,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
             // will have the effect of releasing memory associated with the previous builder, but costs some time.
             if incrementalBuildersCache.ContainsSimilarKey (ctok, options) then
-
-                // Project is now invalid, clear any cache related to it.
-                parseCacheLock.AcquireLock (fun ltok -> ClearProjectFilesCache ltok options)
-
                 // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                 // including by incrementalBuildersCache.Set.
                 let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
@@ -2924,8 +2951,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member bc.InvalidateProject(options: FSharpProjectOptions, userOpName) =
         reactor.EnqueueOp(userOpName, "InvalidateProject: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
-            incrementalBuildersCache.RemoveAnySimilar (ctok, options)
-            parseCacheLock.AcquireLock (fun ltok -> ClearProjectFilesCache ltok options))
+            invalidateProject ctok options)
 
     member bc.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
@@ -3213,7 +3239,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
 
-    /// Invalidate a project. Clears all caches related to this project, including check files, stale check files, etc.
+    /// Invalidate a project. Clears all caches related to this the project represented by the given FSharpProjectOptions, including check files, stale check files, etc.
     member ic.InvalidateProject(options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateProject(options, userOpName)

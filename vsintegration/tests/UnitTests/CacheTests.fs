@@ -112,11 +112,9 @@ type CacheTests() =
             // Remaining projects should still be in the cache.
             for i = i + 1 to projectIds.Count - 1 do
                 Assert.True (cenv.cache.ContainsKey projectIds.[i])
-                Assert.True (cenv.cpsCommandLineOptions.ContainsKey projectIds.[i])
                 Assert.True (checker.ProjectExistsInAnyCache fsharpProjects.[i] |> Async.RunSynchronously)
 
             Assert.False (cenv.cache.ContainsKey projectIds.[i])
-            Assert.False (cenv.cpsCommandLineOptions.ContainsKey projectIds.[i])
             Assert.False (checker.ProjectExistsInAnyCache fsharpProjects.[i] |> Async.RunSynchronously)
 
         workspace.Dispose ()
@@ -144,7 +142,6 @@ type CacheTests() =
 
         for i = 0 to projectIds.Count - 1 do
             Assert.False (cenv.cache.ContainsKey projectIds.[i])
-            Assert.False (cenv.cpsCommandLineOptions.ContainsKey projectIds.[i])
             Assert.False (checker.ProjectExistsInAnyCache fsharpProjects.[i] |> Async.RunSynchronously)
 
         workspace.Dispose ()
