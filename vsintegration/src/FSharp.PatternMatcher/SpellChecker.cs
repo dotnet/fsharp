@@ -13,16 +13,16 @@ namespace Roslyn.Utilities
     {
         private const string SerializationFormat = "2";
 
-        public VersionStamp Version { get; }
+        public PatternMatcherVersionStamp Version { get; }
         private readonly BKTree _bkTree;
 
-        public SpellChecker(VersionStamp version, BKTree bKTree)
+        public SpellChecker(PatternMatcherVersionStamp version, BKTree bKTree)
         {
             Version = version;
             _bkTree = bKTree;
         }
 
-        public SpellChecker(VersionStamp version, IEnumerable<StringSlice> corpus)
+        public SpellChecker(PatternMatcherVersionStamp version, IEnumerable<StringSlice> corpus)
             : this(version, BKTree.Create(corpus))
         {
         }

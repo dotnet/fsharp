@@ -766,3 +766,6 @@ module public PrettyNaming =
     /// All the keywords in the F# language 
     val KeywordNames : string list
 
+/// A set of helpers for dealing with F# files.
+module FSharpFileUtilities =
+    val isScriptFile : string -> bool
