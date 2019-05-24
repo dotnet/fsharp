@@ -334,11 +334,7 @@ namespace Internal.Utilities.Text.Lexing
                         // ways
                         let baseForUnicodeCategories = numLowUnicodeChars+numSpecificUnicodeChars*2
                         let unicodeCategory = 
-#if FX_RESHAPED_GLOBALIZATION
-                            System.Globalization.CharUnicodeInfo.GetUnicodeCategory(inp)
-#else
                             System.Char.GetUnicodeCategory(inp)
-#endif
                         //System.Console.WriteLine("inp = {0}, unicodeCategory = {1}", [| box inp; box unicodeCategory |]);
                         int trans.[state].[baseForUnicodeCategories + int32 unicodeCategory]
                     else 
@@ -349,10 +345,9 @@ namespace Internal.Utilities.Text.Lexing
                         if c = inp
                         then int trans.[state].[baseForSpecificUnicodeChars+i*2+1]
                         else loop(i+1)
-                
                 loop 0
         let eofPos    = numLowUnicodeChars + 2*numSpecificUnicodeChars + numUnicodeCategories 
-        
+
         let rec scanUntilSentinel lexBuffer state =
             // Return an endOfScan after consuming the input 
             let a = int accept.[state] 

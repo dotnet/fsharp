@@ -1342,20 +1342,6 @@ namespace Microsoft.FSharp.Core
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
             val inline FastCompareTuple5 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
 
-#if FX_RESHAPED_REFLECTION
-    module internal PrimReflectionAdapters =
-
-        open System.Reflection
-
-        type System.Type with
-            member inline IsGenericType : bool
-            member inline IsValueType : bool
-            member inline GetMethod : string * parameterTypes : Type[] -> MethodInfo
-            member inline GetProperty : string -> PropertyInfo
-            member inline IsAssignableFrom : otherType : Type -> bool
-            member inline GetCustomAttributes : attributeType : Type * inherits: bool -> obj[]
-#endif
-
     //-------------------------------------------------------------------------
     // F# Choice Types
 

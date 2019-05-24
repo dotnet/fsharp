@@ -17,10 +17,6 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
-#if FX_RESHAPED_REFLECTION
-    open ReflectionAdapters
-#endif
-
     type LinkedSubSource(cancellationToken: CancellationToken) =
 
         let failureCTS = new CancellationTokenSource()
@@ -168,13 +164,11 @@ namespace Microsoft.FSharp.Control
                 let f = unbox<(unit -> AsyncReturn)> o
                 this.ExecuteWithTrampoline f |> unfake)
 
-#if !FX_NO_PARAMETERIZED_THREAD_START
         // Preallocate this delegate and keep it in the trampoline holder.
         let threadStartCallbackForStartThreadWithTrampoline =
             ParameterizedThreadStart (fun o ->
                 let f = unbox<(unit -> AsyncReturn)> o
                 this.ExecuteWithTrampoline f |> unfake)
-#endif
 
         /// Execute an async computation after installing a trampoline on its synchronous stack.
         [<DebuggerHidden>]
@@ -196,22 +190,10 @@ namespace Microsoft.FSharp.Control
             | null -> this.QueueWorkItemWithTrampoline f
             | _ -> this.PostWithTrampoline syncCtxt f
 
-#if FX_NO_PARAMETERIZED_THREAD_START
-        // This should be the only call to Thread.Start in this library. We must always install a trampoline.
-        member this.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
-#if FX_NO_THREAD
-            this.QueueWorkItemWithTrampoline f
-#else
-            (new Thread((fun _ -> this.Execute f |> unfake), IsBackground=true)).Start()
-            fake()
-#endif
-
-#else
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
         member __.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
             (new Thread(threadStartCallbackForStartThreadWithTrampoline, IsBackground=true)).Start(f|>box)
             fake()
-#endif
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member inline __.OnExceptionRaised econt =
@@ -731,12 +713,7 @@ namespace Microsoft.FSharp.Control
                         match resEvent with
                         | null -> ()
                         | ev ->
-#if FX_NO_EVENTWAITHANDLE_IDISPOSABLE
-                            ev.Dispose()
-                            System.GC.SuppressFinalize ev
-#else
                             ev.Close()
-#endif
                             resEvent <- null)
 
             interface IDisposable with
@@ -824,15 +801,7 @@ namespace Microsoft.FSharp.Control
                     | None ->
                         // OK, let's really wait for the Set signal. This may block.
                         let timeout = defaultArg timeout Threading.Timeout.Infinite
-#if FX_NO_EXIT_CONTEXT_FLAGS
-#if FX_NO_WAITONE_MILLISECONDS
-                        let ok = resHandle.WaitOne(TimeSpan(int64 timeout*10000L))
-#else
-                        let ok = resHandle.WaitOne(millisecondsTimeout= timeout)
-#endif
-#else
                         let ok = resHandle.WaitOne(millisecondsTimeout= timeout, exitContext=true)
-#endif
                         if ok then
                             // Now the result really must be available
                             result
@@ -1385,15 +1354,7 @@ namespace Microsoft.FSharp.Control
             let millisecondsTimeout = defaultArg millisecondsTimeout Threading.Timeout.Infinite
             if millisecondsTimeout = 0 then
                 async.Delay(fun () ->
-#if FX_NO_EXIT_CONTEXT_FLAGS
-#if FX_NO_WAITONE_MILLISECONDS
-                    let ok = waitHandle.WaitOne(TimeSpan 0L)
-#else
-                    let ok = waitHandle.WaitOne 0
-#endif
-#else
                     let ok = waitHandle.WaitOne(0, exitContext=false)
-#endif
                     async.Return ok)
             else
                 CreateDelimitedUserCodeAsync(fun ctxt ->
@@ -1683,12 +1644,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncRead(buffer: byte[], ?offset, ?count) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FX_NO_BEGINEND_READWRITE
-                // use combo CreateDelimitedUserCodeAsync + taskContinueWith instead of AwaitTask so we can pass cancellation token to the ReadAsync task
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith (stream.ReadAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
-#else
                 Async.FromBeginEnd (buffer, offset, count, stream.BeginRead, stream.EndRead)
-#endif
 
             [<CompiledName("AsyncReadBytes")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member stream.AsyncRead count =
@@ -1705,12 +1661,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncWrite(buffer:byte[], ?offset:int, ?count:int) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FX_NO_BEGINEND_READWRITE
-                // use combo CreateDelimitedUserCodeAsync + taskContinueWithUnit instead of AwaitTask so we can pass cancellation token to the WriteAsync task
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit (stream.WriteAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
-#else
                 Async.FromBeginEnd (buffer, offset, count, stream.BeginWrite, stream.EndWrite)
-#endif
 
         type IObservable<'Args> with
 
@@ -1745,8 +1696,6 @@ namespace Microsoft.FSharp.Control
                         Some (Async.BindResult(AsyncResult.Canceled (OperationCanceledException webExn.Message)))
                     | _ ->
                         None)
-
-#if !FX_NO_WEB_CLIENT
 
         type System.Net.WebClient with
             member inline private this.Download(event: IEvent<'T, _>, handler: _ -> 'T, start, result) =
@@ -1799,5 +1748,3 @@ namespace Microsoft.FSharp.Control
                     start   = (fun userToken -> this.DownloadFileAsync(address, fileName, userToken)),
                     result  = (fun _         -> ())
                 )
-#endif
-

@@ -166,7 +166,7 @@ let config configurationName envVars =
 #else
     let fscArchitecture = "netcoreapp2.1"
     let fsiArchitecture = "netcoreapp2.1"
-    let fsharpCoreArchitecture = "netstandard1.6"
+    let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netcoreapp2.1"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
 #endif

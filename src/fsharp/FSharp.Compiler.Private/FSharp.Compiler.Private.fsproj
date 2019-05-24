@@ -73,12 +73,6 @@
     <Compile Include="..\Logger.fs">
       <Link>Logger.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshapedreflection.fs">
-      <Link>Reflection\reshapedreflection.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Reflection\reshapedmsbuild.fs</Link>
-    </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -156,6 +150,9 @@
     </Compile>
     <Compile Include="..\..\absil\bytes.fs">
       <Link>Utilities\bytes.fs</Link>
+    </Compile>
+    <Compile Include="..\XmlAdapters.fs">
+      <Link>Utilities\XmlAdapters.fs</Link>
     </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>Utilities\InternalCollections.fsi</Link>

@@ -5,11 +5,8 @@
         <iconUrl>http://fsharp.org/img/logo.png</iconUrl>
         <language>en-US</language>
         <dependencies>
-            <group targetFramework=".NETStandard2.0">
-                <dependency id="NETStandard.Library" version="2.0.3" />
-            </group>
-            <group targetFramework="net45">
-            </group>
+            <group targetFramework=".NETStandard2.0" />
+            <group targetFramework="net45" />
         </dependencies>
     </metadata>
     <files>
