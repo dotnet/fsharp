@@ -1304,7 +1304,7 @@ and
 
     /// An object oriented type definition. This is not a parse-tree form, but represents the core
     /// type representation which the type checker splits out from the "ObjectModel" cases of type definitions.
-    | General of SynTypeDefnKind * (SynType * range * Ident option) list * (SynValSig * MemberFlags) list * SynField list  * bool * bool * SynSimplePat list option * range: range
+    | General of SynTypeDefnKind * (SynType * range * Ident option) list * (SynValSig * MemberFlags) list * SynField list  * bool * bool * SynSimplePats option * range: range
 
     /// A type defined by using an IL assembly representation. Only used in FSharp.Core.
     ///

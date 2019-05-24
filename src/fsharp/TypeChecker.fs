@@ -15016,7 +15016,7 @@ module EstablishTypeDefinitionCores =
               match implicitCtorSynPats with
               | None -> ()
               | Some spats -> 
-                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv (SynSimplePats.SimplePats (spats, m))
+                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv spats
                   for arg in ctorArgNames do
                       let ty = names.[arg].Type
                       let m = names.[arg].Ident.idRange
@@ -15816,7 +15816,7 @@ module EstablishTypeDefinitionCores =
                               ()
                           | Some spats -> 
                               if tycon.IsFSharpStructOrEnumTycon then 
-                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv (SynSimplePats.SimplePats (spats, m))
+                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
                                   for arg in ctorArgNames do
                                       let ty = names.[arg].Type
                                       let id = names.[arg].Ident
@@ -16619,7 +16619,7 @@ module TcDeclarations =
 
             let implicitCtorSynPats = 
                 members |> List.tryPick (function 
-                    | SynMemberDefn.ImplicitCtor (_, _, SynSimplePats.SimplePats(spats, _), _, _) -> Some spats
+                    | SynMemberDefn.ImplicitCtor (_, _, (SynSimplePats.SimplePats _ as spats), _, _) -> Some spats
                     | _ -> None)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
