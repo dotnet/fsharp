@@ -8,8 +8,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as latest, preview or 4.7</source>
-        <target state="new">Display the allowed values for language version, specify language version such as latest, preview or 4.7</target>
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
