@@ -111,9 +111,9 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
        ErrorScope.Protect Range.range0 
             (fun () -> 
                 match input with
-                | Some (ParsedInput.ImplFile(_) as p) ->
+                | Some (ParsedInput.ImplFile _ as p) ->
                     FSharpNavigation.getNavigation p
-                | Some (ParsedInput.SigFile(_)) ->
+                | Some (ParsedInput.SigFile _) ->
                     FSharpNavigation.empty
                 | _ -> 
                     FSharpNavigation.empty)
