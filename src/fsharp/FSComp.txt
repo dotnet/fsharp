@@ -1464,5 +1464,5 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 fSharpBannerVersion,"%s for F# %s"
-optsLangVersion,"Display the allowed values for language version, specify language version such as latest, preview or 4.7"
+optsLangVersion,"Display the allowed values for language version, specify language version such as 'latest' or 'preview'"
 optsSupportedLangVersions,"Supported language versions:"

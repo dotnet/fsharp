@@ -829,7 +829,6 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
               let filtered = ErrorResolutionHints.FilterPredictions suggestionsF id.idText 
               if List.isEmpty filtered |> not then
                   os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
-          
 
       | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
           let _, errs = f(smr, ccuName, s)  
@@ -1835,21 +1834,26 @@ let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     with 
         :? System.ArgumentException -> path  
 
-//
+
+//------------------------------------------------------------------------------------------------------------------
+// Language version command line switch
+//------------------------------------------------------------------------------------------------------------------
 // Add your features to this List - in code use languageVersion.SupportsFeature(LanguageFeatures.yourFeature) 
-// a return value of false means your feature is not supported by the users language selection
+// a return value of false means your feature is not supported by the user's language selection
 // All new language features added from now on must be protected by this.
 // Note:
 //   *  The fslang design process will require a decision about feature name and whether it is required.
 //   *  When a feature is assigned a release language, we will scrub the code of feature references and apply
 //      the Release Language version.
-//
+
+/// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
     | LanguageVersion47 = 0
     | Nullness = 1000
     | ScriptingPackageManagement = 1001
 
+/// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
     static let previewVersion = 4.8m                // Language version when preview specified
     static let defaultVersion = 4.7m                // Language version when default specified

@@ -209,12 +209,14 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+/// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
     | LanguageVersion47 = 0
     | Nullness = 1000
     | ScriptingPackageManagement = 1001
 
+/// LanguageVersion management
 type LanguageVersion =
     new: string -> LanguageVersion
     member SupportsFeature: LanguageFeature-> bool

@@ -40,7 +40,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\debug
 CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
 CompilerOptions02,NoMT				CompilerOptions\fsc\gccerrors
-ompilerOptions01,NoMT,help				CompilerOptions\fsc\help
+CompilerOptions01,NoMT,help				CompilerOptions\fsc\help
 CompilerOptions01,NoMT				CompilerOptions\fsc\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsc\langversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\lib
