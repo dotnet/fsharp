@@ -2090,10 +2090,8 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/full-rank-arrays"
         SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_BASIC
 
-#if !FX_NO_CONVERTER
     [<Test>]
     let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
-#endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 

@@ -106,7 +106,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
                 "FSharp.Core"
         let targetCore =
             if targetFramework.StartsWith("netstandard", StringComparison.InvariantCultureIgnoreCase) || targetFramework.StartsWith("netcoreapp", StringComparison.InvariantCultureIgnoreCase) then 
-                "netstandard1.6"
+                "netstandard2.0"
             else
                 "net45"
         (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/bin/"  + compiler + "/" + configuration + "/" + targetCore + "/FSharp.Core.dll")
@@ -150,7 +150,6 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <DebugType>portable</DebugType>
     <Optimize>$(OPTIMIZE)</Optimize>
     <SignAssembly>false</SignAssembly>
-    <DefineConstants>FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants Condition=""'$(OutputType)' == 'Script' and '$(FSharpTestCompilerVersion)' == 'coreclr'"">NETCOREAPP</DefineConstants>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>

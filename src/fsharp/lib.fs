@@ -522,9 +522,7 @@ module UnmanagedProcessExecutionOptions =
     extern UInt32 private GetLastError()
 
     // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
-#if !FX_NO_SECURITY_PERMISSIONS
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>] 
-#endif
     let EnableHeapTerminationOnCorruption() =
         if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
             System.Environment.Version.Major < 3) then // and CLR not 3.0 or higher 
