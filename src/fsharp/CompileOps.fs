@@ -3783,7 +3783,7 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
 #endif          
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
-/// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the Finalizer.
+/// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option, ilGlobalsOpt, typeProviderThread: ITypeProviderThread) as this = 
 
     let mutable resolutions = initialResolutions

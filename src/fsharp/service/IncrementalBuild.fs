@@ -1753,7 +1753,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 tcConfigB.typeProviderThread <- 
                     { new ITypeProviderThread with 
                         member __.EnqueueWork work = 
-                            Reactor.Singleton.EnqueueOp ("Unknown", "ITypeProvider.EnqueueWorkAndWait", "work", fun _ ->
+                            Reactor.Singleton.EnqueueOp ("Unknown", "ITypeProvider.EnqueueWork", "work", fun _ ->
                                 work ()
                             )
                     }
