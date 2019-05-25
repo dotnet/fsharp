@@ -233,6 +233,19 @@ jobs:
         - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
           displayName: Build
 
+      # Up-to-date
+      - job: UpToDate_Windows
+        pool:
+          vmImage: windows-2019
+        steps:
+        - checkout: self
+          clean: true
+        - task: PowerShell@2
+          displayName: Run up-to-date build check
+          inputs:
+            filePath: eng\tests\UpToDate.ps1
+            arguments: -configuration $(_BuildConfig) -ci -binaryLog
+
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    FCS builds                                                       #
 #---------------------------------------------------------------------------------------------------------------------#
