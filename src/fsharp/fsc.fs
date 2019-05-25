@@ -1067,7 +1067,7 @@ module MainModuleBuilder =
             // otherwise, include the default manifest
             else
                 let path = Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
-                if File.Exists(path then path
+                if File.Exists(path) then path
                 else Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
 
         let nativeResources = 
