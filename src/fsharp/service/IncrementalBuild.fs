@@ -1749,6 +1749,17 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
 
+#if !NO_EXTENSIONTYPING
+                tcConfigB.typeProviderThread <- 
+                    { new ITypeProviderThread with 
+                        member __.EnqueueWorkAndWait work = 
+                            Reactor.Singleton.EnqueueAndAwaitOpAsync ("Unknown", "ITypeProvider.EnqueueWorkAndWait", "work", fun _ ->
+                                // not cancellable
+                                Cancellable.ret (work ())
+                            ) |> Async.RunSynchronously
+                    }
+#endif
+
                 tcConfigB, sourceFilesNew
 
             match loadClosureOpt with

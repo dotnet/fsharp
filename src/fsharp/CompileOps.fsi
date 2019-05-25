@@ -207,6 +207,16 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 
 #if !NO_EXTENSIONTYPING
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
+
+/// The thread in which type provider calls will be enqueued and done work on.
+/// Type provider calls must be executed on the same thread sequentially. Type provider authors expect this.
+/// Note: This is currently only used when disposing of type providers and will be extended to all the other type provider calls when compilations can be done in parallel.
+///       Right now all calls in FCS to type providers are single-threaded through use of the reactor thread. 
+type ITypeProviderThread =
+
+    /// Enqueue work to be done on the type provider thread.
+    /// This is a synchronous call.
+    abstract EnqueueWorkAndWait: (unit -> 'T) -> 'T
 #endif
 
 [<RequireQualifiedAccess>]
@@ -350,6 +360,7 @@ type TcConfigBuilder =
       mutable continueAfterParseFailure: bool
 #if !NO_EXTENSIONTYPING
       mutable showExtensionTypeMessages: bool
+      mutable typeProviderThread: ITypeProviderThread
 #endif
       mutable pause: bool 
       mutable alwaysCallVirt: bool
@@ -509,6 +520,7 @@ type TcConfig =
     member continueAfterParseFailure: bool
 #if !NO_EXTENSIONTYPING
     member showExtensionTypeMessages: bool
+    member typeProviderThread: ITypeProviderThread
 #endif
     member pause: bool 
     member alwaysCallVirt: bool
@@ -591,6 +603,8 @@ type TcAssemblyResolutions =
     static member BuildFromPriorResolutions    : CompilationThreadToken * TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
 
 /// Represents a table of imported assemblies with their resolutions.
+/// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
+/// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the Finalizer.
 [<Sealed>] 
 type TcImports =
     interface System.IDisposable
