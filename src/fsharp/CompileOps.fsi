@@ -603,7 +603,7 @@ type TcAssemblyResolutions =
 
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
-/// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the Finalizer.
+/// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 [<Sealed>] 
 type TcImports =
     interface System.IDisposable
