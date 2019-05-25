@@ -132,8 +132,8 @@ module Symbol =
 #endif
     let (|Enum|_|) (entity: FSharpEntity) = if entity.IsEnum then Some() else None
 
-    let (|Tuple|_|) (ty: FSharpType option) = 
-        ty |> Option.bind (fun ty -> if ty.IsTupleType then Some() else None)
+    let (|Tuple|_|) (ty: FSharpType) =
+        if ty.IsTupleType then Some() else None
 
     let (|RefCell|_|) (ty: FSharpType) = 
         match getAbbreviatedType ty with

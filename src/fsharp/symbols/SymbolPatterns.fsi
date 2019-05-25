@@ -37,7 +37,7 @@ module public Symbol =
     val (|ProvidedAndErasedType|_|) : FSharpEntity -> unit option
 #endif
     val (|Enum|_|) : FSharpEntity -> unit option
-    val (|Tuple|_|) : FSharpType option -> unit option
+    val (|Tuple|_|) : FSharpType -> unit option
     val (|RefCell|_|) : FSharpType -> unit option
     val (|FunctionType|_|) : FSharpType -> unit option
     val (|Pattern|_|) : FSharpSymbol -> unit option
