@@ -1964,7 +1964,7 @@ type ResolvedExtensionReference = ResolvedExtensionReference of string * Assembl
 
 type ITypeProviderThread =
 
-    abstract EnqueueWorkAndWait: (unit -> 'T) -> 'T
+    abstract EnqueueWork: (unit -> unit) -> unit
 #endif
 
 type ImportedBinary = 
@@ -2278,7 +2278,7 @@ type TcConfigBuilder =
           continueAfterParseFailure = false
 #if !NO_EXTENSIONTYPING
           showExtensionTypeMessages = false
-          typeProviderThread = { new ITypeProviderThread with member __.EnqueueWorkAndWait work = work () }
+          typeProviderThread = { new ITypeProviderThread with member __.EnqueueWork work = work () }
 #endif
           pause = false 
           alwaysCallVirt = true
@@ -3815,7 +3815,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let actions = disposeTypeProviderActions
         disposeTypeProviderActions <- []
         if actions.Length > 0 then
-            typeProviderThread.EnqueueWorkAndWait (fun () -> for action in actions do action())
+            typeProviderThread.EnqueueWork (fun () -> for action in actions do action())
 #endif
         let actions = disposeActions
         disposeActions <- []

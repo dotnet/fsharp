@@ -1752,11 +1752,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 #if !NO_EXTENSIONTYPING
                 tcConfigB.typeProviderThread <- 
                     { new ITypeProviderThread with 
-                        member __.EnqueueWorkAndWait work = 
-                            Reactor.Singleton.EnqueueAndAwaitOpAsync ("Unknown", "ITypeProvider.EnqueueWorkAndWait", "work", fun _ ->
-                                // not cancellable
-                                Cancellable.ret (work ())
-                            ) |> Async.RunSynchronously
+                        member __.EnqueueWork work = 
+                            Reactor.Singleton.EnqueueOp ("Unknown", "ITypeProvider.EnqueueWorkAndWait", "work", fun _ ->
+                                work ()
+                            )
                     }
 #endif
 

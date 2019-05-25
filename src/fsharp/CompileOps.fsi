@@ -215,8 +215,7 @@ type ResolvedExtensionReference = ResolvedExtensionReference of string * Assembl
 type ITypeProviderThread =
 
     /// Enqueue work to be done on the type provider thread.
-    /// This is a synchronous call.
-    abstract EnqueueWorkAndWait: (unit -> 'T) -> 'T
+    abstract EnqueueWork: (unit -> unit) -> unit
 #endif
 
 [<RequireQualifiedAccess>]
