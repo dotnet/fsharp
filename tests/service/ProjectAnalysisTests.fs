@@ -5523,6 +5523,14 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
+
+module M1 =
+    type R = { Field: int }
+
+module M2 =
+    open M1
+
+    let foo x = x.Field
 """
     let fileSource1 = FSharp.Compiler.Text.SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
