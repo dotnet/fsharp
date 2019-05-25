@@ -3848,7 +3848,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             dllTable
             
 #if !NO_EXTENSIONTYPING
-    member tcImports.Weak = tcImportsWeak
+    member tcImports.Weak = 
+            CheckDisposed()
+            tcImportsWeak
 #endif
         
     member tcImports.RegisterCcu ccuInfo =
