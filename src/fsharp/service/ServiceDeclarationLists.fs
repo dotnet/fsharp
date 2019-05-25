@@ -492,11 +492,12 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
     member __.StructuredDescriptionTextAsync = 
         let userOpName = "ToolTip"
         match info with
-        | Choice1Of2 (_, _, _, _, reactor:IReactorOperations) -> 
+        | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations) -> 
             // reactor causes the lambda to execute on the background compiler thread, through the Reactor
             reactor.EnqueueAndAwaitOpAsync (userOpName, "StructuredDescriptionTextAsync", name, fun ctok -> 
                 RequireCompilationThread ctok
-                cancellable.Return(FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]))
+                cancellable.Return(FSharpToolTipText(items |> List.map (fun x -> SymbolHelpers.FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst)))
+            )
             | Choice2Of2 result -> 
                 async.Return result
 
