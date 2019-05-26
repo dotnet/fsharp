@@ -329,7 +329,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     member this.FindDefinitionsForPeekTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         this.FindDefinitionAtPosition(originDocument, position)
         |> Async.map (
-                Option.map (fun (navItem, _) -> navItem)
+                Option.map (fun (navItem, _) -> navItem :> FSharpNavigableItem)
                 >> Option.toArray
                 >> Array.toSeq)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken
