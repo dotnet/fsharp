@@ -739,8 +739,7 @@ namespace Microsoft.FSharp.Control
             /// <returns>An asynchronous computation that waits for response to the <c>WebRequest</c>.</returns>
             [<CompiledName("AsyncGetResponse")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncGetResponse : unit -> Async<System.Net.WebResponse>
-    
-#if !FX_NO_WEB_CLIENT
+
         type System.Net.WebClient with
 
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI.</summary>
@@ -761,7 +760,6 @@ namespace Microsoft.FSharp.Control
             /// <returns>An asynchronous computation that will wait for the download of the URI to specified file.</returns>
             [<CompiledName("AsyncDownloadFile")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadFile : address:System.Uri * fileName: string -> Async<unit>
-#endif
 
     // Internals used by MailboxProcessor
     module internal AsyncBuilderImpl = 

@@ -1342,20 +1342,6 @@ namespace Microsoft.FSharp.Core
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
             val inline FastCompareTuple5 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
 
-#if FX_RESHAPED_REFLECTION
-    module internal PrimReflectionAdapters =
-
-        open System.Reflection
-
-        type System.Type with
-            member inline IsGenericType : bool
-            member inline IsValueType : bool
-            member inline GetMethod : string * parameterTypes : Type[] -> MethodInfo
-            member inline GetProperty : string -> PropertyInfo
-            member inline IsAssignableFrom : otherType : Type -> bool
-            member inline GetCustomAttributes : attributeType : Type * inherits: bool -> obj[]
-#endif
-
     //-------------------------------------------------------------------------
     // F# Choice Types
 
@@ -1503,8 +1489,6 @@ namespace Microsoft.FSharp.Core
         /// <returns>'U</returns>
         abstract member Invoke : func:'T -> 'U
 
-#if !FX_NO_CONVERTER
-
         /// <summary>Convert an F# first class function value to a value of type <c>System.Converter</c></summary>
         /// <param name="func">The input function.</param>
         /// <returns>A System.Converter of the function type.</returns>
@@ -1524,7 +1508,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="converter">The input System.Converter.</param>
         /// <returns>An F# function of the same type.</returns>
         static member FromConverter : converter:System.Converter<'T,'U> -> ('T -> 'U)
-#endif
 
         /// <summary>Invoke an F# first class function value with five curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -1575,12 +1558,10 @@ namespace Microsoft.FSharp.Core
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
 
-#if !FX_NO_CONVERTER
         /// <summary>Convert the given Converter delegate object to an F# function value</summary>
         /// <param name="converter">The input Converter delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : converter:Converter<'T,'U>          -> ('T -> 'U)
-#endif
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         /// <param name="func">The input Action delegate.</param>

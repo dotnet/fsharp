@@ -11,10 +11,6 @@ namespace Microsoft.FSharp.Control
     open System.Reflection
     open System.Diagnostics
 
-#if FX_RESHAPED_REFLECTION
-    open ReflectionAdapters
-#endif
-
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() = 
         let mutable multicast : System.Delegate = null
