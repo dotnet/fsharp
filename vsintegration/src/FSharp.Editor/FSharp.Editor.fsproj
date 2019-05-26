@@ -85,7 +85,6 @@
     <Compile Include="QuickInfo\Navigation.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
-    <Compile Include="BlockComment\CommentSelectionService.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
@@ -174,6 +173,10 @@
       <Version>$(VSAssemblyVersion)</Version>
       <CodeBase>$PackageFolder$\FSharp.UIResources.dll</CodeBase>
     </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="BlockComment\" />
   </ItemGroup>
 
 </Project>
