@@ -829,6 +829,7 @@ let languageFlags tcConfigB =
         //                               'preview' (features for preview)
         //                               or specific versions like '4.7'
         CompilerOption("langversion", tagLangVersionValues, OptionString (fun switch -> tcConfigB.langVersion <- LanguageVersion(switch)), None, Some (FSComp.SR.optsLangVersion()))
+
         CompilerOption("checked", tagNone, OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsChecked()))
         CompilerOption("define", tagString, OptionString (defineSymbol tcConfigB), None, Some (FSComp.SR.optsDefine()))
         mlCompatibilityFlag tcConfigB

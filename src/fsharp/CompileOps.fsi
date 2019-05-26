@@ -212,7 +212,8 @@ type ResolvedExtensionReference = ResolvedExtensionReference of string * Assembl
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | LanguageVersion47 = 0
+    | LanguageVersion46 = 0
+    | LanguageVersion47 = 1
     | Nullness = 1000
     | ScriptingPackageManagement = 1001
 

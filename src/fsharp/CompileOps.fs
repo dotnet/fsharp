@@ -1849,24 +1849,33 @@ let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | LanguageVersion47 = 0
+    | LanguageVersion46 = 0
+    | LanguageVersion47 = 1
     | Nullness = 1000
     | ScriptingPackageManagement = 1001
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
-    static let previewVersion = 4.8m                // Language version when preview specified
-    static let defaultVersion = 4.7m                // Language version when default specified
-    static let latestVersion = defaultVersion       // Language version when latest specified
-    static let latestMajorVersion = 4.7m            // Language version when latestmajor specified
+
+    // When we increment language versions here preview is higher than current RTM version
+    static let languageVersion46 = 4.6m
+    static let languageVersion47 = 4.7m
+
+    static let previewVersion = languageVersion47       // Language version when preview specified
+    static let defaultVersion = languageVersion46       // Language version when default specified
+    static let latestVersion = defaultVersion           // Language version when latest specified
+    static let latestMajorVersion = languageVersion46   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
     static let languageVersions = set [| latestVersion |]
 
     static let features = dict [|
-        LanguageFeature.LanguageVersion47, latestVersion
+        // Add new LanguageVersions here ...
+        LanguageFeature.LanguageVersion47, 4.7m
+        LanguageFeature.LanguageVersion46, 4.6m
         LanguageFeature.Nullness, previewVersion
         LanguageFeature.ScriptingPackageManagement, previewVersion
+        // Add new LanguageFeatures here ...
         |]
 
     static let dumpAllowedValues () =
@@ -1890,13 +1899,14 @@ type LanguageVersion (specifiedVersion) =
             match Decimal.TryParse(specifiedVersion) with
             | true, v ->
                 if languageVersions.Contains(v) then v
-                else raiseError(); 0m
+                else raiseError (); 0m
             | _ ->
-                raiseError()
+                raiseError ()
                 0m
 
+    /// Check if this feature is supported by the selected langversion
     member __.SupportsFeature featureId =
-        match features.TryGetValue(featureId) with
+        match features.TryGetValue featureId with
         | true, v -> v <= specified
         | false, _ -> false
 
