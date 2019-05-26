@@ -134,6 +134,20 @@ module MapTree =
             elif c = 0 then MapNode (k, v, l, r, h)
             else rebalance l k2 v2 (add comparer k v r) 
 
+    let rec update (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value) (m: MapTree<'Key, 'Value>) =
+        match m with
+        | MapEmpty -> MapOne (k, u None)
+        | MapOne (k2, v2) ->
+            let c = comparer.Compare(k, k2)
+            if c < 0   then MapNode (k, u None, MapEmpty, m, 2)
+            elif c = 0 then MapOne (k, u (Some v2))
+            else            MapNode (k, u None, m, MapEmpty, 2)
+        | MapNode (k2, v2, l, r, h) ->
+            let c = comparer.Compare(k, k2)
+            if c < 0 then rebalance (update comparer k u l) k2 v2 r
+            elif c = 0 then MapNode (k, u (Some v2), l, r, h)
+            else rebalance l k2 v2 (update comparer k u r)
+
     let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) = 
         match m with 
         | MapEmpty -> false
@@ -516,6 +530,9 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 #endif
         new Map<'Key, 'Value>(comparer, MapTree.add comparer key value tree)
 
+    member m.Update(key, updater) : Map<'Key, 'Value> =
+        new Map<'Key, 'Value>(comparer, MapTree.update comparer key updater tree)
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member m.IsEmpty = MapTree.isEmpty tree
 
@@ -732,6 +749,10 @@ module Map =
     [<CompiledName("Add")>]
     let add key value (table: Map<_, _>) =
         table.Add (key, value)
+
+    [<CompiledName("Update")>]
+    let update key updater (table: Map<_, _>) =
+        table.Update (key, updater)
 
     [<CompiledName("Find")>]
     let find key (table: Map<_, _>) =

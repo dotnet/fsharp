@@ -64,6 +64,17 @@ type MapModule() =
         ()
 
     [<Test>]
+    member this.Update() =
+
+        let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
+        let b = Map.update 4 (fun current -> Assert.AreEqual(current, None); 16) a
+        Assert.AreEqual(b.[4], 16)
+        let c = Map.update 4 (fun current -> Assert.AreEqual(current, Some 16); 25) b
+        Assert.AreEqual(c.[4], 25)
+
+        ()
+
+    [<Test>]
     member this.Exists() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]

@@ -246,6 +246,7 @@ type MapType() =
         let ae = e.Add(1,"Monday")
         Assert.AreEqual(ae.[1], "Monday")
         
+    [<Test>]
     member this.Add() =
     
         let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
@@ -256,6 +257,15 @@ type MapType() =
         let e  = Map.empty<int,string>
         let ae = e.Add(1,"Monday")
         Assert.AreEqual(ae.[1], "Monday")
+
+    [<Test>]
+    member this.Update() =
+
+        let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
+        let b = a.Update(4, fun current -> Assert.AreEqual(current, None); 16)
+        Assert.AreEqual(b.[4], 16)
+        let c = b.Update(4, fun current -> Assert.AreEqual(current, Some 16); 25)
+        Assert.AreEqual(c.[4], 25)
     
     [<Test>]
     member this.ContainsKey() =

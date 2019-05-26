@@ -22,6 +22,8 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The resulting map.</returns>
         member Add: key:'Key * value:'Value -> Map<'Key,'Value>
 
+        member Update: key:'Key * updater:('Value option -> 'Value) -> Map<'Key,'Value>
+
         /// <summary>Returns true if there are no bindings in the map.</summary>
         member IsEmpty: bool
 
@@ -85,6 +87,9 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The resulting map.</returns>
         [<CompiledName("Add")>]
         val add: key:'Key -> value:'T -> table:Map<'Key,'T> -> Map<'Key,'T>
+
+        [<CompiledName("Update")>]
+        val update: key:'Key -> updater:('T option -> 'T) -> table:Map<'Key,'T> -> Map<'Key,'T>
 
         /// <summary>Returns a new map made from the given bindings.</summary>
         /// <param name="elements">The input list of key/value pairs.</param>
