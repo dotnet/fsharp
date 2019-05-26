@@ -23,7 +23,7 @@ type private TextVersionHash = int
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
 
 [<Export(typeof<IFSharpSimplifyNameDiagnosticAnalyzer>)>]
-type internal SimplifyNameDiagnosticAnalyzer() =
+type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager

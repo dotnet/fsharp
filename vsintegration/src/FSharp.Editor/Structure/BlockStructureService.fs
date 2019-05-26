@@ -143,7 +143,7 @@ module internal BlockStructure =
 open BlockStructure
  
 [<Export(typeof<IFSharpBlockStructureService>)>]
-type internal FSharpBlockStructureService [<ImportingConstructor>] (checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
+type internal FSharpBlockStructureService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
         
     static let userOpName = "FSharpBlockStructure"
 
@@ -153,7 +153,7 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] (checker: FSh
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
+                let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
                 return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parsedInput |> Seq.toImmutableArray
             } 
             |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)

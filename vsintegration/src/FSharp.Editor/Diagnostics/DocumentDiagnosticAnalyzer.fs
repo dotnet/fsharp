@@ -25,7 +25,7 @@ type internal DiagnosticsType =
     | Semantic
 
 [<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
-type internal FSharpDocumentDiagnosticAnalyzer() =
+type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static let userOpName = "DocumentDiagnosticAnalyzer"
     let getChecker(document: Document) =

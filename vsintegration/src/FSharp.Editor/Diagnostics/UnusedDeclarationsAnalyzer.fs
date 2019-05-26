@@ -16,7 +16,7 @@ open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<Export(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>)>]
-type internal UnusedDeclarationsAnalyzer() =
+type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
     
     static let userOpName = "UnusedDeclarationsAnalyzer"
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager

@@ -21,7 +21,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
-type internal UnusedOpensDiagnosticAnalyzer() =
+type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
