@@ -314,7 +314,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                         let argTys = curriedArgInfos |> List.concat |> List.map fst
                         let methArgTypesR = ConvTypes cenv envinner m argTys
                         let methRetTypeR = ConvReturnType cenv envinner m retTy
-                        let methName = vref.CompiledName
+                        let methName = vref.CompiledName cenv.g.CompilerGlobalState
                         let numGenericArgs = tyargs.Length - numEnclTypeArgs
                         ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, callArgs)
                     else
@@ -551,7 +551,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             match vref.DeclaringEntity with
             | Parent tcref when IsCompiledAsStaticProperty cenv.g vref.Deref  ->
                 let parentTyconR = ConvTyconRef cenv tcref m
-                let propName = vref.CompiledName
+                let propName = vref.CompiledName cenv.g.CompilerGlobalState
                 let propTy = ConvType cenv env m vref.Type
                 QP.mkPropSet( (parentTyconR, propName, propTy, []), [], [ConvExpr cenv env e])
             | _ ->
@@ -742,7 +742,7 @@ and ConvModuleValueAppCore cenv env m (vref: ValRef) tyargs (args: Expr list lis
         let isProperty = IsCompiledAsStaticProperty cenv.g vref.Deref
         let tcrefR = ConvTyconRef cenv tcref m
         let tyargsR = ConvTypes cenv env m tyargs
-        let nm = vref.CompiledName
+        let nm = vref.CompiledName cenv.g.CompilerGlobalState
         let argsR = List.map (ConvExprs cenv env) args
         QP.mkModuleValueApp(tcrefR, nm, isProperty, tyargsR, argsR)
 
@@ -796,7 +796,7 @@ and ConvRecdFieldRef cenv (rfref: RecdFieldRef) m =
 
 and ConvVal cenv env (v: Val) =
     let tyR = ConvType cenv env v.Range v.Type
-    QP.freshVar (v.CompiledName, tyR, v.IsMutable)
+    QP.freshVar (v.CompiledName cenv.g.CompilerGlobalState, tyR, v.IsMutable)
 
 and ConvTyparRef cenv env m (tp: Typar) =
     match env.tyvs.TryFind tp.Stamp  with

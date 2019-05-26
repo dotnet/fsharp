@@ -218,14 +218,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryablePackageVersion)" />
-    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryableVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
   </ItemGroup>
 
   <!-- Hook compilation phase to do custom work -->

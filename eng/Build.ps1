@@ -52,6 +52,7 @@ param (
     [switch]$testFSharpQA,
     [switch]$testVs,
     [switch]$testAll,
+    [string]$officialSkipTests = "false",
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
 
@@ -84,6 +85,7 @@ function Print-Usage() {
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
+    Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
     Write-Host "  -ci                       Set when running on CI server"
@@ -110,6 +112,17 @@ function Process-Arguments() {
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
         $script:testVs = $True
+    }
+
+    if ([System.Boolean]::Parse($script:officialSkipTests)) {
+        $script:testAll = $False
+        $script:testCambridge = $False
+        $script:testCompiler = $False
+        $script:testDesktop = $False
+        $script:testCoreClr = $False
+        $script:testFSharpCore = $False
+        $script:testFSharpQA = $False
+        $script:testVs = $False
     }
 
     if ($noRestore) {
@@ -233,6 +246,11 @@ try {
 
     if ($ci) {
         Prepare-TempDir
+
+        # enable us to build netcoreapp2.1 binaries
+        $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
+        InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
+        InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
     }
 
     if ($bootstrap) {
