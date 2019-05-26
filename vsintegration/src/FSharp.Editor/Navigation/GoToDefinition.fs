@@ -142,6 +142,9 @@ type internal StatusBar(statusBar: IVsStatusbar) =
         { new IDisposable with
             member __.Dispose() = () } //statusBar.Animation(0, &searchIcon) |> ignore }
 
+type internal FSharpGoToDefinitionNavigableItem(document, sourceSpan) =
+    inherit FSharpNavigableItem(Glyph.BasicFile, ImmutableArray.Empty, document, sourceSpan)
+
 type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     let userOpName = "GoToDefinition"
 
@@ -158,7 +161,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 match RoslynHelpers.TryFSharpRangeToTextSpan (refSourceText, range) with 
                 | None -> return None
-                | Some refTextSpan -> return Some (FSharpNavigableItem (refDocument, refTextSpan))
+                | Some refTextSpan -> return Some (FSharpGoToDefinitionNavigableItem (refDocument, refTextSpan))
             else return None
         }
 
@@ -192,7 +195,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
-                return FSharpNavigableItem (implDoc, implTextSpan)
+                return FSharpGoToDefinitionNavigableItem (implDoc, implTextSpan)
             else
                 let! targetDocument = originDocument.Project.Solution.TryGetDocumentFromFSharpRange fsSymbolUse.RangeAlternate
                 return! rangeToNavigableItem (fsSymbolUse.RangeAlternate, targetDocument)
@@ -253,7 +256,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         )
  
                 let! location = symbol.Locations |> Seq.tryHead
-                return (FSharpNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan), idRange)
+                return (FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan), idRange)
 
             | FSharpFindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
@@ -270,7 +273,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         let! targetRange = this.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText, projectOptions, implVersion.GetHashCode())
 
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
-                        let navItem = FSharpNavigableItem (implDocument, implTextSpan)
+                        let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
                         return (navItem, idRange)
                     else // jump from implementation to the corresponding signature
                         let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true, userOpName=userOpName) |> liftAsync
@@ -279,7 +282,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                             let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
                             let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
                             let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
-                            let navItem = FSharpNavigableItem (sigDocument, sigTextSpan)
+                            let navItem = FSharpGoToDefinitionNavigableItem (sigDocument, sigTextSpan)
                             return (navItem, idRange)
                         | _ ->
                             return! None
@@ -292,7 +295,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                     let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
                     // if the gotodef call originated from a signature and the returned target is a signature, navigate there
                     if isSignatureFile targetRange.FileName && preferSignature then 
-                        let navItem = FSharpNavigableItem (sigDocument, sigTextSpan)
+                        let navItem = FSharpGoToDefinitionNavigableItem (sigDocument, sigTextSpan)
                         return (navItem, idRange)
                     else // we need to get an FSharpSymbol from the targetRange found in the signature
                          // that symbol will be used to find the destination in the corresponding implementation file
@@ -309,7 +312,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         let! targetRange = this.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText, projectOptions, implVersion.GetHashCode())                               
                         
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
-                        let navItem = FSharpNavigableItem (implDocument, implTextSpan)
+                        let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
                         return (navItem, idRange)
                 | _ ->
                     return! None
@@ -340,7 +343,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// Navigate to the positon of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
     member __.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, statusBar: StatusBar) =
-        let navigableItem = FSharpNavigableItem(document, textSpan)
+        let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
         let workspace = document.Project.Solution.Workspace
         let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
         let options = workspace.Options.WithChangedOption(FSharpNavigationOptions.PreferProvisionalTab, true)
