@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Navigation
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio.Shell.Interop
 
@@ -104,16 +105,6 @@ module private ExternalSymbol =
             [upcast eventsym, ExternalSymbol.Event(container, eventsym.MetadataName)]
 
         | _ -> []
-
-type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
-    interface INavigableItem with
-        member __.Glyph = Glyph.BasicFile
-        member __.DisplayFileLocation = true
-        member __.IsImplicitlyDeclared = false
-        member __.Document = document
-        member __.SourceSpan = textSpan
-        member __.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
-        member __.ChildItems = ImmutableArray<INavigableItem>.Empty
 
 // TODO: Uncomment code when VS has a fix for updating the status bar.
 type internal StatusBar(statusBar: IVsStatusbar) =
@@ -335,7 +326,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     member this.FindDefinitionsForPeekTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         this.FindDefinitionAtPosition(originDocument, position)
         |> Async.map (
-                Option.map (fun (navItem, _) -> (navItem :> INavigableItem))
+                Option.map (fun (navItem, _) -> navItem)
                 >> Option.toArray
                 >> Array.toSeq)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken
@@ -344,31 +335,30 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// at the provided position in the document.
     member this.FindDefinitionTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         this.FindDefinitionAtPosition(originDocument, position)
-        |> Async.map (Option.map (fun (navItem, range) -> (navItem :> INavigableItem, range)))
         |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     /// Navigate to the positon of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
     member __.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, statusBar: StatusBar) =
-        let navigableItem = FSharpNavigableItem(document, textSpan) :> INavigableItem
+        let navigableItem = FSharpNavigableItem(document, textSpan)
         let workspace = document.Project.Solution.Workspace
-        let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
-        let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
+        let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
+        let options = workspace.Options.WithChangedOption(FSharpNavigationOptions.PreferProvisionalTab, true)
         let navigationSucceeded = navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
 
         if not navigationSucceeded then 
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
-    member __.NavigateToItem(navigableItem: #INavigableItem, statusBar: StatusBar) =
+    member __.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar) =
         use __ = statusBar.Animate()
 
         statusBar.Message (SR.NavigatingTo())
 
         let workspace = navigableItem.Document.Project.Solution.Workspace
-        let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
+        let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
 
         // Prefer open documents in the preview tab.
-        let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
+        let options = workspace.Options.WithChangedOption(FSharpNavigationOptions.PreferProvisionalTab, true)
         let result = navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
             
         if result then 
