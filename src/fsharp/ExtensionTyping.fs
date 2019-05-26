@@ -15,6 +15,7 @@ module internal ExtensionTyping =
     open FSharp.Compiler.ErrorLogger
     open FSharp.Compiler.Range
     open FSharp.Compiler.AbstractIL.IL
+    open FSharp.Compiler.AbstractIL.ILBinaryReader
     open FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
 
@@ -62,7 +63,7 @@ module internal ExtensionTyping =
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
-    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m: range) =
+    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, bypassFileSystemShim, m: range) =
 
         // Report an error, blaming the particular type provider component
         let raiseError (e: exn) =
@@ -82,7 +83,7 @@ module internal ExtensionTyping =
             seq { 
                 for subdir in toolingCompatiblePaths() do
                     let designTimeAssemblyPath  = Path.Combine (dir, subdir, designTimeAssemblyName)
-                    if FileSystem.SafeExists designTimeAssemblyPath then 
+                    if AssemblyReader.Exists (designTimeAssemblyPath, bypassFileSystemShim) then 
                         yield loadFromLocation designTimeAssemblyPath
                 match Path.GetDirectoryName dir with
                 | s when s = "" || s = null || Path.GetFileName dir = "packages" || s = dir -> ()
@@ -216,7 +217,7 @@ module internal ExtensionTyping =
                       | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
                           ()
                       | Some _, _ ->
-                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m) do
+                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, isInteractive, m) do
                             let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                             match box resolver with 
                             | null -> ()

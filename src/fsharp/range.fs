@@ -253,7 +253,7 @@ type range(code1:int64, code2: int64) =
             let endCol = r.EndColumn - 1
             let startCol = r.StartColumn - 1
             if FileSystem.IsInvalidPathShim r.FileName then "path invalid: " + r.FileName
-            elif not (FileSystem.SafeExists r.FileName) then "non existing file: " + r.FileName
+            elif not (FileSystem.Exists (r.FileName, false)) then "non existing file: " + r.FileName
             else
               File.ReadAllLines(r.FileName)
               |> Seq.skip (r.StartLine - 1)

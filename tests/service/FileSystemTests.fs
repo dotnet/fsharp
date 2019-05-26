@@ -55,13 +55,13 @@ let B = File1.A + File1.A"""
 
         // Implement the service related to temporary paths and file time stamps
         member __.GetTempPathShim() = defaultFileSystem.GetTempPathShim()
-        member __.GetLastWriteTimeShim(fileName) = defaultFileSystem.GetLastWriteTimeShim(fileName)
+        member __.GetLastWriteTime(fileName, bypassFileSystemShim) = defaultFileSystem.GetLastWriteTime(fileName, bypassFileSystemShim)
         member __.GetFullPathShim(fileName) = defaultFileSystem.GetFullPathShim(fileName)
         member __.IsInvalidPathShim(fileName) = defaultFileSystem.IsInvalidPathShim(fileName)
         member __.IsPathRootedShim(fileName) = defaultFileSystem.IsPathRootedShim(fileName)
 
         // Implement the service related to file existence and deletion
-        member __.SafeExists(fileName) = files.ContainsKey(fileName) || defaultFileSystem.SafeExists(fileName)
+        member __.Exists(fileName, bypassFileSystemShim) = files.ContainsKey(fileName) || defaultFileSystem.Exists(fileName, bypassFileSystemShim)
         member __.FileDelete(fileName) = defaultFileSystem.FileDelete(fileName)
 
         // Implement the service related to assembly loading, used to load type providers

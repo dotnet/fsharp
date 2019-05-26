@@ -18,7 +18,6 @@ open System.Runtime.InteropServices
 open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Internal 
 #if !FX_NO_PDB_READER
 open FSharp.Compiler.AbstractIL.Internal.Support 
@@ -29,7 +28,6 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
-open Microsoft.FSharp.NativeInterop
 open System.Reflection
 
 let checking = false  
@@ -354,7 +352,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     do stats.weakByteFileCount <- stats.weakByteFileCount + 1
 
     /// Used to check that the file hasn't changed
-    let fileStamp = FileSystem.GetLastWriteTimeShim fileName
+    let fileStamp = FileSystem.GetLastWriteTime(fileName, false)
 
     /// The weak handle to the bytes for the file
     let weakBytes = new WeakReference<byte[]> (null)
@@ -368,7 +366,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
             let strongBytes = 
                 let mutable tg = null
                 if not (weakBytes.TryGetTarget(&tg)) then 
-                    if FileSystem.GetLastWriteTimeShim fileName <> fileStamp then 
+                    if FileSystem.GetLastWriteTime(fileName, false) <> fileStamp then 
                         error (Error (FSComp.SR.ilreadFileChanged fileName, range0))
 
                     let bytes = 
@@ -3949,7 +3947,8 @@ type ILReaderOptions =
       ilGlobals: ILGlobals
       reduceMemoryUsage: ReduceMemoryFlag
       metadataOnly: MetadataOnlyFlag
-      tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
+      tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+      bypassFileSystemShim: bool }
 
 
 type ILModuleReader =
@@ -4025,7 +4024,7 @@ let OpenILModuleReader fileName opts =
     let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_,_) as key), keyOk = 
         try 
            let fullPath = FileSystem.GetFullPathShim fileName
-           let writeTime = FileSystem.GetLastWriteTimeShim fileName
+           let writeTime = FileSystem.GetLastWriteTime(fileName, false)
            let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
            key, true
         with exn -> 
@@ -4134,9 +4133,9 @@ let OpenILModuleReader fileName opts =
 
 [<AutoOpen>]
 module Shim =
-    open FSharp.Compiler.Lib
-
     type IAssemblyReader =
+        inherit IFileStampShim
+
         abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
 
     [<Sealed>]
@@ -4144,5 +4143,11 @@ module Shim =
         interface IAssemblyReader with
             member __.GetILModuleReader(filename, readerOptions) =
                 OpenILModuleReader filename readerOptions
+
+            member __.GetLastWriteTime(filename, bypassFileSystemShim) =
+                FileSystem.GetLastWriteTime(filename, bypassFileSystemShim)
+
+            member __.Exists(filename, bypassFileSystemShim) =
+                FileSystem.Exists(filename, bypassFileSystemShim)
 
     let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader

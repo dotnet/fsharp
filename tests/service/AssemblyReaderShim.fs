@@ -7,22 +7,28 @@
 module FSharp.Compiler.Service.Tests.AssemblyReaderShim
 #endif
 
-open FSharp.Compiler.Service.Tests.Common
-open FsUnit
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FsUnit
 open NUnit.Framework
 
 [<Test>]
 let ``Assembly reader shim gets requests`` () =
-    let defaultReader = Shim.AssemblyReader
+    let defaultReader = AssemblyReader
     let mutable gotRequest = false
     let reader =
         { new IAssemblyReader with
             member x.GetILModuleReader(path, opts) =
                 gotRequest <- true
                 defaultReader.GetILModuleReader(path, opts)
-        }
-    Shim.AssemblyReader <- reader
+
+            member x.GetLastWriteTime(path, bypassFileSystemShim) =
+                FileSystem.GetLastWriteTime(path, bypassFileSystemShim)
+
+            member x.Exists(path, bypassFileSystemShim) =
+                FileSystem.Exists(path, bypassFileSystemShim) }
+
+    AssemblyReader <- reader
     let source = """
 module M
 let x = 123

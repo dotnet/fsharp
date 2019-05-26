@@ -1277,7 +1277,15 @@ module Shim =
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
-    type IFileSystem = 
+    type IFileStampShim =
+        /// A shim over File.Exists
+        abstract Exists: filename: string * bypassFileSystemShim: bool -> bool
+
+        /// Utc time of the last modification
+        abstract GetLastWriteTime: filename: string * bypassFileSystemShim: bool -> DateTime
+
+    type IFileSystem =
+        inherit IFileStampShim
 
         /// A shim over File.ReadAllBytes
         abstract ReadAllBytesShim: fileName: string -> byte[] 
@@ -1304,12 +1312,6 @@ module Shim =
 
         /// A shim over Path.GetTempPath
         abstract GetTempPathShim : unit -> string
-
-        /// Utc time of the last modification
-        abstract GetLastWriteTimeShim: fileName: string -> DateTime
-
-        /// A shim over File.Exists
-        abstract SafeExists: fileName: string -> bool
 
         /// A shim over File.Delete
         abstract FileDelete: fileName: string -> unit
@@ -1362,9 +1364,9 @@ module Shim =
 
             member __.GetTempPathShim() = Path.GetTempPath()
 
-            member __.GetLastWriteTimeShim (fileName: string) = File.GetLastWriteTimeUtc fileName
+            member __.GetLastWriteTime(fileName: string, _bypassFileSystemShim) = File.GetLastWriteTimeUtc fileName
 
-            member __.SafeExists (fileName: string) = File.Exists fileName 
+            member __.Exists(fileName: string, _bypassFileSystemShim) = File.Exists fileName 
 
             member __.FileDelete (fileName: string) = File.Delete fileName
 

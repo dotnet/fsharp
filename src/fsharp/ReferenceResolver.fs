@@ -32,25 +32,26 @@ module public ReferenceResolver =
        /// Note: If an explicit "mscorlib" is given, then --noframework is being used, and the whole ReferenceResolver logic is essentially
        /// unused.  However in the future an option may be added to allow an explicit specification of
        /// a .NET Framework version to use for scripts.
-       abstract HighestInstalledNetFrameworkVersion : unit -> string
+       abstract HighestInstalledNetFrameworkVersion: unit -> string
     
        /// Get the Reference Assemblies directory for the .NET Framework (on Windows)
        /// This is added to the default resolution path for 
        /// design-time compilations.
-       abstract DotNetFrameworkReferenceAssembliesRootDirectory : string
+       abstract DotNetFrameworkReferenceAssembliesRootDirectory: string
 
        /// Perform assembly resolution on the given references under the given conditions
-       abstract Resolve :
+       abstract Resolve:
            resolutionEnvironment: ResolutionEnvironment *
            // The actual reference paths or assembly name text, plus baggage
-           references:(string (* baggage *) * string)[] *  
+           references: (string (* baggage *) * string)[] *  
            // e.g. v4.5.1
-           targetFrameworkVersion:string *
-           targetFrameworkDirectories:string list *
-           targetProcessorArchitecture:string *
-           fsharpCoreDir:string *
-           explicitIncludeDirs:string list *
-           implicitIncludeDir:string *
-           logMessage:(string->unit) *
-           logDiagnostic:(bool -> string -> string -> unit)
+           targetFrameworkVersion: string *
+           targetFrameworkDirectories: string list *
+           targetProcessorArchitecture: string *
+           fsharpCoreDir: string *
+           explicitIncludeDirs: string list *
+           implicitIncludeDir: string *
+           logMessage: (string -> unit) *
+           logDiagnostic: (bool -> string -> string -> unit) *
+           bypassFileSystemShim: bool
              -> ResolvedFile[]

@@ -1790,23 +1790,31 @@ let (++) x s = x @ [s]
 // General file name resolver
 //--------------------------------------------------------------------------
 
-/// Will return None if the filename is not found.
-let TryResolveFileUsingPaths(paths, m, name) =
-    let () = 
-        try FileSystem.IsPathRootedShim name |> ignore 
-        with :? System.ArgumentException as e -> error(Error(FSComp.SR.buildProblemWithFilename(name, e.Message), m))
-    if FileSystem.IsPathRootedShim name && FileSystem.SafeExists name 
-    then Some name 
+let private TryResolveFileUsingPaths paths m name bypassFileSystemShim (shim: IFileStampShim) =
+    try
+        FileSystem.IsPathRootedShim(name) |> ignore
+    with :? ArgumentException as e ->
+        error(Error(FSComp.SR.buildProblemWithFilename(name, e.Message), m))
+
+    if FileSystem.IsPathRootedShim(name) && shim.Exists(name, bypassFileSystemShim)
+    then Some name
     else
-        let res = paths |> List.tryPick (fun path ->  
-                    let n = Path.Combine (path, name)
-                    if FileSystem.SafeExists n then Some n 
-                    else None)
-        res
+        paths |> List.tryPick (fun path ->
+            let n = Path.Combine(path, name)
+            if shim.Exists(n, bypassFileSystemShim) then Some n
+            else None)
+
+/// Returns None when the file is not found.
+let TryResolveSourceFileUsingPaths(paths, m, name) =
+    TryResolveFileUsingPaths paths m name false FileSystem
+
+/// Returns None when the file is not found.
+let TryResolveAssemblyFileUsingPaths(paths, m, name, bypassFileSystemShim) =
+    TryResolveFileUsingPaths paths m name bypassFileSystemShim AssemblyReader
 
 /// Will raise FileNameNotResolved if the filename was not found
-let ResolveFileUsingPaths(paths, m, name) =
-    match TryResolveFileUsingPaths(paths, m, name) with
+let ResolveSourceFileUsingPaths(paths, m, name) =
+    match TryResolveSourceFileUsingPaths(paths, m, name) with
     | Some res -> res
     | None ->
         let searchMessage = String.concat "\n " paths
@@ -1869,7 +1877,7 @@ type VersionFlag =
          | VersionString s -> s
          | VersionFile s ->
              let s = if FileSystem.IsPathRootedShim s then s else Path.Combine(implicitIncludeDir, s)
-             if not(FileSystem.SafeExists s) then 
+             if not(FileSystem.Exists(s, false)) then 
                  errorR(Error(FSComp.SR.buildInvalidVersionFile s, rangeStartup)); "0.0.0.0"
              else
                  use is = System.IO.File.OpenText s
@@ -1901,20 +1909,28 @@ type IRawFSharpAssemblyData =
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
 
 /// Cache of time stamps as we traverse a project description
-type TimeStampCache(defaultTimeStamp: DateTime) = 
+type TimeStampCache(defaultTimeStamp: DateTime, bypassFileSystemShim) = 
     let files = Dictionary<string, DateTime>()
     let projects = Dictionary<IProjectReference, DateTime>(HashIdentity.Reference)
-    member cache.GetFileTimeStamp fileName = 
-        let ok, v = files.TryGetValue fileName
-        if ok then v else
-        let v = 
-            try 
-                FileSystem.GetLastWriteTimeShim fileName
-            with 
-            | :? FileNotFoundException ->
-                defaultTimeStamp   
-        files.[fileName] <- v
-        v
+
+    let getFileStamp (shim: IFileStampShim) bypassFileSystemShim fileName =
+        let mutable stamp = Unchecked.defaultof<_>
+        match files.TryGetValue(fileName, &stamp) with
+        | true -> stamp
+        | _ ->
+
+        let stamp =
+            try shim.GetLastWriteTime(fileName, bypassFileSystemShim)
+            with :? FileNotFoundException -> defaultTimeStamp
+
+        files.[fileName] <- stamp
+        stamp
+
+    member cache.GetFileTimeStamp fileName =
+        getFileStamp FileSystem false fileName
+
+    member cache.GetAssemblyTimeStamp fileName =
+        getFileStamp AssemblyReader bypassFileSystemShim fileName
 
     member cache.GetProjectReferenceTimeStamp (pr: IProjectReference, ctok) = 
         let ok, v = projects.TryGetValue pr
@@ -2311,7 +2327,7 @@ type TcConfigBuilder =
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        ResolveFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom], m, nm)
+        ResolveSourceFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom], m, nm)
 
     /// Decide names of output file, pdb and assembly
     member tcConfigB.DecideNames (sourceFiles) =
@@ -2388,7 +2404,7 @@ type TcConfigBuilder =
             warning(Error(FSComp.SR.buildInvalidFilename path, m))    
         else 
             let path = 
-                match TryResolveFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom], m, path) with 
+                match TryResolveSourceFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom], m, path) with 
                 | Some path -> path
                 | None ->
                     // File doesn't exist in the paths. Assume it will be in the load-ed from directory.
@@ -2433,13 +2449,14 @@ type TcConfigBuilder =
             ri, fileNameOfPath ri, ILResourceAccess.Public 
 
 
-let OpenILBinary(filename, reduceMemoryUsage, ilGlobals, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
+let OpenILBinary(filename, reduceMemoryUsage, ilGlobals, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot, bypassFileSystemShim) =
       let opts: ILReaderOptions = 
           { ilGlobals = ilGlobals
             metadataOnly = MetadataOnlyFlag.Yes
             reduceMemoryUsage = reduceMemoryUsage
             pdbDirPath = pdbDirPath
-            tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
+            tryGetMetadataSnapshot = tryGetMetadataSnapshot
+            bypassFileSystemShim = bypassFileSystemShim }
                       
       let location =
 #if FX_NO_APP_DOMAINS
@@ -2477,7 +2494,7 @@ type AssemblyResolution =
     /// This is because ``EvaluateRawContents ctok`` is used. However this path is only currently used
     /// in fsi.fs, which does not use project references.
     //
-    member this.GetILAssemblyRef(ctok, reduceMemoryUsage, tryGetMetadataSnapshot) = 
+    member this.GetILAssemblyRef(ctok, reduceMemoryUsage, tryGetMetadataSnapshot, bypassFileSystemShim) = 
       cancellable {
         match !this.ilAssemblyRef with 
         | Some assemblyRef -> return assemblyRef
@@ -2504,7 +2521,8 @@ type AssemblyResolution =
                           ilGlobals = EcmaMscorlibILGlobals
                           reduceMemoryUsage = reduceMemoryUsage
                           metadataOnly = MetadataOnlyFlag.Yes
-                          tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
+                          tryGetMetadataSnapshot = tryGetMetadataSnapshot
+                          bypassFileSystemShim = bypassFileSystemShim } 
                     use reader = OpenILModuleReader this.resolvedPath readerSettings
                     mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
             this.ilAssemblyRef := Some assemblyRef
@@ -2554,7 +2572,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         let defaultCoreLibraryReference = AssemblyReference(range0, libraryName+".dll", None)
         let nameOfDll(r: AssemblyReference) = 
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir r.Text
-            if FileSystem.SafeExists filename then 
+            if AssemblyReader.Exists(filename, data.isInteractive) then
                 r, Some filename
             else   
                 // If the file doesn't exist, let reference resolution logic report the error later...
@@ -2628,7 +2646,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             if fslibReference.ProjectReference.IsNone then 
                 try 
-                    use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
+                    use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot, data.isInteractive)
                     ()
                 with e -> 
                     error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
@@ -2854,7 +2872,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         let resolveLoadedSource (m, path) =
             try
-                if not(FileSystem.SafeExists path) then 
+                if not(FileSystem.Exists (path, false)) then 
                     error(LoadedSourceNotFoundIgnoring(path, m))                         
                     None
                 else Some(m, path)
@@ -2874,7 +2892,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     /// 'framework' reference set that is potentially shared across multiple compilations.
     member tcConfig.IsSystemAssembly (filename: string) =
         try
-            FileSystem.SafeExists filename &&
+            AssemblyReader.Exists(filename, tcConfig.isInteractive) &&
             ((tcConfig.GetTargetFrameworkDirectories() |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
              (systemAssemblies.Contains (fileNameWithoutExtension filename)) ||
              isInReferenceAssemblyPackDirectory filename)
@@ -2934,7 +2952,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 else    
                     tcConfig.GetSearchPathsForLibraryFiles()
 
-            let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
+            let resolved = TryResolveAssemblyFileUsingPaths(searchPaths, m, nm, tcConfig.isInteractive)
             match resolved with 
             | Some resolved -> 
                 let sysdir = tcConfig.IsSystemAssembly resolved
@@ -3051,7 +3069,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         tcConfig.fsharpBinariesDir, // FSharp binaries directory
                         tcConfig.includes, // Explicit include directories
                         tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
-                        logMessage showMessages, logDiagnostic showMessages)
+                        logMessage showMessages, logDiagnostic showMessages,
+                        tcConfig.isInteractive)
                 with 
                     ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
             
@@ -3462,7 +3481,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
     try 
        let lower = String.lowercase filename
        if List.exists (Filename.checkSuffix lower) (FSharpSigFileSuffixes@FSharpImplFileSuffixes) then  
-            if not(FileSystem.SafeExists filename) then
+            if not(FileSystem.Exists (filename, false)) then
                 error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
             // bug 3155: if the file name is indirect, use a full path
             let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(filename, tcConfig.inputCodePage, retryLocked) 
@@ -3491,13 +3510,19 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
     /// This doesn't need to be cancellable, it is only used by F# Interactive
     member tcResolution.TryFindByExactILAssemblyRef (ctok, assemblyRef) = 
         results |> List.tryFind (fun ar->
-            let r = ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot) |> Cancellable.runWithoutCancellation 
+            let r =
+                ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot, tcConfig.isInteractive)
+                |> Cancellable.runWithoutCancellation 
+
             r = assemblyRef)
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
     member tcResolution.TryFindBySimpleAssemblyName (ctok, simpleAssemName) = 
         results |> List.tryFind (fun ar->
-            let r = ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot) |> Cancellable.runWithoutCancellation 
+            let r =
+                ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot, tcConfig.isInteractive)
+                |> Cancellable.runWithoutCancellation 
+
             r.Name = simpleAssemName)
 
     member tcResolutions.TryFindByResolvedPath nm = resolvedPathToResolution.TryFind nm
@@ -3674,7 +3699,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             let sigDataReaders = 
                 if sigDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then 
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
-                    if not (FileSystem.SafeExists sigFileName) then 
+                    if not (FileSystem.Exists (sigFileName, false)) then 
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
                     [ (ilShortAssemName, fun () -> FileSystem.ReadAllBytesShim sigFileName)]
                 else
@@ -3689,7 +3714,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             let optDataReaders = 
                 if optDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then 
                     let optDataFile = Path.ChangeExtension(filename, "optdata")
-                    if not (FileSystem.SafeExists optDataFile) then 
+                    if not (FileSystem.Exists (optDataFile, false)) then 
                         error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile, FileSystem.GetFullPathShim optDataFile), m))
                     [ (ilShortAssemName, (fun () -> FileSystem.ReadAllBytesShim optDataFile))]
                 else
@@ -3908,7 +3933,8 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                       reduceMemoryUsage = tcConfig.reduceMemoryUsage
                       pdbDirPath = None 
                       metadataOnly = MetadataOnlyFlag.Yes
-                      tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
+                      tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot
+                      bypassFileSystemShim = tcConfig.isInteractive }
                 let reader = OpenILModuleReaderFromBytes fileName bytes opts
                 reader.ILModuleDef, reader.ILAssemblyRefs
 
@@ -3984,7 +4010,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                 let pdbDir = try Filename.directoryName filename with _ -> "."
                 let pdbFile = (try Filename.chopExtension filename with _ -> filename) + ".pdb" 
 
-                if FileSystem.SafeExists pdbFile then 
+                if AssemblyReader.Exists (pdbFile, tcConfig.isInteractive) then 
                     if verbose then dprintf "reading PDB file %s from directory %s\n" pdbFile pdbDir
                     Some pdbDir
                 else
@@ -4000,7 +4026,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
             | Some g -> g
 
         let ilILBinaryReader =
-            OpenILBinary (filename, tcConfig.reduceMemoryUsage, ilGlobals, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
+            OpenILBinary (filename, tcConfig.reduceMemoryUsage, ilGlobals, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot, tcConfig.isInteractive)
 
         tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs

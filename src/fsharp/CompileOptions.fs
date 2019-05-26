@@ -256,7 +256,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
             | None ->
                 errorR(Error(FSComp.SR.optsResponseFileNameInvalid rsp, rangeCmdArgs))
                 []
-            | Some path when not (FileSystem.SafeExists path) ->
+            | Some path when not (FileSystem.Exists (path, false)) ->
                 errorR(Error(FSComp.SR.optsResponseFileNotFound(rsp, path), rangeCmdArgs))
                 []
             | Some path ->

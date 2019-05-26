@@ -610,7 +610,7 @@ let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseR
             // Get a unique random file
             let rec GetUniqueRandomFileName path =
                 let tfn =  path + System.IO.Path.GetRandomFileName()
-                if FileSystem.SafeExists tfn then
+                if FileSystem.Exists (tfn, false) then
                     GetUniqueRandomFileName path
                 else
                     tfn

@@ -163,8 +163,9 @@ type IRawFSharpAssemblyData =
     abstract ShortAssemblyName: string
 
 type TimeStampCache = 
-    new: defaultTimeStamp: DateTime -> TimeStampCache
+    new: defaultTimeStamp: DateTime * bypassFileSystemShim: bool -> TimeStampCache
     member GetFileTimeStamp: string -> DateTime
+    member GetAssemblyTimeStamp: string -> DateTime
     member GetProjectReferenceTimeStamp: IProjectReference * CompilationThreadToken -> DateTime
 
 and IProjectReference = 

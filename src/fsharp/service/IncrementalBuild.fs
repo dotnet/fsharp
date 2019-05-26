@@ -1624,7 +1624,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     member __.Step (ctok: CompilationThreadToken) =  
       cancellable {
-        let cache = TimeStampCache defaultTimeStamp // One per step
+        let cache = TimeStampCache (defaultTimeStamp, tcConfig.isInteractive) // One per step
         let! res = IncrementalBuild.Step cache ctok SavePartialBuild (Target(tcStatesNode, None)) partialBuild
         match res with 
         | None -> 
@@ -1648,14 +1648,14 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     
     member builder.AreCheckResultsBeforeFileInProjectReady filename = 
         let slotOfFile = builder.GetSlotOfFileName filename
-        let cache = TimeStampCache defaultTimeStamp
+        let cache = TimeStampCache (defaultTimeStamp, tcConfig.isInteractive)
         match slotOfFile with
         | (*first file*) 0 -> IncrementalBuild.IsReady cache (Target(initialTcAccNode, None)) partialBuild 
         | _ -> IncrementalBuild.IsReady cache (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
         
     member __.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
       cancellable {
-        let cache = TimeStampCache defaultTimeStamp
+        let cache = TimeStampCache (defaultTimeStamp, tcConfig.isInteractive)
         let! result = 
           cancellable {
             match slotOfFile with
@@ -1685,7 +1685,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
       cancellable {
-        let cache = TimeStampCache defaultTimeStamp
+        let cache = TimeStampCache (defaultTimeStamp, tcConfig.isInteractive)
         let! build = IncrementalBuild.Eval cache ctok SavePartialBuild finalizedTypeCheckNode partialBuild
         match GetScalarResult(finalizedTypeCheckNode, build) with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
@@ -1732,7 +1732,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             match GetVectorResultBySlot(stampedFileNamesNode, slotOfFile, partialBuild) with
             | Some (results, _) ->  return results
             | None -> 
-                let cache = TimeStampCache defaultTimeStamp
+                let cache = TimeStampCache (defaultTimeStamp, tcConfig.isInteractive)
                 let! build = IncrementalBuild.EvalUpTo cache ctok SavePartialBuild (stampedFileNamesNode, slotOfFile) partialBuild  
                 match GetVectorResultBySlot(stampedFileNamesNode, slotOfFile, build) with
                 | Some (results, _) -> return results

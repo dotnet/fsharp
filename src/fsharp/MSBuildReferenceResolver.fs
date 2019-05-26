@@ -374,7 +374,7 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
 
            /// Perform the resolution on rooted and unrooted paths, and then combine the results.
            member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
-                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logDiagnostic) =
+                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logDiagnostic, bypassFileSystemShim) =
 
                 // The {RawFileName} target is 'dangerous', in the sense that is uses <c>Directory.GetCurrentDirectory()</c> to resolve unrooted file paths.
                 // It is unreliable to use this mutable global state inside Visual Studio.  As a result, we partition all references into a "rooted" set

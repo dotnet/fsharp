@@ -10,9 +10,9 @@ open System
 open System.IO
 open System.Reflection
 open Microsoft.Win32
-open FSharp.Compiler
-open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.ReferenceResolver
 
 let internal SimulatedMSBuildResolver =
     let supportedFrameworks = [|
@@ -48,7 +48,7 @@ let internal SimulatedMSBuildResolver =
                 ""
 
         member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,
-                            fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError) =
+                            fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError, bypassFileSystemShim) =
 
 #if !FX_NO_WIN_REGISTRY
             let registrySearchPaths() =
@@ -102,7 +102,7 @@ let internal SimulatedMSBuildResolver =
 
                 try
                     if not found && Path.IsPathRooted r then
-                        if FileSystem.SafeExists r then
+                        if AssemblyReader.Exists (r, bypassFileSystemShim) then
                             success r
                 with e -> logWarningOrError false "SR001" (e.ToString())
 
@@ -118,7 +118,7 @@ let internal SimulatedMSBuildResolver =
                                 | s -> s
                             PF + @"\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\"  + n.Version.ToString()
                         let trialPath = Path.Combine(fscoreDir0, n.Name + ".dll")
-                        if FileSystem.SafeExists trialPath then
+                        if AssemblyReader.Exists (trialPath, bypassFileSystemShim) then
                             success trialPath
                 with e -> logWarningOrError false "SR001" (e.ToString())
 #endif
@@ -133,7 +133,7 @@ let internal SimulatedMSBuildResolver =
                   try
                     if not found then
                         let trialPath = Path.Combine(searchPath, qual)
-                        if FileSystem.SafeExists trialPath then
+                        if AssemblyReader.Exists (trialPath, bypassFileSystemShim) then
                             success trialPath
                   with e -> logWarningOrError false "SR001" (e.ToString())
 
@@ -153,7 +153,7 @@ let internal SimulatedMSBuildResolver =
                                         if Directory.Exists assemblyDir then
                                             for tdir in Directory.EnumerateDirectories assemblyDir do
                                                 let trialPath = Path.Combine(tdir, qual)
-                                                if FileSystem.SafeExists trialPath then
+                                                if AssemblyReader.Exists (trialPath, bypassFileSystemShim) then
                                                     yield trialPath ]
                             //printfn "sorting GAC paths: %A" options
                             options
@@ -176,7 +176,7 @@ let internal SimulatedMSBuildResolver =
                                         if Directory.Exists verdir then
                                             let trialPath = Path.Combine(verdir, qual)
                                             //printfn "searching GAC: %s" trialPath
-                                            if FileSystem.SafeExists trialPath then
+                                            if AssemblyReader.Exists (trialPath, bypassFileSystemShim) then
                                                 success trialPath
                 with e -> logWarningOrError false "SR001" (e.ToString())
 #endif
