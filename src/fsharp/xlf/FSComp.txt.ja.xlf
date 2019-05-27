@@ -6846,7 +6846,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Dispose を呼び出してリソースを解放する必要のある値に対して、let の代わりに使用します。</target>
+        <target state="translated">IDisposable を実装する値に対して let の代わりに使用します</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7146,22 +7146,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">これらのメンバーに実装が指定されていません: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">これらのメンバーに実装が指定されていません: {0} すべてのインターフェイス メンバーは実装され、適切な 'interface' 宣言でリストされている必要があります。例: 'interface ... with member ...'。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">これらのメンバーに実装が指定されていません (一部の結果が省略されました): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">これらのメンバーに実装が指定されていません (一部の結果が省略されました): {0} すべてのインターフェイス メンバーは実装され、適切な 'interface' 宣言でリストされている必要があります。例: 'interface ... with member ...'。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

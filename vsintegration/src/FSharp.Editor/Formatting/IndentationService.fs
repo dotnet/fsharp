@@ -11,11 +11,11 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler.SourceCodeServices
 
-[<Shared>]
-[<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpSynchronousIndentationService>)>]
 type internal FSharpIndentationService
     [<ImportingConstructor>]
     (projectInfoManager: FSharpProjectOptionsManager) =
@@ -92,8 +92,8 @@ type internal FSharpIndentationService
                     lastIndent
         }
 
-    interface ISynchronousIndentationService with
-        member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
+    interface IFSharpSynchronousIndentationService with
+        member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<FSharpIndentationResult> =
             async {
                 let! cancellationToken = Async.CancellationToken
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
@@ -105,5 +105,5 @@ type internal FSharpIndentationService
                 return
                     match indent with
                     | None -> Nullable()
-                    | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
+                    | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
             } |> (fun c -> Async.RunSynchronously(c,cancellationToken=cancellationToken))

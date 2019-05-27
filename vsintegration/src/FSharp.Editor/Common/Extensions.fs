@@ -11,6 +11,10 @@ open Microsoft.CodeAnalysis.Host
 open FSharp.Compiler.Text
 open FSharp.Compiler.Ast
 open FSharp.Compiler.SourceCodeServices
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+
+type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
 
 
 type Path with

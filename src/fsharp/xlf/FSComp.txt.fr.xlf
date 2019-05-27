@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Utilisé à la place de let pour les valeurs qui nécessitent l'appel de Dispose pour libérer des ressources.</target>
+        <target state="translated">Utilisé au lieu de let pour les valeurs qui implémentent IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7074,7 +7074,7 @@
       </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
         <source>The exception '{0}' does not have a field named '{1}'.</source>
-        <target state="translated">L'exception '{0}' n'a pas pas de champ nommé '{1}'.</target>
+        <target state="translated">L'exception '{0}' n'a pas de champ nommé '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternsDoNotHaveFields">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Aucune implémentation pour ces membres : {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Aucune implémentation pour ces membres : {0} Notez que tous les membres d'interface doivent être implémentés et listés sous une déclaration 'interface' appropriée, par ex., 'interface ... with member ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Aucune implémentation pour ces membres (certains résultats sont omis) : {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Aucune implémentation pour ces membres (certains résultats sont omis) : {0} Notez que tous les membres d'interface doivent être implémentés et listés sous une déclaration 'interface' appropriée, par ex., 'interface ... with member ... '.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">
