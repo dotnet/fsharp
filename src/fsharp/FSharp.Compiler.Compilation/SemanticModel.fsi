@@ -7,4 +7,4 @@ type SemanticModel =
 
     internal new: filePath: string * AsyncLazy<IncrementalChecker> -> SemanticModel
 
-    member TryFindSymbolAsync: line: int * column: int -> Async<Symbol option>
+    member TryFindSymbolAsync: line: int * column: int -> Async<FSharpSymbol option>

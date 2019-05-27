@@ -35,7 +35,7 @@ module ImmutableArray =
             f i arr.[i]
 
 type private AsyncLazyWeakMessage<'T> =
-    | GetValue of AsyncReplyChannel<Result<'T, Exception>>
+    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken
 
 type private AgentInstance<'T> = (MailboxProcessor<AsyncLazyWeakMessage<'T>> * CancellationTokenSource)
 
@@ -63,15 +63,24 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
         async {
             while true do
                 match! agent.Receive() with
-                | GetValue replyChannel ->
+                | GetValue (replyChannel, ct) ->
                     try
+                        use _reg = 
+                            ct.Register (fun () -> 
+                                let ex = OperationCanceledException() :> exn
+                                replyChannel.Reply (Error ex)
+                            )
+                        ct.ThrowIfCancellationRequested ()
+
                         match tryGetResult () with
                         | ValueSome result ->
                             replyChannel.Reply (Ok result)
                         | _ ->
                             let! result = computation
                             cachedResult <- ValueSome (WeakReference<_> result)
-                            replyChannel.Reply (Ok result) 
+
+                            if not ct.IsCancellationRequested then
+                                replyChannel.Reply (Ok result) 
                     with 
                     | ex ->
                         replyChannel.Reply (Error ex)
@@ -108,7 +117,8 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                | AgentAction.GetValue (agent, cts) ->
                         
                    try
-                       match! agent.PostAndAsyncReply GetValue with
+                       let! ct = Async.CancellationToken
+                       match! agent.PostAndAsyncReply (fun replyChannel -> GetValue(replyChannel, ct)) with
                        | Ok result -> return result
                        | Error ex -> return raise ex
                     finally

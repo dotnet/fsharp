@@ -168,9 +168,6 @@ type IncrementalCheckerState =
                     return (tcAcc, cacheIndex)
         }
 
-    // TODO: While we keep results above the source snapshot, we don't keep an inprocess *running* result. 
-    //       This way we don't try to restart already computing results that would be valid on the next state.
-    // TODO: The above TODO applies, but should be changed to a syntax tree.
     member this.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
         let index = this.GetIndex sourceSnapshot.FilePath
         let orderedResults =
@@ -236,7 +233,7 @@ type IncrementalCheckerState =
                                             latestCcuSigForFile=Some ccuSigForFile
                                             tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                             tcModuleNamesDict = moduleNamesDict
-                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, Some (sink.GetResolutions(), symbolEnv)
+                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, (Some (sink, symbolEnv))
                     }
 
                 // No one has ever changed this value, although a bit arbitrary.
@@ -253,7 +250,7 @@ type IncrementalCheckerState =
                                 cancellationToken
                                 (fun ctok f -> f ctok)
 
-                let timeSlicedComputationAsync =
+                let asyncTimeSlicedComputation =
                     timeSlicedComputation
                     |> Eventually.forceAsync (fun eventuallyWork ->
                         CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->
@@ -262,14 +259,10 @@ type IncrementalCheckerState =
                             eventuallyWork ctok
                         )
                     )
-
-                match! timeSlicedComputationAsync with
-                | Some (tcAcc, Some checkerSink) -> 
-                    this.SetPartialCheckResultByIndex (cacheIndex, PartialCheckResult.Checked (syntaxTree, tcAcc))
-                    return (tcAcc, Some checkerSink)
-                | _ ->
-                    return failwith "computation failed"
-                                       
+                    
+                match! asyncTimeSlicedComputation with
+                | Some result -> return result
+                | _ -> return raise (OperationCanceledException ())
             | _ ->
                 return (tcAcc, None)
         }
@@ -277,12 +270,16 @@ type IncrementalCheckerState =
 [<Sealed>]
 type IncrementalChecker (state: IncrementalCheckerState) =
 
-    // TODO: Should be a syntax tree.
     member __.ReplaceSourceSnapshot sourceSnapshot =
         IncrementalChecker (state.ReplaceSourceSnapshot sourceSnapshot)
 
     member __.CheckAsync filePath =
-        state.CheckAsync (filePath, CheckFlags.None)
+        async {
+            let! tcAcc, info = state.CheckAsync (filePath, CheckFlags.None)
+            match info with
+            | None -> return raise (InvalidOperationException ())
+            | Some (sink, symbolEnv) -> return (tcAcc, sink, symbolEnv)
+        }
 
 module IncrementalChecker =
 
