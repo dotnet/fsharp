@@ -829,7 +829,6 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
               let filtered = ErrorResolutionHints.FilterPredictions suggestionsF id.idText 
               if List.isEmpty filtered |> not then
                   os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
-          
 
       | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
           let _, errs = f(smr, ccuName, s)  
@@ -1786,7 +1785,7 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 
 let (++) x s = x @ [s]
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 // General file name resolver
 //--------------------------------------------------------------------------
 
@@ -1834,6 +1833,82 @@ let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
         else path 
     with 
         :? System.ArgumentException -> path  
+
+
+//------------------------------------------------------------------------------------------------------------------
+// Language version command line switch
+//------------------------------------------------------------------------------------------------------------------
+// Add your features to this List - in code use languageVersion.SupportsFeature(LanguageFeatures.yourFeature) 
+// a return value of false means your feature is not supported by the user's language selection
+// All new language features added from now on must be protected by this.
+// Note:
+//   *  The fslang design process will require a decision about feature name and whether it is required.
+//   *  When a feature is assigned a release language, we will scrub the code of feature references and apply
+//      the Release Language version.
+
+/// LanguageFeature enumeration
+[<RequireQualifiedAccess>]
+type LanguageFeature =
+    | LanguageVersion46 = 0
+    | LanguageVersion47 = 1
+    | Nullness = 1000
+    | ScriptingPackageManagement = 1001
+
+/// LanguageVersion management
+type LanguageVersion (specifiedVersion) =
+
+    // When we increment language versions here preview is higher than current RTM version
+    static let languageVersion46 = 4.6m
+    static let languageVersion47 = 4.7m
+
+    static let previewVersion = languageVersion47       // Language version when preview specified
+    static let defaultVersion = languageVersion46       // Language version when default specified
+    static let latestVersion = defaultVersion           // Language version when latest specified
+    static let latestMajorVersion = languageVersion46   // Language version when latestmajor specified
+
+    static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
+    static let languageVersions = set [| latestVersion |]
+
+    static let features = dict [|
+        // Add new LanguageVersions here ...
+        LanguageFeature.LanguageVersion47, 4.7m
+        LanguageFeature.LanguageVersion46, 4.6m
+        LanguageFeature.Nullness, previewVersion
+        LanguageFeature.ScriptingPackageManagement, previewVersion
+        // Add new LanguageFeatures here ...
+        |]
+
+    static let dumpAllowedValues () =
+        printfn "%s" (FSComp.SR.optsSupportedLangVersions())
+        for v in validOptions do printfn "%s" v
+        for v in languageVersions |> Seq.sort do
+            let label = if v = defaultVersion || v = latestVersion then "(Default)" else ""
+            printf "%M %s" v label
+        exit 0
+        0m
+
+    let specified =
+        match specifiedVersion with
+        | "?" -> dumpAllowedValues()
+        | "preview" -> previewVersion
+        | "default" -> latestVersion
+        | "latest" -> latestVersion
+        | "latestmajor" -> latestMajorVersion
+        | _ ->
+            let raiseError () = error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+            match Decimal.TryParse(specifiedVersion) with
+            | true, v ->
+                if languageVersions.Contains(v) then v
+                else raiseError (); 0m
+            | _ ->
+                raiseError ()
+                0m
+
+    /// Check if this feature is supported by the selected langversion
+    member __.SupportsFeature featureId =
+        match features.TryGetValue featureId with
+        | true, v -> v <= specified
+        | false, _ -> false
 
 //----------------------------------------------------------------------------
 // Configuration
@@ -1963,7 +2038,7 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
-type ImportedBinary = 
+type ImportedBinary =
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData 
 #if !NO_EXTENSIONTYPING
@@ -1974,7 +2049,7 @@ type ImportedBinary =
       ILAssemblyRefs: ILAssemblyRef list
       ILScopeRef: ILScopeRef }
 
-type ImportedAssembly = 
+type ImportedAssembly =
     { ILScopeRef: ILScopeRef 
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
@@ -1989,7 +2064,7 @@ type AvailableImportedAssembly =
     | ResolvedImportedAssembly of ImportedAssembly
     | UnresolvedImportedAssembly of string
 
-type CcuLoadFailureAction = 
+type CcuLoadFailureAction =
     | RaiseError
     | ReturnNone
 
@@ -2150,8 +2225,10 @@ type TcConfigBuilder =
       mutable internalTestSpanStackReferring: bool
 
       mutable noConditionalErasure: bool
-      
+
       mutable pathMap: PathMap
+
+      mutable langVersion: LanguageVersion
       }
 
     static member Initial =
@@ -2197,7 +2274,7 @@ type TcConfigBuilder =
           debuginfo = false
           testFlagEmitFeeFeeAs100001 = false
           dumpDebugInfo = false
-          debugSymbolFile = None          
+          debugSymbolFile = None
 
           (* Backend configuration *)
           typeCheckOnly = false
@@ -2288,6 +2365,7 @@ type TcConfigBuilder =
           internalTestSpanStackReferring = false
           noConditionalErasure = false
           pathMap = PathMap.empty
+          langVersion = LanguageVersion("default")
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2737,6 +2815,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.emitTailcalls = data.emitTailcalls
     member x.deterministic = data.deterministic
     member x.pathMap = data.pathMap
+    member x.langVersion = data.langVersion
     member x.preferredUiLang = data.preferredUiLang
     member x.lcid = data.lcid
     member x.optsOn = data.optsOn
@@ -3113,7 +3192,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member tcConfig.PrimaryAssemblyDllReference() = primaryAssemblyReference
     member tcConfig.CoreLibraryDllReference() = fslibReference
-               
+
 
 let ReportWarning options err = 
     warningOn err (options.WarnLevel) (options.WarnOn) && not (List.contains (GetDiagnosticNumber err) (options.WarnOff))
