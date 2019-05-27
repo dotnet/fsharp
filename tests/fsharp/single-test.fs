@@ -62,15 +62,16 @@ type ProjectConfiguration = {
 
 let replaceTokens tag (replacement:string) (template:string) = template.Replace(tag, replacement)
 
-let generateProps testCompilerVersion =
+let generateProps testCompilerVersion configuration =
     let template = @"<Project>
   <PropertyGroup>
-    <Configuration Condition=""'$(Configuration)' == ''"">Release</Configuration>
+    <Configuration Condition=""'$(Configuration)' == ''"">$(TESTCONFIGURATION)</Configuration>
     <FSharpTestCompilerVersion>$(TESTCOMPILERVERSION)</FSharpTestCompilerVersion>
   </PropertyGroup>
   <Import Project=""$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(PROJECTDIRECTORY)'))"" />
 </Project>"
     template
+    |> replaceTokens "$(TESTCONFIGURATION)" configuration
     |> replaceTokens "$(PROJECTDIRECTORY)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
     |> replaceTokens "$(TESTCOMPILERVERSION)" testCompilerVersion
 
@@ -89,7 +90,28 @@ let generateOverrides =
 </Project>"
     template
 
-let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configuration =
+// Arguments:
+//    pc = ProjectConfiguration
+//    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
+//    targetFramework optimize = "net472" OR NETCOREAPP2.1 etc ...
+//    optimize = true or false
+//    configuration = "Release" or "Debug"
+//
+let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramework:string) configuration =
+    let fsharpCoreLocation =
+        let compiler =
+            if outputType = OutputType.Script then
+                "fsi"
+            else
+                "FSharp.Core"
+        let targetCore =
+            if targetFramework.StartsWith("netstandard", StringComparison.InvariantCultureIgnoreCase) || targetFramework.StartsWith("netcoreapp", StringComparison.InvariantCultureIgnoreCase) then 
+                "netstandard1.6"
+            else
+                "net45"
+        (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/bin/"  + compiler + "/" + configuration + "/" + targetCore + "/FSharp.Core.dll")
+
+
     let computeSourceItems addDirectory addCondition (compileItem:CompileItem) sources =
         let computeInclude src =
             let fileName = if addDirectory then Path.Combine(pc.SourceDirectory, src) else src
@@ -118,10 +140,11 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
     let debug = if pc.Optimize then "True" else "False"
     let generateProjBody =
         let template = @"<Project Sdk='Microsoft.NET.Sdk'>
-        
+
   <PropertyGroup>
     <OutputType>$(OUTPUTTYPE)</OutputType>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <IsPackable>false</IsPackable>
     <DebugSymbols>$(DEBUG)</DebugSymbols>
     <DebugType>portable</DebugType>
@@ -134,7 +157,13 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
-  <!-- Utility sources -->
+  <!-- FSharp.Core reference -->
+  <ItemGroup>
+    <Reference Include='FSharp.Core'>
+        <HintPath>$(FSHARPCORELOCATION)</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <ItemGroup>$(UTILITYSOURCEITEMS)
   </ItemGroup>
 
@@ -167,6 +196,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
         |> replace "$(REFERENCEITEMS)" pc.ReferenceItems true true CompileItem.Reference
         |> replace "$(LOADSOURCEITEMS)" pc.LoadSources true true CompileItem.LoadSource
         |> replace "$(USESOURCEITEMS)" pc.UseSources true true CompileItem.UseSource
+        |> replaceTokens "$(FSHARPCORELOCATION)" fsharpCoreLocation
         |> replaceTokens "$(DIRECTORYBUILDLOCATION)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
         |> replaceTokens "$(OUTPUTTYPE)" outputType
         |> replaceTokens "$(OPTIMIZE)" optimize
@@ -176,6 +206,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configura
 
     generateProjBody
 
+let lockObj = obj()
 let singleTestBuildAndRunCore cfg copyFiles p =
     let sources = []
     let loadSources = []
@@ -185,9 +216,26 @@ let singleTestBuildAndRunCore cfg copyFiles p =
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
     let framework = "netcoreapp2.0"
 
+    // Arguments:
+    //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
+    //    compilerType = "coreclr" or "net40"
+    //    targetFramework optimize = "net472" OR NETCOREAPP2.1 etc ...
+    //    optimize = true or false
     let executeSingleTestBuildAndRun outputType compilerType targetFramework optimize =
         let mutable result = false
-        let directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() )
+        let directory =
+            let mutable result = ""
+            lock lockObj <| (fun () ->
+                let rec loop () =
+                    let dir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+                    if Directory.Exists(dir) then
+                        loop ()
+                    else
+                        Directory.CreateDirectory(dir) |>ignore
+                        dir
+                result <- loop())
+            result
+
         let pc = {
             OutputType = outputType
             Framework = framework
@@ -208,15 +256,17 @@ let singleTestBuildAndRunCore cfg copyFiles p =
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
         let projectFileName = Path.Combine(directory, Path.GetRandomFileName() + ".fsproj")
         try
+            // Clean up directory
             Directory.CreateDirectory(directory) |> ignore
             copyFilesToDest cfg.Directory directory
+            try File.Delete(Path.Combine(directory, "FSharp.Core.dll")) with _ -> ()
             emitFile targetsFileName targetsBody
             emitFile overridesFileName overridesBody
             if outputType = OutputType.Exe then
                 let executeFsc testCompilerVersion targetFramework =
-                    let propsBody = generateProps testCompilerVersion
+                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
                     emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
+                    let projectBody = generateProjectArtifacts pc outputType targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s" targetFramework)
@@ -224,9 +274,9 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                 executeFsc compilerType targetFramework
             else
                 let executeFsi testCompilerVersion targetFramework =
-                    let propsBody = generateProps testCompilerVersion
+                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
                     emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
+                    let projectBody = generateProjectArtifacts pc outputType  targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript"

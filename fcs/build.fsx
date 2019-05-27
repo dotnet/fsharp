@@ -31,7 +31,7 @@ let dotnetExePath =
     if File.Exists(pathToCli) then
         pathToCli
     else
-        DotNetCli.InstallDotNetSDK "2.1.504"
+        DotNetCli.InstallDotNetSDK "2.2.105"
 
 let runDotnet workingDir args =
     let result =
@@ -61,7 +61,7 @@ let runCmdIn workDir (exe:string) = Printf.ksprintf (fun (args:string) ->
 // The rest of the code is standard F# build script
 // --------------------------------------------------------------------------------------
 
-let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../artifacts/bin/fcs")
+let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../artifacts/bin/fcs/Release")
 
 // Read release notes & version info from RELEASE_NOTES.md
 let release = LoadReleaseNotes (__SOURCE_DIRECTORY__ + "/RELEASE_NOTES.md")
@@ -92,8 +92,8 @@ Target "BuildVersion" (fun _ ->
 
 Target "Build" (fun _ ->
     runDotnet __SOURCE_DIRECTORY__ "build ../src/buildtools/buildtools.proj -v n -c Proto"
-    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp2.0/fslex.dll"
-    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp2.0/fsyacc.dll"
+    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp2.1/fslex.dll"
+    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp2.1/fsyacc.dll"
     runDotnet __SOURCE_DIRECTORY__ (sprintf "build FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
 )
 

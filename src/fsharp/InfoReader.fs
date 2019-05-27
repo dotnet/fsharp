@@ -107,7 +107,7 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
     let props = new Dictionary<PropInfo, PropInfo>(hashIdentity)
 
     let add pinfo =
-        match props.TryGetValue(pinfo), pinfo with
+        match props.TryGetValue pinfo, pinfo with
         | (true, FSProp (_, ty, Some vref1, _)), FSProp (_, _, _, Some vref2)
         | (true, FSProp (_, ty, _, Some vref2)), FSProp (_, _, Some vref1, _) ->
             let pinfo = FSProp (g, ty, Some vref1, Some vref2)
@@ -316,9 +316,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
              let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty 
              match acc with 
-             | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos::inheritedMethSets))
+             | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos :: inheritedMethSets))
              | _ when not (isNil minfos) -> Some(MethodItem ([minfos]))
-             | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos::inheritedPropSets))
+             | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos :: inheritedPropSets))
              | _ when not (isNil pinfos) -> Some(PropertyItem([pinfos]))
              | _ when not (isNil finfos) -> Some(ILFieldItem(finfos))
              | _ when not (isNil einfos) -> Some(EventItem(einfos))
@@ -509,7 +509,7 @@ type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<
     member x.ItemsWithName(nm)  = NameMultiMap.find nm itemsByName
 
     /// Add new items, extracting the names using the given function.
-    member x.AddItems(items, nmf) = IndexedList<'T>(items::itemLists, List.foldBack (fun x acc -> NameMultiMap.add (nmf x) x acc) items itemsByName )
+    member x.AddItems(items, nmf) = IndexedList<'T>(items :: itemLists, List.foldBack (fun x acc -> NameMultiMap.add (nmf x) x acc) items itemsByName )
 
     /// Get an empty set of items
     static member Empty = IndexedList<'T>([], NameMultiMap.empty)
@@ -662,22 +662,22 @@ let ExcludeHiddenOfPropInfos g amap m pinfos =
     |> List.concat
 
 /// Get the sets of intrinsic methods in the hierarchy (not including extension methods)
-let GetIntrinsicMethInfoSetsOfType (infoReader: InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty = 
+let GetIntrinsicMethInfoSetsOfType (infoReader:InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
     infoReader.GetRawIntrinsicMethodSetsOfType(optFilter, ad, allowMultiIntfInst, m, ty)
     |> FilterOverridesOfMethInfos findFlag infoReader.g infoReader.amap m
   
 /// Get the sets intrinsic properties in the hierarchy (not including extension properties)
-let GetIntrinsicPropInfoSetsOfType (infoReader: InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty = 
+let GetIntrinsicPropInfoSetsOfType (infoReader:InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
     infoReader.GetRawIntrinsicPropertySetsOfType(optFilter, ad, allowMultiIntfInst, m, ty) 
     |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m
 
 /// Get the flattened list of intrinsic methods in the hierarchy
-let GetIntrinsicMethInfosOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty = 
-    GetIntrinsicMethInfoSetsOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty |> List.concat
+let GetIntrinsicMethInfosOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty = 
+    GetIntrinsicMethInfoSetsOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty |> List.concat
   
 /// Get the flattened list of intrinsic properties in the hierarchy
-let GetIntrinsicPropInfosOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty = 
-    GetIntrinsicPropInfoSetsOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty  |> List.concat
+let GetIntrinsicPropInfosOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty = 
+    GetIntrinsicPropInfoSetsOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty  |> List.concat
 
 /// Perform type-directed name resolution of a particular named member in an F# type
 let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad) findFlag m ty = 
@@ -695,12 +695,12 @@ let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad) findFlag m
 ///     -- getting the Dispose method when resolving the 'use' construct 
 ///     -- getting the various methods used to desugar the computation expression syntax 
 let TryFindIntrinsicMethInfo infoReader m ad nm ty = 
-    GetIntrinsicMethInfosOfType infoReader (Some nm, ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m ty 
+    GetIntrinsicMethInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
 
 /// Try to find a particular named property on a type. Only used to ensure that local 'let' definitions and property names
 /// are distinct, a somewhat adhoc check in tc.fs.
 let TryFindPropInfo infoReader m ad nm ty = 
-    GetIntrinsicPropInfosOfType infoReader (Some nm, ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m ty 
+    GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file
@@ -717,7 +717,7 @@ let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
     let g = infoReader.g
     let amap = infoReader.amap
     let invokeMethInfo = 
-        match GetIntrinsicMethInfosOfType infoReader (Some "Invoke", ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m delty with 
+        match GetIntrinsicMethInfosOfType infoReader (Some "Invoke") ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m delty with 
         | [h] -> h
         | [] -> error(Error(FSComp.SR.noInvokeMethodsFound (), m))
         | h :: _ -> warning(InternalError(FSComp.SR.moreThanOneInvokeMethodFound (), m)); h

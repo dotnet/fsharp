@@ -48,6 +48,7 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.ReferenceResolver
 
@@ -586,12 +587,9 @@ let internal directoryName (s:string) =
 /// Process the command line options 
 type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: string[], tcConfigB, fsiConsoleOutput: FsiConsoleOutput) = 
     let mutable enableConsoleKeyProcessing = 
-#if FX_REDUCED_CONSOLE
-        false
-#else
        // Mono on Win32 doesn't implement correct console processing
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
-#endif
+
     let mutable gui        = not runningOnMono // override via "--gui", on by default except when on Mono
 #if DEBUG
     let mutable showILCode = false // show modul il code 
@@ -955,12 +953,13 @@ type internal FsiDynamicCompiler
                         outWriter: TextWriter,
                         tcImports: TcImports, 
                         tcGlobals: TcGlobals, 
-                        ilGlobals: ILGlobals, 
                         fsiOptions : FsiCommandLineOptions,
                         fsiConsoleOutput : FsiConsoleOutput,
                         fsiCollectible: bool,
                         niceNameGen,
                         resolveAssemblyRef) = 
+
+    let ilGlobals = tcGlobals.ilg
 
     let outfile = "TMPFSCI.exe"
     let assemblyName = "FSI-ASSEMBLY"
@@ -1098,7 +1097,7 @@ type internal FsiDynamicCompiler
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath) 
 
-            for (TImplFile(_qname,_,mexpr,_,_,_)) in declaredImpls do
+            for (TImplFile (_qname,_,mexpr,_,_,_)) in declaredImpls do
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr 
                 if not (Layout.isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
@@ -1137,7 +1136,7 @@ type internal FsiDynamicCompiler
         let prefix = mkFragmentPath i
         let prefixPath = pathOfLid prefix
         let impl = SynModuleOrNamespace(prefix,(*isRec*)false, NamedModule,defs,PreXmlDoc.Empty,[],None,rangeStdin)
-        let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(true (* isLastCompiland *), false (* isExe *)) ))
+        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(true (* isLastCompiland *), false (* isExe *)) ))
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
@@ -1224,7 +1223,7 @@ type internal FsiDynamicCompiler
         let bindingA = mkBind (mkSynPatVar None itID) expr (* let it = <expr> *)  // NOTE: the generalizability of 'expr' must not be damaged, e.g. this can't be an application 
         //let saverPath  = ["Microsoft";"FSharp";"Compiler";"Interactive";"RuntimeHelpers";"SaveIt"]
         //let dots = List.replicate (saverPath.Length - 1) m
-        //let bindingB = mkBind (SynPat.Wild m) (SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.LongIdent(false, LongIdentWithDots(List.map (mkSynId m) saverPath,dots),None,m), itExp,m)) (* let _  = saverPath it *)
+        //let bindingB = mkBind (SynPat.Wild m) (SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) saverPath,dots),None,m), itExp,m)) (* let _  = saverPath it *)
         let defA = SynModuleDecl.Let (false, [bindingA], m)
         //let defB = SynModuleDecl.Let (false, [bindingB], m)
         
@@ -1234,9 +1233,9 @@ type internal FsiDynamicCompiler
     member __.CreateDebuggerBreak (m : range) =
         let breakPath = ["System";"Diagnostics";"Debugger";"Break"]
         let dots = List.replicate (breakPath.Length - 1) m
-        let methCall = SynExpr.LongIdent(false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
-        let args = SynExpr.Const(SynConst.Unit, m)
-        let breakStatement = SynExpr.App(ExprAtomicFlag.Atomic, false, methCall, args, m)
+        let methCall = SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
+        let args = SynExpr.Const (SynConst.Unit, m)
+        let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
         SynModuleDecl.DoExpr(SequencePointInfoForBinding.NoSequencePointAtDoBinding, breakStatement, m)
 
     member __.EvalRequireReference (ctok, istate, m, path) = 
@@ -1346,10 +1345,8 @@ module internal NativeMethods =
 
     type ControlEventHandler = delegate of int -> bool
 
-#if !FX_REDUCED_CONSOLE
     [<DllImport("kernel32.dll")>]
     extern bool SetConsoleCtrlHandler(ControlEventHandler _callback,bool _add)
-#endif
 
 // One strange case: when a TAE happens a strange thing 
 // occurs the next read from stdin always returns
@@ -1744,7 +1741,7 @@ type internal FsiStdinLexerProvider
         Lexhelp.resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer 
         let defines = "INTERACTIVE"::tcConfigB.conditionalCompilationDefines
-        let lexargs = mkLexargs (sourceFileName,defines, interactiveInputLightSyntaxStatus, lexResourceManager, ref [], errorLogger) 
+        let lexargs = mkLexargs (sourceFileName,defines, interactiveInputLightSyntaxStatus, lexResourceManager, ref [], errorLogger, PathMap.empty)
         let tokenizer = LexFilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
@@ -1891,7 +1888,7 @@ type internal FsiInteractionProcessor
                         if tcConfig.shadowCopyReferences then
                             let resolvedPath = ar.resolvedPath.ToUpperInvariant()
                             let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
-                            match referencedAssemblies.TryGetValue(resolvedPath) with
+                            match referencedAssemblies.TryGetValue resolvedPath with
                             | false, _ -> 
                                 referencedAssemblies.Add(resolvedPath, fileTime)
                                 FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
@@ -1980,7 +1977,7 @@ type internal FsiInteractionProcessor
             | None                                      -> None,None,istate
             | Some (IHash _)                            -> action,None,istate
             | Some (IDefns ([],_))                      -> None,None,istate
-            | Some (IDefns (SynModuleDecl.HashDirective(hash,mh)::defs,m)) -> 
+            | Some (IDefns (SynModuleDecl.HashDirective(hash,mh) :: defs,m)) -> 
                 Some (IHash(hash,mh)),Some (IDefns(defs,m)),istate
 
             | Some (IDefns (defs,m))                    -> 
@@ -2217,7 +2214,7 @@ type internal FsiInteractionProcessor
             let expr = parseExpression tokenizer 
             let m = expr.Range
             // Make this into "(); expr" to suppress generalization and compilation-as-function
-            let exprWithSeq = SynExpr.Sequential(SequencePointInfoForSeq.SuppressSequencePointOnStmtOfSequential,true,SynExpr.Const(SynConst.Unit,m.StartRange), expr, m)
+            let exprWithSeq = SynExpr.Sequential (SequencePointInfoForSeq.SuppressSequencePointOnStmtOfSequential,true,SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
             mainThreadProcessParsedExpression ctok errorLogger (exprWithSeq, istate))
         |> commitResult
 
@@ -2326,7 +2323,7 @@ type internal FsiInteractionProcessor
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
-        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, text)
+        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
 
 //----------------------------------------------------------------------------
@@ -2398,7 +2395,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let timeReporter = FsiTimeReporter(outWriter)
 
-#if !FX_REDUCED_CONSOLE
     //----------------------------------------------------------------------------
     // Console coloring
     //----------------------------------------------------------------------------
@@ -2406,7 +2402,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // Testing shows "console coloring" is broken on some Mono configurations (e.g. Mono 2.4 Suse LiveCD).
     // To support fsi usage, the console coloring is switched off by default on Mono.
     do if runningOnMono then enableConsoleColoring <- false 
-#endif
 
 
     //----------------------------------------------------------------------------
@@ -2438,6 +2433,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
 #if NETSTANDARD
+    do tcConfigB.useSdkRefs <- true
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
@@ -2517,8 +2513,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
       with e -> 
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
-    let ilGlobals  = tcGlobals.ilg
-
     let niceNameGen = NiceNameGenerator() 
 
     // Share intern'd strings across all lexing/parsing
@@ -2539,21 +2533,21 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (ctok, aref) with
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
-          
-    let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, ilGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef) 
-    
-    let fsiInterruptController = FsiInterruptController(fsiOptions, fsiConsoleOutput) 
-    
+
+    let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef) 
+
+    let fsiInterruptController = FsiInterruptController(fsiOptions, fsiConsoleOutput)
+
     let uninstallMagicAssemblyResolution = MagicAssemblyResolution.Install(tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput)
-    
-    /// This reference cell holds the most recent interactive state 
+
+    /// This reference cell holds the most recent interactive state
     let initialInteractiveState = fsiDynamicCompiler.GetInitialInteractiveState ()
       
     let fsiStdinLexerProvider = FsiStdinLexerProvider(tcConfigB, fsiStdinSyphon, fsiConsoleInput, fsiConsoleOutput, fsiOptions, lexResourceManager)
 
     let fsiInteractionProcessor = FsiInteractionProcessor(fsi, tcConfigB, fsiOptions, fsiDynamicCompiler, fsiConsolePrompt, fsiConsoleOutput, fsiInterruptController, fsiStdinLexerProvider, lexResourceManager, initialInteractiveState) 
 
-    let commitResult res = 
+    let commitResult res =
         match res with 
         | Choice1Of2 r -> r
         | Choice2Of2 None -> failwith "Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing"
@@ -2567,7 +2561,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             | Choice2Of2 None -> Choice2Of2 (System.Exception "Operation could not be completed due to earlier error")
             | Choice2Of2 (Some userExn) -> Choice2Of2 userExn
 
-        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs)
+        // 'true' is passed for "suggestNames" because we want the FSI session to suggest names for misspellings and it won't affect IDE perf much
+        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs, true)
 
     let dummyScriptFileName = "input.fsx"
 

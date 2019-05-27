@@ -266,10 +266,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let tagListL tagger = function
             | []    -> emptyL
             | [x]   -> x
-            | x::xs ->
+            | x :: xs ->
                 let rec process' prefixL = function
                   | []    -> prefixL
-                  | y::ys -> process' ((tagger prefixL) ++ y) ys
+                  | y :: ys -> process' ((tagger prefixL) ++ y) ys
                 process' x xs
             
         let commaListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.comma)) layouts
@@ -282,7 +282,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             match layouts with
             | []    -> emptyL
             | [x]   -> x
-            | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+            | x :: ys -> List.fold (fun pre y -> pre @@ y) x ys
 
         let optionL selector value = 
             match value with 
@@ -647,7 +647,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         let combine (strs: string list) = System.String.Concat strs
         let showL opts leafFormatter layout =
-            let push x rstrs = x::rstrs
+            let push x rstrs = x :: rstrs
             let z0 = [],0
             let addText (rstrs,i) (text:string) = push text rstrs,i + text.Length
             let index   (_,i)               = i
@@ -935,7 +935,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                         let illFormedMatch = System.Text.RegularExpressions.Regex.IsMatch(txt, illFormedBracketPattern)
                                         match illFormedMatch with
                                         | true -> None // there are mismatched brackets, bail out
-                                        | false when layouts.Length > 1 -> Some (spaceListL (List.rev ((wordL (tagText(replaceEscapedBrackets(txt)))::layouts))))
+                                        | false when layouts.Length > 1 -> Some (spaceListL (List.rev ((wordL (tagText(replaceEscapedBrackets(txt))) :: layouts))))
                                         | false -> Some (wordL (tagText(replaceEscapedBrackets(txt))))
                                       | true ->
                                         // we have a hit on a property reference
@@ -972,7 +972,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                                       | false -> postText 
                                                       | true -> postTextMatch.Groups.["pre"].Value
 
-                                                  let newLayouts = (sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText currentPostText))::layouts
+                                                  let newLayouts = (sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText currentPostText)) :: layouts
                                                   match postText with
                                                     | "" ->
                                                       //We are done, build a space-delimited layout from the collection of layouts we've accumulated
@@ -995,7 +995,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                                       | false ->
                                                         // We are done, there's more text but it doesn't contain any more properties, we need to remove escaped brackets now though
                                                         // since that wasn't done when creating currentPostText
-                                                        Some (spaceListL (List.rev ((sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText(replaceEscapedBrackets(remaingPropertyText))))::layouts)))
+                                                        Some (spaceListL (List.rev ((sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText(replaceEscapedBrackets(remaingPropertyText)))) :: layouts)))
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
@@ -1105,7 +1105,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                              let b1 = arr.GetLowerBound(0) 
                              let project depthLim = if depthLim=(b1+n) then None else Some ((box (arr.GetValue(depthLim)), ty),depthLim+1)
                              let itemLs = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) project stopShort b1 opts.PrintLength
-                             makeArrayL (if b1 = 0 then itemLs else wordL (tagText("bound1="+string_of_int b1))::itemLs)
+                             makeArrayL (if b1 = 0 then itemLs else wordL (tagText("bound1="+string_of_int b1)) :: itemLs)
                         | 2 -> 
                              let n1 = arr.GetLength(0)
                              let n2 = arr.GetLength(1)
@@ -1117,7 +1117,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                              let rowL x = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) (project2 x) stopShort b2 opts.PrintLength |> makeListL
                              let project1 x = if x>=(b1+n1) then None else Some (x,x+1)
                              let rowsL  = boundedUnfoldL rowL project1 stopShort b1 opts.PrintLength
-                             makeArray2L (if b1=0 && b2 = 0 then rowsL else wordL (tagText("bound1=" + string_of_int b1))::wordL(tagText("bound2=" + string_of_int b2))::rowsL)
+                             makeArray2L (if b1=0 && b2 = 0 then rowsL else wordL (tagText("bound1=" + string_of_int b1)) :: wordL(tagText("bound2=" + string_of_int b2)) :: rowsL)
                           | n -> 
                              makeArrayL [wordL (tagText("rank=" + string_of_int n))]
                         

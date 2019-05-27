@@ -1,7 +1,7 @@
 ﻿#if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.ProjectCracker.dll"
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.ProjectCracker.dll"
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -508,7 +508,7 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
         let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/" + scriptName + ".fsx"
         let scriptSource = File.ReadAllText scriptPath
         let projOpts, _diagnostics =
-            checker.GetProjectOptionsFromScript(scriptPath, scriptSource)
+            checker.GetProjectOptionsFromScript(scriptPath, FSharp.Compiler.Text.SourceText.ofString scriptSource)
             |> Async.RunSynchronously
         projOpts.SourceFiles
         |> Array.map Path.GetFileNameWithoutExtension
@@ -527,21 +527,21 @@ let ``Script load closure project`` () =
     let fileName1 = Path.GetTempPath() + Path.DirectorySeparatorChar.ToString() + "Impl.fs"
     let fileName2 = Path.ChangeExtension(Path.GetTempFileName(), ".fsx")
 
-    let fileSource1 = """
+    let fileSource1Text = """
 module ImplFile
 
 #if INTERACTIVE
 let x = 42
 #endif
 """
-
-    let fileSource2 = """
+    let fileSource1 = FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    let fileSource2Text = """
 #load "Impl.fs"
 ImplFile.x
 """
-
-    File.WriteAllText(fileName1, fileSource1)
-    File.WriteAllText(fileName2, fileSource2)
+    let fileSource2 = FSharp.Compiler.Text.SourceText.ofString fileSource2Text
+    File.WriteAllText(fileName1, fileSource1Text)
+    File.WriteAllText(fileName2, fileSource2Text)
 
     printfn "------Starting Script load closure project----"
     printfn "Getting project options..."

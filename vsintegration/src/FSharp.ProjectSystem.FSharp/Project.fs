@@ -42,11 +42,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
     open EnvDTE
 
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Private", CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Server.Shared", CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.UIResources", CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-    do ()
-
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
             /// custom/extended property pages.
@@ -365,8 +360,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let mutable sourcesAndFlags : option<(string[] * string[])> = None
 
             let mutable normalizedRefs : string[] option = None
-
-            let mutable binOutputPath : string option = None
 
 #if DEBUG
             let logger = new Microsoft.Build.Logging.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
@@ -1260,23 +1253,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let updatedNormalizedRefs = flags |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] else None) |> Array.map (fun fn -> Path.GetFullPath(Path.Combine(x.ProjectFolder, fn)))
                 sourcesAndFlags <- Some (updatedNormalizedSources, flags)
                 normalizedRefs <- Some updatedNormalizedRefs
-                binOutputPath <- x.GetCurrentOutputAssembly() |> Option.ofObj
 
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
-
-            // =====================================================================================================
-            // Todo: x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) for VS2017.7
-            // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
-            // This is so that during the interim, earlier VS's will still load the OSS project
-            // =====================================================================================================
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) =
-                x.CoreCompile(flags, sources)
-                if actuallyBuild then
-                    compile.Invoke(0)
-                else
-                    0
 
             member x.Compile(compile:Func<int>, flags:string[], sources:string[]) =
                 x.CoreCompile(flags, sources)
@@ -1288,7 +1268,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member __.CompilationSourceFiles = match sourcesAndFlags with None -> [| |] | Some (sources,_) -> sources
             member __.CompilationOptions = match sourcesAndFlags with None -> [| |] | Some (_,flags) -> flags
             member __.CompilationReferences = match normalizedRefs with None -> [| |] | Some refs -> refs
-            member __.CompilationBinOutputPath = binOutputPath
 
             override x.ComputeSourcesAndFlags() =
 
@@ -1410,7 +1389,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.CompilationSourceFiles = x.CompilationSourceFiles
                     member __.CompilationOptions = x.CompilationOptions
                     member __.CompilationReferences = x.CompilationReferences
-                    member __.CompilationBinOutputPath = x.CompilationBinOutputPath
+                    member __.CompilationBinOutputPath = 
+                        let outputPath = x.GetCurrentOutputAssembly()
+                        if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
 
                     member __.Description = 
                         match sourcesAndFlags with
@@ -1437,7 +1418,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // that does _not_ reference "this" to get its information.
             // CreateStaticProjectSite can be called on a project that failed to load (as in Close)
             member private x.CreateStaticProjectSite() =
-                let outputPath = x.CompilationBinOutputPath
+                let outputPath = x.GetCurrentOutputAssembly()
                 let sourceFiles = x.CompilationSourceFiles
                 let options = x.CompilationOptions
                 let refs = x.CompilationReferences
@@ -1453,7 +1434,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.CompilationSourceFiles = sourceFiles
                     member __.CompilationOptions = options
                     member __.CompilationReferences = refs
-                    member __.CompilationBinOutputPath = outputPath
+                    member __.CompilationBinOutputPath = if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
                     member __.ProjectFileName = projFileName
                     member __.BuildErrorReporter 
                         with get() = staticBuildErrorReporter

@@ -72,7 +72,8 @@ module internal MsBuildAdapters =
     open Microsoft.FSharp.Core.ReflectionAdapters
 
     /// <summary>
-    /// Used to specify the targeted version of the .NET Framework for some methods of ToolLocationHelper.
+    /// Used to specify the targeted version of the .NET Framework for some methods of ToolLocationHelper.  This is meant to mimic
+    /// the official version here: https://source.dot.net/#q=TargetDotNetFrameworkVersion.
     /// </summary>
     type public TargetDotNetFrameworkVersion =
     | Version11 = 0
@@ -89,7 +90,7 @@ module internal MsBuildAdapters =
     | Version47 = 11
     | Version471 = 12
     | Version472 = 13
-    | VersionLatest = 8  //TargetDotNetFrameworkVersion.Version461
+    | VersionLatest = 13  //TargetDotNetFrameworkVersion.Version472
 
     /// <summary>
     /// Used to specify the targeted bitness of the .NET Framework for some methods of ToolLocationHelper
@@ -118,7 +119,11 @@ module internal ToolLocationHelper =
     let dotNetFrameworkVersion451 = Version(4, 5, 1)
     let dotNetFrameworkVersion452 = Version(4, 5, 2)
     let dotNetFrameworkVersion46  = Version(4, 6)
-    let dotNetFrameworkVersion461  = Version(4, 6, 1)
+    let dotNetFrameworkVersion461 = Version(4, 6, 1)
+    let dotNetFrameworkVersion462 = Version(4, 6, 2)
+    let dotNetFrameworkVersion47  = Version(4, 7)
+    let dotNetFrameworkVersion471 = Version(4, 7, 1)
+    let dotNetFrameworkVersion472 = Version(4, 7, 2)
 
     // visual studio versions.
     let visualStudioVersion100 = new Version(10, 0);
@@ -210,6 +215,10 @@ module internal ToolLocationHelper =
         | TargetDotNetFrameworkVersion.Version452 -> dotNetFrameworkVersion452
         | TargetDotNetFrameworkVersion.Version46 -> dotNetFrameworkVersion46
         | TargetDotNetFrameworkVersion.Version461 -> dotNetFrameworkVersion461
+        | TargetDotNetFrameworkVersion.Version462 -> dotNetFrameworkVersion462
+        | TargetDotNetFrameworkVersion.Version47 -> dotNetFrameworkVersion47
+        | TargetDotNetFrameworkVersion.Version471 -> dotNetFrameworkVersion471
+        | TargetDotNetFrameworkVersion.Version472 -> dotNetFrameworkVersion472
         | _ -> raise (getArgumentException version)
 
     let complusInstallRoot = Environment.GetEnvironmentVariable("COMPLUS_INSTALLROOT")
@@ -360,7 +369,7 @@ module internal ToolLocationHelper =
         // Doesn't need to be virtual @@@@@
         abstract member GetPathToDotNetFramework: DotNetFrameworkArchitecture -> string
         default this.GetPathToDotNetFramework arch =
-            match this.pathsToDotNetFramework.TryGetValue(arch) with
+            match this.pathsToDotNetFramework.TryGetValue arch with
             | true, x -> x
             | _ ->
                 if not (CheckForFrameworkInstallation this.dotNetFrameworkRegistryKey this.dotNetFrameworkSetupRegistryInstalledName) then null
@@ -749,11 +758,15 @@ module internal ToolLocationHelper =
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion452 visualStudioVersion150     // v4.5.2
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion140     // v4.6
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion461 visualStudioVersion150     // v4.6.1
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion462 visualStudioVersion150     // v4.6.2
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion47  visualStudioVersion150     // v4.7
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion471 visualStudioVersion150     // v4.7.1
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion472 visualStudioVersion150     // v4.7.2
         |]
         array.ToDictionary<DotNetFrameworkSpec, Version>(fun spec -> spec.Version)
 
     let getDotNetFrameworkSpec version =
-        match dotNetFrameworkSpecDict.TryGetValue(version) with
+        match dotNetFrameworkSpecDict.TryGetValue version with
         | true, x -> x
         | _ -> raise (getArgumentException version)
 

@@ -52,7 +52,7 @@ let rec private evalILAttribElem e =
 
 let rec private evalFSharpAttribArg g e = 
     match e with
-    | Expr.Const(c, _, _) -> 
+    | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b
         | Const.SByte i  -> box i
@@ -513,7 +513,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
         match attr.TyconRef.TryDeref with
         | ValueSome _ -> 
             let tcs = tcref.Stamp
-            match casmap.TryGetValue(tcs) with
+            match casmap.TryGetValue tcs with
             | true, c -> c
             | _ ->
                 let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])

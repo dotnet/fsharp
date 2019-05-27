@@ -6,11 +6,9 @@ open System.Composition
 open System.Collections.Generic
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Notification
 
 open FSharp.Compiler.SourceCodeServices
@@ -32,12 +30,12 @@ type internal FSharpNavigationBarItemService
     interface INavigationBarItemService with
         member __.GetItemsAsync(document, cancellationToken) : Task<IList<NavigationBarItem>> = 
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText=sourceText, userOpName=userOpName)
-                let navItems = NavigationImpl.getNavigation parsedInput
+                let navItems = FSharpNavigation.getNavigation parsedInput
                 let rangeToTextSpan range = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
-                return 
+                return
                     navItems.Declarations
                     |> Array.choose (fun topLevelDecl ->
                         rangeToTextSpan(topLevelDecl.Declaration.Range)

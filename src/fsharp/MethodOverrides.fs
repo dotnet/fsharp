@@ -134,7 +134,7 @@ module DispatchSlotChecking =
 
         // Drop 'this'
         match vsl with 
-        | [thisv]::vs -> 
+        | [thisv] :: vs -> 
             // Check for empty variable list from a () arg
             let vs = if vs.Length = 1 && argInfos.IsEmpty then [] else vs
             let implKind = 
@@ -255,23 +255,30 @@ module DispatchSlotChecking =
 
         let isReqdTyInterface = isInterfaceTy g reqdTy 
         let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract)
-        let res = ref true
-        let fail exn = (res := false ; if showMissingMethodsAndRaiseErrors then errorR exn)
         
+        let mutable res = true
+        let fail exn =
+            res <- false
+            if showMissingMethodsAndRaiseErrors then
+                errorR exn
+
         // Index the availPriorOverrides and overrides by name
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         let overridesKeyed = overrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         
-        dispatchSlots |> List.iter (fun (RequiredSlot(dispatchSlot, isOptional)) -> 
-          
-            match NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
-                    |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)  with
+        // we accumulate those to compose a more complete error message, see noimpl() bellow.
+        let missingOverloadImplementation = ResizeArray()
+
+        for (RequiredSlot(dispatchSlot, isOptional)) in dispatchSlots do
+            let maybeResolvedSlot =
+                NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
+                |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)
+
+            match maybeResolvedSlot with
             | [ovd] -> 
                 if not ovd.IsCompilerGenerated then 
-                    let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot], None)
-                    CallNameResolutionSink sink (ovd.Range, nenv, item, item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, denv, AccessorDomain.AccessibleFromSomewhere)
-                sink |> ignore
-                ()
+                    let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
+                    CallNameResolutionSink sink (ovd.Range, nenv, item,item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, denv,AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
                 if not isOptional &&
                    // Check that no available prior override implements this dispatch slot
@@ -281,10 +288,7 @@ module DispatchSlotChecking =
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     
                     let noimpl() = 
-                        if isReqdTyInterface then 
-                            fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
-                        else 
-                            fail(Error(FSComp.SR.typrelNoImplementationGiven(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
+                        missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo amap m denv dispatchSlot))
                     
                     match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
@@ -307,7 +311,7 @@ module DispatchSlotChecking =
                             if moreThanOnePossibleDispatchSlot then
                                 noimpl()
 
-                            elif argTys.Length <> vargtys.Length then 
+                            elif argTys.Length <> vargtys.Length then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                             elif mtps.Length <> fvmtps.Length then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
@@ -324,11 +328,48 @@ module DispatchSlotChecking =
                         else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
-                        
                     | _ -> 
                         fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap m denv dispatchSlot), m))
-            | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot), m)))
-        !res
+            | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot), m))
+        
+        if missingOverloadImplementation.Count > 0 then
+            // compose message listing missing override implementation
+            let maxDisplayedOverrides = 10
+            let shouldTruncate = missingOverloadImplementation.Count > maxDisplayedOverrides
+            let messageWithInterfaceSuggestion = 
+                // check any of the missing overrides has isReqdTyInterface flag set
+                // in which case we use the message "with suggestion"
+                missingOverloadImplementation 
+                |> Seq.map fst 
+                |> Seq.filter id 
+                |> Seq.isEmpty
+                |> not
+
+            if missingOverloadImplementation.Count = 1 then
+                // only one missing override, we have specific message for that
+                let signature = (snd missingOverloadImplementation.[0]).Value
+                if messageWithInterfaceSuggestion then 
+                    fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(signature), m))
+                else
+                    fail(Error(FSComp.SR.typrelNoImplementationGiven(signature), m))
+            else
+                let signatures = 
+                    (missingOverloadImplementation 
+                    |> Seq.truncate maxDisplayedOverrides 
+                    |> Seq.map snd 
+                    |> Seq.map (fun signature -> System.Environment.NewLine + "\t'" + signature.Value + "'")
+                    |> String.concat "") + System.Environment.NewLine 
+                
+                // we have specific message if the list is truncated
+                let messageFunction =
+                    match shouldTruncate, messageWithInterfaceSuggestion with
+                    | false, true  -> FSComp.SR.typrelNoImplementationGivenSeveralWithSuggestion
+                    | false, false -> FSComp.SR.typrelNoImplementationGivenSeveral
+                    | true , true  -> FSComp.SR.typrelNoImplementationGivenSeveralTruncatedWithSuggestion
+                    | true , false -> FSComp.SR.typrelNoImplementationGivenSeveralTruncated
+                fail(Error(messageFunction(signatures), m))
+
+        res
 
     /// Check all implementations implement some dispatch slot.
     let CheckOverridesAreAllUsedOnce(denv, g, amap, isObjExpr, reqdTy,
@@ -376,7 +417,7 @@ module DispatchSlotChecking =
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
                     match dispatchSlots with
-                    | meth::_ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
+                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
                     | _ -> ()
 
 
@@ -475,7 +516,7 @@ module DispatchSlotChecking =
                       
                       // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
                       // So here we get and yield all of those.
-                      for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes) IgnoreOverrides reqdTyRange do
+                      for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange do
                          if minfo.IsDispatchSlot then
                              yield RequiredSlot(minfo, (*isOptional=*) not minfo.IsAbstract) ]
                 
@@ -510,7 +551,7 @@ module DispatchSlotChecking =
                 isImpliedInterfaceType x.ApparentEnclosingType
                 
             let reqdProperties = 
-                GetIntrinsicPropInfosOfType infoReader (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes) IgnoreOverrides reqdTyRange reqdTy 
+                GetIntrinsicPropInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
                 |> List.filter isRelevantRequiredProperty
                 
             let dispatchSlotsKeyed = dispatchSlots |> NameMultiMap.initBy (fun (RequiredSlot(v, _)) -> v.LogicalName) 
@@ -708,7 +749,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
         | _, Some(SlotImplSet(_, dispatchSlotsKeyed, _, _)) -> 
             NameMultiMap.find  memberName.idText dispatchSlotsKeyed |> List.map (fun (RequiredSlot(dispatchSlot, _)) -> dispatchSlot)
         | ty, None -> 
-            GetIntrinsicMethInfosOfType infoReader (Some(memberName.idText), ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides bindm ty
+            GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
     let topValSynArities = SynInfo.AritiesOfArgs valSynData
     let topValSynArities = if List.isEmpty topValSynArities then topValSynArities else topValSynArities.Tail
@@ -723,7 +764,7 @@ let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberNam
         | _, Some(SlotImplSet(_, _, _, reqdProps)) -> 
             reqdProps |> List.filter (fun pinfo -> pinfo.PropertyName = memberName.idText) 
         | ty, None -> 
-            GetIntrinsicPropInfosOfType infoReader (Some(memberName.idText), ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides bindm ty
+            GetIntrinsicPropInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
         
     let dispatchSlots = pinfos |> List.filter (fun pinfo -> pinfo.IsVirtualProperty)
     dispatchSlots

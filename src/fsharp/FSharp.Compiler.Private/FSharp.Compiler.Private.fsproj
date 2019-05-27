@@ -4,28 +4,24 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);MSBUILD_AT_LEAST_15</DefineConstants>
+    <DefineConstants>$(DefineConstants);LOCALIZATION_FCOMP</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
-    <SkipPDBConversion>true</SkipPDBConversion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net46' AND '$(OS)' == 'Windows_NT'">
-    <!-- portable PDBs can't be properly generated for this assembly, see https://github.com/Microsoft/visualfsharp/issues/5976 -->
-    <DebugType>full</DebugType>
-    <EnableSourceLink>false</EnableSourceLink>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
+    <Tailcalls>true</Tailcalls>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) AND '$(OS)' == 'Windows_NT'">
-    <!-- portable PDBs can't be properly converted for this assembly, see https://github.com/Microsoft/visualfsharp/issues/5976 -->
-    <PublishWindowsPdb>false</PublishWindowsPdb>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <Tailcalls>true</Tailcalls>
   </PropertyGroup>
 
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
@@ -39,7 +35,6 @@
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Tasks.Core.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Collections.Immutable.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.ValueTuple.dll" />
     </ItemGroup>
   </Target>
 
@@ -62,6 +57,7 @@
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
+    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
   </ItemGroup>
 
   <ItemGroup>
@@ -178,6 +174,12 @@
     </Compile>
     <Compile Include="..\rational.fs">
       <Link>Utilities\rational.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\PathMap.fsi">
+      <Link>Utilities\PathMap.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\utils\PathMap.fs">
+      <Link>Utilities\PathMap.fs</Link>
     </Compile>
     <Compile Include="..\range.fsi">
       <Link>ErrorLogging\range.fsi</Link>
@@ -365,6 +367,9 @@
     <Compile Include="..\QuotationPickler.fs">
       <Link>TypedAST\QuotationPickler.fs</Link>
     </Compile>
+    <Compile Include="..\CompilerGlobalState.fs">
+      <Link>TypedAST\CompilerGlobalState.fs</Link>
+    </Compile>
     <Compile Include="..\tast.fs">
       <Link>TypedAST\tast.fs</Link>
     </Compile>
@@ -446,6 +451,9 @@
     <Compile Include="..\CheckFormatStrings.fs">
       <Link>Logic\CheckFormatStrings.fs</Link>
     </Compile>
+    <Compile Include="..\FindUnsolved.fsi">
+      <Link>Logic\FindUnsolved.fsi</Link>
+    </Compile>
     <Compile Include="..\FindUnsolved.fs">
       <Link>Logic\FindUnsolved.fs</Link>
     </Compile>
@@ -467,8 +475,6 @@
     <Compile Include="..\TypeChecker.fs">
       <Link>Logic\TypeChecker.fs</Link>
     </Compile>
-
-    <!-- includes the optimizer and code generator -->
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
@@ -487,8 +493,14 @@
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="..\LowerCallsAndSeqs.fsi">
+      <Link>Optimize\LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="..\LowerCallsAndSeqs.fs">
       <Link>Optimize\LowerCallsAndSeqs.fs</Link>
+    </Compile>
+    <Compile Include="..\autobox.fsi">
+      <Link>Optimize\autobox.fsi</Link>
     </Compile>
     <Compile Include="..\autobox.fs">
       <Link>Optimize\autobox.fs</Link>
@@ -501,6 +513,9 @@
     </Compile>
 
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
+    <Compile Include="..\DotNetFrameworkDependencies.fs">
+      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -631,6 +646,12 @@
     <Compile Include="..\service\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
+    <Compile Include="..\service\ServiceErrorResolutionHints.fsi">
+      <Link>Service/ServiceErrorResolutionHints.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceErrorResolutionHints.fs">
+      <Link>Service/ServiceErrorResolutionHints.fs</Link>
+    </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
     </Compile>
@@ -661,7 +682,7 @@
       <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
 
-    <Compile Include="..\MSBuildReferenceResolver.fs"  Condition="'$(MonoPackaging)' != 'true'">
+    <Compile Include="..\MSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
@@ -674,39 +695,38 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildPackageVersion)" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildPackageVersion)" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildPackageVersion)" />
-    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionPackageVersion)" />
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.Startswith('netstandard'))">
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
-    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourcePackageVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
-    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsPackageVersion)" />
-    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
-    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityPackageVersion)" />
-    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
-    <PackageReference Include="System.Runtime" Version="$(SystemRuntimePackageVersion)" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesPackageVersion)" />
-    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsPackageVersion)" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsPackageVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalPackageVersion)" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
-    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTuplePackageVersion)" />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourceVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
+    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
+    <PackageReference Include="System.Runtime" Version="$(SystemRuntimeVersion)" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesVersion)" />
+    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsVersion)" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
   </ItemGroup>
 
 </Project>
