@@ -49,3 +49,16 @@ type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
 
             return result               
         }
+
+    member __.FindSymbolUsesAsync (symbol: FSharpSymbol) =
+        async {
+            let result = ImmutableArray.CreateBuilder ()
+
+            let! resolutions, symbolEnv = asyncLazyGetSymbols.GetValueAsync ()
+            for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
+                let cnr = resolutions.CapturedNameResolutions.[i]
+                if ItemsAreEffectivelyEqual symbolEnv.g symbol.Item cnr.Item then
+                    result.Add (FSharpSymbolUse (symbolEnv.g, cnr.DisplayEnv, symbol, cnr.ItemOccurence, cnr.Range))
+
+            return result.ToImmutable ()
+        }

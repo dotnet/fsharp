@@ -9,4 +9,5 @@ type internal CompilationGlobalsScope = FSharp.Compiler.SourceCodeServices.Compi
 type internal ParseResult = ParsedInput option * (PhasedDiagnostic * FSharpErrorSeverity) []
 type internal SymbolEnv = FSharp.Compiler.SourceCodeServices.SymbolEnv
 type FSharpSymbol = FSharp.Compiler.SourceCodeServices.FSharpSymbol
+type FSharpSymbolUse = FSharp.Compiler.SourceCodeServices.FSharpSymbolUse
 
