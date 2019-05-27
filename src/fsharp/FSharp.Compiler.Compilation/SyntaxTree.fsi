@@ -13,6 +13,8 @@ type SourceSnapshot =
 
     member internal GetSourceValueAsync: unit -> Async<SourceValue>
 
+    member internal GetSourceValueAsync: unit -> Async<SourceText>
+
 [<Sealed;AbstractClass;Extension>]
 type internal ITemporaryStorageServiceExtensions =
 
@@ -30,3 +32,5 @@ type SyntaxTree =
     member internal ParsingInfo: ParsingInfo
 
     member GetParseResultAsync: unit -> Async<ParseResult>
+
+    member GetSourceText:  unit -> Async<SourceText>
