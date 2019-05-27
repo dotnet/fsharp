@@ -525,6 +525,7 @@ let tagAddress = "<address>"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
+let tagLangVersionValues = "{?|version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -821,19 +822,18 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
 
 let languageFlags tcConfigB =
     [
-        CompilerOption
-            ("checked", tagNone,
-             OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None,
-             Some (FSComp.SR.optsChecked()))
-        
-        CompilerOption
-            ("define", tagString,
-             OptionString (defineSymbol tcConfigB), None,
-             Some (FSComp.SR.optsDefine()))
-        
+        // -langversion:?                Display the allowed values for language version
+        // -langversion:<string>         Specify language version such as
+        //                               'default' (latest major version), or
+        //                               'latest' (latest version, including minor versions),
+        //                               'preview' (features for preview)
+        //                               or specific versions like '4.7'
+        CompilerOption("langversion", tagLangVersionValues, OptionString (fun switch -> tcConfigB.langVersion <- LanguageVersion(switch)), None, Some (FSComp.SR.optsLangVersion()))
+
+        CompilerOption("checked", tagNone, OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsChecked()))
+        CompilerOption("define", tagString, OptionString (defineSymbol tcConfigB), None, Some (FSComp.SR.optsDefine()))
         mlCompatibilityFlag tcConfigB
     ]
-    
 
 // OptionBlock: Advanced user options
 //-----------------------------------

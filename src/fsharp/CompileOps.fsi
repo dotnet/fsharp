@@ -209,6 +209,19 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+/// LanguageFeature enumeration
+[<RequireQualifiedAccess>]
+type LanguageFeature =
+    | LanguageVersion46 = 0
+    | LanguageVersion47 = 1
+    | Nullness = 1000
+    | ScriptingPackageManagement = 1001
+
+/// LanguageVersion management
+type LanguageVersion =
+    new: string -> LanguageVersion
+    member SupportsFeature: LanguageFeature-> bool
+
 [<RequireQualifiedAccess>]
 type CompilerTarget = 
     | WinExe 
@@ -375,6 +388,8 @@ type TcConfigBuilder =
       mutable noConditionalErasure: bool
 
       mutable pathMap : PathMap
+
+      mutable langVersion : LanguageVersion
     }
 
     static member Initial: TcConfigBuilder
