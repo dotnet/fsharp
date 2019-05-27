@@ -247,6 +247,7 @@ Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collecti
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] Remove(TKey)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Core.FSharpOption`1[TValue] TryFind(TKey)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Boolean TryGetValue(TKey, TValue ByRef)
+Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] Update[TKey,TValue](TKey, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpOption`1[TValue], TValue])
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.String ToString()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.Type GetType()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue Item [TKey]
@@ -412,6 +413,7 @@ Microsoft.FSharp.Collections.MapModule: System.Tuple`2[Microsoft.FSharp.Collecti
 Microsoft.FSharp.Collections.MapModule: System.Tuple`2[TKey,T][] ToArray[TKey,T](Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: System.Type GetType()
 Microsoft.FSharp.Collections.MapModule: T Find[TKey,T](TKey, Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
+Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] Update[TKey,T](TKey, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpOption`1[T], T], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: TKey FindKey[TKey,T](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: TResult Pick[TKey,T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[TResult]]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: TState FoldBack[TKey,T,TState](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TState,TState]]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T], TState)
