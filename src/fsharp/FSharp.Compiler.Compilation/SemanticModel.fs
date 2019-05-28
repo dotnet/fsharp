@@ -26,35 +26,53 @@ open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
 
+[<AutoOpen>]
+module SemanticModelHelpers =
+
+    let tryGetBestCapturedEnv p (resolutions: TcResolutions) =
+        let mutable bestSoFar = None
+        
+        resolutions.CapturedEnvs 
+        |> ResizeArray.iter (fun (possm,env,ad) -> 
+            if rangeContainsPos possm p then
+                match bestSoFar with 
+                | Some (bestm,_,_) -> 
+                    if rangeContainsRange bestm possm then 
+                      bestSoFar <- Some (possm,env,ad)
+                | None -> 
+                    bestSoFar <- Some (possm,env,ad))
+
+        bestSoFar
+
 [<Sealed>]
 type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
 
-    let asyncLazyGetSymbols =
+    let asyncLazyGetAllSymbols =
         AsyncLazy(async {
             let! checker = asyncLazyChecker.GetValueAsync ()
             let! _tcAcc, sink, symbolEnv = checker.CheckAsync filePath
-            return (sink.GetResolutions (), symbolEnv)
+            return (checker, sink.GetResolutions (), symbolEnv)
         })
 
     member __.TryFindSymbolAsync (line: int, column: int) : Async<FSharpSymbol option> =
         async {
+            let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
             let mutable result = None
 
-            // TODO: This is inefficient but works for now. Switch over to using a lexer to grab the token range and ask name resolution what it is.
-            let! resolutions, symbolEnv = asyncLazyGetSymbols.GetValueAsync ()
+            let p = mkPos line column
             for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
                 let cnr = resolutions.CapturedNameResolutions.[i]
-                if Range.rangeContainsPos cnr.Range (mkPos line column) then
+                if Range.rangeContainsPos cnr.Range p then
                     result <- Some (FSharpSymbol.Create (symbolEnv, cnr.Item))
 
-            return result               
+            return result
         }
 
     member __.FindSymbolUsesAsync (symbol: FSharpSymbol) =
         async {
             let result = ImmutableArray.CreateBuilder ()
 
-            let! resolutions, symbolEnv = asyncLazyGetSymbols.GetValueAsync ()
+            let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
             for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
                 let cnr = resolutions.CapturedNameResolutions.[i]
                 if ItemsAreEffectivelyEqual symbolEnv.g symbol.Item cnr.Item then

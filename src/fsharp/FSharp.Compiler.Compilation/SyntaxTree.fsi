@@ -1,11 +1,13 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System.Collections.Immutable
 open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.CompileOps
+open FSharp.Compiler
 
 [<Sealed>]
 type SourceSnapshot =
@@ -44,3 +46,7 @@ type SyntaxTree =
     member GetParseResultAsync: unit -> Async<ParseResult>
 
     member GetSourceTextAsync:  unit -> Async<SourceText>
+
+    //member GetTokensAsync: line: int -> Async<ImmutableArray<FSharpTokenInfo>>
+
+    //member TryGetTokenAsync: line: int * column: int -> Async<FSharpTokenInfo option>

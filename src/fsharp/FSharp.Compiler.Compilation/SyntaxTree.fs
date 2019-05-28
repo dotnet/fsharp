@@ -2,6 +2,7 @@
 
 open System.IO
 open System.Threading
+open System.Collections.Immutable
 open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
@@ -132,4 +133,46 @@ type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: Sourc
 
     member __.GetSourceTextAsync () =
         asyncLazyWeakGetSourceText.GetValueAsync ()
+
+    //member this.GetTokensAsync (line: int) =
+    //    if line <= 0 then
+    //        invalidArg "line" "Specified line is less than or equal to 0. F# uses line counting starting at 1."
+    //    async {
+    //        let! sourceText = this.GetSourceTextAsync ()
+    //        let tokenizer = FSharpSourceTokenizer (pConfig.conditionalCompilationDefines, Some filePath)
+    //        let lines = sourceText.Lines
+    //        if line > lines.Count then
+    //            invalidArg "line" "Specified line does not exist in source."
+    //        let lineTokenizer = tokenizer.CreateLineTokenizer (sourceText.Lines.[line - 1].Text.ToString())
+
+    //        let tokens = ImmutableArray.CreateBuilder ()
+
+    //        let mutable state = FSharpTokenizerLexState.Initial
+    //        let mutable canStop = false
+    //        while not canStop do
+    //            let infoOpt, newState = lineTokenizer.ScanToken (FSharpTokenizerLexState.Initial)
+    //            state <- newState
+    //            match infoOpt with
+    //            | Some info ->
+    //                tokens.Add info
+    //            | _ ->
+    //                canStop <- true
+
+    //        return tokens.ToImmutable ()
+    //    }
+
+    //member this.TryGetToken (line: int, column: int) =
+    //    if line <= 0 then
+    //        invalidArg "line" "Specified line is less than or equal to zero. F# uses line counting starting at 1."
+    //    if column < 0 then
+    //        invalidArg "column" "Specified column is less than zero."
+    //    async {
+    //        let! tokens = this.GetTokensAsync line
+    //        if tokens.Length > 0 then
+    //            return
+    //                tokens
+    //                |> Seq.tryFind (fun x -> column >= x.LeftColumn && column <= x.RightColumn)
+    //        else
+    //            return None
+    //    }
         
