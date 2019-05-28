@@ -309,7 +309,7 @@
       </trans-unit>
       <trans-unit id="5035">
         <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</source>
-        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目：.NET Framework 4.5、Windows 应用商店、Silverlight 5、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 47)</target>
+        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目: .NET Framework 4.5、Windows 应用商店、Silverlight 5、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 47</target>
         <note />
       </trans-unit>
       <trans-unit id="5036">
@@ -329,7 +329,7 @@
       </trans-unit>
       <trans-unit id="5040">
         <source>A project item for consuming a .NET Managed Resources File (Resx) using ResxFile type provider.</source>
-        <target state="translated">通过 ResxFile 类型提供程序使用 .NET 托管资源文件(Resx)的项目项。</target>
+        <target state="translated">通过 ResxFile 类型提供程序使用 .NET 受管理资源文件(Resx)的项目项。</target>
         <note />
       </trans-unit>
       <trans-unit id="5041">
@@ -369,7 +369,7 @@
       </trans-unit>
       <trans-unit id="5048">
         <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 7</source>
-        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目：.NET Framework 4.5、Windows 应用商店、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件7)</target>
+        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目: .NET Framework 4.5、Windows 应用商店、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件7</target>
         <note />
       </trans-unit>
       <trans-unit id="5049">
@@ -379,7 +379,7 @@
       </trans-unit>
       <trans-unit id="5050">
         <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 78</source>
-        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目：.NET Framework 4.5、Windows 应用商店、Windows Phone 8 Silverlight、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 78)</target>
+        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目: .NET Framework 4.5、Windows 应用商店、Windows Phone 8 Silverlight、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 78</target>
         <note />
       </trans-unit>
       <trans-unit id="5051">
@@ -389,7 +389,7 @@
       </trans-unit>
       <trans-unit id="5052">
         <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</source>
-        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目：.NET Framework 4.5、Windows 应用商店、Windows Phone 8.1、Windows Phone Silverlight 8、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 259)</target>
+        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目: .NET Framework 4.5、Windows 应用商店、Windows Phone 8.1、Windows Phone Silverlight 8、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 259</target>
         <note />
       </trans-unit>
       <trans-unit id="5053">
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# 交互</target>
+        <target state="translated">F# 交互窗口</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -459,7 +459,7 @@
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# 交互</target>
+        <target state="translated">F# 交互窗口</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
