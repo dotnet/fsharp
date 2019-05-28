@@ -80,6 +80,7 @@ type CompilationTests () =
         let c = compilationService.CreateCompilation options
         let semanticModel = c.GetSemanticModel "test1.fs"
         let symbol = semanticModel.TryFindSymbolAsync (4, 9) |> Async.RunSynchronously
+        let tooltip = semanticModel.GetToolTipTextAsync (4, 9) |> Async.RunSynchronously
         Assert.True (symbol.IsSome)
 
 [<TestFixture>]

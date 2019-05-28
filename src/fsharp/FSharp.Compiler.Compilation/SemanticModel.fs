@@ -80,3 +80,18 @@ type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
 
             return result.ToImmutable ()
         }
+
+    member __.GetToolTipTextAsync (line, column) =
+        async {
+            let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
+            let mutable result = None
+
+            let p = mkPos line column
+            for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
+                let cnr = resolutions.CapturedNameResolutions.[i]
+                if Range.rangeContainsPos cnr.Range p then
+                    let items = [ FSharp.Compiler.SourceCodeServices.SymbolHelpers.FormatStructuredDescriptionOfItem false symbolEnv.infoReader cnr.Range cnr.DisplayEnv cnr.ItemWithInst ]
+                    result <- Some (SourceCodeServices.FSharpToolTipText items)
+
+            return result
+        }
