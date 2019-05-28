@@ -574,7 +574,7 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityOneIsConstructor">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nOne is a constructor/property and the other is not</source>
-        <target state="translated">Il modulo '{0}' contiene\n    {1}    \ntuttavia la relativa firma specifica\n    {2}    \nUno è un costruttore o una proprietà, l'altro no.</target>
+        <target state="translated">Il modulo '{0}' contiene\n    {1}    \nma la relativa firma specifica\n    {2}    \nUno è un costruttore o una proprietà, l'altro no</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityStaticButInstance">
@@ -1889,7 +1889,7 @@
       </trans-unit>
       <trans-unit id="parsOnlyHashDirectivesAllowed">
         <source>Only '#' compiler directives may occur prior to the first 'namespace' declaration</source>
-        <target state="translated">Prima della prima dichiarazione 'namespace' possono essere presenti solo direttive '#' del compilatore.</target>
+        <target state="translated">Prima della prima dichiarazione 'namespace' possono essere presenti solo direttive '#' del compilatore</target>
         <note />
       </trans-unit>
       <trans-unit id="parsVisibilityDeclarationsShouldComePriorToIdentifier">
@@ -2939,7 +2939,7 @@
       </trans-unit>
       <trans-unit id="tcIDisposableTypeShouldUseNew">
         <source>It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value</source>
-        <target state="translated">Per indicare che le risorse possono essere di proprietà del valore generato, è consigliabile usare la sintassi 'new Type(args)', invece di 'Type(args)' o di 'Type' come valore della funzione che rappresenta il costruttore, per creare oggetti che supportano l'interfaccia IDisposable.</target>
+        <target state="translated">Per indicare che le risorse possono essere di proprietà del valore generato, è consigliabile usare la sintassi 'new Type(args)', invece di 'Type(args)' o di 'Type' come valore della funzione che rappresenta il costruttore, per creare oggetti che supportano l'interfaccia IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSyntaxCanOnlyBeUsedToCreateObjectTypes">
@@ -4114,7 +4114,7 @@
       </trans-unit>
       <trans-unit id="optsPublicSign">
         <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed</source>
-        <target state="translated">Firma pubblicamente l'assembly usando solo la parte pubblica della chiave con nome sicuro e contrassegna l'assembly come firmato.</target>
+        <target state="translated">Firma pubblicamente l'assembly usando solo la parte pubblica della chiave con nome sicuro e contrassegna l'assembly come firmato</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWriteXml">
@@ -4534,7 +4534,7 @@
       </trans-unit>
       <trans-unit id="typeInfoProperty">
         <source>property</source>
-        <target state="translated">Proprietà.</target>
+        <target state="translated">proprietà</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoExtension">
@@ -5339,7 +5339,7 @@
       </trans-unit>
       <trans-unit id="parsMissingGreaterThan">
         <source>Unmatched '&lt;'. Expected closing '&gt;'</source>
-        <target state="translated">'&lt;' non corrispondente. È previsto '&gt;' di chiusura</target>
+        <target state="translated">'&lt;' senza corrispondenza. È previsto '&gt;' di chiusura</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
@@ -5964,7 +5964,7 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedLBrackLess">
         <source>Unmatched '[&lt;'. Expected closing '&gt;]'</source>
-        <target state="translated">[&lt;' non corrispondente. È previsto '&gt;]' di chiusura</target>
+        <target state="translated">'[&lt;' senza corrispondenza. È previsto '&gt;]' di chiusura</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileMatch">
@@ -6149,7 +6149,7 @@
       </trans-unit>
       <trans-unit id="tcNoIntegerForLoopInQuery">
         <source>In queries, use the form 'for x in n .. m do ...' for ranging over integers</source>
-        <target state="translated">Nelle query utilizzare il formato 'for x in n .. m do ...' per gestire interi</target>
+        <target state="translated">Nelle query usare il formato 'for x in n .. m do ...' per gestire interi</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoWhileInQuery">
@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Usata al posto di let per valori con i quali è necessario chiamare Dispose per liberare risorse.</target>
+        <target state="translated">Usata al posto di let per valori che implementano IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Non è stata specificata alcuna implementazione per tali membri: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Non è stata specificata alcuna implementazione per tali membri: {0}. Si noti che tutti i membri dell'interfaccia devono essere implementati ed elencati in una dichiarazione 'interface' appropriata, ad esempio 'interface ... with member ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Non è stata specificata alcuna implementazione per tali membri (alcuni risultati sono stati omessi): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Non è stata specificata alcuna implementazione per tali membri (alcuni risultati sono stati omessi): {0}. Si noti che tutti i membri dell'interfaccia devono essere implementati ed elencati in una dichiarazione 'interface' appropriata, ad esempio 'interface ... with member ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

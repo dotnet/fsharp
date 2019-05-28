@@ -16,6 +16,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.Symbols
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal UnusedOpensDiagnosticAnalyzer() =
@@ -33,7 +34,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             category = DiagnosticCategory.Style, 
             defaultSeverity = DiagnosticSeverity.Hidden, 
             isEnabledByDefault = true, 
-            customTags = DiagnosticCustomTags.Unnecessary)
+            customTags = FSharpDiagnosticCustomTags.Unnecessary)
 
     override __.Priority = 90 // Default = 50
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor

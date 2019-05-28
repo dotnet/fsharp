@@ -219,7 +219,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
-        <target state="translated">无法识别的托管资源隐私设置“{0}”，有效的选项为“public”和“private”</target>
+        <target state="translated">无法识别的受管理资源隐私设置“{0}”，有效的选项为 "public" 和 "private"</target>
         <note />
       </trans-unit>
       <trans-unit id="buildMultipleReferencesNotAllowed">
@@ -239,12 +239,12 @@
       </trans-unit>
       <trans-unit id="buildImplicitModuleIsNotLegalIdentifier">
         <source>The declarations in this file will be placed in an implicit module '{0}' based on the file name '{1}'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.</source>
-        <target state="translated">此文件中的声明将置于基于文件名“{1}”的隐式模块“{0}”中。但由于这不是一个有效的 F# 标识符，因此将无法从其他文件访问该内容。请考虑重命名此文件或在文件的顶部添加“module”或“namespace”声明。</target>
+        <target state="translated">此文件中的声明将置于基于文件名“{1}”的隐式模块“{0}”中。但由于这不是一个有效的 F# 标识符，因此将无法从其他文件访问该内容。请考虑重命名此文件或在文件的顶部添加 "module" 或 "namespace" 声明。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildMultiFileRequiresNamespaceOrModule">
         <source>Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration.</source>
-        <target state="translated">库或多文件应用程序中的文件必须以命名空间或模块声明开头，例如 “namespace SomeNamespace.SubNamespace”或“module SomeNamespace.SomeModule”。仅应用程序的最后一个源文件可以忽略此类声明。</target>
+        <target state="translated">库或多文件应用程序中的文件必须以命名空间或模块声明开头，例如 "namespace SomeNamespace.SubNamespace" 或 "module SomeNamespace.SomeModule"。仅应用程序的最后一个源文件可以忽略此类声明。</target>
         <note />
       </trans-unit>
       <trans-unit id="noEqualSignAfterModule">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="buildMultipleToplevelModules">
         <source>This file contains multiple declarations of the form 'module SomeNamespace.SomeModule'. Only one declaration of this form is permitted in a file. Change your file to use an initial namespace declaration and/or use 'module ModuleName = ...' to define your modules.</source>
-        <target state="translated">此文件包含形式为“module SomeNamespace.SomeModule”的多个声明。一个文件中只能有一个此形式的声明。将您的文件更改为使用初始命名空间声明并且/或者使用“module ModuleName = ...”定义模块。</target>
+        <target state="translated">此文件包含形式为 "module SomeNamespace.SomeModule" 的多个声明。一个文件中只能有一个此形式的声明。将您的文件更改为使用初始命名空间声明并且/或者使用 "module ModuleName = ..." 定义模块。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildOptionRequiresParameter">
@@ -274,12 +274,12 @@
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssembly">
         <source>Could not resolve assembly '{0}'</source>
-        <target state="translated">未能解析程序集“{0}”</target>
+        <target state="translated">无法解析程序集“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
         <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">未能解析“{1}”所需的程序集“{0}”</target>
+        <target state="translated">无法解析“{1}”所需的程序集“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
@@ -309,7 +309,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
         <source>Invalid directive. Expected '#time', '#time \"on\"' or '#time \"off\"'.</source>
-        <target state="translated">指令无效。应为“#time”、“#time \"on\"”或“#time \"off\"”。</target>
+        <target state="translated">指令无效。应为 '#time'、'#time \"on\"' 或 '#time \"off\"'。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDirectivesInModulesAreIgnored">
@@ -334,7 +334,7 @@
       </trans-unit>
       <trans-unit id="buildSignatureWithoutImplementation">
         <source>The signature file '{0}' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.</source>
-        <target state="translated">签名文件“{0}”没有相应的实现文件。如果存在实现文件，则检查签名文件和实现文件中的“module”和“namespace”声明是否匹配。</target>
+        <target state="translated">签名文件“{0}”没有相应的实现文件。如果存在实现文件，则检查签名文件和实现文件中的 "module" 和 "namespace" 声明是否匹配。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildArgInvalidInt">
@@ -359,7 +359,7 @@
       </trans-unit>
       <trans-unit id="pickleErrorReadingWritingMetadata">
         <source>Error reading/writing metadata for the F# compiled DLL '{0}'. Was the DLL compiled with an earlier version of the F# compiler? (error: '{1}').</source>
-        <target state="translated">读取/写入 F# 编译的 DLL“{0}”时出错。是否使用了早期版本的 F# 编译器编译 DLL? (错误: “{1}”)。</target>
+        <target state="translated">读取/写入 F# 编译的 DLL“{0}”的元数据时出错。是否使用了早期版本的 F# 编译器编译 DLL? (错误: “{1}”)。</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTypeOrModuleNotConcrete">
@@ -419,7 +419,7 @@
       </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
         <source>Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.</source>
-        <target state="translated">常数表达式的变化无效。请考虑将该表达式复制一个可变的本地变量，例如“let mutable x = ...”。</target>
+        <target state="translated">常数表达式的变化无效。请考虑将该表达式复制一个可变的本地变量，例如 "let mutable x = ..."。</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueHasBeenCopied">
@@ -779,17 +779,17 @@
       </trans-unit>
       <trans-unit id="FieldNotContainedStaticsDiffer">
         <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe 'static' modifiers differ</source>
-        <target state="translated">该模块包含字段\n    {0}    \n而其签名指定\n    {1}    \n“static”修饰符不同</target>
+        <target state="translated">该模块包含字段\n    {0}    \n而其签名指定\n    {1}    \n"static" 修饰符不同</target>
         <note />
       </trans-unit>
       <trans-unit id="FieldNotContainedMutablesDiffer">
         <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe 'mutable' modifiers differ</source>
-        <target state="translated">该模块包含字段\n    {0}    \n而其签名指定\n    {1}    \n“mutable”修饰符不同</target>
+        <target state="translated">该模块包含字段\n    {0}    \n而其签名指定\n    {1}    \n"mutable" 修饰符不同</target>
         <note />
       </trans-unit>
       <trans-unit id="FieldNotContainedLiteralsDiffer">
         <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe 'literal' modifiers differ</source>
-        <target state="translated">该模块包含字段\n    {0}    \n而其签名指定\n    {1}    \n“literal”修饰符不同</target>
+        <target state="translated">该模块包含字段\n    {0}    \n而其签名指定\n    {1}    \n"literal" 修饰符不同</target>
         <note />
       </trans-unit>
       <trans-unit id="FieldNotContainedTypesDiffer">
@@ -804,17 +804,17 @@
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
-        <target state="translated">未能解析使用“printf”样式的格式字符串所产生的固有多义性</target>
+        <target state="translated">未能解析使用 "printf" 样式的格式字符串所产生的固有多义性</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInEnum">
         <source>Could not resolve the ambiguity in the use of a generic construct with an 'enum' constraint at or near this position</source>
-        <target state="translated">未能解析在此位置或其附近使用带“enum”约束的泛型构造所产生的多义性</target>
+        <target state="translated">未能解析在此位置或其附近使用带 "enum" 约束的泛型构造所产生的多义性</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInDelegate">
         <source>Could not resolve the ambiguity in the use of a generic construct with a 'delegate' constraint at or near this position</source>
-        <target state="translated">未能解析在此位置或其附近使用带“delegate”约束的泛型构造所产生的多义性</target>
+        <target state="translated">未能解析在此位置或其附近使用带 "delegate" 约束的泛型构造所产生的多义性</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInvalidValue">
@@ -844,27 +844,27 @@
       </trans-unit>
       <trans-unit id="typrelTypeImplementsIComparableShouldOverrideObjectEquals">
         <source>The type '{0}' implements 'System.IComparable'. Consider also adding an explicit override for 'Object.Equals'</source>
-        <target state="translated">类型“{0}”实现“System.IComparable”。请考虑同时添加“Object.Equals”的显式重写</target>
+        <target state="translated">类型“{0}”实现 "System.IComparable"。请考虑同时添加 "Object.Equals" 的显式重写</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelTypeImplementsIComparableDefaultObjectEqualsProvided">
         <source>The type '{0}' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'. An implementation of 'Object.Equals' has been automatically provided, implemented via 'System.IComparable'. Consider implementing the override 'Object.Equals' explicitly</source>
-        <target state="translated">类型“{0}”显式实现“System.IComparable”，但未提供相对应的“Object.Equals”的重写。已自动提供“Object.Equals”的实现(通过“System.IComparable”实现)。请考虑显式实现重写“Object.Equals”</target>
+        <target state="translated">类型“{0}”显式实现 "System.IComparable"，但未提供相对应的 "Object.Equals" 的重写。已自动提供 "Object.Equals " 的实现(通过 "System.IComparable" 实现)。请考虑显式实现重写 "Object.Equals"</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelExplicitImplementationOfGetHashCodeOrEquals">
         <source>The struct, record or union type '{0}' has an explicit implementation of 'Object.GetHashCode' or 'Object.Equals'. You must apply the 'CustomEquality' attribute to the type</source>
-        <target state="translated">结构、记录或联合类型“{0}”具有“Object.GetHashCode”或“Object.Equals”的显式实现。您必须将“CustomEquality”特性应用于该类型</target>
+        <target state="translated">结构、记录或联合类型“{0}”具有 "Object.GetHashCode" 或 "Object.Equals" 的显式实现。您必须将 "CustomEquality" 特性应用于该类型</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelExplicitImplementationOfGetHashCode">
         <source>The struct, record or union type '{0}' has an explicit implementation of 'Object.GetHashCode'. Consider implementing a matching override for 'Object.Equals(obj)'</source>
-        <target state="translated">结构、记录或联合类型“{0}”具有“Object.GetHashCode”的显式实现。请考虑为“Object.Equals(obj)”实现匹配的重写</target>
+        <target state="translated">结构、记录或联合类型“{0}”具有 "Object.GetHashCode" 的显式实现。请考虑为 "Object.Equals(obj)" 实现匹配的重写</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelExplicitImplementationOfEquals">
         <source>The struct, record or union type '{0}' has an explicit implementation of 'Object.Equals'. Consider implementing a matching override for 'Object.GetHashCode()'</source>
-        <target state="translated">结构、记录或联合类型“{0}”具有“Object.Equals”的显式实现。请考虑为“Object.GetHashCode()”实现匹配的重写</target>
+        <target state="translated">结构、记录或联合类型“{0}”具有 "Object.Equals" 的显式实现。请考虑为 "Object.GetHashCode()" 实现匹配的重写</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleHiddenBySignature">
@@ -964,7 +964,7 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenWithSuggestion">
         <source>No implementation was given for '{0}'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="translated">未为“{0}”给定任何实现。请注意，必须在适当的“interface”声明下实现并列出所有接口成员，例如“interface ... with member ...”。</target>
+        <target state="translated">未为“{0}”给定任何实现。请注意，必须在适当的 "interface" 声明下实现并列出所有接口成员，例如 "interface ... with member ..."。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelMemberDoesNotHaveCorrectNumberOfArguments">
@@ -1009,37 +1009,37 @@
       </trans-unit>
       <trans-unit id="augNoRefEqualsOnStruct">
         <source>The 'ReferenceEquality' attribute cannot be used on structs. Consider using the 'StructuralEquality' attribute instead, or implement an override for 'System.Object.Equals(obj)'.</source>
-        <target state="translated">不能对结构使用“ReferenceEquality”特性。请考虑改用“StructuralEquality”特性，或实现对“System.Object.Equals(obj)”的重写。</target>
+        <target state="translated">不能对结构使用 "ReferenceEquality" 特性。请考虑改用 "StructuralEquality" 特性，或实现对 "System.Object.Equals(obj)" 的重写。</target>
         <note />
       </trans-unit>
       <trans-unit id="augInvalidAttrs">
         <source>This type uses an invalid mix of the attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison'</source>
-        <target state="translated">此类型使用的“NoEquality”、“ReferenceEquality”、“StructuralEquality”、“NoComparison”和“StructuralComparison”特性组合无效</target>
+        <target state="translated">此类型使用的 "NoEquality"、"ReferenceEquality"、"StructuralEquality"、"NoComparison" 和 "StructuralComparison" 特性组合无效</target>
         <note />
       </trans-unit>
       <trans-unit id="augNoEqualityNeedsNoComparison">
         <source>The 'NoEquality' attribute must be used in conjunction with the 'NoComparison' attribute</source>
-        <target state="translated">“NoEquality”特性必须与“NoComparison”特性结合使用</target>
+        <target state="translated">"NoEquality" 特性必须与 "NoComparison" 特性结合使用</target>
         <note />
       </trans-unit>
       <trans-unit id="augStructCompNeedsStructEquality">
         <source>The 'StructuralComparison' attribute must be used in conjunction with the 'StructuralEquality' attribute</source>
-        <target state="translated">“StructuralComparison”特性必须与“StructuralEquality”特性结合使用</target>
+        <target state="translated">"StructuralComparison" 特性必须与 "StructuralEquality" 特性结合使用</target>
         <note />
       </trans-unit>
       <trans-unit id="augStructEqNeedsNoCompOrStructComp">
         <source>The 'StructuralEquality' attribute must be used in conjunction with the 'NoComparison' or 'StructuralComparison' attributes</source>
-        <target state="translated">“StructuralEquality”特性必须与“NoComparison”或“StructuralComparison”特性结合使用</target>
+        <target state="translated">"StructuralEquality" 特性必须与 "NoComparison" 或 "StructuralComparison" 特性结合使用</target>
         <note />
       </trans-unit>
       <trans-unit id="augTypeCantHaveRefEqAndStructAttrs">
         <source>A type cannot have both the 'ReferenceEquality' and 'StructuralEquality' or 'StructuralComparison' attributes</source>
-        <target state="translated">一个类型不能同时具有“ReferenceEquality”特性和“StructuralEquality”或“StructuralComparison”特性</target>
+        <target state="translated">一个类型不能同时具有 "ReferenceEquality" 特性和 "StructuralEquality" 或 "StructuralComparison" 特性</target>
         <note />
       </trans-unit>
       <trans-unit id="augOnlyCertainTypesCanHaveAttrs">
         <source>Only record, union, exception and struct types may be augmented with the 'ReferenceEquality', 'StructuralEquality' and 'StructuralComparison' attributes</source>
-        <target state="translated">只可以利用“ReferenceEquality”、“StructuralEquality”和“StructuralComparison”特性来扩大记录、联合、异常和结构类型</target>
+        <target state="translated">只可以利用 "ReferenceEquality"、"StructuralEquality" 和 "StructuralComparison" 特性来扩大记录、联合、异常和结构类型</target>
         <note />
       </trans-unit>
       <trans-unit id="augRefEqCantHaveObjEquals">
@@ -1054,12 +1054,12 @@
       </trans-unit>
       <trans-unit id="augCustomCompareNeedsIComp">
         <source>A type with attribute 'CustomComparison' must have an explicit implementation of at least one of 'System.IComparable' or 'System.Collections.IStructuralComparable'</source>
-        <target state="translated">具有特性“CustomComparison”的类型必须至少显式实现“System.IComparable”或“System.Collections.IStructuralComparable”中的一个</target>
+        <target state="translated">具有特性 "CustomComparison" 的类型必须至少显式实现 "System.IComparable" 或 "System.Collections.IStructuralComparable" 中的一个</target>
         <note />
       </trans-unit>
       <trans-unit id="augNoEqNeedsNoObjEquals">
         <source>A type with attribute 'NoEquality' should not usually have an explicit implementation of 'Object.Equals(obj)'. Disable this warning if this is intentional for interoperability purposes</source>
-        <target state="translated">具有特性“NoEquality”通常不应显式实现“Object.Equals(obj)”。如果这是为了实现互操作性而特意这样做的，请禁用此警告</target>
+        <target state="translated">具有特性 "NoEquality" 通常不应显式实现 "Object.Equals(obj)"。如果这是为了实现互操作性而特意这样做的，请禁用此警告</target>
         <note />
       </trans-unit>
       <trans-unit id="augNoCompCantImpIComp">
@@ -1069,7 +1069,7 @@
       </trans-unit>
       <trans-unit id="augCustomEqNeedsNoCompOrCustomComp">
         <source>The 'CustomEquality' attribute must be used in conjunction with the 'NoComparison' or 'CustomComparison' attributes</source>
-        <target state="translated">“CustomEquality”特性必须与“NoComparison”或“CustomComparison”特性结合使用</target>
+        <target state="translated">"CustomEquality" 特性必须与 "NoComparison" 或 "CustomComparison" 特性结合使用</target>
         <note />
       </trans-unit>
       <trans-unit id="forPositionalSpecifiersNotPermitted">
@@ -1089,7 +1089,7 @@
       </trans-unit>
       <trans-unit id="forPrefixFlagSpacePlusSetTwice">
         <source>Prefix flag (' ' or '+') set twice</source>
-        <target state="translated">前缀标志(“ ”或“+”)设置了两次</target>
+        <target state="translated">前缀标志(" " 或 "+")设置了两次</target>
         <note />
       </trans-unit>
       <trans-unit id="forHashSpecifierIsInvalid">
@@ -1114,7 +1114,7 @@
       </trans-unit>
       <trans-unit id="forPrecisionMissingAfterDot">
         <source>Precision missing after the '.'</source>
-        <target state="translated">“.”后缺少精度</target>
+        <target state="translated">"." 后缺少精度</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatDoesntSupportPrecision">
@@ -1129,7 +1129,7 @@
       </trans-unit>
       <trans-unit id="forLIsUnnecessary">
         <source>The 'l' or 'L' in this format specifier is unnecessary. In F# code you can use %d, %x, %o or %u instead, which are overloaded to work with all basic integer types.</source>
-        <target state="translated">此格式说明符中不需要“l”或“L”。在 F# 代码中，可以改用 %d、%x、%o 或 %u，这些项将被重载以用于所有基本整数类型。</target>
+        <target state="translated">此格式说明符中不需要 "l" 或 "L"。在 F# 代码中，可以改用 %d、%x、%o 或 %u，这些项将被重载以用于所有基本整数类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="forHIsUnnecessary">
@@ -1159,7 +1159,7 @@
       </trans-unit>
       <trans-unit id="chkProtectedOrBaseCalled">
         <source>A protected member is called or 'base' is being used. This is only allowed in the direct implementation of members since they could escape their object scope.</source>
-        <target state="translated">调用了受保护的成员或正在使用“base”。只能在对成员的直接实现中这样做，因为它们可能会超出其对象范围。</target>
+        <target state="translated">调用了受保护的成员或正在使用 "base"。只能在对成员的直接实现中这样做，因为它们可能会超出其对象范围。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkByrefUsedInInvalidWay">
@@ -1169,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="chkBaseUsedInInvalidWay">
         <source>The 'base' keyword is used in an invalid way. Base calls cannot be used in closures. Consider using a private member to make base calls.</source>
-        <target state="translated">“base”关键字的使用方式无效。在闭包中不能使用 base 调用。请考虑使用私有成员进行 base 调用。</target>
+        <target state="translated">"base" 关键字的使用方式无效。在闭包中不能使用 base 调用。请考虑使用私有成员进行 base 调用。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkVariableUsedInInvalidWay">
@@ -1194,7 +1194,7 @@
       </trans-unit>
       <trans-unit id="chkErrorContainsCallToRethrow">
         <source>Calls to 'reraise' may only occur directly in a handler of a try-with</source>
-        <target state="translated">只可以在 try-with 的处理程序中直接调用“reraise”</target>
+        <target state="translated">只可以在 try-with 的处理程序中直接调用 "reraise"</target>
         <note />
       </trans-unit>
       <trans-unit id="chkSplicingOnlyInQuotations">
@@ -1214,7 +1214,7 @@
       </trans-unit>
       <trans-unit id="chkNoFirstClassRethrow">
         <source>First-class uses of the 'reraise' function is not permitted</source>
-        <target state="translated">不允许优先使用“reraise”函数</target>
+        <target state="translated">不允许优先使用 "reraise" 函数</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAtThisPoint">
@@ -1224,12 +1224,12 @@
       </trans-unit>
       <trans-unit id="chkLimitationsOfBaseKeyword">
         <source>'base' values may only be used to make direct calls to the base implementations of overridden members</source>
-        <target state="translated">“base”值只能用于直接调用重写成员的基实现</target>
+        <target state="translated">"base" 值只能用于直接调用重写成员的基实现</target>
         <note />
       </trans-unit>
       <trans-unit id="chkObjCtorsCantUseExceptionHandling">
         <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">在初始化对象之前，对象构造函数不能直接使用 try/with 和 try/finally。这包括像“for x in ...”这样详细说明其构造使用方式的构造。这是由通用 IL 设定的限制。</target>
+        <target state="translated">在初始化对象之前，对象构造函数不能直接使用 try/with 和 try/finally。这包括像 "for x in ..." 这样详细说明其构造使用方式的构造。这是由通用 IL 设定的限制。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
@@ -1369,7 +1369,7 @@
       </trans-unit>
       <trans-unit id="chkValueWithDefaultValueMustHaveDefaultValue">
         <source>The type of a field using the 'DefaultValue' attribute must admit default initialization, i.e. have 'null' as a proper value or be a struct type whose fields all admit default initialization. You can use 'DefaultValue(false)' to disable this check</source>
-        <target state="translated">使用“DefaultValue”特性的字段的类型必须承认默认初始化，也就是说，此类型将“null”用作适当的值，或者此类型是一个结构类型，其中的所有字段均承认默认初始化。可以使用“DefaultValue(false)”禁用此检查</target>
+        <target state="translated">使用 "DefaultValue" 特性的字段的类型必须承认默认初始化，也就是说，此类型将 "null" 用作适当的值，或者此类型是一个结构类型，其中的所有字段均承认默认初始化。可以使用 "DefaultValue(false)" 禁用此检查</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefInTypeAbbrev">
@@ -2644,7 +2644,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidPropertyType">
         <source>This property has an invalid type. Properties taking multiple indexer arguments should have types of the form 'ty1 * ty2 -&gt; ty3'. Properties returning functions should have types of the form '(ty1 -&gt; ty2)'.</source>
-        <target state="translated">此属性的类型无效。采用多个索引器参数的属性应具有 "ty1 * ty1-&amp; gt; ty1" 形式的类型。返回函数的属性应具有 "(ty1 -&gt; ty2)" 形式的类型。</target>
+        <target state="translated">此属性的类型无效。采用多个索引器参数的属性应具有 "ty1 * ty2 -&gt; ty3" 形式的类型。返回函数的属性应具有 "(ty1 -&gt; ty2)" 形式的类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedUnitOfMeasureMarkWithAttribute">
@@ -3389,7 +3389,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBinding">
         <source>'use' bindings must be of the form 'use &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">"use" 绑定必须采用 "use &lt;var&gt; = &lt;expr&gt;" 形式。</target>
+        <target state="translated">"use" 绑定必须采用 "use &lt;var&gt; = &lt;expr&gt;" 形式</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAbstractMembersIllegalInAugmentation">
@@ -3459,7 +3459,7 @@
       </trans-unit>
       <trans-unit id="tcMemberOverridesIllegalInInterface">
         <source>Interfaces cannot contain definitions of member overrides</source>
-        <target state="translated">接口不能包含成员重写的定义。</target>
+        <target state="translated">接口不能包含成员重写的定义</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
@@ -3504,7 +3504,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">如果还给定了常量值，则声明只能是 [&lt;Literal&gt;] 属性，例如 "val x : int = 1"。</target>
+        <target state="translated">如果还给定了常量值，则声明只能是 [&lt;Literal&gt;] 属性，例如 "val x : int = 1"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
@@ -3529,7 +3529,7 @@
       </trans-unit>
       <trans-unit id="tcStaticValFieldsMustBeMutableAndPrivate">
         <source>Static 'val' fields in types must be mutable, private and marked with the '[&lt;DefaultValue&gt;]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.</source>
-        <target state="translated">类型中的静态 "val" 字段必须是可变的和私有的，并标记了 "[&lt;DefaultValue&gt;]" 属性。这些字段将初始化为各自类型的 "null" 或“零”值。请考虑在类类型中也使用 "static let mutable" 绑定</target>
+        <target state="translated">类型中的静态 "val" 字段必须是可变的和私有的，并标记了 "[&lt;DefaultValue&gt;]" 属性。这些字段将初始化为各自类型的 "null" 或“零”值。请考虑在类类型中也使用 "static let mutable" 绑定。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldRequiresName">
@@ -4189,12 +4189,12 @@
       </trans-unit>
       <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
         <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">#NAME?</target>
+        <target state="translated">--仅在发出可移植 PDB 时才支持嵌入开关(--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSourceLinkRequirePortablePDBs">
         <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">#NAME?</target>
+        <target state="translated">--仅在发出可移植 PDB 时才支持源链接开关(--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="srcFileTooLarge">
@@ -4204,7 +4204,7 @@
       </trans-unit>
       <trans-unit id="optsResource">
         <source>Embed the specified managed resource</source>
-        <target state="translated">嵌入指定的托管资源</target>
+        <target state="translated">嵌入指定的受管理资源</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLinkresource">
@@ -5139,7 +5139,7 @@
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
         <source>The use of the type syntax 'int C' and 'C  &lt;int&gt;' is not permitted here. Consider adjusting this type to be written in the form 'C&lt;int&gt;'</source>
-        <target state="translated">此处不允许使用类型语法 "int C" 和 "C  &lt;int&gt;"。请考虑调整此类型，使其按 "C&lt;int&gt;" 形式进行编写。</target>
+        <target state="translated">此处不允许使用类型语法 "int C" 和 "C  &lt;int&gt;"。请考虑调整此类型，使其按 "C&lt;int&gt;" 形式进行编写</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUndefinedItemRefModuleNamespace">
@@ -5304,7 +5304,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBinding">
         <source>'use!' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">"use!" 绑定必须采用 "use! &lt;var&gt; = &lt;expr&gt;" 形式。</target>
+        <target state="translated">"use!" 绑定必须采用 "use! &lt;var&gt; = &lt;expr&gt;" 形式</target>
         <note />
       </trans-unit>
       <trans-unit id="crefNoInnerGenericsInQuotations">
@@ -5774,7 +5774,7 @@
       </trans-unit>
       <trans-unit id="tcTypeTestLossy">
         <source>This type test or downcast will erase the provided type '{0}' to the type '{1}'</source>
-        <target state="translated">此类型测试或向下转换会将提供的类型“{0}”清除为类型“{1}”。</target>
+        <target state="translated">此类型测试或向下转换会将提供的类型“{0}”清除为类型“{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeCastErased">
@@ -5924,7 +5924,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeGroupJoin">
         <source>{0} var in collection {1} (outerKey = innerKey) into group. Note that parentheses are required after '{2}'</source>
-        <target state="translated">集合 {1} (outerKey = innerKey) 中的 {0} var 到组中。请注意, 在 "{2}" 之后需要圆括号</target>
+        <target state="translated">{0} var in collection {1} (outerKey = innerKey) into group。请注意，“{2}”后需使用括号</target>
         <note />
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
@@ -6289,7 +6289,7 @@
       </trans-unit>
       <trans-unit id="memberOperatorDefinitionWithNonTripleArgument">
         <source>Infix operator member '{0}' has {1} initial argument(s). Expected a tuple of 3 arguments</source>
-        <target state="translated">中缀运算符成员“{0}”具有 {1} 个初始参数。需要一个由 3 个参数构成的元组。</target>
+        <target state="translated">中缀运算符成员“{0}”具有 {1} 个初始参数。需要一个由 3 个参数构成的元组</target>
         <note />
       </trans-unit>
       <trans-unit id="cannotResolveNullableOperators">
@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">用于替代 let，以便要求 Dispose 的值可调用到免费资源。</target>
+        <target state="translated">代替 let 用于实现 IDisposable 的值</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -6909,12 +6909,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionTypedQuotation">
         <source>Delimits a typed code quotation.</source>
-        <target state="translated">分隔泛型代码引用。</target>
+        <target state="translated">分隔类型化代码引用。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUntypedQuotation">
         <source>Delimits a untyped code quotation.</source>
-        <target state="translated">分隔泛型代码引用。</target>
+        <target state="translated">分隔非类型化代码引用。</target>
         <note />
       </trans-unit>
       <trans-unit id="itemNotFoundDuringDynamicCodeGen">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">没有为这些成员提供实现: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">没有为这些成员提供实现: {0}请注意，必须实现所有接口成员，并在适当的 "interface" 声明下将其列出，例如 "interface ... with member ..."。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">没有为这些成员提供实现 (省略了一些结果): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">没有为这些成员提供实现 (省略了一些结果): {0}请注意，必须实现所有接口成员，并在适当的 "interface" 声明下列出，例如 "interface ... with member ..."。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">
