@@ -5,15 +5,22 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Compilation.Utilities
+open FSharp.Compiler.CompileOps
 
 [<Sealed>]
 type SourceSnapshot =
 
     member FilePath: string
 
-    member internal GetSourceValueAsync: unit -> Async<SourceValue>
-
-    member internal GetSourceValueAsync: unit -> Async<SourceText>
+[<NoEquality; NoComparison>]
+type internal ParsingConfig =
+    {
+        tcConfig: TcConfig
+        isLastFileOrScript: bool
+        isExecutable: bool
+        conditionalCompilationDefines: string list
+        filePath: string
+    }
 
 [<Sealed;AbstractClass;Extension>]
 type internal ITemporaryStorageServiceExtensions =
@@ -21,16 +28,19 @@ type internal ITemporaryStorageServiceExtensions =
     [<Extension>]
     static member CreateSourceSnapshot: ITemporaryStorageService * filePath: string * SourceText -> Cancellable<SourceSnapshot>
 
+    [<Extension>]
+    static member CreateSourceSnapshot: ITemporaryStorageService * filePath: string -> Cancellable<SourceSnapshot>
+
 [<Sealed>]
 type SyntaxTree =
 
-    internal new: filePath: string * ParsingInfo * AsyncLazyWeak<ParseResult> -> SyntaxTree
+    internal new: filePath: string * ParsingConfig * SourceSnapshot -> SyntaxTree
 
     member FilePath: string
 
     /// TODO: Make this public when we have a better way to handling ParsingInfo, perhaps have a better ParsingOptions?
-    member internal ParsingInfo: ParsingInfo
+    member internal ParsingConfig: ParsingConfig
 
     member GetParseResultAsync: unit -> Async<ParseResult>
 
-    member GetSourceText:  unit -> Async<SourceText>
+    member GetSourceTextAsync:  unit -> Async<SourceText>

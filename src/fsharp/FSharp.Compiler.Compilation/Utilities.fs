@@ -131,6 +131,8 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
                                  agentInstance <- None
        }
 
+       member __.TryGetValue () = tryGetResult ()
+
 [<Sealed>]
 type AsyncLazy<'T when 'T : not struct> (computation) =
     

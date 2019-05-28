@@ -70,7 +70,7 @@ type IncrementalCheckerState =
     static member private CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, sourceSnapshot: SourceSnapshot) =
         let filePath = sourceSnapshot.FilePath
 
-        let parsingInfo =
+        let pConfig =
             {
                 tcConfig = tcConfig
                 isLastFileOrScript = isLastFileOrScript
@@ -79,13 +79,7 @@ type IncrementalCheckerState =
                 filePath = filePath
             }
 
-        let asyncLazyWeakGetParseResult =
-            AsyncLazyWeak (async {
-                use! sourceValue = sourceSnapshot.GetSourceValueAsync ()
-                return Parser.Parse parsingInfo sourceValue
-            })
-
-        SyntaxTree (filePath, parsingInfo, asyncLazyWeakGetParseResult)
+        SyntaxTree (filePath, pConfig, sourceSnapshot)
 
     static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSourceSnapshots: ImmutableArray<SourceSnapshot>) =
         cancellable {
@@ -97,37 +91,14 @@ type IncrementalCheckerState =
 
             orderedResultsBuilder.Count <- length
 
-            // Build syntax trees.
-            let syntaxTrees = ResizeArray length
-
-            try
-                orderedSourceSnapshots
-                |> ImmutableArray.iteri (fun i sourceSnapshot ->
-                    let isLastFile = (orderedSourceSnapshots.Length - 1) = i
-                    let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isLastFile, sourceSnapshot)
-                    let sourceValue = Async.RunSynchronously (sourceSnapshot.GetSourceValueAsync (), cancellationToken = cancellationToken)
-                    syntaxTrees.Add (syntaxTree, sourceValue)
-                )
-
-                // We parallelize parsing here because reading from source snapshots are not truly asynchronous; memory mapped files are blocking, non-asynchronous calls.
-                orderedSourceSnapshots |> Seq.iteri (fun i _ ->
-               // Parallel.For(0, orderedSourceSnapshots.Length, fun i ->
-                    let syntaxTree, sourceValue = syntaxTrees.[i]
-                    let parseResult = Parser.Parse syntaxTree.ParsingInfo sourceValue
-                    let compilationResult = PartialCheckResult.Parsed (syntaxTree, parseResult)
-
-                    orderedResultsBuilder.[i] <- compilationResult
-                    indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
-                ) |> ignore
-
-            finally
-                syntaxTrees
-                |> Seq.iter (fun (_, sourceValue) -> 
-                    // TODO: We should moving disposing of a stream in the Parser.
-                    (sourceValue :> IDisposable).Dispose ()
-                )
-
-                cancellationToken.ThrowIfCancellationRequested ()
+            orderedSourceSnapshots
+            |> ImmutableArray.iteri (fun i sourceSnapshot ->
+                let isLastFile = (orderedSourceSnapshots.Length - 1) = i
+                let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isLastFile, sourceSnapshot)
+                let parseResult = Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
+                orderedResultsBuilder.[i] <- Parsed (syntaxTree, parseResult)
+                indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
+            )
 
             return {
                 tcConfig = tcConfig
