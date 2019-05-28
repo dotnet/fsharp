@@ -190,8 +190,6 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
         if not (state.filePathIndexMap.ContainsKey filePath) then
             failwithf "File path does not exist in compilation. File path: %s" filePath
 
-    let cachedSemanticModel = Dictionary ()
-
     member __.Id = id
 
     member __.Version = version
@@ -207,12 +205,17 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
 
     member __.GetSemanticModel filePath =
         checkFilePath filePath
-        match cachedSemanticModel.TryGetValue filePath with
-        | true, sm -> sm
-        | _ ->
-            let sm = SemanticModel (filePath, asyncLazyGetChecker)
-            cachedSemanticModel.[filePath] <- sm
-            sm
+        SemanticModel (filePath, asyncLazyGetChecker)
+
+    member __.GetSyntaxTree filePath =
+        checkFilePath filePath
+        // Note: Getting a syntax tree requires that the checker be built. This is due to the tcConfig dependency when parsing a syntax tree.
+        //       When parsing does not require tcConfig, we can build the syntax trees in Compilation and pass them directly to the checker when it gets built.
+        // TODO: Remove this when we fix the tcConfig dependency on parsing.
+        Async.RunSynchronously (async {
+            let! checker = state.asyncLazyGetChecker.GetValueAsync ()
+            return checker.GetSyntaxTree filePath
+        })       
 
 module Compilation =
 

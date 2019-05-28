@@ -64,7 +64,7 @@ type IncrementalCheckerState =
         indexLookup: ImmutableDictionary<string, int>
     }
 
-    // TODO: This should be moved out of the checker (possibly to Compilation), but we have a dependency on tcConfig; which gets built and passed to the checker.
+    // TODO: This should be moved out of the checker (possibly to Compilation), but we have a dependency on tcConfig; which gets built as part of the checker.
     //       The checker should not be thinking about source snapshots and only be thinking about consuming syntax trees.
     /// Create a syntax tree.
     static member private CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, sourceSnapshot: SourceSnapshot) =
@@ -155,6 +155,11 @@ type IncrementalCheckerState =
                     result
             )
         { this with orderedResults = orderedResults }
+
+    member this.GetSyntaxTree filePath =
+        match this.indexLookup.TryGetValue filePath with
+        | true, i -> this.orderedResults.[i].SyntaxTree
+        | _ -> failwith "file for syntax tree does not exist in incremental checker"
 
     member this.CheckAsync (filePath: string, flags: CheckFlags) =
         let tcConfig = this.tcConfig
@@ -251,6 +256,9 @@ type IncrementalChecker (state: IncrementalCheckerState) =
             | None -> return raise (InvalidOperationException ())
             | Some (sink, symbolEnv) -> return (tcAcc, sink, symbolEnv)
         }
+
+    member __.GetSyntaxTree filePath =
+        state.GetSyntaxTree filePath
 
 module IncrementalChecker =
 

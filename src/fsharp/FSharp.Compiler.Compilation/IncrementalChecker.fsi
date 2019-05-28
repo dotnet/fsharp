@@ -30,6 +30,8 @@ type internal IncrementalChecker =
 
     member CheckAsync: filePath: string -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
 
+    member GetSyntaxTree: filePath: string -> SyntaxTree
+
 [<RequireQualifiedAccess>]
 module internal IncrementalChecker =
 

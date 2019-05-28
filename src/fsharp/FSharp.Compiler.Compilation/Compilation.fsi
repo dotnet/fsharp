@@ -52,6 +52,8 @@ and [<Sealed>] Compilation =
 
     member GetSemanticModel: filePath: string -> SemanticModel
 
+    member GetSyntaxTree: filePath: string -> SyntaxTree
+
 [<RequireQualifiedAccess>]
 module internal Compilation =
 
