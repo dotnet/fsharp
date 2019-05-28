@@ -175,8 +175,4 @@
     </AssemblyAttribute>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="BlockComment\" />
-  </ItemGroup>
-
 </Project>
