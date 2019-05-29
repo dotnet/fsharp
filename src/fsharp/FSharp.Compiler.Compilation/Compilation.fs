@@ -233,12 +233,12 @@ type CompilationOptions =
             options.MetadataReferences.OfType<Microsoft.CodeAnalysis.PortableExecutableReference>()
             |> Array.ofSeq
 
-        let tryGetMetadataSnapshot path _ =
+        let tryGetMetadataSnapshot path (_: DateTime) =
             let metadataReferenceOpt = 
                 peReferences
                 |> Array.tryFind (fun x -> String.Equals (path, x.FilePath, StringComparison.OrdinalIgnoreCase))
             match metadataReferenceOpt with
-            | Some metadata -> metadata
+            | Some metadata -> Some (getRawPointerMetadataSnapshot metadata)
             | _ -> failwith "should not happen" // this should not happen because we construct references for the command line args here. existing references from the command line args are removed.
 
         let commandLineArgs =
@@ -257,7 +257,7 @@ type CompilationOptions =
                 frameworkTcImportsCache = frameworkTcImportsCache
                 legacyReferenceResolver = globalOptions.LegacyReferenceResolver
                 defaultFSharpBinariesDir = globalOptions.DefaultFSharpBinariesDir
-                tryGetMetadataSnapshot = globalOptions.TryGetMetadataSnapshot
+                tryGetMetadataSnapshot = tryGetMetadataSnapshot
                 suggestNamesForErrors = options.SuggestNamesForErrors
                 sourceFiles = options.SourceSnapshots |> Seq.map (fun x -> x.FilePath) |> List.ofSeq
                 commandLineArgs = commandLineArgs
