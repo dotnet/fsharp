@@ -32,7 +32,13 @@ type internal IncrementalChecker =
 
     member GetSyntaxTree: filePath: string -> SyntaxTree
 
+    member TcInitial: TcInitial
+
+    /// Finishes checking everything.
+    /// Once finished, the results will be cached.
+    member FinishAsync: unit -> Async<TcAccumulator []>
+
 [<RequireQualifiedAccess>]
 module internal IncrementalChecker =
 
-    val create: TcConfig -> TcGlobals -> TcImports -> TcAccumulator -> CheckerOptions -> ImmutableArray<SourceSnapshot> -> Cancellable<IncrementalChecker>
+    val create: TcInitial -> TcImports -> TcAccumulator -> CheckerOptions -> ImmutableArray<SourceSnapshot> -> Cancellable<IncrementalChecker>

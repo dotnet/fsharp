@@ -51,6 +51,7 @@ type internal TcInitial =
         unresolvedReferences: UnresolvedAssemblyReference list
         importsInvalidated: Event<string>
         assemblyName: string
+        outfile: string
         niceNameGen: NiceNameGenerator
         loadClosureOpt: LoadClosure option
         projectDirectory: string
@@ -132,7 +133,7 @@ module TcInitial =
 
         let tcConfig = TcConfig.Create(tcConfigB, validate=true)
         let niceNameGen = NiceNameGenerator()
-        let _outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
+        let outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
 
         // Resolve assemblies and create the framework TcImports. This is done when constructing the
         // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
@@ -158,6 +159,7 @@ module TcInitial =
             unresolvedReferences = unresolvedReferences
             importsInvalidated = Event<string> () // TODO:
             assemblyName = assemblyName
+            outfile = outfile
             niceNameGen = niceNameGen
             loadClosureOpt = loadClosureOpt
             projectDirectory = projectDirectory

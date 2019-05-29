@@ -22,6 +22,49 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Tastops
+
+[<AutoOpen>]
+module CompilationHelpers = 
+    let TryFindFSharpStringAttribute tcGlobals attribSpec attribs =
+        match TryFindFSharpAttribute tcGlobals attribSpec attribs with
+        | Some (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some s
+        | _ -> None
+
+/// The implementation of the information needed by TcImports in CompileOps.fs for an F# assembly reference.
+//
+/// Constructs the build data (IRawFSharpAssemblyData) representing the assembly when used 
+/// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
+/// a virtualized view of the assembly contents as computed by background checking.
+type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState: TcState, outfile, topAttrs, assemblyName, ilAssemRef) = 
+
+    let generatedCcu = tcState.Ccu
+    let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
+                      
+    let sigData = 
+        let _sigDataAttributes, sigDataResources = Driver.EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
+        [ for r in sigDataResources  do
+            let ccuName = GetSignatureDataResourceName r
+            yield (ccuName, (fun () -> r.GetBytes())) ]
+
+    let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
+
+    let ivtAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute)
+
+    interface IRawFSharpAssemblyData with 
+        member __.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
+        member __.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
+        member __.TryGetILModuleDef() = None
+        member __.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
+        member __.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
+        member __.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
+        member __.ShortAssemblyName = assemblyName
+        member __.ILScopeRef = IL.ILScopeRef.Assembly ilAssemRef
+        member __.ILAssemblyRefs = [] // These are not significant for service scenarios
+        member __.HasAnyFSharpSignatureDataAttribute =  true
+        member __.HasMatchingFSharpSignatureDataAttribute _ilg = true
 
 [<Struct>]
 type CompilationId private (_guid: Guid) =
@@ -114,7 +157,7 @@ type CompilationOptions =
                 keepAllBackgroundResolutions = options.KeepAllBackgroundResolutions
                 parsingOptions = { isExecutable = options.IsExecutable }
             }
-        IncrementalChecker.create tcInitial.tcConfig tcInitial.tcGlobals tcImports tcAcc checkerOptions options.SourceSnapshots
+        IncrementalChecker.create tcInitial tcImports tcAcc checkerOptions options.SourceSnapshots
         |> Cancellable.runWithoutCancellation
 
 and [<NoEquality; NoComparison>] CompilationState =
@@ -215,7 +258,91 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
         Async.RunSynchronously (async {
             let! checker = state.asyncLazyGetChecker.GetValueAsync ()
             return checker.GetSyntaxTree filePath
-        })       
+        })
+
+    member __.PreEmitAsync () =
+        // TODO: Maybe break this out into separate functions? Compilation is responsible though.
+        async {
+            let! checker = asyncLazyGetChecker.GetValueAsync ()
+            let! tcStates = checker.FinishAsync ()
+            let tcConfig = checker.TcInitial.tcConfig
+            let tcGlobals = checker.TcInitial.tcGlobals
+            let assemblyName = checker.TcInitial.assemblyName
+            let outfile = checker.TcInitial.outfile            
+
+            let errorLogger = CompilationErrorLogger("PreEmitAsync", tcConfig.errorSeverityOptions)
+            use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
+
+            // Get the state at the end of the type-checking of the last file
+            let finalAcc = tcStates.[tcStates.Length-1]
+
+            // Finish the checking
+            let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
+                let results = tcStates |> List.ofArray |> List.map (fun acc-> acc.tcEnvAtEndOfFile, defaultArg acc.topAttribs EmptyTopAttrs, acc.latestImplFile, acc.latestCcuSigForFile)
+                TypeCheckMultipleInputsFinish (results, finalAcc.tcState)
+  
+            let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 
+                try
+                    // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this, 
+                    // so we make this temporary here
+                    let oldContents = tcState.Ccu.Deref.Contents
+                    try
+                        let tcState, tcAssemblyExpr = TypeCheckClosedInputSetFinish (mimpls, tcState)
+
+                        // Compute the identity of the generated assembly based on attributes, options etc.
+                        // Some of this is duplicated from fsc.fs
+                        let ilAssemRef = 
+                            let publicKey = 
+                                try 
+                                    let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
+                                    match Driver.GetStrongNameSigner signingInfo with 
+                                    | None -> None
+                                    | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
+                                with e -> 
+                                    errorRecoveryNoRange e
+                                    None
+                            let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib  "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
+                            let assemVerFromAttrib = 
+                                TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
+                                |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
+                            let ver = 
+                                match assemVerFromAttrib with 
+                                | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
+                                | Some v -> v
+                            ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
+                
+                        let tcAssemblyDataOpt = 
+                            try
+
+                              // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                              // We return 'None' for the assembly portion of the cross-assembly reference 
+                              let hasTypeProviderAssemblyAttrib = 
+                                  topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) -> 
+                                      let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName 
+                                      nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+
+                              if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
+                                None
+                              else
+                                Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
+
+                            with e -> 
+                                errorRecoveryNoRange e
+                                None
+                        ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
+                    finally 
+                        tcState.Ccu.Deref.Contents <- oldContents
+                with e -> 
+                    errorRecoveryNoRange e
+                    mkSimpleAssemblyRef assemblyName, None, None
+
+            let finalAccWithErrors = 
+                { finalAcc with 
+                    tcErrorsRev = errorLogger.GetErrors() :: finalAcc.tcErrorsRev 
+                    topAttribs = Some topAttrs
+                }
+            return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalAccWithErrors
+        }
 
 module Compilation =
 

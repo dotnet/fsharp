@@ -38,6 +38,7 @@ type internal TcInitial =
         unresolvedReferences: UnresolvedAssemblyReference list
         importsInvalidated: Event<string>
         assemblyName: string
+        outfile: string
         niceNameGen: NiceNameGenerator
         loadClosureOpt: LoadClosure option
         projectDirectory: string

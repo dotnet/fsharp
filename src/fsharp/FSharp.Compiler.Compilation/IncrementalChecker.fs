@@ -22,6 +22,9 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Tastops
 
 type internal CheckerParsingOptions =
     {
@@ -202,6 +205,9 @@ type IncrementalCheckerState =
                         let symbolEnv = SymbolEnv (tcGlobals, tcState.Ccu, Some ccuSigForFile, tcImports)
                                 
                         let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
+
+                        this.SetPartialCheckResultByIndex (cacheIndex, PartialCheckResult.Checked (syntaxTree, tcAcc))
+
                         return {tcAcc with  tcState=tcState 
                                             tcEnvAtEndOfFile=tcEnvAtEndOfFile
                                             topAttribs=Some topAttribs
@@ -244,10 +250,17 @@ type IncrementalCheckerState =
         }
 
 [<Sealed>]
-type IncrementalChecker (state: IncrementalCheckerState) =
+type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
+
+    let getTcAccs () =
+        state.orderedResults 
+        |> Array.map (function
+            | PartialCheckResult.Checked (_, tcAcc) -> tcAcc
+            | _ -> failwith "should not happen, missing a checked file"
+        )
 
     member __.ReplaceSourceSnapshot sourceSnapshot =
-        IncrementalChecker (state.ReplaceSourceSnapshot sourceSnapshot)
+        IncrementalChecker (tcInitial, state.ReplaceSourceSnapshot sourceSnapshot)
 
     member __.CheckAsync filePath =
         async {
@@ -260,10 +273,22 @@ type IncrementalChecker (state: IncrementalCheckerState) =
     member __.GetSyntaxTree filePath =
         state.GetSyntaxTree filePath
 
+    member __.TcInitial = tcInitial
+
+    member this.FinishAsync () =
+        match state.orderedResults.[state.orderedResults.Length - 1] with
+        | PartialCheckResult.Checked _ ->
+            async { return getTcAccs () }
+        | result -> 
+            async {
+                let! _ = this.CheckAsync (result.SyntaxTree.FilePath)
+                return getTcAccs ()
+            }           
+
 module IncrementalChecker =
 
-    let create tcConfig tcGlobals tcImports tcAcc (checkerOptions: CheckerOptions) sourceSnapshots =
+    let create (tcInitial: TcInitial) tcImports tcAcc (checkerOptions: CheckerOptions) sourceSnapshots =
         cancellable {
-            let! state = IncrementalCheckerState.Create (tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)
-            return IncrementalChecker state
+            let! state = IncrementalCheckerState.Create (tcInitial.tcConfig, tcInitial.tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)
+            return IncrementalChecker (tcInitial, state)
         }
