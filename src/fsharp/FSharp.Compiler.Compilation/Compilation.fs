@@ -247,8 +247,10 @@ type CompilationOptions =
             |> List.filter (fun x -> not (x.Contains("-r:")))
 
         let commandLineArgs =
-            peReferences
-            |> Array.map (fun x -> "-r:" + x.FilePath)
+            commandLineArgs @
+            (peReferences
+             |> Array.map (fun x -> "-r:" + x.FilePath)
+             |> List.ofArray)
 
         let tcInitialOptions =
             {
