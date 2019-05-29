@@ -6,14 +6,11 @@ open System
 open System.ComponentModel.Composition
 open System.Diagnostics
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open FSharp.NativeInterop
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 #nowarn "9" // NativePtr.toNativeInt
