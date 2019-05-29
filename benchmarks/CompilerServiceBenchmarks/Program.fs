@@ -366,12 +366,16 @@ module TestModule%i =
 
     let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
     let mutable compilation = compilationService.CreateCompilation compilationOptions
+    let semanticModel = compilation.GetSemanticModel (sprintf "test%i.fs" 1)
+
+    do
+        semanticModel.TryFindSymbolAsync (1, 1) |> Async.RunSynchronously |> ignore
 
     [<Benchmark>]
     member __.Test() =
-        let compilation = compilationService.CreateCompilation compilationOptions
-        for i = 1 to 100 do
-            let semanticModel = compilation.GetSemanticModel (sprintf "test%i.fs" i)
+       // let compilation = compilationService.CreateCompilation compilationOptions
+        for i = 1 to 1 do
+           // let semanticModel = compilation.GetSemanticModel (sprintf "test%i.fs" i)
             semanticModel.TryFindSymbolAsync (1, 1) |> Async.RunSynchronously |> ignore
 
 [<EntryPoint>]

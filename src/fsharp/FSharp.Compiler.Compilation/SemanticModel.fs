@@ -44,6 +44,39 @@ module SemanticModelHelpers =
 
         bestSoFar
 
+    let tryFindSymbol line column (resolutions: TcResolutions) (symbolEnv: SymbolEnv) =
+        let mutable result = None
+
+        let p = mkPos line column
+        for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
+            let cnr = resolutions.CapturedNameResolutions.[i]
+            if Range.rangeContainsPos cnr.Range p then
+                result <- Some (FSharpSymbol.Create (symbolEnv, cnr.Item))
+
+        result
+
+    let findSymbols (symbol: FSharpSymbol) (resolutions: TcResolutions) (symbolEnv: SymbolEnv) =
+        let result = ImmutableArray.CreateBuilder ()
+
+        for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
+            let cnr = resolutions.CapturedNameResolutions.[i]
+            if ItemsAreEffectivelyEqual symbolEnv.g symbol.Item cnr.Item then
+                result.Add (FSharpSymbolUse (symbolEnv.g, cnr.DisplayEnv, symbol, cnr.ItemOccurence, cnr.Range))
+
+        result.ToImmutable ()
+
+    let getToolTipText line column (resolutions: TcResolutions) (symbolEnv: SymbolEnv) =
+        let mutable result = None
+
+        let p = mkPos line column
+        for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
+            let cnr = resolutions.CapturedNameResolutions.[i]
+            if Range.rangeContainsPos cnr.Range p then
+                let items = [ FSharp.Compiler.SourceCodeServices.SymbolHelpers.FormatStructuredDescriptionOfItem false symbolEnv.infoReader cnr.Range cnr.DisplayEnv cnr.ItemWithInst ]
+                result <- Some (SourceCodeServices.FSharpToolTipText items)
+
+        result
+
 [<Sealed>]
 type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
 
@@ -57,41 +90,17 @@ type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
     member __.TryFindSymbolAsync (line: int, column: int) : Async<FSharpSymbol option> =
         async {
             let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
-            let mutable result = None
-
-            let p = mkPos line column
-            for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
-                let cnr = resolutions.CapturedNameResolutions.[i]
-                if Range.rangeContainsPos cnr.Range p then
-                    result <- Some (FSharpSymbol.Create (symbolEnv, cnr.Item))
-
-            return result
+            return tryFindSymbol line column resolutions symbolEnv
         }
 
-    member __.FindSymbolUsesAsync (symbol: FSharpSymbol) =
+    member __.FindSymbolUsesAsync symbol =
         async {
-            let result = ImmutableArray.CreateBuilder ()
-
             let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
-            for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
-                let cnr = resolutions.CapturedNameResolutions.[i]
-                if ItemsAreEffectivelyEqual symbolEnv.g symbol.Item cnr.Item then
-                    result.Add (FSharpSymbolUse (symbolEnv.g, cnr.DisplayEnv, symbol, cnr.ItemOccurence, cnr.Range))
-
-            return result.ToImmutable ()
+            return findSymbols symbol resolutions symbolEnv
         }
 
     member __.GetToolTipTextAsync (line, column) =
         async {
             let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
-            let mutable result = None
-
-            let p = mkPos line column
-            for i = 0 to resolutions.CapturedNameResolutions.Count - 1 do
-                let cnr = resolutions.CapturedNameResolutions.[i]
-                if Range.rangeContainsPos cnr.Range p then
-                    let items = [ FSharp.Compiler.SourceCodeServices.SymbolHelpers.FormatStructuredDescriptionOfItem false symbolEnv.infoReader cnr.Range cnr.DisplayEnv cnr.ItemWithInst ]
-                    result <- Some (SourceCodeServices.FSharpToolTipText items)
-
-            return result
+            return getToolTipText line column resolutions symbolEnv
         }

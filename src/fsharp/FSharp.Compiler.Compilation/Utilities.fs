@@ -158,6 +158,8 @@ type AsyncLazy<'T when 'T : not struct> (computation) =
                 return failwith "should not happen"
         }
 
+    member __.TryGetValue () = cachedResult
+
 /// Thread safe.
 [<Sealed>]
 type LruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheSize: int, equalityComparer: IEqualityComparer<'Key>) =

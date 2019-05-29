@@ -168,7 +168,7 @@ type IncrementalCheckerState =
         let options = this.options
 
         async {
-            let! cancellationToken = Async.CancellationToken
+            let! ct = Async.CancellationToken
 
             let! (tcAcc, cacheIndex) = this.GetPriorTcAccumulatorAsync (filePath)
             let syntaxTree = (this.GetPartialCheckResultByIndex cacheIndex).SyntaxTree
@@ -223,7 +223,7 @@ type IncrementalCheckerState =
                         fullComputation |> 
                             Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled 
                                 maxTimeShareMilliseconds
-                                cancellationToken
+                                ct
                                 (fun ctok f -> f ctok)
 
                 let asyncTimeSlicedComputation =
