@@ -6,6 +6,8 @@ open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
 
+type MetadataReference = Microsoft.CodeAnalysis.MetadataReference
+
 type internal CompilationId = struct end
 
 [<NoEquality;NoComparison>]
@@ -37,10 +39,10 @@ type CompilationOptions =
         KeepAssemblyContents: bool
         KeepAllBackgroundResolutions: bool
         SourceSnapshots: ImmutableArray<SourceSnapshot>
-        CompilationReferences: ImmutableArray<Compilation>
+        MetadataReferences: ImmutableArray<MetadataReference>
     }
 
-    static member Create: assemblyPath: string * projectDirectory: string * ImmutableArray<SourceSnapshot> * ImmutableArray<Compilation> -> CompilationOptions
+    static member Create: assemblyPath: string * projectDirectory: string * ImmutableArray<SourceSnapshot> * ImmutableArray<MetadataReference> -> CompilationOptions
 
 and [<Sealed>] Compilation =
 

@@ -25,9 +25,33 @@ open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Tastops
+open System.Diagnostics
+
+#nowarn "9" // NativePtr.toNativeInt
+
+type MetadataReference = Microsoft.CodeAnalysis.MetadataReference
 
 [<AutoOpen>]
 module CompilationHelpers = 
+
+    open FSharp.NativeInterop
+
+    let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata) =
+        let amd = (md :?> Microsoft.CodeAnalysis.AssemblyMetadata)
+        let mmd = amd.GetModules().[0]
+        let mmr = mmd.GetMetadataReader()
+
+        // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+        // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
+        // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
+        // You shouldn't dispose it directly."
+
+        let objToHold = box md
+
+        // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
+        Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+
+        (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
 
     /// The implementation of the information needed by TcImports in CompileOps.fs for an F# assembly reference.
     //
@@ -184,10 +208,10 @@ type CompilationOptions =
         KeepAssemblyContents: bool
         KeepAllBackgroundResolutions: bool
         SourceSnapshots: ImmutableArray<SourceSnapshot>
-        CompilationReferences: ImmutableArray<Compilation>
+        MetadataReferences: ImmutableArray<MetadataReference>
     }
 
-    static member Create (assemblyPath, projectDirectory, sourceSnapshots, compilationReferences) =
+    static member Create (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences) =
         let suggestNamesForErrors = false
         let useScriptResolutionRules = false
         {
@@ -200,10 +224,32 @@ type CompilationOptions =
             KeepAssemblyContents = false
             KeepAllBackgroundResolutions = false
             SourceSnapshots = sourceSnapshots
-            CompilationReferences = compilationReferences
+            MetadataReferences = metadataReferences
         }
 
     member options.CreateTcInitial (frameworkTcImportsCache, globalOptions, ctok) =
+
+        let peReferences = 
+            options.MetadataReferences.OfType<Microsoft.CodeAnalysis.PortableExecutableReference>()
+            |> Array.ofSeq
+
+        let tryGetMetadataSnapshot path _ =
+            let metadataReferenceOpt = 
+                peReferences
+                |> Array.tryFind (fun x -> String.Equals (path, x.FilePath, StringComparison.OrdinalIgnoreCase))
+            match metadataReferenceOpt with
+            | Some metadata -> metadata
+            | _ -> failwith "should not happen" // this should not happen because we construct references for the command line args here. existing references from the command line args are removed.
+
+        let commandLineArgs =
+            // clear any references as we get them from metadata references
+            options.CommandLineArgs
+            |> List.filter (fun x -> not (x.Contains("-r:")))
+
+        let commandLineArgs =
+            peReferences
+            |> Array.map (fun x -> "-r:" + x.FilePath)
+
         let tcInitialOptions =
             {
                 frameworkTcImportsCache = frameworkTcImportsCache
@@ -212,7 +258,7 @@ type CompilationOptions =
                 tryGetMetadataSnapshot = globalOptions.TryGetMetadataSnapshot
                 suggestNamesForErrors = options.SuggestNamesForErrors
                 sourceFiles = options.SourceSnapshots |> Seq.map (fun x -> x.FilePath) |> List.ofSeq
-                commandLineArgs = options.CommandLineArgs
+                commandLineArgs = commandLineArgs
                 projectDirectory = options.ProjectDirectory
                 projectReferences = [] // TODO:
                 useScriptResolutionRules = options.UseScriptResolutionRules
