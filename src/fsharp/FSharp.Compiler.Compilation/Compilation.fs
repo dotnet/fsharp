@@ -29,8 +29,6 @@ open System.Diagnostics
 
 #nowarn "9" // NativePtr.toNativeInt
 
-type MetadataReference = Microsoft.CodeAnalysis.MetadataReference
-
 [<AutoOpen>]
 module CompilationHelpers = 
 
@@ -208,10 +206,10 @@ type CompilationOptions =
         KeepAssemblyContents: bool
         KeepAllBackgroundResolutions: bool
         SourceSnapshots: ImmutableArray<SourceSnapshot>
-        MetadataReferences: ImmutableArray<MetadataReference>
+        CompilationReferences: ImmutableArray<CompilationReference>
     }
 
-    static member Create (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences) =
+    static member Create (assemblyPath, projectDirectory, sourceSnapshots, compilationReferences) =
         let suggestNamesForErrors = false
         let useScriptResolutionRules = false
         {
@@ -224,21 +222,36 @@ type CompilationOptions =
             KeepAssemblyContents = false
             KeepAllBackgroundResolutions = false
             SourceSnapshots = sourceSnapshots
-            MetadataReferences = metadataReferences
+            CompilationReferences = compilationReferences
         }
 
     member options.CreateTcInitial (frameworkTcImportsCache, globalOptions, ctok) =
 
         let peReferences = 
-            options.MetadataReferences.OfType<Microsoft.CodeAnalysis.PortableExecutableReference>()
+            options.CompilationReferences
+            |> Seq.choose(function
+                | CompilationReference.Roslyn metadataReference ->
+                    match metadataReference with
+                    | :? Microsoft.CodeAnalysis.PortableExecutableReference as peReference -> Some peReference
+                    | _ -> None
+                | _ -> None
+            )
             |> Array.ofSeq
 
-        let tryGetMetadataSnapshot path (_: DateTime) =
+        let fsharpCompReferences =
+            options.CompilationReferences
+            |> Seq.choose(function
+                | CompilationReference.FSharpCompilation comp -> Some comp
+                | _ -> None
+            )
+            |> List.ofSeq
+
+        let tryGetMetadataSnapshot (path, _) =
             let metadataReferenceOpt = 
                 peReferences
                 |> Array.tryFind (fun x -> String.Equals (path, x.FilePath, StringComparison.OrdinalIgnoreCase))
             match metadataReferenceOpt with
-            | Some metadata -> Some (getRawPointerMetadataSnapshot metadata)
+            | Some metadata -> Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
             | _ -> failwith "should not happen" // this should not happen because we construct references for the command line args here. existing references from the command line args are removed.
 
         let commandLineArgs =
@@ -252,6 +265,27 @@ type CompilationOptions =
              |> Array.map (fun x -> "-r:" + x.FilePath)
              |> List.ofArray)
 
+        let commandLineArgs =
+            commandLineArgs @
+            (fsharpCompReferences |> List.map (fun x -> x.OutputFilePath))
+
+        let projectReferences =
+            fsharpCompReferences
+            |> List.map (fun x ->
+                { new IProjectReference with
+                
+                    member __.FileName = x.OutputFilePath
+
+                    member __.EvaluateRawContents _ =
+                        cancellable {
+                            let! ct = Cancellable.token ()
+                            return Async.RunSynchronously(x.GetAssemblyDataAsync (), cancellationToken = ct)
+                        }
+
+                    member __.TryGetLogicalTimeStamp (_, _) = None
+                }
+            )
+
         let tcInitialOptions =
             {
                 frameworkTcImportsCache = frameworkTcImportsCache
@@ -262,7 +296,7 @@ type CompilationOptions =
                 sourceFiles = options.SourceSnapshots |> Seq.map (fun x -> x.FilePath) |> List.ofSeq
                 commandLineArgs = commandLineArgs
                 projectDirectory = options.ProjectDirectory
-                projectReferences = [] // TODO:
+                projectReferences = projectReferences
                 useScriptResolutionRules = options.UseScriptResolutionRules
                 assemblyPath = options.AssemblyPath
                 isExecutable = options.IsExecutable
@@ -282,6 +316,10 @@ type CompilationOptions =
             }
         IncrementalChecker.create tcInitial tcImports tcAcc checkerOptions options.SourceSnapshots
         |> Cancellable.runWithoutCancellation
+
+and [<RequireQualifiedAccess>] CompilationReference =
+    | Roslyn of Microsoft.CodeAnalysis.MetadataReference
+    | FSharpCompilation of Compilation 
 
 and [<NoEquality; NoComparison>] CompilationState =
     {
@@ -396,6 +434,8 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
 
     member __.GetAssemblyDataAsync () =
         state.asyncLazyGetRawFSharpAssemblyData.GetValueAsync ()
+
+    member __.OutputFilePath = state.options.AssemblyPath
 
 module Compilation =
 

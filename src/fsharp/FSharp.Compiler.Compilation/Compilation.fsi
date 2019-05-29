@@ -6,8 +6,6 @@ open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
 
-type MetadataReference = Microsoft.CodeAnalysis.MetadataReference
-
 type internal CompilationId = struct end
 
 [<NoEquality;NoComparison>]
@@ -39,10 +37,14 @@ type CompilationOptions =
         KeepAssemblyContents: bool
         KeepAllBackgroundResolutions: bool
         SourceSnapshots: ImmutableArray<SourceSnapshot>
-        MetadataReferences: ImmutableArray<MetadataReference>
+        CompilationReferences: ImmutableArray<CompilationReference>
     }
 
-    static member Create: assemblyPath: string * projectDirectory: string * ImmutableArray<SourceSnapshot> * ImmutableArray<MetadataReference> -> CompilationOptions
+    static member Create: assemblyPath: string * projectDirectory: string * ImmutableArray<SourceSnapshot> * ImmutableArray<CompilationReference> -> CompilationOptions
+
+and [<RequireQualifiedAccess>] CompilationReference =
+    | Roslyn of Microsoft.CodeAnalysis.MetadataReference
+    | FSharpCompilation of Compilation 
 
 and [<Sealed>] Compilation =
 
