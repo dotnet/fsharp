@@ -2995,12 +2995,12 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     let maxMemEvent = new Event<unit>()
 
     /// Instantiate an interactive checker.    
-    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?legacyReferenceResolver, ?tryGetMetadataSnapshot, ?suggestNamesForErrors) = 
+    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?useLegacyReferenceResolver, ?tryGetMetadataSnapshot, ?suggestNamesForErrors) = 
 
         let legacyReferenceResolver = 
-            match legacyReferenceResolver with 
-            | None -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
-            | Some rr -> rr
+            match useLegacyReferenceResolver with
+            | Some choice when choice -> MSBuildReferenceResolver.Resolver
+            | _ -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
 
         let keepAssemblyContents = defaultArg keepAssemblyContents false
         let keepAllBackgroundResolutions = defaultArg keepAllBackgroundResolutions true
