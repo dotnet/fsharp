@@ -4,14 +4,13 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Runtime.CompilerServices
-open System.Runtime.Caching
 open System.Text.RegularExpressions
-open Internal.Utilities.Collections
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
+open System.Collections.Generic
 
 type internal ITaggedTextCollector =
     abstract Add: text: TaggedText -> unit
@@ -215,10 +214,9 @@ module internal XmlDocumentation =
     /// Provide Xml Documentation             
     type Provider(xmlIndexService:IVsXMLMemberIndexService) = 
         /// Index of assembly name to xml member index.
-        let mutable xmlCache = new AgedLookup<VsThreadToken,string,IVsXMLMemberIndex>(10,areSimilar=(fun (x,y) -> x = y))
+        let cache = Dictionary<string, IVsXMLMemberIndex>()
         
-        do Events.SolutionEvents.OnAfterCloseSolution.Add (fun _ -> 
-            xmlCache.Clear(vsToken))
+        do Events.SolutionEvents.OnAfterCloseSolution.Add (fun _ -> cache.Clear())
 
     #if DEBUG // Keep under DEBUG so that it can keep building.
 
@@ -251,14 +249,14 @@ module internal XmlDocumentation =
 
         /// Retrieve the pre-existing xml index or None
         let GetMemberIndexOfAssembly(assemblyName) =
-            match xmlCache.TryGet(vsToken, assemblyName) with 
-            | Some(memberIndex) -> Some(memberIndex)
-            | None -> 
+            match cache.TryGetValue(assemblyName) with 
+            | true, memberIndex -> Some(memberIndex)
+            | false, _ -> 
                 let ok,memberIndex = xmlIndexService.CreateXMLMemberIndex(assemblyName)
                 if Com.Succeeded(ok) then 
                     let ok = memberIndex.BuildMemberIndex()
-                    if Com.Succeeded(ok) then 
-                        xmlCache.Put(vsToken, assemblyName,memberIndex)
+                    if Com.Succeeded(ok) then
+                        cache.Add(assemblyName, memberIndex)
                         Some(memberIndex)
                     else None
                 else None
