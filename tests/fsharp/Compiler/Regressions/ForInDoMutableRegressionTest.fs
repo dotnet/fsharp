@@ -8,7 +8,7 @@ open NUnit.Framework
 [<TestFixture()>]
 module ForInDoMutableRegressionTest =
 
-    /// This test is to ensure we initialize locals inside loops when they are immutable.
+    /// This test is to ensure we initialize locals inside loops.
     [<Test>]
     let Script_ForInDoMutableRegressionTest() =
         let script = 
