@@ -53,7 +53,7 @@
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
-    <!--<InternalsVisibleTo Include="FSharp.Editor" />-->
+    <InternalsVisibleTo Include="FSharp.Editor" />
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
@@ -560,15 +560,7 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
-
-    <Compile Include="..\MSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
-      <Link>Misc/MSBuildReferenceResolver.fs</Link>
-    </Compile>
-    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
-    <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
-      <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
-    </Compile>
-
+    
     <!-- the incremental builder and service . -->
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
@@ -688,6 +680,14 @@
     </Compile>
     <Compile Include="..\fsi\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
+    </Compile>
+    
+    <Compile Include="..\MSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>Misc/MSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
 
