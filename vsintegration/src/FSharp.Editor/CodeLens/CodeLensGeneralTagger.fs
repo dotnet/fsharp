@@ -8,7 +8,6 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
 open System.Windows
-open System.Collections.Generic
 open Microsoft.VisualStudio.Text.Tagging
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
@@ -32,7 +31,9 @@ type CodeLensGeneralTagger (view, buffer) as self =
                 let left = Canvas.GetLeft parent
                 let top = Canvas.GetTop parent
                 let width = parent.ActualWidth
+#if DEBUG
                 logInfof "Width of parent: %.4f" width
+#endif
                 left + width, top
             | _ ->
                 try
@@ -47,12 +48,16 @@ type CodeLensGeneralTagger (view, buffer) as self =
                     // Calling the method twice fixes this bug and ensures that all values are correct.
                     // Okay not really :( Must be replaced later with an own calculation depending on editor font settings!
                     if 7 * offset > int g.Left then
+#if DEBUG
                         logErrorf "Incorrect return from geometry measure"
+#endif
                         Canvas.GetLeft ui, g.Top
                     else 
                         g.Left, g.Top
                 with e -> 
+#if DEBUG
                     logExceptionWithContext (e, "Error in layout ui element on line")
+#endif
                     Canvas.GetLeft ui, Canvas.GetTop ui
         Canvas.SetLeft(ui, left)
         Canvas.SetTop(ui, top)
@@ -89,7 +94,10 @@ type CodeLensGeneralTagger (view, buffer) as self =
                                         self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
                                     self.AddedAdornments.Add stackPanel |> ignore
                         | _ -> ()
-                    with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
+                    with e ->
+#if DEBUG
+                        logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
+#endif
             } |> Async.Ignore
     
     override self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement)=
@@ -114,7 +122,10 @@ type CodeLensGeneralTagger (view, buffer) as self =
                         let lineNumber = 
                             try
                                 snapshot.GetLineNumberFromPosition(span.Start.Position)
-                            with e -> logExceptionWithContext (e, "line number tagging"); 0
+                            with e ->
+#if DEBUG
+                                logExceptionWithContext (e, "line number tagging"); 0
+#endif
                         if self.TrackingSpans.ContainsKey(lineNumber) && self.TrackingSpans.[lineNumber] |> Seq.isEmpty |> not then
                             
                             let tagSpan = snapshot.GetLineFromLineNumber(lineNumber).Extent
@@ -134,7 +145,10 @@ type CodeLensGeneralTagger (view, buffer) as self =
                                     stackPanels |> Seq.map (fun ui -> 
                                         ui.Measure(Size(10000., 10000.))
                                         ui.DesiredSize )
-                                with e -> logExceptionWithContext (e, "internal tagging"); Seq.empty
+                                with e ->
+#if DEBUG
+                                    logExceptionWithContext (e, "internal tagging"); Seq.empty
+#endif
                             let height = 
                                 try
                                     sizes 
@@ -142,12 +156,17 @@ type CodeLensGeneralTagger (view, buffer) as self =
                                     |> Seq.sortDescending 
                                     |> Seq.tryHead
                                     |> Option.defaultValue 0.
-                                with e -> logExceptionWithContext (e, "height tagging"); 0.
+                                with e ->
+#if DEBUG
+                                    logExceptionWithContext (e, "height tagging"); 0.
+#endif
                             
                             yield TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
                 }
-            with e -> 
+            with e ->
+#if DEBUG
                 logErrorf "Error in code lens get tags %A" e
+#endif
                 Seq.empty
 
 

@@ -2,23 +2,15 @@
 
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
-
 open System
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open System.ComponentModel.Composition
 open Microsoft.VisualStudio.Utilities
-open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.LanguageServices
-open System.Collections.Generic
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Text.Classification
-open Microsoft.VisualStudio.ComponentModelHost
-open System.Threading
-open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
