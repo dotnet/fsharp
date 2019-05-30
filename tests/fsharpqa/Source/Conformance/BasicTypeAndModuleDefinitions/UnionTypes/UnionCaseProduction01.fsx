@@ -4,7 +4,7 @@
 //  | id	-- nullary union case
 //  | id of type * ... * type	-- n-ary union case
 //  | id : sig-spec	-- n-ary union case
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 type T = | A

@@ -1,5 +1,5 @@
 // #NoMT #FSI 
-//<Expect status="success">EventName: Event</Expect>
+//<Expect status="success">EventName: Event</Expects>
 
 type T() =
     do 
