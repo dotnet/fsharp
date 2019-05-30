@@ -227,29 +227,14 @@ type CompilationOptions =
 
     member options.CreateTcInitial (frameworkTcImportsCache, globalOptions, ctok) =
 
-        let peReferences = 
-            options.CompilationReferences
-            |> Seq.choose(function
-                | CompilationReference.Roslyn metadataReference ->
-                    match metadataReference with
-                    | :? Microsoft.CodeAnalysis.PortableExecutableReference as peReference -> Some peReference
-                    | _ -> None
-                | _ -> None
-            )
-            |> Array.ofSeq
-
-        let fsharpCompReferences =
-            options.CompilationReferences
-            |> Seq.choose(function
-                | CompilationReference.FSharpCompilation comp -> Some comp
-                | _ -> None
-            )
-            |> List.ofSeq
-
         let tryGetMetadataSnapshot (path, _) =
             let metadataReferenceOpt = 
-                peReferences
-                |> Array.tryFind (fun x -> String.Equals (path, x.FilePath, StringComparison.OrdinalIgnoreCase))
+                options.CompilationReferences
+                |> Seq.choose(function
+                    | CompilationReference.PortableExecutable peReference -> Some peReference
+                    | _ -> None
+                )
+                |> Seq.tryFind (fun x -> String.Equals (path, x.FilePath, StringComparison.OrdinalIgnoreCase))
             match metadataReferenceOpt with
             | Some metadata -> Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
             | _ -> failwith "should not happen" // this should not happen because we construct references for the command line args here. existing references from the command line args are removed.
@@ -261,17 +246,24 @@ type CompilationOptions =
 
         let commandLineArgs =
             commandLineArgs @
-            (peReferences
-             |> Array.map (fun x -> "-r:" + x.FilePath)
-             |> List.ofArray)
-
-        let commandLineArgs =
-            commandLineArgs @
-            (fsharpCompReferences |> List.map (fun x -> x.OutputFilePath))
+            (options.CompilationReferences
+             |> Seq.map (function
+                | CompilationReference.PortableExecutable peReference ->
+                    "-r:" + peReference.FilePath
+                | CompilationReference.FSharpCompilation compilation ->
+                    "-r:" + compilation.OutputFilePath
+             )
+             |> List.ofSeq)
 
         let projectReferences =
-            fsharpCompReferences
-            |> List.map (fun x ->
+            options.CompilationReferences
+            |> Seq.choose(function
+                | CompilationReference.FSharpCompilation compilation ->
+                    Some compilation
+                | _ ->
+                    None
+            )
+            |> Seq.map (fun x ->
                 { new IProjectReference with
                 
                     member __.FileName = x.OutputFilePath
@@ -285,6 +277,7 @@ type CompilationOptions =
                     member __.TryGetLogicalTimeStamp (_, _) = None
                 }
             )
+            |> List.ofSeq
 
         let tcInitialOptions =
             {
@@ -318,7 +311,7 @@ type CompilationOptions =
         |> Cancellable.runWithoutCancellation
 
 and [<RequireQualifiedAccess>] CompilationReference =
-    | Roslyn of Microsoft.CodeAnalysis.MetadataReference
+    | PortableExecutable of Microsoft.CodeAnalysis.PortableExecutableReference
     | FSharpCompilation of Compilation 
 
 and [<NoEquality; NoComparison>] CompilationState =

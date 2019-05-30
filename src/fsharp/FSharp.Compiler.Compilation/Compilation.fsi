@@ -43,7 +43,7 @@ type CompilationOptions =
     static member Create: assemblyPath: string * projectDirectory: string * ImmutableArray<SourceSnapshot> * ImmutableArray<CompilationReference> -> CompilationOptions
 
 and [<RequireQualifiedAccess>] CompilationReference =
-    | Roslyn of Microsoft.CodeAnalysis.MetadataReference
+    | PortableExecutable of Microsoft.CodeAnalysis.PortableExecutableReference
     | FSharpCompilation of Compilation 
 
 and [<Sealed>] Compilation =
