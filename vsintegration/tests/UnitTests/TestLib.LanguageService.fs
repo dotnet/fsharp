@@ -21,7 +21,7 @@ open Microsoft.VisualStudio.FSharp
 
 [<AutoOpen>]
 module internal Globals =
-    let checker = FSharpChecker.Create(useLegacyReferenceResolver=true)
+    let checker = FSharpChecker.Create(legacyReferenceResolver=FSharp.Compiler.MSBuildReferenceResolver.Resolver)
 
 
 //open Internal.Utilities
