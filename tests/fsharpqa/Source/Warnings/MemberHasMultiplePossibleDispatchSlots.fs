@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" id="FS3213">The member 'Bar</Expect>
+//<Expects status="Error" id="FS3213">The member 'Bar</Expects>
 //<Expects>Please restrict it to one of the following:</Expects>
 //<Expects>Bar : double -> int</Expects>
 //<Expects>Bar : int -> int</Expects>
