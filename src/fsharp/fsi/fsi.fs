@@ -2498,7 +2498,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     /// The single, global interactive checker that can be safely used in conjunction with other operations
     /// on the FsiEvaluationSession.  
-    let checker = FSharpChecker.Create(useLegacyReferenceResolver=true)
+    let checker = FSharpChecker.Create(legacyReferenceResolver=legacyReferenceResolver)
 
     let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) = 
         try 
