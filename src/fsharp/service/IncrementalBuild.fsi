@@ -106,6 +106,9 @@ type internal IncrementalBuilder =
       member ImportsInvalidatedByTypeProvider : IEvent<string>
 #endif
 
+      /// Tries to get the current successful TcImports. This is only used in testing. Do not use it for other stuff.
+      member TryGetCurrentTcImports : unit -> TcImports option
+
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
 

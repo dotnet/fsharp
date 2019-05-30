@@ -1956,6 +1956,11 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
     member info.Errors = errors
 
     member info.HasFullTypeCheckInfo = details.IsSome
+
+    member info.TryGetCurrentTcImports () =
+        match builderX with
+        | Some builder -> builder.TryGetCurrentTcImports ()
+        | _ -> None
     
     /// Intellisense autocompletions
     member info.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 

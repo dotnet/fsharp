@@ -1218,6 +1218,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 #if !NO_EXTENSIONTYPING
     let importsInvalidatedByTypeProvider = new Event<string>()
 #endif
+    let mutable currentTcImportsOpt = None
 
     // Check for the existence of loaded sources and prepend them to the sources list if present.
     let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
@@ -1317,6 +1318,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         | true, tg -> tg.Trigger msg
                         | _ -> ()))  
 #endif
+                currentTcImportsOpt <- Some tcImports
                 return tcImports
             with e -> 
                 System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
@@ -1560,6 +1562,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 #if !NO_EXTENSIONTYPING
     member __.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
 #endif
+
+    member __.TryGetCurrentTcImports () = currentTcImportsOpt
 
     member __.AllDependenciesDeprecated = allDependencies
 
