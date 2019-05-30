@@ -57,7 +57,7 @@ type internal FSharpCheckerProvider
                     keepAllBackgroundResolutions = false,
                     // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
                     (* , MaxMemory = 2300 *) 
-                    useLegacyReferenceResolver=true,
+                    legacyReferenceResolver=FSharp.Compiler.MSBuildReferenceResolver.Resolver,
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
