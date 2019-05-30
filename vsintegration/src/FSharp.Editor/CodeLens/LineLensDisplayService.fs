@@ -66,4 +66,5 @@ type internal LineLensDisplayService (view, buffer) =
 #if DEBUG
                 logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
 #endif
+                ()
         } |> Async.Ignore

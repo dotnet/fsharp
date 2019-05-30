@@ -199,8 +199,8 @@ type internal FSharpCodeLensService
                 }
             
             let inline setNewResultsAndWarnIfOverriden fullDeclarationText value = 
-                if newResults.ContainsKey fullDeclarationText then
 #if DEBUG
+                if newResults.ContainsKey fullDeclarationText then
                     logWarningf "New results already contains: %A" fullDeclarationText
 #endif
                 newResults.[fullDeclarationText] <- value
@@ -307,6 +307,7 @@ type internal FSharpCodeLensService
 #if DEBUG
                         logExceptionWithContext (e, "Line Lens tracking tag span creation")
 #endif
+                        ()
                 ()
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
@@ -337,6 +338,7 @@ type internal FSharpCodeLensService
 #if DEBUG
                             logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
 #endif
+                            ()
                     } |> (RoslynHelpers.StartAsyncSafe CancellationToken.None) "UIElement creation"
 
             for value in tagsToUpdate do
@@ -396,4 +398,3 @@ type internal FSharpCodeLensService
         bufferChangedCts.Dispose()
         bufferChangedCts <- new CancellationTokenSource()
         executeCodeLenseAsync () |> Async.Ignore |> RoslynHelpers.StartAsyncSafe bufferChangedCts.Token "Buffer Changed"
-

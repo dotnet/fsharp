@@ -98,6 +98,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
 #if DEBUG
                         logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
 #endif
+                        ()
             } |> Async.Ignore
     
     override self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement)=
@@ -124,8 +125,9 @@ type CodeLensGeneralTagger (view, buffer) as self =
                                 snapshot.GetLineNumberFromPosition(span.Start.Position)
                             with e ->
 #if DEBUG
-                                logExceptionWithContext (e, "line number tagging"); 0
+                                logExceptionWithContext (e, "line number tagging")
 #endif
+                                0
                         if self.TrackingSpans.ContainsKey(lineNumber) && self.TrackingSpans.[lineNumber] |> Seq.isEmpty |> not then
                             
                             let tagSpan = snapshot.GetLineFromLineNumber(lineNumber).Extent
@@ -147,8 +149,9 @@ type CodeLensGeneralTagger (view, buffer) as self =
                                         ui.DesiredSize )
                                 with e ->
 #if DEBUG
-                                    logExceptionWithContext (e, "internal tagging"); Seq.empty
+                                    logExceptionWithContext (e, "internal tagging")
 #endif
+                                    Seq.empty
                             let height = 
                                 try
                                     sizes 
@@ -158,8 +161,9 @@ type CodeLensGeneralTagger (view, buffer) as self =
                                     |> Option.defaultValue 0.
                                 with e ->
 #if DEBUG
-                                    logExceptionWithContext (e, "height tagging"); 0.
+                                    logExceptionWithContext (e, "height tagging")
 #endif
+                                    0.0
                             
                             yield TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
                 }
