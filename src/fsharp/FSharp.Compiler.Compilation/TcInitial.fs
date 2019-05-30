@@ -60,6 +60,7 @@ type internal TcInitial =
 module TcInitial =
 
     let create options ctok =
+        let useSimpleResolutionSwitch = "--simpleresolution"
         let frameworkTcImportsCache = options.frameworkTcImportsCache
         let sourceFiles = options.sourceFiles
         let commandLineArgs = options.commandLineArgs
@@ -102,6 +103,8 @@ module TcInitial =
                 define :: tcConfigB.conditionalCompilationDefines
 
             tcConfigB.projectReferences <- projectReferences
+
+            tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 
             // Apply command-line arguments and collect more source files if they are in the arguments
             let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
