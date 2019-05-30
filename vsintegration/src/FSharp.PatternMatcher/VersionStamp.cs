@@ -8,9 +8,9 @@ namespace Microsoft.CodeAnalysis
     /// <summary>
     /// VersionStamp should be only used to compare versions returned by same API.
     /// </summary>
-    internal struct PatternMatcherVersionStamp : IEquatable<PatternMatcherVersionStamp>, IObjectWritable
+    internal struct VersionStamp : IEquatable<VersionStamp>, IObjectWritable
     {
-        public static PatternMatcherVersionStamp Default => default(PatternMatcherVersionStamp);
+        public static VersionStamp Default => default(VersionStamp);
 
         private const int GlobalVersionMarker = -1;
         private const int InitialGlobalVersion = 10000;
@@ -36,19 +36,19 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         private readonly int _globalIncrement;
 
-        private PatternMatcherVersionStamp(DateTime utcLastModified)
+        private VersionStamp(DateTime utcLastModified)
             : this(utcLastModified, 0)
         {
         }
 
-        private PatternMatcherVersionStamp(DateTime utcLastModified, int localIncrement)
+        private VersionStamp(DateTime utcLastModified, int localIncrement)
         {
             _utcLastModified = utcLastModified;
             _localIncrement = localIncrement;
             _globalIncrement = GetNextGlobalVersion();
         }
 
-        private PatternMatcherVersionStamp(DateTime utcLastModified, int localIncrement, int globalIncrement)
+        private VersionStamp(DateTime utcLastModified, int localIncrement, int globalIncrement)
         {
             _utcLastModified = utcLastModified;
             _localIncrement = localIncrement;
@@ -58,24 +58,24 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Creates a new instance of a VersionStamp.
         /// </summary>
-        public static PatternMatcherVersionStamp Create()
+        public static VersionStamp Create()
         {
-            return new PatternMatcherVersionStamp(DateTime.UtcNow);
+            return new VersionStamp(DateTime.UtcNow);
         }
 
         /// <summary>
         /// Creates a new instance of a version stamp based on the specified DateTime.
         /// </summary>
-        public static PatternMatcherVersionStamp Create(DateTime utcTimeLastModified)
+        public static VersionStamp Create(DateTime utcTimeLastModified)
         {
-            return new PatternMatcherVersionStamp(utcTimeLastModified);
+            return new VersionStamp(utcTimeLastModified);
         }
 
         /// <summary>
         /// compare two different versions and return either one of the versions if there is no collision, otherwise, create a new version
         /// that can be used later to compare versions between different items
         /// </summary>
-        public PatternMatcherVersionStamp GetNewerVersion(PatternMatcherVersionStamp version)
+        public VersionStamp GetNewerVersion(VersionStamp version)
         {
             // * NOTE *
             // in current design/implementation, there are 4 possible ways for a version to be created.
@@ -106,7 +106,7 @@ namespace Microsoft.CodeAnalysis
 
                 // mark it as global version
                 // global version can't be moved to newer version.
-                return new PatternMatcherVersionStamp(_utcLastModified, (thisGlobalVersion > thatGlobalVersion) ? thisGlobalVersion : thatGlobalVersion, GlobalVersionMarker);
+                return new VersionStamp(_utcLastModified, (thisGlobalVersion > thatGlobalVersion) ? thisGlobalVersion : thatGlobalVersion, GlobalVersionMarker);
             }
 
             return version;
@@ -116,7 +116,7 @@ namespace Microsoft.CodeAnalysis
         /// Gets a new VersionStamp that is guaranteed to be newer than its base one
         /// this should only be used for same item to move it to newer version
         /// </summary>
-        public PatternMatcherVersionStamp GetNewerVersion()
+        public VersionStamp GetNewerVersion()
         {
             // global version can't be moved to newer version
             Contract.Requires(_globalIncrement != GlobalVersionMarker);
@@ -124,7 +124,7 @@ namespace Microsoft.CodeAnalysis
             var now = DateTime.UtcNow;
             var incr = (now == _utcLastModified) ? _localIncrement + 1 : 0;
 
-            return new PatternMatcherVersionStamp(now, incr);
+            return new VersionStamp(now, incr);
         }
 
         /// <summary>
@@ -143,15 +143,15 @@ namespace Microsoft.CodeAnalysis
 
         public override bool Equals(object obj)
         {
-            if (obj is PatternMatcherVersionStamp)
+            if (obj is VersionStamp)
             {
-                return this.Equals((PatternMatcherVersionStamp)obj);
+                return this.Equals((VersionStamp)obj);
             }
 
             return false;
         }
 
-        public bool Equals(PatternMatcherVersionStamp version)
+        public bool Equals(VersionStamp version)
         {
             if (_utcLastModified == version._utcLastModified)
             {
@@ -161,12 +161,12 @@ namespace Microsoft.CodeAnalysis
             return false;
         }
 
-        public static bool operator ==(PatternMatcherVersionStamp left, PatternMatcherVersionStamp right)
+        public static bool operator ==(VersionStamp left, VersionStamp right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(PatternMatcherVersionStamp left, PatternMatcherVersionStamp right)
+        public static bool operator !=(VersionStamp left, VersionStamp right)
         {
             return !left.Equals(right);
         }
@@ -174,7 +174,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// check whether given persisted version is re-usable
         /// </summary>
-        internal static bool CanReusePersistedVersion(PatternMatcherVersionStamp baseVersion, PatternMatcherVersionStamp persistedVersion)
+        internal static bool CanReusePersistedVersion(VersionStamp baseVersion, VersionStamp persistedVersion)
         {
             if (baseVersion == persistedVersion)
             {
@@ -202,16 +202,16 @@ namespace Microsoft.CodeAnalysis
             writer.WriteInt32(_globalIncrement);
         }
 
-        internal static PatternMatcherVersionStamp ReadFrom(ObjectReader reader)
+        internal static VersionStamp ReadFrom(ObjectReader reader)
         {
             var raw = reader.ReadInt64();
             var localIncrement = reader.ReadInt32();
             var globalIncrement = reader.ReadInt32();
 
-            return new PatternMatcherVersionStamp(DateTime.FromBinary(raw), localIncrement, globalIncrement);
+            return new VersionStamp(DateTime.FromBinary(raw), localIncrement, globalIncrement);
         }
 
-        private static int GetGlobalVersion(PatternMatcherVersionStamp version)
+        private static int GetGlobalVersion(VersionStamp version)
         {
             // global increment < 0 means it is a global version which has its global increment in local increment
             return version._globalIncrement >= 0 ? version._globalIncrement : version._localIncrement;
@@ -227,7 +227,7 @@ namespace Microsoft.CodeAnalysis
 
             // this will let versions to be compared safely between multiple items
             // without worrying about collision within same session
-            var globalVersion = Interlocked.Increment(ref PatternMatcherVersionStamp.s_globalVersion);
+            var globalVersion = Interlocked.Increment(ref VersionStamp.s_globalVersion);
 
             return globalVersion;
         }
@@ -235,7 +235,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// True if this VersionStamp is newer than the specified one.
         /// </summary>
-        internal bool TestOnly_IsNewerThan(PatternMatcherVersionStamp version)
+        internal bool TestOnly_IsNewerThan(VersionStamp version)
         {
             if (_utcLastModified > version._utcLastModified)
             {
