@@ -14,20 +14,15 @@ namespace N2
    module M3 =
    exit 0
 
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Import mscorlib\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Build Framework TC Imports\]</Expects>
+//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Import mscorlib and FSharp.Core.dll\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Parse inputs\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Import DLLs\]</Expects>
+//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Import non-system references\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Typecheck\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Typechecked\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Write Interface File \]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Write XML docs\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Write HTML docs\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Encode Interface Data\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Initial simplify\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Lowertop optimization\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[TAST -> ILX\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[ILX -> IL\]</Expects>
+//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[TAST -> IL\]</Expects>
 //<Expects status="success">ilwrite: TIME.+Write Started</Expects>
 //<Expects status="success">ilwrite: TIME.+Module Generation Preparation</Expects>
 //<Expects status="success">ilwrite: TIME.+Module Generation Pass 1</Expects>
@@ -54,6 +49,3 @@ namespace N2
 //<Expects status="success">ilwrite: TIME.+Finalize PDB</Expects>
 //<Expects status="success">ilwrite: TIME.+Signing Image</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Write .NET Binary\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Write Config File\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Write Stats File\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Copy referenced files\]</Expects>
