@@ -1961,11 +1961,15 @@ type AssemblyReference =
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
 #if !NO_EXTENSIONTYPING
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
-
-type ITypeProviderThread =
-
-    abstract EnqueueWork: (unit -> unit) -> unit
 #endif
+
+/// The thread in which compilation calls will be enqueued and done work on.
+/// Note: This is currently only used when disposing of type providers and will be extended to all the other type provider calls when compilations can be done in parallel.
+///       Right now all calls in FCS to type providers are single-threaded through use of the reactor thread. 
+type ICompilationThread =
+
+    /// Enqueue work to be done on a compilation thread.
+    abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
 
 type ImportedBinary = 
     { FileName: string
@@ -2118,8 +2122,8 @@ type TcConfigBuilder =
 #if !NO_EXTENSIONTYPING
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages: bool
-      mutable typeProviderThread: ITypeProviderThread
 #endif
+      mutable compilationThread: ICompilationThread
 
       /// pause between passes? 
       mutable pause: bool
@@ -2278,8 +2282,10 @@ type TcConfigBuilder =
           continueAfterParseFailure = false
 #if !NO_EXTENSIONTYPING
           showExtensionTypeMessages = false
-          typeProviderThread = { new ITypeProviderThread with member __.EnqueueWork work = work () }
 #endif
+          compilationThread = 
+                let ctok = CompilationThreadToken ()
+                { new ICompilationThread with member __.EnqueueWork work = work ctok }
           pause = false 
           alwaysCallVirt = true
           noDebugData = false
@@ -2753,8 +2759,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.continueAfterParseFailure = data.continueAfterParseFailure
 #if !NO_EXTENSIONTYPING
     member x.showExtensionTypeMessages = data.showExtensionTypeMessages
-    member x.typeProviderThread = data.typeProviderThread
 #endif
+    member x.compilationThread = data.compilationThread
     member x.pause = data.pause
     member x.alwaysCallVirt = data.alwaysCallVirt
     member x.noDebugData = data.noDebugData
@@ -3784,7 +3790,7 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
-and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option, ilGlobalsOpt, typeProviderThread: ITypeProviderThread) as this = 
+and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option, ilGlobalsOpt, compilationThread: ICompilationThread) as this = 
 
     let mutable resolutions = initialResolutions
     let mutable importsBase: TcImports option = importsBase
@@ -3815,7 +3821,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let actions = disposeTypeProviderActions
         disposeTypeProviderActions <- []
         if actions.Length > 0 then
-            typeProviderThread.EnqueueWork (fun () -> for action in actions do action())
+            compilationThread.EnqueueWork (fun _ -> for action in actions do action())
 #endif
         let actions = disposeActions
         disposeActions <- []
@@ -4646,7 +4652,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, frameworkDLLs, [])
         let tcAltResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkDLLs, [])
 
-        let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None, tcConfig.typeProviderThread) 
+        let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None, tcConfig.compilationThread) 
 
         // Fetch the primaryAssembly from the referenced assemblies otherwise 
         let primaryAssemblyReference =
@@ -4746,7 +4752,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcConfig = tcConfigP.Get ctok
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkReferences, knownUnresolved)
         let references = tcResolutions.GetAssemblyResolutions()
-        let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some tcGlobals.ilg, tcConfig.typeProviderThread)
+        let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some tcGlobals.ilg, tcConfig.compilationThread)
         let! _assemblies = tcImports.RegisterAndImportReferencedAssemblies(ctok, references)
         tcImports.ReportUnresolvedAssemblyReferences knownUnresolved
         return tcImports

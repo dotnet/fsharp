@@ -207,16 +207,15 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 
 #if !NO_EXTENSIONTYPING
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
+#endif
 
-/// The thread in which type provider calls will be enqueued and done work on.
-/// Type provider calls must be executed on the same thread sequentially. Type provider authors expect this.
+/// The thread in which compilation calls will be enqueued and done work on.
 /// Note: This is currently only used when disposing of type providers and will be extended to all the other type provider calls when compilations can be done in parallel.
 ///       Right now all calls in FCS to type providers are single-threaded through use of the reactor thread. 
-type ITypeProviderThread =
+type ICompilationThread =
 
-    /// Enqueue work to be done on the type provider thread.
-    abstract EnqueueWork: (unit -> unit) -> unit
-#endif
+    /// Enqueue work to be done on a compilation thread.
+    abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
 
 [<RequireQualifiedAccess>]
 type CompilerTarget = 
@@ -359,8 +358,8 @@ type TcConfigBuilder =
       mutable continueAfterParseFailure: bool
 #if !NO_EXTENSIONTYPING
       mutable showExtensionTypeMessages: bool
-      mutable typeProviderThread: ITypeProviderThread
 #endif
+      mutable compilationThread: ICompilationThread
       mutable pause: bool 
       mutable alwaysCallVirt: bool
       mutable noDebugData: bool
@@ -519,8 +518,8 @@ type TcConfig =
     member continueAfterParseFailure: bool
 #if !NO_EXTENSIONTYPING
     member showExtensionTypeMessages: bool
-    member typeProviderThread: ITypeProviderThread
 #endif
+    member compilationThread: ICompilationThread
     member pause: bool 
     member alwaysCallVirt: bool
     member noDebugData: bool

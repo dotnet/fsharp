@@ -1749,15 +1749,13 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
 
-#if !NO_EXTENSIONTYPING
-                tcConfigB.typeProviderThread <- 
-                    { new ITypeProviderThread with 
+                tcConfigB.compilationThread <- 
+                    { new ICompilationThread with 
                         member __.EnqueueWork work = 
-                            Reactor.Singleton.EnqueueOp ("Unknown", "ITypeProvider.EnqueueWork", "work", fun _ ->
-                                work ()
+                            Reactor.Singleton.EnqueueOp ("Unknown", "ICompilationThread.EnqueueWork", "work", fun ctok ->
+                                work ctok
                             )
                     }
-#endif
 
                 tcConfigB, sourceFilesNew
 
