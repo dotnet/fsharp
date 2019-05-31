@@ -112,6 +112,12 @@ module TcInitial =
             // Never open PDB files for the language service, even if --standalone is specified
             tcConfigB.openDebugInformationForLaterStaticLinking <- false
 
+            tcConfigB.compilationThread <-
+                { new ICompilationThread with
+                    member __.EnqueueWork work =
+                        CompilationWorker.Enqueue work
+                }
+
             tcConfigB, sourceFilesNew
 
         match loadClosureOpt with

@@ -5,6 +5,7 @@ open System.Threading
 open FSharp.Compiler.AbstractIL.Internal.Library
 
 type CompilationWorkerMessage =
+    | WorkUnit of (CompilationThreadToken -> unit)
     | Work of (CompilationThreadToken -> obj) * AsyncReplyChannel<Result<obj, Exception>> * CancellationToken
     | WorkAsync of (CompilationThreadToken -> Async<obj>) * AsyncReplyChannel<Result<obj, Exception>> * CancellationToken
 
@@ -17,6 +18,11 @@ type CompilationWorkerInstance () =
         async {
             while true do
                 match! agent.Receive() with
+                | WorkUnit work ->
+                    try
+                        work ctok
+                    with
+                    | _ -> ()
                 | Work (work, replyChannel, ct) ->
                     try
                         ct.ThrowIfCancellationRequested ()
@@ -39,6 +45,9 @@ type CompilationWorkerInstance () =
 
     do
         agent.Start ()
+
+    member __.Enqueue (work: CompilationThreadToken -> unit) =
+        agent.Post (WorkUnit work)
 
     member __.EnqueueAndAwaitAsync (work: CompilationThreadToken -> 'T) =
         async {
@@ -64,6 +73,8 @@ type CompilationWorkerInstance () =
 module CompilationWorker =
 
     let instance = CompilationWorkerInstance ()
+
+    let Enqueue work = instance.Enqueue work
 
     let EnqueueAndAwaitAsync work = instance.EnqueueAndAwaitAsync work
 
