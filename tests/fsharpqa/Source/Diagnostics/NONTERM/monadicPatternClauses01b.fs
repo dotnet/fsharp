@@ -1,6 +1,6 @@
 // #Regression #Diagnostics 
 // Regression test for FSharp1.0:2106
-//<Expects status=notin>NONTERM</Expects>
+//<Expects status="notin">NONTERM</Expects>
 //<Expects id="FS0010" status="error"></Expects>
 
 #light 

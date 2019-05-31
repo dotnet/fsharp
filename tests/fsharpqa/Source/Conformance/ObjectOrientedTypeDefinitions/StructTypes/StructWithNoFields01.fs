@@ -1,6 +1,6 @@
 // #Regression #Conformance #ObjectOrientedTypes #Structs 
 // Regression test for FSHARP1.0:3051
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 module TestModule
 
 [<Struct>]

@@ -704,7 +704,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_BrowseCertFileFilter">
         <source>Certificate Files</source>
-        <target state="translated">Certyfikuj pliki</target>
+        <target state="translated">Pliki certyfikatów</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_IssuedTo">
@@ -1642,7 +1642,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="RSE_Err_RenameNotSupported">
         <source>The current object is auto-generated and only supports renaming through the Managed Resources Editor.</source>
-        <target state="translated">Bieżący obiekt został wygenerowany automatycznie i obsługuje zmianę nazwy poprzez edytor zarządzanych zasobów.</target>
+        <target state="translated">Bieżący obiekt został wygenerowany automatycznie i obsługuje zmianę nazwy poprzez edytor zasobów zarządzanych.</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Err_CantFindResourceFile_1Arg">
@@ -2123,7 +2123,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceEditor">
         <source>Managed Resources Editor</source>
-        <target state="translated">Edytor zarządzanych zasobów</target>
+        <target state="translated">Edytor zasobów zarządzanych</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_DlgTitle_AddExisting">
