@@ -3,7 +3,7 @@
 // Now that the OCaml style XmlDoc is gone, (** ... *) should be just a normal comment.
 // We want to verify that no xml with a "summary" is generate.
 // See also FSHARP1.0:1654
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light 
 

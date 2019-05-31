@@ -65,10 +65,6 @@ let LowerImplFile g assembly =
 let mkLambdaNoType g m uv e =
     mkLambda m uv (e, tyOfExpr g e)
 
-let mkUnitDelayLambda (g: TcGlobals) m e =
-    let uv, _ue = mkCompGenLocal m "unitVar" g.unit_ty
-    mkLambdaNoType g m uv e
-
 let callNonOverloadedMethod g amap m methName ty args =
     match TryFindIntrinsicMethInfo (InfoReader(g, amap)) m AccessibleFromSomeFSharpCode methName ty  with
     | [] -> error(InternalError("No method called '"+methName+"' was found", m))
@@ -81,21 +77,33 @@ let callNonOverloadedMethod g amap m methName ty args =
 
 
 type LoweredSeqFirstPhaseResult =
-   { /// The code to run in the second phase, to rebuild the expressions, once all code labels and their mapping to program counters have been determined
-     /// 'nextVar' is the argument variable for the GenerateNext method that represents the byref argument that holds the "goto" destination for a tailcalling sequence expression
+   {
+     /// The second phase of the transformation.  This rebuilds the 'generate', 'dispose' and 'checkDispose' expressions for the
+     /// state machine.  It is run after all code labels and their mapping to program counters have been determined
+     /// after the first phase. 
+     ///
+     /// The arguments to phase2 are as follows:
+     ///     'pc' is the state machine variable allocated to hold the "program counter" for the state machine
+     ///     'current' is the state machine variable allocated to hold the "current" value being yielded from the enumeration
+     ///     'nextVar' is the argument variable for the GenerateNext method that represents the byref argument
+     ///               that holds the "goto" destination for a tailcalling sequence expression
+     ///     'pcMap' is the mapping from code labels to values for 'pc'
+     ///
+     /// The phase2 function returns the core of the generate, dipsose and checkDispose implementations. 
      phase2 : ((* pc: *) ValRef * (* current: *) ValRef * (* nextVar: *) ValRef * Map<ILCodeLabel, int> -> Expr * Expr * Expr)
 
      /// The labels allocated for one portion of the sequence expression
      labels : int list
 
-     /// any actual work done in Close
+     /// Indicates if any actual work is done in dispose, i.e. is there a 'try-finally' (or 'use') in the computation.
      significantClose : bool
 
      /// The state variables allocated for one portion of the sequence expression (i.e. the local let-bound variables which become state variables)
      stateVars: ValRef list
 
      /// The vars captured by the non-synchronous path
-     capturedVars: FreeVars }
+     capturedVars: FreeVars
+   }
 
 let isVarFreeInExpr v e = Zset.contains v (freeInExpr CollectTyparsAndLocals e).FreeLocals
 
@@ -179,8 +187,9 @@ let LowerSeqExpr g amap overallExpr =
         | Expr.App (Expr.Val (vref, _, _), _f0ty, [elemTy], [e], _m) when valRefEq g vref g.seq_vref ->  Some (e, elemTy)
         | _ -> None
 
+    /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
     let RepresentBindingAsLocal (bind: Binding) res2 m =
-        // printfn "found letrec state variable %s" bind.Var.DisplayName
+        // printfn "LowerSeq: found local variable %s" bind.Var.DisplayName
         { res2 with
             phase2 = (fun ctxt ->
                 let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
@@ -190,8 +199,9 @@ let LowerSeqExpr g amap overallExpr =
                 generate, dispose, checkDispose)
             stateVars = res2.stateVars }
 
+    /// Implement a decision to represent a 'let' binding as a state machine variable
     let RepresentBindingAsStateMachineLocal (bind: Binding) res2 m =
-        // printfn "found letrec state variable %s" bind.Var.DisplayName
+        // printfn "LowerSeq: found state variable %s" bind.Var.DisplayName
         let (TBind(v, e, sp)) = bind
         let sp, spm =
             match sp with
@@ -238,12 +248,12 @@ let LowerSeqExpr g amap overallExpr =
                  //return true
                  //NEXT:
             let label = IL.generateCodeLabel()
-            Some { phase2 = (fun (pcv, currv, _nextv, pcMap) ->
+            Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
                             mkCompGenSequential m
-                                (mkValSet m pcv (mkInt32 g m pcMap.[label]))
+                                (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
                                 (mkSequential SequencePointsAtSeq m
-                                    (mkValSet m currv e)
+                                    (mkValSet m currVar e)
                                     (mkCompGenSequential m
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
                                         (Expr.Op (TOp.Label label, [], [], m))))
@@ -354,7 +364,7 @@ let LowerSeqExpr g amap overallExpr =
             match resBody with
             | Some res1  ->
                 let capturedVars = unionFreeVars res1.capturedVars (freeInExpr CollectLocals compensation)
-                Some { phase2 = (fun ((pcv, _currv, _, pcMap) as ctxt) ->
+                Some { phase2 = (fun ((pcVar, _currv, _, pcMap) as ctxt) ->
                             let generate1, dispose1, checkDispose1 = res1.phase2 ctxt
                             let generate =
                                 // copy the compensation expression - one copy for the success continuation and one for the exception
@@ -362,13 +372,13 @@ let LowerSeqExpr g amap overallExpr =
                                 mkCompGenSequential m
                                     // set the PC to the inner finally, so that if an exception happens we run the right finally
                                     (mkCompGenSequential m
-                                        (mkValSet m pcv (mkInt32 g m pcMap.[innerDisposeContinuationLabel]))
+                                        (mkValSet m pcVar (mkInt32 g m pcMap.[innerDisposeContinuationLabel]))
                                         generate1 )
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
                                     (mkCompGenSequential m
                                         (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
                                         (mkCompGenSequential m
-                                            (mkValSet m pcv (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
+                                            (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
                                             compensation))
                             let dispose =
                                 // generate inner try/finallys, then outer try/finallys
@@ -378,7 +388,7 @@ let LowerSeqExpr g amap overallExpr =
                                     (mkCompGenSequential m
                                         (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
                                         (mkCompGenSequential m
-                                            (mkValSet m pcv (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
+                                            (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
                                             (mkCompGenSequential m
                                                 compensation
                                                 (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)))))
@@ -512,12 +522,12 @@ let LowerSeqExpr g amap overallExpr =
         // Note, however, this leads to a loss of tailcalls: the case not
         // handled correctly yet is sequence expressions that use yield! in the last position
         // This can give rise to infinite iterator chains when implemented by the naive expansion to
-        // �for x in e yield e�. For example consider this:
+        // 'for x in e yield e'. For example consider this:
         //
         // let rec rwalk x = {  yield x
         //                      yield! rwalk (x + rand()) }
         //
-        // This is the moral equivalent of a tailcall optimization. These also don�t compile well
+        // This is the moral equivalent of a tailcall optimization. These also don't compile well
         // in the C# compilation model
 
         | arbitrarySeqExpr ->
@@ -540,12 +550,12 @@ let LowerSeqExpr g amap overallExpr =
                              //return 2
                              //NEXT:
                         let label = IL.generateCodeLabel()
-                        Some { phase2 = (fun (pcv, _currv, nextv, pcMap) ->
+                        Some { phase2 = (fun (pcVar, _currv, nextVar, pcMap) ->
                                     let generate =
                                         mkCompGenSequential m
-                                            (mkValSet m pcv (mkInt32 g m pcMap.[label]))
+                                            (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
                                             (mkSequential SequencePointsAtSeq m
-                                                (mkAddrSet m nextv arbitrarySeqExpr)
+                                                (mkAddrSet m nextVar arbitrarySeqExpr)
                                                 (mkCompGenSequential m
                                                     (Expr.Op (TOp.Return, [], [mkTwo g m], m))
                                                     (Expr.Op (TOp.Label label, [], [], m))))
@@ -573,54 +583,77 @@ let LowerSeqExpr g amap overallExpr =
         let m = e.Range
         let initLabel = IL.generateCodeLabel()
         let noDisposeContinuationLabel = IL.generateCodeLabel()
+
+        // Perform phase1
         match Lower true true noDisposeContinuationLabel noDisposeContinuationLabel e with
         | Some res ->
+
+            // After phase1, create the variables for the state machine and work out a program counter for each label.
             let labs = res.labels
             let stateVars = res.stateVars
             // printfn "successfully lowered, found %d state variables and %d labels!" stateVars.Length labs.Length
-            let pcv, pce = mkMutableCompGenLocal m "pc" g.int32_ty
-            let currv, _curre = mkMutableCompGenLocal m "current" ty
-            let nextv, _nexte = mkMutableCompGenLocal m "next" (mkByrefTy g (mkSeqTy g ty))
-            let nextvref = mkLocalValRef nextv
-            let pcvref = mkLocalValRef pcv
-            let currvref = mkLocalValRef currv
+            let pcVar, pcExpr = mkMutableCompGenLocal m "pc" g.int32_ty
+            let currVar, _currExpr = mkMutableCompGenLocal m "current" ty
+            let nextVar, _nextExpr = mkMutableCompGenLocal m "next" (mkByrefTy g (mkSeqTy g ty))
+            let nextVarRef = mkLocalValRef nextVar
+            let pcVarRef = mkLocalValRef pcVar
+            let currVarRef = mkLocalValRef currVar
             let pcs = labs |> List.mapi (fun i _ -> i + 1)
             let pcDone = labs.Length + 1
             let pcInit = 0
             let pc2lab  = Map.ofList ((pcInit, initLabel) :: (pcDone, noDisposeContinuationLabel) :: List.zip pcs labs)
             let lab2pc = Map.ofList ((initLabel, pcInit) :: (noDisposeContinuationLabel, pcDone) :: List.zip labs pcs)
-            let stateMachineExpr, disposalExpr, checkDisposeExpr = res.phase2 (pcvref, currvref, nextvref, lab2pc)
-            // Add on the final 'return false' to indicate the iteration is complete
-            let stateMachineExpr =
+
+            // Execute phase2, building the core of the the GenerateNext, Dispose and CheckDispose methods
+            let generateExprCore, disposalExprCore, checkDisposeExprCore =
+                res.phase2 (pcVarRef, currVarRef, nextVarRef, lab2pc)
+            
+            // Add on the final label and cleanup to the GenerateNext method 
+            //    generateExpr;
+            //    pc <- PC_DONE
+            //    noDispose: 
+            //       current <- null
+            //       return 0
+            let generateExprWithCleanup =
                 mkCompGenSequential m
-                    stateMachineExpr
+                    generateExprCore
                     (mkCompGenSequential m
                         // set the pc to "finished"
-                        (mkValSet m pcvref (mkInt32 g m pcDone))
+                        (mkValSet m pcVarRef (mkInt32 g m pcDone))
                         (mkCompGenSequential m
                             (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
                             (mkCompGenSequential m
                                 // zero out the current value to free up its memory
-                                (mkValSet m currvref (mkDefault (m, currvref.Type)))
+                                (mkValSet m currVarRef (mkDefault (m, currVarRef.Type)))
                                 (Expr.Op (TOp.Return, [], [mkZero g m], m)))))
-            let checkDisposeExpr =
+
+            // Add on the final label to the 'CheckDispose' method
+            //    checkDisposeExprCore
+            //    noDispose: 
+            //        return false
+            let checkDisposeExprWithCleanup =
                 mkCompGenSequential m
-                    checkDisposeExpr
+                    checkDisposeExprCore
                     (mkCompGenSequential m
                         (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
                         (Expr.Op (TOp.Return, [], [mkFalse g m], m)))
 
+            // A utility to add a jump table to the three generated methods
             let addJumpTable isDisposal expr =
                 let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m )
                 let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), SuppressSequencePointAtTarget)
                 let dtree =
-                  TDSwitch(pce,
+                  TDSwitch(pcExpr,
                            [
-                             // no disposal action for the initial state (pc = 0)
+                             // Add an empty disposal action for the initial state (pc = 0)
                              if isDisposal then
                                  yield mkCase(DecisionTreeTest.Const(Const.Int32 pcInit), mkGotoLabelTarget noDisposeContinuationLabel)
+
+                             // Yield one target for each PC, where the action of the target is to goto the appropriate label
                              for pc in pcs do
                                  yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc])
+
+                             // Yield one target for the 'done' program counter, where the action of the target is to continuation label
                              yield mkCase(DecisionTreeTest.Const(Const.Int32 pcDone), mkGotoLabelTarget noDisposeContinuationLabel) ],
                            Some(mkGotoLabelTarget pc2lab.[pcInit]),
                            m)
@@ -628,21 +661,31 @@ let LowerSeqExpr g amap overallExpr =
                 let table = mbuilder.Close(dtree, m, g.int_ty)
                 mkCompGenSequential m table (mkCompGenSequential m (Expr.Op (TOp.Label initLabel, [], [], m)) expr)
 
+            // A utility to handle the cases where exceptions are raised by the disposal logic.  
+            // We wrap the disposal state machine in a loop that repeatedly drives the disposal logic of the
+            // state machine through each disposal state, then re-raise the last exception raised.
+            // 
+            // let mutable exn : exn = null
+            // while(this.pc <> END_STATE) do
+            //    try
+            //       ``disposalExpr``
+            //    with e -> exn <- e
+            // if exn <> null then raise exn
             let handleExeceptionsInDispose disposalExpr =
-                // let mutable exn : exn = null
-                // while(this.pc <> END_STATE) do
-                //    try
-                //       ``disposalExpr''
-                //    with e -> exn <- e
-                // if exn <> null then raise exn
                 let exnV, exnE = mkMutableCompGenLocal m "exn" g.exn_ty
                 let exnVref = mkLocalValRef exnV
                 let startLabel = IL.generateCodeLabel()
-                let doneLabel = IL.generateCodeLabel ()
+                let doneDisposeLabel = IL.generateCodeLabel ()
                 // try ``disposalExpr'' with e -> exn <- e
                 let eV, eE = mkLocal m "e" g.exn_ty
                 let efV, _ = mkLocal m "ef" g.exn_ty
+
+                // exn <- e
                 let assignToExn = Expr.Op (TOp.LValueOp (LValueOperation.LSet, exnVref), [], [eE], m)
+
+                //    try
+                //       ``disposalExpr``
+                //    with e -> exn <- e
                 let exceptionCatcher =
                     mkTryWith g
                         (disposalExpr,
@@ -651,14 +694,24 @@ let LowerSeqExpr g amap overallExpr =
                             m, g.unit_ty,
                             NoSequencePointAtTry, NoSequencePointAtWith)
 
-
-                // while(this.pc != END_STATE)
+                // Make the loop
+                //
+                // startLabel:
+                //  match this.pc with
+                //    | PC_DONE -> goto DONE_DISPOSE
+                //    | _ -> ()
+                //  try
+                //      ``disposalExpr``
+                //  with e ->
+                //      exn <- e
+                //  goto startLabel
+                // DONE_DISPOSE:
                 let whileLoop =
                     let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
                     let addResultTarget e = mbuilder.AddResultTarget(e, SuppressSequencePointAtTarget)
                     let dtree =
-                        TDSwitch(pce,
-                                    [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op (TOp.Goto doneLabel, [], [], m)) ) ],
+                        TDSwitch(pcExpr,
+                                    [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op (TOp.Goto doneDisposeLabel, [], [], m)) ) ],
                                     Some (addResultTarget (mkUnit g m)),
                                     m)
                     let pcIsEndStateComparison = mbuilder.Close(dtree, m, g.unit_ty)
@@ -670,7 +723,7 @@ let LowerSeqExpr g amap overallExpr =
                                 exceptionCatcher
                                 (mkCompGenSequential m
                                     (Expr.Op ((TOp.Goto startLabel), [], [], m))
-                                    (Expr.Op ((TOp.Label doneLabel), [], [], m))
+                                    (Expr.Op ((TOp.Label doneDisposeLabel), [], [], m))
                                 )
                             )
                         )
@@ -678,32 +731,42 @@ let LowerSeqExpr g amap overallExpr =
                 let doRaise =
                     mkNonNullCond g m g.unit_ty exnE (mkThrow m g.unit_ty exnE) (Expr.Const (Const.Unit, m, g.unit_ty))
 
+                // let mutable exn = null
+                // --loop--
+                // if exn != null then raise exn
                 mkLet
                     NoSequencePointAtLetBinding m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
                         (mkCompGenSequential m whileLoop doRaise)
 
-            let stateMachineExprWithJumpTable = addJumpTable false stateMachineExpr
-            let disposalExpr =
+            // Add the jumptable to the GenerateNext method
+            let generateExprWithJumpTable =
+                addJumpTable false generateExprWithCleanup
+
+            // Add the jumptable to the Dispose method
+            let disposalExprWithJumpTable =
                 if res.significantClose then
                     let disposalExpr =
                         mkCompGenSequential m
-                            disposalExpr
+                            disposalExprCore
                             (mkCompGenSequential m
                                 (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
                                 (mkCompGenSequential m
                                     // set the pc to "finished"
-                                    (mkValSet m pcvref (mkInt32 g m pcDone))
+                                    (mkValSet m pcVarRef (mkInt32 g m pcDone))
                                     // zero out the current value to free up its memory
-                                    (mkValSet m currvref (mkDefault (m, currvref.Type)))))
+                                    (mkValSet m currVarRef (mkDefault (m, currVarRef.Type)))))
                     disposalExpr
                     |> addJumpTable true
                     |> handleExeceptionsInDispose
                 else
-                    (mkValSet m pcvref (mkInt32 g m pcDone))
+                    mkValSet m pcVarRef (mkInt32 g m pcDone)
 
-            let checkDisposeExprWithJumpTable = addJumpTable true checkDisposeExpr
-            // all done, no return the results
-            Some (nextvref, pcvref, currvref, stateVars, stateMachineExprWithJumpTable, disposalExpr, checkDisposeExprWithJumpTable, ty, m)
+            // Add the jumptable to the CheckDispose method
+            let checkDisposeExprWithJumpTable =
+                addJumpTable true checkDisposeExprWithCleanup
+
+            // all done, now return the results
+            Some (nextVarRef, pcVarRef, currVarRef, stateVars, generateExprWithJumpTable, disposalExprWithJumpTable, checkDisposeExprWithJumpTable, ty, m)
 
         | None ->
             // printfn "FAILED: no compilation found! %s" (stringOfRange m)

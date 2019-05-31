@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Dash_underline">
         <source>D_ash underline</source>
-        <target state="translated">短线下划线(_A）</target>
+        <target state="translated">短线下划线(_A)</target>
         <note />
       </trans-unit>
       <trans-unit id="Dot_underline">

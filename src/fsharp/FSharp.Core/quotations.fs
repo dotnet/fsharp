@@ -132,12 +132,10 @@ type Var(name: string, typ:Type, ?isMutable: bool) =
                 if System.Object.ReferenceEquals(v, v2) then 0 else
                 let c = compare v.Name v2.Name
                 if c <> 0 then c else
-#if !FX_NO_REFLECTION_METADATA_TOKENS // not available on Compact Framework
                 let c = compare v.Type.MetadataToken v2.Type.MetadataToken
                 if c <> 0 then c else
                 let c = compare v.Type.Module.MetadataToken v2.Type.Module.MetadataToken
                 if c <> 0 then c else
-#endif
                 let c = compare v.Type.Assembly.FullName v2.Type.Assembly.FullName
                 if c <> 0 then c else
                 compare v.Stamp v2.Stamp
@@ -1686,7 +1684,6 @@ module Patterns =
 
     let decodedTopResources = new Dictionary<Assembly * string, int>(10, HashIdentity.Structural)
 
-#if !FX_NO_REFLECTION_METADATA_TOKENS
 #if FX_NO_REFLECTION_MODULE_HANDLES // not available on Silverlight
     [<StructuralEquality;StructuralComparison>]
     type ModuleHandle = ModuleHandle of string * string
@@ -1695,130 +1692,12 @@ module Patterns =
 #else
     type ModuleHandle = System.ModuleHandle
 #endif
-#endif
 
-
-#if FX_NO_REFLECTION_METADATA_TOKENS // not available on Compact Framework
-    [<StructuralEquality; NoComparison>]
-    type ReflectedDefinitionTableKey =
-        // Key is declaring type * type parameters count * name * parameter types * return type
-        // Registered reflected definitions can contain generic methods or constructors in generic types,
-        // however TryGetReflectedDefinition can be queried with concrete instantiations of the same methods that doesn't contain type parameters.
-        // To make these two cases match we apply the following transformations:
-        // 1. if declaring type is generic - key will contain generic type definition, otherwise - type itself
-        // 2. if method is instantiation of generic one - pick parameters from generic method definition, otherwise - from methods itself
-        // 3 if method is constructor and declaring type is generic then we'll use the following trick to treat C<'a>() and C<int>() as the same type
-        // - we resolve method handle of the constructor using generic type definition - as a result for constructor from instantiated type we obtain matching constructor in generic type definition
-        | Key of System.Type * int * string * System.Type[] * System.Type
-        static member GetKey(methodBase:MethodBase) =
-            let isGenericType = methodBase.DeclaringType.IsGenericType
-            let declaringType =
-                if isGenericType then
-                    methodBase.DeclaringType.GetGenericTypeDefinition()
-                else methodBase.DeclaringType
-            let tyArgsCount =
-                if methodBase.IsGenericMethod then
-                    methodBase.GetGenericArguments().Length
-                else 0
-#if FX_RESHAPED_REFLECTION
-            // this is very unfortunate consequence of limited Reflection capabilities on .NETCore
-            // what we want: having MethodBase for some concrete method or constructor we would like to locate corresponding MethodInfo\ConstructorInfo from the open generic type (canonical form).
-            // It is necessary to build the key for the table of reflected definitions: reflection definition is saved for open generic type but user may request it using
-            // arbitrary instantiation.
-            let findMethodInOpenGenericType (mb : ('T :> MethodBase)) : 'T =
-                let candidates =
-                    let bindingFlags =
-                        (if mb.IsPublic then BindingFlags.Public else BindingFlags.NonPublic) |||
-                        (if mb.IsStatic then BindingFlags.Static else BindingFlags.Instance)
-                    let candidates : MethodBase[] =
-                        downcast (
-                            if mb.IsConstructor then
-                                box (declaringType.GetConstructors bindingFlags)
-                            else
-                                box (declaringType.GetMethods bindingFlags)
-                        )
-                    candidates |> Array.filter (fun c ->
-                        c.Name = mb.Name &&
-                        (c.GetParameters().Length) = (mb.GetParameters().Length) &&
-                        (c.IsGenericMethod = mb.IsGenericMethod) &&
-                        (if c.IsGenericMethod then c.GetGenericArguments().Length = mb.GetGenericArguments().Length else true)
-                        )
-                let solution =
-                    if candidates.Length = 0 then failwith "Unexpected, failed to locate matching method"
-                    elif candidates.Length = 1 then candidates.[0]
-                    else
-                    // here we definitely know that candidates
-                    // a. has matching name
-                    // b. has the same number of arguments
-                    // c. has the same number of type parameters if any
-
-                    let originalParameters = mb.GetParameters()
-                    let originalTypeArguments = mb.DeclaringType.GetGenericArguments()
-                    let EXACT_MATCHING_COST = 2
-                    let GENERIC_TYPE_MATCHING_COST = 1
-
-                    // loops through the parameters and computes the rate of the current candidate.
-                    // having the argument:
-                    // - rate is increased on EXACT_MATCHING_COST if type of argument that candidate has at position i exactly matched the type of argument for the original method.
-                    // - rate is increased on GENERIC_TYPE_MATCHING_COST if candidate has generic argument at given position and its type matched the type of argument for the original method.
-                    // - otherwise rate will be 0
-                    let evaluateCandidate (mb : MethodBase) : int =
-                        let parameters = mb.GetParameters()
-                        let rec loop i resultSoFar =
-                            if i >= parameters.Length then resultSoFar
-                            else
-                            let p = parameters.[i]
-                            let orig = originalParameters.[i]
-                            if p.ParameterType = orig.ParameterType then loop (i + 1) (resultSoFar + EXACT_MATCHING_COST) // exact matching
-                            elif p.ParameterType.IsGenericParameter && p.ParameterType.DeclaringType = mb.DeclaringType then
-                                let pos = p.ParameterType.GenericParameterPosition
-                                if originalTypeArguments.[pos] = orig.ParameterType then loop (i + 1) (resultSoFar + GENERIC_TYPE_MATCHING_COST)
-                                else 0
-                            else
-                                0
-
-                        loop 0 0
-
-                    Array.maxBy evaluateCandidate candidates
-
-                solution :?> 'T
-#endif
-            match methodBase with
-            | :? MethodInfo as mi ->
-                let mi =
-                    if mi.IsGenericMethod then
-                        let mi = mi.GetGenericMethodDefinition()
-                        if isGenericType then
-#if FX_RESHAPED_REFLECTION
-                            findMethodInOpenGenericType mi
-#else
-                            MethodBase.GetMethodFromHandle(mi.MethodHandle, declaringType.TypeHandle) :?> MethodInfo
-#endif
-                        else
-                            mi
-                    else mi
-                let paramTypes = mi.GetParameters() |> getTypesFromParamInfos
-                Key(declaringType, tyArgsCount, methodBase.Name, paramTypes, mi.ReturnType)
-            | :? ConstructorInfo as ci ->
-                let mi =
-                    if isGenericType then
-#if FX_RESHAPED_REFLECTION
-                        findMethodInOpenGenericType ci
-#else
-                        MethodBase.GetMethodFromHandle(ci. MethodHandle, declaringType.TypeHandle) :?> ConstructorInfo // convert ctor with concrete args to ctor with generic args
-#endif
-                    else
-                        ci
-                let paramTypes = mi.GetParameters() |> getTypesFromParamInfos
-                Key(declaringType, tyArgsCount, methodBase.Name, paramTypes, declaringType)
-            | _ -> failwithf "Unexpected MethodBase type, %A" (methodBase.GetType()) // per MSDN ConstructorInfo and MethodInfo are the only derived types from MethodBase
-#else
     [<StructuralEquality; NoComparison>]
     type ReflectedDefinitionTableKey =
         | Key of ModuleHandle * int
         static member GetKey(methodBase:MethodBase) =
             Key(methodBase.Module.ModuleHandle, methodBase.MetadataToken)
-#endif
 
     [<NoEquality; NoComparison>]
     type ReflectedDefinitionTableEntry = Entry of Bindable<Expr>

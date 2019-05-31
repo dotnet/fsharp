@@ -90,7 +90,7 @@
 
   <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' == 'true'">
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <PackageReference Include="FsCheck" Version="$(FsCheckPackageVersion)" />
+    <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' != 'true'">
