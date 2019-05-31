@@ -6,6 +6,7 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.TcGlobals
 
 /// Accumulated results of type checking.
 [<NoEquality; NoComparison>]
@@ -20,8 +21,6 @@ type internal TcAccumulator =
 
       latestCcuSigForFile: ModuleOrNamespaceType option
 
-      tcDependencyFiles: string list
-
       /// Disambiguation table for module names
       tcModuleNamesDict: ModuleNamesDict
 
@@ -31,4 +30,4 @@ type internal TcAccumulator =
 [<RequireQualifiedAccess>]
 module internal TcAccumulator =
 
-    val createInitial: TcInitial -> CompilationThreadToken -> Cancellable<TcImports * TcAccumulator>
+    val createInitial: TcInitial -> CompilationThreadToken -> Cancellable<TcGlobals * TcImports * TcAccumulator>

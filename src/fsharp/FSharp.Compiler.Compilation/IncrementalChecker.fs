@@ -214,8 +214,7 @@ type IncrementalCheckerState =
                                             latestImplFile=implFile
                                             latestCcuSigForFile=Some ccuSigForFile
                                             tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
-                                            tcModuleNamesDict = moduleNamesDict
-                                            tcDependencyFiles = filePath :: tcAcc.tcDependencyFiles }, (Some (sink, symbolEnv))
+                                            tcModuleNamesDict = moduleNamesDict }, (Some (sink, symbolEnv))
                     }
 
                 // No one has ever changed this value, although a bit arbitrary.
@@ -275,6 +274,10 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
 
     member __.TcInitial = tcInitial
 
+    member __.TcGlobals = state.tcGlobals
+
+    member __.TcImports = state.tcImports
+
     member this.FinishAsync () =
         match state.orderedResults.[state.orderedResults.Length - 1] with
         | PartialCheckResult.Checked _ ->
@@ -287,8 +290,8 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
 
 module IncrementalChecker =
 
-    let create (tcInitial: TcInitial) tcImports tcAcc (checkerOptions: CheckerOptions) sourceSnapshots =
+    let create (tcInitial: TcInitial) tcGlobals tcImports tcAcc (checkerOptions: CheckerOptions) sourceSnapshots =
         cancellable {
-            let! state = IncrementalCheckerState.Create (tcInitial.tcConfig, tcInitial.tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)
+            let! state = IncrementalCheckerState.Create (tcInitial.tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)
             return IncrementalChecker (tcInitial, state)
         }

@@ -25,7 +25,6 @@ open FSharp.Compiler.Compilation.Utilities
 
 type TcInitialOptions =
     {
-        frameworkTcImportsCache: FrameworkImportsCache
         legacyReferenceResolver: ReferenceResolver.Resolver
         defaultFSharpBinariesDir: string
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
@@ -44,24 +43,17 @@ type TcInitialOptions =
 type internal TcInitial =
     {
         tcConfig: TcConfig
-        tcConfigP: TcConfigProvider
-        tcGlobals: TcGlobals
-        frameworkTcImports: TcImports
-        nonFrameworkResolutions: AssemblyResolution list
-        unresolvedReferences: UnresolvedAssemblyReference list
         importsInvalidated: Event<string>
         assemblyName: string
         outfile: string
         niceNameGen: NiceNameGenerator
         loadClosureOpt: LoadClosure option
-        projectDirectory: string
     }
 
 module TcInitial =
 
-    let create options ctok =
+    let create options =
         let useSimpleResolutionSwitch = "--simpleresolution"
-        let frameworkTcImportsCache = options.frameworkTcImportsCache
         let sourceFiles = options.sourceFiles
         let commandLineArgs = options.commandLineArgs
         let legacyReferenceResolver = options.legacyReferenceResolver
@@ -141,14 +133,6 @@ module TcInitial =
         let niceNameGen = NiceNameGenerator()
         let outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
 
-        // Resolve assemblies and create the framework TcImports. This is done when constructing the
-        // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
-        // included in these references. 
-        let (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = 
-            match Cancellable.run CancellationToken.None (frameworkTcImportsCache.Get(ctok, tcConfig)) with
-            | ValueOrCancelled.Value result -> result
-            | ValueOrCancelled.Cancelled ex -> raise ex
-
         // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
         // This is ok because not much can actually go wrong here.
         let errorOptions = tcConfig.errorSeverityOptions
@@ -158,15 +142,9 @@ module TcInitial =
 
         {
             tcConfig = tcConfig
-            tcConfigP = TcConfigProvider.Constant tcConfig
-            tcGlobals = tcGlobals
-            frameworkTcImports = frameworkTcImports
-            nonFrameworkResolutions = nonFrameworkResolutions
-            unresolvedReferences = unresolvedReferences
-            importsInvalidated = Event<string> () // TODO:
+            importsInvalidated = Event<string> ()
             assemblyName = assemblyName
             outfile = outfile
             niceNameGen = niceNameGen
             loadClosureOpt = loadClosureOpt
-            projectDirectory = projectDirectory
         }

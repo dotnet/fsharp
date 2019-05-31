@@ -34,6 +34,10 @@ type internal IncrementalChecker =
 
     member TcInitial: TcInitial
 
+    member TcGlobals: TcGlobals
+
+    member TcImports: TcImports
+
     /// Finishes checking everything.
     /// Once finished, the results will be cached.
     member FinishAsync: unit -> Async<TcAccumulator []>
@@ -41,4 +45,4 @@ type internal IncrementalChecker =
 [<RequireQualifiedAccess>]
 module internal IncrementalChecker =
 
-    val create: TcInitial -> TcImports -> TcAccumulator -> CheckerOptions -> ImmutableArray<SourceSnapshot> -> Cancellable<IncrementalChecker>
+    val create: TcInitial -> TcGlobals -> TcImports -> TcAccumulator -> CheckerOptions -> ImmutableArray<SourceSnapshot> -> Cancellable<IncrementalChecker>

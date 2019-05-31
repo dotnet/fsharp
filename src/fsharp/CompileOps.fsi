@@ -645,6 +645,7 @@ type TcImports =
     static member BuildFrameworkTcImports     : CompilationThreadToken * TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> Cancellable<TcGlobals * TcImports>
     static member BuildNonFrameworkTcImports  : CompilationThreadToken * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> Cancellable<TcImports>
     static member BuildTcImports              : CompilationThreadToken * TcConfigProvider -> Cancellable<TcGlobals * TcImports>
+    static member BuildResolvedTcImports      : CompilationThreadToken * TcConfigProvider * AssemblyResolution list -> Cancellable<TcGlobals * TcImports>
 
 //----------------------------------------------------------------------------
 // Special resources in DLLs

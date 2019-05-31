@@ -4782,6 +4782,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkReferences, knownUnresolved)
         return tcGlobals, tcImports
       }
+
+    static member BuildResolvedTcImports(ctok, tcConfigP: TcConfigProvider, assemblyResolutions) =
+        TcImports.BuildFrameworkTcImports (ctok, tcConfigP, assemblyResolutions, [])
         
     interface System.IDisposable with 
         member tcImports.Dispose() = 

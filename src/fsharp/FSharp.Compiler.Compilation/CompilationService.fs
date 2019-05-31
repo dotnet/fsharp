@@ -23,7 +23,6 @@ type CompilationServiceOptions =
 [<Sealed>]
 type CompilationService (options: CompilationServiceOptions) =
     // Caches
-    let frameworkTcImportsCache = FrameworkImportsCache 8 // TODO: Is 8 ok?
     let temporaryStorageService = options.Workspace.Services.TemporaryStorage
     let incrementalCheckerMruCache = 
         // Is a Mru algorithm really the right cache for these? A Lru might be better.
@@ -46,6 +45,5 @@ type CompilationService (options: CompilationServiceOptions) =
     member __.CreateCompilation (compilationOptions: CompilationOptions) = 
         Compilation.create compilationOptions options.CompilationGlobalOptions
             { 
-                frameworkTcImportsCache = frameworkTcImportsCache
                 incrementalCheckerCache = incrementalCheckerMruCache
             }

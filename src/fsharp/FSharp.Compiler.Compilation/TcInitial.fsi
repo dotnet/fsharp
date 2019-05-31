@@ -10,7 +10,6 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 [<NoEquality; NoComparison>]
 type internal TcInitialOptions =
     {
-        frameworkTcImportsCache: FrameworkImportsCache
         legacyReferenceResolver: ReferenceResolver.Resolver
         defaultFSharpBinariesDir: string
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
@@ -31,20 +30,14 @@ type internal TcInitialOptions =
 type internal TcInitial =
     {
         tcConfig: TcConfig
-        tcConfigP: TcConfigProvider
-        tcGlobals: TcGlobals
-        frameworkTcImports: TcImports
-        nonFrameworkResolutions: AssemblyResolution list
-        unresolvedReferences: UnresolvedAssemblyReference list
         importsInvalidated: Event<string>
         assemblyName: string
         outfile: string
         niceNameGen: NiceNameGenerator
         loadClosureOpt: LoadClosure option
-        projectDirectory: string
     }
 
 [<RequireQualifiedAccess>]
 module internal TcInitial =
 
-    val create: TcInitialOptions -> CompilationThreadToken -> TcInitial
+    val create: TcInitialOptions -> TcInitial

@@ -171,7 +171,6 @@ type CompilationId private (_guid: Guid) =
 type CompilationCaches =
     {
         incrementalCheckerCache: MruWeakCache<struct (CompilationId * VersionStamp), IncrementalChecker>
-        frameworkTcImportsCache: FrameworkImportsCache
     }
 
 type CompilationGlobalOptions =
@@ -225,8 +224,7 @@ type CompilationOptions =
             CompilationReferences = compilationReferences
         }
 
-    member options.CreateTcInitial (frameworkTcImportsCache, globalOptions, ctok) =
-
+    member options.CreateTcInitial globalOptions =
         let tryGetMetadataSnapshot (path, _) =
             let metadataReferenceOpt = 
                 options.CompilationReferences
@@ -281,7 +279,6 @@ type CompilationOptions =
 
         let tcInitialOptions =
             {
-                frameworkTcImportsCache = frameworkTcImportsCache
                 legacyReferenceResolver = globalOptions.LegacyReferenceResolver
                 defaultFSharpBinariesDir = globalOptions.DefaultFSharpBinariesDir
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot
@@ -296,18 +293,18 @@ type CompilationOptions =
                 keepAssemblyContents = options.KeepAssemblyContents
                 keepAllBackgroundResolutions = options.KeepAllBackgroundResolutions
             }
-        TcInitial.create tcInitialOptions ctok
+        TcInitial.create tcInitialOptions
 
-    member options.CreateIncrementalChecker (frameworkTcImportsCache, globalOptions, ctok) =
-        let tcInitial = options.CreateTcInitial (frameworkTcImportsCache, globalOptions, ctok)
-        let tcImports, tcAcc = TcAccumulator.createInitial tcInitial ctok |> Cancellable.runWithoutCancellation
+    member options.CreateIncrementalChecker (globalOptions, ctok) =
+        let tcInitial = options.CreateTcInitial globalOptions
+        let tcGlobals, tcImports, tcAcc = TcAccumulator.createInitial tcInitial ctok |> Cancellable.runWithoutCancellation
         let checkerOptions =
             {
                 keepAssemblyContents = options.KeepAssemblyContents
                 keepAllBackgroundResolutions = options.KeepAllBackgroundResolutions
                 parsingOptions = { isExecutable = options.IsExecutable }
             }
-        IncrementalChecker.create tcInitial tcImports tcAcc checkerOptions options.SourceSnapshots
+        IncrementalChecker.create tcInitial tcGlobals tcImports tcAcc checkerOptions options.SourceSnapshots
         |> Cancellable.runWithoutCancellation
 
 and [<RequireQualifiedAccess>] CompilationReference =
@@ -338,7 +335,7 @@ and [<NoEquality; NoComparison>] CompilationState =
         let asyncLazyGetChecker =
             AsyncLazy (async {
                 return! CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
-                    options.CreateIncrementalChecker (caches.frameworkTcImportsCache, globalOptions, ctok)
+                    options.CreateIncrementalChecker (globalOptions, ctok)
                 )
             })
 
@@ -347,7 +344,8 @@ and [<NoEquality; NoComparison>] CompilationState =
                 let! checker = asyncLazyGetChecker.GetValueAsync ()
                 let! tcAccs = checker.FinishAsync ()
                 let tcInitial = checker.TcInitial
-                let _, assemblyDataOpt, _, _ = preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcInitial.tcGlobals tcAccs
+                let tcGlobals = checker.TcGlobals
+                let _, assemblyDataOpt, _, _ = preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
                 return assemblyDataOpt
             })
 
