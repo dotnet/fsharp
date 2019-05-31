@@ -194,8 +194,9 @@ type internal FSharpCodeLensService
                     with e -> 
 #if DEBUG
                         logErrorf "Error in lazy line lens computation. %A" e
+#else
+                        ignore e
 #endif
-                        e |> ignore
                         return None
                 }
             
@@ -308,8 +309,7 @@ type internal FSharpCodeLensService
 #if DEBUG
                         logExceptionWithContext (e, "Line Lens tracking tag span creation")
 #endif
-                        e |> ignore
-                        ()
+                        ignore e
                 ()
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
@@ -390,8 +390,9 @@ type internal FSharpCodeLensService
                   | e ->
 #if DEBUG
                       logErrorf "Line Lens startup failed with: %A" e
+#else
+                      ignore e
 #endif
-                      e |> ignore
                       numberOfFails <- numberOfFails + 1
            } |> Async.Start
         end

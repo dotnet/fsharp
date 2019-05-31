@@ -156,8 +156,9 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
          with e ->
 #if DEBUG
             logErrorf "Error in line lens provider: %A" e
+#else
+            ignore e
 #endif
-            ()
     
     /// Public non-thread-safe method to add line lens for a given tracking span.
     /// Returns an UIElement which can be used to add Ui elements and to remove the line lens later.
@@ -179,14 +180,13 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
             with e ->
 #if DEBUG
                 logExceptionWithContext(e, "Removing line lens")
+#else
+                ignore e
 #endif
-                e |> ignore
-                ()
-        else
 #if DEBUG
+        else
             logWarningf "No ui element is attached to this tracking span!"
 #endif
-            ()
         let lineNumber = 
             (trackingSpan.GetStartPoint self.CurrentBufferSnapshot).Position 
             |> self.CurrentBufferSnapshot.GetLineNumberFromPosition
@@ -197,11 +197,10 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #endif
             if self.TrackingSpans.[lineNumber].Count = 0 then
                 self.TrackingSpans.Remove lineNumber |> ignore
-        else
 #if DEBUG
+        else
             logWarningf "No tracking span is accociated with this line number %d!" lineNumber
 #endif
-            ()
 
     abstract member AddUiElementToCodeLens : ITrackingSpan * UIElement -> unit
     default self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
@@ -254,9 +253,9 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
                         with e ->
 #if DEBUG
                             logErrorf "Error in non visible lines iteration %A" e
+#else
+                            ignore e
 #endif
-                            e |> ignore
-                            ()
                 for lineNumber in newVisibleLineNumbers do
                     try
                         let line = 
@@ -269,9 +268,9 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
                      with e ->
 #if DEBUG
                         logErrorf "Error in new visible lines iteration %A" e
+#else
+                        ignore e
 #endif
-                        e |> ignore
-                        ()
             if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
                 self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.
             if self.RelayoutRequested.Count > 0 then
@@ -297,9 +296,9 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
         with e ->
 #if DEBUG
             logExceptionWithContext (e, "Layout changed")
+#else
+            ignore e
 #endif
-            e |> ignore
-            ()
 
     abstract LayoutUIElementOnLine : IWpfTextView -> ITextViewLine -> Grid -> unit
 

@@ -29,8 +29,9 @@ type internal LineLensDisplayService (view, buffer) =
                 with e ->
 #if DEBUG
                     logExceptionWithContext (e, "Error in layout ui element on line")
+#else
+                    ignore e
 #endif
-                    e |> ignore
                     Canvas.GetLeft ui, Canvas.GetTop ui
         Canvas.SetLeft(ui, left)
         Canvas.SetTop(ui, top)
@@ -66,7 +67,7 @@ type internal LineLensDisplayService (view, buffer) =
             with e ->
 #if DEBUG
                 logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
+#else
+                ignore e
 #endif
-                e |> ignore
-                ()
         } |> Async.Ignore
