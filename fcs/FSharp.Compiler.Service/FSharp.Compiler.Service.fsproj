@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
   <PropertyGroup>
@@ -543,17 +543,17 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fsi">
-      <Link>Service/IncrementalBuild.fsi</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fs">
-      <Link>Service/IncrementalBuild.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\Reactor.fsi">
       <Link>Service/Reactor.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\Reactor.fs">
       <Link>Service/Reactor.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fsi">
+      <Link>Service/IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fs">
+      <Link>Service/IncrementalBuild.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
