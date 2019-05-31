@@ -180,6 +180,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #if DEBUG
                 logExceptionWithContext(e, "Removing line lens")
 #endif
+                e |> ignore
                 ()
         else
 #if DEBUG
@@ -254,6 +255,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #if DEBUG
                             logErrorf "Error in non visible lines iteration %A" e
 #endif
+                            e |> ignore
                             ()
                 for lineNumber in newVisibleLineNumbers do
                     try
@@ -268,6 +270,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #if DEBUG
                         logErrorf "Error in new visible lines iteration %A" e
 #endif
+                        e |> ignore
                         ()
             if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
                 self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.
@@ -295,6 +298,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #if DEBUG
             logExceptionWithContext (e, "Layout changed")
 #endif
+            e |> ignore
             ()
 
     abstract LayoutUIElementOnLine : IWpfTextView -> ITextViewLine -> Grid -> unit
