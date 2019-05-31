@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\..\core\state-machines\sync.fsi" />
     <Compile Include="..\..\..\core\state-machines\sync.fs" />
     <Compile Include="..\..\..\core\state-machines\seq2.fs" />
     <Compile Include="..\..\..\core\state-machines\list.fs" />

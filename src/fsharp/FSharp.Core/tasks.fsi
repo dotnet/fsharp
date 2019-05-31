@@ -16,30 +16,34 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// A marker interface to give priority to different available overloads
     type IPriority1 = interface inherit IPriority2 end
 
-    module CodeGenHelpers = 
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __jumptable : int -> (unit -> 'T) -> 'T
+    module StateMachineHelpers = 
+        type MachineFunc<'Machine, 'Result> = delegate of byref<'Machine> -> 'Result
+
+        type MachineFunc<'Machine, 'Arg, 'Result> = delegate of byref<'Machine> * 'Arg -> 'Result
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __stateMachineStruct<'Template, 'Meth1, 'Meth2, 'Result> : meth1: 'Meth1 -> meth2: 'Meth2 -> after: (unit -> 'Result) -> 'Result
+        val __stateMachinesSupported<'T> : bool 
+
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        val __jumptable : pc: int -> code: 'T -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         val __stateMachine<'T> : _obj: 'T -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __newEntryPoint: unit -> int
+        val __stateMachineStruct<'Template, 'Result> : moveNext: MachineFunc<'Template, unit> -> _setMachineState: MachineFunc<'Template, IAsyncStateMachine, unit> -> after: MachineFunc<'Template, 'Result> -> 'Result
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __machine<'T> : 'T
+        val __entryPointStruct: MachineFunc<'Machine, 'Step> -> MachineFunc<'Machine, 'Step>
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __machineAddr<'T> : byref<'T>
+        val __entryPointStructStaticId: MachineFunc<'Machine, 'Step> -> int
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __entryPoint: int -> unit
+        val __entryPoint: ('Machine -> 'Step) -> ('Machine -> 'Step)
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __return : 'T -> 'T
+        val __entryPointStaticId: ('Machine -> 'Step) -> int
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
@@ -49,75 +53,66 @@ open System.Runtime.CompilerServices
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
 /// Represents the result of a computation, a value of true indicates completion
 [<Struct; NoComparison; NoEquality>]
-type TaskStep<'T, 'TOverall> =
-    new : completed: bool -> TaskStep<'T, 'TOverall>
+type TaskStep<'T> =
+    new : completed: bool -> TaskStep<'T>
     member IsCompleted: bool
 
 [<Struct; NoComparison; NoEquality>]
 /// This is used by the compiler as a template for creating state machine structs
-type TaskStateMachineTemplate<'T> =
+type TaskStateMachine<'T> =
     [<DefaultValue(false)>]
     val mutable Result : 'T
 
-    [<DefaultValue>]
+    [<DefaultValue(false)>]
     val mutable ResumptionPoint : int
 
-    [<DefaultValue>]
+    [<DefaultValue(false)>]
+    val mutable MachineFunc : MachineFunc<TaskStateMachine<'T>, obj>
+
+    [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
 
     interface IAsyncStateMachine
 
+type TaskCode<'TOverall, 'T> = delegate of byref<TaskStateMachine<'TOverall>> -> TaskStep<'T>
+
 [<Class>]
 type TaskBuilder =
     
-    [<NoDynamicInvocation>]
-    member inline Combine: task1: TaskStep<unit, 'TOverall> * task2: (unit -> TaskStep<'T, 'TOverall>) -> TaskStep<'T, 'TOverall>
+    member inline Combine: task1: TaskCode<'TOverall, unit> * task2: TaskCode<'TOverall, 'T> -> TaskCode<'TOverall, 'T>
     
-    [<NoDynamicInvocation>]
-    member inline Delay: f: (unit -> TaskStep<'T, 'TOverall>) -> (unit -> TaskStep<'T, 'TOverall>)
+    member inline Delay: f: (unit -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
     
-    [<NoDynamicInvocation>]
-    member inline For: sequence: seq<'T> * body: ('T -> TaskStep<unit, 'TOverall>) -> TaskStep<unit, 'TOverall>
+    member inline For: sequence: seq<'T> * body: ('T -> TaskCode<'TOverall, unit>) -> TaskCode<'TOverall, unit>
     
-    [<NoDynamicInvocation>]
-    member inline Return: x: 'T -> TaskStep<'T, 'T>
+    member inline Return: x: 'T -> TaskCode<'T, 'T>
     
-    [<NoDynamicInvocation>]
-    member inline ReturnFrom: task: Task<'T> -> TaskStep<'T, 'T>
+    member inline Run: code: TaskCode<'T, 'T> -> Task<'T>
     
-    [<NoDynamicInvocation>]
-    member inline Run: code: (unit -> TaskStep<'T, 'T>) -> Task<'T>
+    member inline TryFinally: body: TaskCode<'TOverall, 'T> * fin: (unit -> unit) -> TaskCode<'TOverall, 'T>
     
-    [<NoDynamicInvocation>]
-    member inline TryFinally: body: (unit -> TaskStep<'T, 'TOverall>) * fin: (unit -> unit) -> TaskStep<'T, 'TOverall>
+    member inline TryWith: body: TaskCode<'TOverall, 'T> * catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
     
-    [<NoDynamicInvocation>]
-    member inline TryWith: body: (unit -> TaskStep<'T, 'TOverall>) * catch: (exn -> TaskStep<'T, 'TOverall>) -> TaskStep<'T, 'TOverall>
+    member inline Using: disp: 'Resource * body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T> when 'Resource :> IDisposable
     
-    [<NoDynamicInvocation>]
-    member inline Using: disp: 'Resource * body: ('Resource -> TaskStep<'T, 'TOverall>) -> TaskStep<'T, 'TOverall> when 'Resource :> IDisposable
+    member inline While: condition: (unit -> bool) * body: TaskCode<'TOverall, unit> -> TaskCode<'TOverall, unit>
     
-    [<NoDynamicInvocation>]
-    member inline While: condition: (unit -> bool) * body: (unit -> TaskStep<unit, 'TOverall>) -> TaskStep<unit, 'TOverall>
-    
-    [<NoDynamicInvocation; DefaultValue>]
-    member inline Zero: unit -> TaskStep<unit, 'TOverall>
+    [<DefaultValue>]
+    member inline Zero: unit -> TaskCode<'TOverall, unit>
 
-[<AutoOpen>]
-module ContextSensitiveTasks = 
+    member inline ReturnFrom: task: Task<'T> -> TaskCode<'T, 'T>
 
-    /// Builds a `System.Th`reading.Tasks.Task<'T>` similarly to a C# async/await method.
-    /// Use this like `task { let! taskResult = someTask(); return taskResult.ToString(); }`.
-    val task : TaskBuilder
+and 
 
     /// Provides evidence that various types can be used in bind and return constructs in task computation expressions
     [<Sealed; NoComparison; NoEquality>]
-    type Witnesses =
+    Witnesses =
         interface IPriority1
         interface IPriority2
         interface IPriority3
@@ -125,7 +120,7 @@ module ContextSensitiveTasks =
         /// Provides evidence that task-like types can be used in 'bind' in a task computation expression
         [<NoDynamicInvocation>]
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall >
-                : priority: IPriority2 * taskLike: ^TaskLike * k: ( ^TResult1 -> TaskStep< 'TResult2, 'TOverall>) -> TaskStep< 'TResult2, 'TOverall>
+                : priority: IPriority2 * taskLike: ^TaskLike * k: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
@@ -133,15 +128,15 @@ module ContextSensitiveTasks =
 
         /// Provides evidence that tasks can be used in 'bind' in a task computation expression
         [<NoDynamicInvocation>]
-        static member inline CanBind: priority: IPriority1 * task: Task<'TResult1> * k: ('TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
+        static member inline CanBind: priority: IPriority1 * task: Task<'TResult1> * k: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
 
         /// Provides evidence that F# Async computations can be used in 'bind' in a task computation expression
         [<NoDynamicInvocation>]
-        static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * k: ('TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
+        static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * k: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
 
         /// Provides evidence that task-like types can be used in 'return' in a task workflow
         [<NoDynamicInvocation>]
-        static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T> : priority: IPriority1 * taskLike: ^TaskLike -> TaskStep< ^T, ^T > 
+        static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T> : priority: IPriority2 * taskLike: ^TaskLike -> TaskCode< ^T, ^T > 
                                             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted: unit -> bool)
@@ -149,19 +144,31 @@ module ContextSensitiveTasks =
 
         /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
         [<NoDynamicInvocation>]
-        static member inline CanReturnFrom: IPriority1 * computation: Async<'T> -> TaskStep<'T, 'T>
+        static member inline CanReturnFrom: IPriority1 * computation: Task<'T> -> TaskCode<'T, 'T>
 
-    type TaskBuilder with
-        /// Provides the ability to bind to a variety of tasks, using context-sensitive semantics
+        /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
         [<NoDynamicInvocation>]
-        member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
-            when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>)
+        static member inline CanReturnFrom: IPriority1 * computation: Async<'T> -> TaskCode<'T, 'T>
+
+[<AutoOpen>]
+module TaskHelpers = 
+
+    /// Builds a `System.Threading.Tasks.Task<'T>` similarly to a C# async/await method.
+    /// Use this like `task { let! taskResult = someTask(); return taskResult.ToString(); }`.
+    val task : TaskBuilder
+
+    type TaskBuilder with 
+        /// Provides the ability to bind to a variety of tasks, using context-sensitive semantics
+        member inline Bind< ^TaskLike, ^TResult1, 'TResult2, 'TOverall
+                                when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>)> 
+                     : task: ^TaskLike * continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>        
 
         /// Provides the ability to return results from a variety of tasks, using context-sensitive semantics
-        [<NoDynamicInvocation>]
-        member inline ReturnFrom: a: ^TaskLike -> TaskStep< 'T, 'T >
-            when (Witnesses or  ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T, 'T>)
+        member inline ReturnFrom: a: ^TaskLike -> TaskCode< 'T, 'T >
+            when (Witnesses or  ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskCode<'T, 'T>)
 
+
+(*
 module ContextInsensitiveTasks = 
 
     /// Builds a `System.Threading.Tasks.Task<'T>` similarly to a C# async/await method, but where
@@ -180,7 +187,7 @@ module ContextInsensitiveTasks =
 
         /// Provides evidence that task-like computations can be used in 'bind' in a task computation expression
         [<NoDynamicInvocation>]
-        static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall > : priority: IPriority3 * taskLike: ^TaskLike * k: ( ^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
+        static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall > : priority: IPriority3 * taskLike: ^TaskLike * k: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
             when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
             and ^Awaiter :> ICriticalNotifyCompletion
             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
@@ -188,7 +195,7 @@ module ContextInsensitiveTasks =
 
         /// Provides evidence that task-like computations can be used in 'bind' in a task computation expression
         [<NoDynamicInvocation>]
-        static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaitable, ^Awaiter, 'TOverall > : priority: IPriority2 * taskLike: ^TaskLike * k: (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
+        static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaitable, ^Awaiter, 'TOverall > : priority: IPriority2 * taskLike: ^TaskLike * k: (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
             when  ^TaskLike: (member ConfigureAwait: bool ->  ^Awaitable)
             and ^Awaitable: (member GetAwaiter:  unit ->  ^Awaiter)
             and ^Awaiter :> ICriticalNotifyCompletion
@@ -197,11 +204,11 @@ module ContextInsensitiveTasks =
 
         /// Provides evidence that tasks can be used in 'bind' in a task computation expression
         [<NoDynamicInvocation>]
-        static member inline CanBind: priority: IPriority1 * task: Task<'TResult1> * k: ('TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
+        static member inline CanBind: priority: IPriority1 * task: Task<'TResult1> * k: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
 
         /// Provides evidence that F# async computations can be used in 'bind' in a task computation expression
         [<NoDynamicInvocation>]
-        static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * k: ('TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
+        static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * k: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
 
         /// Provides evidence that types following the "awaitable" pattern can be used in 'return!' in a task computation expression
         [<NoDynamicInvocation>]
@@ -228,12 +235,12 @@ module ContextInsensitiveTasks =
 
         /// Provides the ability to bind to a variety of tasks, using context-sensitive semantics
         [<NoDynamicInvocation>]
-        member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>
-            when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskStep<'TResult2, 'TOverall>) -> TaskStep<'TResult2, 'TOverall>)
+        member inline Bind : task: ^TaskLike * continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
+            when (Witnesses or  ^TaskLike): (static member CanBind: Witnesses * ^TaskLike * (^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>)
 
         /// Provides the ability to return results from a variety of tasks, using context-sensitive semantics
         [<NoDynamicInvocation>]
         member inline ReturnFrom: a: ^TaskLike -> TaskStep< 'T, 'T >
             when (Witnesses or  ^TaskLike): (static member CanReturnFrom: Witnesses * ^TaskLike -> TaskStep<'T, 'T>)
-
+*)
 #endif

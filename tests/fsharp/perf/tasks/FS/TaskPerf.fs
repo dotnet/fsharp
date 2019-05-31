@@ -12,7 +12,7 @@ open System.IO
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 open TaskBuilderTasks.ContextSensitive // TaskBuilder.fs extension members
-open FSharp.Control.ContextSensitiveTasks // the default
+//open FSharp.Control.ContextSensitiveTasks // the default
 open Tests.SyncBuilder
 
 [<AutoOpen>]

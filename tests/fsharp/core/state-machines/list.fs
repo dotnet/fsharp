@@ -5,127 +5,121 @@ open System
 open System.Collections
 open System.Collections.Generic
 open System.Runtime.CompilerServices
-open FSharp.Core.CompilerServices.CodeGenHelpers
-
-let [<Literal>] DONE = 3uy
-
-[<Struct>]
-type ListStep<'T>(res: byte) = 
-    member x.IsDone = (res = DONE)
+open FSharp.Core.CompilerServices.StateMachineHelpers
 
 [<AbstractClass>]
 type ListStateMachine<'T>() =
     let res = ResizeArray<'T>()
 
-    abstract Populate : unit -> ListStep<'T>
+    abstract Populate : unit -> unit
 
     member __.Yield (v: 'T) = res.Add(v)
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    member this.StartAsResizeArray() = 
-        this.Populate() |> ignore
+    member this.ToResizeArray() = 
+        this.Populate()
         res
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    member this.StartAsList() = 
-        this.Populate() |> ignore
+    member this.ToList() = 
+        this.Populate()
         Seq.toList res
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    member this.StartAsArray() = 
+    member this.ToArray() = 
         this.Populate() |> ignore
         res.ToArray()
-    
+
+type ListCode<'T> = ListStateMachine<'T> -> unit
+
 type ResizeArrayBuilderBase() =
     
     [<NoDynamicInvocation>]
-    member inline __.Delay(__expand_f : unit -> ListStep<'T>) = __expand_f
+    member inline __.Delay(__expand_f : unit -> ListCode<'T>) : ListCode<'T> = (fun sm -> (__expand_f()) sm)
 
     [<NoDynamicInvocation>]
-    member inline __.Zero() : ListStep<'T> =
-        ListStep<'T>(DONE)
+    member inline __.Zero() : ListCode<'T> =
+        (fun _sm -> ())
 
     [<NoDynamicInvocation>]
-    member inline __.Combine(``__machine_step$cont``: ListStep<'T>, __expand_task2: unit -> ListStep<'T>) : ListStep<'T> =
-        __expand_task2()
+    member inline __.Combine(__expand_task1: ListCode<'T>, __expand_task2: ListCode<'T>) : ListCode<'T> =
+        (fun sm -> 
+            __expand_task1 sm
+            __expand_task2 sm)
             
     [<NoDynamicInvocation>]
-    member inline __.While(__expand_condition : unit -> bool, __expand_body : unit -> ListStep<'T>) : ListStep<'T> =
-        while __expand_condition() do
-            let ``__machine_step$cont`` = __expand_body ()
-            ()
-        ListStep<'T>(DONE)
+    member inline __.While(__expand_condition : unit -> bool, __expand_body : ListCode<'T>) : ListCode<'T> =
+        (fun sm -> 
+            while __expand_condition() do
+                __expand_body sm)
 
     [<NoDynamicInvocation>]
-    member inline __.TryWith(__expand_body : unit -> ListStep<'T>, __expand_catch : exn -> ListStep<'T>) : ListStep<'T> =
-        try
-            let ``__machine_step$cont`` = __expand_body ()
-            ()
-        with exn -> 
-            let ``__machine_step$cont`` = __expand_catch exn
-            ()
-        ListStep<'T>(DONE)
+    member inline __.TryWith(__expand_body : ListCode<'T>, __expand_catch : exn -> ListCode<'T>) : ListCode<'T> =
+        (fun sm -> 
+            try
+                __expand_body sm
+            with exn -> 
+                __expand_catch exn sm)
 
     [<NoDynamicInvocation>]
-    member inline __.TryFinally(__expand_body: unit -> ListStep<'T>, compensation : unit -> unit) : ListStep<'T> =
-        try
-            let ``__machine_step$cont`` = __expand_body ()
-            ()
-        with _ ->
-            compensation()
-            reraise()
+    member inline __.TryFinally(__expand_body: ListCode<'T>, compensation : unit -> unit) : ListCode<'T> =
+        (fun sm -> 
+            try
+                __expand_body sm
+            with _ ->
+                compensation()
+                reraise()
 
-        compensation()
-        ListStep<'T>(DONE)
+            compensation())
 
     [<NoDynamicInvocation>]
-    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> ListStep<'T>) = 
+    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> ListCode<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
-            (fun () -> __expand_body disp),
+            (fun sm -> __expand_body disp sm),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
     [<NoDynamicInvocation>]
-    member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> ListStep<'T>) : ListStep<'T> =
+    member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> ListCode<'T>) : ListCode<'T> =
         this.Using (sequence.GetEnumerator(), 
-            (fun e -> this.While((fun () -> e.MoveNext()), (fun () -> __expand_body e.Current))))
+            (fun e -> this.While((fun () -> e.MoveNext()), (fun sm -> __expand_body e.Current sm))))
 
     [<NoDynamicInvocation>]
-    member inline __.Yield (``__machine_step$cont``: 'T) : ListStep<'T> =
-        __machine<ListStateMachine<'T>>.Yield(``__machine_step$cont``)
-        ListStep<'T>(DONE)
+    member inline __.Yield (v: 'T) : ListCode<'T> =
+        (fun sm ->
+            sm.Yield v)
 
     [<NoDynamicInvocation>]
-    member inline this.YieldFrom (source: IEnumerable<'T>) : ListStep<'T> =
+    member inline this.YieldFrom (source: IEnumerable<'T>) : ListCode<'T> =
         this.For(source, (fun ``__machine_step$cont`` -> this.Yield(``__machine_step$cont``)))
 
 type ResizeArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
-    member inline __.Run(__expand_code : unit -> ListStep<'T>) : ResizeArray<'T> = 
+    member inline __.Run(__expand_code : ListCode<'T>) : ResizeArray<'T> = 
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member __.Populate () = __jumptable 0 __expand_code }).StartAsResizeArray()
+                member sm.Populate () = __jumptable 0 (__expand_code sm) }).ToResizeArray()
 
 let rsarray = ResizeArrayBuilder()
 
 type ListBuilder() =     
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
-    member inline __.Run(__expand_code : unit -> ListStep<'T>) : 'T list = 
+    member inline __.Run(__expand_code : ListCode<'T>) : 'T list = 
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member __.Populate () = __jumptable 0 __expand_code }).StartAsList()
+                member sm.Populate () = __jumptable 0 (__expand_code sm) }).ToList()
         
 let list = ListBuilder()
 
 type ArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
-    member inline __.Run(__expand_code : unit -> ListStep<'T>) : 'T[] = 
+    member inline __.Run(__expand_code : ListCode<'T>) : 'T[] = 
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member __.Populate () = __jumptable 0 __expand_code }).StartAsArray()
+                member sm.Populate () = __jumptable 0 (__expand_code sm) }).ToArray()
         
 let array = ArrayBuilder()
 
@@ -135,9 +129,9 @@ module Examples =
         list {
            printfn "in t1"
            yield "a"
-           let x = 1
+           let x = "d"
            yield "b"
-           yield "c"
+           yield "c" + x
         }
 
     let t2 () = 
