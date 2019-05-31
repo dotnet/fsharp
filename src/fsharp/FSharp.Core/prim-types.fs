@@ -3829,7 +3829,7 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte     = (# "" value : uint32 #)             
              
              when ^T : uint64     = (# "conv.u4" value  : uint32 #)
-             when ^T : uint32     = (# "conv.u4" value  : uint32 #)
+             when ^T : uint32     = (# "" value  : uint32 #)
              when ^T : uint16     = (# "conv.u4" value  : uint32 #)
              when ^T : char       = (# "conv.u4" value  : uint32 #)
              when ^T : unativeint = (# "conv.u4" value  : uint32 #)
@@ -3912,7 +3912,7 @@ namespace Microsoft.FSharp.Core
              when ^T : string     = ParseInt64 (castToString value)
              when ^T : float     = (# "conv.i8" value  : int64 #)
              when ^T : float32   = (# "conv.i8" value  : int64 #)
-             when ^T : int64     = (# "conv.i8" value  : int64 #)
+             when ^T : int64     = (# "" value  : int64 #)
              when ^T : int32     = (# "conv.i8" value  : int64 #)
              when ^T : int16     = (# "conv.i8" value  : int64 #)
              when ^T : nativeint = (# "conv.i8" value  : int64 #)
@@ -4029,7 +4029,7 @@ namespace Microsoft.FSharp.Core
              when ^T : int64      = (# "conv.i" value  : nativeint #)
              when ^T : int32      = (# "conv.i" value  : nativeint #)
              when ^T : int16      = (# "conv.i" value  : nativeint #)
-             when ^T : nativeint  = (# "conv.i" value  : nativeint #)
+             when ^T : nativeint  = (# "" value  : nativeint #)
              when ^T : sbyte      = (# "conv.i" value  : nativeint #)
 
              // Narrower unsigned types we zero-extend.
@@ -4041,7 +4041,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16     = (# "conv.u" value  : nativeint #)
              when ^T : char       = (# "conv.u" value  : nativeint #)
              when ^T : unativeint = (# "" value  : nativeint #)
-             when ^T : byte       = (# "conv.i" value  : nativeint #)
+             when ^T : byte       = (# "conv.u" value  : nativeint #)
 
         [<CompiledName("ToString")>]
         let inline string (value: ^T) = 
