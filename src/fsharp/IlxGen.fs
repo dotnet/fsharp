@@ -826,7 +826,14 @@ and IlxGenEnv =
 
       /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
       withinSEH: bool
+
+      /// Are we inside of a recursive let binding, while loop, or a for loop?
+      isInLoop: bool
     }
+
+let SetIsInLoop isInLoop eenv =
+    if eenv.isInLoop = isInLoop then eenv
+    else { eenv with isInLoop = isInLoop }
 
 let ReplaceTyenv tyenv (eenv: IlxGenEnv) = {eenv with tyenv = tyenv }
 
@@ -3369,6 +3376,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
 //--------------------------------------------------------------------------
 
 and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
+    let eenv = SetIsInLoop true eenv
     let g = cenv.g
 
     // The JIT/NGen eliminate array-bounds checks for C# loops of form:
@@ -3459,6 +3467,7 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
 //--------------------------------------------------------------------------
 
 and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
+    let eenv = SetIsInLoop true eenv
     let finish = CG.GenerateDelayMark cgbuf "while_finish"
     let startTest = CG.GenerateMark cgbuf "startTest"
 
@@ -5083,6 +5092,7 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
 
 /// Generate letrec bindings
 and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
+    let eenv = SetIsInLoop true eenv
     // Fix up recursion for non-toplevel recursive bindings
     let bindsPossiblyRequiringFixup =
         allBinds |> List.filter (fun b ->
@@ -5324,8 +5334,8 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
     | _ ->
         let storage = StorageForVal cenv.g m vspec eenv
         match storage, rhsExpr with
-        // locals are zero-init, no need to initialize them
-        | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc ->
+        // locals are zero-init, no need to initialize them, except if you are in a loop and the local is mutable.
+        | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc && not (eenv.isInLoop && vspec.IsMutable) ->
             CommitStartScope cgbuf startScopeMarkOpt
         | _ ->
             GenBindingRhs cenv cgbuf eenv SPSuppress vspec rhsExpr
@@ -7460,7 +7470,8 @@ let GetEmptyIlxGenEnv (ilg: ILGlobals) ccu =
       liveLocals=IntMap.empty()
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
-      withinSEH = false }
+      withinSEH = false
+      isInLoop = false }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list

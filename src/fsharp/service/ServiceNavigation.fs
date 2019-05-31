@@ -441,10 +441,12 @@ module NavigationImpl =
         items |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
         new FSharpNavigationItems(items)
 
+[<RequireQualifiedAccess>]
+module FSharpNavigation =
     let getNavigation (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.SigFile (ParsedSigFileInput (modules = modules)) -> getNavigationFromSigFile modules
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> getNavigationFromImplFile modules
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = modules)) -> NavigationImpl.getNavigationFromSigFile modules
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> NavigationImpl.getNavigationFromImplFile modules
 
     let empty = FSharpNavigationItems([||])
 
