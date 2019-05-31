@@ -1,7 +1,7 @@
 // #Conformance #LexicalAnalysis #Constants 
 // Number type specifier are not case sensitive
 // Oct
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 let x = 0o7

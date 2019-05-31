@@ -560,6 +560,12 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
+    <Compile Include="..\service\Reactor.fsi">
+      <Link>Service/Reactor.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\Reactor.fs">
+      <Link>Service/Reactor.fs</Link>
+    </Compile>
 
     <!-- the incremental builder and service . -->
     <Compile Include="..\service\IncrementalBuild.fsi">
@@ -567,12 +573,6 @@
     </Compile>
     <Compile Include="..\service\IncrementalBuild.fs">
       <Link>Service/IncrementalBuild.fs</Link>
-    </Compile>
-    <Compile Include="..\service\Reactor.fsi">
-      <Link>Service/Reactor.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\Reactor.fs">
-      <Link>Service/Reactor.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceCompilerDiagnostics.fsi">
       <Link>Service/ServiceCompilerDiagnostics.fsi</Link>
