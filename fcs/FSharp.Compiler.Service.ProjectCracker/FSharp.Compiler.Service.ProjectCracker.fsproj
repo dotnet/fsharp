@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework)</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
   <PropertyGroup>
@@ -20,14 +19,14 @@
       <Link>ProjectCrackerOptions.fs</Link>
     </Compile>
     <Compile Include="ProjectCracker.fs" />
-    <Content Include="..\FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCracker.targets" PackagePath="build\net461" />
-    <Content Include="$(ArtifactsBinDir)\fcs\net461\FSharp.Compiler.Service.ProjectCrackerTool.exe" PackagePath="utilities\net461" />
-    <Content Include="$(ArtifactsBinDir)\fcs\net461\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" PackagePath="utilities\net461" />
+    <Content Include="..\FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCracker.targets" PackagePath="build\$(FcsTargetNetFxFramework)" />
+    <Content Include="$(ArtifactsBinDir)\fcs\$(Configuration)\$(FcsTargetNetFxFramework)\FSharp.Compiler.Service.ProjectCrackerTool.exe" PackagePath="utilities\$(FcsTargetNetFxFramework)" />
+    <Content Include="$(ArtifactsBinDir)\fcs\$(Configuration)\$(FcsTargetNetFxFramework)\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" PackagePath="utilities\$(FcsTargetNetFxFramework)" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Runtime" />
     <Reference Include="System.IO" />
-    <PackageReference Include="FSharp.Core" Version="4.6.2" />
+    <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 </Project>

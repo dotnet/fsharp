@@ -146,13 +146,13 @@ type FileIndexTable() =
     //
     // TO move forward we should eventually introduce a new type NormalizedFileName that tracks this invariant.
     member t.FileToIndex normalize filePath = 
-        match fileToIndexTable.TryGetValue(filePath) with 
+        match fileToIndexTable.TryGetValue filePath with 
         | true, idx -> idx
         | _ -> 
         
         // Try again looking for a normalized entry.
         let normalizedFilePath = if normalize then normalizeFilePath filePath else filePath
-        match fileToIndexTable.TryGetValue(normalizedFilePath) with 
+        match fileToIndexTable.TryGetValue normalizedFilePath with 
         | true, idx ->
             // Record the non-normalized entry if necessary
             if filePath <> normalizedFilePath then 
@@ -252,11 +252,14 @@ type range(code1:int64, code2: int64) =
         try
             let endCol = r.EndColumn - 1
             let startCol = r.StartColumn - 1
-            File.ReadAllLines(r.FileName)
-            |> Seq.skip (r.StartLine - 1)
-            |> Seq.take (r.EndLine - r.StartLine + 1)
-            |> String.concat "\n"
-            |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+            if FileSystem.IsInvalidPathShim r.FileName then "path invalid: " + r.FileName
+            elif not (FileSystem.SafeExists r.FileName) then "non existing file: " + r.FileName
+            else
+              File.ReadAllLines(r.FileName)
+              |> Seq.skip (r.StartLine - 1)
+              |> Seq.take (r.EndLine - r.StartLine + 1)
+              |> String.concat "\n"
+              |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
         with e ->
             e.ToString()        
 #endif

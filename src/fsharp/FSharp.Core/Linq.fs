@@ -235,9 +235,7 @@ module LeafExpressionConverter =
             match tm with
             | Call(obj, minfo2, args)
                 when (
-#if !FX_NO_REFLECTION_METADATA_TOKENS
                         minfo.MetadataToken = minfo2.MetadataToken &&
-#endif
                         if isg1 then minfo2.IsGenericMethod && gmd = minfo2.GetGenericMethodDefinition()
                         else minfo = minfo2
                      ) ->

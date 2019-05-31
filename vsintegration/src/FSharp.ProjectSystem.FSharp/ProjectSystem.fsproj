@@ -8,7 +8,7 @@
     <NoWarn>$(NoWarn);52;62;75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
-    <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
+    <DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
@@ -104,24 +104,24 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.CoreUtility" Version="$(MicrosoftVisualStudioCoreUtilityPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.ImageCatalog" Version="$(MicrosoftVisualStudioImageCatalogPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.ProjectAggregator" Version="$(MicrosoftVisualStudioProjectAggregatorPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="$(MicrosoftVisualStudioShellImmutable100PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="$(MicrosoftVisualStudioShellImmutable110PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.15.0" Version="$(MicrosoftVisualStudioShellImmutable150PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.10.0" Version="$(MicrosoftVisualStudioShellInterop100PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.11.0" Version="$(MicrosoftVisualStudioShellInterop110PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Text.Data" Version="$(MicrosoftVisualStudioTextDataPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="VSSDK.DebuggerVisualizers" Version="$(VSSDKDebuggerVisualizersPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="EnvDTE80" Version="$(EnvDTE80Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.CoreUtility" Version="$(MicrosoftVisualStudioCoreUtilityVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.ImageCatalog" Version="$(MicrosoftVisualStudioImageCatalogVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.ProjectAggregator" Version="$(MicrosoftVisualStudioProjectAggregatorVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="$(MicrosoftVisualStudioShellImmutable100Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="$(MicrosoftVisualStudioShellImmutable110Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.15.0" Version="$(MicrosoftVisualStudioShellImmutable150Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.10.0" Version="$(MicrosoftVisualStudioShellInterop100Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.11.0" Version="$(MicrosoftVisualStudioShellInterop110Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.Data" Version="$(MicrosoftVisualStudioTextDataVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="VSSDK.DebuggerVisualizers" Version="$(VSSDKDebuggerVisualizersVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
   <Target Name="CopyCtoFile" BeforeTargets="CopyLocalizationResources" DependsOnTargets="VSCTCompile">

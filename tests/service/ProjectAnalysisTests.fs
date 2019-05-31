@@ -96,7 +96,6 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 [<Test>]
 let ``Test project1 whole project errors`` () = 
 
-
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
     wholeProjectResults .Errors.Length |> shouldEqual 2
     wholeProjectResults.Errors.[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
@@ -106,6 +105,26 @@ let ``Test project1 whole project errors`` () =
     wholeProjectResults.Errors.[0].EndLineAlternate |> shouldEqual 10
     wholeProjectResults.Errors.[0].StartColumn |> shouldEqual 43
     wholeProjectResults.Errors.[0].EndColumn |> shouldEqual 44
+
+[<Test;NonParallelizable>]
+let ``Test project1 and make sure TcImports gets cleaned up`` () = 
+
+    let test () =
+        let (_, checkFileAnswer) = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunSynchronously
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwith "should not be aborted"
+        | FSharpCheckFileAnswer.Succeeded checkFileResults ->
+            let tcImportsOpt = checkFileResults.TryGetCurrentTcImports ()
+            Assert.True tcImportsOpt.IsSome
+            let weakTcImports = WeakReference tcImportsOpt.Value
+            Assert.True weakTcImports.IsAlive
+            weakTcImports
+     
+    let weakTcImports = test ()
+    checker.InvalidateConfiguration (Project1.options)
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+    GC.Collect(2, GCCollectionMode.Forced, blocking = true)
+    Assert.False weakTcImports.IsAlive
 
 [<Test>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =
@@ -5103,48 +5122,48 @@ let ``Test project41 all symbols`` () =
               yield (s.Symbol.DisplayName, tups s.RangeAlternate, attribsOfSymbol s.Symbol, pos) ]
     allSymbolUsesInfo |> shouldEqual
           [("X", ((4, 19), (4, 20)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (4, 19));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (4, 19));
            ("data1", ((4, 8), (4, 13)), ["val"], (4, 8));
            ("int", ((7, 23), (7, 26)), ["abbrev"], (0, 0));
            ("X", ((7, 19), (7, 20)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (7, 19));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (7, 19));
            ("data1", ((7, 32), (7, 37)), ["val"], (4, 8));
            ("data2", ((7, 8), (7, 13)), ["val"], (7, 8));
            ("int", ((9, 20), (9, 23)), ["abbrev"], (0, 0));
            ("X", ((9, 16), (9, 17)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (9, 16));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (9, 16));
            ("int", ((9, 20), (9, 23)), ["abbrev"], (0, 0));
            ("X", ((9, 16), (9, 17)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (9, 16));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (9, 16));
            ("D", ((9, 9), (9, 10)), ["abbrev"], (9, 9));
            ("int", ((12, 23), (12, 26)), ["abbrev"], (0, 0));
            ("X", ((12, 19), (12, 20)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (12, 19));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (12, 19));
            ("v", ((12, 12), (12, 13)), [], (12, 12));
            ("v", ((12, 33), (12, 34)), [], (12, 12));
            ("X", ((12, 33), (12, 36)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (12, 19));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (12, 19));
            ("f1", ((12, 8), (12, 10)), ["val"], (12, 8));
            ("D", ((15, 16), (15, 17)), ["abbrev"], (9, 9));
            ("v", ((15, 12), (15, 13)), [], (15, 12));
            ("v", ((15, 21), (15, 22)), [], (15, 12));
            ("X", ((15, 21), (15, 24)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (9, 16));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (9, 16));
            ("f2", ((15, 8), (15, 10)), ["val"], (15, 8));
            ("int", ((18, 29), (18, 32)), ["abbrev"], (0, 0));
            ("string", ((18, 38), (18, 44)), ["abbrev"], (0, 0));
            ("X", ((18, 25), (18, 26)),
-            ["field"; "anon(0, [//<>f__AnonymousType4026451324`2']X,Y)"], (18, 25));
+            ["field"; "anon(0, [//<>f__AnonymousType4026451324`2]X,Y)"], (18, 25));
            ("Y", ((18, 34), (18, 35)),
-            ["field"; "anon(1, [//<>f__AnonymousType4026451324`2']X,Y)"], (18, 34));
+            ["field"; "anon(1, [//<>f__AnonymousType4026451324`2]X,Y)"], (18, 34));
            ("X", ((18, 19), (18, 20)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (18, 19));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (18, 19));
            ("v", ((18, 12), (18, 13)), [], (18, 12));
            ("v", ((18, 54), (18, 55)), [], (18, 12));
            ("X", ((18, 56), (18, 57)),
-            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (18, 19));
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1]X)"], (18, 19));
            ("X", ((18, 54), (18, 59)),
-            ["field"; "anon(0, [//<>f__AnonymousType4026451324`2']X,Y)"], (18, 25));
+            ["field"; "anon(0, [//<>f__AnonymousType4026451324`2]X,Y)"], (18, 25));
            ("f3", ((18, 8), (18, 10)), ["val"], (18, 8));
            ("M", ((2, 7), (2, 8)), ["module"], (2, 7))]
 
@@ -5523,6 +5542,14 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
+
+module M1 =
+    type R = { Field: int }
+
+module M2 =
+    open M1
+
+    let foo x = x.Field
 """
     let fileSource1 = FSharp.Compiler.Text.SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)

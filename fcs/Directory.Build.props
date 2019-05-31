@@ -16,13 +16,23 @@
     <ArtifactsDir>$(MSBuildThisFileDirectory)..\artifacts</ArtifactsDir>
     <ArtifactsBinDir>$(ArtifactsDir)\bin</ArtifactsBinDir>
     <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
-    <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
-    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
+    <OutputPath>$(ArtifactsBinDir)\fcs\$(Configuration)</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs\$(Configuration)</IntermediateOutputPath>
     <DisableCompilerRedirection>true</DisableCompilerRedirection>
   </PropertyGroup>
 
   <!-- SDK targets override -->
   <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..\src</FSharpSourcesRoot>
+    <VersionPrefix>22.0.3</VersionPrefix>
+    <OtherFlags>--version:$(VersionPrefix)</OtherFlags>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>    
+    <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
+    <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
+    <ToolsetFsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</ToolsetFsiToolPath>
+    <ToolsetFsiToolExe>fsi.exe</ToolsetFsiToolExe>
     <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net472</ProtoOutputPath>
+    <FcsFSharpCorePkgVersion>4.6.2</FcsFSharpCorePkgVersion>
+    <FcsTargetNetFxFramework>net461</FcsTargetNetFxFramework>
   </PropertyGroup>
 </Project>

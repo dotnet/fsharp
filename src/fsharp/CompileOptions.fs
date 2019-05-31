@@ -407,6 +407,13 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
+let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
+    match pathPair.Split([|'='|], 2) with
+    | [| oldPrefix; newPrefix |] ->
+        tcConfigB.AddPathMapping (oldPrefix, newPrefix)
+    | _ ->
+        error(Error(FSComp.SR.optsInvalidPathMapFormat(), rangeCmdArgs))
+
 let jitoptimizeSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some (switch = OptionSwitch.On) }
     
@@ -441,6 +448,9 @@ let subSystemVersionSwitch (tcConfigB: TcConfigBuilder) (text: string) =
                  tcConfigB.subsystemVersion <- (major, minor)
             | _ -> fail()
         | _ -> fail()
+
+let SetUseSdkSwitch (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.useSdkRefs <- (switch = OptionSwitch.On)
 
 let (++) x s = x @ [s]
 
@@ -513,6 +523,7 @@ let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
 let tagInt = "<n>"
+let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
 
 // PrintOptionInfo
@@ -544,18 +555,21 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
 // OptionBlock: Input files
 //-------------------------
 
-let inputFileFlagsBoth (tcConfigB : TcConfigBuilder) =
-    [   CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None,
-                            Some (FSComp.SR.optsReference()) )
+let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
+    [ CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
     ]
 
-let referenceFlagAbbrev (tcConfigB: TcConfigBuilder) = 
-        CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None,
-                            Some(FSComp.SR.optsShortFormOf("--reference")) )
-      
-let inputFileFlagsFsi tcConfigB = inputFileFlagsBoth tcConfigB
-let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
+let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB 
 
+let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
+#if NETSTANDARD
+        [ CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs())) ]
+#else
+        List.empty<CompilerOption>
+#endif
+
+let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
+    List.concat [ inputFileFlagsBoth tcConfigB; inputFileFlagsFsiBase tcConfigB]
 
 // OptionBlock: Errors and warnings
 //---------------------------------
@@ -780,7 +794,12 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
            ("deterministic", tagNone,
             OptionSwitch (SetDeterministicSwitch tcConfigB), None,
             Some (FSComp.SR.optsDeterministic()))
-         
+
+          CompilerOption
+           ("pathmap", tagPathMap,
+            OptionStringList (AddPathMapping tcConfigB), None,
+            Some (FSComp.SR.optsPathMap()))
+
           CompilerOption
            ("crossoptimize", tagNone,
             OptionSwitch (crossOptimizeSwitch tcConfigB), None,
@@ -824,12 +843,6 @@ let libFlag (tcConfigB: TcConfigBuilder) =
         ("lib", tagDirList,
          OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), None,
          Some (FSComp.SR.optsLib()))
-
-let libFlagAbbrev (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("I", tagDirList,
-         OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), None,
-         Some (FSComp.SR.optsShortFormOf("--lib")))
 
 let codePageFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
@@ -1395,8 +1408,10 @@ let abbreviatedFlagsBoth tcConfigB =
         CompilerOption("O", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsShortFormOf("--optimize[+|-]")))
         CompilerOption("g", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsShortFormOf("--debug")))
         CompilerOption("i", tagString, OptionUnit (fun () -> tcConfigB.printSignature <- true), None, Some(FSComp.SR.optsShortFormOf("--sig")))
-        referenceFlagAbbrev tcConfigB (* -r <dll> *)
-        libFlagAbbrev tcConfigB       (* -I <dir> *)
+        CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)),
+            None, Some(FSComp.SR.optsShortFormOf("--reference")))
+        CompilerOption("I", tagDirList, OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), 
+            None, Some (FSComp.SR.optsShortFormOf("--lib")))
     ]
 
 let abbreviatedFlagsFsi tcConfigB = abbreviatedFlagsBoth tcConfigB
@@ -1557,17 +1572,17 @@ let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, c
 //----------------------------------------------------------------------------
 
 let showTermFileCount = ref 0    
-let PrintWholeAssemblyImplementation (tcConfig:TcConfig) outfile header expr =
+let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then 
             let filename = outfile + ".terms"
             let n = !showTermFileCount
             showTermFileCount := n+1
             use f = System.IO.File.CreateText (filename + "-" + string n + "-" + header)
-            Layout.outL f (Layout.squashTo 192 (DebugPrint.implFilesL expr))
+            Layout.outL f (Layout.squashTo 192 (DebugPrint.implFilesL g expr))
         else 
             dprintf "\n------------------\nshowTerm: %s:\n" header
-            Layout.outL stderr (Layout.squashTo 192 (DebugPrint.implFilesL expr))
+            Layout.outL stderr (Layout.squashTo 192 (DebugPrint.implFilesL g expr))
             dprintf "\n------------------\n"
 
 //----------------------------------------------------------------------------
@@ -1665,13 +1680,13 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     // Always optimize once - the results of this step give the x-module optimization 
     // info.  Subsequent optimization steps choose representations etc. which we don't 
     // want to save in the x-module info (i.e. x-module info is currently "high level"). 
-    PrintWholeAssemblyImplementation tcConfig outfile "pass-start" implFiles
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-start" implFiles
 #if DEBUG
     if tcConfig.showOptimizationData then 
-        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL implFiles)))
+        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
     
     if tcConfig.showOptimizationData then 
-        dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.entityL ccu.Contents)))
+        dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.entityL tcGlobals ccu.Contents)))
 #endif
 
     let optEnv0 = optEnv
@@ -1753,11 +1768,9 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     let implFiles, implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
     let tassembly = TypedAssemblyAfterOptimization implFiles
-    PrintWholeAssemblyImplementation tcConfig outfile "pass-end" (List.map fst implFiles)
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (List.map fst implFiles)
     ReportTime tcConfig ("Ending Optimizations")
-
     tassembly, assemblyOptData, optEnvFirstLoop
-
 
 //----------------------------------------------------------------------------
 // ILX generation 

@@ -14,10 +14,6 @@
   <ItemGroup>
     <Compile Include="Tests.fs" />
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" />
-  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Compilation\FSharp.Compiler.Compilation.fsproj" />

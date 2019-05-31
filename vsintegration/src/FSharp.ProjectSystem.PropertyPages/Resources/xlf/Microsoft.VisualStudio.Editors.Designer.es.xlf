@@ -108,7 +108,7 @@ Haga clic en ACEPTAR para pasar esto por alto y continuar. Haga clic en CANCELAR
       </trans-unit>
       <trans-unit id="PPG_KeyFileBrowseText">
         <source>&lt;Browse...&gt;</source>
-        <target state="translated">&lt;Examinar... &gt;</target>
+        <target state="translated">&lt;Examinar...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ComboBoxSelect_None">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)

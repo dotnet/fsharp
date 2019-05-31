@@ -98,6 +98,9 @@ type public FSharpCheckFileResults =
     /// an unrecoverable error in earlier checking/parsing/resolution steps.
     member HasFullTypeCheckInfo: bool
 
+    /// Tries to get the current successful TcImports. This is only used in testing. Do not use it for other stuff.
+    member internal TryGetCurrentTcImports: unit -> TcImports option
+
     /// Indicates the set of files which must be watched to accurately track changes that affect these results,
     /// Clients interested in reacting to updates to these files should watch these files and take actions as described
     /// in the documentation for compiler service.
@@ -505,14 +508,6 @@ type public FSharpChecker =
     member ParseAndCheckProject : options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckProjectResults>
 
     /// <summary>
-    /// <para>Create resources for the project and keep the project alive until the returned object is disposed.</para>
-    /// </summary>
-    ///
-    /// <param name="options">The options for the project or script.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member KeepProjectAlive : options: FSharpProjectOptions * ?userOpName: string -> Async<IDisposable>
-
-    /// <summary>
     /// <para>For a given script file, get the FSharpProjectOptions implied by the #load closure.</para>
     /// <para>All files are read from the FileSystem API, except the file being checked.</para>
     /// </summary>
@@ -524,7 +519,7 @@ type public FSharpChecker =
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetProjectOptionsFromScript : filename: string * sourceText: ISourceText * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string -> Async<FSharpProjectOptions * FSharpErrorInfo list>
+    member GetProjectOptionsFromScript : filename: string * sourceText: ISourceText * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string -> Async<FSharpProjectOptions * FSharpErrorInfo list>
 
     /// <summary>
     /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>
