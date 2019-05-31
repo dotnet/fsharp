@@ -3325,3 +3325,5 @@ module PrettyNaming =
     let QuoteIdentifierIfNeeded id = Lexhelp.Keywords.QuoteIdentifierIfNeeded id
     let KeywordNames = Lexhelp.Keywords.keywordNames
 
+module FSharpFileUtilities =
+    let isScriptFile (fileName: string) = CompileOps.IsScript fileName
