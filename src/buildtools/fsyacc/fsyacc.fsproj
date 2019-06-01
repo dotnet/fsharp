@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <DefineConstants>INTERNALIZED_FSLEXYACC_RUNTIME;$(DefineConstant)</DefineConstants>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +18,10 @@
     <Compile Include="fsyaccpars.fs" />
     <Compile Include="fsyacclex.fs" />
     <Compile Include="fsyacc.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\fsharp\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
 </Project>

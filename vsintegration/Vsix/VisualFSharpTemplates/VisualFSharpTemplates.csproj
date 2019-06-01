@@ -15,17 +15,19 @@
       <Link>packages\System.ValueTuple.4.4.0.nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="$(NuGetPackageRoot)\FSharp.Core\4.6.2\FSharp.Core.4.6.2.nupkg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>packages\FSharp.Core.4.6.2.nupkg</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core.nuget\FSharp.Core.nuget.csproj">
-      <VSIXSubPath>packages</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>PackOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
+    <!-- must include a shipped version in the VSIX, not what's currently in source -->
+    <PackageReference Include="FSharp.Core" Version="4.6.2" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

@@ -20,6 +20,11 @@ open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
 
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+
+type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
+
 [<RequireQualifiedAccess>]
 type internal LexerSymbolKind = 
     | Ident = 0
@@ -809,7 +814,7 @@ module internal Tokenizer =
                         else PrettyNaming.IsIdentifierPartCharacter c) 
         
         let isFixableIdentifier (s: string) = 
-            not (String.IsNullOrEmpty s) && Lexhelp.Keywords.NormalizeIdentifierBackticks s |> isIdentifier
+            not (String.IsNullOrEmpty s) && Keywords.NormalizeIdentifierBackticks s |> isIdentifier
         
         let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
         

@@ -15,6 +15,7 @@ open FSharp.Compiler.Layout
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<RequireQualifiedAccess>]
 module internal RoslynHelpers =
@@ -149,7 +150,7 @@ module internal RoslynHelpers =
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
         let customTags = 
             match error.ErrorNumber with
-            | 1182 -> DiagnosticCustomTags.Unnecessary
+            | 1182 -> FSharpDiagnosticCustomTags.Unnecessary
             | _ -> null
         let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
         Diagnostic.Create(descriptor, location)

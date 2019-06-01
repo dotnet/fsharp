@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 // Options
 // Interesting case: Some vs None
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 let samples = [  Some(1,1+1) = Some(1,2);                   // tuples support structural equality
                  Some(hash (1,1+1)) = Some(hash (1,2));     // Function calls return identical values

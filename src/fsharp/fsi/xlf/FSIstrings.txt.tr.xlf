@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# Interactive işlemi başlatılırken bir sorun oluştu. Bu durum, bazı Windows sistemlerindeki Unicode kullanan uygulamalara yönelik arka plan işlemi konsol desteğinde bilinen bir soruna bağlı olabilir. Visual Studio için Araçlar-&gt;Seçenekler-&gt;F# Interactive'i seçmeyi deneyin ve '--fsi-server-no-unicode' girin.</target>
+        <target state="translated">F# Etkileşimli işlemi başlatılırken bir sorun oluştu. Bu durum, bazı Windows sistemlerindeki Unicode kullanan uygulamalara yönelik arka plan işlemi konsol desteğinde bilinen bir soruna bağlı olabilir. Visual Studio için Araçlar-&gt;Seçenekler-&gt;F# Etkileşimli'yi seçmeyi deneyin ve '--fsi-server-no-unicode' girin.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  F# Interactive yönergeleri:</target>
+        <target state="translated">F# Etkileşimli yönergeleri:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; '{0}' öğesine başvuruldu (dosya F# Interactive işlemi tarafından kilitlenmiş olabilir)</target>
+        <target state="translated">--&gt; '{0}' öğesine başvuruldu (dosya F# Etkileşimli işlemi tarafından kilitlenmiş olabilir)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
@@ -254,12 +254,12 @@
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="translated">Microsoft (R) F# Interactive sürüm {0}</target>
+        <target state="translated">Microsoft (R) F# Etkileşimli sürüm {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# {0} için F# Interactive</target>
+        <target state="translated">F# {0} için F# Etkileşimli</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">

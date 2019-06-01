@@ -129,7 +129,8 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
                     rules)
      
             let pathThroughLastSlash = getPathThroughLastSlash(text, position, quotedPathGroup)
-            context.AddItems(helper.GetItems(pathThroughLastSlash, ct))
+            let! items = helper.GetItemsAsync(pathThroughLastSlash, ct) |> Async.AwaitTask |> liftAsync
+            context.AddItems(items)
         } 
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken

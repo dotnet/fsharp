@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="translated">64 bit F# Interactive</target>
+        <target state="translated">64 bit F# Etkileşimli</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
-        <target state="translated">Visual Studio tarafından çalıştırılabilen F# Interactive'e geçirilmiş ek komut satırı bağımsız değişkenleri. (Betik hata ayıklaması etkinleştirilmişse en iyi duruma getirme ve hata ayıklama bayrakları yok sayılır.)</target>
+        <target state="translated">Visual Studio tarafından çalıştırılabilen F# Etkileşimli'ye geçirilmiş ek komut satırı bağımsız değişkenleri. (Betik hata ayıklaması etkinleştirilmişse en iyi duruma getirme ve hata ayıklama bayrakları yok sayılır.)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">F# betiklerinde hata ayıklamayı etkinleştir (betik performansını etkileyebilir, F# Interactive'in sıfırlanmasını gerektirir)</target>
+        <target state="translated">F# betiklerinde hata ayıklamayı etkinleştir (betik performansını etkileyebilir, F# Etkileşimli'nin sıfırlanmasını gerektirir)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">

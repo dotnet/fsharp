@@ -624,7 +624,7 @@
       </trans-unit>
       <trans-unit id="ListElementDefinition">
         <source>This is a list with 3 elements.  ';' is used to separate elements on the same line.</source>
-        <target state="translated">Jest to lista z trzema elementami. Znak „;” oddziela elementy w tym samym wierszu.</target>
+        <target state="translated">Jest to lista z 3 elementami. Znak „;” oddziela elementy w tym samym wierszu.</target>
         <note />
       </trans-unit>
       <trans-unit id="ListNewlineElements">
@@ -649,7 +649,7 @@
       </trans-unit>
       <trans-unit id="PrintList2">
         <source>Print the first 5 elements of 'daysList' using 'List.take'.</source>
-        <target state="translated">Wydrukuj pięć pierwszych elementów listy „daysList” przy użyciu wyrażenia „List.take”.</target>
+        <target state="translated">Wydrukuj 5 pierwszych elementów listy „daysList” przy użyciu wyrażenia „List.take”.</target>
         <note />
       </trans-unit>
       <trans-unit id="ListComputationConditional-Line1">
@@ -1214,7 +1214,7 @@
       </trans-unit>
       <trans-unit id="EmployeeDu">
         <source>A Discriminated Union of 3 different kinds of employees</source>
-        <target state="translated">Unia rozłączna trzech różnych rodzajów pracowników</target>
+        <target state="translated">Unia rozłączna 3 różnych rodzajów pracowników</target>
         <note />
       </trans-unit>
       <trans-unit id="CountEmployees-Line1">

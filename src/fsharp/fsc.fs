@@ -148,8 +148,8 @@ type InProcErrorLoggerProvider() =
                             CollectDiagnostic
                                 (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
                                  tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err, true)
-                        let container = if isError then errors else warnings 
-                        container.AddRange errs } 
+                        let container = if isError then errors else warnings
+                        container.AddRange(errs) }
                 :> ErrorLogger }
 
     member __.CapturedErrors = errors.ToArray()

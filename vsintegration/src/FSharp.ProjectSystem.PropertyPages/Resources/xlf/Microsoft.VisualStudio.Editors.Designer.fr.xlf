@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="PPG_VdtGeneralTitle">
         <source>Database</source>
-        <target state="translated">Base de données </target>
+        <target state="translated">Base de données</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Security">
@@ -2840,7 +2840,7 @@ Voulez-vous mettre à jour la valeur dans le fichier .settings ?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
         <source>To enable client application services, you must set the Target Framework for your application to .NET Framework 3.5 or later. In C#, you can do this on the Application property page. In Visual Basic, you can do this one the Compile property page by clicking Advanced Compile Options.</source>
-        <target state="translated">Pour activer les services d'application cliente, vous devez définir le Framework cible pour votre application à .NET Framework 3.5 ou version ultérieure. En C#, vous le faites sur la page de propriétés Application. En Visual Basic, vous le faites sur le page de propriétés Compiler en cliquant sur Options avancées de compilation.</target>
+        <target state="translated">Pour activer les services d'application cliente, vous devez définir le Framework cible pour votre application sur .NET Framework 3.5 ou version ultérieure. En C#, vous le faites sur la page de propriétés Application. En Visual Basic, vous le faites sur le page de propriétés Compiler en cliquant sur Options avancées de compilation.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">

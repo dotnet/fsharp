@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">&amp;Cesta výstupu:</target>
+        <target state="translated">&amp;Výstupní cesta:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">Definovat konstantu DEB&amp;UG</target>
+        <target state="translated">Definovat konstant&amp;u DEBUG</target>
         <note />
       </trans-unit>
     </body>

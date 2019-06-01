@@ -95,6 +95,7 @@ extras
 ossreadme*.txt
 *.csproj.user
 *.fsproj.user
+*.vbproj.user
 *.sln.DotSettings.user
 *.log
 *.jrs

@@ -1963,6 +1963,14 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+/// The thread in which compilation calls will be enqueued and done work on.
+/// Note: This is currently only used when disposing of type providers and will be extended to all the other type provider calls when compilations can be done in parallel.
+///       Right now all calls in FCS to type providers are single-threaded through use of the reactor thread. 
+type ICompilationThread =
+
+    /// Enqueue work to be done on a compilation thread.
+    abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
+
 type ImportedBinary = 
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData 
@@ -2115,6 +2123,7 @@ type TcConfigBuilder =
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages: bool
 #endif
+      mutable compilationThread: ICompilationThread
 
       /// pause between passes? 
       mutable pause: bool
@@ -2274,6 +2283,9 @@ type TcConfigBuilder =
 #if !NO_EXTENSIONTYPING
           showExtensionTypeMessages = false
 #endif
+          compilationThread = 
+                let ctok = CompilationThreadToken ()
+                { new ICompilationThread with member __.EnqueueWork work = work ctok }
           pause = false 
           alwaysCallVirt = true
           noDebugData = false
@@ -2746,8 +2758,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.showLoadedAssemblies = data.showLoadedAssemblies
     member x.continueAfterParseFailure = data.continueAfterParseFailure
 #if !NO_EXTENSIONTYPING
-    member x.showExtensionTypeMessages = data.showExtensionTypeMessages    
+    member x.showExtensionTypeMessages = data.showExtensionTypeMessages
 #endif
+    member x.compilationThread = data.compilationThread
     member x.pause = data.pause
     member x.alwaysCallVirt = data.alwaysCallVirt
     member x.noDebugData = data.noDebugData
@@ -3741,10 +3754,43 @@ type TcConfigProvider =
 // TcImports
 //--------------------------------------------------------------------------
 
-          
+#if !NO_EXTENSIONTYPING
+// These are hacks in order to allow TcImports to be held as a weak reference inside a type provider.
+// The reason is due to older type providers compiled using an older TypeProviderSDK, that SDK used reflection on fields and properties to determine the contract.
+// The reflection code has now since been removed, see here: https://github.com/fsprojects/FSharp.TypeProviders.SDK/pull/305. But we still need to work on older type providers.
+// One day we can remove these hacks when we deemed most if not all type providers were re-compiled using the newer TypeProviderSDK.
+// Yuck.
+type TcImportsDllInfoHack =
+    {
+        FileName: string
+    }
+
+and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
+    let mutable dllInfos: TcImportsDllInfoHack list = []
+
+    member __.SetDllInfos (value: ImportedBinary list) =
+        dllInfos <- value |> List.map (fun x -> { FileName = x.FileName })
+
+    member __.Base: TcImportsWeakHack option =
+        match tcImports.TryGetTarget() with
+        | true, strong ->
+            match strong.Base with
+            | Some (baseTcImports: TcImports) ->
+                Some baseTcImports.Weak
+            | _ ->
+                None
+        | _ -> 
+            None
+
+    member __.SystemRuntimeContainsType typeName =
+        match tcImports.TryGetTarget () with
+        | true, strong -> strong.SystemRuntimeContainsType typeName
+        | _ -> false
+#endif          
 /// Represents a table of imported assemblies with their resolutions.
-[<Sealed>] 
-type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option, ilGlobalsOpt) = 
+/// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
+/// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
+and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option, ilGlobalsOpt, compilationThread: ICompilationThread) as this = 
 
     let mutable resolutions = initialResolutions
     let mutable importsBase: TcImports option = importsBase
@@ -3757,11 +3803,29 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
     let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
 #if !NO_EXTENSIONTYPING
+    let mutable disposeTypeProviderActions = []
     let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
+    let mutable tcImportsWeak = TcImportsWeakHack (WeakReference<_> this)
 #endif
     
     let CheckDisposed() =
         if disposed then assert false
+
+    let dispose () =
+        CheckDisposed()
+        // disposing deliberately only closes this tcImports, not the ones up the chain 
+        disposed <- true        
+        if verbose then 
+            dprintf "disposing of TcImports, %d binaries\n" disposeActions.Length
+#if !NO_EXTENSIONTYPING
+        let actions = disposeTypeProviderActions
+        disposeTypeProviderActions <- []
+        if actions.Length > 0 then
+            compilationThread.EnqueueWork (fun _ -> for action in actions do action())
+#endif
+        let actions = disposeActions
+        disposeActions <- []
+        for action in actions do action()
 
     static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) =
         let matchNameSpace (entityOpt: Entity option) n =
@@ -3776,8 +3840,8 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                 | Some _ -> true
                 | None -> false
         | None -> false
-  
-    member private tcImports.Base = 
+
+    member internal tcImports.Base = 
             CheckDisposed()
             importsBase
 
@@ -3787,7 +3851,13 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
         
     member tcImports.DllTable =
             CheckDisposed()
-            dllTable        
+            dllTable
+            
+#if !NO_EXTENSIONTYPING
+    member tcImports.Weak = 
+            CheckDisposed()
+            tcImportsWeak
+#endif
         
     member tcImports.RegisterCcu ccuInfo =
         CheckDisposed()
@@ -3798,9 +3868,12 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
     member tcImports.RegisterDll dllInfo =
         CheckDisposed()
         dllInfos <- dllInfos ++ dllInfo
+#if !NO_EXTENSIONTYPING
+        tcImportsWeak.SetDllInfos dllInfos
+#endif
         dllTable <- NameMap.add (getNameOfScopeRef dllInfo.ILScopeRef) dllInfo dllTable
 
-    member tcImports.GetDllInfos() = 
+    member tcImports.GetDllInfos() : ImportedBinary list = 
         CheckDisposed()
         match importsBase with 
         | Some importsBase-> importsBase.GetDllInfos() @ dllInfos
@@ -3967,9 +4040,15 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
         |> Seq.toList
 #endif
 
-    member tcImports.AttachDisposeAction action =
+    member private tcImports.AttachDisposeAction action =
         CheckDisposed()
         disposeActions <- action :: disposeActions
+
+#if !NO_EXTENSIONTYPING
+    member private tcImports.AttachDisposeTypeProviderAction action =
+        CheckDisposed()
+        disposeTypeProviderActions <- action :: disposeTypeProviderActions
+#endif
   
     // Note: the returned binary reader is associated with the tcImports, i.e. when the tcImports are closed 
     // then the reader is closed. 
@@ -4119,7 +4198,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
 
                 | _ -> failwith "Unexpected representation in namespace entity referred to by a type provider"
 
-    member tcImports.ImportTypeProviderExtensions 
+    member tcImportsStrong.ImportTypeProviderExtensions 
                (ctok, tcConfig: TcConfig, 
                 fileNameOfRuntimeAssembly, 
                 ilScopeRefOfRuntimeAssembly, 
@@ -4153,7 +4232,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                  { resolutionFolder = tcConfig.implicitIncludeDir
                    outputFile = tcConfig.outputFile
                    showResolutionMessages = tcConfig.showExtensionTypeMessages 
-                   referencedAssemblies = Array.distinct [| for r in tcImports.AllAssemblyResolutions() -> r.resolvedPath |]
+                   referencedAssemblies = Array.distinct [| for r in tcImportsStrong.AllAssemblyResolutions() -> r.resolvedPath |]
                    temporaryFolder = FileSystem.GetTempPathShim() }
 
             // The type provider should not hold strong references to disposed
@@ -4161,9 +4240,10 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
             // dispatch via a thunk which gets set to a non-resource-capturing 
             // failing function when the object is disposed. 
             let systemRuntimeContainsType =  
-                // NOTE: do not touch this
+                // NOTE: do not touch this, edit: but we did, we had no choice - TPs cannot hold a strong reference on TcImports "ever".
+                let tcImports = tcImportsWeak
                 let systemRuntimeContainsTypeRef = ref (fun typeName -> tcImports.SystemRuntimeContainsType typeName)
-                tcImports.AttachDisposeAction(fun () -> systemRuntimeContainsTypeRef := (fun _ -> raise (System.ObjectDisposedException("The type provider has been disposed"))))  
+                tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> systemRuntimeContainsTypeRef := (fun _ -> raise (System.ObjectDisposedException("The type provider has been disposed"))))  
                 fun arg -> systemRuntimeContainsTypeRef.Value arg  
 
             let providers = 
@@ -4174,7 +4254,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
             // We ignore all exceptions from provider disposal.
             for provider in providers do 
-                tcImports.AttachDisposeAction(fun () -> 
+                tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> 
                     try 
                         provider.PUntaintNoFailure(fun x -> x).Dispose() 
                     with e -> 
@@ -4203,7 +4283,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                     let handler = tp.Invalidate.Subscribe(fun _ -> capturedInvalidateCcu.Trigger (capturedMessage))  
 
                     // When the TcImports is disposed we detach the invalidation callback
-                    tcImports.AttachDisposeAction(fun () -> try handler.Dispose() with _ -> ())), m)  
+                    tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> try handler.Dispose() with _ -> ())), m)  
                 
             match providers with
             | [] -> 
@@ -4222,7 +4302,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                         // for that namespace.
                         let rec loop (providedNamespace: Tainted<IProvidedNamespace>) =
                             let path = ExtensionTyping.GetProvidedNamespaceAsPath(m, provider, providedNamespace.PUntaint((fun r -> r.NamespaceName), m))
-                            tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [], path, provider, None)
+                            tcImportsStrong.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [], path, provider, None)
 
                             // Inject entities for the types returned by provider.GetTypes(). 
                             //
@@ -4232,7 +4312,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                             let tys = providedNamespace.PApplyArray((fun provider -> provider.GetTypes()), "GetTypes", m)
                             let ptys = [| for ty in tys -> ty.PApply((fun ty -> ty |> ProvidedType.CreateNoContext), m) |]
                             for st in ptys do 
-                                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [], path, provider, Some st)
+                                tcImportsStrong.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [], path, provider, Some st)
 
                             for providedNestedNamespace in providedNamespace.PApplyArray((fun provider -> provider.GetNestedNamespaces()), "GetNestedNamespaces", m) do 
                                 loop providedNestedNamespace
@@ -4564,9 +4644,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
 
     // Note: This returns a TcImports object. However, framework TcImports are not currently disposed. The only reason
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
-    //
-    // If this ever changes then callers may need to begin disposing the TcImports (though remember, not before all derived 
-    // non-framework TcImports built related to this framework TcImports are disposed).
+    // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
     static member BuildFrameworkTcImports (ctok, tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
       cancellable {
 
@@ -4574,8 +4652,7 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, frameworkDLLs, [])
         let tcAltResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkDLLs, [])
 
-        // Note: TcImports are disposable - the caller owns this object and must dispose
-        let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None) 
+        let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None, tcConfig.compilationThread) 
 
         // Fetch the primaryAssembly from the referenced assemblies otherwise 
         let primaryAssemblyReference =
@@ -4666,24 +4743,21 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
         knownUnresolved
         |> List.map (function UnresolvedAssemblyReference(file, originalReferences) -> file, originalReferences)
         |> List.iter reportAssemblyNotResolved
+
+    override tcImports.Finalize () =
+        dispose ()
         
-    // Note: This returns a TcImports object. TcImports are disposable - the caller owns the returned TcImports object 
-    // and when hosted in Visual Studio or another long-running process must dispose this object. 
     static member BuildNonFrameworkTcImports (ctok, tcConfigP: TcConfigProvider, tcGlobals: TcGlobals, baseTcImports, nonFrameworkReferences, knownUnresolved) = 
       cancellable {
         let tcConfig = tcConfigP.Get ctok
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkReferences, knownUnresolved)
         let references = tcResolutions.GetAssemblyResolutions()
-        let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some tcGlobals.ilg)
+        let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some tcGlobals.ilg, tcConfig.compilationThread)
         let! _assemblies = tcImports.RegisterAndImportReferencedAssemblies(ctok, references)
         tcImports.ReportUnresolvedAssemblyReferences knownUnresolved
         return tcImports
       }
       
-    // Note: This returns a TcImports object. TcImports are disposable - the caller owns the returned TcImports object 
-    // and if hosted in Visual Studio or another long-running process must dispose this object. However this
-    // function is currently only used from fsi.exe. If we move to a long-running hosted evaluation service API then
-    // we should start disposing these objects.
     static member BuildTcImports(ctok, tcConfigP: TcConfigProvider) = 
       cancellable {
         let tcConfig = tcConfigP.Get ctok
@@ -4696,14 +4770,8 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
         
     interface System.IDisposable with 
         member tcImports.Dispose() = 
-            CheckDisposed()
-            // disposing deliberately only closes this tcImports, not the ones up the chain 
-            disposed <- true        
-            if verbose then 
-                dprintf "disposing of TcImports, %d binaries\n" disposeActions.Length
-            let actions = disposeActions
-            disposeActions <- []
-            for action in actions do action()
+            dispose ()
+            GC.SuppressFinalize tcImports
 
     override tcImports.ToString() = "TcImports(...)"
         

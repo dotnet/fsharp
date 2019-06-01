@@ -1,3 +1,3 @@
 // #NoMT #CompilerOptions 
-//<Expect status="error"></Expect>
+//<Expect status="error"></Expects>
 exit 0

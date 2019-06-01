@@ -242,7 +242,7 @@
       </trans-unit>
       <trans-unit id="LinkedItemsAreNotSupported">
         <source>Cannot save '{0}' outside the project directory. Linked items are not supported.</source>
-        <target state="translated">Impossibile salvare '{0}' all'esterno della directory del progetto. Gli elementi collegati non sono supportati.</target>
+        <target state="translated">Non è possibile salvare '{0}' all'esterno della directory del progetto. Gli elementi collegati non sono supportati.</target>
         <note />
       </trans-unit>
       <trans-unit id="Library">
@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">minimal</target>
+        <target state="translated">Minima</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -492,7 +492,7 @@
       </trans-unit>
       <trans-unit id="CustomToolNamespace">
         <source>Custom Tool Namespace</source>
-        <target state="translated">Spazio dei nomi strumento personalizzato</target>
+        <target state="translated">Spazio dei nomi dello strumento personalizzato</target>
         <note />
       </trans-unit>
       <trans-unit id="CustomToolNamespaceDescription">

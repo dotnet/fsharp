@@ -389,7 +389,7 @@
       </trans-unit>
       <trans-unit id="5052">
         <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</source>
-        <target state="translated">..NET Framework 4.5, Windows Mağazası, Windows Phone 8.1, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android ve Xamarin.iOS(Classic)'ta çalışabilen bir F# kitaplığı (.dll) oluşturma projesi.  Profil 259</target>
+        <target state="translated">.NET Framework 4.5, Windows Mağazası, Windows Phone 8.1, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android ve Xamarin.iOS(Classic)'ta çalışabilen bir F# kitaplığı (.dll) oluşturma projesi.  Profil 259</target>
         <note />
       </trans-unit>
       <trans-unit id="5053">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="ProductDetails">
         <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Microsoft Visual F# Tools 10.4 for F# 4.6</target>
+        <target state="translated">F# 4.6 için Microsoft Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
         <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">F# 4.6 için Microsoft Visual F# Araçları 10.4</target>
+        <target state="translated">F# 4.6 için Microsoft Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">

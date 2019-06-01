@@ -14,12 +14,12 @@
       </trans-unit>
       <trans-unit id="ResourcesLabel.Text">
         <source>Specify how application resources will be managed:</source>
-        <target state="translated">指定应用程序资源的管理方式: </target>
+        <target state="translated">指定应用程序资源的管理方式:</target>
         <note />
       </trans-unit>
       <trans-unit id="ResourceLabel.Text">
         <source>&amp;Resource File:</source>
-        <target state="translated">资源文件(&amp;R): </target>
+        <target state="translated">资源文件(&amp;R):</target>
         <note />
       </trans-unit>
       <trans-unit id="UseStandardResourceNames.Text">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="TargetFrameworkLabel.Text">
         <source>Tar&amp;get Framework:</source>
-        <target state="translated">目标框架(&amp;G): </target>
+        <target state="translated">目标框架(&amp;G):</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFSharpCoreVersionLabel.Text">
         <source>Target F# runtime:</source>
-        <target state="translated">目标 F# 运行时: </target>
+        <target state="translated">目标 f# 运行时:</target>
         <note />
       </trans-unit>
     </body>

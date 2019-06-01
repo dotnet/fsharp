@@ -10,13 +10,13 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler.SourceCodeServices
 open System.Threading
 open System.Windows.Forms
 
-[<Shared>]
-[<ExportLanguageService(typeof<IEditorFormattingService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpEditorFormattingService>)>]
 type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
@@ -170,7 +170,7 @@ type internal FSharpEditorFormattingService
                 return toIList Seq.empty
         }
         
-    interface IEditorFormattingService with
+    interface IFSharpEditorFormattingService with
         member val SupportsFormatDocument = false
         member val SupportsFormatSelection = false
         member val SupportsFormatOnPaste = true

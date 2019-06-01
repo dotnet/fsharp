@@ -727,7 +727,7 @@
       </trans-unit>
       <trans-unit id="CannotLoadUnknownTargetFrameworkProject">
         <source>The project '{0}' is targeting '{1}'; however, the target framework is not installed on the machine.</source>
-        <target state="translated">Projekt {0} je zaměřený na {1}. Cílová verze rozhraní .NET Framework ale na tomto počítači není nainstalovaná.</target>
+        <target state="translated">Projekt {0} je zaměřený na {1}. Cílová verze architektury .NET Framework ale na tomto počítači není nainstalovaná.</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductName">
@@ -737,7 +737,7 @@
       </trans-unit>
       <trans-unit id="ProjectReferencesHigherVersionWarning">
         <source>The referenced project '{0}' is targeting a higher framework version ({1}) than this project’s current target framework version ({2}). This may lead to build failures if types from assemblies outside this project’s target framework are used by any project in the dependency chain.</source>
-        <target state="translated">Odkazovaný projekt {0} je cílený na vyšší verzi rozhraní .NET Framework ({1}), než je aktuální cílová verze rozhraní .NET Framework tohoto projektu ({2}). Pokud se budou typy ze sestavení mimo cílovou verzi rozhraní .NET Framework tohoto projektu používat kdekoliv ve struktuře závislostí projektů, může to vést k chybám sestavení.</target>
+        <target state="translated">Odkazovaný projekt {0} je cílený na vyšší verzi rozhraní .NET Framework ({1}), než je aktuální verze cílové architektury tohoto projektu ({2}). Pokud se budou typy ze sestavení mimo verzi cílové architektury tohoto projektu používat kdekoliv ve struktuře závislostí projektů, může to vést k chybám sestavení.</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectConversionNotRequired">

@@ -499,7 +499,7 @@
       </trans-unit>
       <trans-unit id="NeedReloadToChangeTargetFx">
         <source>Changing the Target Framework requires that the current project be closed and then reopened.\nAny unsaved changes within the project will be automatically saved.\n\nChanging Target Framework may require manual modification of project files in order to build.\n\nAre you sure you want to change the Target Framework for this project?</source>
-        <target state="translated">Změna cílového rámce vyžaduje zavření a opětovné otevření aktuálního projektu. \nJakékoliv neuložené změny v rámci projektu budou automaticky uloženy.\n\nZměna cílového rámce může vyžadovat ruční úpravy souborů projektu, aby mohlo být provedeno sestavení.\n\nJste si jisti, že chcete změnit cílový rámec tohoto projektu?</target>
+        <target state="translated">Změna cílové architektury vyžaduje zavření a opětovné otevření aktuálního projektu. \nJakékoliv neuložené změny v rámci projektu budou automaticky uloženy.\n\nZměna cílové architektury může vyžadovat ruční úpravy souborů projektu, aby mohlo být provedeno sestavení.\n\nJste si jisti, že chcete změnit cílovou architekturu tohoto projektu?</target>
         <note />
       </trans-unit>
       <trans-unit id="AddReferenceDialogTitle">

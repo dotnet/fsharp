@@ -3,27 +3,27 @@
 
 // Test for FSharp1.0:2581 - FSI should display bound values, not just evaluated expressions (was: FSI should print the value of the last declared value is there is no last expression)
 
-//<Expects status=success>type RecT =</Expects>
-//<Expects status=success>  {Name: string;}</Expects>
-//<Expects status=success>type Bldg =</Expects>
-//<Expects status=success>  \| House</Expects>
-//<Expects status=success>  \| Museum</Expects>
-//<Expects status=success>  \| Office</Expects>
-//<Expects status=success>val a : int = 1</Expects>
-//<Expects status=success>val B : string = "Hello"</Expects>
-//<Expects status=success>val c' : RecT = {Name = "F#";}</Expects>
-//<Expects status=success>val _d : Bldg = Office</Expects>
-//<Expects status=success>val e : seq<int></Expects>
-//<Expects status=success>val F'F : int list = \[3; 2; 1]</Expects>
-//<Expects status=success>val g : Set<int></Expects>
-//<Expects status=success>val g' : Set<'a></Expects>
-//<Expects status=success>val getPointF : x:float32 \* y:float32 -> System\.Drawing\.PointF</Expects>
-//<Expects status=success>val h : System\.Drawing\.PointF = {X=.+, Y=.+}</Expects>
-//<Expects status=success>val i : int \* RecT \* Bldg = \(1, {Name = "F#";}, Office\)</Expects>
-//<Expects status=success>val J_ : int \[\] = \[\|1; 2; 3\|]</Expects>
-//<Expects status=success>val j_' : float \[\] = \[\|1\.0; 1\.0\|]</Expects>
-//<Expects status=success>val j_'_ : RecT \[\] = \[\|\|]</Expects>
-//<Expects status=success>val j_'' : string \[\] = \[\|"0"; "1"; "2"; "3"; "4"\|]</Expects>
+//<Expects status="success">type RecT =</Expects>
+//<Expects status="success">  {Name: string;}</Expects>
+//<Expects status="success">type Bldg =</Expects>
+//<Expects status="success">  \| House</Expects>
+//<Expects status="success">  \| Museum</Expects>
+//<Expects status="success">  \| Office</Expects>
+//<Expects status="success">val a : int = 1</Expects>
+//<Expects status="success">val B : string = "Hello"</Expects>
+//<Expects status="success">val c' : RecT = {Name = "F#";}</Expects>
+//<Expects status="success">val _d : Bldg = Office</Expects>
+//<Expects status="success">val e : seq<int></Expects>
+//<Expects status="success">val F'F : int list = \[3; 2; 1]</Expects>
+//<Expects status="success">val g : Set<int></Expects>
+//<Expects status="success">val g' : Set<'a></Expects>
+//<Expects status="success">val getPointF : x:float32 \* y:float32 -> System\.Drawing\.PointF</Expects>
+//<Expects status="success">val h : System\.Drawing\.PointF = {X=.+, Y=.+}</Expects>
+//<Expects status="success">val i : int \* RecT \* Bldg = \(1, {Name = "F#";}, Office\)</Expects>
+//<Expects status="success">val J_ : int \[\] = \[\|1; 2; 3\|]</Expects>
+//<Expects status="success">val j_' : float \[\] = \[\|1\.0; 1\.0\|]</Expects>
+//<Expects status="success">val j_'_ : RecT \[\] = \[\|\|]</Expects>
+//<Expects status="success">val j_'' : string \[\] = \[\|"0"; "1"; "2"; "3"; "4"\|]</Expects>
 
 
 type RecT = { Name : string }

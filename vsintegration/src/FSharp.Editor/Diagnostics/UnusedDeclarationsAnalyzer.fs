@@ -11,6 +11,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open FSharp.Compiler.SourceCodeServices
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal UnusedDeclarationsAnalyzer() =
@@ -29,7 +30,7 @@ type internal UnusedDeclarationsAnalyzer() =
             category = DiagnosticCategory.Style,
             defaultSeverity = DiagnosticSeverity.Hidden,
             isEnabledByDefault = true,
-            customTags = DiagnosticCustomTags.Unnecessary)
+            customTags = FSharpDiagnosticCustomTags.Unnecessary)
     
     let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
         match symbol with

@@ -414,7 +414,7 @@
       </trans-unit>
       <trans-unit id="6002">
         <source>F# Project Files (*.fsproj);*.fsproj</source>
-        <target state="translated">F# 프로젝트 파일 (*.fsproj);*.fsproj</target>
+        <target state="translated">F# 프로젝트 파일(*.fsproj);*.fsproj</target>
         <note />
       </trans-unit>
       <trans-unit id="6003">

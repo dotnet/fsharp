@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
-        <target state="translated">Další argumenty příkazového řádku předané F# Interactive a spustitelné ve Visual Studiu. (Pokud se povolí ladění skriptů, ignorují se příznaky optimalizace a ladění.)</target>
+        <target state="translated">Další argumenty příkazového řádku předané F# Interactive a spustitelné v sadě Visual Studio. (Pokud se povolí ladění skriptů, ignorují se příznaky optimalizace a ladění.)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">Znemožňuje zamknutí odkazovaných sestavení interaktivním procesem jazyka F#.</target>
+        <target state="translated">Znemožňuje zamknutí odkazovaných sestavení procesem F# Interactive.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">

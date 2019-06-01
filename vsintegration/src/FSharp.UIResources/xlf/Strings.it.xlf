@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="Unused_declaration_code_fix">
         <source>Analyze and suggest fixes for unused values</source>
-        <target state="translated">Analizar y sugerir correcciones para valores no utilizados</target>
+        <target state="translated">Analizza e suggerisci correzioni per valori inutilizzati</target>
         <note />
       </trans-unit>
       <trans-unit id="Block_Structure">

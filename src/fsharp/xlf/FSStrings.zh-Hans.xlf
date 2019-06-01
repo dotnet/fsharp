@@ -424,7 +424,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HASH">
         <source>symbol #</source>
-        <target state="translated">意外的</target>
+        <target state="translated">符号 #</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.UNDERSCORE">
@@ -984,7 +984,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.STRING">
         <source>string literal</source>
-        <target state="translated">字符串</target>
+        <target state="translated">字符串文本</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EOF">
@@ -1344,7 +1344,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">将检查对要定义的对象的递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化 。请考虑在成员中或 "&lt;ctor-expr&gt; then &lt;expr&gt;" 格式的尾随表达式中放置自引用。</target>
+        <target state="translated">将检查对要定义的对象的递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。请考虑在成员中或 "&lt;ctor-expr&gt; then &lt;expr&gt;" 格式的尾随表达式中放置自引用。</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">

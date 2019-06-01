@@ -111,15 +111,15 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
        ErrorScope.Protect Range.range0 
             (fun () -> 
                 match input with
-                | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = modules))) ->
-                    NavigationImpl.getNavigationFromImplFile modules 
-                | Some (ParsedInput.SigFile (ParsedSigFileInput _)) ->
-                    NavigationImpl.empty
+                | Some (ParsedInput.ImplFile _ as p) ->
+                    FSharpNavigation.getNavigation p
+                | Some (ParsedInput.SigFile _) ->
+                    FSharpNavigation.empty
                 | _ -> 
-                    NavigationImpl.empty )
+                    FSharpNavigation.empty)
             (fun err -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetNavigationItemsImpl: '%s'" err)
-                NavigationImpl.empty)   
+                FSharpNavigation.empty)
             
     member private scope.ValidateBreakpointLocationImpl pos =
         let isMatchRange m = rangeContainsPos m pos || m.StartLine = pos.Line

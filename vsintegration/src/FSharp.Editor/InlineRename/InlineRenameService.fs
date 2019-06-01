@@ -57,7 +57,7 @@ type internal InlineRenameLocationSet(locations: InlineRenameLocation [], origin
                     match symbolKind with
                     | LexerSymbolKind.GenericTypeParameter
                     | LexerSymbolKind.StaticallyResolvedTypeParameter -> replacementText
-                    | _ -> Lexhelp.Keywords.NormalizeIdentifierBackticks replacementText
+                    | _ -> Keywords.NormalizeIdentifierBackticks replacementText
                 return 
                     { new IInlineRenameReplacementInfo with
                         member __.NewSolution = newSolution

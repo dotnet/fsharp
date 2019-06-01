@@ -492,19 +492,12 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
     member __.StructuredDescriptionTextAsync = 
         let userOpName = "ToolTip"
         match info with
-        | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
+        | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations) -> 
             // reactor causes the lambda to execute on the background compiler thread, through the Reactor
             reactor.EnqueueAndAwaitOpAsync (userOpName, "StructuredDescriptionTextAsync", name, fun ctok -> 
                 RequireCompilationThread ctok
-                // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
-                // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
-                // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
-                // disposal. Yes, you are right to scratch your head here, but this is ok.
-                cancellable.Return(
-                    if checkAlive() then 
-                        FSharpToolTipText(items |> List.map (fun x -> SymbolHelpers.FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst))
-                    else 
-                        FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]))
+                cancellable.Return(FSharpToolTipText(items |> List.map (fun x -> SymbolHelpers.FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst)))
+            )
             | Choice2Of2 result -> 
                 async.Return result
 
@@ -559,7 +552,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
     member __.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool, checkAlive) = 
+    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> SymbolHelpers.RemoveExplicitlySuppressedCompletionItems g
@@ -697,7 +690,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | ns -> Some (System.String.Join(".", ns)))
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), getAccessibility item.Item,
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor), getAccessibility item.Item,
                         item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         new FSharpDeclarationListInfo(Array.ofList decls, isForType, false)
