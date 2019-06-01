@@ -19,6 +19,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text.Outlining
+open FSharp.NativeInterop
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 
 #nowarn "9" // NativePtr.toNativeInt
