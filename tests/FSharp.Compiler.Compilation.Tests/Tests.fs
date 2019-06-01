@@ -1,6 +1,7 @@
 namespace FSharp.Compiler.Compilation.Tests
 
 open System
+open System.IO
 open System.Collections.Immutable
 open System.Collections.Generic
 open FSharp.Compiler.Compilation
@@ -8,6 +9,9 @@ open FSharp.Compiler.Compilation.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open NUnit.Framework
+open Microsoft.CodeAnalysis.MSBuild
+
+//open Microsoft.CodeAnalysis.MS
 
 [<AutoOpen>]
 module Helpers =
@@ -66,7 +70,7 @@ type CompilationTests () =
         let sources =
             [
                 for i = 1 to 3 do
-                    yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 100))
+                    yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 1))
             ]
         let workspace = new AdhocWorkspace ()
         let compilationService = CompilationService (CompilationServiceOptions.Create workspace)
@@ -76,7 +80,33 @@ type CompilationTests () =
             |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
             |> ImmutableArray.CreateRange
 
-        let options = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
+        let currentReferencedAssemblies =
+            let asmLocations =
+                AppDomain.CurrentDomain.GetAssemblies()
+                |> Array.choose (fun asm -> 
+                    if not asm.IsDynamic then
+                        Some asm.Location
+                    else
+                        None
+                )
+            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
+
+        let compilationReferences =
+            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
+            |> Seq.choose (fun filePath ->
+                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
+                    Some (PortableExecutableReference.CreateFromFile filePath)
+                else
+                    None
+            )
+            |> Seq.map (fun peReference -> CompilationReference.PortableExecutable peReference)
+            |> ImmutableArray.CreateRange
+
+        let fsharpCoreCompilationReference =
+            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
+            |> CompilationReference.PortableExecutable
+
+        let options = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, compilationReferences.Add fsharpCoreCompilationReference)
         let c = compilationService.CreateCompilation options
         let semanticModel = c.GetSemanticModel "test1.fs"
         let symbol = semanticModel.TryFindSymbolAsync (4, 9) |> Async.RunSynchronously

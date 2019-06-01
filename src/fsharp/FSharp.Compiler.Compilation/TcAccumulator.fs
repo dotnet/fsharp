@@ -59,7 +59,20 @@ module TcAccumulator =
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
         let tcConfigP = TcConfigProvider.Constant tcConfig
-        let! (tcGlobals, tcImports) = TcImports.BuildResolvedTcImports (ctok, tcConfigP, [])
+
+        let assemblyResolutions =
+            tcConfig.referencedDLLs
+            |> List.map (fun x ->
+                {
+                    originalReference = x
+                    resolvedPath = x.Text
+                    prepareToolTip = fun () -> x.Text
+                    sysdir = false
+                    ilAssemblyRef = ref None
+                }
+            )
+
+        let! (tcGlobals, tcImports) = TcImports.BuildResolvedTcImports (ctok, tcConfigP, assemblyResolutions)
 
 #if !NO_EXTENSIONTYPING
         tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 

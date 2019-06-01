@@ -243,6 +243,7 @@ type CompilationOptions =
             |> List.filter (fun x -> not (x.Contains("-r:")))
 
         let commandLineArgs =
+            ["--noframework"] @
             commandLineArgs @
             (options.CompilationReferences
              |> Seq.map (function

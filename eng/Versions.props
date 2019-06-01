@@ -100,6 +100,7 @@
     <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
     <MicrosoftCodeAnalysisWorkspacesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisWorkspacesCommonVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
+    <MicrosoftCodeAnalysisWorkspacesMSBuildVersion>$(RoslynVersion)</MicrosoftCodeAnalysisWorkspacesMSBuildVersion>
     <!-- Microsoft Build packages -->
     <MicrosoftBuildOverallPackagesVersion>16.0.461</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
