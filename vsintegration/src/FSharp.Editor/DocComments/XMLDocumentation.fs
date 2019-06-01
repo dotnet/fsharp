@@ -218,35 +218,6 @@ module internal XmlDocumentation =
         
         do Events.SolutionEvents.OnAfterCloseSolution.Add (fun _ -> cache.Clear())
 
-    #if DEBUG // Keep under DEBUG so that it can keep building.
-
-        let _AppendTypeParameters (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,count = memberData.GetTypeParamCount()
-            if Com.Succeeded(ok) && count > 0 then 
-                for param in 0..count do
-                    let ok,name,text = memberData.GetTypeParamTextAt(param)
-                    if Com.Succeeded(ok) then
-                        EnsureHardLine collector
-                        collector.Add(tagTypeParameter name)
-                        collector.Add(Literals.space)
-                        collector.Add(tagPunctuation "-")
-                        collector.Add(Literals.space)
-                        collector.Add(tagText text)
-
-        let _AppendRemarks (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok, remarksText = memberData.GetRemarksText()
-            if Com.Succeeded(ok) then 
-                AppendOnNewLine collector remarksText            
-    #endif
-
-        let _AppendReturns (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,returnsText = memberData.GetReturnsText()
-            if Com.Succeeded(ok) then 
-                if not collector.EndsWithLineBreak then 
-                    AppendHardLine(collector)
-                    AppendHardLine(collector)
-                AppendOnNewLine collector returnsText
-
         /// Retrieve the pre-existing xml index or None
         let GetMemberIndexOfAssembly(assemblyName) =
             match cache.TryGetValue(assemblyName) with 
@@ -273,7 +244,7 @@ module internal XmlDocumentation =
 
         interface IDocumentationBuilder with 
             /// Append the given processed XML formatted into the string builder
-            override this.AppendDocumentationFromProcessedXML(xmlCollector, exnCollector, processedXml, showExceptions, showParameters, paramName) =
+            override __.AppendDocumentationFromProcessedXML(xmlCollector, exnCollector, processedXml, showExceptions, showParameters, paramName) =
                 match XmlDocReader.TryCreate processedXml with
                 | Some xmlDocReader ->
                     match paramName with
