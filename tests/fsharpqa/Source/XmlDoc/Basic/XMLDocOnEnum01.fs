@@ -1,6 +1,6 @@
 // #XMLDoc
 // Regression test for Dev11:40070
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 /// Doc comment for Test.
 type Test = 

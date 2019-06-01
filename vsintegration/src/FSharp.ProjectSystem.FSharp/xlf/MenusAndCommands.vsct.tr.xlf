@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">&amp;Başvuruları F# Interactive'e Gönder</target>
+        <target state="translated">&amp;Başvuruları F# Etkileşimli'ye Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">&amp;Başvuruları F# Interactive'e Gönder</target>
+        <target state="translated">&amp;Başvuruları F# Etkileşimli'ye Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">
@@ -114,12 +114,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|ButtonText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">&amp;Proje Çıkışını F# Interactive'e Gönder</target>
+        <target state="translated">&amp;Proje Çıkışını F# Etkileşimli'ye Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|MenuText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">&amp;Proje Çıkışını F# Interactive'e Gönder</target>
+        <target state="translated">&amp;Proje Çıkışını F# Etkileşimli'ye Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|CommandName">
