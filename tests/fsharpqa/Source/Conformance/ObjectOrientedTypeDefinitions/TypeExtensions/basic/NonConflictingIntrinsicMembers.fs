@@ -3,7 +3,7 @@
 // conflicting members.
 // After recent changes, DoStuff are no longed intrinsic members; they are instead
 // extension methods... so this code compiles just fine.
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light
 namespace NS

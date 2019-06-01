@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
         <source>For additional templates to use with F#, see the 'Online Templates' in Visual Studio,</source>
-        <target state="translated">有关要用于 F# 的其他模板，请参见 Visual Studio 中的“联机模板”。</target>
+        <target state="translated">有关要用于 F# 的其他模板，请参见 Visual Studio 中的“联机模板”，</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="XmlComments-Line3">
         <source>To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/xml-documentation</source>
-        <target state="translated">有关详细信息，请参阅: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/xml-documentation</target>
+        <target state="translated">有关详细信息，请参阅: https://docs.microsoft.com/zh-cn/dotnet/articles/fsharp/language-reference/xml-documentation</target>
         <note />
       </trans-unit>
       <trans-unit id="OpenNamespaces">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="LearnMore">
         <source>To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</source>
-        <target state="translated">有关详细信息，请参阅: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</target>
+        <target state="translated">有关详细信息，请参阅: https://docs.microsoft.com/zh-cn/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</target>
         <note />
       </trans-unit>
       <trans-unit id="Module-Line1">
@@ -114,7 +114,7 @@
       </trans-unit>
       <trans-unit id="Module-Line3">
         <source>To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/modules</source>
-        <target state="translated">有关详细信息，请参阅: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/modules</target>
+        <target state="translated">有关详细信息，请参阅: https://docs.microsoft.com/zh-cn/dotnet/articles/fsharp/language-reference/modules</target>
         <note />
       </trans-unit>
       <trans-unit id="SampleInt">
@@ -479,7 +479,7 @@
       </trans-unit>
       <trans-unit id="FilterWithoutPipes-Line1">
         <source>Given a list of integers, it filters out the even numbers,</source>
-        <target state="translated">如果是整数列表，它会筛选出偶数。</target>
+        <target state="translated">如果是整数列表，它会筛选出偶数，</target>
         <note />
       </trans-unit>
       <trans-unit id="FilterWithoutPipes-Line2">

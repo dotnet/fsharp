@@ -2,41 +2,24 @@
 
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
-#nowarn "40"
-
 open System
-open System.Collections.Concurrent
-open System.Collections.Generic
-open System.Collections.Immutable
-open System.ComponentModel.Composition
 open System.ComponentModel.Design
-open System.Diagnostics
-open System.IO
-open System.Linq
-open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Threading
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Options
-open FSharp.Compiler.CompileOps
 open FSharp.Compiler.SourceCodeServices
+open FSharp.NativeInterop
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Events
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Text.Outlining
-open FSharp.NativeInterop
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 
 #nowarn "9" // NativePtr.toNativeInt
 
@@ -68,10 +51,10 @@ type internal FSharpCheckerWorkspaceServiceFactory
         projectInfoManager: FSharpProjectOptionsManager
     ) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
-        member this.CreateService(_workspaceServices) =
+        member __.CreateService(_workspaceServices) =
             upcast { new FSharpCheckerWorkspaceService with
-                member this.Checker = checkerProvider.Checker
-                member this.FSharpProjectOptionsManager = projectInfoManager }
+                member __.Checker = checkerProvider.Checker
+                member __.FSharpProjectOptionsManager = projectInfoManager }
 
 [<Sealed>]
 type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
@@ -104,7 +87,7 @@ type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
 type internal FSharpSettingsFactory
     [<Composition.ImportingConstructor>] (settings: EditorOptions) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
-        member this.CreateService(_) = upcast settings
+        member __.CreateService(_) = upcast settings
 
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
@@ -236,20 +219,20 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.Initialize() = 
         base.Initialize()
 
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
+        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.FSharpCompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
 
-    override this.ContentTypeName = FSharpConstants.FSharpContentTypeName
-    override this.LanguageName = FSharpConstants.FSharpLanguageName
-    override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
+    override __.ContentTypeName = FSharpConstants.FSharpContentTypeName
+    override __.LanguageName = FSharpConstants.FSharpLanguageName
+    override __.RoslynLanguageName = FSharpConstants.FSharpLanguageName
 
-    override this.LanguageServiceId = new Guid(FSharpConstants.languageServiceGuidString)
-    override this.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
+    override __.LanguageServiceId = new Guid(FSharpConstants.languageServiceGuidString)
+    override __.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
 
-    override this.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
+    override __.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
 
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)

@@ -315,12 +315,12 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">启动窗体(&amp;O)</target>
+        <target state="translated">启动窗体(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
         <source>The following events are available for MyApplication:</source>
-        <target state="translated">以下事件可用于 MyApplication: </target>
+        <target state="translated">以下事件可用于 MyApplication:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine3">
@@ -784,7 +784,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">输入密码以打开文件 {0}(&amp;P)</target>
+        <target state="translated">输入密码打开文件 {0}(&amp;P)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
@@ -851,7 +851,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Reference_RemoveImportsFailUnexpected">
         <source>Adding or removing '{0}' as a project import failed because of an unexpected error from the project system.  The error returned was:  '{1}'.</source>
-        <target state="translated">由于项目系统中发生意外错误，未能将“{0}”作为项目导入进行添加或删除。返回的错误为:“{1}”</target>
+        <target state="translated">由于项目系统中发生意外错误，未能将“{0}”作为项目导入进行添加或删除。返回的错误为:“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Reference_AddWebReference">
@@ -985,7 +985,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">基址必须是小于或等于 8 位数字的十六进制数字，例如 &amp;H11000000。</target>
+        <target state="translated">基址必须是十六进制数，位数小于或等于 8，如 &amp;H11000000。</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1112,7 +1112,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Property_StartURL">
         <source>Start Browser With URL</source>
-        <target state="translated">使用 URL启动浏览器</target>
+        <target state="translated">使用 URL 启动浏览器</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Property_StartWorkingDirectory">
@@ -1642,7 +1642,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="RSE_Err_RenameNotSupported">
         <source>The current object is auto-generated and only supports renaming through the Managed Resources Editor.</source>
-        <target state="translated">当前对象是自动生成的，只支持通过托管资源编辑器重命名。</target>
+        <target state="translated">当前对象是自动生成的，只支持通过受管理资源编辑器重命名。</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Err_CantFindResourceFile_1Arg">
@@ -1934,7 +1934,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
         <source>New I&amp;con...</source>
-        <target state="translated">新图标(&amp;C)...</target>
+        <target state="translated">新建图标(&amp;C)...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_TextFile">
@@ -2123,7 +2123,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceEditor">
         <source>Managed Resources Editor</source>
-        <target state="translated">托管资源编辑器</target>
+        <target state="translated">受管理资源编辑器</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_DlgTitle_AddExisting">
@@ -2537,7 +2537,7 @@ app.config 文件中的新值为“{1}”
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_COMMON1">
         <source>This class allows you to handle specific events on the settings class:</source>
-        <target state="translated">通过此类可以处理设置类的特定事件: </target>
+        <target state="translated">通过此类可以处理设置类的特定事件:</target>
         <note>Comments for user part of extending generated settings class</note>
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_COMMON2">
@@ -2562,7 +2562,7 @@ app.config 文件中的新值为“{1}”
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HOWTO_ATTACHEVTS">
         <source>To add event handlers for saving and changing settings, uncomment the lines below:</source>
-        <target state="translated">若要为保存和更改设置添加事件处理程序，请取消注释下列行: </target>
+        <target state="translated">若要为保存和更改设置添加事件处理程序，请取消注释下列行:</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HANDLE_CHANGING">
@@ -2720,7 +2720,7 @@ app.config 文件中的新值为“{1}”
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
         <source>Startup &amp;URI:</source>
-        <target state="translated">启动和 URI:</target>
+        <target state="translated">启动 URI (&amp;U):</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">
