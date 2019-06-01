@@ -266,6 +266,13 @@ type MapType() =
         Assert.AreEqual(b.[4], 16)
         let c = b.Update(4, fun current -> Assert.AreEqual(current, Some 16); 25)
         Assert.AreEqual(c.[4], 25)
+
+        let e  = Map.empty<int,string>
+        let ue = e.Update(1, fun current -> Assert.AreEqual(current, None); "Monday")
+        Assert.AreEqual(ue.[1], "Monday")
+
+        let uo = ue.Update(1, fun current -> Assert.AreEqual(current, Some "Monday"); "Tuesday")
+        Assert.AreEqual(uo.[1], "Tuesday")
     
     [<Test>]
     member this.ContainsKey() =

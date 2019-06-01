@@ -72,6 +72,16 @@ type MapModule() =
         let c = Map.update 4 (fun current -> Assert.AreEqual(current, Some 16); 25) b
         Assert.AreEqual(c.[4], 25)
 
+        // empty Map
+        let eptMap = Map.empty
+        let resultEpt = Map.update 1 (fun current -> Assert.AreEqual(current, None); "a") eptMap
+        Assert.AreEqual(resultEpt.[1], "a")
+
+        // One-element Map
+        let oeleMap = Map.ofSeq [(1, "one")]
+        let resultOele = Map.update 7 (fun current -> Assert.AreEqual(current, None); "seven") oeleMap
+        Assert.AreEqual(resultOele.[7], "seven")
+
         ()
 
     [<Test>]
