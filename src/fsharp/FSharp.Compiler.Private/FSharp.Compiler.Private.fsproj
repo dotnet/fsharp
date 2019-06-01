@@ -575,6 +575,12 @@
     <Compile Include="..\service\IncrementalBuild.fs">
       <Link>Service/IncrementalBuild.fs</Link>
     </Compile>
+    <Compile Include="..\service\ServiceCompilerDiagnostics.fsi">
+      <Link>Service/ServiceCompilerDiagnostics.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceCompilerDiagnostics.fs">
+      <Link>Service/ServiceCompilerDiagnostics.fs</Link>
+    </Compile>
     <Compile Include="..\service\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
     </Compile>
