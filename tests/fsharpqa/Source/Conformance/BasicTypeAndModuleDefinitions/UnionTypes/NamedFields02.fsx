@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Unions 
 // Should be able to pattern match using named or positional fields
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 type MyDU = 
     | Case1 of int * int * int * Named1 : int * Named2 : int * int
 

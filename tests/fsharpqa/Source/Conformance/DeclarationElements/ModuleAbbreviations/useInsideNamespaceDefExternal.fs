@@ -1,7 +1,7 @@
 // #Conformance #DeclarationElements #Modules #ReqNOMT 
 // Use module abbreviation inside a namespace
 // Module is defined in an external assembly
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 namespace Faa.Bor

@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Unions 
 // By default, Union types implement IComparable
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
  
 #light
 

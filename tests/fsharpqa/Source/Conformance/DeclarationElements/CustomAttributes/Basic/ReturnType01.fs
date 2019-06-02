@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:1165
 // F# supports custom attributes on return type
 // Note: the syntax is kind of awkward...
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light
 

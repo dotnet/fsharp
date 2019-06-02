@@ -1,7 +1,7 @@
 // #XMLDoc
 // Regression test for FSHARP1.0:850
 // Simple /// is xmldoc
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light 
 
