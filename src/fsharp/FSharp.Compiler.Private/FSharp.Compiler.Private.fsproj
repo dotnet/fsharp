@@ -49,6 +49,7 @@
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
     <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
+    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
@@ -572,6 +573,12 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
+    <Compile Include="..\service\Reactor.fsi">
+      <Link>Service/Reactor.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\Reactor.fs">
+      <Link>Service/Reactor.fs</Link>
+    </Compile>
 
     <!-- the incremental builder and service . -->
     <Compile Include="..\service\IncrementalBuild.fsi">
@@ -580,11 +587,11 @@
     <Compile Include="..\service\IncrementalBuild.fs">
       <Link>Service/IncrementalBuild.fs</Link>
     </Compile>
-    <Compile Include="..\service\Reactor.fsi">
-      <Link>Service/Reactor.fsi</Link>
+    <Compile Include="..\service\ServiceCompilerDiagnostics.fsi">
+      <Link>Service/ServiceCompilerDiagnostics.fsi</Link>
     </Compile>
-    <Compile Include="..\service\Reactor.fs">
-      <Link>Service/Reactor.fs</Link>
+    <Compile Include="..\service\ServiceCompilerDiagnostics.fs">
+      <Link>Service/ServiceCompilerDiagnostics.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
@@ -679,7 +686,7 @@
     <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-    
+
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -690,7 +697,6 @@
     <Compile Include="..\fsi\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
-
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>

@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules 
 // Type abbreviation
 // The type nested in modules
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 module M1 = 

@@ -96,7 +96,6 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 [<Test>]
 let ``Test project1 whole project errors`` () = 
 
-
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
     wholeProjectResults .Errors.Length |> shouldEqual 2
     wholeProjectResults.Errors.[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
@@ -106,6 +105,26 @@ let ``Test project1 whole project errors`` () =
     wholeProjectResults.Errors.[0].EndLineAlternate |> shouldEqual 10
     wholeProjectResults.Errors.[0].StartColumn |> shouldEqual 43
     wholeProjectResults.Errors.[0].EndColumn |> shouldEqual 44
+
+[<Test;NonParallelizable>]
+let ``Test project1 and make sure TcImports gets cleaned up`` () = 
+
+    let test () =
+        let (_, checkFileAnswer) = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunSynchronously
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwith "should not be aborted"
+        | FSharpCheckFileAnswer.Succeeded checkFileResults ->
+            let tcImportsOpt = checkFileResults.TryGetCurrentTcImports ()
+            Assert.True tcImportsOpt.IsSome
+            let weakTcImports = WeakReference tcImportsOpt.Value
+            Assert.True weakTcImports.IsAlive
+            weakTcImports
+     
+    let weakTcImports = test ()
+    checker.InvalidateConfiguration (Project1.options)
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+    GC.Collect(2, GCCollectionMode.Forced, blocking = true)
+    Assert.False weakTcImports.IsAlive
 
 [<Test>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =

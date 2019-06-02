@@ -1,7 +1,7 @@
 // AssemblyAttributes
 // See FSHARP1.0:832,1674,1675 and 2290
 // Attribute under test:  AssemblyTitle
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light
 
