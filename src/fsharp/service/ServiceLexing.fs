@@ -768,18 +768,21 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 
 [<Sealed>]
 type FSharpSourceTokenizer(defineConstants: string list, filename: string option) =
+
+    // Public callers are unable to answer LanguageVersion feature support questions.
+    // External Tools including the VS IDE will enable the default LanguageVersion 
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+ 
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
     let lexArgsLightOn = mkLexargs(filename, defineConstants, LightSyntaxStatus(true, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
     let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
 
     member this.CreateLineTokenizer(lineText: string) =
-        let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, lineText)
         FSharpLineTokenizer(lexbuf, Some lineText.Length, filename, lexArgsLightOn, lexArgsLightOff)
 
     member this.CreateBufferTokenizer bufferFiller =
-        let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         let lexbuf = UnicodeLexing.FunctionAsLexbuf(isFeatureSupported, bufferFiller)
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
 

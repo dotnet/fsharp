@@ -2109,7 +2109,7 @@ inlineAssemblyTyconRepr:
   | HASH stringOrKeywordString HASH 
      { libraryOnlyError (lhs parseState)
        let lhsm = lhs parseState 
-       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (ParseAssemblyCodeType $2 (rhs parseState 2),lhsm) }
+       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (internalParseAssemblyCodeType $2 parseState.LexBuffer.SupportsFeature (rhs parseState 2),lhsm) }
 
 classOrInterfaceOrStruct: 
   | CLASS     { TyconClass } 
@@ -4005,11 +4005,11 @@ inlineAssemblyExpr:
   |  HASH stringOrKeywordString opt_inlineAssemblyTypeArg opt_curriedArgExprs  opt_inlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
         let s,sm = $2,rhs parseState 2
-        (fun m -> SynExpr.LibraryOnlyILAssembly (ParseAssemblyCodeInstructions s sm,$3,List.rev $4,$5,m)) }
-  
-opt_curriedArgExprs: 
-  | opt_curriedArgExprs argExpr  %prec expr_args 
-      { $2 :: $1 } 
+        (fun m -> SynExpr.LibraryOnlyILAssembly (internalParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm, $3, List.rev $4, $5, m)) }
+
+opt_curriedArgExprs:
+  | opt_curriedArgExprs argExpr  %prec expr_args
+      { $2 :: $1 }
 
   |  
       { [] }

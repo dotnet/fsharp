@@ -1967,14 +1967,14 @@ let PushCurriedPatternsToExpr synArgNameGenerator wholem isMember pats rhs =
             expr
     spatsl, expr
 
-/// Helper for parsing the inline IL fragments.
+let internal internalParseAssemblyCodeInstructions s isFeatureSupported m =
 #if NO_INLINE_IL_PARSER
-let ParseAssemblyCodeInstructions _s m =
+    ignore s
+    ignore isFeatureSupported
+
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     [| |]
 #else
-let ParseAssemblyCodeInstructions s m =
-    let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     try
         FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
@@ -1983,15 +1983,20 @@ let ParseAssemblyCodeInstructions s m =
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
+let ParseAssemblyCodeInstructions s m =
+    // Public API can not answer the isFeatureSupported questions, so here we support everything
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    internalParseAssemblyCodeInstructions s isFeatureSupported m
 
-/// Helper for parsing the inline IL fragments.
+let internal internalParseAssemblyCodeType s isFeatureSupported m =
+    ignore s
+    ignore isFeatureSupported
+
 #if NO_INLINE_IL_PARSER
-let ParseAssemblyCodeType _s m =
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     IL.EcmaMscorlibILGlobals.typ_Object
 #else
-let ParseAssemblyCodeType s m =
-    let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    let isFeatureSupported (_featureId:LanguageFeature) = true
     try
         FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
@@ -2000,6 +2005,12 @@ let ParseAssemblyCodeType s m =
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
       IL.EcmaMscorlibILGlobals.typ_Object
 #endif
+
+/// Helper for parsing the inline IL fragments.
+let ParseAssemblyCodeType s m =
+    // Public API can not answer the isFeatureSupported questions, so here we support everything
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    internalParseAssemblyCodeType s isFeatureSupported m
 
 //------------------------------------------------------------------------
 // AST constructors

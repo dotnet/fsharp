@@ -1534,7 +1534,9 @@ module internal Parser =
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
 
-    let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    // Public callers are unable to answer LanguageVersion feature support questions.
+    // External Tools including the VS IDE will enable the default LanguageVersion 
+    let isFeatureSupported (_featureId:LanguageFeature) = true
     let createLexbuf sourceText isFeatureSupported =
         UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText)
 
