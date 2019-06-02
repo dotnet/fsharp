@@ -15,6 +15,7 @@ open FSharp.Compiler.Parser
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open Internal.Utilities
@@ -773,12 +774,13 @@ type FSharpSourceTokenizer(defineConstants: string list, filename: string option
     let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
 
     member this.CreateLineTokenizer(lineText: string) =
-        let lexbuf = UnicodeLexing.StringAsLexbuf lineText
+        let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, lineText)
         FSharpLineTokenizer(lexbuf, Some lineText.Length, filename, lexArgsLightOn, lexArgsLightOff)
 
-
     member this.CreateBufferTokenizer bufferFiller =
-        let lexbuf = UnicodeLexing.FunctionAsLexbuf bufferFiller
+        let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        let lexbuf = UnicodeLexing.FunctionAsLexbuf(isFeatureSupported, bufferFiller)
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
 
 module Keywords =

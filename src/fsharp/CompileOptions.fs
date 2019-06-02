@@ -17,6 +17,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops 
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.IlxGen
@@ -813,12 +814,26 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 //----------------------
 
 let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
-      
+
 let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
        ("mlcompatibility", tagNone,
         OptionUnit (fun () -> tcConfigB.mlCompatibility<-true; tcConfigB.TurnWarningOff(rangeCmdArgs, "62")), None,
         Some (FSComp.SR.optsMlcompatibility()))
+
+/// LanguageVersion management
+let setLanguageVersion (specifiedVersion) =
+
+    let languageVersion = new LanguageVersion(specifiedVersion)
+    let dumpAllowedValues () =
+        printfn "%s" (FSComp.SR.optsSupportedLangVersions())
+        for v in languageVersion.ValidOptions do printfn "%s" v
+        for v in languageVersion.ValidVersions do printfn "%s" v
+        exit 0
+
+    if specifiedVersion = "?" then dumpAllowedValues ()
+    if not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    languageVersion
 
 let languageFlags tcConfigB =
     [
@@ -828,7 +843,7 @@ let languageFlags tcConfigB =
         //                               'latest' (latest version, including minor versions),
         //                               'preview' (features for preview)
         //                               or specific versions like '4.7'
-        CompilerOption("langversion", tagLangVersionValues, OptionString (fun switch -> tcConfigB.langVersion <- LanguageVersion(switch)), None, Some (FSComp.SR.optsLangVersion()))
+        CompilerOption("langversion", tagLangVersionValues, OptionString (fun switch -> tcConfigB.langVersion <- setLanguageVersion(switch)), None, Some (FSComp.SR.optsLangVersion()))
 
         CompilerOption("checked", tagNone, OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsChecked()))
         CompilerOption("define", tagString, OptionString (defineSymbol tcConfigB), None, Some (FSComp.SR.optsDefine()))

@@ -12,6 +12,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
 
@@ -1973,11 +1974,13 @@ let ParseAssemblyCodeInstructions _s m =
     [| |]
 #else
 let ParseAssemblyCodeInstructions s m =
-    try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
+    let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    try
+        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf s)
+           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
     with RecoverableParseError ->
-      errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [| |]
+      errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
 
@@ -1988,9 +1991,11 @@ let ParseAssemblyCodeType _s m =
     IL.EcmaMscorlibILGlobals.typ_Object
 #else
 let ParseAssemblyCodeType s m =
-    try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
+    let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    try
+        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf s)
+           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
       IL.EcmaMscorlibILGlobals.typ_Object

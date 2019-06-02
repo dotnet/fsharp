@@ -34,6 +34,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
@@ -1691,9 +1692,11 @@ type internal FsiStdinLexerProvider
         let initialLightSyntaxStatus = tcConfigB.light <> Some false
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
+    let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
+
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readf = 
-        UnicodeLexing.FunctionAsLexbuf 
-          (fun (buf: char[], start, len) -> 
+        UnicodeLexing.FunctionAsLexbuf
+          (isFeatureSupported, (fun (buf: char[], start, len) ->
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readf()) with :? EndOfStreamException -> None
             inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
@@ -1709,7 +1712,7 @@ type internal FsiStdinLexerProvider
                 for i = 0 to ntrimmed-1 do
                     buf.[i+start] <- input.[i]
                 ntrimmed
-        )
+          ))
 
     //----------------------------------------------------------------------------
     // Reading stdin as a lex stream
@@ -1730,6 +1733,7 @@ type internal FsiStdinLexerProvider
         let tokenizer = LexFilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
+    let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
 
     // Create a new lexer to read stdin 
     member __.CreateStdinLexer (errorLogger) =
@@ -1748,12 +1752,12 @@ type internal FsiStdinLexerProvider
 
     // Create a new lexer to read an "included" script file
     member __.CreateIncludedScriptLexer (sourceFileName, errorLogger) =
-        let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(sourceFileName,tcConfigB.inputCodePage,(*retryLocked*)false)  
+        let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(isFeatureSupported, sourceFileName, tcConfigB.inputCodePage, (*retryLocked*)false)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     // Create a new lexer to read a string
     member this.CreateStringLexer (sourceFileName, source, errorLogger) =
-        let lexbuf = UnicodeLexing.StringAsLexbuf(source)  
+        let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, source)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     member __.ConsoleInput = fsiConsoleInput
@@ -1813,6 +1817,7 @@ type internal FsiInteractionProcessor
             stopProcessingRecovery e range0
             istate,CompletedWithReportedError e
 
+    let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
 
     let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
@@ -2037,11 +2042,7 @@ type internal FsiInteractionProcessor
     let parseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
             Parser.typedSeqExprEOF tokenizer.Lexer tokenizer.LexBuffer)
-  
-//    let parseType (tokenizer:LexFilter.LexFilter) =
-//        reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
-//            Parser.typEOF tokenizer.Lexer tokenizer.LexBuffer)
-  
+
     let mainThreadProcessParsedExpression ctok errorLogger (expr, istate) = 
       istate |> InteractiveCatch errorLogger (fun istate ->
         istate |> mainThreadProcessAction ctok (fun ctok _tcConfig istate ->
@@ -2171,7 +2172,7 @@ type internal FsiInteractionProcessor
 #if FX_LCIDFROMCODEPAGE
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
 #endif
-        let lexbuf = UnicodeLexing.StringAsLexbuf(sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, errorLogger)
         currState 
         |> InteractiveCatch errorLogger (fun istate ->
@@ -2190,7 +2191,7 @@ type internal FsiInteractionProcessor
 #if FX_LCIDFROMCODEPAGE
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
 #endif
-        let lexbuf = UnicodeLexing.StringAsLexbuf(sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, errorLogger)
         currState 
         |> InteractiveCatch errorLogger (fun istate ->
@@ -2645,8 +2646,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member x.FormatValue(obj:obj, objTy) = 
         fsiDynamicCompiler.FormatValue(obj, objTy)
 
-    member x.EvalExpression(sourceText) = 
-        
+    member x.EvalExpression(sourceText) =
+
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -2655,7 +2656,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.EvalExpression(ctok, sourceText, dummyScriptFileName, errorLogger)
         |> commitResult
 
-    member x.EvalExpressionNonThrowing(sourceText) = 
+    member x.EvalExpressionNonThrowing(sourceText) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.

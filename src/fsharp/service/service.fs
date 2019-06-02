@@ -28,6 +28,7 @@ open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
@@ -1533,8 +1534,9 @@ module internal Parser =
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
 
-    let createLexbuf sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(sourceText)
+    let isFeatureSupported (_featureId:LanguageFeature) = true                  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    let createLexbuf sourceText isFeatureSupported =
+        UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText)
 
     let matchBraces(sourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
@@ -1547,9 +1549,9 @@ module internal Parser =
         let delayedLogger = CapturingErrorLogger("matchBraces")
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        
+
         let matchingBraces = new ResizeArray<_>()
-        Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+        Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1585,7 +1587,7 @@ module internal Parser =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+            Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
