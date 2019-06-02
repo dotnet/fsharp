@@ -9,6 +9,7 @@ open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
 open FSharp.Compiler.SourceCodeServices
+open FSharp.NativeInterop
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
