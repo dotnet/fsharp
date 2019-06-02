@@ -192,10 +192,7 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
-    </Compile>
-    <Compile Include="..\ReferenceResolver.fs">
-      <Link>ReferenceResolution\ReferenceResolver.fs</Link>
-    </Compile>
+    </Compile>    
     <FsLex Include="..\..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
@@ -275,6 +272,21 @@
     </Compile>
     <Compile Include="..\..\absil\ilreflect.fs">
       <Link>AbsIL\ilreflect.fs</Link>
+    </Compile>
+    <Compile Include="..\ReferenceResolver.fs">
+      <Link>ReferenceResolution\ReferenceResolver.fs</Link>
+    </Compile>
+    
+    <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
+    <Compile Include="..\LegacyMSBuildReferenceResolver.fsi">
+      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
+      <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
@@ -561,14 +573,6 @@
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
 
-    <Compile Include="..\MSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
-      <Link>Misc/MSBuildReferenceResolver.fs</Link>
-    </Compile>
-    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
-    <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
-      <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
-    </Compile>
-
     <!-- the incremental builder and service . -->
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
@@ -633,9 +637,6 @@
     <Compile Include="..\..\utils\reshapedmsbuild.fs">
       <Link>Service/reshapedmsbuild.fs</Link>
     </Compile>
-    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
-      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
-    </Compile>
     <Compile Include="..\service\ExternalSymbol.fsi">
       <Link>Service/ExternalSymbol.fsi</Link>
     </Compile>
@@ -688,6 +689,11 @@
     </Compile>
     <Compile Include="..\fsi\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
+    </Compile>
+
+    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
 
