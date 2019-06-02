@@ -19,6 +19,7 @@ let testData    =
 let expectedArraySum        = 167167000 // Find an expression for this sum from count
 let expectedRangeSum        = ((count + 1) * count) / 2
 let expectedStringSum       = 30
+let expectedWildCard        = count + 1
 
 let getTestData (inner : int [] -> #seq<int>) (outer : #seq<int> [] -> #seq<'U>) =
     (testData |> Array.map inner) |> outer
@@ -115,6 +116,13 @@ let sumOverString () =
         sum <- sum + ((int i) - (int '0'))
 #endif
     sum
+    
+// usingWildcard counts using a wildcard in a for loop
+let usingWildcard () =
+    let mutable sum = 0
+    for _ = 0 to count do
+        sum <- sum + 1
+    sum
 
 let arraySum                = sumOverArray ()
 let seqSum                  = sumOverSeq ()
@@ -124,6 +132,7 @@ let listSum                 = sumOverList ()
 let ilistSum                = sumOverIList ()
 let rangeSum                = sumOverRange ()
 let stringSum               = sumOverString ()
+let wildCard                = usingWildcard ()
 
 do test "arraySum"          (expectedArraySum   = arraySum      )
 do test "seqSum"            (expectedArraySum   = seqSum        )
@@ -133,6 +142,7 @@ do test "listSum"           (expectedArraySum   = listSum       )
 do test "ilistSum"          (expectedArraySum   = ilistSum      )
 do test "rangeSum"          (expectedRangeSum   = rangeSum      )
 do test "stringSum"         (expectedStringSum  = stringSum     )
+do test "wildCard"          (expectedWildCard   = wildCard      )
 
 #if TESTS_AS_APP
 let RUN() = !failures
