@@ -120,7 +120,7 @@ type CompilationTests () =
                     """
 module CompilationTest.Test
 open System.Collections
-open System
+open System. 
 
 let beef = 1
                     """ |> SourceText.From
@@ -163,7 +163,7 @@ let beef = 1
         let options = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, compilationReferences.Add fsharpCoreCompilationReference)
         let c = compilationService.CreateCompilation options
         let semanticModel = c.GetSemanticModel "test1.fs"
-        let symbols = semanticModel.GetCompletionSymbolsAsync (4, 12) |> Async.RunSynchronously
+        let symbols = semanticModel.GetCompletionSymbolsAsync (4, 13) |> Async.RunSynchronously
         Assert.False (symbols.IsEmpty)
 
 [<TestFixture>]

@@ -1,6 +1,5 @@
 ﻿namespace FSharp.Compiler.Compilation
 
-open System
 open System.IO
 open System.Threading
 open System.Threading.Tasks
@@ -78,15 +77,44 @@ module SemanticModelHelpers =
 
         result
 
+    let hasDots (longDotId: LongIdentWithDots) =
+        match longDotId with
+        | LongIdentWithDots (_, []) -> false
+        | _ -> true
+
+    let getIdents (p: pos) (longDotId: LongIdentWithDots) =
+        match longDotId with
+        | LongIdentWithDots (id, dotms) ->
+            match dotms |> List.rev |> List.tryFindIndex (fun dotm -> p.Line = dotm.EndLine && p.Column >= dotm.EndColumn) with
+            | Some index ->
+                id.[..index]
+                |> List.map (fun x -> x.idText)
+            | _ ->
+                id.[..id.Length - 2]
+                |> List.map (fun x -> x.idText)
+
+    let getIdentsForCompletion line column (lineStr: string) (parsedInput: ParsedInput) =
+        let p = mkPos line column
+        let resultOpt = AstTraversal.Traverse(p, parsedInput, { new AstTraversal.AstVisitorBase<_>() with 
+            member __.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                defaultTraverse(expr)
+
+            member __.VisitModuleDecl(defaultTraverse, decl) =
+                match decl with
+                | SynModuleDecl.Open (longDotId, _) ->
+                    Some (getIdents p longDotId)
+                | _ ->
+                    defaultTraverse decl                      
+        })
+        match resultOpt with
+        | None -> []
+        | Some result -> result
+
     let getCompletionItems (symbolEnv: SymbolEnv) nenv ad m idents =
         let g = symbolEnv.g
         let amap = symbolEnv.amap
         let ncenv = NameResolver (g, amap, symbolEnv.infoReader, NameResolution.FakeInstantiationGenerator)
-        match ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad idents false with
-        | [] ->
-            ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad [] false
-        | items ->
-            items
+        ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad idents false
 
     let getCompletionSymbols line column lineStr (parsedInput: ParsedInput) (resolutions: TcResolutions) (symbolEnv: SymbolEnv) =
         match tryGetBestCapturedEnv (mkPos line column) resolutions with
@@ -102,8 +130,8 @@ module SemanticModelHelpers =
                 | CompletionContext.Invalid -> []
 
                 | CompletionContext.OpenDeclaration ->
-                    
-                    getCompletionItems symbolEnv nenv ad m []
+                    let idents = getIdentsForCompletion line column lineStr parsedInput
+                    getCompletionItems symbolEnv nenv ad m idents
                     |> List.choose (fun item ->
                         match item with
                         | Item.ModuleOrNamespaces _ -> Some (FSharpSymbol.Create (symbolEnv, item))
@@ -151,6 +179,6 @@ type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
                 return []
             | Some parsedInput ->
                 let! sourceText = syntaxTree.GetSourceTextAsync ()
-                let lineStr = sourceText.Lines.[line - 1].ToString()
+                let lineStr = sourceText.Lines.[line - 1].ToString().Replace("\n", "").Replace("\r", "").TrimEnd(' ')
                 return getCompletionSymbols line column lineStr parsedInput resolutions symbolEnv
         }
