@@ -13556,7 +13556,7 @@ module MutRecBindingChecking =
                             error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
 
                         match classMemberDef, containerInfo with
-                        | SynMemberDefn.ImplicitCtor (vis, Attributes attrs, spats, thisIdOpt, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
+                        | SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(spats, _), thisIdOpt, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
@@ -15016,7 +15016,7 @@ module EstablishTypeDefinitionCores =
               match implicitCtorSynPats with
               | None -> ()
               | Some spats -> 
-                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv (SynSimplePats.SimplePats (spats, m))
+                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv spats
                   for arg in ctorArgNames do
                       let ty = names.[arg].Type
                       let m = names.[arg].Ident.idRange
@@ -15816,7 +15816,7 @@ module EstablishTypeDefinitionCores =
                               ()
                           | Some spats -> 
                               if tycon.IsFSharpStructOrEnumTycon then 
-                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv (SynSimplePats.SimplePats (spats, m))
+                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
                                   for arg in ctorArgNames do
                                       let ty = names.[arg].Type
                                       let id = names.[arg].Ident
@@ -16621,7 +16621,7 @@ module TcDeclarations =
 
             let implicitCtorSynPats = 
                 members |> List.tryPick (function 
-                    | SynMemberDefn.ImplicitCtor (_, _, spats, _, _) -> Some spats
+                    | SynMemberDefn.ImplicitCtor (_, _, (SynSimplePats.SimplePats _ as spats), _, _) -> Some spats
                     | _ -> None)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
@@ -16630,7 +16630,7 @@ module TcDeclarations =
                 members |> List.exists (function 
                     | SynMemberDefn.Member(Binding(_, _, _, _, _, _, SynValData(Some memberFlags, _, _), SynPatForConstructorDecl SynPatForNullaryArgs, _, _, _, _), _) -> 
                         memberFlags.MemberKind=MemberKind.Constructor 
-                    | SynMemberDefn.ImplicitCtor (_, _, spats, _, _) -> isNil spats
+                    | SynMemberDefn.ImplicitCtor (_, _, SynSimplePats.SimplePats(spats, _), _, _) -> isNil spats
                     | _ -> false)
             let repr = SynTypeDefnSimpleRepr.General(kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, m)
             let isAtOriginalTyconDefn = not (isAugmentationTyconDefnRepr repr)

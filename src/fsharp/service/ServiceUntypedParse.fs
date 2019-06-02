@@ -916,8 +916,8 @@ module UntypedParseImpl =
         and walkMember = function
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member(binding, _) -> walkBinding binding
-            | SynMemberDefn.ImplicitCtor(_, Attributes attrs, pats, _, _) -> 
-                List.tryPick walkAttribute attrs |> Option.orElse (List.tryPick walkSimplePat pats)
+            | SynMemberDefn.ImplicitCtor(_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _) -> 
+                List.tryPick walkAttribute attrs |> Option.orElse (List.tryPick walkSimplePat simplePats)
             | SynMemberDefn.ImplicitInherit(t, e, _, _) -> walkType t |> Option.orElse (walkExpr e)
             | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.tryPick walkBinding bindings
             | SynMemberDefn.Interface(t, members, _) -> 
