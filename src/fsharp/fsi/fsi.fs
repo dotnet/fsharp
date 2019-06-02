@@ -27,7 +27,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Extensions.ILX
-open FSharp.Compiler.AbstractIL.ILRuntimeWriter 
+open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.Lib
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Ast
@@ -389,9 +389,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
               | PrintExpr -> 
                   anyToLayoutCall.AnyToLayout(opts, x, ty)
         with 
-#if !FX_REDUCED_EXCEPTIONS
         | :? ThreadAbortException -> Layout.wordL (TaggedTextOps.tagText "")
-#endif
         | e ->
 #if DEBUG
           printf "\n\nPrintValue: x = %+A and ty=%s\n" x (ty.FullName)
@@ -805,7 +803,6 @@ let internal InstallErrorLoggingOnThisThread errorLogger =
     SetThreadErrorLoggerNoUnwind(errorLogger)
     SetThreadBuildPhaseNoUnwind(BuildPhase.Interactive)
 
-#if !FX_NO_SERVERCODEPAGES
 /// Set the input/output encoding. The use of a thread is due to a known bug on 
 /// on Vista where calls to Console.InputEncoding can block the process.
 let internal SetServerCodePages(fsiOptions: FsiCommandLineOptions) =     
@@ -834,7 +831,6 @@ let internal SetServerCodePages(fsiOptions: FsiCommandLineOptions) =
 #if LOGGING_GUI
         if not !successful then 
             System.Windows.Forms.MessageBox.Show(FSIstrings.SR.fsiConsoleProblem()) |> ignore
-#endif
 #endif
 
 //----------------------------------------------------------------------------
@@ -1340,7 +1336,6 @@ type internal FsiDynamicCompiler
 //----------------------------------------------------------------------------
 // ctrl-c handling
 //----------------------------------------------------------------------------
-
 module internal NativeMethods = 
 
     type ControlEventHandler = delegate of int -> bool
@@ -1403,14 +1398,6 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
 
         ctrlEventActions  <- action           :: ctrlEventActions;
 #else
-#if FX_NO_THREADABORT
-        ignore threadToKill
-        ignore pauseMilliseconds
-        ignore fsiConsoleOutput
-        ignore CTRL_C
-        ignore fsiOptions
-        exitViaKillThread <- false
-#else
         if !progress then fprintfn fsiConsoleOutput.Out "installing CtrlC handler"
         // WINDOWS TECHNIQUE: .NET has more safe points, and you can do more when a safe point. 
         // Hence we actually start up the killer thread within the handler. 
@@ -1437,18 +1424,18 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
                                 if !progress then fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread())  
                                 killThreadRequest <- NoRequest
                                 threadToKill.Abort()
-                            ()),Name="ControlCAbortThread") 
+                            ()),Name="ControlCAbortThread")
                     killerThread.IsBackground <- true
-                    killerThread.Start() 
-        
+                    killerThread.Start()
+
             let ctrlEventHandler = new NativeMethods.ControlEventHandler(fun i ->  if i = CTRL_C then (raiseCtrlC(); true) else false ) 
             ctrlEventHandlers <- ctrlEventHandler :: ctrlEventHandlers
             ctrlEventActions  <- raiseCtrlC       :: ctrlEventActions
             let _resultOK = NativeMethods.SetConsoleCtrlHandler(ctrlEventHandler,true)
             exitViaKillThread <- false // don't exit via kill thread
-        with e -> 
+        with e ->
             if !progress then fprintfn fsiConsoleOutput.Error "Failed to install ctrl-c handler using Windows technique - trying to install one using Unix signal handling...";
-            // UNIX TECHNIQUE: We start up a killer thread, and it watches the mutable reference location.    
+            // UNIX TECHNIQUE: We start up a killer thread, and it watches the mutable reference location.
             // We can't have a dependency on Mono DLLs (indeed we don't even have them!)
             // So SOFT BIND the following code:
             // Mono.Unix.Native.Stdlib.signal(Mono.Unix.Native.Signum.SIGINT,new Mono.Unix.Native.SignalHandler(fun n -> PosixSignalProcessor.PosixInvoke(n))) |> ignore;
@@ -1507,8 +1494,6 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
             | Choice2Of2 e ->
               fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiCouldNotInstallCtrlCHandler(e.Message))
               exitViaKillThread <- false  
-#endif
-
 
     member x.PosixInvoke(n:int) = 
          // we run this code once with n = -1 to make sure it is JITted before execution begins
@@ -2034,13 +2019,11 @@ type internal FsiInteractionProcessor
             fsiInterruptController.InterruptAllowed <- InterruptIgnored;
             res
         with
-#if !FX_REDUCED_EXCEPTIONS
         | :? ThreadAbortException ->
            fsiInterruptController.ClearInterruptRequest()
            fsiInterruptController.InterruptAllowed <- InterruptIgnored;
            (try Thread.ResetAbort() with _ -> ());
            (istate,CtrlC)
-#endif
         |  e ->
            fsiInterruptController.ClearInterruptRequest()
            fsiInterruptController.InterruptAllowed <- InterruptIgnored;
@@ -2361,7 +2344,6 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
               if !progress then fprintfn fsiConsoleOutput.Out "MAIN:  entering event loop...";
               fsi.EventLoopRun()
             with
-#if !FX_REDUCED_EXCEPTIONS
             |  :? ThreadAbortException ->
               // If this TAE handler kicks it's almost certainly too late to save the
               // state of the process - the state of the message loop may have been corrupted 
@@ -2369,7 +2351,6 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
               (try Thread.ResetAbort() with _ -> ());
               true
               // Try again, just case we can restart
-#endif
             | e -> 
               stopProcessingRecovery e range0;
               true
@@ -2466,20 +2447,14 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     do
       match tcConfigB.preferredUiLang with
-#if FX_RESHAPED_GLOBALIZATION
-      | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
-#else
       | Some s -> Thread.CurrentThread.CurrentUICulture <- new System.Globalization.CultureInfo(s)
-#endif
       | None -> ()
 
-#if !FX_NO_SERVERCODEPAGES
-    do 
-      try 
-          SetServerCodePages fsiOptions 
-      with e -> 
+    do
+      try
+          SetServerCodePages fsiOptions
+      with e ->
           warning(e)
-#endif
 
     do 
       updateBannerText() // resetting banner text after parsing options

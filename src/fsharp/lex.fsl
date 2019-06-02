@@ -85,11 +85,7 @@ let parseInt32 (s:string) =
     let mutable p = 0 
     let sign = getSign32 s &p l 
     let specifier = get0OXB s &p l 
-#if FX_RESHAPED_GLOBALIZATION
-    match CultureInfo.InvariantCulture.TextInfo.ToLower(specifier) with 
-#else
     match Char.ToLower(specifier,CultureInfo.InvariantCulture) with 
-#endif
     | 'x' -> sign * (int32 (Convert.ToUInt32(UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture))))
     | 'b' -> sign * (int32 (Convert.ToUInt32(parseBinaryUInt64 s p l)))
     | 'o' -> sign * (int32 (Convert.ToUInt32(parseOctalUInt64 s p l)))

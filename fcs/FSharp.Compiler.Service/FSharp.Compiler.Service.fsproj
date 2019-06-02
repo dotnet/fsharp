@@ -34,7 +34,6 @@
     <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WIN_REGISTRY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
@@ -66,9 +65,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fs">
       <Link>Logger.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/utils/reshapedreflection.fs">
-      <Link>Reshaped/reshapedreflection.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/sformat.fsi">
       <Link>ErrorText/sformat.fsi</Link>
@@ -156,6 +152,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/absil/bytes.fs">
       <Link>Utilities/bytes.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/XmlAdapters.fs">
+      <Link>Utilities\XmlAdapters.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/lib.fs">
       <Link>Utilities/lib.fs</Link>
