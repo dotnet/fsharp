@@ -7,6 +7,21 @@
         <target state="new">{0} for F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="new">Supported language versions:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="new">Unrecognized value '{0}' for --langversion use --langversion:? for complete list</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">未定義命名空間 '{0}'。</target>

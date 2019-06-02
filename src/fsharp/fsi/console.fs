@@ -14,8 +14,6 @@ open Internal.Utilities
 module internal ConsoleOptions =
 
   let readKeyFixup (c:char) =
-#if FX_NO_SERVERCODEPAGES
-#else
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
       // Convert it to a Unicode char through the encoding.
       if 0 <= int c && int c <= 255 then
@@ -27,7 +25,6 @@ module internal ConsoleOptions =
           c // no fix up
       else
         assert("readKeyFixHook: given char is outside the 0..255 byte range" = "")
-#endif
         c
 
 type internal Style = Prompt | Out | Error

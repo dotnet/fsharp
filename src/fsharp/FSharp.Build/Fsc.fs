@@ -39,6 +39,7 @@ type public Fsc () as this =
     let mutable generateInterfaceFile : string = null
     let mutable highEntropyVA : bool = false
     let mutable keyFile : string = null
+    let mutable langVersion : string = null
     let mutable noFramework = false
     let mutable optimize  : bool = true
     let mutable otherFlags : string = null
@@ -102,15 +103,15 @@ type public Fsc () as this =
                 | "EMBEDDED" -> "embedded"
                 | "FULL"     -> "full"
                 | _          -> null)
-        if embedAllSources then
-            builder.AppendSwitch("--embed+")
+        if embedAllSources then builder.AppendSwitch("--embed+")
         if embeddedFiles <> null then 
             for item in embeddedFiles do
                 builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
+        builder.AppendSwitchIfNotNull("--langVersion:", langVersion)
         // NoFramework
-        if noFramework then 
-            builder.AppendSwitch("--noframework") 
+        if noFramework then
+            builder.AppendSwitch("--noframework")
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
@@ -119,7 +120,6 @@ type public Fsc () as this =
                 builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
-
         // GenerateInterfaceFile
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
@@ -330,6 +330,10 @@ type public Fsc () as this =
         with get() = keyFile
         and set(s) = keyFile <- s
 
+    member fsc.LangVersion
+        with get() = langVersion
+        and set(s) = langVersion <- s
+
     member fsc.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
@@ -363,7 +367,7 @@ type public Fsc () as this =
     member fsc.PathMap
         with get() = pathMap
         and set(s) = pathMap <- s
-    
+
     // --pdb <string>: 
     //     Name the debug output file
     member fsc.PdbFile

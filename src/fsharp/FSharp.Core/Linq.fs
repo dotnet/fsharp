@@ -162,11 +162,6 @@ open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
 
-#if FX_RESHAPED_REFLECTION
-open PrimReflectionAdapters
-open ReflectionAdapters
-#endif
-
 module LeafExpressionConverter =
 
     // The following is recognized as a LINQ 'member initialization pattern' in a quotation.
@@ -219,11 +214,7 @@ module LeafExpressionConverter =
         SubstHelperRaw(q, x, y) |> Expr.Cast
 
     let showAll =
-#if FX_RESHAPED_REFLECTION
-        true
-#else
         BindingFlags.Public ||| BindingFlags.NonPublic
-#endif
 
     let NullableConstructor =
         typedefof<Nullable<int>>.GetConstructors().[0]

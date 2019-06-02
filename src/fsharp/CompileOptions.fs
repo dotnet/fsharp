@@ -525,6 +525,7 @@ let tagAddress = "<address>"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
+let tagLangVersionValues = "{?|version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -821,19 +822,18 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
 
 let languageFlags tcConfigB =
     [
-        CompilerOption
-            ("checked", tagNone,
-             OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None,
-             Some (FSComp.SR.optsChecked()))
-        
-        CompilerOption
-            ("define", tagString,
-             OptionString (defineSymbol tcConfigB), None,
-             Some (FSComp.SR.optsDefine()))
-        
+        // -langversion:?                Display the allowed values for language version
+        // -langversion:<string>         Specify language version such as
+        //                               'default' (latest major version), or
+        //                               'latest' (latest version, including minor versions),
+        //                               'preview' (features for preview)
+        //                               or specific versions like '4.7'
+        CompilerOption("langversion", tagLangVersionValues, OptionString (fun switch -> tcConfigB.langVersion <- LanguageVersion(switch)), None, Some (FSComp.SR.optsLangVersion()))
+
+        CompilerOption("checked", tagNone, OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsChecked()))
+        CompilerOption("define", tagString, OptionString (defineSymbol tcConfigB), None, Some (FSComp.SR.optsDefine()))
         mlCompatibilityFlag tcConfigB
     ]
-    
 
 // OptionBlock: Advanced user options
 //-----------------------------------
@@ -1604,16 +1604,10 @@ let ReportTime (tcConfig:TcConfig) descr =
         | Some("fsc-oom") -> raise(System.OutOfMemoryException())
         | Some("fsc-an") -> raise(System.ArgumentNullException("simulated"))
         | Some("fsc-invop") -> raise(System.InvalidOperationException())
-#if FX_REDUCED_EXCEPTIONS
-#else
         | Some("fsc-av") -> raise(System.AccessViolationException())
-#endif
         | Some("fsc-aor") -> raise(System.ArgumentOutOfRangeException())
         | Some("fsc-dv0") -> raise(System.DivideByZeroException())
-#if FX_REDUCED_EXCEPTIONS
-#else
         | Some("fsc-nfn") -> raise(System.NotFiniteNumberException())
-#endif
         | Some("fsc-oe") -> raise(System.OverflowException())
         | Some("fsc-atmm") -> raise(System.ArrayTypeMismatchException())
         | Some("fsc-bif") -> raise(System.BadImageFormatException())
