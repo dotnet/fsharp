@@ -4809,7 +4809,7 @@
       </trans-unit>
       <trans-unit id="nrUnexpectedEmptyLongId">
         <source>Unexpected empty long identifier</source>
-        <target state="translated">Nieoczekiwany pusty, długi identyfikator </target>
+        <target state="translated">Nieoczekiwany pusty długi identyfikator</target>
         <note />
       </trans-unit>
       <trans-unit id="nrRecordDoesNotContainSuchLabel">
@@ -6194,7 +6194,7 @@
       </trans-unit>
       <trans-unit id="etTooManyStaticParameters">
         <source>Too many static parameters. Expected at most {0} parameters, but got {1} unnamed and {2} named parameters.</source>
-        <target state="translated">Zbyt wiele parametrów statycznych. Oczekiwano co najwyżej następującej liczby parametrów: {0}, ale uzyskano następującą liczbę parametrów nienazwanych i nazwanych: {1} i {2} .</target>
+        <target state="translated">Zbyt wiele parametrów statycznych. Oczekiwano co najwyżej następującej liczby parametrów: {0}, ale uzyskano następującą liczbę parametrów nienazwanych i nazwanych: {1} i {2}.</target>
         <note />
       </trans-unit>
       <trans-unit id="infosInvalidProvidedLiteralValue">
@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Używane zamiast instrukcji let na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
+        <target state="translated">Używane zamiast powiązania let dla wartości implementujących interfejs IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Nie podano implementacji dla tych składowych: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Nie podano implementacji dla tych składowych: {0}Pamiętaj, że wszystkie składowe interfejsu muszą być zaimplementowane i wymienione w ramach odpowiedniej deklaracji „interface”, np. „interface ... with member ...”.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Nie podano implementacji dla tych składowych (niektóre wyniki zostały pominięte): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Nie podano implementacji dla tych składowych (niektóre wyniki zostały pominięte): {0}Pamiętaj, że wszystkie składowe interfejsów muszą być zaimplementowane i wymienione w ramach odpowiedniej deklaracji „interface” np. „interface ... with member ...”.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

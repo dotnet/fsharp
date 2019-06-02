@@ -1529,7 +1529,7 @@
       </trans-unit>
       <trans-unit id="Interfaces-Line3">
         <source>To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/interfaces</source>
-        <target state="translated">Weitere Informationen finden Sie unter:: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/interfaces</target>
+        <target state="translated">Weitere Informationen finden Sie unter: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/interfaces</target>
         <note />
       </trans-unit>
       <trans-unit id="IDisposable">

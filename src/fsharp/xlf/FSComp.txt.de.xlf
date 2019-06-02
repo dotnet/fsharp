@@ -2804,7 +2804,7 @@
       </trans-unit>
       <trans-unit id="tcSyntaxErrorUnexpectedQMark">
         <source>Syntax error - unexpected '?' symbol</source>
-        <target state="translated">Syntaxfehler - unerwartetes Symbol "?".</target>
+        <target state="translated">Syntaxfehler – unerwartetes Symbol "?".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionCountMisMatch">
@@ -4424,7 +4424,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownArgumentToTheTestSwitch">
         <source>Unknown --test argument: '{0}'</source>
-        <target state="translated">Unbekannt - Testargument: '{0}'</target>
+        <target state="translated">Unbekannt – Testargument: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
@@ -5454,7 +5454,7 @@
       </trans-unit>
       <trans-unit id="fscQuotationLiteralsStaticLinking0">
         <source>Code in this assembly makes uses of quotation literals. Static linking may not include components that make use of quotation literals unless all assemblies are compiled with at least F# 4.0.</source>
-        <target state="translated">Der Code in dieser Assembly verwendet Quotation-Literale. Statische Verknüpfungen schließen unter Umständen Komponenten nicht ein, die Quotation-Literale verwenden, sofern nicht alle Assemblys mindestens mit F# kompiliert sind.</target>
+        <target state="translated">Der Code in dieser Assembly verwendet Quotation-Literale. Statische Verknüpfungen schließen unter Umständen Komponenten nicht ein, die Quotation-Literale verwenden, sofern nicht alle Assemblys mindestens mit F# 4.0 kompiliert sind.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoEXE">
@@ -6609,7 +6609,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionDowncast">
         <source>Used to convert to a type that is lower in the inheritance chain.</source>
-        <target state="translated">Wird zum Konvertieren in einen Typ verwendet, der in Vererbungskette niedriger ist. </target>
+        <target state="translated">Wird zum Konvertieren in einen Typ verwendet, der in Vererbungskette höher ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionDownto">
@@ -6839,12 +6839,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUpcast">
         <source>Used to convert to a type that is higher in the inheritance chain.</source>
-        <target state="translated">Wird zum Konvertieren in einen Typ verwendet, der in Vererbungskette höher ist. </target>
+        <target state="translated">Wird zum Konvertieren in einen Typ verwendet, der in Vererbungskette niedriger ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Wird anstelle von "let" für Werte verwendet, bei denen die "Dispose" zum Freigeben von Ressourcen erforderlich ist.</target>
+        <target state="translated">Wird anstelle von "let" für Werte verwendet, die die IDisposable-Schnittstelle implementieren</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Für folgende Member wurde keine Implementierung angegeben: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Für folgende Member wurde keine Implementierung angegeben: {0} Beachten Sie, dass alle Schnittstellenmember implementiert und in einer entsprechenden interface-Deklaration aufgeführt werden müssen, z.B. "interface ... with member ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Für folgende Member wurde keine Implementierung angegeben (einige Ergebnisse ausgelassen): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Für folgende Member wurde keine Implementierung angegeben (einige Ergebnisse ausgelassen): {0} Beachten Sie, dass alle Schnittstellenmember implementiert und in einer entsprechenden interface-Deklaration aufgeführt werden müssen, z.B. "interface ... with member ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

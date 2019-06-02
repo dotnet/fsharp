@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">生成后事件命令行(&amp;O): </target>
+        <target state="translated">生成后事件命令行(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">
         <source>Always</source>
-        <target state="translated">总是</target>
+        <target state="translated">始终</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items1">

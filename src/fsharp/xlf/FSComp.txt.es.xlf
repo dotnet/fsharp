@@ -2219,7 +2219,7 @@
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
         <source>The syntax '(typ,...,typ) ident' is not used in F# code. Consider using 'ident&lt;typ,...,typ&gt;' instead</source>
-        <target state="translated">La sintaxis "(typ,..., typ) ident" no se utiliza en código de F #. Considere el uso de "ident&lt;typ,...,typ&gt;" en lugar</target>
+        <target state="translated">La sintaxis "(typ,..., typ) ident" no se utiliza en código de F#. Considere el uso de "ident&lt;typ,...,typ&gt;" en lugar</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidLiteralInType">
@@ -4624,7 +4624,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">El evento "{0}" tiene un tipo no estándar. Si este evento se declara en otro lenguaje CLI, puede que necesite acceder a este evento con los métodos {1} y {2} explícitos para el evento. Si este evento se declara en F #, cree instancias del evento de "IDelegateEvent&lt;_&gt;" o "IEvent&lt;_,_&gt;".</target>
+        <target state="translated">El evento "{0}" tiene un tipo no estándar. Si este evento se declara en otro lenguaje CLI, puede que necesite acceder a este evento con los métodos {1} y {2} explícitos para el evento. Si este evento se declara en F#, cree instancias del evento de "IDelegateEvent&lt;_&gt;" o "IEvent&lt;_,_&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Se usa en lugar de let para los valores que requieren que se llame a Dispose para liberar recursos.</target>
+        <target state="translated">Utilizado en lugar de let para valores que implementan IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7004,7 +7004,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">La referencia de un puntero byref devuelto por una función o un método se elimina implícitamente a partir de F # 4.5. Para adquirir el valor de retorno como un puntero, use el operador address-of, por ejemplo, "&amp;f(x)' or '&amp;obj.Method(arg1, arg2)".</target>
+        <target state="translated">La referencia de un puntero byref devuelto por una función o un método se elimina implícitamente a partir de F# 4.5. Para adquirir el valor de retorno como un puntero, use el operador address-of, por ejemplo, "&amp;f(x)' or '&amp;obj.Method(arg1, arg2)".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">No se ha proporcionado ninguna implementación para esos miembros: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">No se ha proporcionado ninguna implementación para esos miembros: {0}Tenga en cuenta que todos los miembros de la interfaz deben implementarse y enumerarse en una declaracón "interface" adecuada; por ejemplo, "interface ... with member ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">No se ofreció ninguna implementación para esos miembros (se omitieron algunos resultados): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">No se ofreció ninguna implementación para esos miembros (se omitieron algunos resultados): {0} Tenga en cuenta que todos los miembros de la interfaz deben implementarse y enumerarse bajo una declaración de "interface" apropiada; por ejemplo, "interface ... with member ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

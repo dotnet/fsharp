@@ -1357,20 +1357,20 @@ attributes:
 
 
 /* One set of custom attributes, including [< ... >] */
-attributeList: 
-  | LBRACK_LESS  attributeListElements opt_seps GREATER_RBRACK opt_OBLOCKSEP 
-      {  $2 }
+attributeList:
+  | LBRACK_LESS attributeListElements opt_seps GREATER_RBRACK opt_OBLOCKSEP
+      { mkAttributeList $2 (rhs2 parseState 1 3) }
 
-  | LBRACK_LESS  error GREATER_RBRACK opt_OBLOCKSEP 
-      {  [] }
+  | LBRACK_LESS error GREATER_RBRACK opt_OBLOCKSEP
+      { mkAttributeList [] (rhs2 parseState 1 3) }
 
-  | LBRACK_LESS  attributeListElements opt_seps ends_coming_soon_or_recover 
+  | LBRACK_LESS attributeListElements opt_seps ends_coming_soon_or_recover
       { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess())
-        $2 }
+        mkAttributeList $2 (rhs2 parseState 1 2) }
 
-  | LBRACK_LESS  ends_coming_soon_or_recover 
+  | LBRACK_LESS ends_coming_soon_or_recover
       { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess())
-        [] }
+        mkAttributeList [] (rhs parseState 1) }
 
 
 /* One set of custom attributes, not including [< ... >] */
@@ -1644,7 +1644,10 @@ memberCore:
                    let optInline = $1 || optInline 
                    // optional attributes are only applied to getters and setters
                    // the "top level" attrs will be applied to both
-                   let optAttrs = optAttrs |> List.map (fun (a:SynAttribute) -> { a with AppliesToGetterAndSetter=true })
+                   let optAttrs =
+                       optAttrs |> List.map (fun attrList ->
+                           { attrList with Attributes = attrList.Attributes |> List.map (fun a -> { a with AppliesToGetterAndSetter = true } ) })
+
                    let attrs = attrs @ optAttrs
                    
                    let binding = bindingBuilder (visNoLongerUsed,optInline,isMutable,mBindLhs,NoSequencePointAtInvisibleBinding,optReturnType,expr,exprm,[],attrs,Some (memFlagsBuilder MemberKind.Member))
