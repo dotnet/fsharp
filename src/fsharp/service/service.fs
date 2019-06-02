@@ -2944,9 +2944,9 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?legacyReferenceResolver, ?tryGetMetadataSnapshot, ?suggestNamesForErrors) = 
 
         let legacyReferenceResolver = 
-            match legacyReferenceResolver with 
-            | None -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+            match legacyReferenceResolver with
             | Some rr -> rr
+            | None -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
 
         let keepAssemblyContents = defaultArg keepAssemblyContents false
         let keepAllBackgroundResolutions = defaultArg keepAllBackgroundResolutions true
