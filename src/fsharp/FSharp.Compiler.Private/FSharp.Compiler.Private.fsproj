@@ -677,7 +677,7 @@
     <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-    
+
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -688,7 +688,7 @@
     <Compile Include="..\fsi\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
-
+    
     <Compile Include="..\MSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
