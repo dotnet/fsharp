@@ -25,6 +25,7 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
+open FSharp.Compiler.SourceCodeServices
 
 [<AutoOpen>]
 module SemanticModelHelpers =
@@ -77,6 +78,39 @@ module SemanticModelHelpers =
 
         result
 
+    let getCompletionItems (symbolEnv: SymbolEnv) nenv ad m idents =
+        let g = symbolEnv.g
+        let amap = symbolEnv.amap
+        let ncenv = NameResolver (g, amap, symbolEnv.infoReader, NameResolution.FakeInstantiationGenerator)
+        match ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad idents false with
+        | [] ->
+            ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad [] false
+        | items ->
+            items
+
+    let getCompletionSymbols line column lineStr (parsedInput: ParsedInput) (resolutions: TcResolutions) (symbolEnv: SymbolEnv) =
+        match tryGetBestCapturedEnv (mkPos line column) resolutions with
+        | None -> []
+        | Some (m, nenv, ad) ->
+            // Look for a "special" completion context
+            let completionContextOpt = UntypedParseImpl.TryGetCompletionContext(mkPos line column, parsedInput, lineStr)
+            
+            match completionContextOpt with
+            | None -> []
+            | Some completionContext ->
+                match completionContext with
+                | CompletionContext.Invalid -> []
+
+                | CompletionContext.OpenDeclaration ->
+                    
+                    getCompletionItems symbolEnv nenv ad m []
+                    |> List.choose (fun item ->
+                        match item with
+                        | Item.ModuleOrNamespaces _ -> Some (FSharpSymbol.Create (symbolEnv, item))
+                        | _ -> None
+                    )
+                | _ -> []
+
 [<Sealed>]
 type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
 
@@ -103,4 +137,20 @@ type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
         async {
             let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
             return getToolTipText line column resolutions symbolEnv
+        }
+
+    member __.GetCompletionSymbolsAsync (line, column) =
+        async {
+            let! checker, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
+
+            let syntaxTree = checker.GetSyntaxTree filePath
+            let! (parsedInputOpt, _) = syntaxTree.GetParseResultAsync ()
+
+            match parsedInputOpt with
+            | None -> 
+                return []
+            | Some parsedInput ->
+                let! sourceText = syntaxTree.GetSourceTextAsync ()
+                let lineStr = sourceText.Lines.[line - 1].ToString()
+                return getCompletionSymbols line column lineStr parsedInput resolutions symbolEnv
         }

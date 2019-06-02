@@ -110,8 +110,61 @@ type CompilationTests () =
         let c = compilationService.CreateCompilation options
         let semanticModel = c.GetSemanticModel "test1.fs"
         let symbol = semanticModel.TryFindSymbolAsync (4, 9) |> Async.RunSynchronously
-        let tooltip = semanticModel.GetToolTipTextAsync (4, 9) |> Async.RunSynchronously
         Assert.True (symbol.IsSome)
+
+    [<Test>]
+    member __.``Get Completion Symbols - Open Declaration`` () =
+        let sources =
+            [
+                ("test1.fs",
+                    """
+module CompilationTest.Test
+open System.Collections
+open System
+
+let beef = 1
+                    """ |> SourceText.From
+                )
+            ]
+        let workspace = new AdhocWorkspace ()
+        let compilationService = CompilationService (CompilationServiceOptions.Create workspace)
+
+        let sourceSnapshots =
+            sources
+            |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
+            |> ImmutableArray.CreateRange
+
+        let currentReferencedAssemblies =
+            let asmLocations =
+                AppDomain.CurrentDomain.GetAssemblies()
+                |> Array.choose (fun asm -> 
+                    if not asm.IsDynamic then
+                        Some asm.Location
+                    else
+                        None
+                )
+            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
+
+        let compilationReferences =
+            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
+            |> Seq.choose (fun filePath ->
+                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
+                    Some (PortableExecutableReference.CreateFromFile filePath)
+                else
+                    None
+            )
+            |> Seq.map (fun peReference -> CompilationReference.PortableExecutable peReference)
+            |> ImmutableArray.CreateRange
+
+        let fsharpCoreCompilationReference =
+            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
+            |> CompilationReference.PortableExecutable
+
+        let options = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, compilationReferences.Add fsharpCoreCompilationReference)
+        let c = compilationService.CreateCompilation options
+        let semanticModel = c.GetSemanticModel "test1.fs"
+        let symbols = semanticModel.GetCompletionSymbolsAsync (4, 12) |> Async.RunSynchronously
+        Assert.False (symbols.IsEmpty)
 
 [<TestFixture>]
 type UtilitiesTest () =
