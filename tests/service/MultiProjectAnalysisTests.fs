@@ -348,11 +348,6 @@ let ``Test ManyProjectsStressTest cache too small`` () =
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest false
 
-    // Because the cache is too small, we need explicit calls to KeepAlive to avoid disposal of project information
-    let disposals = 
-        [ for p in ManyProjectsStressTest.jointProject :: ManyProjectsStressTest.projects do
-             yield checker.KeepProjectAlive p.Options |> Async.RunSynchronously ]
-
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]

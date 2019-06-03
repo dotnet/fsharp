@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  Directivas de F#:</target>
+        <target state="translated">Directivas de F# interactivo:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# Interactive para F# {0}</target>
+        <target state="translated">F# interactivo para F# {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">

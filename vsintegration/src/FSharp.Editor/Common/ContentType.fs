@@ -6,6 +6,7 @@ open System.ComponentModel.Composition
 
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.VisualStudio.Utilities
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 module FSharpStaticTypeDefinitions = 
     [<Export>]
@@ -17,11 +18,3 @@ module FSharpStaticTypeDefinitions =
     [<Name(FSharpConstants.FSharpSignatureHelpContentTypeName)>]
     [<BaseDefinition("sighelp")>]
     let FSharpSignatureHelpContentTypeDefinition = ContentTypeDefinition()
-
-[<ExportContentTypeLanguageService(FSharpConstants.FSharpContentTypeName, FSharpConstants.FSharpLanguageName)>]
-type FSharpContentType [<System.Composition.ImportingConstructor>](contentTypeRegistry : IContentTypeRegistryService) =  
-    member this.contentTypeRegistryService = contentTypeRegistry
- 
-    interface IContentTypeLanguageService with
-        member this.GetDefaultContentType() = 
-            this.contentTypeRegistryService.GetContentType(FSharpConstants.FSharpContentTypeName)
