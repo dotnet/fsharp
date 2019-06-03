@@ -130,7 +130,8 @@ let mkDefnBindings (mWhole,BindingSetPreAttrs(_,isRec,isUse,declsPreAttrs,_bindi
     attrDecls @ letDecls
 
 let idOfPat m p = 
-    match p with 
+    match p with
+    | SynPat.Wild r -> mkSynId r "_"    
     | SynPat.Named (SynPat.Wild _,id,false,_,_) -> id 
     | SynPat.LongIdent(LongIdentWithDots([id],_),_,None, SynConstructorArgs.Pats [], None,_) -> id
     | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier())
