@@ -8805,7 +8805,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
 //------------------------------------------------------------------------- 
 
 and GetLongIdentTypeNameInfo delayed =
-    // Given 'MyOverloadedType<int>.MySubType...' use arity of #given type arguments to help 
+    // Given 'MyOverloadedType<int>.MySubType...' use the number of given type arguments to help 
     // resolve type name lookup of 'MyOverloadedType' 
     // Also determine if type names should resolve to Item.Types or Item.CtorGroup 
     match delayed with 

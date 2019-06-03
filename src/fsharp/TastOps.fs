@@ -3208,7 +3208,7 @@ let isSizeOfValRef g vref =
 
 let isNameOfValRef g vref = 
     valRefEq g vref g.nameof_vref 
-    // There is an internal version of typeof defined in prim-types.fs that needs to be detected
+    // There is an internal version of nameof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "nameof") 
 
 let isTypeDefOfValRef g vref = 

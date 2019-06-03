@@ -172,19 +172,17 @@ type FrameworkMethodTests() =
         let b = nameof(System.Tuple.Create)
         Assert.AreEqual("Create",b)
 
-
 type CustomUnionType =
-| OptionA 
-| OptionB of int * string
+    | OptionA 
+    | OptionB of int * string
 
 type CustomRecordType =
-  { X: int; Y: int }
+    { X: int; Y: int }
 
 [<Measure>] type Milliquacks 
 
 [<TestFixture>]
 type UnionAndRecordNameOfTests() =    
-
 
     [<Test>]
     member this.``measure 1`` () = 
@@ -295,5 +293,3 @@ type Person =
         | x when x = nameof __.Name -> { __ with Name = string value }
         | x when x = nameof __.Age -> { __ with Age = value :?> int }
         | _ -> __
-
-

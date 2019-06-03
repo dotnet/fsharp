@@ -7170,8 +7170,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoFirstClassNameOf">
-        <source>First-class uses of the 'nameof' operator is not permitted.</source>
-        <target state="new">First-class uses of the 'nameof' operator is not permitted.</target>
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">
