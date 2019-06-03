@@ -298,7 +298,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
             result <- true
         finally
             if result <> false then
-                Directory.Delete(directory, true)
+                try Directory.Delete(directory, true) with _ -> ()
             else
                 printfn "Configuration: %s" cfg.Directory
                 printfn "Directory: %s" directory
