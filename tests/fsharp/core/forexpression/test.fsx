@@ -110,18 +110,7 @@ let sumOverRange () =
 let sumOverString () =
     let mutable sum = 0
     for i in testString do
-#if NETCOREAPP
-        sum <- sum + ((int (i :?> char)) - (int '0'))
-#else
         sum <- sum + ((int i) - (int '0'))
-#endif
-    sum
-    
-// usingWildcard counts using a wildcard in a for loop
-let usingWildcard () =
-    let mutable sum = 0
-    for _ = 0 to count do
-        sum <- sum + 1
     sum
 
 let arraySum                = sumOverArray ()
@@ -132,7 +121,6 @@ let listSum                 = sumOverList ()
 let ilistSum                = sumOverIList ()
 let rangeSum                = sumOverRange ()
 let stringSum               = sumOverString ()
-let wildCard                = usingWildcard ()
 
 do test "arraySum"          (expectedArraySum   = arraySum      )
 do test "seqSum"            (expectedArraySum   = seqSum        )
@@ -142,7 +130,6 @@ do test "listSum"           (expectedArraySum   = listSum       )
 do test "ilistSum"          (expectedArraySum   = ilistSum      )
 do test "rangeSum"          (expectedRangeSum   = rangeSum      )
 do test "stringSum"         (expectedStringSum  = stringSum     )
-do test "wildCard"          (expectedWildCard   = wildCard      )
 
 #if TESTS_AS_APP
 let RUN() = !failures
