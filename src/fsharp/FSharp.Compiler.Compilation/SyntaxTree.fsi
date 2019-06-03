@@ -8,6 +8,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler
+open FSharp.Compiler.Ast
 
 [<Sealed>]
 type SourceSnapshot =
@@ -33,6 +34,30 @@ type internal ITemporaryStorageServiceExtensions =
     [<Extension>]
     static member CreateSourceSnapshot: ITemporaryStorageService * filePath: string -> Cancellable<SourceSnapshot>
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type SyntaxNodeKind =
+    | Expr of SynExpr
+    | ModuleDecl of SynModuleDecl
+    | Binding of SynBinding
+    | ComponentInfo of SynComponentInfo
+    | HashDirective of Range.range
+    | ImplicitInherit of SynType * SynExpr * Range.range
+    | InheritSynMemberDefn of SynComponentInfo * SynTypeDefnKind * SynType * SynMemberDefns * Range.range
+    | InterfaceSynMemberDefnType of SynType
+    | LetOrUse of SynBinding list * Range.range
+    | MatchClause of SynMatchClause
+    | ModuleOrNamespace of SynModuleOrNamespace
+    | Pat of SynPat
+    | RecordField of SynExpr option * LongIdentWithDots option
+    | SimplePats of SynSimplePat list
+    | Type of SynType
+    | TypeAbbrev of SynType * Range.range
+
+[<Sealed>]
+type SyntaxNode =
+    
+    member Kind : SyntaxNodeKind
+
 [<Sealed>]
 type SyntaxTree =
 
@@ -45,7 +70,9 @@ type SyntaxTree =
 
     member GetParseResultAsync: unit -> Async<ParseResult>
 
-    member GetSourceTextAsync:  unit -> Async<SourceText>
+    member GetSourceTextAsync: unit -> Async<SourceText>
+
+    member TryFindNodeAsync: line: int * column: int -> Async<SyntaxNode option>
 
     //member GetTokensAsync: line: int -> Async<ImmutableArray<FSharpTokenInfo>>
 

@@ -11,6 +11,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.Text
 open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Ast
 
 type ParsingConfig =
     {
@@ -78,6 +79,30 @@ type ITemporaryStorageServiceExtensions =
             return SourceSnapshot (filePath, sourceStorage)
         }
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type SyntaxNodeKind =
+    | Expr of SynExpr
+    | ModuleDecl of SynModuleDecl
+    | Binding of SynBinding
+    | ComponentInfo of SynComponentInfo
+    | HashDirective of Range.range
+    | ImplicitInherit of SynType * SynExpr * Range.range
+    | InheritSynMemberDefn of SynComponentInfo * SynTypeDefnKind * SynType * SynMemberDefns * Range.range
+    | InterfaceSynMemberDefnType of SynType
+    | LetOrUse of SynBinding list * Range.range
+    | MatchClause of SynMatchClause
+    | ModuleOrNamespace of SynModuleOrNamespace
+    | Pat of SynPat
+    | RecordField of SynExpr option * LongIdentWithDots option
+    | SimplePats of SynSimplePat list
+    | Type of SynType
+    | TypeAbbrev of SynType * Range.range
+
+[<Sealed>]
+type SyntaxNode (kind) =
+    
+    member __.Kind = kind
+
 [<Sealed>]
 type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: SourceSnapshot) =
 
@@ -133,6 +158,63 @@ type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: Sourc
 
     member __.GetSourceTextAsync () =
         asyncLazyWeakGetSourceText.GetValueAsync ()
+
+    member this.TryFindNodeAsync (line: int, column: int) =
+        async {
+            match! this.GetParseResultAsync () with
+            | Some input, _ ->
+                return FSharp.Compiler.SourceCodeServices.AstTraversal.Traverse(Range.mkPos line column, input, { new FSharp.Compiler.SourceCodeServices.AstTraversal.AstVisitorBase<_>() with 
+                    member __.VisitExpr(_path, _traverseSynExpr, _defaultTraverse, expr) =
+                        Some (SyntaxNodeKind.Expr expr |> SyntaxNode)
+
+                    member __.VisitModuleDecl(_defaultTraverse, decl) =
+                        Some (SyntaxNodeKind.ModuleDecl decl |> SyntaxNode)
+
+                    member __.VisitBinding (_, binding) =
+                        Some (SyntaxNodeKind.Binding binding |> SyntaxNode)
+
+                    member __.VisitComponentInfo info =
+                        Some (SyntaxNodeKind.ComponentInfo info |> SyntaxNode)
+
+                    member __.VisitHashDirective m =
+                        Some (SyntaxNodeKind.HashDirective m |> SyntaxNode)
+
+                    member __.VisitImplicitInherit (_, ty, expr, m) =
+                        Some (SyntaxNodeKind.ImplicitInherit (ty, expr, m) |> SyntaxNode)
+
+                    member __.VisitInheritSynMemberDefn(info, typeDefnKind, synType, members, m) =
+                        Some (SyntaxNodeKind.InheritSynMemberDefn (info, typeDefnKind, synType, members, m) |> SyntaxNode)
+
+                    member __.VisitInterfaceSynMemberDefnType synType =
+                        Some (SyntaxNodeKind.InterfaceSynMemberDefnType synType |> SyntaxNode)
+
+                    member __.VisitLetOrUse (_, _, bindings, m) =
+                        Some (SyntaxNodeKind.LetOrUse (bindings, m) |> SyntaxNode)
+
+                    member __.VisitMatchClause (_, matchClause) =
+                        Some (SyntaxNodeKind.MatchClause matchClause |> SyntaxNode)
+
+                    member __.VisitModuleOrNamespace moduleOrNamespace =
+                        Some (SyntaxNodeKind.ModuleOrNamespace moduleOrNamespace |> SyntaxNode)
+
+                    member __.VisitPat (_, pat) =
+                        Some (SyntaxNodeKind.Pat pat |> SyntaxNode)
+
+                    member __.VisitRecordField (_, copyOpt, recordFieldOpt) =
+                        Some (SyntaxNodeKind.RecordField (copyOpt, recordFieldOpt) |> SyntaxNode)
+
+                    member __.VisitSimplePats simplePats =
+                        Some (SyntaxNodeKind.SimplePats simplePats |> SyntaxNode)
+
+                    member this.VisitType (_, ty) =
+                        Some (SyntaxNodeKind.Type ty |> SyntaxNode)
+
+                    member __.VisitTypeAbbrev (ty, m) =
+                        Some (SyntaxNodeKind.TypeAbbrev (ty, m) |> SyntaxNode)
+                })
+            | _ ->
+                return None
+        }
 
     //member this.GetTokensAsync (line: int) =
     //    if line <= 0 then
