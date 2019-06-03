@@ -99,9 +99,11 @@ type SyntaxNodeKind =
     | TypeAbbrev of SynType * Range.range
 
 [<Sealed>]
-type SyntaxNode (kind) =
+type SyntaxNode (kind, parentOpt: SyntaxNode option) =
     
     member __.Kind = kind
+
+    member __.Parent = parentOpt
 
 [<Sealed>]
 type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: SourceSnapshot) =
@@ -163,12 +165,18 @@ type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: Sourc
         async {
             match! this.GetParseResultAsync () with
             | Some input, _ ->
+                let mutable currentParent = None
+                let setCurrentParent node =
+                    currentParent <- node
+                    currentParent
                 return FSharp.Compiler.SourceCodeServices.AstTraversal.Traverse(Range.mkPos line column, input, { new FSharp.Compiler.SourceCodeServices.AstTraversal.AstVisitorBase<_>() with 
                     member __.VisitExpr(_path, _traverseSynExpr, _defaultTraverse, expr) =
-                        Some (SyntaxNodeKind.Expr expr |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.Expr expr, currentParent))
+                        |> setCurrentParent
 
                     member __.VisitModuleDecl(_defaultTraverse, decl) =
-                        Some (SyntaxNodeKind.ModuleDecl decl |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.ModuleDecl decl, currentParent))
+                        |> setCurrentParent
 
                     member __.VisitBinding (_, binding) =
                         Some (SyntaxNodeKind.Binding binding |> SyntaxNode)
