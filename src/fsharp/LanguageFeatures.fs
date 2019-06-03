@@ -22,6 +22,7 @@ type LanguageFeature =
     | LanguageVersion46 = 0
     | LanguageVersion47 = 1
     | SingleUnderscorePattern = 2
+    | RelaxWhitespace = 4
     | Nullness = 1000
     | ScriptingPackageManagement = 1001
 
@@ -44,6 +45,7 @@ type LanguageVersion (specifiedVersion) =
         // Add new LanguageVersions here ...
         LanguageFeature.LanguageVersion47, 4.7m
         LanguageFeature.LanguageVersion46, 4.6m
+        LanguageFeature.RelaxWhitespace, previewVersion
         LanguageFeature.Nullness, previewVersion
         LanguageFeature.ScriptingPackageManagement, previewVersion
         LanguageFeature.SingleUnderscorePattern, previewVersion

@@ -9,6 +9,7 @@ type LanguageFeature =
     | LanguageVersion46 = 0
     | LanguageVersion47 = 1
     | SingleUnderscorePattern = 2
+    | RelaxWhitespace = 4
     | Nullness = 1000
     | ScriptingPackageManagement = 1001
 
