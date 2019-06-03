@@ -1174,7 +1174,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">Palabra clave</target>
+        <target state="translated">palabra clave </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">

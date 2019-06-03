@@ -25,17 +25,20 @@ type internal SymbolEnv =
 type public FSharpAccessibility = 
     internal new: Accessibility * ?isProtected: bool -> FSharpAccessibility
 
-    /// Indicates the symbol has public accessibility
-    member IsPublic : bool
+    /// Indicates the symbol has public accessibility.
+    member IsPublic: bool
 
-    /// Indicates the symbol has private accessibility
-    member IsPrivate : bool
+    /// Indicates the symbol has private accessibility.
+    member IsPrivate: bool
 
-    /// Indicates the symbol has internal accessibility
-    member IsInternal : bool
+    /// Indicates the symbol has internal accessibility.
+    member IsInternal: bool
+
+    /// Indicates the symbol has protected accessibility.
+    member IsProtected: bool
 
     /// The underlying Accessibility
-    member internal Contents : Accessibility
+    member internal Contents: Accessibility
 
 
 /// Represents the information needed to format types and other information in a style

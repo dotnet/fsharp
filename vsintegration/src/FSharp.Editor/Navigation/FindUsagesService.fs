@@ -7,15 +7,14 @@ open System.Collections.Immutable
 open System.Composition
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Editor.FindUsages
-open Microsoft.CodeAnalysis.FindUsages
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
-[<ExportLanguageService(typeof<IFindUsagesService>, FSharpConstants.FSharpLanguageName); Shared>]
+[<Export(typeof<IFSharpFindUsagesService>)>]
 type internal FSharpFindUsagesService
     [<ImportingConstructor>]
     (
@@ -40,14 +39,14 @@ type internal FSharpFindUsagesService
                             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
                                 let span = Tokenizer.fixupSpan(sourceText, span)
-                                return Some (DocumentSpan(doc, span))
+                                return Some (FSharpDocumentSpan(doc, span))
                             | None -> return None
                         })
                     |> Async.Parallel
                 return spans |> Array.choose id |> Array.toList
         }
 
-    let findReferencedSymbolsAsync(document: Document, position: int, context: IFindUsagesContext, allReferences: bool, userOpName: string) : Async<unit> =
+    let findReferencedSymbolsAsync(document: Document, position: int, context: IFSharpFindUsagesContext, allReferences: bool, userOpName: string) : Async<unit> =
         asyncMaybe {
             let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
             let checker = checkerProvider.Checker
@@ -60,7 +59,7 @@ type internal FSharpFindUsagesService
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, userOpName=userOpName)
             let! declaration = checkFileResults.GetDeclarationLocation (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false, userOpName=userOpName) |> liftAsync
-            let tags = GlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
+            let tags = GlyphTags.GetTags(Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyphHelpersObsolete.Convert(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind)))
             
             let declarationRange = 
                 match declaration with
@@ -77,14 +76,14 @@ type internal FSharpFindUsagesService
                     return 
                         match declarationSpans with 
                         | [] -> 
-                            [ DefinitionItem.CreateNonNavigableItem(
+                            [ FSharpDefinitionItem.CreateNonNavigableItem(
                                 tags,
                                 ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)),
                                 ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
                         | _ ->
                             declarationSpans
                             |> List.map (fun span ->
-                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
+                                FSharpDefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
                 } |> liftAsync
             
             for definitionItem in definitionItems do
@@ -121,13 +120,13 @@ type internal FSharpFindUsagesService
                         | _ ->
                             for referenceDocSpan in referenceDocSpans do
                                 for definitionItem in definitionItems do
-                                    let referenceItem = SourceReferenceItem(definitionItem, referenceDocSpan, true) // defaulting to `true` until we can officially determine if this usage is a write
+                                    let referenceItem = FSharpSourceReferenceItem(definitionItem, referenceDocSpan)
                                     do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask |> liftAsync
             
             ()
         } |> Async.Ignore
 
-    interface IFindUsagesService with
+    interface IFSharpFindUsagesService with
         member __.FindReferencesAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, true, userOpName)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

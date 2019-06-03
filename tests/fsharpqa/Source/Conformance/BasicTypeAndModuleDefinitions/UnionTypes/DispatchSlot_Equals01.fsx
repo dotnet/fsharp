@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Unions 
 // By default, Union types implement dispatch slot Equals
 // Also minimal test on the expected implementation.
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 type T1 = | A
