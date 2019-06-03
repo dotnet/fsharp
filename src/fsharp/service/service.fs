@@ -2946,7 +2946,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
         let legacyReferenceResolver = 
             match legacyReferenceResolver with
             | Some rr -> rr
-            | None -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+            | None -> SimulatedMSBuildReferenceResolver.getResolver()
 
         let keepAssemblyContents = defaultArg keepAssemblyContents false
         let keepAllBackgroundResolutions = defaultArg keepAllBackgroundResolutions true
