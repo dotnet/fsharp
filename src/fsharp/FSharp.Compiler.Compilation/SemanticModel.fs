@@ -97,14 +97,18 @@ module SemanticModelHelpers =
         let p = mkPos line column
         let resultOpt = AstTraversal.Traverse(p, parsedInput, { new AstTraversal.AstVisitorBase<_>() with 
             member __.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
-                defaultTraverse(expr)
+                match expr with
+                | SynExpr.LongIdent(_, longDotId, _, _) ->
+                    Some (getIdents p longDotId)
+                | _ ->
+                    defaultTraverse(expr)
 
             member __.VisitModuleDecl(defaultTraverse, decl) =
                 match decl with
                 | SynModuleDecl.Open (longDotId, _) ->
                     Some (getIdents p longDotId)
                 | _ ->
-                    defaultTraverse decl                      
+                    defaultTraverse decl
         })
         match resultOpt with
         | None -> []
@@ -124,7 +128,10 @@ module SemanticModelHelpers =
             let completionContextOpt = UntypedParseImpl.TryGetCompletionContext(mkPos line column, parsedInput, lineStr)
             
             match completionContextOpt with
-            | None -> []
+            | None ->
+                let idents = getIdentsForCompletion line column lineStr parsedInput
+                getCompletionItems symbolEnv nenv ad m idents
+                |> List.map (fun item -> FSharpSymbol.Create (symbolEnv, item))
             | Some completionContext ->
                 match completionContext with
                 | CompletionContext.Invalid -> []
@@ -137,6 +144,7 @@ module SemanticModelHelpers =
                         | Item.ModuleOrNamespaces _ -> Some (FSharpSymbol.Create (symbolEnv, item))
                         | _ -> None
                     )
+
                 | _ -> []
 
 [<Sealed>]

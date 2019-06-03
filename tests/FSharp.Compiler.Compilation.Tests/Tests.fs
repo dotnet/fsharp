@@ -122,7 +122,9 @@ module CompilationTest.Test
 open System.Collections
 open System. 
 
-let beef = 1
+let beef = obj ()
+let x = beef.
+let yopac = 1
                     """ |> SourceText.From
                 )
             ]
@@ -164,6 +166,8 @@ let beef = 1
         let c = compilationService.CreateCompilation options
         let semanticModel = c.GetSemanticModel "test1.fs"
         let symbols = semanticModel.GetCompletionSymbolsAsync (4, 13) |> Async.RunSynchronously
+        Assert.False (symbols.IsEmpty)
+        let symbols = semanticModel.GetCompletionSymbolsAsync (7, 14) |> Async.RunSynchronously
         Assert.False (symbols.IsEmpty)
 
 [<TestFixture>]
