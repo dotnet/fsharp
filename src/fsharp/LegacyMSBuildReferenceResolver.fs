@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.MSBuildReferenceResolver 
+module LegacyMSBuildReferenceResolver
 
     open System
     open System.IO
@@ -16,6 +16,7 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
+    open FSharp.Compiler
 
     // Reflection wrapper for properties
     type System.Object with
@@ -367,7 +368,7 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
 
         resolvedFiles
 
-    let Resolver =
+    let getResolver () =
        { new ReferenceResolver.Resolver with 
            member __.HighestInstalledNetFrameworkVersion() = HighestInstalledRefAssembliesOrDotNETFramework()
            member __.DotNetFrameworkReferenceAssembliesRootDirectory =  DotNetFrameworkReferenceAssembliesRootDirectory

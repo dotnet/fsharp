@@ -1172,7 +1172,13 @@ and
             | None -> unionRanges e.Range m
             | Some x -> unionRanges (unionRanges e.Range m) x.Range
 
-and SynAttributes = SynAttribute list
+and
+    /// List of attributes enclosed in [< ... >].
+    SynAttributeList =
+    { Attributes: SynAttribute list
+      Range: range }
+
+and SynAttributes = SynAttributeList list
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1304,7 +1310,7 @@ and
 
     /// An object oriented type definition. This is not a parse-tree form, but represents the core
     /// type representation which the type checker splits out from the "ObjectModel" cases of type definitions.
-    | General of SynTypeDefnKind * (SynType * range * Ident option) list * (SynValSig * MemberFlags) list * SynField list  * bool * bool * SynSimplePat list option * range: range
+    | General of SynTypeDefnKind * (SynType * range * Ident option) list * (SynValSig * MemberFlags) list * SynField list  * bool * bool * SynSimplePats option * range: range
 
     /// A type defined by using an IL assembly representation. Only used in FSharp.Core.
     ///
@@ -1519,7 +1525,7 @@ and
     | Member of memberDefn: SynBinding * range: range
 
     /// implicit ctor args as a defn line, 'as' specification
-    | ImplicitCtor of accessiblity: SynAccess option * attributes: SynAttributes * ctorArgs: SynSimplePat list * selfIdentifier: Ident option * range: range
+    | ImplicitCtor of accessiblity: SynAccess option * attributes: SynAttributes * ctorArgs: SynSimplePats * selfIdentifier: Ident option * range: range
 
     /// inherit <typ>(args...) as base
     | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
@@ -2118,6 +2124,18 @@ type SynExpr with
 type SynReturnInfo = SynReturnInfo of (SynType * SynArgInfo) * range: range
 
 
+let mkAttributeList attrs range =
+    [{ Attributes = attrs
+       Range = range }]
+
+let ConcatAttributesLists (attrsLists: SynAttributeList list) =
+    attrsLists
+    |> List.map (fun x -> x.Attributes)
+    |> List.concat
+
+let (|Attributes|) synAttributes =
+    ConcatAttributesLists synAttributes
+
 /// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
 ///
 /// Function and member definitions have strongly syntactically constrained arities.  We infer
@@ -2186,7 +2204,7 @@ module SynInfo =
     let AritiesOfArgs (SynValInfo(args, _)) = List.map List.length args
 
     /// Get the argument attributes from the syntactic information for an argument.
-    let AttribsOfArgData (SynArgInfo(attribs, _, _)) = attribs
+    let AttribsOfArgData (SynArgInfo(Attributes attribs, _, _)) = attribs
 
     /// Infer the syntactic argument info for a single argument from a simple pattern.
     let rec InferSynArgInfoFromSimplePat attribs p =
