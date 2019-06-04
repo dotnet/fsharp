@@ -107,6 +107,9 @@ type public FSharpCheckFileResults =
     /// an unrecoverable error in earlier checking/parsing/resolution steps.
     member HasFullTypeCheckInfo: bool
 
+    /// Tries to get the current successful TcImports. This is only used in testing. Do not use it for other stuff.
+    member internal TryGetCurrentTcImports: unit -> TcImports option
+
     /// Indicates the set of files which must be watched to accurately track changes that affect these results,
     /// Clients interested in reacting to updates to these files should watch these files and take actions as described
     /// in the documentation for compiler service.
