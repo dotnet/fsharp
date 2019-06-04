@@ -1811,6 +1811,13 @@ module VersionTests =
     [<Test>]
     let ``member-selfidentifier-version4.7``() = singleTestBuildAndRunVersion "core/members/self-identifier/version47" FSC_BUILDONLY "preview"
 
+    [<Test>]
+    let ``indent-version4.6``() = singleTestBuildAndRunVersion "core/indent/version46" FSC_BUILDONLY "4.6"
+
+    [<Test>]
+    let ``indent-version4.7``() = singleTestBuildAndRunVersion "core/indent/version47" FSC_BUILDONLY "preview"
+
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module ToolsTests = 
 
@@ -1820,7 +1827,7 @@ module ToolsTests =
         let cfg = testConfig "tools/bundle"
 
         fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
-   
+
         peverify cfg "test-one-fsharp-module.exe"
    
         fsc cfg "%s -a -o:test_two_fsharp_modules_module_1.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_1.fs"]

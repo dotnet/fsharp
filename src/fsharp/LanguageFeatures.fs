@@ -23,6 +23,7 @@ type LanguageFeature =
     | LanguageVersion47 = 1
     | SingleUnderscorePattern = 2
     | WildCardInForLoop = 3
+    | RelaxWhitespace = 4
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
@@ -45,6 +46,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.LanguageVersion46, 4.6m
         LanguageFeature.SingleUnderscorePattern, previewVersion
         LanguageFeature.WildCardInForLoop, previewVersion
+        LanguageFeature.RelaxWhitespace, previewVersion
 
         // Add new LanguageFeatures here ...
         |]
