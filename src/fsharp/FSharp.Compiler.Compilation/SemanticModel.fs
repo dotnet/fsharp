@@ -180,6 +180,7 @@ type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
             let! checker, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
 
             let syntaxTree = checker.GetSyntaxTree filePath
+            let! node = syntaxTree.TryFindNodeAsync (line, column)
             let! (parsedInputOpt, _) = syntaxTree.GetParseResultAsync ()
 
             match parsedInputOpt with

@@ -79,32 +79,6 @@ type ITemporaryStorageServiceExtensions =
             return SourceSnapshot (filePath, sourceStorage)
         }
 
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type SyntaxNodeKind =
-    | Expr of SynExpr
-    | ModuleDecl of SynModuleDecl
-    | Binding of SynBinding
-    | ComponentInfo of SynComponentInfo
-    | HashDirective of Range.range
-    | ImplicitInherit of SynType * SynExpr * Range.range
-    | InheritSynMemberDefn of SynComponentInfo * SynTypeDefnKind * SynType * SynMemberDefns * Range.range
-    | InterfaceSynMemberDefnType of SynType
-    | LetOrUse of SynBinding list * Range.range
-    | MatchClause of SynMatchClause
-    | ModuleOrNamespace of SynModuleOrNamespace
-    | Pat of SynPat
-    | RecordField of SynExpr option * LongIdentWithDots option
-    | SimplePats of SynSimplePat list
-    | Type of SynType
-    | TypeAbbrev of SynType * Range.range
-
-[<Sealed>]
-type SyntaxNode (kind, parentOpt: SyntaxNode option) =
-    
-    member __.Kind = kind
-
-    member __.Parent = parentOpt
-
 [<Sealed>]
 type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: SourceSnapshot) =
 
@@ -166,59 +140,69 @@ type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: Sourc
             match! this.GetParseResultAsync () with
             | Some input, _ ->
                 let mutable currentParent = None
-                let setCurrentParent node =
+                let setCurrentParent node f =
+                    let prev = currentParent
                     currentParent <- node
-                    currentParent
+                    let result = f ()
+                    currentParent <- prev
+                    result
                 return FSharp.Compiler.SourceCodeServices.AstTraversal.Traverse(Range.mkPos line column, input, { new FSharp.Compiler.SourceCodeServices.AstTraversal.AstVisitorBase<_>() with 
-                    member __.VisitExpr(_path, _traverseSynExpr, _defaultTraverse, expr) =
-                        Some (SyntaxNode (SyntaxNodeKind.Expr expr, currentParent))
-                        |> setCurrentParent
+                    member __.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+                        let node = Some (SyntaxNode (SyntaxNodeKind.Expr expr, currentParent))
+                        setCurrentParent node (fun () -> defaultTraverse expr)
 
-                    member __.VisitModuleDecl(_defaultTraverse, decl) =
-                        Some (SyntaxNode (SyntaxNodeKind.ModuleDecl decl, currentParent))
-                        |> setCurrentParent
+                    member __.VisitModuleDecl(defaultTraverse, decl) =
+                        let node = Some (SyntaxNode (SyntaxNodeKind.ModuleDecl decl, currentParent))
+                        setCurrentParent node (fun () -> defaultTraverse decl)
 
                     member __.VisitBinding (_, binding) =
-                        Some (SyntaxNodeKind.Binding binding |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.Binding binding, currentParent))
 
                     member __.VisitComponentInfo info =
-                        Some (SyntaxNodeKind.ComponentInfo info |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.ComponentInfo info, currentParent))
 
                     member __.VisitHashDirective m =
-                        Some (SyntaxNodeKind.HashDirective m |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.HashDirective m, currentParent))
 
-                    member __.VisitImplicitInherit (_, ty, expr, m) =
-                        Some (SyntaxNodeKind.ImplicitInherit (ty, expr, m) |> SyntaxNode)
+                    member __.VisitImplicitInherit (defaultTraverse, ty, expr, m) =
+                        let node = Some (SyntaxNode (SyntaxNodeKind.ImplicitInherit (ty, expr, m), currentParent))
+                        setCurrentParent node (fun () -> defaultTraverse expr)
 
                     member __.VisitInheritSynMemberDefn(info, typeDefnKind, synType, members, m) =
-                        Some (SyntaxNodeKind.InheritSynMemberDefn (info, typeDefnKind, synType, members, m) |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.InheritSynMemberDefn (info, typeDefnKind, synType, members, m), currentParent))
 
                     member __.VisitInterfaceSynMemberDefnType synType =
-                        Some (SyntaxNodeKind.InterfaceSynMemberDefnType synType |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.InterfaceSynMemberDefnType synType, currentParent))
 
-                    member __.VisitLetOrUse (_, _, bindings, m) =
-                        Some (SyntaxNodeKind.LetOrUse (bindings, m) |> SyntaxNode)
+                    member __.VisitLetOrUse (_, defaultTraverse, bindings, m) =
+                        let node = Some (SyntaxNode (SyntaxNodeKind.LetOrUse (bindings, m), currentParent))
+                        bindings
+                        |> List.tryPick (fun binding ->
+                            setCurrentParent node (fun () -> defaultTraverse binding)
+                        )
 
                     member __.VisitMatchClause (_, matchClause) =
-                        Some (SyntaxNodeKind.MatchClause matchClause |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.MatchClause matchClause, currentParent))
 
                     member __.VisitModuleOrNamespace moduleOrNamespace =
-                        Some (SyntaxNodeKind.ModuleOrNamespace moduleOrNamespace |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.ModuleOrNamespace moduleOrNamespace, currentParent))
 
-                    member __.VisitPat (_, pat) =
-                        Some (SyntaxNodeKind.Pat pat |> SyntaxNode)
+                    member __.VisitPat (defaultTraverse, pat) =
+                        let node = Some (SyntaxNode (SyntaxNodeKind.Pat pat, currentParent))
+                        setCurrentParent node (fun () -> defaultTraverse pat)
 
                     member __.VisitRecordField (_, copyOpt, recordFieldOpt) =
-                        Some (SyntaxNodeKind.RecordField (copyOpt, recordFieldOpt) |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.RecordField (copyOpt, recordFieldOpt), currentParent))
 
                     member __.VisitSimplePats simplePats =
-                        Some (SyntaxNodeKind.SimplePats simplePats |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.SimplePats simplePats, currentParent))
 
-                    member this.VisitType (_, ty) =
-                        Some (SyntaxNodeKind.Type ty |> SyntaxNode)
+                    member this.VisitType (defaultTraverse, ty) =
+                        let node = Some (SyntaxNode (SyntaxNodeKind.Type ty, currentParent))
+                        setCurrentParent node (fun () -> defaultTraverse ty)
 
                     member __.VisitTypeAbbrev (ty, m) =
-                        Some (SyntaxNodeKind.TypeAbbrev (ty, m) |> SyntaxNode)
+                        Some (SyntaxNode (SyntaxNodeKind.TypeAbbrev (ty, m), currentParent))
                 })
             | _ ->
                 return None
