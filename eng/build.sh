@@ -217,6 +217,15 @@ function BuildSolution {
   cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
   cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
 
+  bootstrap_config=Proto
+  MSBuild "$repo_root/proto.proj" \
+    /restore \
+    /p:Configuration=$bootstrap_config \
+    /t:Build
+
+  cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  cp $artifacts_dir/bin/fsi/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
@@ -251,3 +260,4 @@ if [[ "$test_core_clr" == true ]]; then
 fi
 
 ExitWithExitCode 0
+
