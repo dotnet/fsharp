@@ -23,6 +23,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Parser
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
@@ -142,19 +143,17 @@ let tryAppendXmlDoc (buff:option<System.Text.StringBuilder>) (s:string) =
 let shouldStartLine args lexbuf (m:range) err tok = 
     if (m.StartColumn <> 0) then fail args lexbuf err tok
     else tok
-    
+
 let shouldStartFile args lexbuf (m:range) err tok = 
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
     else tok
-    
-let evalIfDefExpression startPos args (lookup:string->bool) (lexed:string) =
-    let lexbuf          = LexBuffer<char>.FromChars (lexed.ToCharArray ())
+
+let evalIfDefExpression startPos isFeatureSupported args (lookup:string->bool) (lexed:string) =
+    let lexbuf          = LexBuffer<char>.FromChars (isFeatureSupported, lexed.ToCharArray ())
     lexbuf.StartPos     <- startPos
     lexbuf.EndPos       <- startPos
     let tokenStream     = FSharp.Compiler.PPLexer.tokenstream args
-
     let expr            = FSharp.Compiler.PPParser.start tokenStream lexbuf
-
     LexerIfdefEval lookup expr
 
 }
@@ -608,7 +607,7 @@ rule token args skip = parse
    { let m = lexbuf.LexemeRange   
      let lookup id = List.contains id args.defines
      let lexed = lexeme lexbuf
-     let isTrue = evalIfDefExpression lexbuf.StartPos args lookup lexed
+     let isTrue = evalIfDefExpression lexbuf.StartPos lexbuf.SupportsFeature args lookup lexed
      args.ifdefStack := (IfDefIf,m) :: !(args.ifdefStack)
      
      // Get the token; make sure it starts at zero position & return

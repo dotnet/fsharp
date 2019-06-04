@@ -108,7 +108,7 @@ type public Fsc () as this =
             for item in embeddedFiles do
                 builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
-        builder.AppendSwitchIfNotNull("--langVersion:", langVersion)
+        builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         // NoFramework
         if noFramework then
             builder.AppendSwitch("--noframework")

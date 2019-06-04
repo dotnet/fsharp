@@ -28,6 +28,7 @@ open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Lexhelp
@@ -1735,7 +1736,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     let os = System.Text.StringBuilder()
                     OutputPhasedDiagnostic os err flattenErrors suggestNames
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
-        
+
             relatedErrors |> List.iter OutputRelatedError
 
         match err with
@@ -1833,82 +1834,6 @@ let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
         else path 
     with 
         :? System.ArgumentException -> path  
-
-
-//------------------------------------------------------------------------------------------------------------------
-// Language version command line switch
-//------------------------------------------------------------------------------------------------------------------
-// Add your features to this List - in code use languageVersion.SupportsFeature(LanguageFeatures.yourFeature) 
-// a return value of false means your feature is not supported by the user's language selection
-// All new language features added from now on must be protected by this.
-// Note:
-//   *  The fslang design process will require a decision about feature name and whether it is required.
-//   *  When a feature is assigned a release language, we will scrub the code of feature references and apply
-//      the Release Language version.
-
-/// LanguageFeature enumeration
-[<RequireQualifiedAccess>]
-type LanguageFeature =
-    | LanguageVersion46 = 0
-    | LanguageVersion47 = 1
-    | Nullness = 1000
-    | ScriptingPackageManagement = 1001
-
-/// LanguageVersion management
-type LanguageVersion (specifiedVersion) =
-
-    // When we increment language versions here preview is higher than current RTM version
-    static let languageVersion46 = 4.6m
-    static let languageVersion47 = 4.7m
-
-    static let previewVersion = languageVersion47       // Language version when preview specified
-    static let defaultVersion = languageVersion46       // Language version when default specified
-    static let latestVersion = defaultVersion           // Language version when latest specified
-    static let latestMajorVersion = languageVersion46   // Language version when latestmajor specified
-
-    static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| latestVersion |]
-
-    static let features = dict [|
-        // Add new LanguageVersions here ...
-        LanguageFeature.LanguageVersion47, 4.7m
-        LanguageFeature.LanguageVersion46, 4.6m
-        LanguageFeature.Nullness, previewVersion
-        LanguageFeature.ScriptingPackageManagement, previewVersion
-        // Add new LanguageFeatures here ...
-        |]
-
-    static let dumpAllowedValues () =
-        printfn "%s" (FSComp.SR.optsSupportedLangVersions())
-        for v in validOptions do printfn "%s" v
-        for v in languageVersions |> Seq.sort do
-            let label = if v = defaultVersion || v = latestVersion then "(Default)" else ""
-            printf "%M %s" v label
-        exit 0
-        0m
-
-    let specified =
-        match specifiedVersion with
-        | "?" -> dumpAllowedValues()
-        | "preview" -> previewVersion
-        | "default" -> latestVersion
-        | "latest" -> latestVersion
-        | "latestmajor" -> latestMajorVersion
-        | _ ->
-            let raiseError () = error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
-            match Decimal.TryParse(specifiedVersion) with
-            | true, v ->
-                if languageVersions.Contains(v) then v
-                else raiseError (); 0m
-            | _ ->
-                raiseError ()
-                0m
-
-    /// Check if this feature is supported by the selected langversion
-    member __.SupportsFeature featureId =
-        match features.TryGetValue featureId with
-        | true, v -> v <= specified
-        | false, _ -> false
 
 //----------------------------------------------------------------------------
 // Configuration
@@ -3556,8 +3481,8 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
        if List.exists (Filename.checkSuffix lower) (FSharpSigFileSuffixes@FSharpImplFileSuffixes) then  
             if not(FileSystem.SafeExists filename) then
                 error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
-            // bug 3155: if the file name is indirect, use a full path
-            let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(filename, tcConfig.inputCodePage, retryLocked) 
+            let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
+            let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(isFeatureSupported, filename, tcConfig.inputCodePage, retryLocked) 
             ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
        else error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None 
@@ -5080,11 +5005,13 @@ module private ScriptPreprocessClosure =
             | CodeContext.CompilationAndEvaluation -> ["INTERACTIVE"]
             | CodeContext.Compilation -> ["COMPILED"]
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(sourceText) 
-        
+
+        let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText) 
+
         let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
         ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger) 
-          
+
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig 
            (legacyReferenceResolver, defaultFSharpBinariesDir, 

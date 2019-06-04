@@ -78,6 +78,12 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/sr.fs">
       <Link>ErrorText/sr.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LanguageFeatures.fsi">
+      <Link>Driver\LanguageFeatures.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LanguageFeatures.fs">
+      <Link>Driver\LanguageFeatures.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/prim-lexing.fsi">
       <Link>LexYaccRuntime/prim-lexing.fsi</Link>
     </Compile>

@@ -86,6 +86,12 @@
     <Compile Include="..\sr.fs">
       <Link>ErrorText\sr.fs</Link>
     </Compile>
+    <Compile Include="..\LanguageFeatures.fsi">
+      <Link>Driver\LanguageFeatures.fsi</Link>
+    </Compile>
+    <Compile Include="..\LanguageFeatures.fs">
+      <Link>Driver\LanguageFeatures.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\prim-lexing.fsi">
       <Link>LexYaccRuntime\prim-lexing.fsi</Link>
     </Compile>
