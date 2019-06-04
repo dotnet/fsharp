@@ -2434,7 +2434,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let legacyReferenceResolver = 
         match legacyReferenceResolver with 
-        | None -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+        | None -> SimulatedMSBuildReferenceResolver.getResolver()
         | Some rr -> rr
 
     let tcConfigB = 
