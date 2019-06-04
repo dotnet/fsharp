@@ -77,24 +77,29 @@ module ParsedInputVisitorHelpers =
 
     type SynMeasure with
 
-        member this.Range defaultM =
+        member this.PossibleRange =
             match this with
             | SynMeasure.Named (range=m) -> m
             | SynMeasure.Product (range=m) -> m
             | SynMeasure.Seq (range=m) -> m
             | SynMeasure.Divide (range=m) -> m
             | SynMeasure.Power (range=m) -> m
-            | SynMeasure.One -> defaultM
+            | SynMeasure.One -> range0
             | SynMeasure.Anon (range=m) -> m
             | SynMeasure.Var (range=m) -> m
 
     type SynRationalConst with
 
-        member this.Range defaultM =
+        member this.PossibleRange =
             match this with
-            | SynRationalConst.Integer _ -> defaultM
+            | SynRationalConst.Integer _ -> range0
             | SynRationalConst.Rational (range=m) -> m
-            | SynRationalConst.Negate rationalConst -> rationalConst.Range defaultM
+            | SynRationalConst.Negate rationalConst -> rationalConst.PossibleRange
+
+    type SynConst with
+
+        member this.PossibleRange =
+            this.Range range0
 
 [<AbstractClass>]
 type ParseInputVisitor<'T> (p: pos) =
@@ -672,7 +677,7 @@ type ParseInputVisitor<'T> (p: pos) =
 
             let measure =
                 [measure]
-                |> mapVisitList (fun x -> x.Range range0) this.VisitMeasure
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitMeasure
 
             (sconst @ measure)
             |> tryVisitList
@@ -689,27 +694,27 @@ type ParseInputVisitor<'T> (p: pos) =
 
         | SynMeasure.Product (measure1, measure2, _) ->
             [measure1; measure2]
-            |> mapVisitList (fun x -> x.Range range0) this.VisitMeasure
+            |> mapVisitList (fun x -> x.PossibleRange) this.VisitMeasure
             |> tryVisitList
 
         | SynMeasure.Seq (measures, _) ->
             measures
-            |> mapVisitList (fun x -> x.Range range0) this.VisitMeasure
+            |> mapVisitList (fun x -> x.PossibleRange) this.VisitMeasure
             |> tryVisitList
 
         | SynMeasure.Divide (measure1, measure2, _) ->
             [measure1; measure2]
-            |> mapVisitList (fun x -> x.Range range0) this.VisitMeasure
+            |> mapVisitList (fun x -> x.PossibleRange) this.VisitMeasure
             |> tryVisitList
 
         | SynMeasure.Power (measure, rationalCost, _) ->
             let measure =
                 [measure]
-                |> mapVisitList (fun x -> x.Range range0) this.VisitMeasure
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitMeasure
 
             let rationalCost =
                 [rationalCost]
-                |> mapVisitList (fun x -> x.Range range0) this.VisitRationalConst
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitRationalConst
 
             (measure @ rationalCost)
             |> tryVisitList
@@ -912,7 +917,37 @@ type ParseInputVisitor<'T> (p: pos) =
             (ty @ constraints)
             |> tryVisitList
 
-     //   | SynType.
+        | SynType.HashConstraint (ty, _) ->
+            ty
+            |> tryVisit ty.Range this.VisitType
+
+        | SynType.MeasureDivide (dividendTy, divisorTy, _) ->
+            let dividendTy =
+                [dividendTy]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let divisorTy =
+                [divisorTy]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            (dividendTy @ divisorTy)
+            |> tryVisitList
+
+        | SynType.MeasurePower (measureTy, rationalConst, _) ->
+            let measureTy =
+                [measureTy]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let rationalConst =
+                [rationalConst]
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitRationalConst
+
+            (measureTy @ rationalConst)
+            |> tryVisitList
+
+        | SynType.StaticConstant (sconst, _) ->
+            sconst
+            |> tryVisit sconst.PossibleRange this.VisitConst
 
         | _ ->
             None
