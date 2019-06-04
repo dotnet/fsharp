@@ -7,14 +7,13 @@
 module Tests.Service.ServiceUntypedParseTests
 #endif
 
-open System
 open System.IO
-open System.Text
-open NUnit.Framework
+open FsUnit
+open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
-open Tests.Service
+open NUnit.Framework
 
 let [<Literal>] private Marker = "(* marker *)"
 
@@ -100,3 +99,53 @@ type T =
 type T =
     { F: int }
 """ lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
+
+
+
+[<Test>]
+let ``Attribute lists`` () =
+    let source = """
+[<A>]
+let foo1 = ()
+
+[<A>]
+[<B;C>]
+let foo2 = ()
+
+[<A>] [<B;C>]
+let foo3 = ()
+
+[<A
+let foo4 = ()
+
+[<A;
+let foo5 = ()
+
+[<
+let foo6 = ()
+
+[<>]
+let foo7 = ()
+"""
+    match parseSourceCode ("test", source) with
+    | Some (ParsedInput.ImplFile (ParsedImplFileInput (_,_,_,_,_,[SynModuleOrNamespace (_,_,_,decls,_,_,_,_)],_))) ->
+        decls |> List.map (fun decl ->
+            match decl with
+            | SynModuleDecl.Let (_,[Binding(_,_,_,_,attributeLists,_,_,_,_,_,_,_)],_) ->
+                attributeLists |> List.map (fun list ->
+                    let r = list.Range
+
+                    list.Attributes.Length,
+                    ((r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)))
+
+            | _ -> failwith "Could not get binding")
+        |> shouldEqual
+            [ [ (1, ((2,  0),  (2, 5))) ]
+              [ (1, ((5,  0),  (5, 5))); (2, ((6, 0), (6, 7))) ]
+              [ (1, ((9,  0),  (9, 5))); (2, ((9, 6), (9, 13))) ]
+              [ (1, ((12, 0), (13, 0))) ]
+              [ (1, ((15, 0), (15, 4))) ]
+              [ (0, ((18, 0), (18, 2))) ]
+              [ (0, ((21, 0), (21, 4))) ] ]
+
+    | _ -> failwith "Could not get module decls"

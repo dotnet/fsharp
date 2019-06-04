@@ -62,7 +62,7 @@ module Driver =
 #if CROSS_PLATFORM_COMPILER
             SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
 #else
-            MSBuildReferenceResolver.Resolver
+            LegacyMSBuildReferenceResolver.getResolver()
 #endif
 
         // This is the only place where ReduceMemoryFlag.No is set. This is because fsc.exe is not a long-running process and

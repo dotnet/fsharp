@@ -68,6 +68,7 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Actions:"
     Write-Host "  -restore                  Restore packages (short: -r)"
+    Write-Host "  -norestore                Don't restore packages"
     Write-Host "  -build                    Build main solution (short: -b)"
     Write-Host "  -rebuild                  Rebuild main solution"
     Write-Host "  -pack                     Build NuGet packages, VS insertion manifests and installer"
@@ -106,6 +107,7 @@ function Process-Arguments() {
        Print-Usage
        exit 0
     }
+    $script:nodeReuse = $False;
 
     if ($testAll) {
         $script:testDesktop = $True
@@ -143,7 +145,7 @@ function Process-Arguments() {
 }
 
 function Update-Arguments() {
-    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc.exe")) {
+    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe")) {
         $script:bootstrap = $True
     }
 }
@@ -177,7 +179,6 @@ function BuildSolution() {
         /p:Publish=$publish `
         /p:ContinuousIntegrationBuild=$ci `
         /p:OfficialBuildId=$officialBuildId `
-        /p:BootstrapBuildPath=$bootstrapDir `
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
@@ -211,7 +212,7 @@ function UpdatePath() {
 }
 
 function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\fsi.exe"
+    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\publish\fsi.exe"
 
     # Only verify versions on CI or official build
     if ($ci -or $official) {
@@ -270,6 +271,7 @@ try {
 
     if ($testDesktop) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
@@ -277,6 +279,7 @@ try {
 
     if ($testCoreClr) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework

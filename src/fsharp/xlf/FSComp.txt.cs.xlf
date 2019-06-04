@@ -324,7 +324,7 @@
       </trans-unit>
       <trans-unit id="buildImplementationAlreadyGivenDetail">
         <source>An implementation of file or module '{0}' has already been given. Compilation order is significant in F# because of type inference. You may need to adjust the order of your files to place the signature file before the implementation. In Visual Studio files are type-checked in the order they appear in the project file, which can be edited manually or adjusted using the solution explorer.</source>
-        <target state="translated">Implementace souboru nebo modulu {0} už je zadaná. V F# záleží na pořadí kompilace, a to kvůli odvození typů proměnných. Pořadí souborů můžete upravit a podpisový soubor umístit před implementaci. Ve Visual Studiu se typ souborů kontroluje v tom pořadí, ve kterém se soubory objeví v souboru projektu, který se dá upravit ručně nebo pomocí Průzkumníka řešení.</target>
+        <target state="translated">Implementace souboru nebo modulu {0} už je zadaná. V F# záleží na pořadí kompilace, a to kvůli odvození typů proměnných. Pořadí souborů můžete upravit a podpisový soubor umístit před implementaci. V sadě Visual Studio se typ souborů kontroluje v tom pořadí, ve kterém se soubory objeví v souboru projektu, který se dá upravit ručně nebo pomocí Průzkumníka řešení.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildImplementationAlreadyGiven">
@@ -4469,7 +4469,7 @@
       </trans-unit>
       <trans-unit id="optsTargetProfile">
         <source>Specify target framework profile of this assembly. Valid values are mscorlib, netcore or netstandard. Default - mscorlib</source>
-        <target state="translated">Zadejte profil cílového rozhraní tohoto sestavení. Platné hodnoty jsou mscorlib, netcore nebo netstandard. Výchozí je mscorlib.</target>
+        <target state="translated">Zadejte profil cílové architektury tohoto sestavení. Platné hodnoty jsou mscorlib, netcore nebo netstandard. Výchozí je mscorlib.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmitDebugInfoInQuotations">
@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Používá se místo výrazu let u hodnot, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
+        <target state="translated">Používá se místo let pro hodnoty, které implementují IDisposable.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Následující členy nemají žádnou implementaci: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Následující členy nemají žádnou implementaci: {0} Všechny členy rozhraní je potřeba implementovat a uvést pod příslušnou deklarací interface, třeba takto: interface ... with member ...</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Následující členy nemají žádnou implementaci (některé výsledky jsou vynechané): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Následující členy nemají žádnou implementaci (některé výsledky jsou vynechané): {0} Všechny členy rozhraní je potřeba implementovat a uvést pod příslušnou deklarací interface, třeba takto: interface ... with member ...</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

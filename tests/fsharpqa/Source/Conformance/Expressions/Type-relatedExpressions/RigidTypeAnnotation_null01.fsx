@@ -7,7 +7,7 @@
 // expr : ty
 //
 // Misc test on 'null'
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 let a = null : string

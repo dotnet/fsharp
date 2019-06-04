@@ -2,25 +2,20 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open System
-open System.Diagnostics
-open System.Collections.Generic
-open FSharp.Compiler
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.Internal.Library 
         
 #if !FX_NO_INDENTED_TEXT_WRITER
 /// Capture information about an interface in ASTs
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type internal InterfaceData =
+type InterfaceData =
     | Interface of SynType * SynMemberDefns option
     | ObjExpr of SynType * SynBinding list
     member Range : range
     member TypeParameters : string[]
 
-module internal InterfaceStubGenerator =
+module InterfaceStubGenerator =
 
     /// Get members in the decreasing order of inheritance chain
     val getInterfaceMembers : FSharpEntity -> seq<FSharpMemberOrFunctionOrValue * seq<FSharpGenericParameter * FSharpType>>

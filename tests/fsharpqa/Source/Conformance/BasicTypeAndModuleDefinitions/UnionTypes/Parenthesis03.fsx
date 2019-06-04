@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypesAndModules #Unions 
 // Regression test for FSHARP1.0:4787 ("Discriminated union constructors as first class values")
-//<Expect status="success"></Expect>
+//<Expects status="success"></Expects>
 
 type A =
     | A1 of int * int

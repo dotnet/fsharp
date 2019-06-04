@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Usado ao invés de let para valores que necessitam que Dispose seja chamado para liberar recursos.</target>
+        <target state="translated">Used em vez de let para valores que implementam IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Implementação não foi concedida para os membros: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Implementação não concedida para os membros: {0} Todos os membros de interface devem ser implementados e listados em uma declaração de 'interface' apropriada, por exemplo, 'interface ... com membro ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Implementação não concedida para os membros (alguns resultados omitidos): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Implementação não concedida para os membros (alguns resultados omitidos): {0} Todos os membros de interface devem ser implementados e listados em uma declaração de 'interface' apropriada, por exemplo, 'interface ... com o membro...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

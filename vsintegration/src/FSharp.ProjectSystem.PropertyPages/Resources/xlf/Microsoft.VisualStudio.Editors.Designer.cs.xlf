@@ -88,7 +88,7 @@ The application may throw security exceptions when it attempts to perform action
 Click OK to ignore and continue. Click CANCEL to choose a different output path.</source>
         <target state="translated">Cesta výstupu není důvěryhodná.
 Při pokusech o provedení akcí vyžadujících úplný vztah důvěryhodnosti může v aplikaci docházet k bezpečnostním výjimkám.
-Pokud chcete tento stav ignorovat a pokračovat v operaci , klikněte na OK. Pokud chcete vybrat jinou cestu výstupu, klikněte na Zrušit.</target>
+Pokud chcete tento stav ignorovat a pokračovat v operaci, klikněte na OK. Pokud chcete vybrat jinou cestu výstupu, klikněte na Zrušit.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_BrowseText">
@@ -2840,7 +2840,7 @@ Chcete aktualizovat hodnotu v souboru .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
         <source>To enable client application services, you must set the Target Framework for your application to .NET Framework 3.5 or later. In C#, you can do this on the Application property page. In Visual Basic, you can do this one the Compile property page by clicking Advanced Compile Options.</source>
-        <target state="translated">Abyste mohli povolit klientské aplikační služby, musíte pro cílové rozhraní .NET Framework vaší aplikace vybrat .NET Framework 3.5 nebo novější. V jazyce C# to můžete udělat na stránce Vlastnosti aplikace. Ve Visual Basicu zase kliknutím na Další možnosti kompilace na stránce Vlastnosti kompilace.</target>
+        <target state="translated">Abyste mohli povolit klientské aplikační služby, musíte jako cílovou architekturu vaší aplikace vybrat .NET Framework 3.5 nebo novější. V jazyce C# to můžete udělat na stránce Vlastnosti aplikace. Ve Visual Basicu zase kliknutím na Další možnosti kompilace na stránce Vlastnosti kompilace.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">

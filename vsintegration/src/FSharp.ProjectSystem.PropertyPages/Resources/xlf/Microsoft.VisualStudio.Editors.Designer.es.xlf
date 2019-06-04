@@ -108,7 +108,7 @@ Haga clic en ACEPTAR para pasar esto por alto y continuar. Haga clic en CANCELAR
       </trans-unit>
       <trans-unit id="PPG_KeyFileBrowseText">
         <source>&lt;Browse...&gt;</source>
-        <target state="translated">&lt;Examinar... &gt;</target>
+        <target state="translated">&lt;Examinar...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ComboBoxSelect_None">

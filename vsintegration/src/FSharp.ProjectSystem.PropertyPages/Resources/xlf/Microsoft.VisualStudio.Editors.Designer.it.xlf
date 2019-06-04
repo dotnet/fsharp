@@ -507,7 +507,7 @@ Se si modifica questa impostazione, verranno ripristinate le impostazioni in tut
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_ZoneDefault">
         <source>(Zone Default)</source>
-        <target state="translated">(Predefinita dell'area)</target>
+        <target state="translated">(Predefinita della zona)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_Included">
@@ -522,7 +522,7 @@ Se si modifica questa impostazione, verranno ripristinate le impostazioni in tut
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_FullTrustToolTip">
         <source>The application will require elevated permissions to run in the selected zone. Click the help link above for more info.</source>
-        <target state="translated">Per eseguire l'applicazione nell'area selezionata, sono necessarie autorizzazioni elevate. Per altre informazioni, fare clic sul precedente collegamento della Guida.</target>
+        <target state="translated">Per eseguire l'applicazione nella zona selezionata, sono necessarie autorizzazioni elevate. Per altre informazioni, fare clic sul collegamento della Guida indicato sopra.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_BadPermissionToolTip">
@@ -562,7 +562,7 @@ Se si modifica questa impostazione, verranno ripristinate le impostazioni in tut
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_SecurityPermissionCannotBeExcluded">
         <source>The SecurityPermission must be included in your application with the Execute flag set or your application will not run. Mark this permission as "Zone Default" or "Include."</source>
-        <target state="translated">Per eseguire l'applicazione, SecurityPermission deve essere incluso nell'applicazione con il flag impostato su Execute. Contrassegnare l'autorizzazione come "Predefinita dell'area" o "Includi".</target>
+        <target state="translated">Per eseguire l'applicazione, SecurityPermission deve essere incluso nell'applicazione con il flag impostato su Execute. Contrassegnare l'autorizzazione come "Predefinita della zona" o "Includi".</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_ExecuteCannotBeExcluded">
@@ -2930,7 +2930,7 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
         <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
-        <target state="translated">Non è possibile eseguire l'applicazione nell'area selezionata perché è richiesta un'autorizzazione elevata. Per altre informazioni, fare clic sul precedente collegamento della Guida.</target>
+        <target state="translated">Non è possibile eseguire l'applicazione nella zona selezionata perché è richiesta un'autorizzazione elevata. Per altre informazioni, fare clic sul collegamento della Guida indicato sopra.</target>
         <note />
       </trans-unit>
     </body>

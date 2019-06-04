@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:2087
 // Function parameter attributes are ignored and do not appear in the resulting assembly
 // Attribute is placed on a let-binding function definition
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 open System.Reflection
 

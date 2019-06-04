@@ -32,9 +32,9 @@
 
   <!-- SDK targets override -->
   <PropertyGroup>
-    <_FSharpBuildTargetFramework Condition="'$(FSharpTestCompilerVersion)' == 'net40'">net472</_FSharpBuildTargetFramework>
-    <_FSharpBuildTargetFramework Condition="'$(FSharpTestCompilerVersion)' == 'coreclr'">netcoreapp2.1</_FSharpBuildTargetFramework>
-    <_FSharpBuildBinPath>$(MSBuildThisFileDirectory)artifacts\bin\FSharp.Build\$(Configuration)\$(_FSharpBuildTargetFramework)</_FSharpBuildBinPath>
+    <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'!='Core'">net472</_FSharpBuildTargetFramework>
+    <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'=='Core'">netcoreapp2.1</_FSharpBuildTargetFramework>
+    <_FSharpBuildBinPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\$(_FSharpBuildTargetFramework)</_FSharpBuildBinPath>
 
     <FSharpBuildAssemblyFile>$(_FSharpBuildBinPath)\FSharp.Build.dll</FSharpBuildAssemblyFile>
 

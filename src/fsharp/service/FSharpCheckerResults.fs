@@ -149,7 +149,6 @@ type internal TypeCheckInfo
            sFallback: NameResolutionEnv,
            loadClosure : LoadClosure option,
            reactorOps : IReactorOperations,
-           checkAlive : (unit -> bool),
            textSnapshotInfo:obj option,
            implFileOpt: TypedImplFile option,
            openDeclarations: OpenDeclaration[]) = 
@@ -925,7 +924,7 @@ type internal TypeCheckInfo
                         |> Option.bind (fun x -> x.ParseTree)
                         |> Option.map (fun parsedInput -> UntypedParseImpl.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
                     let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,isAttributeApplication,checkAlive))
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,isAttributeApplication))
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarations: '%s'" msg)
                 FSharpDeclarationListInfo.Error msg)
@@ -1665,7 +1664,6 @@ module internal ParseAndCheckFile =
            backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
            reactorOps: IReactorOperations,
            // Used by 'FSharpDeclarationListInfo' to check the IncrementalBuilder is still alive.
-           checkAlive : (unit -> bool),
            textSnapshotInfo : obj option,
            userOpName: string,
            suggestNamesForErrors: bool) = async {
@@ -1756,7 +1754,6 @@ module internal ParseAndCheckFile =
                               tcEnvAtEnd.NameEnv,
                               loadClosure,
                               reactorOps,
-                              checkAlive,
                               textSnapshotInfo,
                               List.tryHead implFiles,
                               sink.GetOpenDeclarations())     
@@ -1790,29 +1787,8 @@ type FSharpCheckFileResults
          reactorOpsX:IReactorOperations, 
          keepAssemblyContents: bool) =
 
-    // This may be None initially, or may be set to None when the object is disposed or finalized
+    // This may be None initially
     let mutable details = match scopeOptX with None -> None | Some scopeX -> Some (scopeX, builderX, reactorOpsX)
-
-    // Increment the usage count on the IncrementalBuilder. We want to keep the IncrementalBuilder and all associated
-    // resources and type providers alive for the duration of the lifetime of this object.
-    let decrementer = 
-        match details with 
-        | Some (_,builderOpt,_) -> IncrementalBuilder.KeepBuilderAlive builderOpt
-        | _ -> { new System.IDisposable with member x.Dispose() = () } 
-
-    let mutable disposed = false
-
-    let dispose() = 
-       if not disposed then 
-           disposed <- true 
-           match details with 
-           | Some (_,_,reactor) -> 
-               // Make sure we run disposal in the reactor thread, since it may trigger type provider disposals etc.
-               details <- None
-               reactor.EnqueueOp ("GCFinalizer","FSharpCheckFileResults.DecrementUsageCountOnIncrementalBuilder", filename, fun ctok -> 
-                   RequireCompilationThread ctok
-                   decrementer.Dispose())
-           | _ -> () 
 
     // Run an operation that needs to access a builder and be run in the reactor thread
     let reactorOp userOpName opName dflt f = 
@@ -1820,12 +1796,8 @@ type FSharpCheckFileResults
         match details with
         | None -> 
             return dflt
-        | Some (_, Some builder, _) when not builder.IsAlive -> 
-            System.Diagnostics.Debug.Assert(false,"unexpected dead builder") 
-            return dflt
-        | Some (scope, builderOpt, reactor) -> 
+        | Some (scope, _, reactor) -> 
             // Increment the usage count to ensure the builder doesn't get released while running operations asynchronously. 
-            use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             let! res = reactor.EnqueueAndAwaitOpAsync(userOpName, opName, filename, fun ctok ->  f ctok scope |> cancellable.Return)
             return res
       }
@@ -1836,14 +1808,15 @@ type FSharpCheckFileResults
         | None -> dflt()
         | Some (scope, _builderOpt, _ops) -> f scope
 
-    // At the moment we only dispose on finalize - we never explicitly dispose these objects. Explicitly disposing is not
-    // really worth much since the underlying project builds are likely to still be in the incrementalBuilder cache.
-    override __.Finalize() = dispose() 
-
     member __.Errors = errors
 
     member __.HasFullTypeCheckInfo = details.IsSome
     
+    member info.TryGetCurrentTcImports () =
+        match builderX with
+        | Some builder -> builder.TryGetCurrentTcImports ()
+        | _ -> None
+
     /// Intellisense autocompletions
     member __.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
@@ -1986,12 +1959,12 @@ type FSharpCheckFileResults
             RequireCompilationThread ctok
             scope.IsRelativeNameResolvableFromSymbol(pos, plid, symbol))
     
-    member __.GetDisplayEnvForPos(pos: pos) : Async<DisplayEnv option> =
+    member __.GetDisplayContextForPos(pos: pos) : Async<FSharpDisplayContext option> =
         let userOpName = "CodeLens"
         reactorOp userOpName "GetDisplayContextAtPos" None (fun ctok scope -> 
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos pos
-            Some nenv.DisplayEnv)
+            Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))
             
     member __.ImplementationFile =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
@@ -2046,7 +2019,7 @@ type FSharpCheckFileResults
         let tcFileInfo = 
             TypeCheckInfo(tcConfig, tcGlobals, ccuSigForFile, thisCcu, tcImports, tcAccessRights, 
                           projectFileName, mainInputFileName, sResolutions, sSymbolUses, 
-                          sFallback, loadClosure, reactorOps, (fun () -> builder.IsAlive),
+                          sFallback, loadClosure, reactorOps,
                           None, implFileOpt, openDeclarations) 
                 
         let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
@@ -2079,7 +2052,7 @@ type FSharpCheckFileResults
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, sourceText, mainInputFileName, projectFileName, tcConfig, tcGlobals, tcImports, 
                      tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
-                     (fun () -> builder.IsAlive), textSnapshotInfo, userOpName, suggestNamesForErrors)
+                     textSnapshotInfo, userOpName, suggestNamesForErrors)
             match tcFileInfo with 
             | Result.Error ()  ->  
                 return FSharpCheckFileAnswer.Aborted                
@@ -2245,7 +2218,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     (parseResults, sourceText, filename, "project",
                      tcConfig, tcGlobals, tcImports,  tcState, 
                      Map.empty, Some loadClosure, backgroundDiagnostics,
-                     reactorOps, (fun () -> true), None, userOpName, suggestNamesForErrors)
+                     reactorOps, None, userOpName, suggestNamesForErrors)
 
             return
                 match tcFileInfo with 

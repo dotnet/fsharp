@@ -1586,7 +1586,7 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
             // results in duplication of textual variables. So we ensure we never record two name resolutions
             // for the same identifier at the same location.
             if allowedRange m then
-                if replace then 
+                if replace then
                     capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
                     capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
                 else
