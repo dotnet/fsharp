@@ -11,8 +11,7 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
     <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
-    <ProtoOutputPath Condition="'$(OS)' != 'Unix'">$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
-    <ProtoOutputPath Condition="'$(OS)' == 'Unix'">$(ArtifactsDir)/fsc/Proto/netcoreapp2.1</ProtoOutputPath>
+    <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
   </PropertyGroup>
@@ -96,10 +95,10 @@
 
   <!-- SDK targets override -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
-    <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
-    <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
-    <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
-    <FSharpOverridesTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+    <FSharpTargetsPath>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <FSharpPropsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
 </Project>
