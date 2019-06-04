@@ -44,7 +44,7 @@ let stripFromFileExpectations source =
                 else expect.Replace(content, "")
 
             let rdr = XmlReader.Create(new StringReader(nocontentxpect))
-            let mutable element = { status="success";  id = ""; span = ""; pattern = content; matched = false; line=nocontentxpect }
+            let mutable element = { status="success";  id = ""; span = ""; pattern = content; matched = false; line=expect }
             let mutable insideExpects = false
             let mutable foundOne = false
             try
