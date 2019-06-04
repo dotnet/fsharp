@@ -12,6 +12,214 @@ open FSharp.Compiler
 open FSharp.Compiler.Text
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Ast
+open FSharp.Compiler.Range
+
+[<AutoOpen>]
+module SyntaxTreeHelpers =
+
+    let isZeroRange (r: range) =
+        posEq r.Start r.End
+
+    let tryVisit p m visit item =
+        if rangeContainsPos m p && not (isZeroRange m) then
+            visit item
+        else
+            None
+
+    let tryVisitList p xs : 'T option =
+        xs
+        |> List.sortWith (fun (getRange1, _) (getRange2, _)->
+            let r1 = getRange1 ()
+            let r2 = getRange2 ()
+            rangeOrder.Compare (r1, r2)
+        )
+        |> List.tryPick (fun (getRange, visit) ->
+            let r = getRange ()
+            if rangeContainsPos r p && not (isZeroRange r) then
+                visit ()
+            else
+                None
+        )
+        |> Option.orElseWith (fun () ->
+            xs
+            |> List.tryPick (fun (getRange, visit) ->
+                let r = getRange ()
+                if posGt p r.Start && not (isZeroRange r) then
+                    visit ()
+                else
+                    None
+            )
+        )
+
+    let mapVisitList getRange visit xs =
+        xs
+        |> List.map (fun x -> ((fun () -> getRange x), fun () -> visit x))
+
+    type ParsedHashDirective with
+
+        member this.Range =
+            match this with
+            | ParsedHashDirective (_, _, m) -> m
+
+    type SynTypeConstraint with
+
+        member this.Range =
+            match this with
+            | SynTypeConstraint.WhereTyparIsValueType (_, m) -> m
+            | SynTypeConstraint.WhereTyparIsReferenceType (_, m) -> m
+            | SynTypeConstraint.WhereTyparIsUnmanaged (_, m) -> m
+            | SynTypeConstraint.WhereTyparSupportsNull (_, m) -> m
+            | SynTypeConstraint.WhereTyparIsComparable (_, m) -> m
+            | SynTypeConstraint.WhereTyparIsEquatable (_, m) -> m
+            | SynTypeConstraint.WhereTyparDefaultsToType (_, _, m) -> m
+            | SynTypeConstraint.WhereTyparSubtypeOfType (_, _, m) -> m
+            | SynTypeConstraint.WhereTyparSupportsMember (_, _, m) -> m
+            | SynTypeConstraint.WhereTyparIsEnum (_, _, m) -> m
+            | SynTypeConstraint.WhereTyparIsDelegate (_, _, m) -> m
+
+    type SynMemberSig with
+
+        member this.Range =
+            match this with
+            | SynMemberSig.Member (_, _, m) -> m
+            | SynMemberSig.Interface (_, m) -> m
+            | SynMemberSig.Inherit (_, m) -> m
+            | SynMemberSig.ValField (_, m) -> m
+            | SynMemberSig.NestedType (_, m) -> m
+
+    type SynValSig with
+
+        member this.Range =
+            match this with
+            | ValSpfn (_, _, _, _, _, _, _, _, _, _, m) -> m
+
+    type SynField with
+
+        member this.Range =
+            match this with
+            | Field (_, _, _, _, _, _, _, m) -> m
+
+    type SynTypeDefnSig with
+
+        member this.Range =
+            match this with
+            | TypeDefnSig (_, _, _, m) -> m
+
+    type SynSimplePat with
+
+        member this.Range =
+            match this with
+            | SynSimplePat.Id (range=m) -> m
+            | SynSimplePat.Typed (range=m) -> m
+            | SynSimplePat.Attrib (range=m) -> m
+
+    type SynMeasure with
+
+        member this.PossibleRange =
+            match this with
+            | SynMeasure.Named (range=m) -> m
+            | SynMeasure.Product (range=m) -> m
+            | SynMeasure.Seq (range=m) -> m
+            | SynMeasure.Divide (range=m) -> m
+            | SynMeasure.Power (range=m) -> m
+            | SynMeasure.One -> range0
+            | SynMeasure.Anon (range=m) -> m
+            | SynMeasure.Var (range=m) -> m
+
+    type SynRationalConst with
+
+        member this.PossibleRange =
+            match this with
+            | SynRationalConst.Integer _ -> range0
+            | SynRationalConst.Rational (range=m) -> m
+            | SynRationalConst.Negate rationalConst -> rationalConst.PossibleRange
+
+    type SynConst with
+
+        member this.PossibleRange =
+            this.Range range0
+
+    type SynArgInfo with
+
+        member this.PossibleRange =
+            match this with
+            | SynArgInfo (attribs, _, idOpt) ->
+                let ranges =
+                    attribs
+                    |> List.map (fun x -> x.Range)
+                    |> List.append (match idOpt with | Some id -> [id.idRange] | _ -> [])
+
+                match ranges with
+                | [] -> range0
+                | _ ->
+                    ranges
+                    |> List.reduce unionRanges
+
+    type SynValInfo with
+
+        member this.PossibleRange =
+            match this with
+            | SynValInfo (argInfos, argInfo) ->
+                let ranges =
+                    argInfos
+                    |> List.reduce (@)
+                    |> List.append [argInfo]
+                    |> List.map (fun x -> x.PossibleRange)
+                    |> List.filter (fun x -> not (isZeroRange x))
+
+                match ranges with
+                | [] -> range0
+                | _ ->
+                    ranges
+                    |> List.reduce unionRanges
+
+    type SynTypeDefnKind with
+
+        member this.PossibleRange =
+            match this with
+            | TyconUnspecified
+            | TyconClass
+            | TyconInterface
+            | TyconStruct
+            | TyconRecord
+            | TyconUnion
+            | TyconAbbrev
+            | TyconHiddenRepr
+            | TyconAugmentation
+            | TyconILAssemblyCode ->
+                range0
+            | TyconDelegate (ty, valInfo) ->
+                let valInfoRange = valInfo.PossibleRange
+                if isZeroRange valInfoRange then
+                    ty.Range
+                else
+                    unionRanges ty.Range valInfoRange
+
+    type SynTyparDecl with
+
+        member this.Range =
+            match this with
+            | TyparDecl (attribs, typar) ->
+                attribs
+                |> List.map (fun x -> x.Range)
+                |> List.append [typar.Range]
+                |> List.reduce unionRanges
+
+    type SynValTyparDecls with
+
+        member this.PossibleRange =
+            match this with
+            | SynValTyparDecls (typarDecls, _, constraints) ->
+                let ranges =
+                    typarDecls
+                    |> List.map (fun x -> x.Range)
+                    |> List.append (constraints |> List.map (fun x -> x.Range))
+
+                match ranges with
+                | [] -> range0
+                | _ ->
+                    ranges
+                    |> List.reduce unionRanges
 
 type ParsingConfig =
     {
@@ -137,75 +345,76 @@ type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: Sourc
 
     member this.TryFindNodeAsync (line: int, column: int) =
         async {
-            match! this.GetParseResultAsync () with
-            | Some input, _ ->
-                let mutable currentParent = None
-                let setCurrentParent node f =
-                    let prev = currentParent
-                    currentParent <- node
-                    let result = f ()
-                    currentParent <- prev
-                    result
-                return FSharp.Compiler.SourceCodeServices.AstTraversal.Traverse(Range.mkPos line column, input, { new FSharp.Compiler.SourceCodeServices.AstTraversal.AstVisitorBase<_>() with 
-                    member __.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
-                        let node = Some (SyntaxNode (SyntaxNodeKind.Expr expr, currentParent))
-                        setCurrentParent node (fun () -> defaultTraverse expr)
+            ()
+            //match! this.GetParseResultAsync () with
+            //| Some input, _ ->
+            //    let mutable currentParent = None
+            //    let setCurrentParent node f =
+            //        let prev = currentParent
+            //        currentParent <- node
+            //        let result = f ()
+            //        currentParent <- prev
+            //        result
+            //    return FSharp.Compiler.SourceCodeServices.AstTraversal.Traverse(Range.mkPos line column, input, { new FSharp.Compiler.SourceCodeServices.AstTraversal.AstVisitorBase<_>() with 
+            //        member __.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+            //            let node = Some (SyntaxNode (SyntaxNodeKind.Expr expr, currentParent))
+            //            setCurrentParent node (fun () -> defaultTraverse expr)
 
-                    member __.VisitModuleDecl(defaultTraverse, decl) =
-                        let node = Some (SyntaxNode (SyntaxNodeKind.ModuleDecl decl, currentParent))
-                        setCurrentParent node (fun () -> defaultTraverse decl)
+            //        member __.VisitModuleDecl(defaultTraverse, decl) =
+            //            let node = Some (SyntaxNode (SyntaxNodeKind.ModuleDecl decl, currentParent))
+            //            setCurrentParent node (fun () -> defaultTraverse decl)
 
-                    member __.VisitBinding (_, binding) =
-                        Some (SyntaxNode (SyntaxNodeKind.Binding binding, currentParent))
+            //        member __.VisitBinding (_, binding) =
+            //            Some (SyntaxNode (SyntaxNodeKind.Binding binding, currentParent))
 
-                    member __.VisitComponentInfo info =
-                        Some (SyntaxNode (SyntaxNodeKind.ComponentInfo info, currentParent))
+            //        member __.VisitComponentInfo info =
+            //            Some (SyntaxNode (SyntaxNodeKind.ComponentInfo info, currentParent))
 
-                    member __.VisitHashDirective m =
-                        Some (SyntaxNode (SyntaxNodeKind.HashDirective m, currentParent))
+            //        member __.VisitHashDirective m =
+            //            Some (SyntaxNode (SyntaxNodeKind.HashDirective m, currentParent))
 
-                    member __.VisitImplicitInherit (defaultTraverse, ty, expr, m) =
-                        let node = Some (SyntaxNode (SyntaxNodeKind.ImplicitInherit (ty, expr, m), currentParent))
-                        setCurrentParent node (fun () -> defaultTraverse expr)
+            //        member __.VisitImplicitInherit (defaultTraverse, ty, expr, m) =
+            //            let node = Some (SyntaxNode (SyntaxNodeKind.ImplicitInherit (ty, expr, m), currentParent))
+            //            setCurrentParent node (fun () -> defaultTraverse expr)
 
-                    member __.VisitInheritSynMemberDefn(info, typeDefnKind, synType, members, m) =
-                        Some (SyntaxNode (SyntaxNodeKind.InheritSynMemberDefn (info, typeDefnKind, synType, members, m), currentParent))
+            //        member __.VisitInheritSynMemberDefn(info, typeDefnKind, synType, members, m) =
+            //            Some (SyntaxNode (SyntaxNodeKind.InheritSynMemberDefn (info, typeDefnKind, synType, members, m), currentParent))
 
-                    member __.VisitInterfaceSynMemberDefnType synType =
-                        Some (SyntaxNode (SyntaxNodeKind.InterfaceSynMemberDefnType synType, currentParent))
+            //        member __.VisitInterfaceSynMemberDefnType synType =
+            //            Some (SyntaxNode (SyntaxNodeKind.InterfaceSynMemberDefnType synType, currentParent))
 
-                    member __.VisitLetOrUse (_, defaultTraverse, bindings, m) =
-                        let node = Some (SyntaxNode (SyntaxNodeKind.LetOrUse (bindings, m), currentParent))
-                        bindings
-                        |> List.tryPick (fun binding ->
-                            setCurrentParent node (fun () -> defaultTraverse binding)
-                        )
+            //        member __.VisitLetOrUse (_, defaultTraverse, bindings, m) =
+            //            let node = Some (SyntaxNode (SyntaxNodeKind.LetOrUse (bindings, m), currentParent))
+            //            bindings
+            //            |> List.tryPick (fun binding ->
+            //                setCurrentParent node (fun () -> defaultTraverse binding)
+            //            )
 
-                    member __.VisitMatchClause (_, matchClause) =
-                        Some (SyntaxNode (SyntaxNodeKind.MatchClause matchClause, currentParent))
+            //        member __.VisitMatchClause (_, matchClause) =
+            //            Some (SyntaxNode (SyntaxNodeKind.MatchClause matchClause, currentParent))
 
-                    member __.VisitModuleOrNamespace moduleOrNamespace =
-                        Some (SyntaxNode (SyntaxNodeKind.ModuleOrNamespace moduleOrNamespace, currentParent))
+            //        member __.VisitModuleOrNamespace moduleOrNamespace =
+            //            Some (SyntaxNode (SyntaxNodeKind.ModuleOrNamespace moduleOrNamespace, currentParent))
 
-                    member __.VisitPat (defaultTraverse, pat) =
-                        let node = Some (SyntaxNode (SyntaxNodeKind.Pat pat, currentParent))
-                        setCurrentParent node (fun () -> defaultTraverse pat)
+            //        member __.VisitPat (defaultTraverse, pat) =
+            //            let node = Some (SyntaxNode (SyntaxNodeKind.Pat pat, currentParent))
+            //            setCurrentParent node (fun () -> defaultTraverse pat)
 
-                    member __.VisitRecordField (_, copyOpt, recordFieldOpt) =
-                        Some (SyntaxNode (SyntaxNodeKind.RecordField (copyOpt, recordFieldOpt), currentParent))
+            //        member __.VisitRecordField (_, copyOpt, recordFieldOpt) =
+            //            Some (SyntaxNode (SyntaxNodeKind.RecordField (copyOpt, recordFieldOpt), currentParent))
 
-                    member __.VisitSimplePats simplePats =
-                        Some (SyntaxNode (SyntaxNodeKind.SimplePats simplePats, currentParent))
+            //        member __.VisitSimplePats simplePats =
+            //            Some (SyntaxNode (SyntaxNodeKind.SimplePats simplePats, currentParent))
 
-                    member this.VisitType (defaultTraverse, ty) =
-                        let node = Some (SyntaxNode (SyntaxNodeKind.Type ty, currentParent))
-                        setCurrentParent node (fun () -> defaultTraverse ty)
+            //        member this.VisitType (defaultTraverse, ty) =
+            //            let node = Some (SyntaxNode (SyntaxNodeKind.Type ty, currentParent))
+            //            setCurrentParent node (fun () -> defaultTraverse ty)
 
-                    member __.VisitTypeAbbrev (ty, m) =
-                        Some (SyntaxNode (SyntaxNodeKind.TypeAbbrev (ty, m), currentParent))
-                })
-            | _ ->
-                return None
+            //        member __.VisitTypeAbbrev (ty, m) =
+            //            Some (SyntaxNode (SyntaxNodeKind.TypeAbbrev (ty, m), currentParent))
+            //    })
+            //| _ ->
+            //    return None
         }
 
     //member this.GetTokensAsync (line: int) =
