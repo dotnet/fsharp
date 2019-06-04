@@ -405,7 +405,7 @@ module Structure =
             rcheck Scope.MatchClause Collapse.Same e.Range collapse
             parseExpr e
 
-        and parseAttributes (attrs: SynAttributes) =
+        and parseAttributes (Attributes attrs) =
             let attrListRange() =
                 if not (List.isEmpty attrs) then
                     let range = Range.startToEnd (attrs.[0].Range) (attrs.[attrs.Length-1].ArgExpr.Range)

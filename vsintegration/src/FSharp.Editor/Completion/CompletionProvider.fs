@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
@@ -15,13 +14,10 @@ open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 
 open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
-open System.Runtime.Caching
-open System.Collections.Concurrent
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
@@ -48,7 +44,7 @@ type internal FSharpCompletionProvider
     static let [<Literal>] IndexPropName = "Index"
 
     static let keywordCompletionItems =
-        Lexhelp.Keywords.keywordsWithDescription
+        Keywords.KeywordsWithDescription
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
         |> List.sortBy (fun (keyword, _) -> keyword)
         |> List.mapi (fun n (keyword, description) ->
@@ -156,7 +152,7 @@ type internal FSharpCompletionProvider
                     | _, idents -> Array.last idents
 
                 let completionItem = 
-                    CommonCompletionItem.Create(name, null, glyph = Nullable glyph, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, filterText = filterText)
+                    CommonCompletionItem.Create(name, null, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, glyph = Nullable (Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyphHelpersObsolete.Convert(glyph)), filterText = filterText)
                                         .AddProperty(FullNamePropName, declarationItem.FullName)
                         
                 let completionItem =

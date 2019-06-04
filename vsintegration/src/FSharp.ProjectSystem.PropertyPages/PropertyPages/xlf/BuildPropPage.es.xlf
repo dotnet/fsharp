@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">&amp;Preferencia de 32 bits</target>
+        <target state="translated">&amp;Preferir 32 bits</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">

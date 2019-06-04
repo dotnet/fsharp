@@ -1954,7 +1954,7 @@
       </trans-unit>
       <trans-unit id="parsSyntaxError">
         <source>Syntax error</source>
-        <target state="translated">sözdizimi hatası</target>
+        <target state="translated">Söz dizimi hatası</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAugmentationsIllegalOnDelegateType">
@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let yerine kullanılır.</target>
+        <target state="translated">IDisposable uygulayan değerler için let yerine kullanılır</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Bu üyelere uygulama verilmedi: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Bu üyelere uygulama verilmedi: {0}Tüm arabirim üyelerinin uygulanması ve uygun bir "arabirim" bildirimi (ör. "arabirim ... ile üye ..." kapsamında listelenmesi gerektiğini unutmayın.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Bu üyelere uygulama verilmedi (bazı sonuçlar atlandı): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Bu üyelere uygulama verilmedi (bazı sonuçlar atlandı): {0}Tüm arabirim üyelerinin uygulanması ve uygun bir "arabirim" bildirimi (ör. "arabirim ... ile üye ..." kapsamında listelenmesi gerektiğini unutmayın.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

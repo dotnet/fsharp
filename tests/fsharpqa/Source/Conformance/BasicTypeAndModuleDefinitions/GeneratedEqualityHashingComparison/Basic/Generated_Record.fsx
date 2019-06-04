@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 // Check thru reflection the set of methods
 // Record
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
          
 let TestListOfMethods (typ : System.Type) (exp : string array) = 

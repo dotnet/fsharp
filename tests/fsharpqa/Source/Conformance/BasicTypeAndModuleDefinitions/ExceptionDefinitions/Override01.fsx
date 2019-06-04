@@ -2,7 +2,7 @@
 // Exception definition define new discriminated union cases
 // Verify that we can use misc types (notice that the "sig-spec" cannot be used [covered in another testcase]
 // This is reqgression test for FSHARP1.0:3725
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 [<Measure>] type Kg
 

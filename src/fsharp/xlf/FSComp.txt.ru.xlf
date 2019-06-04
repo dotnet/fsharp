@@ -2769,7 +2769,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
         <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">Для данного случая объединения требуется {0} аргументов в форме кортежа </target>
+        <target state="translated">Для данного случая объединения требуется {0} аргументов в форме кортежа</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Используется вместо let для значений, требующих вызова Dispose для освобождения ресурсов.</target>
+        <target state="translated">Используется вместо let для значений, которые реализуют IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Реализация для этих членов отсутствует: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Реализация для этих членов отсутствует: {0}Обратите внимание, что каждый член интерфейса должен быть реализован и указан в соответствующем объявлении "interface", например, "интерфейс ... с членом ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Реализация для этих членов отсутствует (некоторые результаты опущены): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Реализация для этих членов отсутствует (некоторые результаты опущены): {0}Обратите внимание, что каждый член интерфейса должен быть реализован и указан в соответствующем объявлении "interface", например, "интерфейс ... с членом ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

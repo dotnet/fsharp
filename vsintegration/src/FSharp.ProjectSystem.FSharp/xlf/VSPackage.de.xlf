@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="Project">
         <source>Project</source>
-        <target state="translated">Projekt </target>
+        <target state="translated">Projekt</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFile">
@@ -404,7 +404,7 @@
       </trans-unit>
       <trans-unit id="6000">
         <source>F# Tools</source>
-        <target state="translated">F#-Tools</target>
+        <target state="translated">F# Tools</target>
         <note />
       </trans-unit>
       <trans-unit id="6001">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="ProductDetails">
         <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Microsoft Visual F#-Tools 10.4 für f# 4.6</target>
+        <target state="translated">Microsoft Visual F# Tools 10.4 für f# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
         <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Microsoft Visual F#-Tools 10.4 für f# 4.6</target>
+        <target state="translated">Microsoft Visual F# Tools 10.4 für f# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -454,7 +454,7 @@
       </trans-unit>
       <trans-unit id="9001">
         <source>Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Visual F#-Tools 10.4 für F# 4.6</target>
+        <target state="translated">Visual F# Tools 10.4 für F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
