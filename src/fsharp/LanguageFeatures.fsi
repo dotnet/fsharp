@@ -10,6 +10,7 @@ type LanguageFeature =
     | LanguageVersion47 = 1
     | SingleUnderscorePattern = 2
     | WildCardInForLoop = 3
+    | RelaxWhitespace = 4
 
 /// LanguageVersion management
 type LanguageVersion =
