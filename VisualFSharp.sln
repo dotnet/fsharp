@@ -157,6 +157,7 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Compilation", "src\fsharp\FSharp.Compiler.Compilation\FSharp.Compiler.Compilation.fsproj", "{6C05C603-43BB-4A6F-8485-3ED1F685F4A0}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Compilation.Tests", "tests\FSharp.Compiler.Compilation.Tests\FSharp.Compiler.Compilation.Tests.fsproj", "{0661AF4D-5655-4038-A254-0AC57DEFBD2A}"
+EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer", "src\fsharp\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj", "{60BAFFA5-6631-4328-B044-2E012AB76DCA}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer.UnitTests", "tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj", "{AAF2D233-1C38-4090-8FFA-F7C545625E06}"
