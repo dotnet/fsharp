@@ -31,9 +31,17 @@
 {
   // Offset: 0x00000000 Length: 0x00000466
 }
+.mresource public FSharpSignatureDataB.OptionalArg01
+{
+  // Offset: 0x00000470 Length: 0x00000004
+}
 .mresource public FSharpOptimizationData.OptionalArg01
 {
   // Offset: 0x00000470 Length: 0x00000445
+}
+.mresource public FSharpOptimizationDataB.OptionalArg01
+{
+  // Offset: 0x00000220 Length: 0x00000000
 }
 .module OptionalArg01.exe
 // MVID: {5CB489E1-4F48-B5AF-A745-0383E189B45C}

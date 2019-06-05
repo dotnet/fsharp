@@ -31,9 +31,17 @@
 {
   // Offset: 0x00000000 Length: 0x000001CE
 }
+.mresource public FSharpSignatureDataB.AnonRecd
+{
+  // Offset: 0x000001A8 Length: 0x00000004
+}
 .mresource public FSharpOptimizationData.AnonRecd
 {
-  // Offset: 0x000001D8 Length: 0x0000006B
+  // Offset: 0x000001B0 Length: 0x0000006B
+}
+.mresource public FSharpOptimizationDataB.AnonRecd
+{
+  // Offset: 0x00000220 Length: 0x00000000
 }
 .module AnonRecd.exe
 // MVID: {5CBDEF61-C42F-5208-A745-038361EFBD5C}
