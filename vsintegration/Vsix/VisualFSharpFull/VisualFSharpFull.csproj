@@ -54,7 +54,7 @@
       <Private>True</Private>
       <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj" Condition="'$(IncludeVsLanguageServer)' == 'true'" >
       <Project>{60BAFFA5-6631-4328-B044-2E012AB76DCA}</Project>
       <Name>FSharp.Compiler.LanguageServer</Name>
       <IncludeOutputGroupsInVSIX>PublishedProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>

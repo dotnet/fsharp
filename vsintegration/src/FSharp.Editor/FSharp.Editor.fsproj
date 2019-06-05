@@ -59,7 +59,7 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.LanguageServer\JsonOptionConverter.fs">
       <Link>LanguageService\JsonOptionConverter.fs</Link>
     </Compile>
-    <Compile Include="LanguageService\FSharpLanguageClient.fs" />
+    <Compile Include="LanguageService\FSharpLanguageClient.fs" Condition="'$(IncludeVsLanguageServer)' == 'true'" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
