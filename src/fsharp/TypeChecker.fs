@@ -962,7 +962,7 @@ let AdjustValSynInfoInSignature g ty (SynValInfo(argsData, retData) as sigMD) =
 /// The ValReprInfo for a value, except the number of typars is not yet inferred 
 type PartialValReprInfo = PartialValReprInfo of ArgReprInfo list list * ArgReprInfo 
 
-let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(attrs, isOpt, nm)) = 
+let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) = 
     // Synthesize an artificial "OptionalArgument" attribute for the parameter
     let optAttrs = 
         if isOpt then 
@@ -2453,7 +2453,7 @@ type NormalizedBinding =
       SynBindingKind *
       bool * (* pesudo/mustinline value? *)
       bool * (* mutable *)
-      SynAttributes * 
+      SynAttribute list * 
       XmlDoc *
       SynValTyparDecls * 
       SynValData * 
@@ -2583,7 +2583,7 @@ module BindingNormalization =
 
     let NormalizeBinding isObjExprBinding cenv (env: TcEnv) b = 
         match b with 
-        | Binding (vis, bkind, isInline, isMutable, attrs, doc, valSynData, p, retInfo, rhsExpr, mBinding, spBind) ->
+        | Binding (vis, bkind, isInline, isMutable, Attributes attrs, doc, valSynData, p, retInfo, rhsExpr, mBinding, spBind) ->
             let (NormalizedBindingPat(pat, rhsExpr, valSynData, typars)) = 
                 NormalizeBindingPattern cenv cenv.nameResolver isObjExprBinding env valSynData p (NormalizedBindingRhs ([], retInfo, rhsExpr))
             NormalizedBinding(vis, bkind, isInline, isMutable, attrs, doc.ToXmlDoc(), typars, valSynData, pat, rhsExpr, mBinding, spBind)
@@ -4572,7 +4572,7 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
 and TcTypar cenv env newOk tpenv tp =
     TcTyparOrMeasurePar (Some TyparKind.Type) cenv env newOk tpenv tp
 
-and TcTyparDecl cenv env (TyparDecl(synAttrs, (Typar(id, _, _) as stp))) =
+and TcTyparDecl cenv env (TyparDecl(Attributes synAttrs, (Typar(id, _, _) as stp))) =
     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
     let hasMeasureAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
     let hasEqDepAttr = HasFSharpAttribute cenv.g cenv.g.attrib_EqualityConditionalOnAttribute attrs
@@ -10763,7 +10763,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter))
         let retAttribs = 
             match rtyOpt with 
-            | Some (SynBindingReturnInfo(_, _, retAttrs)) -> TcAttrs AttributeTargets.ReturnValue retAttrs 
+            | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> TcAttrs AttributeTargets.ReturnValue retAttrs 
             | None -> [] 
 
         let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
@@ -12289,7 +12289,7 @@ and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
 
 let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memFlagsOpt, tpenv, valSpfn) = 
 
-  let (ValSpfn (synAttrs, _, SynValTyparDecls (synTypars, synCanInferTypars, _), _, _, isInline, mutableFlag, doc, vis, literalExprOpt, m)) = valSpfn 
+  let (ValSpfn (Attributes synAttrs, _, SynValTyparDecls (synTypars, synCanInferTypars, _), _, _, isInline, mutableFlag, doc, vis, literalExprOpt, m)) = valSpfn 
 
   GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, synTypars, m)
   let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, synCanInferTypars, memFlagsOpt)
@@ -12405,7 +12405,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         rfspec
 
 
-    let TcAnonFieldDecl cenv env parent tpenv nm (Field(attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
+    let TcAnonFieldDecl cenv env parent tpenv nm (Field(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
         let id = (match idOpt with None -> mkSynId m nm | Some id -> id)
         let f = TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmldoc.ToXmlDoc(), vis, m) 
         match idOpt with 
@@ -12416,7 +12416,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         f
 
 
-    let TcNamedFieldDecl cenv env parent isIncrClass tpenv (Field(attribs, isStatic, id, ty, isMutable, xmldoc, vis, m)) =
+    let TcNamedFieldDecl cenv env parent isIncrClass tpenv (Field(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m)) =
         match id with 
         | None -> error (Error(FSComp.SR.tcFieldRequiresName(), m))
         | Some id -> TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmldoc.ToXmlDoc(), vis, m) 
@@ -12453,7 +12453,7 @@ module TcRecdUnionAndEnumDeclarations = begin
             | _ ->
                 seen.Add(f.Name, sf)
                 
-    let TcUnionCaseDecl cenv env parent thisTy tpenv (UnionCase (synAttrs, id, args, xmldoc, vis, m)) =
+    let TcUnionCaseDecl cenv env parent thisTy tpenv (UnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
@@ -12490,7 +12490,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         let unionCases' = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy tpenv) 
         unionCases' |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let TcEnumDecl cenv env parent thisTy fieldTy (EnumCase (synAttrs, id, v, xmldoc, m)) =
+    let TcEnumDecl cenv env parent thisTy fieldTy (EnumCase(Attributes synAttrs, id, v, xmldoc, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
         match v with 
         | SynConst.Bytes _
@@ -13556,7 +13556,7 @@ module MutRecBindingChecking =
                             error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
 
                         match classMemberDef, containerInfo with
-                        | SynMemberDefn.ImplicitCtor (vis, attrs, spats, thisIdOpt, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
+                        | SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(spats, _), thisIdOpt, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
@@ -14810,7 +14810,7 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations = 
 
-    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(synAttrs, UnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
+    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, UnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isUpper id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
@@ -15016,7 +15016,7 @@ module EstablishTypeDefinitionCores =
               match implicitCtorSynPats with
               | None -> ()
               | Some spats -> 
-                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv (SynSimplePats.SimplePats (spats, m))
+                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv spats
                   for arg in ctorArgNames do
                       let ty = names.[arg].Type
                       let m = names.[arg].Ident.idRange
@@ -15075,7 +15075,7 @@ module EstablishTypeDefinitionCores =
             |> set
 
     let TcTyconDefnCore_Phase1A_BuildInitialModule cenv envInitial parent typeNames compInfo decls =
-        let (ComponentInfo(attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo 
+        let (ComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo 
         let id = ComputeModuleName longPath
         let modAttrs = TcAttributes cenv envInitial AttributeTargets.ModuleDecl attribs 
         let modKind = ComputeModuleOrNamespaceKind cenv.g true typeNames modAttrs id.idText
@@ -15146,7 +15146,7 @@ module EstablishTypeDefinitionCores =
     ///  synTyconInfo: Syntactic AST for the name, attributes etc. of the type constructor
     ///  synTyconRepr: Syntactic AST for the RHS of the type definition
     let private TcTyconDefnCore_Phase1B_EstablishBasicKind cenv inSig envinner (MutRecDefnsPhase1DataForTycon(synTyconInfo, synTyconRepr, _, _, _, _)) (tycon: Tycon) = 
-        let (ComponentInfo(synAttrs, typars, _, _, _, _, _, _)) = synTyconInfo
+        let (ComponentInfo(Attributes synAttrs, typars, _, _, _, _, _, _)) = synTyconInfo
         let m = tycon.Range
         let id = tycon.Id
 
@@ -15816,7 +15816,7 @@ module EstablishTypeDefinitionCores =
                               ()
                           | Some spats -> 
                               if tycon.IsFSharpStructOrEnumTycon then 
-                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv (SynSimplePats.SimplePats (spats, m))
+                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
                                   for arg in ctorArgNames do
                                       let ty = names.[arg].Type
                                       let id = names.[arg].Ident
@@ -16520,7 +16520,7 @@ module TcDeclarations =
                 // Convert autoproperties to let bindings in the pre-list
                 let rec preAutoProps memb =
                     match memb with 
-                    | SynMemberDefn.AutoProperty (attribs, isStatic, id, tyOpt, propKind, _, xmlDoc, _access, synExpr, _mGetSet, mWholeAutoProp) -> 
+                    | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, _, xmlDoc, _access, synExpr, _mGetSet, mWholeAutoProp) -> 
                         // Only the keep the field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
                         let mLetPortion = synExpr.Range
@@ -16532,6 +16532,7 @@ module TcDeclarations =
                             | MemberKind.PropertySet 
                             | MemberKind.PropertyGetSet -> true 
                             | _ -> false
+                        let attribs = mkAttributeList attribs mWholeAutoProp
                         let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, NoSequencePointAtInvisibleBinding, retInfo, synExpr, synExpr.Range, [], attribs, None)
 
                         [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
@@ -16546,7 +16547,7 @@ module TcDeclarations =
                 // Convert autoproperties to member bindings in the post-list
                 let rec postAutoProps memb =
                     match memb with 
-                    | SynMemberDefn.AutoProperty (attribs, isStatic, id, tyOpt, propKind, memberFlags, xmlDoc, access, _synExpr, mGetSetOpt, _mWholeAutoProp) ->
+                    | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, memberFlags, xmlDoc, access, _synExpr, mGetSetOpt, _mWholeAutoProp) ->
                         let mMemberPortion = id.idRange
                         // Only the keep the non-field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
@@ -16566,6 +16567,7 @@ module TcDeclarations =
                                 let getter = 
                                     let rhsExpr = SynExpr.Ident fldId
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
+                                    let attribs = mkAttributeList attribs mMemberPortion
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, NoSequencePointAtInvisibleBinding, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags MemberKind.Member))
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
@@ -16619,7 +16621,7 @@ module TcDeclarations =
 
             let implicitCtorSynPats = 
                 members |> List.tryPick (function 
-                    | SynMemberDefn.ImplicitCtor (_, _, spats, _, _) -> Some spats
+                    | SynMemberDefn.ImplicitCtor (_, _, (SynSimplePats.SimplePats _ as spats), _, _) -> Some spats
                     | _ -> None)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
@@ -16628,7 +16630,7 @@ module TcDeclarations =
                 members |> List.exists (function 
                     | SynMemberDefn.Member(Binding(_, _, _, _, _, _, SynValData(Some memberFlags, _, _), SynPatForConstructorDecl SynPatForNullaryArgs, _, _, _, _), _) -> 
                         memberFlags.MemberKind=MemberKind.Constructor 
-                    | SynMemberDefn.ImplicitCtor (_, _, spats, _, _) -> isNil spats
+                    | SynMemberDefn.ImplicitCtor (_, _, SynSimplePats.SimplePats(spats, _), _, _) -> isNil spats
                     | _ -> false)
             let repr = SynTypeDefnSimpleRepr.General(kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, m)
             let isAtOriginalTyconDefn = not (isAugmentationTyconDefnRepr repr)
@@ -16870,7 +16872,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let env = List.foldBack (AddLocalVal cenv.tcSink scopem) idvs env
             return env
 
-        | SynModuleSigDecl.NestedModule(ComponentInfo(attribs, _parms, _constraints, longPath, xml, _, vis, im) as compInfo, isRec, mdefs, m) ->
+        | SynModuleSigDecl.NestedModule(ComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im) as compInfo, isRec, mdefs, m) ->
             if isRec then 
                 // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
                 let modDecl = SynModuleSigDecl.NestedModule(compInfo, false, mdefs, m)
@@ -17175,7 +17177,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.DoExpr _ -> return! failwith "unreachable"
 
-      | SynModuleDecl.Attributes (synAttrs, _) -> 
+      | SynModuleDecl.Attributes (Attributes synAttrs, _) -> 
           let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs
           return ((fun e -> e), attrs), env, env
 
@@ -17190,7 +17192,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let modDecl = SynModuleDecl.NestedModule(compInfo, false, mdefs, isContinuingModule, m)
               return! TcModuleOrNamespaceElementsMutRec cenv parent typeNames m env None [modDecl]
           else
-              let (ComponentInfo(attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo
+              let (ComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo
               let id = ComputeModuleName longPath
 
               let modAttrs = TcAttributes cenv env AttributeTargets.ModuleDecl attribs
@@ -17327,7 +17329,7 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
     let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
     let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
-    let (mutRecDefns, (_, _, synAttrs)) = 
+    let (mutRecDefns, (_, _, Attributes synAttrs)) = 
       let rec loop isNamespace attrs defs: (MutRecDefnsInitialData * _) = 
         ((true, true, attrs), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk, attrs) def -> 
             match ElimModuleDoBinding def with

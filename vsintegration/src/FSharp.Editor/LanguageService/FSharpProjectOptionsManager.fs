@@ -10,7 +10,6 @@ open System.ComponentModel.Composition
 open System.IO
 open System.Linq
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.CompileOps
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
@@ -359,7 +358,7 @@ type internal FSharpProjectOptionsManager
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
             | Some (_, parsingOptions, _) -> parsingOptions
-            | _ -> { FSharpParsingOptions.Default with IsInteractive = IsScript document.Name }
+            | _ -> { FSharpParsingOptions.Default with IsInteractive = FSharpFileUtilities.isScriptFile document.Name }
         CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions     
 
     member this.TryGetOptionsByProject(project) =

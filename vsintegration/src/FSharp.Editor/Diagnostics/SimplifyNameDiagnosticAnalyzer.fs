@@ -7,13 +7,11 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open FSharp.Compiler
 open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
 open System.Runtime.Caching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
@@ -94,7 +92,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                         match rest with
                                         | [] -> return current
                                         | headIdent :: restPlid ->
-                                            let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item, userOpName=userOpName) 
+                                            let! res = checkResults.IsRelativeNameResolvableFromSymbol(posAtStartOfName, current, symbolUse.Symbol, userOpName=userOpName)
                                             if res then return current
                                             else return! loop restPlid (headIdent :: current)
                                     }
