@@ -181,7 +181,7 @@ type CompilationGlobalOptions =
     }
 
     static member Create () =
-        let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+        let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.getResolver ()
         
         // TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
         let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharp.Compiler.CompileOps.TcState>.Assembly.Location)).Value
