@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <Compile Include="ProtocolTests.fs" />
+    <Compile Include="SerializationTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
