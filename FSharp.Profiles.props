@@ -5,43 +5,22 @@
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) OR $(TargetFramework.StartsWith('netcoreapp'))">
     <DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CORHOST_SIGNER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EVENTWAITHANDLE_IDISPOSABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_WRITER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULE_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_ONLY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SERVERCODEPAGES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREADABORT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WAITONE_MILLISECONDS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WIN_REGISTRY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WINFORMS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_INDENTED_TEXT_WRITER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_REDUCED_EXCEPTIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_GLOBALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
   </PropertyGroup>

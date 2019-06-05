@@ -5,50 +5,23 @@
         <iconUrl>http://fsharp.org/img/logo.png</iconUrl>
         <language>en-US</language>
         <dependencies>
-            <group targetFramework=".NETStandard1.6">
-                <dependency id="System.Collections" version="4.0.11" />
-                <dependency id="System.Console" version="4.0.0" />
-                <dependency id="System.Diagnostics.Debug" version="4.0.11" />
-                <dependency id="System.Diagnostics.Tools" version="4.0.1" />
-                <dependency id="System.Globalization" version="4.0.11" />
-                <dependency id="System.IO" version="4.1.0" />
-                <dependency id="System.Linq" version="4.1.0" />
-                <dependency id="System.Linq.Expressions" version="4.1.0" />
-                <dependency id="System.Linq.Queryable" version="4.0.1" />
-                <dependency id="System.Net.Requests" version="4.0.11" />
-                <dependency id="System.Reflection" version="4.1.0" />
-                <dependency id="System.Reflection.Extensions" version="4.0.1" />
-                <dependency id="System.Resources.ResourceManager" version="4.0.1" />
-                <dependency id="System.Runtime" version="4.1.0" />
-                <dependency id="System.Runtime.Extensions" version="4.1.0" />
-                <dependency id="System.Runtime.Numerics" version="4.0.1" />
-                <dependency id="System.Text.RegularExpressions" version="4.1.0" />
-                <dependency id="System.Threading" version="4.0.11" />
-                <dependency id="System.Threading.Tasks" version="4.0.11" />
-                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
-                <dependency id="System.Threading.Thread" version="4.0.0" />
-                <dependency id="System.Threading.ThreadPool" version="4.0.10" />
-                <dependency id="System.Threading.Timer" version="4.0.1" />
-            </group>
-            <group targetFramework=".NETStandard2.0">
-            </group>
-            <group targetFramework="net45">
-            </group>
+            <group targetFramework=".NETStandard2.0" />
+            <group targetFramework="net45" />
         </dependencies>
     </metadata>
     <files>
-        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.dll"     target="lib\netstandard1.6" />
-        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.sigdata" target="lib\netstandard1.6" />
-        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.optdata" target="lib\netstandard1.6" />
-        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.xml"     target="lib\netstandard1.6" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"              target="lib\netstandard2.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.sigdata"          target="lib\netstandard2.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.optdata"          target="lib\netstandard2.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.xml"              target="lib\netstandard2.0" />
 
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.dll"     target="lib\net45" />
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.sigdata" target="lib\net45" />
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.optdata" target="lib\net45" />
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.xml"     target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.dll"                       target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.sigdata"                   target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.optdata"                   target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.xml"                       target="lib\net45" />
 
         <!-- resources -->
-        <file src="FSharp.Core\$Configuration$\netstandard1.6\**\FSharp.Core.resources.dll" target="lib\netstandard1.6" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll" target="lib\netstandard2.0" />
         <file src="FSharp.Core\$Configuration$\net45\**\FSharp.Core.resources.dll"          target="lib\net45" />
     </files>
 </package>

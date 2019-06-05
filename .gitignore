@@ -95,11 +95,14 @@ extras
 ossreadme*.txt
 *.csproj.user
 *.fsproj.user
+*.vbproj.user
 *.sln.DotSettings.user
 *.log
 *.jrs
 *.chk
-*.bak
+*.bak                                                     
+*.vserr
+*.err
 *.orig
 *.mdf
 *.ldf

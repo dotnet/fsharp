@@ -29,7 +29,6 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSIstrings.fs"
              @"src\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs"
              @"src\assemblyinfo\assemblyinfo.shared.fs"
-             @"src\utils\reshapedreflection.fs"
              @"src\utils\sformat.fsi"
              @"src\utils\sformat.fs"
              @"src\fsharp\sr.fsi"
@@ -205,7 +204,7 @@ let FCS (repositoryDir: string) : Options =
           [|@"-o:obj\Release\FSharp.Compiler.Private.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
             @"--define:CROSS_PLATFORM_COMPILER";
-            @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
+            @"--define:FX_ATLEAST_40";
             @"--define:COMPILER";
             @"--define:ENABLE_MONO_SUPPORT"; "--define:FX_MSBUILDRESOLVER_RUNTIMELIKE";
             @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
