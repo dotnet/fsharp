@@ -153,34 +153,33 @@ type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
     let asyncLazyGetAllSymbols =
         AsyncLazy(async {
             let! checker = asyncLazyChecker.GetValueAsync ()
-            let! _tcAcc, sink, symbolEnv = checker.CheckAsync filePath
-            return (checker, sink.GetResolutions (), symbolEnv)
+            let! tcAcc, sink, symbolEnv = checker.CheckAsync filePath
+            return (checker, tcAcc, sink.GetResolutions (), symbolEnv)
         })
 
     member __.TryFindSymbolAsync (line: int, column: int) : Async<FSharpSymbol option> =
         async {
-            let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
+            let! _checker, _tcAcc, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
             return tryFindSymbol line column resolutions symbolEnv
         }
 
     member __.FindSymbolUsesAsync symbol =
         async {
-            let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
+            let! _, _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
             return findSymbols symbol resolutions symbolEnv
         }
 
     member __.GetToolTipTextAsync (line, column) =
         async {
-            let! _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
+            let! _, _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
             return getToolTipText line column resolutions symbolEnv
         }
 
     member __.GetCompletionSymbolsAsync (line, column) =
         async {
-            let! checker, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
+            let! checker, _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
 
             let syntaxTree = checker.GetSyntaxTree filePath
-            let! node = syntaxTree.TryFindNodeAsync (line, column)
             let! (parsedInputOpt, _) = syntaxTree.GetParseResultAsync ()
 
             match parsedInputOpt with

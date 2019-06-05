@@ -236,6 +236,39 @@ type SourceValue =
     | Stream of Stream
 
 [<RequireQualifiedAccess>]
+module Lexer =
+
+    open FSharp.Compiler.Lexhelp
+
+    let Lex (pConfig: ParsingConfig) sourceValue tokenCallback =
+        let skipWhitespace = true
+        let tcConfig = pConfig.tcConfig
+        let filePath = pConfig.filePath
+        let errorLogger = CompilationErrorLogger("Lex", tcConfig.errorSeverityOptions)
+
+        let lightSyntaxStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filePath, true) 
+        let conditionalCompilationDefines = pConfig.conditionalCompilationDefines
+        let lexargs = mkLexargs (filePath, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, tcConfig.pathMap)
+
+        match sourceValue with
+        | SourceValue.SourceText sourceText ->
+            let lexbuf = UnicodeLexing.SourceTextAsLexbuf (sourceText.ToFSharpSourceText ())
+            usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
+                while not lexbuf.IsPastEndOfStream do
+                    tokenCallback (Lexer.token lexargs skipWhitespace lexbuf, lexbuf.LexemeRange)
+            )
+        | SourceValue.Stream stream ->
+            let streamReader = new StreamReader(stream) // don't dispose of stream reader
+            let lexbuf = 
+                UnicodeLexing.FunctionAsLexbuf (fun (chars, start, length) ->
+                    streamReader.ReadBlock (chars, start, length)
+                )
+            usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
+                while not lexbuf.IsPastEndOfStream do
+                    tokenCallback (Lexer.token lexargs skipWhitespace lexbuf, lexbuf.LexemeRange)
+            )
+
+[<RequireQualifiedAccess>]
 module Parser =
 
     let Parse (pConfig: ParsingConfig) sourceValue =
@@ -262,6 +295,13 @@ type SourceSnapshot (filePath: string, sourceStorage: SourceStorage) =
     member __.FilePath = filePath
 
     member __.SourceStorage = sourceStorage
+
+[<Sealed>]
+type SyntaxToken (token: Parser.token, range: range) =
+
+    member __.Token = token
+
+    member __.Range = range
 
 [<Sealed;AbstractClass;Extension>]
 type ITemporaryStorageServiceExtensions =
@@ -333,6 +373,29 @@ type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: Sourc
                     return Parser.Parse pConfig (SourceValue.Stream stream)
         })
 
+    let asyncLazyWeakGetTokens =
+        AsyncLazyWeak(async {
+            let! ct = Async.CancellationToken
+            // If we already have a weakly cached source text as a result of calling GetSourceText, just use that value.
+            match asyncLazyWeakGetSourceText.TryGetValue () with
+            | ValueSome sourceText ->
+                let tokens = ImmutableArray.CreateBuilder ()
+                Lexer.Lex pConfig (SourceValue.SourceText sourceText) tokens.Add
+                return tokens.ToImmutable () |> ref
+            | _ ->
+                match sourceSnapshot.SourceStorage with
+                | SourceStorage.SourceText _ ->
+                    let! sourceText = asyncLazyWeakGetSourceTextFromSourceTextStorage.GetValueAsync ()
+                    let tokens = ImmutableArray.CreateBuilder ()
+                    Lexer.Lex pConfig (SourceValue.SourceText sourceText) tokens.Add
+                    return tokens.ToImmutable () |> ref
+                | SourceStorage.Stream storage ->
+                    let stream = storage.ReadStream ct
+                    let tokens = ImmutableArray.CreateBuilder ()
+                    Lexer.Lex pConfig (SourceValue.Stream stream) tokens.Add
+                    return tokens.ToImmutable () |> ref
+        })
+
     member __.FilePath = filePath
 
     member __.ParsingConfig = pConfig
@@ -342,6 +405,21 @@ type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: Sourc
 
     member __.GetSourceTextAsync () =
         asyncLazyWeakGetSourceText.GetValueAsync ()
+
+    member __.TryFindTokenAsync (line: int, column: int) =
+        async {
+            let! tokens = asyncLazyWeakGetTokens.GetValueAsync ()
+            let tokens = !tokens
+            let p = mkPos line column
+            return
+                tokens
+                |> Seq.tryPick (fun (t, m) ->
+                    if rangeContainsPos m p then
+                        Some (SyntaxToken (t, m))
+                    else
+                        None
+                )
+        }
 
     member this.TryFindNodeAsync (line: int, column: int) =
         async {

@@ -35,6 +35,13 @@ type internal ITemporaryStorageServiceExtensions =
     static member CreateSourceSnapshot: ITemporaryStorageService * filePath: string -> Cancellable<SourceSnapshot>
 
 [<Sealed>]
+type SyntaxToken =
+
+    member internal Token: Parser.token
+
+    member Range: Range.range
+
+[<Sealed>]
 type SyntaxTree =
 
     internal new: filePath: string * ParsingConfig * SourceSnapshot -> SyntaxTree
@@ -47,6 +54,8 @@ type SyntaxTree =
     member GetParseResultAsync: unit -> Async<ParseResult>
 
     member GetSourceTextAsync: unit -> Async<SourceText>
+
+    member TryFindTokenAsync: line: int * column: int -> Async<SyntaxToken option>
 
    // member TryFindNodeAsync: line: int * column: int -> Async<SyntaxNode option>
 
