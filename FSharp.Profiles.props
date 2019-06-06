@@ -9,41 +9,80 @@
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
   </PropertyGroup>
 
+  <!--
+    Define symbols/constants controlling compilation for all 'netstandard' and 'netcoreapp' projects in this repository.
+    This should be used sparingly - prefer to define constants in one of the more-specific groups below which apply
+    only to a narrower group of target framework monikers.
+    When removing any constants from here for _versioning_ reasons (e.g. a constant controls a workaround which isn't
+    needed for a newer version of netstandard/netcoreapp), you *must* not DELETE the constant; instead MOVE it to one
+    or more of the more-specific PropertyGroups below.
+  -->
   <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) OR $(TargetFramework.StartsWith('netcoreapp'))">
+    <!--
+      TODO: Replace uses of the NETSTANDARD constant with one of the more-specific, standardized constants defined by
+            the .NET SDK build system: https://docs.microsoft.com/en-us/dotnet/standard/frameworks
+    -->
     <DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
+    <!-- AppDomains deprecated, not supported by .NET Core -->
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
+    <!-- IAsyncResult deprecated, not supported by .NET Core. -->
     <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CORHOST_SIGNER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EVENTWAITHANDLE_IDISPOSABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_WRITER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SERVERCODEPAGES</DefineConstants><!-- TODO: maybe netcoreapp1.x-specific? -->
+    <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
+    <!--
+      TODO: For netcoreapp2.x compilation, maybe don't define this constant, then have the projects pull in the
+            nuget package for System.Configuration?
+    -->
+    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
+    <!--
+      Thread.Abort() is included in netstandard2.0 / netcoreapp2.x. However, we'll continue to avoid using it,
+      at least for now, since .NET Core will raise a PlatformNotSupportedException when this method is called:
+      https://github.com/dotnet/corefx/blob/23cd3cfb15908c21557cfa0a3f17e7c6a32d9f35/src/Common/src/CoreLib/System/Threading/Thread.cs#L184
+    -->
+    <DefineConstants>$(DefineConstants);FX_NO_THREADABORT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_WIN_REGISTRY</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_WINFORMS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
+    <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
+  </PropertyGroup>
+
+  <!--
+    Define constants applicable to projects in this repository targeting 'netstandard1.x' or 'netcoreapp1.x'.
+  -->
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard1')) OR $(TargetFramework.StartsWith('netcoreapp1'))">
+    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_EVENTWAITHANDLE_IDISPOSABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_INDENTED_TEXT_WRITER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULE_HANDLES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_ONLY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SERVERCODEPAGES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREADABORT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WAITONE_MILLISECONDS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WIN_REGISTRY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WINFORMS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_INDENTED_TEXT_WRITER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_REDUCED_EXCEPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_GLOBALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
-    <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
+  </PropertyGroup>
+
+  <!--
+    Define constants applicable to projects in this repository targeting 'netstandard2.x'.
+    These are applied in addition to any constants defined above applicable to all 'netstandard' versions.
+    TODO: Consider extending the condition for this PropertyGroup to cover netcoreapp2.x as well,
+          since .NET Core 2.0 implements netstandard2.0.
+  -->
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard2')) OR $(TargetFramework.StartsWith('netcoreapp2'))">
+    <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
   </PropertyGroup>
 
 </Project>
