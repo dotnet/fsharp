@@ -13,9 +13,9 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Text
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -44,7 +44,7 @@ module internal ColorStateLookup_DEPRECATED =
             toLexState.Add(result,lexState)
             result
 
-        do Add(0L)|>ignore // Add the 'unknown' state.
+        do Add(FSharpTokenizerLexState.Initial)|>ignore // Add the 'unknown' state.
 
         static member private TryGet<'tKey,'tVal>(dict:Dictionary<'tKey,'tVal>,key:'tKey) : 'tVal option =
             let mutable result = Unchecked.defaultof<'tVal>
@@ -198,7 +198,7 @@ type internal FSharpColorizer_DEPRECATED
 
     /// Start state at the beginning of parsing a file.
     override c.GetStartState(state) =
-        state <- ColorStateLookup_DEPRECATED.ColorStateOfLexState(0L)
+        state <- ColorStateLookup_DEPRECATED.ColorStateOfLexState(FSharpTokenizerLexState.Initial)
         VSConstants.S_OK
 
     /// Colorize a line of text. Resulting per-character attributes are stored into attrs

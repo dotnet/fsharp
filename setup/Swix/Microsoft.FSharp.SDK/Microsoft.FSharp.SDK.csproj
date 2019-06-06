@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- these are static and should never change -->
+    <PackageReference Include="FSharp.Core" Version="4.3.4" IncludeAssets="none" />
+    <PackageReference Include="Microsoft.Portable.FSharp.Core" Version="10.1.0" IncludeAssets="none" />
+    <PackageReference Include="Microsoft.VisualFSharp.Core.Redist" Version="1.0.0" IncludeAssets="none" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SwrProperty Include="PackagesFolder=$(NuGetPackageRoot)" />
+    <SwrProperty Include="VsixVersion=$(VsixVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SwrFile Include="Files.swr" />
+  </ItemGroup>
+
+</Project>

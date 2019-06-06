@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Functions to format error message details
-module internal Microsoft.FSharp.Compiler.ErrorResolutionHints
+module internal FSharp.Compiler.ErrorResolutionHints
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 let maxSuggestions = 5
 let minThresholdForSuggestions = 0.7
@@ -24,7 +24,7 @@ let IsInEditDistanceProximity idText suggestion =
     editDistance <= threshold
 
 /// Filters predictions based on edit distance to the given unknown identifier.
-let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =    
+let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =    
     let uppercaseText = idText.ToUpperInvariant()
     let allSuggestions = suggestionF()
 
@@ -43,6 +43,7 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
             name |> Seq.forall (fun c -> c <> ' ')
 
     if allSuggestions.Contains idText then [] else // some other parsing error occurred
+    let dotIdText = "." + idText
     allSuggestions
     |> Seq.choose (fun suggestion ->
         // Because beginning a name with _ is used both to indicate an unused
@@ -53,7 +54,7 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
         let suggestion:string = demangle suggestion
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
-        if similarity >= highConfidenceThreshold || suggestion.EndsWithOrdinal("." + idText) then
+        if similarity >= highConfidenceThreshold || suggestion.EndsWithOrdinal(dotIdText) then
             Some(similarity, suggestion)
         elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
             None

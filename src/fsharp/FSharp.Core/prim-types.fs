@@ -6,8 +6,8 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 #nowarn "60" // Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
-#nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.
-#nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in compilation failures if you attempt to invoke the member constraint from your own code.
+#nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration...
+#nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler...
 #nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
 
 namespace Microsoft.FSharp.Core
@@ -53,152 +53,152 @@ namespace Microsoft.FSharp.Core
        | UseNullAsTrueValue = 8
        | Event = 16
 
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     type SealedAttribute(value:bool) =
         inherit System.Attribute()
         member x.Value = value
         new() = new SealedAttribute(true)
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type AbstractClassAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.GenericParameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.GenericParameter, AllowMultiple=false)>]
     [<Sealed>]
     type EqualityConditionalOnAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.GenericParameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.GenericParameter, AllowMultiple=false)>]
     [<Sealed>]
     type ComparisonConditionalOnAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type AllowNullLiteralAttribute(value: bool) =
         inherit System.Attribute()
         member x.Value = value
         new () = new AllowNullLiteralAttribute(true)
       
-    [<AttributeUsage(AttributeTargets.Field,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
     [<Sealed>]
     type VolatileFieldAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute(value:bool) = 
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage (AttributeTargets.Property,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIEventAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIMutableAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type AutoSerializableAttribute(value:bool) = 
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute(check:bool) = 
         inherit System.Attribute()
         member x.Check = check
         new() = new DefaultValueAttribute(true)
 
-    [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]  
     [<Sealed>]
     type EntryPointAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type ReferenceEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type CustomEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type CustomComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor, AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute(includeValue: bool) =
         inherit System.Attribute()
         new() = ReflectedDefinitionAttribute(false)
         member x.IncludeValue = includeValue
 
-    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CompiledNameAttribute(compiledName:string) =
         inherit System.Attribute()
         member x.CompiledName = compiledName
 
-    [<AttributeUsage (AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.GenericParameter ||| AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.GenericParameter ||| AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAnnotatedAbbreviationAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Interface,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Interface, AllowMultiple=false)>]  
     [<Sealed>]
     type InterfaceAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type ClassAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Field,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
     [<Sealed>]
     type LiteralAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Assembly,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple=false)>]
     [<Sealed>]
     type FSharpInterfaceDataVersionAttribute(major:int,minor:int,release:int)  =
         inherit System.Attribute()
@@ -206,7 +206,7 @@ namespace Microsoft.FSharp.Core
         member x.Minor = minor
         member x.Release = release
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationMappingAttribute(sourceConstructFlags:SourceConstructFlags,
                                      variantNumber:int,
@@ -224,26 +224,26 @@ namespace Microsoft.FSharp.Core
         member x.TypeDefinitions = typeDefinitions
         member x.ResourceName = resourceName
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationSourceNameAttribute(sourceName:string)  =
         inherit System.Attribute()
         member x.SourceName = sourceName
 
     //-------------------------------------------------------------------------
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationRepresentationAttribute (flags : CompilationRepresentationFlags) =
         inherit System.Attribute()
         member x.Flags = flags
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute(message:string) =
         inherit System.Attribute()
         member x.Message = message    
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationArgumentCountsAttribute(counts:int[]) =
         inherit System.Attribute()
@@ -251,7 +251,7 @@ namespace Microsoft.FSharp.Core
            let unboxPrim(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
            (unboxPrim(counts.Clone()) : System.Collections.Generic.IEnumerable<int>)
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CustomOperationAttribute(name:string) =
         inherit System.Attribute()
@@ -272,18 +272,18 @@ namespace Microsoft.FSharp.Core
         member x.MaintainsVariableSpace with get() = maintainsVarSpace and set v = maintainsVarSpace <- v
         member x.MaintainsVariableSpaceUsingBind with get() = maintainsVarSpaceWithBind and set v = maintainsVarSpaceWithBind <- v
 
-    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false)>]
     [<Sealed>]
     type ProjectionParameterAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum, AllowMultiple=false)>]
     [<Sealed>]
     type StructuredFormatDisplayAttribute(value:string) =
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilerMessageAttribute(message:string, messageNumber : int) =
         inherit System.Attribute()
@@ -294,37 +294,37 @@ namespace Microsoft.FSharp.Core
         member x.IsError with get() = isError and set v = isError <- v
         member x.IsHidden with get() = isHidden and set v = isHidden <- v
 
-    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
     type UnverifiableAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
     type NoDynamicInvocationAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false)>]
     [<Sealed>]
     type OptionalArgumentAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type GeneralizableValueAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type RequiresExplicitTypeArgumentsAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly,AllowMultiple=true)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute(path:string) =
         inherit System.Attribute()
@@ -334,7 +334,7 @@ namespace Microsoft.FSharp.Core
     /// This Attribute is used to make Value bindings like
     ///      let x = some code
     /// operate like static properties.
-    [<AttributeUsage(AttributeTargets.Property,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
     type ValueAsStaticPropertyAttribute() =
         inherit System.Attribute()
@@ -469,7 +469,7 @@ namespace Microsoft.FSharp.Core
     
     module TupleUtils =
     
-        // adapted from System.Tuple::CombineHashCodes
+        // adapted from System.Tuple :: CombineHashCodes
         let inline mask (n:int) (m:int) = (# "and" n m : int #)
         let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
         let inline opxor (x:int) (y:int) : int = (# "xor" x y : int32 #)
@@ -822,25 +822,33 @@ namespace Microsoft.FSharp.Core
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
             let rec GenericCompare (comp:GenericComparer) (xobj:obj,yobj:obj) = 
-                (*if objEq xobj yobj then 0 else *)
                   match xobj,yobj with 
                    | null,null -> 0
                    | null,_ -> -1
                    | _,null -> 1
+
                    // Use Ordinal comparison for strings
-                   | (:? string as x),(:? string as y) -> System.String.CompareOrdinal(x, y)
+                   | (:? string as x),(:? string as y) ->
+                       System.String.CompareOrdinal(x, y)
+
                    // Permit structural comparison on arrays
                    | (:? System.Array as arr1),_ -> 
                        match arr1,yobj with 
                        // Fast path
-                       | (:? (obj[]) as arr1), (:? (obj[]) as arr2)      -> GenericComparisonObjArrayWithComparer comp arr1 arr2
+                       | (:? (obj[]) as arr1), (:? (obj[]) as arr2) ->
+                           GenericComparisonObjArrayWithComparer comp arr1 arr2
                        // Fast path
-                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2)     -> GenericComparisonByteArray arr1 arr2
-                       | _                   , (:? System.Array as arr2) -> GenericComparisonArbArrayWithComparer comp arr1 arr2
-                       | _ -> FailGenericComparison xobj
+                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2) ->
+                           GenericComparisonByteArray arr1 arr2
+                       | _, (:? System.Array as arr2) ->
+                           GenericComparisonArbArrayWithComparer comp arr1 arr2
+                       | _ ->
+                           FailGenericComparison xobj
+
                    // Check for IStructuralComparable
                    | (:? IStructuralComparable as x),_ ->
                        x.CompareTo(yobj,comp)
+
                    // Check for IComparable
                    | (:? System.IComparable as x),_ -> 
                        if comp.ThrowsOnPER then 
@@ -853,15 +861,22 @@ namespace Microsoft.FSharp.Core
                                     raise NaNException
                            | _ -> ()
                        x.CompareTo(yobj)
-                   | (:? nativeint as x),(:? nativeint as y) -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                   | (:? unativeint as x),(:? unativeint as y) -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+
+                   | (:? nativeint as x),(:? nativeint as y) ->
+                       if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+
+                   | (:? unativeint as x),(:? unativeint as y) ->
+                       if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+
                    | _,(:? IStructuralComparable as yc) ->
                        let res = yc.CompareTo(xobj,comp)
                        if res < 0 then 1 elif res > 0 then -1 else 0
+
                    | _,(:? System.IComparable as yc) -> 
                        // Note -c doesn't work here: be careful of comparison function returning minint
-                       let c = yc.CompareTo(xobj) in 
+                       let c = yc.CompareTo(xobj)
                        if c < 0 then 1 elif c > 0 then -1 else 0
+
                    | _ -> FailGenericComparison xobj
 
             /// specialcase: Core implementation of structural comparison on arbitrary arrays.
@@ -1090,7 +1105,7 @@ namespace Microsoft.FSharp.Core
                  when 'T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                     System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
 
@@ -1168,7 +1183,7 @@ namespace Microsoft.FSharp.Core
                  when 'T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                     System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
             /// Generic less-than with static optimizations for some well-known cases.
@@ -1374,7 +1389,7 @@ namespace Microsoft.FSharp.Core
                      | (:? (char[]) as arr1),    (:? (char[]) as arr2)     -> GenericEqualityCharArray arr1 arr2
                      | (:? (float32[]) as arr1), (:? (float32[]) as arr2) -> GenericEqualitySingleArray er arr1 arr2
                      | (:? (float[]) as arr1),   (:? (float[]) as arr2)     -> GenericEqualityDoubleArray er arr1 arr2
-                     | _                   ,    (:? System.Array as arr2) -> GenericEqualityArbArray er iec arr1 arr2
+                     | _,    (:? System.Array as arr2) -> GenericEqualityArbArray er iec arr1 arr2
                      | _ -> xobj.Equals(yobj)
                  | (:? IStructuralEquatable as x1),_ -> x1.Equals(yobj,iec)
                  // Ensure ER NaN semantics on recursive calls
@@ -1811,7 +1826,7 @@ namespace Microsoft.FSharp.Core
             let inline HashString (s:string) = 
                  match s with 
                  | null -> 0 
-                 | _ -> (# "call instance int32 [mscorlib]System.String::GetHashCode()" s : int #)
+                 | _ -> (# "call instance int32 [mscorlib]System.String :: GetHashCode()" s : int #)
                     
             // from mscorlib v4.0.30319
             let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
@@ -1885,7 +1900,9 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) = 
-                TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)
+                TupleUtils.combineTupleHashes
+                    (GenericHashWithComparerFast comparer x1)
+                    (GenericHashWithComparerFast comparer x2)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1895,7 +1912,11 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) =
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (GenericHashWithComparerFast comparer x3)
+                TupleUtils.combineTupleHashes
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x1)
+                        (GenericHashWithComparerFast comparer x2))
+                    (GenericHashWithComparerFast comparer x3)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1905,7 +1926,13 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) = 
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))
+                TupleUtils.combineTupleHashes
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x1)
+                        (GenericHashWithComparerFast comparer x2))
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x3)
+                        (GenericHashWithComparerFast comparer x4))
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1915,7 +1942,15 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) = 
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))) (GenericHashWithComparerFast comparer x5)
+                TupleUtils.combineTupleHashes 
+                    (TupleUtils.combineTupleHashes 
+                        (TupleUtils.combineTupleHashes 
+                            (GenericHashWithComparerFast comparer x1)
+                            (GenericHashWithComparerFast comparer x2))
+                        (TupleUtils.combineTupleHashes
+                            (GenericHashWithComparerFast comparer x3)
+                            (GenericHashWithComparerFast comparer x4)))
+                    (GenericHashWithComparerFast comparer x5)
 
             /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples
             //
@@ -3054,12 +3089,29 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<Struct>]
     [<CompiledName("FSharpValueOption`1")>]
+    [<DebuggerDisplay("ValueSome({Value})")>]
     type ValueOption<'T> =
         | ValueNone : 'T voption
         | ValueSome : 'T -> 'T voption
 
         member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
 
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        static member None : 'T voption = ValueNone
+
+        static member Some (value) : 'T voption = ValueSome(value)
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        member x.IsNone = match x with ValueNone -> true | _ -> false
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        member x.IsSome = match x with ValueSome _ -> true | _ -> false
+
+        static member op_Implicit (value) : 'T option = Some(value)
+
+        override x.ToString() = 
+           // x is non-null, hence ValueSome
+           "ValueSome("^anyToStringShowingNull x.Value^")"
 
     and 'T voption = ValueOption<'T>
 
@@ -3085,7 +3137,7 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("FSharpList`1")>]
     type List<'T> = 
        | ([])  :                  'T list
-       | (::)  : Head: 'T * Tail: 'T list -> 'T list
+       | ( :: )  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
        interface System.Collections.Generic.IReadOnlyCollection<'T>
@@ -3105,14 +3157,14 @@ namespace Microsoft.FSharp.Collections
            let rec count l n max =
                match l with
                | [] -> n
-               | _::t -> if n > max then n else count t (n+1) max
+               | _ :: t -> if n > max then n else count t (n+1) max
 
            let items length =
                let items = zeroCreate length
                let rec copy (items: 'T[]) l i = 
                    match l with
                    | [] -> () 
-                   | h::t -> 
+                   | h :: t -> 
                        if i < length then 
                            SetArray items i h
                            copy items t (i+1)
@@ -3141,14 +3193,14 @@ namespace Microsoft.FSharp.Collections
         let nonempty x = match x with [] -> false | _ -> true
         // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
         // tail cons cells is permitted in carefully written library code.
-        let inline setFreshConsTail cons t = cons.(::).1 <- t
+        let inline setFreshConsTail cons t = cons.( :: ).1 <- t
         let inline freshConsNoTail h = h :: (# "ldnull" : 'T list #)
 
         // Return the last cons it the chain
         let rec appendToFreshConsTail cons xs = 
             match xs with 
             | [] -> cons
-            | h::t -> 
+            | h :: t -> 
                 let cons2 = [h]
                 setFreshConsTail cons cons2
                 appendToFreshConsTail cons2 t
@@ -3196,7 +3248,7 @@ namespace Microsoft.FSharp.Collections
         let rec nth l n = 
             match l with 
             | [] -> raise (new System.ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
-            | h::t -> 
+            | h :: t -> 
                if n < 0 then raise (new System.ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
                elif n = 0 then h
                else nth t (n - 1)
@@ -3206,7 +3258,7 @@ namespace Microsoft.FSharp.Collections
             if n = 0 then setFreshConsTail cons [] else
             match l with
             | [] -> outOfRange()
-            | x::xs ->
+            | x :: xs ->
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
                 sliceFreshConsTail cons2 (n - 1) xs
@@ -3217,7 +3269,7 @@ namespace Microsoft.FSharp.Collections
             if n < 0 then [] else
             match l with
             | [] -> outOfRange()
-            | x::xs ->
+            | x :: xs ->
                 let cons = freshConsNoTail x
                 sliceFreshConsTail cons n xs
                 cons
@@ -3228,7 +3280,7 @@ namespace Microsoft.FSharp.Collections
             let rec loop i lst =
                 match lst with
                 | _ when i = 0 -> lst
-                | _::t -> loop (i-1) t
+                | _ :: t -> loop (i-1) t
                 | [] -> outOfRange()
             loop n l
 
@@ -3254,7 +3306,7 @@ namespace Microsoft.FSharp.Collections
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         static member Empty       : 'T list = []
 
-        static member Cons(head,tail) : 'T list = head::tail
+        static member Cons(head,tail) : 'T list = head :: tail
         override x.ToString() = 
            match x with 
            | [] -> "[]"
@@ -3646,11 +3698,11 @@ namespace Microsoft.FSharp.Core
 
         let inline castToString (x:'T) = (# "" x : string #)  // internal
 
-        // let rec (@) x y = match x with [] -> y | (h::t) -> h :: (t @ y)
+        // let rec (@) x y = match x with [] -> y | (h :: t) -> h :: (t @ y)
         let (@) list1 list2 = 
             match list1 with
             | [] -> list2
-            | (h::t) -> 
+            | (h :: t) -> 
             match list2 with
             | [] -> list1
             | _ ->
@@ -4049,7 +4101,7 @@ namespace Microsoft.FSharp.Core
                 when ^T : float32= (# "clt" x y : bool #) 
                 when ^T : char   = (# "clt" x y : bool #)
                 when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static greater-than with static optimizations for some well-known cases.
             let inline (>) (x:^T) (y:^U) = 
@@ -4069,7 +4121,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static less-than-or-equal with static optimizations for some well-known cases.
             let inline (<=) (x:^T) (y:^U) = 
@@ -4089,7 +4141,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
             let inline (>=) (x:^T) (y:^U) = 
@@ -4109,7 +4161,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
@@ -4181,7 +4233,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" e1 : string #) ,(# "" e2 : string #))
+                     System.String.CompareOrdinal((# "" e1 : string #),(# "" e2 : string #))
                  when ^T : decimal     = System.Decimal.Compare((# "" e1:decimal #), (# "" e2:decimal #))
 
             [<CompiledName("Max")>]
@@ -5001,7 +5053,7 @@ namespace Microsoft.FSharp.Core
             let inline ComputeSlice bound start finish length =
                 match start, finish with
                 | None, None -> bound, bound + length - 1
-                | None, Some n when n >= bound  -> bound , n
+                | None, Some n when n >= bound  -> bound, n
                 | Some m, None when m <= bound + length -> m, bound + length - 1
                 | Some m, Some n -> m, n
                 | _ -> raise (System.IndexOutOfRangeException())

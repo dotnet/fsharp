@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="ExceptionsHeader">
         <source>Exceptions:</source>
-        <target state="translated">例外狀況: </target>
+        <target state="translated">例外狀況:</target>
         <note />
       </trans-unit>
       <trans-unit id="GenericParametersHeader">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="6014">
         <source>Formatting</source>
-        <target state="new">Formatting</target>
+        <target state="translated">格式化</target>
         <note />
       </trans-unit>
     </body>

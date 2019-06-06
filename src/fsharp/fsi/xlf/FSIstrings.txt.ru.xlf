@@ -189,7 +189,7 @@
       </trans-unit>
       <trans-unit id="fsiInterrupt">
         <source>\n- Interrupt\n</source>
-        <target state="translated">\n- Interrupt\n</target>
+        <target state="translated">\n- Прерывать\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExit">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Предотвращает блокировку ссылок процессом F# Interactive.</target>
+        <target state="translated">Предотвращает блокировку ссылок интерактивным процессом F#.</target>
         <note />
       </trans-unit>
     </body>

@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
@@ -15,13 +14,10 @@ open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open System.Runtime.Caching
-open System.Collections.Concurrent
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
@@ -48,11 +44,11 @@ type internal FSharpCompletionProvider
     static let [<Literal>] IndexPropName = "Index"
 
     static let keywordCompletionItems =
-        Lexhelp.Keywords.keywordsWithDescription
+        Keywords.KeywordsWithDescription
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
         |> List.sortBy (fun (keyword, _) -> keyword)
         |> List.mapi (fun n (keyword, description) ->
-             CommonCompletionItem.Create(keyword, CompletionItemRules.Default, Nullable Glyph.Keyword, sortText = sprintf "%06d" (1000000 + n))
+             CommonCompletionItem.Create(keyword, null, CompletionItemRules.Default, Nullable Glyph.Keyword, sortText = sprintf "%06d" (1000000 + n))
                 .AddProperty("description", description)
                 .AddProperty(IsKeywordPropName, ""))
     
@@ -84,28 +80,30 @@ type internal FSharpCompletionProvider
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list), intelliSenseOptions: IntelliSenseOptions) =
-        // Skip if we are at the start of a document
-        if caretPosition = 0 then false
-        // Skip if it was triggered by an operation other than insertion
-        elif not (trigger = CompletionTriggerKind.Insertion) then false
-        // Skip if we are not on a completion trigger
+        if caretPosition = 0 then
+            false
         else
             let triggerPosition = caretPosition - 1
             let triggerChar = sourceText.[triggerPosition]
 
-            // do not trigger completion if it's not single dot, i.e. range expression
-            if not intelliSenseOptions.ShowAfterCharIsTyped && triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+            if trigger = CompletionTriggerKind.Deletion && intelliSenseOptions.ShowAfterCharIsDeleted then
+                Char.IsLetterOrDigit(sourceText.[triggerPosition]) || triggerChar = '.'
+            elif not (trigger = CompletionTriggerKind.Insertion) then
                 false
             else
-                let documentId, filePath, defines = getInfo()
-                CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                (triggerChar = '.' || (intelliSenseOptions.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
+                // Do not trigger completion if it's not single dot, i.e. range expression
+                if not intelliSenseOptions.ShowAfterCharIsTyped && triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+                    false
+                else
+                    let documentId, filePath, defines = getInfo()
+                    CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
+                    (triggerChar = '.' || (intelliSenseOptions.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
                 
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list, languageServicePerformanceOptions: LanguageServicePerformanceOptions, intellisenseOptions: IntelliSenseOptions) = 
         asyncMaybe {
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, languageServicePerformanceOptions, userOpName = userOpName)
+            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions, userOpName = userOpName)
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -154,7 +152,7 @@ type internal FSharpCompletionProvider
                     | _, idents -> Array.last idents
 
                 let completionItem = 
-                    CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, filterText = filterText)
+                    CommonCompletionItem.Create(name, null, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, glyph = Nullable (Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyphHelpersObsolete.Convert(glyph)), filterText = filterText)
                                         .AddProperty(FullNamePropName, declarationItem.FullName)
                         
                 let completionItem =
@@ -218,7 +216,7 @@ type internal FSharpCompletionProvider
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
             do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
-            let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let getAllSymbols(fileCheckResults: FSharpCheckFileResults) =
                 if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules
@@ -284,7 +282,7 @@ type internal FSharpCompletionProvider
                     let! sourceText = document.GetTextAsync(cancellationToken)
                     let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
-                    let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                     let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     

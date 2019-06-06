@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="6014">
         <source>Formatting</source>
-        <target state="new">Formatting</target>
+        <target state="translated">서식</target>
         <note />
       </trans-unit>
     </body>

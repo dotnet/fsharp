@@ -8,12 +8,13 @@ open System.Text
 open NUnit.Framework
 
 open Internal.Utilities.Text.Lexing
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Lexer
-open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler
+open FSharp.Compiler.Lexer
+open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Ast
+open Internal.Utilities
 
 [<TestFixture>]
 type HashIfExpression()     =
@@ -63,7 +64,7 @@ type HashIfExpression()     =
         let resourceManager = LexResourceManager ()
         let defines         = []
         let startPos        = Position.Empty
-        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, stack, errorLogger)
+        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, stack, errorLogger, PathMap.empty)
 
         CompileThreadStatic.ErrorLogger <- errorLogger
 

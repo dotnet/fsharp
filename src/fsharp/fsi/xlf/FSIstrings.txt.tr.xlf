@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  F# Etkileşimli yönergeleri:</target>
+        <target state="translated">F# Etkileşimli yönergeleri:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">

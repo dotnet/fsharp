@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="ImplementInterface">
         <source>Implement interface</source>
-        <target state="translated">Arabirim uygulama</target>
+        <target state="translated">Arabirimi uygula</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="6014">
         <source>Formatting</source>
-        <target state="new">Formatting</target>
+        <target state="translated">Biçimlendirme</target>
         <note />
       </trans-unit>
     </body>

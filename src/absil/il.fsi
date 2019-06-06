@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The "unlinked" view of .NET metadata and code.  Central to the Abstract IL library
-module public Microsoft.FSharp.Compiler.AbstractIL.IL 
+module public FSharp.Compiler.AbstractIL.IL 
 
 open System.Collections.Generic
 open System.Reflection
@@ -53,7 +53,15 @@ type PublicKey =
     member KeyToken: byte[]
     static member KeyAsToken: byte[] -> PublicKey 
 
-type ILVersionInfo = uint16 * uint16 * uint16 * uint16
+[<Struct>]
+type ILVersionInfo =
+
+    val Major: uint16
+    val Minor: uint16
+    val Build: uint16
+    val Revision: uint16
+
+    new : major: uint16 * minor: uint16 * build: uint16 * revision: uint16 -> ILVersionInfo
 
 [<Sealed>]
 type ILAssemblyRef =
@@ -1605,7 +1613,7 @@ val decodeILAttribData:
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 
 /// Generate simple references to assemblies and modules.
-val mkSimpleAssRef: string -> ILAssemblyRef
+val mkSimpleAssemblyRef: string -> ILAssemblyRef
 
 val mkSimpleModRef: string -> ILModuleRef
 
@@ -1955,6 +1963,7 @@ val isILTypedReferenceTy: ILType -> bool
 val isILDoubleTy: ILType -> bool
 val isILSingleTy: ILType -> bool
 
+val sha1HashInt64 : byte[] -> int64
 /// Get a public key token from a public key.
 val sha1HashBytes: byte[] -> byte[] (* SHA1 hash *)
 

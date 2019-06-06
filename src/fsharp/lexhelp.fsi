@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Lexhelp
+module internal FSharp.Compiler.Lexhelp
 
 open Internal.Utilities
 open Internal.Utilities.Text
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
 
 
 
@@ -33,7 +33,8 @@ type lexargs =
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
-      applyLineDirectives: bool }
+      applyLineDirectives: bool
+      pathMap: PathMap }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
@@ -41,7 +42,7 @@ type LongUnicodeLexResult =
     | Invalid
 
 val resetLexbufPos : string -> UnicodeLexing.Lexbuf -> unit
-val mkLexargs : 'a * string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger -> lexargs
+val mkLexargs : 'a * string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger * PathMap -> lexargs
 val reusingLexbufForParsing : UnicodeLexing.Lexbuf -> (unit -> 'a) -> 'a 
 
 val usingLexbufForParsing : UnicodeLexing.Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a

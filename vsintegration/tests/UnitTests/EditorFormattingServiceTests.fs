@@ -8,7 +8,7 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis.Formatting
 
 [<TestFixture>]

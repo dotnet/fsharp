@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nAusnahme beim Schöndruck.\nMelden Sie dies, damit das Problem behoben werden kann.\nAblaufverfolgung: {0}\n</target>
+        <target state="translated">\n\nAusnahme bei der automatischen Strukturierung und Einrückung.\nMelden Sie dies, damit das Problem behoben werden kann.\nAblaufverfolgung: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Verhindert, dass Verweise vom F# Interactive-Prozess gesperrt werden</target>
+        <target state="translated">Verhindert, dass Verweise vom F# Interactive-Prozess gesperrt werden.</target>
         <note />
       </trans-unit>
     </body>

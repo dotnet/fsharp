@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Build
+namespace FSharp.Build
 
 open System
 open System.Diagnostics
@@ -10,10 +10,6 @@ open System.Reflection
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
 //There are a lot of flags on fsc.exe.
 //For now, not all of them are represented in the "Fsc class" object model.
@@ -34,6 +30,7 @@ type public Fsc () as this =
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
     let mutable delaySign : bool = false
+    let mutable deterministic : bool = false
     let mutable disabledWarnings : string = null
     let mutable documentationFile : string = null
     let mutable dotnetFscCompilerPath : string = null
@@ -45,7 +42,8 @@ type public Fsc () as this =
     let mutable noFramework = false
     let mutable optimize  : bool = true
     let mutable otherFlags : string = null
-    let mutable outputAssembly : string = null 
+    let mutable outputAssembly : string = null
+    let mutable pathMap : string = null
     let mutable pdbFile : string = null
     let mutable platform : string = null
     let mutable prefer32bit : bool = false
@@ -121,6 +119,7 @@ type public Fsc () as this =
                 builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
+
         // GenerateInterfaceFile
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
@@ -143,8 +142,8 @@ type public Fsc () as this =
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
                 | "ANYCPU",  _, _  -> "anycpu"
-                | "X86"   ,  _, _  -> "x86"
-                | "X64"   ,  _, _  -> "x64"
+                | "X86",  _, _  -> "x86"
+                | "X64",  _, _  -> "x64"
                 | _ -> null)
         // Resources
         if resources <> null then 
@@ -235,6 +234,15 @@ type public Fsc () as this =
 
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
 
+        builder.AppendSwitch("--nocopyfsharpcore")
+        
+        match pathMap with
+        | null -> ()
+        | _ -> builder.AppendSwitchIfNotNull("--pathmap:", pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+
+        if deterministic then
+            builder.AppendSwitch("--deterministic+")
+
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
         capturedArguments <- builder.CapturedArguments()
@@ -265,6 +273,10 @@ type public Fsc () as this =
         with get() = debugType
         and set(s) = debugType <- s
 
+    member fsc.Deterministic 
+        with get() = deterministic
+        and set(p) = deterministic <- p
+
     member fsc.DelaySign
         with get() = delaySign
         and set(s) = delaySign <- s
@@ -291,6 +303,10 @@ type public Fsc () as this =
     member fsc.EmbedAllSources
         with get() = embedAllSources
         and  set(s) = embedAllSources <- s
+
+    member fsc.Embed
+        with get() = embeddedFiles
+        and set(e) = embeddedFiles <- e
 
     member fsc.EmbeddedFiles
         with get() = embeddedFiles
@@ -343,6 +359,11 @@ type public Fsc () as this =
         with get() = outputAssembly
         and set(s) = outputAssembly <- s
 
+    // --pathmap <string>: Paths to rewrite when producing deterministic builds
+    member fsc.PathMap
+        with get() = pathMap
+        and set(s) = pathMap <- s
+    
     // --pdb <string>: 
     //     Name the debug output file
     member fsc.PdbFile
@@ -485,7 +506,7 @@ type public Fsc () as this =
     override fsc.ToolName = "fsc.exe" 
     override fsc.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
     override fsc.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
-    override fsc.GenerateFullPathToTool() = 
+    override fsc.GenerateFullPathToTool() =
         if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
         System.IO.Path.Combine(toolPath, fsc.ToolExe)
     override fsc.LogToolCommand (message:string) =
@@ -524,24 +545,11 @@ type public Fsc () as this =
                         -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
                     | e -> reraise()
 
-                // Todo: Remove !FX_NO_CONVERTER code path for VS2017.7
-                // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
-                // This is so that during the interim, earlier VS's will still load the OSS project
                 let baseCallDelegate = Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
                 try
                     invokeCompiler baseCallDelegate
                 with
                 | e ->
-#if !FX_NO_CONVERTER
-                    try
-                        let baseCall = fun (dummy : int) -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
-                        // We are using a Converter<int,int> rather than a "unit->int" because it is too hard to
-                        // figure out how to pass an F# function object via reflection.  
-                        let baseCallDelegate = new System.Converter<int,int>(baseCall)
-                        invokeCompiler baseCallDelegate
-                    with
-                    | e ->
-#endif
                         Debug.Assert(false, "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
                         reraise()
 
@@ -565,8 +573,7 @@ type public Fsc () as this =
     member internal fsc.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
         fsc.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
 
-    member internal fsc.GetCapturedArguments() =
-        [|
+    member internal fsc.GetCapturedArguments() = [|
             yield! capturedArguments
             yield! capturedFilenames
         |]

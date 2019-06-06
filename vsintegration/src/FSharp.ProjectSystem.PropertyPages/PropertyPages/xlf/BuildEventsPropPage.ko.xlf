@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">빌드 전 이벤트 명령줄(&amp;R):</target>
+        <target state="translated">빌드 이벤트 명령줄 대화 상자(&amp;R):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">

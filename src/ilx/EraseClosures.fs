@@ -1,18 +1,18 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseClosures
+module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseClosures
 
 open Internal.Utilities
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
-open Microsoft.FSharp.Compiler.AbstractIL.Morphs 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
+open FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
+open FSharp.Compiler.AbstractIL.Morphs 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.PrettyNaming
 open System.Reflection
 
 // -------------------------------------------------------------------- 
@@ -27,7 +27,7 @@ let rec stripUpTo n test dest x =
     if test x then 
         let l, r = dest x
         let ls, res = stripUpTo (n-1) test dest r
-        (l::ls), res
+        (l :: ls), res
     else ([], x)
 
 // -------------------------------------------------------------------- 
@@ -231,7 +231,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
             let storers, (loaders2 : ILInstr list list) =  unwind rest
             (List.rev (List.concat storers) : ILInstr list) , List.concat loaders2
         else 
-            stripUpTo n (function (_x::_y) -> true | _ -> false) (function (x::y) -> (x, y) | _ -> failwith "no!") loaders
+            stripUpTo n (function (_x :: _y) -> true | _ -> false) (function (x :: y) -> (x, y) | _ -> failwith "no!") loaders
             
     let rec buildApp fst loaders apps =
         // Strip off one valid indirect call.  [fst] indicates if this is the 
@@ -369,7 +369,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let fixupArg mkEnv mkArg n = 
                   let rec findMatchingArg l c = 
                       match l with 
-                      | ((m, _)::t) -> 
+                      | ((m, _) :: t) -> 
                           if n = m then mkEnv c
                           else findMatchingArg t (c+1)
                       | [] -> mkArg (n - argToFreeVarMap.Length + 1)

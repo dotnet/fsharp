@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Rational arithmetic, used for exponents on units-of-measure
-module internal Microsoft.FSharp.Compiler.Rational
+module internal FSharp.Compiler.Rational
 
 open System.Numerics
 
 type Rational = { 
-  numerator: BigInteger;
+  numerator: BigInteger
   denominator: BigInteger
 }
 
@@ -26,7 +26,7 @@ let mkRational p q =
     if q > BigInteger.Zero then p, q else -p, -q
     
   in
-    { numerator = p;
+    { numerator = p
       denominator = q 
     }
 

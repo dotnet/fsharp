@@ -1,0 +1,18 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <DisableOutputPathCopying>true</DisableOutputPathCopying>
+    <EnableXlfLocalization>false</EnableXlfLocalization>
+    <SetupRootFolder>$(MSBuildThisFileDirectory)</SetupRootFolder>
+    <SetupResourcesDirectory>$(SetupRootFolder)resources</SetupResourcesDirectory>
+    <BinariesDir>$(SetupRootFolder)..\artifacts\bin</BinariesDir>
+    <OutputPath>$(ArtifactsDir)\VSSetup\$(Configuration)</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)\VSSetup.obj\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
+    <VsixBuildLocation>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)</VsixBuildLocation>
+    <InsertionDir>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)\Insertion</InsertionDir>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+  </PropertyGroup>
+
+</Project>

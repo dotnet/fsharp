@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Build
+namespace FSharp.Build
 
 open System
 open System.Collections
@@ -133,9 +133,7 @@ type WriteCodeFragment() =
                         _outputFile
 
                 let codeText = code.ToString()
-                let alreadyExists = (try File.Exists fileName && File.ReadAllText(fileName) = codeText with _ -> false)
-                if not alreadyExists then
-                    File.WriteAllText(fileName, codeText)
+                File.WriteAllText(fileName, codeText)
                 _outputFile <- outputFileItem
                 true
 

@@ -13,8 +13,8 @@ open Fake.ReleaseNotesHelper
 #if MONO
 // prevent incorrect output encoding (e.g. https://github.com/fsharp/FAKE/issues/1196)
 System.Console.OutputEncoding <- System.Text.Encoding.UTF8
-CleanDir (__SOURCE_DIRECTORY__ + "/../tests/TestResults") 
-File.WriteAllText(__SOURCE_DIRECTORY__ + "/../tests/TestResults/notestsyet.txt","No tests yet")
+CleanDir (__SOURCE_DIRECTORY__ + "/../artifacts/TestResults") 
+File.WriteAllText(__SOURCE_DIRECTORY__ + "/../artifacts/TestResults/notestsyet.txt","No tests yet")
 let isMono = true
 #else
 let isMono = false
@@ -24,7 +24,14 @@ let isMono = false
 // Utilities
 // --------------------------------------------------------------------------------------
 
-let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.201"
+let dotnetExePath =
+    // Build.cmd normally downloads a dotnet cli to: <repo-root>\artifacts\toolset\dotnet
+    // check if there is one there to avoid downloading an additional one here
+    let pathToCli = Path.Combine(__SOURCE_DIRECTORY__, @"..\artifacts\toolset\dotnet\dotnet.exe")
+    if File.Exists(pathToCli) then
+        pathToCli
+    else
+        DotNetCli.InstallDotNetSDK "2.2.105"
 
 let runDotnet workingDir args =
     let result =
@@ -54,13 +61,13 @@ let runCmdIn workDir (exe:string) = Printf.ksprintf (fun (args:string) ->
 // The rest of the code is standard F# build script
 // --------------------------------------------------------------------------------------
 
-let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../release/fcs")
+let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../artifacts/bin/fcs/Release")
 
 // Read release notes & version info from RELEASE_NOTES.md
 let release = LoadReleaseNotes (__SOURCE_DIRECTORY__ + "/RELEASE_NOTES.md")
 let isAppVeyorBuild = buildServer = BuildServer.AppVeyor
 let isJenkinsBuild = buildServer = BuildServer.Jenkins
-let isVersionTag tag = Version.TryParse tag |> fst
+let isVersionTag (tag: string) = Version.TryParse tag |> fst
 let hasRepoVersionTag = isAppVeyorBuild && AppVeyorEnvironment.RepoTag && isVersionTag AppVeyorEnvironment.RepoTagName
 let assemblyVersion = if hasRepoVersionTag then AppVeyorEnvironment.RepoTagName else release.NugetVersion
 
@@ -75,15 +82,8 @@ Target "Clean" (fun _ ->
 
 Target "Restore" (fun _ ->
     // We assume a paket restore has already been run
+    runDotnet __SOURCE_DIRECTORY__ "restore ../src/buildtools/buildtools.proj -v n"
     runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.sln -v n"
-    for p in [ "../packages.config" ] do
-        let rec executeProcess count =
-            let result = ExecProcess (fun info ->
-                info.FileName <- FullName @"./../.nuget/NuGet.exe"
-                info.WorkingDirectory <- FullName @"./.."
-                info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
-            if result <> 0 && count > 1 then  executeProcess (count - 1) else result
-        (executeProcess 5) |> assertExitCodeZero
 )
 
 Target "BuildVersion" (fun _ ->
@@ -91,16 +91,19 @@ Target "BuildVersion" (fun _ ->
 )
 
 Target "Build" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.sln -v n -c Release"
+    runDotnet __SOURCE_DIRECTORY__ "build ../src/buildtools/buildtools.proj -v n -c Proto"
+    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp2.1/fslex.dll"
+    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp2.1/fsyacc.dll"
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "build FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
 )
 
 Target "Test" (fun _ ->
     // This project file is used for the netcoreapp2.0 tests to work out reference sets
-    runDotnet __SOURCE_DIRECTORY__ "restore ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
-    runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
+    runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n /restore /p:DisableCompilerRedirection=true"
 
     // Now run the tests
-    runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release"
+    let logFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "artifacts", "TestResults", "Release", "FSharp.Compiler.Service.Test.xml")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --no-restore --no-build -v n -c Release --test-adapter-path . --logger \"nunit;LogFilePath=%s\"" logFilePath)
 )
 
 Target "NuGet" (fun _ ->

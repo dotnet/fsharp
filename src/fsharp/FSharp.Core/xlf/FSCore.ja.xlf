@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="notAPermutation">
         <source>The function did not compute a permutation.</source>
-        <target state="translated">関数は順列を計算しませんでした。</target>
+        <target state="translated">関数は順列をコンピューティングしませんでした。</target>
         <note />
       </trans-unit>
       <trans-unit id="notARecordType">

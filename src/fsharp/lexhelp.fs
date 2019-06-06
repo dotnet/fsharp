@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Lexhelp
+module internal FSharp.Compiler.Lexhelp
 
 open System
 open System.Text
@@ -10,22 +10,20 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Text
 open Internal.Utilities.Text.Lexing
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Parser
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Ast
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.Range
+open FSharp.Compiler.Parser
 
-
-
-// The "mock" filename used by fsi.exe when reading from stdin.
-// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
+/// The "mock" filename used by fsi.exe when reading from stdin.
+/// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
 let stdinMockFilename = "stdin" 
 
 /// Lexer args: status of #light processing.  Mutated when a #light
@@ -45,12 +43,13 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 type LexResourceManager() =
     let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(1024)
     member x.InternIdentifierToken(s) = 
-        let mutable res = Unchecked.defaultof<_> 
-        let ok = strings.TryGetValue(s, &res)  
-        if ok then res  else 
-        let res = IDENT s
-        (strings.[s] <- res; res)
-              
+        match strings.TryGetValue s with
+        | true, res -> res
+        | _ ->
+            let res = IDENT s
+            strings.[s] <- res
+            res
+
 /// Lexer parameters 
 type lexargs =  
     { defines: string list
@@ -58,7 +57,8 @@ type lexargs =
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
-      applyLineDirectives: bool }
+      applyLineDirectives: bool
+      pathMap: PathMap }
 
 /// possible results of lexing a long unicode escape sequence in a string literal, e.g. "\UDEADBEEF"
 type LongUnicodeLexResult =
@@ -66,13 +66,14 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger) =
+let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
     { defines = defines
       ifdefStack= ifdefStack
       lightSyntaxStatus=lightSyntaxStatus
       resourceManager=resourceManager
       errorLogger=errorLogger
-      applyLineDirectives=true }
+      applyLineDirectives=true
+      pathMap=pathMap }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 
@@ -287,10 +288,10 @@ module Keywords =
       ]
     (*------- reserved keywords which are ml-compatibility ids *) 
     @ List.map (fun s -> (FSHARP,s,RESERVED)) 
-        [ "break"; "checked"; "component"; "constraint"; "continue"; 
-          "fori";  "include";  "mixin"; 
-          "parallel"; "params";  "process"; "protected"; "pure"; 
-          "sealed"; "trait";  "tailcall"; "virtual"; ]
+        [ "break"; "checked"; "component"; "constraint"; "continue"
+          "fori";  "include";  "mixin"
+          "parallel"; "params";  "process"; "protected"; "pure"
+          "sealed"; "trait";  "tailcall"; "virtual" ]
 
     let private unreserveWords = 
         keywordList |> List.choose (function (mode, keyword, _) -> if mode = FSHARP then Some keyword else None) 
@@ -327,16 +328,19 @@ module Keywords =
             match s with 
             | "__SOURCE_DIRECTORY__" ->
                 let filename = fileOfFileIndex lexbuf.StartPos.FileIndex
-                let dirname = 
+                let dirname =
                     if String.IsNullOrWhiteSpace(filename) then
                         String.Empty
                     else if filename = stdinMockFilename then
                         System.IO.Directory.GetCurrentDirectory()
                     else
-                        filename 
+                        filename
                         |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
                         |> System.IO.Path.GetDirectoryName
-                KEYWORD_STRING dirname
+
+                if String.IsNullOrEmpty dirname then dirname
+                else PathMap.applyDir args.pathMap dirname
+                |> KEYWORD_STRING
             | "__SOURCE_FILE__" -> 
                 KEYWORD_STRING (System.IO.Path.GetFileName((fileOfFileIndex lexbuf.StartPos.FileIndex))) 
             | "__LINE__" -> 

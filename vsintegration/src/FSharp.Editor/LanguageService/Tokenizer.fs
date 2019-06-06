@@ -13,12 +13,17 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Ast
+open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
+
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+
+type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
 
 [<RequireQualifiedAccess>]
 type internal LexerSymbolKind = 
@@ -556,7 +561,7 @@ module internal Tokenizer =
                     i
                 // Rescan the lines if necessary and report the information
                 let result = new List<ClassifiedSpan>()
-                let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+                let mutable lexState = if scanStartLine = 0 then FSharpTokenizerLexState.Initial else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
  
                 for i = scanStartLine to endLine do
                     cancellationToken.ThrowIfCancellationRequested()
@@ -569,7 +574,7 @@ module internal Tokenizer =
                         //   2. the hash codes match
                         //   3. the start-of-line lex states are the same
                         match sourceTextData.[i] with 
-                        | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
+                        | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> 
                             data
                         | _ -> 
                             // Otherwise, we recompute
@@ -589,7 +594,7 @@ module internal Tokenizer =
                 if endLine < lines.Count - 1 then 
                     match sourceTextData.[endLine+1] with 
                     | Some data  -> 
-                        if data.LexStateAtStartOfLine <> lexState then
+                        if not (data.LexStateAtStartOfLine.Equals(lexState)) then
                             sourceTextData.ClearFrom (endLine+1)
                     | None -> ()
                 result
@@ -729,7 +734,7 @@ module internal Tokenizer =
                 ) do  
                 i <- i - 1
             i
-        let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+        let lexState = if scanStartLine = 0 then FSharpTokenizerLexState.Initial else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
         let lineContents = textLine.Text.ToString(textLine.Span)
         
         // We can reuse the old data when 
@@ -809,7 +814,7 @@ module internal Tokenizer =
                         else PrettyNaming.IsIdentifierPartCharacter c) 
         
         let isFixableIdentifier (s: string) = 
-            not (String.IsNullOrEmpty s) && Lexhelp.Keywords.NormalizeIdentifierBackticks s |> isIdentifier
+            not (String.IsNullOrEmpty s) && Keywords.NormalizeIdentifierBackticks s |> isIdentifier
         
         let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
         

@@ -26,8 +26,9 @@ open System.IO
 open System.Text
 open NUnit.Framework
 open Microsoft.CodeAnalysis.Text
+open VisualFSharp.UnitTests.Roslyn
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
@@ -39,7 +40,7 @@ let internal projectOptions = {
     ProjectId = None
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
-    OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
+    OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll") |]
     IsIncompleteTypeCheckEnvironment = true
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
@@ -48,6 +49,43 @@ let internal projectOptions = {
     ExtraProjectInfo = None
     Stamp = None
 }
+
+let private DefaultDocumentationProvider = 
+    { new IDocumentationBuilder with
+        override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
+        override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
+    }
+
+let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:int) =
+    async {
+        let triggerChar = None // TODO:
+        let code = File.ReadAllText(fileName)
+        let! triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, DefaultDocumentationProvider, SourceText.From(code), caretPosition, project.Options, triggerChar, fileName, 0)
+        return triggered
+    } |> Async.RunSynchronously
+
+let GetCompletionTypeNames (project:FSharpProject) (fileName:string) (caretPosition:int) =
+    let sigHelp = GetSignatureHelp project fileName caretPosition
+    match sigHelp with
+        | None -> [||]
+        | Some (items, _applicableSpan, _argumentIndex, _argumentCount, _argumentName) ->
+            let completionTypeNames =
+                items
+                |> Array.map (fun (_, _, _, _, _, x, _) -> x |> Array.map (fun (_, _, x, _, _) -> x))
+            completionTypeNames
+
+let GetCompletionTypeNamesFromCursorPosition (project:FSharpProject) =
+    let fileName, caretPosition = project.GetCaretPosition()
+    let completionNames = GetCompletionTypeNames project fileName caretPosition
+    completionNames
+
+let GetCompletionTypeNamesFromXmlString (xml:string) =
+    use project = CreateProject xml
+    GetCompletionTypeNamesFromCursorPosition project
+
+let GetCompletionTypeNamesFromCode (code:string) =
+    use project = SingleFileProject code
+    GetCompletionTypeNamesFromCursorPosition project
 
 [<Test>]
 let ShouldGiveSignatureHelpAtCorrectMarkers() =
@@ -66,7 +104,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
              ("arg0", Some ("[7..64)", 1, 2, Some "arg0"));
              ("arg0=", Some ("[7..64)", 1, 2, Some "arg0")); 
              ("World", Some ("[7..64)", 1, 2, Some "arg0"));
-             (")", None)]);
+             (")", Some("[7..64)", 0, 2, Some "format"))]);
           ( """
 //2
 open System
@@ -127,6 +165,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 //Test case 5
           ( """let _ = System.DateTime(""",
             [("let _ = System.DateTime(",  Some ("[8..24)", 0, 0, None)) ])
+          ( """let _ = System.DateTime(1L,""",
+            [("let _ = System.DateTime(1L,", Some ("[8..27)", 1, 2, None )) ])
           ]
 
     let sb = StringBuilder()
@@ -139,14 +179,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-            let documentationProvider = 
-                { new IDocumentationBuilder with
-                    override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-                    override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
-                } 
-
             let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, documentationProvider, SourceText.From(fileContents), caretPosition, projectOptions, triggerChar, filePath, 0) |> Async.RunSynchronously
+            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, DefaultDocumentationProvider, SourceText.From(fileContents), caretPosition, projectOptions, triggerChar, filePath, 0) |> Async.RunSynchronously
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
                 match triggered with 
@@ -164,8 +198,36 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
     | "" -> ()
     | errorText -> Assert.Fail errorText
 
+// migrated from legacy test
+[<Test>]
+let ``Multi.ReferenceToProjectLibrary``() =
+    let completionNames = GetCompletionTypeNamesFromXmlString @"
+<Projects>
 
+  <Project Name=""TestLibrary.fsproj"">
+    <Reference>HelperLibrary.fsproj</Reference>
+    <File Name=""Test.fs"">
+      <![CDATA[
+open Test
+Foo.Sum(12, $$
+      ]]>
+    </File>
+  </Project>
 
-#if EXE
-ShouldGiveSignatureHelpAtCorrectMarkers()
-#endif
+  <Project Name=""HelperLibrary.fsproj"">
+    <File Name=""Helper.fs"">
+      <![CDATA[
+namespace Test
+
+type public Foo() =
+    static member Sum(x:int, y:int) = x + y
+      ]]>
+    </File>
+  </Project>
+
+</Projects>
+"
+    let expected = [|
+        [|"System.Int32"; "System.Int32"|]
+    |]
+    Assert.AreEqual(expected, completionNames)

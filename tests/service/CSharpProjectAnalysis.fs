@@ -1,8 +1,8 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../bin/v4.5/CSharp_Analysis.dll"
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -16,9 +16,9 @@ open System
 open System.IO
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 open FSharp.Compiler.Service.Tests
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
@@ -67,8 +67,8 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
 let ``Test that csharp references are recognized as such`` () = 
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
-    let ass = table.["CSharp_Analysis"]
-    let search = ass.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") 
+    let assembly = table.["CSharp_Analysis"]
+    let search = assembly.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") 
     Assert.True search.IsSome
     let found = search.Value
     // this is no F# thing

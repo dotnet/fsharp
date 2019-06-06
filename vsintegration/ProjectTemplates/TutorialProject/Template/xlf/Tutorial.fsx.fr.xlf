@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Pour exécuter le code en F# Interactive, mettez en surbrillance une portion du code, puis appuyez sur Alt+Entrée ou cliquez avec le bouton droit,</target>
+        <target state="translated">Pour exécuter le code dans F# Interactive, mettez en surbrillance une portion du code, puis appuyez sur Alt+Entrée ou cliquez avec le bouton droit,</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -209,7 +209,7 @@
       </trans-unit>
       <trans-unit id="FunctionsModule-Line1">
         <source>Much of F# programming consists of defining functions that transform input data to produce</source>
-        <target state="translated">La programmation en F# consiste en grande partie à définir des fonctions qui transforment des données d'entrée pour produire des</target>
+        <target state="translated">La programmation F# consiste en grande partie à définir des fonctions qui transforment des données d'entrée pour produire des</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionsModule-Line2">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">et</target>
+        <target state="translated">Et</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">
@@ -584,7 +584,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line9">
         <source>This is using what is known as function composition.  This is possible because functions in F#</source>
-        <target state="translated">C'est ce qui s'appelle la composition de fonctions. Cela vient du fait que les fonctions en F#</target>
+        <target state="translated">C'est ce qui s'appelle la composition de fonctions. Cela vient du fait que les fonctions dans F#</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line10">

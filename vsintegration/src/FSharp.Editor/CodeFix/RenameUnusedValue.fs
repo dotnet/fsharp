@@ -12,8 +12,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RenameUnusedValue"); Shared>]
 type internal FSharpRenameUnusedValueCodeFixProvider
@@ -57,7 +57,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
             // We have to use the additional check for backtickes because `IsOperatorOrBacktickedName` operates on display names
             // where backtickes are replaced with parens.
             if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken)
                 let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
                 let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions

@@ -86,9 +86,7 @@ type AsyncType() =
         // In such case TimeoutException is raised
         // since ThreadPool cannot provide 1000 threads in 1 second
         // (the number of threads in ThreadPool is adjusted slowly).
-        Assert.DoesNotThrow(fun () ->
-            Async.RunSynchronously(computation, timeout = 1000)
-            |> ignore)
+        Async.RunSynchronously(computation, timeout = 1000) |> ignore
 
     [<Test>]
     member this.AsyncSleepCancellation1() =
@@ -134,7 +132,7 @@ type AsyncType() =
     member this.CreateTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-#if NETSTANDARD1_6
+#if !NET46
         let t : Task<string> =
 #else
         use t : Task<string> =
@@ -151,7 +149,7 @@ type AsyncType() =
         let a = async {
             cts.CancelAfter (100)
             do! tcs.Task |> Async.AwaitTask }
-#if NETSTANDARD1_6
+#if !NET46
         let t : Task<unit> =
 #else
         use t : Task<unit> =
@@ -178,7 +176,7 @@ type AsyncType() =
     member this.StartTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =
@@ -208,7 +206,7 @@ type AsyncType() =
         let a = async { 
             do raise (Exception ())
          }
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =
@@ -227,7 +225,7 @@ type AsyncType() =
         let a = async {
                 while true do ()
             }
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =
@@ -252,7 +250,7 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =
@@ -274,7 +272,7 @@ type AsyncType() =
     member this.CreateImmediateAsTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-#if FSCORE_PORTABLE_NEW || coreclr
+#if !NET46
         let t : Task<string> =
 #else
         use t : Task<string> =
@@ -288,7 +286,7 @@ type AsyncType() =
     member this.StartImmediateAsTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-#if FSCORE_PORTABLE_NEW || coreclr
+#if !NET46
         let t = 
 #else
         use t =
@@ -304,7 +302,7 @@ type AsyncType() =
         let a = async { 
             do raise (Exception ())
          }
-#if FSCORE_PORTABLE_NEW || coreclr
+#if !NET46
         let t = 
 #else
         use t =
@@ -317,14 +315,15 @@ type AsyncType() =
             e -> exceptionThrown <- true
         Assert.IsTrue (t.IsFaulted)
         Assert.IsTrue(exceptionThrown)
-        
+
+#if IGNORED
     [<Test>]
     [<Ignore("https://github.com/Microsoft/visualfsharp/issues/4337")>]
     member this.CancellationPropagatesToImmediateTask () =
         let a = async {
                 while true do ()
             }
-#if FSCORE_PORTABLE_NEW || coreclr
+#if !NET46
         let t = 
 #else
         use t =
@@ -337,7 +336,9 @@ type AsyncType() =
         with e -> exceptionThrown <- true
         Assert.IsTrue (exceptionThrown)   
         Assert.IsTrue(t.IsCanceled)            
-        
+#endif
+
+#if IGNORED
     [<Test>]
     [<Ignore("https://github.com/Microsoft/visualfsharp/issues/4337")>]
     member this.CancellationPropagatesToGroupImmediate () =
@@ -350,11 +351,7 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
         use t =
-#endif
             Async.StartImmediateAsTask(a, cancellationToken=token)
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.IsTrue
@@ -367,12 +364,12 @@ type AsyncType() =
         Assert.IsTrue (exceptionThrown)   
         Assert.IsTrue(t.IsCanceled)      
         Assert.IsTrue(!cancelled)      
-
+#endif
 
     [<Test>]
     member this.TaskAsyncValue () =
         let s = "Test"
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =
@@ -412,7 +409,7 @@ type AsyncType() =
         
     [<Test>]
     member this.TaskAsyncValueException () =
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =
@@ -431,7 +428,7 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if NETSTANDARD1_6
+#if !NET46
         let t : Task<unit>= 
 #else
         use t : Task<unit>=
@@ -450,7 +447,7 @@ type AsyncType() =
     [<Test>]
     member this.NonGenericTaskAsyncValue () =
         let hasBeenCalled = ref false
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =
@@ -465,7 +462,7 @@ type AsyncType() =
         
     [<Test>]
     member this.NonGenericTaskAsyncValueException () =
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =
@@ -484,7 +481,7 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if NETSTANDARD1_6
+#if !NET46
         let t = 
 #else
         use t =

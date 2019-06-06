@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 [<RequireQualifiedAccess>]
 /// Patterns over FSharpSymbol and derivatives.
@@ -37,7 +37,7 @@ module public Symbol =
     val (|ProvidedAndErasedType|_|) : FSharpEntity -> unit option
 #endif
     val (|Enum|_|) : FSharpEntity -> unit option
-    val (|Tuple|_|) : FSharpType option -> unit option
+    val (|Tuple|_|) : FSharpType -> unit option
     val (|RefCell|_|) : FSharpType -> unit option
     val (|FunctionType|_|) : FSharpType -> unit option
     val (|Pattern|_|) : FSharpSymbol -> unit option

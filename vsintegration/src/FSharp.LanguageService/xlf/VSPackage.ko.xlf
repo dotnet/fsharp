@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="Operator">
         <source>Operator</source>
-        <target state="translated">연산자</target>
+        <target state="translated">운영자</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFile">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="Comment">
         <source>Comment</source>
-        <target state="translated">설명</target>
+        <target state="translated">주석</target>
         <note />
       </trans-unit>
       <trans-unit id="Identifier">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="Number">
         <source>Number</source>
-        <target state="translated">숫자</target>
+        <target state="translated">번호</target>
         <note />
       </trans-unit>
       <trans-unit id="String">

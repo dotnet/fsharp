@@ -1,0 +1,12 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UseStandardResourceNames>false</UseStandardResourceNames>
+    <PackageOutputPath>$(ArtifactsPackagesDir)\$(Configuration)</PackageOutputPath>
+  </PropertyGroup>
+
+</Project>

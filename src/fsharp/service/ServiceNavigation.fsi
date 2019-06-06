@@ -5,9 +5,9 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler 
+open FSharp.Compiler 
 
 /// Indicates a kind of item to show in an F# navigation bar
 type public FSharpNavigationDeclarationItemKind =
@@ -60,12 +60,10 @@ type public FSharpNavigationTopLevelDeclaration =
 type public FSharpNavigationItems =
     member Declarations : FSharpNavigationTopLevelDeclaration[]
 
-// implementation details used by other code in the compiler    
-module internal NavigationImpl =
-    val internal getNavigationFromImplFile : Ast.SynModuleOrNamespace list -> FSharpNavigationItems
-    val internal getNavigationFromSigFile : Ast.SynModuleOrNamespaceSig list -> FSharpNavigationItems
-    val internal getNavigation : Ast.ParsedInput -> FSharpNavigationItems
+// Functionality to access navigable F# items.
+module public FSharpNavigation =
     val internal empty : FSharpNavigationItems
+    val getNavigation : Ast.ParsedInput -> FSharpNavigationItems
 
 module public NavigateTo =
     [<RequireQualifiedAccess>]

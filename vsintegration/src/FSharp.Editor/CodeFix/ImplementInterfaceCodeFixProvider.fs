@@ -7,15 +7,14 @@ open System.Composition
 open System.Threading
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 [<NoEquality; NoComparison>]
 type internal InterfaceState =
@@ -138,7 +137,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken)
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
             let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, projectOptions, sourceText = sourceText, userOpName = userOpName)

@@ -134,7 +134,7 @@ module ChoiceUtils =
         if not <| List.isEmpty ops then
             let minTimeout = getMinTime()
             let minTimeoutOps = ops |> Seq.filter (fun op -> op.Timeout <= minTimeout) |> Seq.length
-            Assert.LessOrEqual(!completed, minTimeoutOps)
+            Assert.IsTrue(!completed <= minTimeoutOps)
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -161,18 +161,10 @@ type AsyncModule() =
                 do! Async.Sleep(20)
                 
             return !tickstamps
-        }     
+        }
 
-    let wait (wh : #System.Threading.WaitHandle) (timeoutMilliseconds : int) = 
-#if FX_NO_WAITONE_MILLISECONDS
-        wh.WaitOne(TimeSpan.FromMilliseconds (float timeoutMilliseconds))
-#else
-#if FX_NO_EXIT_CONTEXT_FLAGS
-        wh.WaitOne(timeoutMilliseconds)
-#else
+    let wait (wh : System.Threading.WaitHandle) (timeoutMilliseconds : int) = 
         wh.WaitOne(timeoutMilliseconds, exitContext=false)
-#endif
-#endif
 
     let dispose(d : #IDisposable) = d.Dispose()
 
@@ -266,7 +258,7 @@ type AsyncModule() =
         // wait 10 seconds for completion
         let ok = wait barrier 10000
         if not ok then Assert.Fail("Async computation was not completed in given time")
-    
+
     [<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle1``() = 
         let wh = new System.Threading.ManualResetEvent(false)
@@ -349,7 +341,7 @@ type AsyncModule() =
 
         for _i = 1 to 3 do test()
 
-
+#if EXPENSIVE
     [<Test; Category("Expensive"); Explicit>]
     member this.``Async.AwaitWaitHandle does not leak memory`` () =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
@@ -383,7 +375,8 @@ type AsyncModule() =
         
         // The leak hangs on a race condition which is really hard to trigger in F# 3.0, hence the 100000 runs...
         for _ in 1..10 do tryToLeak()
-           
+#endif
+
     [<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle2``() = 
         let wh = new System.Threading.ManualResetEvent(false)
@@ -441,11 +434,13 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !coreclr
+#if EXPENSIVE
+#if NET46
     [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
         Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
+#endif
 #endif
 
     [<Test>]
@@ -565,6 +560,7 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
+#if IGNORED
     [<Test; Ignore("See https://github.com/Microsoft/visualfsharp/issues/4887")>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
@@ -591,6 +587,7 @@ type AsyncModule() =
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
+#endif
 
     [<Test>]
     member this.``Async caching should work``() = 

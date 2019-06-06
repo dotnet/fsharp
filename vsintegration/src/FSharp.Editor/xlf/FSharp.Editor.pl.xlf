@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="NameCanBeSimplified">
         <source>Name can be simplified.</source>
-        <target state="translated">Nazwę można uprościć.</target>
+        <target state="translated">Nazwa może zostać uproszczona.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFunctionsOrMethodsClassificationType">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="6014">
         <source>Formatting</source>
-        <target state="new">Formatting</target>
+        <target state="translated">Formatowanie</target>
         <note />
       </trans-unit>
     </body>

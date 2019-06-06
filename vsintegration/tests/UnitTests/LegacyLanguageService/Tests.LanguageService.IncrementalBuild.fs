@@ -13,11 +13,11 @@ open NUnit.Framework.Constraints
 #endif
 open Salsa.Salsa
 open Salsa.VsOpsUtils               
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.IncrementalBuild
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.IncrementalBuild
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 // Useful methods that someday might go into IncrementalBuild
 module internal Vector = 
