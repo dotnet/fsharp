@@ -10,11 +10,6 @@ open FSharp.Compiler.CompileOps
 open FSharp.Compiler
 open FSharp.Compiler.Ast
 
-[<Sealed>]
-type SourceSnapshot =
-
-    member FilePath: string
-
 [<NoEquality; NoComparison>]
 type internal ParsingConfig =
     {
@@ -25,26 +20,17 @@ type internal ParsingConfig =
         filePath: string
     }
 
-[<Sealed;AbstractClass;Extension>]
-type internal ITemporaryStorageServiceExtensions =
-
-    [<Extension>]
-    static member CreateSourceSnapshot: ITemporaryStorageService * filePath: string * SourceText -> Cancellable<SourceSnapshot>
-
-    [<Extension>]
-    static member CreateSourceSnapshot: ITemporaryStorageService * filePath: string -> Cancellable<SourceSnapshot>
-
 [<Sealed>]
-type SyntaxToken =
+type FSharpSyntaxToken =
 
     member internal Token: Parser.token
 
     member Range: Range.range
 
 [<Sealed>]
-type SyntaxTree =
+type FSharpSyntaxTree =
 
-    internal new: filePath: string * ParsingConfig * SourceSnapshot -> SyntaxTree
+    internal new: filePath: string * ParsingConfig * FSharpSourceSnapshot -> FSharpSyntaxTree
 
     member FilePath: string
 
@@ -55,7 +41,7 @@ type SyntaxTree =
 
     member GetSourceTextAsync: unit -> Async<SourceText>
 
-    member TryFindTokenAsync: line: int * column: int -> Async<SyntaxToken option>
+    member TryFindTokenAsync: line: int * column: int -> Async<FSharpSyntaxToken option>
 
    // member TryFindNodeAsync: line: int * column: int -> Async<SyntaxNode option>
 

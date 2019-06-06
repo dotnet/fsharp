@@ -26,11 +26,11 @@ type internal CheckerOptions =
 [<Sealed>]
 type internal IncrementalChecker =
 
-    member ReplaceSourceSnapshot: sourceSnapshot: SourceSnapshot -> IncrementalChecker
+    member ReplaceSourceSnapshot: sourceSnapshot: FSharpSourceSnapshot -> IncrementalChecker
 
     member CheckAsync: filePath: string -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
 
-    member GetSyntaxTree: filePath: string -> SyntaxTree
+    member GetSyntaxTree: filePath: string -> FSharpSyntaxTree
 
     member TcInitial: TcInitial
 
@@ -45,4 +45,4 @@ type internal IncrementalChecker =
 [<RequireQualifiedAccess>]
 module internal IncrementalChecker =
 
-    val create: TcInitial -> TcGlobals -> TcImports -> TcAccumulator -> CheckerOptions -> ImmutableArray<SourceSnapshot> -> Cancellable<IncrementalChecker>
+    val create: TcInitial -> TcGlobals -> TcImports -> TcAccumulator -> CheckerOptions -> ImmutableArray<FSharpSourceSnapshot> -> Cancellable<IncrementalChecker>

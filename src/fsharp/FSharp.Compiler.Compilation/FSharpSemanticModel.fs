@@ -27,7 +27,7 @@ open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.SourceCodeServices
 
 [<AutoOpen>]
-module SemanticModelHelpers =
+module FSharpSemanticModelHelpers =
 
     let tryGetBestCapturedEnv p (resolutions: TcResolutions) =
         let mutable bestSoFar = None
@@ -148,7 +148,7 @@ module SemanticModelHelpers =
                 | _ -> []
 
 [<Sealed>]
-type SemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
+type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
 
     let asyncLazyGetAllSymbols =
         AsyncLazy(async {

@@ -15,7 +15,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 
 [<AutoOpen>]
-module SyntaxTreeHelpers =
+module FSharpSyntaxTreeHelpers =
 
     let isZeroRange (r: range) =
         posEq r.Start r.End
@@ -284,51 +284,15 @@ module Parser =
                 ParseOneInputStream (pConfig.tcConfig, Lexhelp.LexResourceManager (), pConfig.conditionalCompilationDefines, filePath, stream, (pConfig.isLastFileOrScript, pConfig.isExecutable), errorLogger)
         (input, errorLogger.GetErrors ())
 
-[<RequireQualifiedAccess>]
-type SourceStorage =
-    | SourceText of ITemporaryTextStorage 
-    | Stream of ITemporaryStreamStorage
-
 [<Sealed>]
-type SourceSnapshot (filePath: string, sourceStorage: SourceStorage) =
-
-    member __.FilePath = filePath
-
-    member __.SourceStorage = sourceStorage
-
-[<Sealed>]
-type SyntaxToken (token: Parser.token, range: range) =
+type FSharpSyntaxToken (token: Parser.token, range: range) =
 
     member __.Token = token
 
     member __.Range = range
 
-[<Sealed;AbstractClass;Extension>]
-type ITemporaryStorageServiceExtensions =
-
-    [<Extension>]
-    static member CreateSourceSnapshot (this: ITemporaryStorageService, filePath: string, sourceText: SourceText) =
-        cancellable {
-            let! ct = Cancellable.token ()
-            let storage = this.CreateTemporaryTextStorage ct
-            storage.WriteText (sourceText, ct)
-            let sourceStorage = SourceStorage.SourceText storage
-            return SourceSnapshot (filePath, sourceStorage)
-        }
-
-    [<Extension>]
-    static member CreateSourceSnapshot (this: ITemporaryStorageService, filePath: string) =
-        cancellable {
-            let! ct = Cancellable.token ()
-            let storage = this.CreateTemporaryStreamStorage ct
-            use stream = File.OpenRead filePath
-            storage.WriteStream (stream, ct)
-            let sourceStorage = SourceStorage.Stream storage
-            return SourceSnapshot (filePath, sourceStorage)
-        }
-
 [<Sealed>]
-type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: SourceSnapshot) =
+type FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot) =
 
     let asyncLazyWeakGetSourceTextFromSourceTextStorage =
         AsyncLazyWeak(async {
@@ -415,7 +379,7 @@ type SyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: Sourc
                 tokens
                 |> Seq.tryPick (fun (t, m) ->
                     if rangeContainsPos m p then
-                        Some (SyntaxToken (t, m))
+                        Some (FSharpSyntaxToken (t, m))
                     else
                         None
                 )

@@ -42,11 +42,11 @@ type CheckFlags =
     | None = 0x00
 
 type PartialCheckResult =
-    | NotParsed of SyntaxTree
-    | Parsed of SyntaxTree * ParseResult
+    | NotParsed of FSharpSyntaxTree
+    | Parsed of FSharpSyntaxTree * ParseResult
     /// Is an impl file, but only checked its signature file (.fsi). This is a performance optimization.
    // | SignatureChecked of SyntaxTree * TcAccumulator
-    | Checked of SyntaxTree * TcAccumulator
+    | Checked of FSharpSyntaxTree * TcAccumulator
 
     member this.SyntaxTree =
         match this with
@@ -70,7 +70,7 @@ type IncrementalCheckerState =
     // TODO: This should be moved out of the checker (possibly to Compilation), but we have a dependency on tcConfig; which gets built as part of the checker.
     //       The checker should not be thinking about source snapshots and only be thinking about consuming syntax trees.
     /// Create a syntax tree.
-    static member private CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, sourceSnapshot: SourceSnapshot) =
+    static member private CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, sourceSnapshot: FSharpSourceSnapshot) =
         let filePath = sourceSnapshot.FilePath
 
         let pConfig =
@@ -82,9 +82,9 @@ type IncrementalCheckerState =
                 filePath = filePath
             }
 
-        SyntaxTree (filePath, pConfig, sourceSnapshot)
+        FSharpSyntaxTree (filePath, pConfig, sourceSnapshot)
 
-    static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSourceSnapshots: ImmutableArray<SourceSnapshot>) =
+    static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSourceSnapshots: ImmutableArray<FSharpSourceSnapshot>) =
         cancellable {
             let! cancellationToken = Cancellable.token ()
             let length = orderedSourceSnapshots.Length
@@ -142,7 +142,7 @@ type IncrementalCheckerState =
                     return (tcAcc, cacheIndex)
         }
 
-    member this.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
+    member this.ReplaceSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
         let index = this.GetIndex sourceSnapshot.FilePath
         let orderedResults =
             this.orderedResults

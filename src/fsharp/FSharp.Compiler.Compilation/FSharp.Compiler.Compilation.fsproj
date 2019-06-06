@@ -20,24 +20,22 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="Abbreviations.fs" />
     <Compile Include="Extensions.fs" />
-    <Compile Include="SyntaxTree.fsi" />
-    <Compile Include="SyntaxTree.fs" />
     <Compile Include="CompilationWorker.fsi" />
     <Compile Include="CompilationWorker.fs" />
     <Compile Include="TcInitial.fsi" />
     <Compile Include="TcInitial.fs" />
     <Compile Include="TcAccumulator.fsi" />
     <Compile Include="TcAccumulator.fs" />
+    <Compile Include="FSharpSourceSnapshot.fsi" />
+    <Compile Include="FSharpSourceSnapshot.fs" />
+    <Compile Include="FSharpSyntaxTree.fsi" />
+    <Compile Include="FSharpSyntaxTree.fs" />
     <Compile Include="IncrementalChecker.fsi" />
     <Compile Include="IncrementalChecker.fs" />
-    <Compile Include="SemanticModel.fsi" />
-    <Compile Include="SemanticModel.fs" />
-    <Compile Include="VersionStamp.fsi" />
-    <Compile Include="VersionStamp.fs" />
-    <Compile Include="Compilation.fsi" />
-    <Compile Include="Compilation.fs" />
-    <Compile Include="CompilationService.fsi" />
-    <Compile Include="CompilationService.fs" />
+    <Compile Include="FSharpSemanticModel.fsi" />
+    <Compile Include="FSharpSemanticModel.fs" />
+    <Compile Include="FSharpCompilation.fsi" />
+    <Compile Include="FSharpCompilation.fs" />
   </ItemGroup>
 
   <ItemGroup>

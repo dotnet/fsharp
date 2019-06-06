@@ -26,13 +26,19 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Tastops
 open System.Diagnostics
+open Microsoft.CodeAnalysis
 
 #nowarn "9" // NativePtr.toNativeInt
 
 [<AutoOpen>]
-module CompilationHelpers = 
+module FSharpCompilationHelpers = 
 
     open FSharp.NativeInterop
+
+    let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
+
+    // TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharp.Compiler.CompileOps.TcState>.Assembly.Location)).Value
 
     let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata) =
         let amd = (md :?> Microsoft.CodeAnalysis.AssemblyMetadata)
@@ -168,33 +174,24 @@ type CompilationId private (_guid: Guid) =
 
     static member Create () = CompilationId (Guid.NewGuid ())
 
-type CompilationCaches =
-    {
-        incrementalCheckerCache: MruWeakCache<struct (CompilationId * VersionStamp), IncrementalChecker>
-    }
+[<RequireQualifiedAccess>]
+module IncrementalCheckerCache =
 
-type CompilationGlobalOptions =
-    {
-        LegacyReferenceResolver: ReferenceResolver.Resolver
-        DefaultFSharpBinariesDir: string
-        TryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
-    }
+    let private cache = 
+        // Is a Mru algorithm really the right cache for these? A Lru might be better.
+        MruWeakCache<struct (CompilationId * VersionStamp), IncrementalChecker> (
+            cacheSize = 3, 
+            weakReferenceCacheSize = 1000, 
+            equalityComparer = EqualityComparer<struct (CompilationId * VersionStamp)>.Default
+        ) 
 
-    static member Create () =
-        let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.getResolver ()
-        
-        // TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
-        let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharp.Compiler.CompileOps.TcState>.Assembly.Location)).Value
-        
-        let tryGetMetadataSnapshot = (fun _ -> None)
-        
-        {
-            LegacyReferenceResolver = legacyReferenceResolver
-            DefaultFSharpBinariesDir = defaultFSharpBinariesDir
-            TryGetMetadataSnapshot = tryGetMetadataSnapshot
-        }
+    let set key value =
+        cache.Set (key, value)
 
-type CompilationOptions =
+    let tryGetValue key =
+        cache.TryGetValue key
+
+type FSharpCompilationOptions =
     {
         SuggestNamesForErrors: bool
         CommandLineArgs: string list
@@ -204,32 +201,16 @@ type CompilationOptions =
         IsExecutable: bool
         KeepAssemblyContents: bool
         KeepAllBackgroundResolutions: bool
-        SourceSnapshots: ImmutableArray<SourceSnapshot>
-        CompilationReferences: ImmutableArray<CompilationReference>
+        SourceSnapshots: ImmutableArray<FSharpSourceSnapshot>
+        MetadataReferences: ImmutableArray<FSharpMetadataReference>
     }
 
-    static member Create (assemblyPath, projectDirectory, sourceSnapshots, compilationReferences) =
-        let suggestNamesForErrors = false
-        let useScriptResolutionRules = false
-        {
-            SuggestNamesForErrors = suggestNamesForErrors
-            CommandLineArgs = []
-            ProjectDirectory = projectDirectory
-            UseScriptResolutionRules = useScriptResolutionRules
-            AssemblyPath = assemblyPath
-            IsExecutable = false
-            KeepAssemblyContents = false
-            KeepAllBackgroundResolutions = false
-            SourceSnapshots = sourceSnapshots
-            CompilationReferences = compilationReferences
-        }
-
-    member options.CreateTcInitial globalOptions =
+    member options.CreateTcInitial () =
         let tryGetMetadataSnapshot (path, _) =
             let metadataReferenceOpt = 
-                options.CompilationReferences
+                options.MetadataReferences
                 |> Seq.choose(function
-                    | CompilationReference.PortableExecutable peReference -> Some peReference
+                    | FSharpMetadataReference.PortableExecutable peReference -> Some peReference
                     | _ -> None
                 )
                 |> Seq.tryFind (fun x -> String.Equals (path, x.FilePath, StringComparison.OrdinalIgnoreCase))
@@ -245,19 +226,19 @@ type CompilationOptions =
         let commandLineArgs =
             ["--noframework"] @
             commandLineArgs @
-            (options.CompilationReferences
+            (options.MetadataReferences
              |> Seq.map (function
-                | CompilationReference.PortableExecutable peReference ->
+                | FSharpMetadataReference.PortableExecutable peReference ->
                     "-r:" + peReference.FilePath
-                | CompilationReference.FSharpCompilation compilation ->
+                | FSharpMetadataReference.FSharpCompilation compilation ->
                     "-r:" + compilation.OutputFilePath
              )
              |> List.ofSeq)
 
         let projectReferences =
-            options.CompilationReferences
+            options.MetadataReferences
             |> Seq.choose(function
-                | CompilationReference.FSharpCompilation compilation ->
+                | FSharpMetadataReference.FSharpCompilation compilation ->
                     Some compilation
                 | _ ->
                     None
@@ -280,8 +261,8 @@ type CompilationOptions =
 
         let tcInitialOptions =
             {
-                legacyReferenceResolver = globalOptions.LegacyReferenceResolver
-                defaultFSharpBinariesDir = globalOptions.DefaultFSharpBinariesDir
+                legacyReferenceResolver = legacyReferenceResolver
+                defaultFSharpBinariesDir = defaultFSharpBinariesDir
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot
                 suggestNamesForErrors = options.SuggestNamesForErrors
                 sourceFiles = options.SourceSnapshots |> Seq.map (fun x -> x.FilePath) |> List.ofSeq
@@ -296,8 +277,8 @@ type CompilationOptions =
             }
         TcInitial.create tcInitialOptions
 
-    member options.CreateIncrementalChecker (globalOptions, ctok) =
-        let tcInitial = options.CreateTcInitial globalOptions
+    member options.CreateIncrementalChecker ctok =
+        let tcInitial = options.CreateTcInitial ()
         let tcGlobals, tcImports, tcAcc = TcAccumulator.createInitial tcInitial ctok |> Cancellable.runWithoutCancellation
         let checkerOptions =
             {
@@ -308,21 +289,19 @@ type CompilationOptions =
         IncrementalChecker.create tcInitial tcGlobals tcImports tcAcc checkerOptions options.SourceSnapshots
         |> Cancellable.runWithoutCancellation
 
-and [<RequireQualifiedAccess>] CompilationReference =
-    | PortableExecutable of Microsoft.CodeAnalysis.PortableExecutableReference
-    | FSharpCompilation of Compilation 
+and [<RequireQualifiedAccess>] FSharpMetadataReference =
+    | PortableExecutable of PortableExecutableReference
+    | FSharpCompilation of FSharpCompilation 
 
 and [<NoEquality; NoComparison>] CompilationState =
     {
         filePathIndexMap: ImmutableDictionary<string, int>
-        caches: CompilationCaches
-        options: CompilationOptions
-        globalOptions: CompilationGlobalOptions
+        options: FSharpCompilationOptions
         asyncLazyGetChecker: AsyncLazy<IncrementalChecker>
         asyncLazyGetRawFSharpAssemblyData: AsyncLazy<IRawFSharpAssemblyData option>
     }
 
-    static member Create (options, globalOptions, caches: CompilationCaches) =
+    static member Create options =
         let sourceSnapshots = options.SourceSnapshots
 
         let filePathIndexMapBuilder = ImmutableDictionary.CreateBuilder (StringComparer.OrdinalIgnoreCase)
@@ -336,7 +315,7 @@ and [<NoEquality; NoComparison>] CompilationState =
         let asyncLazyGetChecker =
             AsyncLazy (async {
                 return! CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
-                    options.CreateIncrementalChecker (globalOptions, ctok)
+                    options.CreateIncrementalChecker (ctok)
                 )
             })
 
@@ -352,17 +331,15 @@ and [<NoEquality; NoComparison>] CompilationState =
 
         {
             filePathIndexMap = filePathIndexMapBuilder.ToImmutableDictionary ()
-            caches = caches
             options = options
-            globalOptions = globalOptions
             asyncLazyGetChecker = asyncLazyGetChecker
             asyncLazyGetRawFSharpAssemblyData = asyncLazyGetRawFSharpAssemblyData
         }
 
     member this.SetOptions options =
-        CompilationState.Create (options, this.globalOptions, this.caches)
+        CompilationState.Create options
 
-    member this.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
+    member this.ReplaceSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
         match this.filePathIndexMap.TryGetValue sourceSnapshot.FilePath with
         | false, _ -> failwith "source snapshot does not exist in compilation"
         | _, filePathIndex ->
@@ -381,15 +358,15 @@ and [<NoEquality; NoComparison>] CompilationState =
 
             { this with options = options; asyncLazyGetChecker = asyncLazyGetChecker }
 
-and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version: VersionStamp) =
+and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, version: VersionStamp) =
 
     let asyncLazyGetChecker =
         AsyncLazy (async {
-            match state.caches.incrementalCheckerCache.TryGetValue struct (id, version) with
+            match IncrementalCheckerCache.tryGetValue struct (id, version) with
             | ValueSome checker -> return checker
             | _ -> 
                 let! checker = state.asyncLazyGetChecker.GetValueAsync ()
-                state.caches.incrementalCheckerCache.Set (struct (id, version), checker)
+                IncrementalCheckerCache.set struct (id, version) checker
                 return checker
         })
 
@@ -403,16 +380,16 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
 
     member __.Options = state.options
 
-    member __.SetOptions (options: CompilationOptions) =
-        Compilation (id, state.SetOptions options, version.NewVersionStamp ())
+    member __.SetOptions options =
+        FSharpCompilation (id, state.SetOptions options, version.GetNewerVersion ())
 
-    member __.ReplaceSourceSnapshot (sourceSnapshot: SourceSnapshot) =
+    member __.ReplaceSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
         checkFilePath sourceSnapshot.FilePath
-        Compilation (id, state.ReplaceSourceSnapshot sourceSnapshot, version.NewVersionStamp ())
+        FSharpCompilation (id, state.ReplaceSourceSnapshot sourceSnapshot, version.GetNewerVersion ())
 
     member __.GetSemanticModel filePath =
         checkFilePath filePath
-        SemanticModel (filePath, asyncLazyGetChecker)
+        FSharpSemanticModel (filePath, asyncLazyGetChecker)
 
     member __.GetSyntaxTree filePath =
         checkFilePath filePath
@@ -429,7 +406,23 @@ and [<Sealed>] Compilation (id: CompilationId, state: CompilationState, version:
 
     member __.OutputFilePath = state.options.AssemblyPath
 
-module Compilation =
+    static member Create options =
+        FSharpCompilation (CompilationId.Create (), CompilationState.Create options, VersionStamp.Create ())
 
-    let create options globalOptions caches =
-        Compilation (CompilationId.Create (), CompilationState.Create (options, globalOptions, caches), VersionStamp.Create ())
+    static member Create (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences) =
+        let suggestNamesForErrors = false
+        let useScriptResolutionRules = false
+        let options =
+            {
+                SuggestNamesForErrors = suggestNamesForErrors
+                CommandLineArgs = []
+                ProjectDirectory = projectDirectory
+                UseScriptResolutionRules = useScriptResolutionRules
+                AssemblyPath = assemblyPath
+                IsExecutable = false
+                KeepAssemblyContents = false
+                KeepAllBackgroundResolutions = false
+                SourceSnapshots = sourceSnapshots
+                MetadataReferences = metadataReferences
+            }
+        FSharpCompilation.Create options

@@ -1,11 +1,6 @@
 ﻿open System
 open System.IO
 open System.Text
-open System.Threading
-open System.Threading.Tasks
-open System.Collections.Immutable
-open System.Collections.Generic
-open FSharp.Compiler
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
@@ -15,8 +10,6 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.CodeAnalysis.Text
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
-open FSharp.Compiler.Compilation
-open Microsoft.CodeAnalysis
 
 module private SourceText =
 
@@ -322,64 +315,7 @@ type CompilerService() =
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             ClearAllILModuleReaderCache()
 
-[<MemoryDiagnoser>]
-type CompilationBenchmarks() =
-
-    let workspace = new AdhocWorkspace ()
-    let compilationService = CompilationService (CompilationServiceOptions.Create workspace)
-
-    let createTestModules name amount =
-        [
-            for i = 1 to amount do
-                yield
-                    sprintf
-                    """
-module TestModule%i =
-
-    type %s () =
-
-                    member val X = 1
-
-                    member val Y = 2
-
-                    member val Z = 3
-                    
-    let testFunction (x: %s) =
-                    x.X + x.Y + x.Z
-                    """ i name name
-        ]
-        |> List.reduce (+)
-
-    let createSource name amount =
-        (sprintf """namespace Test.%s""" name) + createTestModules name amount
-
-    let sources =
-        [
-            for i = 1 to 100 do
-                yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 100))
-        ]
-
-    let sourceSnapshots =
-        sources
-        |> List.map (fun (filePath, sourceText) -> compilationService.CreateSourceSnapshot (filePath, sourceText))
-        |> ImmutableArray.CreateRange
-
-    let compilationOptions = CompilationOptions.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
-    let mutable compilation = compilationService.CreateCompilation compilationOptions
-    let semanticModel = compilation.GetSemanticModel (sprintf "test%i.fs" 1)
-
-    do
-        semanticModel.TryFindSymbolAsync (1, 1) |> Async.RunSynchronously |> ignore
-
-    [<Benchmark>]
-    member __.Test() =
-       // let compilation = compilationService.CreateCompilation compilationOptions
-        for i = 1 to 1 do
-           // let semanticModel = compilation.GetSemanticModel (sprintf "test%i.fs" i)
-            semanticModel.TryFindSymbolAsync (1, 1) |> Async.RunSynchronously |> ignore
-
 [<EntryPoint>]
 let main argv =
-   // let _ = BenchmarkRunner.Run<CompilerService>()
-    let _ = BenchmarkRunner.Run<CompilationBenchmarks>()
+    let _ = BenchmarkRunner.Run<CompilerService>()
     0

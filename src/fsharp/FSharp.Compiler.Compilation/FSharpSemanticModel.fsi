@@ -3,9 +3,9 @@
 open FSharp.Compiler.Compilation.Utilities
 
 [<Sealed>]
-type SemanticModel =
+type FSharpSemanticModel =
 
-    internal new: filePath: string * AsyncLazy<IncrementalChecker> -> SemanticModel
+    internal new: filePath: string * AsyncLazy<IncrementalChecker> -> FSharpSemanticModel
 
     member TryFindSymbolAsync: line: int * column: int -> Async<FSharpSymbol option>
 
