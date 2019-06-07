@@ -22,10 +22,8 @@ open System.Windows.Forms
 #endif
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.Lib
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Interactive
 open FSharp.Compiler.Interactive.Shell.Settings
 
 #nowarn "55"
@@ -316,7 +314,12 @@ let evaluateSession(argv: string[]) =
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
-    use e = new SaveAndRestoreConsoleEncoding()
+    use e =
+        { new IDisposable with
+            member __.Dispose() =
+                try 
+                    Console.SetOut(Console.Out)
+                with _ -> ()}
 
 #if !FX_NO_APP_DOMAINS
     let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
