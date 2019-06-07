@@ -161,6 +161,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskPerfCSharp", "tests\fsharp\perf\tasks\CS\TaskPerfCSharp.csproj", "{218BD16B-D9BB-402A-970B-72A86E30AA41}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TaskPerf", "tests\fsharp\perf\tasks\FS\TaskPerf.fsproj", "{0018B20C-1AE7-4E81-8E9E-A273FCA10A70}"
+EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer", "src\fsharp\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj", "{60BAFFA5-6631-4328-B044-2E012AB76DCA}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer.UnitTests", "tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj", "{AAF2D233-1C38-4090-8FFA-F7C545625E06}"
