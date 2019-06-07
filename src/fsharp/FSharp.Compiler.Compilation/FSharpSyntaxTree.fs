@@ -14,213 +14,6 @@ open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 
-[<AutoOpen>]
-module FSharpSyntaxTreeHelpers =
-
-    let isZeroRange (r: range) =
-        posEq r.Start r.End
-
-    let tryVisit p m visit item =
-        if rangeContainsPos m p && not (isZeroRange m) then
-            visit item
-        else
-            None
-
-    let tryVisitList p xs : 'T option =
-        xs
-        |> List.sortWith (fun (getRange1, _) (getRange2, _)->
-            let r1 = getRange1 ()
-            let r2 = getRange2 ()
-            rangeOrder.Compare (r1, r2)
-        )
-        |> List.tryPick (fun (getRange, visit) ->
-            let r = getRange ()
-            if rangeContainsPos r p && not (isZeroRange r) then
-                visit ()
-            else
-                None
-        )
-        |> Option.orElseWith (fun () ->
-            xs
-            |> List.tryPick (fun (getRange, visit) ->
-                let r = getRange ()
-                if posGt p r.Start && not (isZeroRange r) then
-                    visit ()
-                else
-                    None
-            )
-        )
-
-    let mapVisitList getRange visit xs =
-        xs
-        |> List.map (fun x -> ((fun () -> getRange x), fun () -> visit x))
-
-    type ParsedHashDirective with
-
-        member this.Range =
-            match this with
-            | ParsedHashDirective (_, _, m) -> m
-
-    type SynTypeConstraint with
-
-        member this.Range =
-            match this with
-            | SynTypeConstraint.WhereTyparIsValueType (_, m) -> m
-            | SynTypeConstraint.WhereTyparIsReferenceType (_, m) -> m
-            | SynTypeConstraint.WhereTyparIsUnmanaged (_, m) -> m
-            | SynTypeConstraint.WhereTyparSupportsNull (_, m) -> m
-            | SynTypeConstraint.WhereTyparIsComparable (_, m) -> m
-            | SynTypeConstraint.WhereTyparIsEquatable (_, m) -> m
-            | SynTypeConstraint.WhereTyparDefaultsToType (_, _, m) -> m
-            | SynTypeConstraint.WhereTyparSubtypeOfType (_, _, m) -> m
-            | SynTypeConstraint.WhereTyparSupportsMember (_, _, m) -> m
-            | SynTypeConstraint.WhereTyparIsEnum (_, _, m) -> m
-            | SynTypeConstraint.WhereTyparIsDelegate (_, _, m) -> m
-
-    type SynMemberSig with
-
-        member this.Range =
-            match this with
-            | SynMemberSig.Member (_, _, m) -> m
-            | SynMemberSig.Interface (_, m) -> m
-            | SynMemberSig.Inherit (_, m) -> m
-            | SynMemberSig.ValField (_, m) -> m
-            | SynMemberSig.NestedType (_, m) -> m
-
-    type SynValSig with
-
-        member this.Range =
-            match this with
-            | ValSpfn (_, _, _, _, _, _, _, _, _, _, m) -> m
-
-    type SynField with
-
-        member this.Range =
-            match this with
-            | Field (_, _, _, _, _, _, _, m) -> m
-
-    type SynTypeDefnSig with
-
-        member this.Range =
-            match this with
-            | TypeDefnSig (_, _, _, m) -> m
-
-    type SynSimplePat with
-
-        member this.Range =
-            match this with
-            | SynSimplePat.Id (range=m) -> m
-            | SynSimplePat.Typed (range=m) -> m
-            | SynSimplePat.Attrib (range=m) -> m
-
-    type SynMeasure with
-
-        member this.PossibleRange =
-            match this with
-            | SynMeasure.Named (range=m) -> m
-            | SynMeasure.Product (range=m) -> m
-            | SynMeasure.Seq (range=m) -> m
-            | SynMeasure.Divide (range=m) -> m
-            | SynMeasure.Power (range=m) -> m
-            | SynMeasure.One -> range0
-            | SynMeasure.Anon (range=m) -> m
-            | SynMeasure.Var (range=m) -> m
-
-    type SynRationalConst with
-
-        member this.PossibleRange =
-            match this with
-            | SynRationalConst.Integer _ -> range0
-            | SynRationalConst.Rational (range=m) -> m
-            | SynRationalConst.Negate rationalConst -> rationalConst.PossibleRange
-
-    type SynConst with
-
-        member this.PossibleRange =
-            this.Range range0
-
-    type SynArgInfo with
-
-        member this.PossibleRange =
-            match this with
-            | SynArgInfo (attribs, _, idOpt) ->
-                let ranges =
-                    attribs
-                    |> List.map (fun x -> x.Range)
-                    |> List.append (match idOpt with | Some id -> [id.idRange] | _ -> [])
-
-                match ranges with
-                | [] -> range0
-                | _ ->
-                    ranges
-                    |> List.reduce unionRanges
-
-    type SynValInfo with
-
-        member this.PossibleRange =
-            match this with
-            | SynValInfo (argInfos, argInfo) ->
-                let ranges =
-                    argInfos
-                    |> List.reduce (@)
-                    |> List.append [argInfo]
-                    |> List.map (fun x -> x.PossibleRange)
-                    |> List.filter (fun x -> not (isZeroRange x))
-
-                match ranges with
-                | [] -> range0
-                | _ ->
-                    ranges
-                    |> List.reduce unionRanges
-
-    type SynTypeDefnKind with
-
-        member this.PossibleRange =
-            match this with
-            | TyconUnspecified
-            | TyconClass
-            | TyconInterface
-            | TyconStruct
-            | TyconRecord
-            | TyconUnion
-            | TyconAbbrev
-            | TyconHiddenRepr
-            | TyconAugmentation
-            | TyconILAssemblyCode ->
-                range0
-            | TyconDelegate (ty, valInfo) ->
-                let valInfoRange = valInfo.PossibleRange
-                if isZeroRange valInfoRange then
-                    ty.Range
-                else
-                    unionRanges ty.Range valInfoRange
-
-    type SynTyparDecl with
-
-        member this.Range =
-            match this with
-            | TyparDecl (attribs, typar) ->
-                attribs
-                |> List.map (fun x -> x.Range)
-                |> List.append [typar.Range]
-                |> List.reduce unionRanges
-
-    type SynValTyparDecls with
-
-        member this.PossibleRange =
-            match this with
-            | SynValTyparDecls (typarDecls, _, constraints) ->
-                let ranges =
-                    typarDecls
-                    |> List.map (fun x -> x.Range)
-                    |> List.append (constraints |> List.map (fun x -> x.Range))
-
-                match ranges with
-                | [] -> range0
-                | _ ->
-                    ranges
-                    |> List.reduce unionRanges
-
 type ParsingConfig =
     {
         tcConfig: TcConfig
@@ -284,15 +77,24 @@ module Parser =
                 ParseOneInputStream (pConfig.tcConfig, Lexhelp.LexResourceManager (), pConfig.conditionalCompilationDefines, filePath, stream, (pConfig.isLastFileOrScript, pConfig.isExecutable), errorLogger)
         (input, errorLogger.GetErrors ())
 
+[<RequireQualifiedAccess>]
+type FSharpSyntaxNodeKind =
+    | ModuleOrNamespace of SynModuleOrNamespace
+
 [<Sealed>]
-type FSharpSyntaxToken (token: Parser.token, range: range) =
+type FSharpSyntaxToken (parent: FSharpSyntaxNode option, token: Parser.token, range: range) =
 
     member __.Token = token
 
     member __.Range = range
 
-[<Sealed>]
-type FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot) =
+and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
+
+    member __.Parent = parent
+    
+    member __.Kind = kind
+
+and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot) =
 
     let asyncLazyWeakGetSourceTextFromSourceTextStorage =
         AsyncLazyWeak(async {
@@ -379,7 +181,7 @@ type FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot:
                 tokens
                 |> Seq.tryPick (fun (t, m) ->
                     if rangeContainsPos m p then
-                        Some (FSharpSyntaxToken (t, m))
+                        Some (FSharpSyntaxToken (None, t, m))
                     else
                         None
                 )
