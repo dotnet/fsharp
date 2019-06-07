@@ -297,11 +297,11 @@ type internal TypeCheckInfo
               let ad = 
                 match vref.BaseOrThisInfo, ad with
                 | ValBaseOrThisInfo.NormalVal, AccessibleFrom(paths, Some tcref) ->
-                    let tcref = generalizedTyconRef tcref
+                    let thisTy = generalizedTyOfTyconRef g tcref
                     // check that type of value is the same or subtype of tcref
                     // yes - allow access to protected members
                     // no - strip ability to access protected members
-                    if FSharp.Compiler.TypeRelations.TypeFeasiblySubsumesType 0 g amap m tcref FSharp.Compiler.TypeRelations.CanCoerce ty then
+                    if FSharp.Compiler.TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy FSharp.Compiler.TypeRelations.CanCoerce ty then
                         ad
                     else
                         AccessibleFrom(paths, None)
@@ -1302,7 +1302,7 @@ type internal TypeCheckInfo
             protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
 
         let isStructTyconRef (tyconRef: TyconRef) = 
-            let ty = generalizedTyOfTyconRef tyconRef
+            let ty = generalizedTyOfTyconRef g tyconRef
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             isStructTy g underlyingTy
 
