@@ -159,12 +159,12 @@ module ArrayPositive2 =
         [ printfn "hello"
           if true then yield 1 else yield 2 ] 
 
-    // check subsumption is alloed when using explicit yield
+    // check subsumption is allowed when using explicit yield
     let l13 : obj list = 
         [ printfn "hello"
           if true then yield 1 else yield 2 ] 
 
-    // check subsumption is alloed when using explicit yield
+    // check subsumption is allowed when using explicit yield
     let l14 : obj list = 
         [ printfn "hello"
           if true then yield 1 ] 
@@ -231,17 +231,17 @@ module BuilderPositive2 =
           yield! empty
         }
 
-    // Note, no subsumption is permitted when using yield in computation expressions, with or eithout implicit yield
-    //let v3c : L<obj>  = 
-    //    list {
-    //      printfn "hello"
-    //      if true then 1 else obj() 
-    //    } 
-    //let v3c : L<obj>  = 
-    //    list {
-    //      printfn "hello"
-    //      if true then yield 1 else obj() 
-    //    } 
+
+
+
+
+
+
+
+
+
+
+
 
     let v3d = 
         list {
@@ -311,3 +311,29 @@ module ArrayNegative2 =
 module SeqNegative2 = 
     let s5 = seq { if true then 1 else yield 2 } // expect warning about "1" being ignored. There is a 'yield' so statements are statements.
     let s8 = seq { match 1 with 1 -> 4 | 2 -> 5 | 3 -> yield 6 | _ -> ()  } // expect warning about "4" being ignored. There is a 'yield' so statements are statements.
+
+module BuilderNegative2 = 
+    type L<'T> = { Make: (unit -> 'T list) }
+    let L f = { Make = f }
+
+    type ListBuilder() = 
+        member __.Combine(x1: L<'T>, x2: L<'T>) = L(fun () -> x1.Make() @ x2.Make())
+        member __.Delay(f: unit -> L<'T>) = L(fun () -> f().Make())
+        member __.Zero() = L(fun () -> [])
+        member __.Yield(a: 'T) = L(fun () -> [a])
+        member __.YieldFrom(x: L<'T>) = x
+
+    let list = ListBuilder()
+
+    let v3c : L<obj>  = 
+        list {
+          printfn "hello"
+          if true then 1 else obj() 
+        } 
+
+    let v3c : L<obj>  = 
+        list {
+          printfn "hello"
+          if true then yield 1 else obj() 
+        } 
+

@@ -6049,11 +6049,11 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
     // Used to implement the type-directed 'implicit yield' rule for computation expressions
     | SynExpr.SequentialOrImplicitYield (sp, synExpr1, synExpr2, otherExpr, m) ->
-        let isStmt, e1', tpenv = TryTcStmt cenv env tpenv synExpr1
+        let isStmt, expr1, tpenv = TryTcStmt cenv env tpenv synExpr1
         if isStmt then 
             let env = ShrinkContext env m synExpr2.Range
-            let e2', tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv synExpr2 
-            Expr.Sequential(e1', e2', NormalSeq, sp, m), tpenv
+            let expr2, tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv synExpr2 
+            Expr.Sequential(expr1, expr2, NormalSeq, sp, m), tpenv
         else
             // The first expression wasn't unit-typed, so proceed to the alternative interpretation
             // Note a copy of the first expression is embedded in 'otherExpr' and thus
