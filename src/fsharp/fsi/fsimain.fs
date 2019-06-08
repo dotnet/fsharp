@@ -314,11 +314,12 @@ let evaluateSession(argv: string[]) =
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
-    use e =
+    let savedOut = Console.Out
+    use __ =
         { new IDisposable with
             member __.Dispose() =
                 try 
-                    Console.SetOut(Console.Out)
+                    Console.SetOut(savedOut)
                 with _ -> ()}
 
 #if !FX_NO_APP_DOMAINS
