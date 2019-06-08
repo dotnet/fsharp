@@ -26,6 +26,8 @@
     <Compile Include="TcInitial.fs" />
     <Compile Include="TcAccumulator.fsi" />
     <Compile Include="TcAccumulator.fs" />
+    <Compile Include="AstVisitor.fsi" />
+    <Compile Include="AstVisitor.fs" />
     <Compile Include="FSharpSourceSnapshot.fsi" />
     <Compile Include="FSharpSourceSnapshot.fs" />
     <Compile Include="FSharpSyntaxTree.fsi" />

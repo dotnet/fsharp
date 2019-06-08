@@ -3,6 +3,7 @@
 open System.IO
 open System.Threading
 open System.Collections.Immutable
+open System.Collections.Generic
 open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
@@ -181,11 +182,11 @@ module AstVisitorHelpers =
             | TyconILAssemblyCode ->
                 range0
             | TyconDelegate (ty, valInfo) ->
-                let valInfoRange = valInfo.PossibleRange
-                if isZeroRange valInfoRange then
+                let valInfoPossibleRange = valInfo.PossibleRange
+                if isZeroRange valInfoPossibleRange then
                     ty.Range
                 else
-                    unionRanges ty.Range valInfoRange
+                    unionRanges ty.Range valInfoPossibleRange
 
     type SynTyparDecl with
 
@@ -234,8 +235,14 @@ module AstVisitorHelpers =
             match this with
             | SynValData (_, valInfo, idOpt) ->
                 match idOpt with
-                | Some id -> unionRanges valInfo.PossibleRange id.idRange
-                | _ -> valInfo.PossibleRange
+                | Some id ->
+                    let valInfoPossibleRange = valInfo.PossibleRange
+                    if isZeroRange valInfoPossibleRange then
+                        id.idRange
+                    else
+                        unionRanges id.idRange valInfoPossibleRange
+                | _ -> 
+                    valInfo.PossibleRange
 
     type SynBindingReturnInfo with
 
@@ -243,12 +250,67 @@ module AstVisitorHelpers =
             match this with
             | SynBindingReturnInfo (_, m, _) -> m
 
+    type SynConstructorArgs with
+
+        member this.PossibleRange =
+            match this with
+            | Pats pats ->
+                pats
+                |> List.map (fun x -> x.Range)
+                |> List.reduce unionRanges
+
+            | NamePatPairs (_, m) -> m
+
+    type SynInterfaceImpl with
+
+        member this.Range =
+            match this with
+            | InterfaceImpl (_, _, m) -> m
+
+    type SynSimplePatAlternativeIdInfo with
+
+        member this.Range =
+            match this with
+            | Undecided id -> id.idRange
+            | Decided id -> id.idRange
+
+    type SynStaticOptimizationConstraint with
+
+        member this.Range =
+            match this with
+            | WhenTyparTyconEqualsTycon (_, _, m) -> m
+            | WhenTyparIsStruct (_, m) -> m
+
+    type SynUnionCaseType with
+
+        member this.PossibleRange =
+            match this with
+            | UnionCaseFields cases ->
+                match cases with
+                | [] -> range0
+                | _ ->
+                    cases
+                    |> List.map (fun x -> x.Range)
+                    |> List.reduce unionRanges
+
+            | UnionCaseFullType (ty, valInfo) ->
+                let valInfoPossibleRange = valInfo.PossibleRange
+                if isZeroRange valInfoPossibleRange then
+                    ty.Range
+                else
+                    unionRanges ty.Range valInfoPossibleRange
+
 [<AbstractClass>]
-type AstVisitor<'T> (p: pos) =
+type AstVisitor<'T> (textSpan: range) =
+
+    let visitStack = Stack<obj> ()
 
     let tryVisit m visit item =
-        if rangeContainsPos m p && not (isZeroRange m) then
-            visit item
+        if rangeContainsRange m textSpan && not (isZeroRange m) then
+            visitStack.Push item
+            let result = visit item
+            visitStack.Pop () |> ignore
+            result
         else
             None
 
@@ -261,25 +323,24 @@ type AstVisitor<'T> (p: pos) =
         )
         |> List.tryPick (fun (getRange, visit) ->
             let r = getRange ()
-            if rangeContainsPos r p && not (isZeroRange r) then
+            if rangeContainsRange r textSpan && not (isZeroRange r) then
                 visit ()
             else
                 None
         )
-        |> Option.orElseWith (fun () ->
-            xs
-            |> List.tryPick (fun (getRange, visit) ->
-                let r = getRange ()
-                if posGt p r.Start && not (isZeroRange r) then
-                    visit ()
-                else
-                    None
-            )
-        )
 
-    let mapVisitList getRange visit xs =
+    let mapVisitList (getRange: 'Syn -> range) visit xs =
         xs
-        |> List.map (fun x -> ((fun () -> getRange x), fun () -> visit x))
+        |> List.map (fun x -> ((fun () -> getRange x), fun () -> 
+            visitStack.Push x
+            let result = visit x
+            visitStack.Pop () |> ignore
+            result
+        ))
+
+    member this.GetCurrentParentTree () =
+        visitStack.ToArray ()
+        |> ImmutableArray.CreateRange
 
     member this.Traverse parsedInput =
         match parsedInput with
@@ -363,24 +424,13 @@ type AstVisitor<'T> (p: pos) =
     abstract VisitLongIdentWithDots: LongIdentWithDots -> 'T option
     default this.VisitLongIdentWithDots longDotId =
         match longDotId with
-        | LongIdentWithDots (longId, dotms) ->
-            let longId =
-                longId
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
-
-            let dotms =
-                dotms
-                |> mapVisitList id this.VisitDot
-
-            (longId @ dotms)
+        | LongIdentWithDots (longId, _) ->
+            longId
+            |> mapVisitList (fun x -> x.idRange) this.VisitIdent
             |> tryVisitList
 
     abstract VisitIdent: Ident -> 'T option
     default this.VisitIdent _id =
-        None
-
-    abstract VisitDot: range -> 'T option
-    default this.VisitDot _m =
         None
 
     abstract VisitComponentInfo: SynComponentInfo -> 'T option
@@ -538,10 +588,10 @@ type AstVisitor<'T> (p: pos) =
     abstract VisitTypeDefnSigRepr: SynTypeDefnSigRepr -> 'T option
     default this.VisitTypeDefnSigRepr repr =
         match repr with
-        | SynTypeDefnSigRepr.ObjectModel (typeDefnKind, memberSigs, m) ->
+        | SynTypeDefnSigRepr.ObjectModel (typeDefnKind, memberSigs, _) ->
             let typeDefnKind =
                 [typeDefnKind]
-                |> mapVisitList (fun _ -> m) (fun x -> this.VisitTypeDefnKind (x, m))
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitTypeDefnKind
 
             let memberSigs =
                 memberSigs
@@ -595,13 +645,13 @@ type AstVisitor<'T> (p: pos) =
 
             let unionCaseTy =
                 [unionCaseTy]
-                |> mapVisitList (fun _ -> m) (fun x -> this.VisitUnionCaseType (x, m))
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitUnionCaseType
 
             (attribs @ ident @ unionCaseTy)
             |> tryVisitList
 
-    abstract VisitUnionCaseType: SynUnionCaseType * range -> 'T option
-    default this.VisitUnionCaseType (unionCaseTy, m) =
+    abstract VisitUnionCaseType: SynUnionCaseType -> 'T option
+    default this.VisitUnionCaseType unionCaseTy =
         match unionCaseTy with
         | UnionCaseFields cases ->
             cases
@@ -615,25 +665,9 @@ type AstVisitor<'T> (p: pos) =
 
             let valInfo =
                 [valInfo]
-                |> mapVisitList (fun _ -> m) (fun x -> this.VisitValInfo (x, m))
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitValInfo
 
             (ty @ valInfo)
-            |> tryVisitList
-
-    abstract VisitValInfo: SynValInfo * range -> 'T option
-    default this.VisitValInfo (valInfo, m) =
-        match valInfo with
-        | SynValInfo (curriedArgInfos, returnInfo) ->
-            let curriedArgInfos =
-                curriedArgInfos
-                |> List.reduce (@)
-                |> mapVisitList (fun _ -> m) this.VisitArgInfo
-
-            let returnInfo =
-                [returnInfo]
-                |> mapVisitList (fun _ -> m) this.VisitArgInfo
-
-            (curriedArgInfos @ returnInfo)
             |> tryVisitList
 
     abstract VisitArgInfo: SynArgInfo -> 'T option
@@ -676,7 +710,7 @@ type AstVisitor<'T> (p: pos) =
         | SynTypeDefnSimpleRepr.General (typeDefnKind, tys, valSigs, fields, _, _, patsOpt, m) ->
             let typeDefnKind =
                 [typeDefnKind]
-                |> mapVisitList (fun _ -> m) (fun x -> this.VisitTypeDefnKind (x, m))
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitTypeDefnKind
 
             let tys =
                 tys
@@ -716,8 +750,8 @@ type AstVisitor<'T> (p: pos) =
             (typeDefnKind @ tys @ valSigs @ fields @ pats)
             |> tryVisitList
 
-        | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (ilType, _) ->
-            this.VisitILType ilType
+        | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ ->
+            None
 
         | SynTypeDefnSimpleRepr.TypeAbbrev (_, ty, _) ->
             ty
@@ -729,10 +763,6 @@ type AstVisitor<'T> (p: pos) =
         | SynTypeDefnSimpleRepr.Exception exDefnRepr ->
             exDefnRepr
             |> tryVisit exDefnRepr.Range this.VisitExceptionDefnRepr
-
-    abstract VisitILType: AbstractIL.IL.ILType -> 'T option
-    default this.VisitILType _ =
-        None
 
     abstract VisitSimplePat: SynSimplePat -> 'T option
     default this.VisitSimplePat simplePat =
@@ -746,7 +776,7 @@ type AstVisitor<'T> (p: pos) =
                 match simplePatInfoOpt with
                 | Some simplePatInfo ->
                     [simplePatInfo.contents]
-                    |> mapVisitList (fun _ -> m) (fun x -> this.VisitSimplePatAlternativeIdInfo (x, m))
+                    |> mapVisitList (fun x -> x.Range) this.VisitSimplePatAlternativeIdInfo
                 | _ ->
                     []
 
@@ -776,16 +806,6 @@ type AstVisitor<'T> (p: pos) =
 
             (simplePat @ attribs)
             |> tryVisitList
-
-    abstract VisitSimplePatAlternativeIdInfo: SynSimplePatAlternativeIdInfo * range -> 'T option
-    default this.VisitSimplePatAlternativeIdInfo (simplePatInfo, _) =
-        match simplePatInfo with
-        | Undecided id ->
-            id
-            |> tryVisit id.idRange this.VisitIdent
-        | Decided id ->
-            id
-            |> tryVisit id.idRange this.VisitIdent
 
     abstract VisitEnumCase: SynEnumCase -> 'T option
     default this.VisitEnumCase enumCase =
@@ -878,10 +898,11 @@ type AstVisitor<'T> (p: pos) =
             None
 
         | SynRationalConst.Negate rationalConst ->
-            this.VisitRationalConst rationalConst
+            rationalConst
+            |> tryVisit rationalConst.PossibleRange this.VisitRationalConst
 
-    abstract VisitTypeDefnKind: SynTypeDefnKind * range -> 'T option
-    default this.VisitTypeDefnKind (typeDefnKind, m) =
+    abstract VisitTypeDefnKind: SynTypeDefnKind -> 'T option
+    default this.VisitTypeDefnKind typeDefnKind =
         match typeDefnKind with
         | TyconDelegate (ty, valInfo) ->
             let ty =
@@ -890,7 +911,7 @@ type AstVisitor<'T> (p: pos) =
 
             let valInfo =
                 [valInfo]
-                |> mapVisitList (fun _ -> m) (fun x -> this.VisitValInfo (x, m))
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitValInfo
 
             (ty @ valInfo)
             |> tryVisitList
@@ -934,7 +955,7 @@ type AstVisitor<'T> (p: pos) =
 
             let valTyparDecls =
                 [valTyparDecls]
-                |> mapVisitList (fun _ -> m) (fun x -> this.VisitValTyparDecls (x, m))
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitValTyparDecls
 
             let ty =
                 [ty]
@@ -942,7 +963,7 @@ type AstVisitor<'T> (p: pos) =
 
             let valInfo =
                 [valInfo]
-                |> mapVisitList (fun _ -> m) (fun x -> this.VisitValInfo (x, m))
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitValInfo
 
             let expr =
                 match exprOpt with
@@ -955,8 +976,8 @@ type AstVisitor<'T> (p: pos) =
             (attribs @ id @ valTyparDecls @ ty @ valInfo @ expr)
             |> tryVisitList
 
-    abstract VisitValTyparDecls: SynValTyparDecls * range -> 'T option
-    default this.VisitValTyparDecls (valTyparDecls, m) =
+    abstract VisitValTyparDecls: SynValTyparDecls -> 'T option
+    default this.VisitValTyparDecls valTyparDecls =
         match valTyparDecls with
         | SynValTyparDecls (typarDecls, _, constraints) ->
             let typarDecls =
@@ -1255,18 +1276,984 @@ type AstVisitor<'T> (p: pos) =
             |> mapVisitList (fun x -> x.Range) this.VisitPat
             |> tryVisitList
 
-        | _ -> failwith "incomplete"
+        | SynPat.LongIdent (longDotId, idOpt, valTyparDeclsOpt, ctorArgs, _, _) ->
+            let longDotId =
+                [longDotId]
+                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
 
+            let idOpt =
+                match idOpt with
+                | Some id ->
+                    [id]
+                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                | _ ->
+                    []
+
+            let valTyparDeclsOpt =
+                match valTyparDeclsOpt with
+                | Some valTyparDecls ->
+                    [valTyparDecls]
+                    |> mapVisitList (fun x -> x.PossibleRange) this.VisitValTyparDecls
+                | _ ->
+                    []
+
+            let ctorArgs =
+                [ctorArgs]
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitConstructorArgs
+
+            (longDotId @ idOpt @ valTyparDeclsOpt @ ctorArgs)
+            |> tryVisitList
+
+        | SynPat.Tuple (_, pats, _) ->
+            pats
+            |> mapVisitList (fun x -> x.Range) this.VisitPat
+            |> tryVisitList
+
+        | SynPat.Paren (pat, _) ->
+            pat
+            |> tryVisit pat.Range this.VisitPat
+
+        | SynPat.ArrayOrList (_, pats, _) ->
+            pats
+            |> mapVisitList (fun x -> x.Range) this.VisitPat
+            |> tryVisitList
+
+        | SynPat.Record (recdData, _) ->
+            let recdData, pats = List.unzip recdData
+            let longIds, ids = List.unzip recdData
+
+            let pats =
+                pats
+                |> mapVisitList (fun x -> x.Range) this.VisitPat
+
+            let longIds =
+                longIds
+                |> List.reduce (@)
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            let ids =
+                ids
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            (pats @ longIds @ ids)
+            |> tryVisitList
+
+        | SynPat.Null _ ->
+            None
+
+        | SynPat.OptionalVal (id, _) ->
+            id
+            |> tryVisit id.idRange this.VisitIdent
+
+        | SynPat.IsInst (ty, _) ->
+            ty
+            |> tryVisit ty.Range this.VisitType
+
+        | SynPat.QuoteExpr (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynPat.DeprecatedCharRange (_, _, _) ->
+            None
+
+        | SynPat.InstanceMember (id1, id2, idOpt, _, _) ->
+            let ids =
+                [id1;id2]
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            let idOpt =
+                match idOpt with
+                | Some id ->
+                    [id]
+                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                | _ ->
+                    []
+
+            (ids @ idOpt)
+            |> tryVisitList
+
+        | SynPat.FromParseError (pat, _) ->
+            pat
+            |> tryVisit pat.Range this.VisitPat
+
+    abstract VisitConstructorArgs: SynConstructorArgs -> 'T option
+    default this.VisitConstructorArgs ctorArgs =
+        match ctorArgs with
+        | Pats pats ->
+            pats
+            |> mapVisitList (fun x -> x.Range) this.VisitPat
+            |> tryVisitList
+
+        | NamePatPairs (pairs, _) ->
+            let ids, pats = List.unzip pairs
+
+            let ids =
+                ids
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            let pats =
+                pats
+                |> mapVisitList (fun x -> x.Range) this.VisitPat
+
+            (ids @ pats)
+            |> tryVisitList
 
     abstract VisitBindingReturnInfo: SynBindingReturnInfo -> 'T option
+    default this.VisitBindingReturnInfo returnInfo =
+        match returnInfo with
+        | SynBindingReturnInfo (ty, _, attribs) ->
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let attribs =
+                attribs
+                |> mapVisitList (fun x -> x.Range) this.VisitAttributeList
+
+            (ty @ attribs)
+            |> tryVisitList
 
     abstract VisitExpr: SynExpr -> 'T option
+    default this.VisitExpr expr =
+        match expr with
+        | SynExpr.Paren (expr, _, _, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.Quote (opExpr, _, quoteExpr, _, _) ->
+            [opExpr;quoteExpr]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.Const (sconst, _) ->
+            sconst
+            |> tryVisit sconst.PossibleRange this.VisitConst
+
+        | SynExpr.Typed (expr, ty, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            (expr @ ty)
+            |> tryVisitList
+
+        | SynExpr.Tuple (_, exprs, _, _) ->
+            exprs
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.AnonRecd (_, copyInfoOpt, recdFields, _) ->
+            let copyInfoOpt =
+                match copyInfoOpt with
+                | Some (expr, _) ->
+                    [expr]
+                    |> mapVisitList (fun x -> x.Range) this.VisitExpr
+                | _ ->
+                    []
+
+            let ids, exprs = List.unzip recdFields
+
+            let ids =
+                ids
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            let exprs =
+                exprs
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (copyInfoOpt @ ids @ exprs)
+            |> tryVisitList
+
+        | SynExpr.ArrayOrList (_, exprs, _) ->
+            exprs
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.Record (baseInfoOpt, copyInfoOpt, recdFields, _) ->
+            let baseInfoOpt =
+                match baseInfoOpt with
+                | Some (ty, expr, _, _, _) ->
+                    let ty =
+                        [ty]
+                        |> mapVisitList (fun x -> x.Range) this.VisitType
+
+                    let expr =
+                        [expr]
+                        |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+                    (ty @ expr)
+                | _ ->
+                    []
+
+            let copyInfoOpt =
+                match copyInfoOpt with
+                | Some (expr, _) ->
+                    [expr]
+                    |> mapVisitList (fun x -> x.Range) this.VisitExpr
+                | _ ->
+                    []
+
+            let recdFieldNames, exprOpts, _ = List.unzip3 recdFields
+
+            let recdFieldNames =
+                recdFieldNames
+                |> List.map (fun (longDotId, _) -> longDotId)
+                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+
+            let exprOpts =
+                exprOpts
+                |> List.choose id
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (baseInfoOpt @ copyInfoOpt @ recdFieldNames @ exprOpts)
+            |> tryVisitList
+
+        | SynExpr.New (_, ty, expr, _) ->
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (ty @ expr)
+            |> tryVisitList
+
+        | SynExpr.ObjExpr (ty, argOpt, bindings, extraImpls, _, _) ->
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let argOpt =
+                match argOpt with
+                | Some (expr, idOpt) ->
+                    let expr =
+                        [expr]
+                        |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+                    let idOpt =
+                        match idOpt with
+                        | Some id ->
+                            [id]
+                            |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                        | _ ->
+                            []
+
+                    (expr @ idOpt)
+                | _ ->
+                    []
+
+            let bindings =
+                bindings
+                |> mapVisitList (fun x -> x.RangeOfBindingAndRhs) this.VisitBinding
+
+            let extraImpls =
+                extraImpls
+                |> mapVisitList (fun x -> x.Range) this.VisitInterfaceImpl
+
+            (ty @ argOpt @ bindings @ extraImpls)
+            |> tryVisitList
+
+        | SynExpr.While (_, whileExpr, doExpr, _) ->
+            [whileExpr;doExpr]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.For (_, id, expr, _, toBody, doBody, _) ->
+            let id =
+                [id]
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            let exprs =
+                [expr;toBody;doBody]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (id @ exprs)
+            |> tryVisitList
+
+        | SynExpr.ForEach (_, _, _, pat, enumExpr, bodyExpr, _) ->
+            let pat =
+                [pat]
+                |> mapVisitList (fun x -> x.Range) this.VisitPat
+
+            let exprs =
+                [enumExpr;bodyExpr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (pat @ exprs)
+            |> tryVisitList
+
+        | SynExpr.ArrayOrListOfSeqExpr (_, expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.CompExpr (_, _, expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.Lambda (_, _, argSimplePats, bodyExpr, _) ->
+            let argSimplePats =
+                [argSimplePats]
+                |> mapVisitList (fun x -> x.Range) this.VisitSimplePats
+
+            let bodyExpr =
+                [bodyExpr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (argSimplePats @ bodyExpr)
+            |> tryVisitList
+
+        | SynExpr.MatchLambda (_, _, clauses, _, _) ->
+            clauses
+            |> mapVisitList (fun x -> x.Range) this.VisitMatchClause
+            |> tryVisitList
+
+        | SynExpr.Match (_, expr, clauses, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let clauses =
+                clauses
+                |> mapVisitList (fun x -> x.Range) this.VisitMatchClause
+
+            (expr @ clauses)
+            |> tryVisitList
+
+        | SynExpr.Do (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.Assert (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.App (_, _, funcExpr, argExpr, _) ->
+            [funcExpr;argExpr]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.TypeApp (expr, _, tys, _, _, _, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let tys =
+                tys
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            (expr @ tys)
+            |> tryVisitList
+
+        | SynExpr.LetOrUse (_, _, bindings, bodyExpr, _) ->
+            let bindings =
+                bindings
+                |> mapVisitList (fun x -> x.RangeOfBindingAndRhs) this.VisitBinding
+
+            let bodyExpr =
+                [bodyExpr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (bindings @ bodyExpr)
+            |> tryVisitList
+
+        | SynExpr.TryWith (tryExpr, _, clauses, _, _, _, _) ->
+            let tryExpr =
+                [tryExpr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let clauses =
+                clauses
+                |> mapVisitList (fun x -> x.Range) this.VisitMatchClause
+
+            (tryExpr @ clauses)
+            |> tryVisitList
+
+        | SynExpr.TryFinally (tryExpr, finallyExpr, _, _, _) ->
+            [tryExpr;finallyExpr]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.Lazy (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.Sequential (_, _, expr1, expr2, _) ->
+            [expr1;expr2]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.IfThenElse (ifExpr, thenExpr, elseExprOpt, _, _, _, _) ->
+            let exprs =
+                [ifExpr;thenExpr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let elseExprOpt =
+                match elseExprOpt with
+                | Some elseExpr ->
+                    [elseExpr]
+                    |> mapVisitList (fun x -> x.Range) this.VisitExpr
+                | _ ->
+                    []
+
+            (exprs @ elseExprOpt)
+            |> tryVisitList
+
+        | SynExpr.Ident id ->
+            id
+            |> tryVisit id.idRange this.VisitIdent
+
+        | SynExpr.LongIdent (_, longDotId, simplePatAltIdInfoOpt, _) ->
+            let longDotId =
+                [longDotId]
+                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+
+            let simplePatAltIdInfoOpt =
+                match simplePatAltIdInfoOpt with
+                | Some simplePatAltIdInfo ->
+                    [simplePatAltIdInfo.contents]
+                    |> mapVisitList (fun x -> x.Range) this.VisitSimplePatAlternativeIdInfo
+                | _ ->
+                    []
+
+            (longDotId @ simplePatAltIdInfoOpt)
+            |> tryVisitList
+
+        | SynExpr.LongIdentSet (longDotId, expr, _) ->
+            let longDotId =
+                [longDotId]
+                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (longDotId @ expr)
+            |> tryVisitList
+
+        | SynExpr.DotGet (expr, _, longDotId, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let longDotId =
+                [longDotId]
+                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+
+            (expr @ longDotId)
+            |> tryVisitList
+
+        | SynExpr.DotSet (expr1, longDotId, expr2, _) ->
+            let exprs =
+                [expr1;expr2]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let longDotId =
+                [longDotId]
+                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+
+            (exprs @ longDotId)
+            |> tryVisitList
+
+        | SynExpr.Set (expr1, expr2, _) ->
+            [expr1;expr2]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.DotIndexedGet (expr, args, _, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let args =
+                args
+                |> mapVisitList (fun x -> x.Range) this.VisitIndexerArg
+
+            (expr @ args)
+            |> tryVisitList
+
+        | SynExpr.DotIndexedSet (objectExpr, args, valueExpr, _, _, _) ->
+            let exprs =
+                [objectExpr;valueExpr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let args =
+                args
+                |> mapVisitList (fun x -> x.Range) this.VisitIndexerArg
+
+            (exprs @ args)
+            |> tryVisitList
+
+        | SynExpr.NamedIndexedPropertySet (longDotId, expr1, expr2, _) ->
+            let longDotId =
+                [longDotId]
+                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+
+            let exprs =
+                [expr1;expr2]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (longDotId @ exprs)
+            |> tryVisitList
+
+        | SynExpr.DotNamedIndexedPropertySet (expr1, longDotId, expr2, expr3, _) ->
+            let exprs =
+                [expr1;expr;expr3]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let longDotId =
+                [longDotId]
+                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+
+            (exprs @ longDotId)
+            |> tryVisitList
+
+        | SynExpr.TypeTest (expr, ty, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            (expr @ ty)
+            |> tryVisitList
+
+        | SynExpr.Upcast (expr, ty, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            (expr @ ty)
+            |> tryVisitList
+
+        | SynExpr.Downcast (expr, ty, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            (expr @ ty)
+            |> tryVisitList
+
+        | SynExpr.InferredUpcast (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.InferredDowncast (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.Null _ ->
+            None
+
+        | SynExpr.AddressOf (_, expr, _, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.TraitCall (typars, memberSig, expr, _) ->
+            let typars =
+                typars
+                |> mapVisitList (fun x -> x.Range) this.VisitTypar
+
+            let memberSig =
+                [memberSig]
+                |> mapVisitList (fun x -> x.Range) this.VisitMemberSig
+
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (typars @ memberSig @ expr)
+            |> tryVisitList
+
+        | SynExpr.JoinIn (expr1, _, expr2, _) ->
+            [expr1;expr2]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynExpr.ImplicitZero _ ->
+            None
+
+        | SynExpr.YieldOrReturn (_, expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.YieldOrReturnFrom (_, expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.LetOrUseBang (_, _, _, pat, expr1, expr2, _) ->
+            let pat =
+                [pat]
+                |> mapVisitList (fun x -> x.Range) this.VisitPat
+
+            let exprs =
+                [expr1;expr2]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (pat @ exprs)
+            |> tryVisitList
+
+        | SynExpr.MatchBang (_, expr, clauses, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let clauses =
+                clauses
+                |> mapVisitList (fun x -> x.Range) this.VisitMatchClause
+
+            (expr @ clauses)
+            |> tryVisitList
+
+        | SynExpr.DoBang (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.LibraryOnlyILAssembly (_, tys1, exprs, tys2, _) ->
+            let tys =
+                (tys1 @ tys2)
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let exprs =
+                exprs
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (tys @ exprs)
+            |> tryVisitList
+
+        | SynExpr.LibraryOnlyStaticOptimization (staticOptConstraints, expr1, expr2, _) ->
+            let staticOptConstraints =
+                staticOptConstraints
+                |> mapVisitList (fun x -> x.Range) this.VisitStaticOptimizationConstraint
+
+            let exprs =
+                [expr1;expr2]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (staticOptConstraints @ exprs)
+            |> tryVisitList
+
+        | SynExpr.LibraryOnlyUnionCaseFieldGet (expr, longId, _, _) ->
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let longId =
+                longId
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            (expr @ longId)
+            |> tryVisitList
+
+        | SynExpr.LibraryOnlyUnionCaseFieldSet (expr1, longId, _, expr2, _) ->
+            let exprs =
+                [expr1;expr2]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let longId =
+                longId
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            (exprs @ longId)
+            |> tryVisitList
+
+        | SynExpr.ArbitraryAfterError _ ->
+            None
+
+        | SynExpr.FromParseError (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+        | SynExpr.Fixed (expr, _) ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+                
+    abstract VisitStaticOptimizationConstraint: SynStaticOptimizationConstraint -> 'T option
+    default this.VisitStaticOptimizationConstraint staticOptConstraint =
+        match staticOptConstraint with
+        | WhenTyparTyconEqualsTycon (typar, ty, _) ->
+            let typar =
+                [typar]
+                |> mapVisitList (fun x -> x.Range) this.VisitTypar
+
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            (typar @ ty)
+            |> tryVisitList
+
+        | WhenTyparIsStruct (typar, _) ->
+            typar
+            |> tryVisit typar.Range this.VisitTypar
+
+    abstract VisitIndexerArg: SynIndexerArg -> 'T option
+    default this.VisitIndexerArg indexerArg =
+        match indexerArg with
+        | SynIndexerArg.Two (expr1, expr2) ->
+            [expr1;expr2]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+            |> tryVisitList
+
+        | SynIndexerArg.One expr ->
+            expr
+            |> tryVisit expr.Range this.VisitExpr
+
+    abstract VisitSimplePatAlternativeIdInfo: SynSimplePatAlternativeIdInfo -> 'T option
+    default this.VisitSimplePatAlternativeIdInfo simplePatAltIdInfo =
+        match simplePatAltIdInfo with
+        | Undecided id ->
+            id
+            |> tryVisit id.idRange this.VisitIdent
+
+        | Decided id ->
+            id
+            |> tryVisit id.idRange this.VisitIdent
+
+    abstract VisitMatchClause: SynMatchClause -> 'T option
+    default this.VisitMatchClause matchClause =
+        match matchClause with
+        | Clause (pat, whenExprOpt, expr, _, _) ->
+            let pat =
+                [pat]
+                |> mapVisitList (fun x -> x.Range) this.VisitPat
+
+            let whenExprOpt =
+                match whenExprOpt with
+                | Some whenExpr ->
+                    [whenExpr]
+                    |> mapVisitList (fun x -> x.Range) this.VisitExpr
+                | _ ->
+                    []
+
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (pat @ whenExprOpt @ expr)
+            |> tryVisitList
+
+    abstract VisitInterfaceImpl: SynInterfaceImpl -> 'T option
+    default this.VisitInterfaceImpl interfaceImpl =
+        match interfaceImpl with
+        | InterfaceImpl (ty, bindings, _) ->
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+            
+            let bindings =
+                bindings
+                |> mapVisitList (fun x -> x.RangeOfBindingAndRhs) this.VisitBinding
+
+            (ty @ bindings)
+            |> tryVisitList
 
     abstract VisitTypeDefn: SynTypeDefn -> 'T option
+    default this.VisitTypeDefn typeDefn =
+        match typeDefn with
+        | TypeDefn (compInfo, typeDefnRepr, memberDefns, _) ->
+            let compInfo =
+                [compInfo]
+                |> mapVisitList (fun x -> x.Range) this.VisitComponentInfo
+
+            let typeDefnRepr =
+                [typeDefnRepr]
+                |> mapVisitList (fun x -> x.Range) this.VisitTypeDefnRepr
+
+            let memberDefns =
+                memberDefns
+                |> mapVisitList (fun x -> x.Range) this.VisitMemberDefn
+
+            (compInfo @ typeDefnRepr @ memberDefns)
+            |> tryVisitList
+
+    abstract VisitTypeDefnRepr: SynTypeDefnRepr -> 'T option
+    default this.VisitTypeDefnRepr repr =
+        match repr with
+        | SynTypeDefnRepr.ObjectModel (kind, memberDefns, _) ->
+            let kind =
+                [kind]
+                |> mapVisitList (fun x -> x.PossibleRange) this.VisitTypeDefnKind
+
+            let memberDefns =
+                memberDefns
+                |> mapVisitList (fun x -> x.Range) this.VisitMemberDefn
+
+            (kind @ memberDefns)
+            |> tryVisitList
+
+        | SynTypeDefnRepr.Simple (simpleRepr, _) ->
+            simpleRepr
+            |> tryVisit simpleRepr.Range this.VisitTypeDefnSimpleRepr
+
+        | SynTypeDefnRepr.Exception exRepr ->
+            exRepr
+            |> tryVisit exRepr.Range this.VisitExceptionDefnRepr
+
+    abstract VisitMemberDefn: SynMemberDefn -> 'T option
+    default this.VisitMemberDefn memberDefn =
+        match memberDefn with
+        | SynMemberDefn.Open (longId, _) ->
+            longId
+            |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+            |> tryVisitList
+
+        | SynMemberDefn.Member (binding, _) ->
+            binding
+            |> tryVisit binding.RangeOfBindingAndRhs this.VisitBinding
+
+        | SynMemberDefn.ImplicitCtor (_, attribs, ctorArgs, idOpt, _) ->
+            let attribs =
+                attribs
+                |> mapVisitList (fun x -> x.Range) this.VisitAttributeList
+
+            let ctorArgs =
+                [ctorArgs]
+                |> mapVisitList (fun x -> x.Range) this.VisitSimplePats
+
+            let idOpt =
+                match idOpt with
+                | Some id ->
+                    [id]
+                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                | _ ->
+                    []
+
+            (attribs @ ctorArgs @ idOpt)
+            |> tryVisitList
+
+        | SynMemberDefn.ImplicitInherit (ty, expr, idOpt, _) ->
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            let idOpt =
+                match idOpt with
+                | Some id ->
+                    [id]
+                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                | _ ->
+                    []
+
+            (ty @ expr @ idOpt)
+            |> tryVisitList
+
+        | SynMemberDefn.LetBindings (bindings, _, _, _) ->
+            bindings
+            |> mapVisitList (fun x -> x.RangeOfBindingAndRhs) this.VisitBinding
+            |> tryVisitList
+
+        | SynMemberDefn.AbstractSlot (valSig, _, _) ->
+            valSig
+            |> tryVisit valSig.Range this.VisitValSig
+
+        | SynMemberDefn.Interface (ty, memberDefnsOpt, _) ->
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let memberDefnsOpt =
+                match memberDefnsOpt with
+                | Some memberDefns ->
+                    memberDefns
+                    |> mapVisitList (fun x -> x.Range) this.VisitMemberDefn
+                | _ ->
+                    []
+
+            (ty @ memberDefnsOpt)
+            |> tryVisitList
+
+        | SynMemberDefn.Inherit (ty, idOpt, _) ->
+            let ty =
+                [ty]
+                |> mapVisitList (fun x -> x.Range) this.VisitType
+
+            let idOpt =
+                match idOpt with
+                | Some id ->
+                    [id]
+                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                | _ ->
+                    []
+
+            (ty @ idOpt)
+            |> tryVisitList
+
+        | SynMemberDefn.ValField (field, _) ->
+            field
+            |> tryVisit field.Range this.VisitField
+
+        | SynMemberDefn.NestedType (typeDefn, _, _) ->
+            typeDefn
+            |> tryVisit typeDefn.Range this.VisitTypeDefn
+
+        | SynMemberDefn.AutoProperty (attribs, _, id, tyOpt, _, _, _, _, expr, _, _) ->
+            let attribs =
+                attribs
+                |> mapVisitList (fun x -> x.Range) this.VisitAttributeList
+
+            let id =
+                [id]
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+
+            let tyOpt =
+                match tyOpt with
+                | Some ty ->
+                    [ty]
+                    |> mapVisitList (fun x -> x.Range) this.VisitType
+                | _ ->
+                    []
+
+            let expr =
+                [expr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+            (attribs @ id @ tyOpt @ expr)
+            |> tryVisitList
 
     abstract VisitExceptionDefn: SynExceptionDefn -> 'T option
+    default this.VisitExceptionDefn exDefn =
+        match exDefn with
+        | SynExceptionDefn (exRepr, memberDefns, _) ->
+            let exRepr =
+                [exRepr]
+                |> mapVisitList (fun x -> x.Range) this.VisitExceptionDefnRepr
+
+            let memberDefns =
+                memberDefns
+                |> mapVisitList (fun x -> x.Range) this.VisitMemberDefn
+
+            (exRepr @ memberDefns)
+            |> tryVisitList
 
     abstract VisitParsedHashDirective: ParsedHashDirective -> 'T option
+    default this.VisitParsedHashDirective hashDirective =
+        match hashDirective with
+        ParsedHashDirective (_, _, _) ->
+            None
 
     abstract VisitAttributeList: SynAttributeList -> 'T option
     default this.VisitAttributeList attribs =
@@ -1275,4 +2262,22 @@ type AstVisitor<'T> (p: pos) =
         |> tryVisitList
 
     abstract VisitAttribute: SynAttribute -> 'T option
-    default this.VisitAttribute attrib = None
+    default this.VisitAttribute attrib =
+        let typeName =
+            [attrib.TypeName]
+            |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+
+        let argExpr =
+            [attrib.ArgExpr]
+            |> mapVisitList (fun x -> x.Range) this.VisitExpr
+
+        let targetOpt =
+            match attrib.Target with
+            | Some target ->
+                [target]
+                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+            | _ ->
+                []
+
+        (typeName @ argExpr @ targetOpt)
+        |> tryVisitList

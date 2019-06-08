@@ -159,7 +159,9 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
 
     member __.TryFindSymbolAsync (line: int, column: int) : Async<FSharpSymbol option> =
         async {
-            let! _checker, _tcAcc, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
+            let! checker, _tcAcc, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
+            let syntaxTree = checker.GetSyntaxTree filePath
+            let! _ = syntaxTree.TryFindTokenAsync (line, column) // test
             return tryFindSymbol line column resolutions symbolEnv
         }
 

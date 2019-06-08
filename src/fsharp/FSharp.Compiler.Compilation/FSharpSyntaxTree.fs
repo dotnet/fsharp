@@ -84,6 +84,8 @@ type FSharpSyntaxNodeKind =
 [<Sealed>]
 type FSharpSyntaxToken (parent: FSharpSyntaxNode option, token: Parser.token, range: range) =
 
+    member __.Parent = parent
+
     member __.Token = token
 
     member __.Range = range
@@ -174,17 +176,29 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
 
     member __.TryFindTokenAsync (line: int, column: int) =
         async {
-            let! tokens = asyncLazyWeakGetTokens.GetValueAsync ()
-            let tokens = !tokens
-            let p = mkPos line column
-            return
-                tokens
-                |> Seq.tryPick (fun (t, m) ->
-                    if rangeContainsPos m p then
-                        Some (FSharpSyntaxToken (None, t, m))
-                    else
-                        None
-                )
+            let! inputOpt, _ = asyncLazyWeakGetParseResult.GetValueAsync ()
+
+            match inputOpt with
+            | Some input ->
+                let! tokens = asyncLazyWeakGetTokens.GetValueAsync ()
+                let tokens = !tokens
+                let p = mkPos line column
+                return
+                    tokens
+                    |> Seq.tryPick (fun (t, m) ->
+                        if rangeContainsPos m p then
+                            let visitor =
+                                { new AstVisitor<ImmutableArray<obj>> (m) with
+                                    override x.VisitIdent id =
+                                        Some (x.GetCurrentParentTree ())
+                                }
+                            let treeStuff = visitor.Traverse input
+                            Some (FSharpSyntaxToken (None, t, m))
+                        else
+                            None
+                    )
+            | _ ->
+                return None
         }
 
     member this.TryFindNodeAsync (line: int, column: int) =
