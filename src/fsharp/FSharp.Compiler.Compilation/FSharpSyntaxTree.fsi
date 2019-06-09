@@ -98,6 +98,8 @@ and [<Sealed>] FSharpSyntaxTree =
 
     member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree
 
+    member internal TestParseWithTokens: unit -> Async<ParseResult>
+
    // member TryFindNodeAsync: line: int * column: int -> Async<SyntaxNode option>
 
     //member GetTokensAsync: line: int -> Async<ImmutableArray<FSharpTokenInfo>>

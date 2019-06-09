@@ -29,12 +29,22 @@ type SourceValue =
     | SourceText of SourceText
     | Stream of Stream
 
+    member this.CreateLexbuf () =
+        match this with
+        | SourceValue.SourceText sourceText ->
+            UnicodeLexing.SourceTextAsLexbuf (sourceText.ToFSharpSourceText ())
+        | SourceValue.Stream stream ->
+            let streamReader = new StreamReader(stream) // don't dispose of stream reader
+            UnicodeLexing.FunctionAsLexbuf (fun (chars, start, length) ->
+                streamReader.ReadBlock (chars, start, length)
+            )
+
 [<RequireQualifiedAccess>]
 module Lexer =
 
     open FSharp.Compiler.Lexhelp
 
-    let LexAux (pConfig: ParsingConfig) sourceValue errorLogger lexbufCallback =
+    let LexAux (pConfig: ParsingConfig) lexbuf errorLogger lexbufCallback =
         let tcConfig = pConfig.tcConfig
         let filePath = pConfig.filePath
 
@@ -42,26 +52,14 @@ module Lexer =
         let conditionalCompilationDefines = pConfig.conditionalCompilationDefines
         let lexargs = mkLexargs (filePath, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, tcConfig.pathMap)
 
-        match sourceValue with
-        | SourceValue.SourceText sourceText ->
-            let lexbuf = UnicodeLexing.SourceTextAsLexbuf (sourceText.ToFSharpSourceText ())
-            usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
-                lexbufCallback lexargs lexbuf
-            )
-        | SourceValue.Stream stream ->
-            let streamReader = new StreamReader(stream) // don't dispose of stream reader
-            let lexbuf = 
-                UnicodeLexing.FunctionAsLexbuf (fun (chars, start, length) ->
-                    streamReader.ReadBlock (chars, start, length)
-                )
-            usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
-                lexbufCallback lexargs lexbuf
-            )
+        usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
+            lexbufCallback lexargs lexbuf
+        )
 
-    let Lex pConfig sourceValue tokenCallback =
-        let skip = false
+    let Lex pConfig (sourceValue: SourceValue) tokenCallback =
+        let skip = true
         let errorLogger = CompilationErrorLogger("Lex", pConfig.tcConfig.errorSeverityOptions)
-        LexAux pConfig sourceValue errorLogger (fun lexargs lexbuf ->
+        LexAux pConfig (sourceValue.CreateLexbuf ()) errorLogger (fun lexargs lexbuf ->
             while not lexbuf.IsPastEndOfStream do
                 tokenCallback (Lexer.token lexargs skip lexbuf) lexbuf.LexemeRange
         )
@@ -69,8 +67,7 @@ module Lexer =
 [<RequireQualifiedAccess>]
 module Parser =
 
-    let Parse (pConfig: ParsingConfig) sourceValue =
-        let skip = true
+    let ParseAux (pConfig: ParsingConfig) lexbuf lex =
         let isLastCompiland = (pConfig.isLastFileOrScript, pConfig.isExecutable)
         let tcConfig = pConfig.tcConfig
         let filePath = pConfig.filePath
@@ -78,10 +75,33 @@ module Parser =
 
         let input =
                 try
-                    Lexer.LexAux pConfig sourceValue errorLogger (fun lexargs lexbuf ->
-                        let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
+                    Lexer.LexAux pConfig lexbuf errorLogger (fun lexargs lexbuf ->
+                        let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, tcConfig.compilingFslib, lex lexargs, lexbuf)
                         ParseInput(tokenizer.Lexer, errorLogger, lexbuf, None, filePath, isLastCompiland)
                     ) |> Some
                 with
                 | _ -> None
         (input, errorLogger.GetErrors ())
+
+    let Parse pConfig (sourceValue: SourceValue) =
+        let skip = true
+        ParseAux pConfig (sourceValue.CreateLexbuf ()) (fun lexargs -> Lexer.token lexargs skip)
+
+    let ParseWithTokens pConfig (tokens: ImmutableArray<Parser.token * range>) =
+        if tokens.Length = 0 then
+            invalidArg "tokens" "no tokens"
+
+        let dummyLexbuf =
+            Internal.Utilities.Text.Lexing.LexBuffer<char>.FromFunction (fun _ -> 0)
+
+        let mutable index = 0
+        let lex =
+            (fun _ (lexbuf: Internal.Utilities.Text.Lexing.LexBuffer<char>) ->
+                let t, r = tokens.[index]
+                index <- index + 1
+                lexbuf.StartPos <- Internal.Utilities.Text.Lexing.Position (r.FileIndex, r.StartLine, r.StartLine, 0, r.StartColumn)
+                lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position (r.FileIndex, r.EndLine, r.EndLine, 0, r.EndColumn)
+                t
+            )
+
+        ParseAux pConfig dummyLexbuf lex

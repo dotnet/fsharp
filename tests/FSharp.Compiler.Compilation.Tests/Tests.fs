@@ -172,6 +172,29 @@ module TestModuleCompilationTest =
         let tokenChanges = newSemanticModel.SyntaxTree.GetIncrementalTokenChangesAsync () |> Async.RunSynchronously
         Assert.True (tokenChanges.Length > 0)
 
+    [<Test>]
+    member __.``Parse With Tokens`` () =
+        let text =
+            SourceText.From """
+namespace Test
+
+// This is a comment.
+
+/// This is a doc comment.
+type TestClass () =
+
+        member val X = 1
+
+        member val Y = 2
+
+        member val Z = 3"""
+
+        let semanticModel, storageService = getSemanticModel text
+
+        let realInput, realErrors = semanticModel.SyntaxTree.GetParseResultAsync () |> Async.RunSynchronously
+        let input, errors = semanticModel.SyntaxTree.TestParseWithTokens () |> Async.RunSynchronously
+        Assert.True input.IsSome
+
 
 [<TestFixture>]
 type UtilitiesTest () =

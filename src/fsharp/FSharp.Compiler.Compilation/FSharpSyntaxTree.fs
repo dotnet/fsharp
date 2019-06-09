@@ -717,4 +717,11 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                 else
                     FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, changes)
             | _ ->
-                FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])        
+                FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])
+                
+    member this.TestParseWithTokens () =
+        async {
+            let! tokensRef = this.GetAllTokensAsync ()
+            let tokens = tokensRef.contents
+            return Parser.ParseWithTokens pConfig tokens
+        }

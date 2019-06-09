@@ -38,3 +38,5 @@ module internal Lexer =
 module internal Parser =
 
     val Parse: ParsingConfig -> SourceValue -> ParseResult
+
+    val ParseWithTokens: ParsingConfig -> ImmutableArray<Parser.token * range> -> ParseResult
