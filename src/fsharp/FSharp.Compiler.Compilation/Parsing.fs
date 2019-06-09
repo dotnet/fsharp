@@ -34,11 +34,9 @@ module Lexer =
 
     open FSharp.Compiler.Lexhelp
 
-    let Lex (pConfig: ParsingConfig) sourceValue tokenCallback =
-        let skipWhitespace = true
+    let LexAux (pConfig: ParsingConfig) sourceValue errorLogger lexbufCallback =
         let tcConfig = pConfig.tcConfig
         let filePath = pConfig.filePath
-        let errorLogger = CompilationErrorLogger("Lex", tcConfig.errorSeverityOptions)
 
         let lightSyntaxStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filePath, true) 
         let conditionalCompilationDefines = pConfig.conditionalCompilationDefines
@@ -48,8 +46,7 @@ module Lexer =
         | SourceValue.SourceText sourceText ->
             let lexbuf = UnicodeLexing.SourceTextAsLexbuf (sourceText.ToFSharpSourceText ())
             usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
-                while not lexbuf.IsPastEndOfStream do
-                    tokenCallback (Lexer.token lexargs skipWhitespace lexbuf) lexbuf.LexemeRange
+                lexbufCallback lexargs lexbuf
             )
         | SourceValue.Stream stream ->
             let streamReader = new StreamReader(stream) // don't dispose of stream reader
@@ -58,22 +55,33 @@ module Lexer =
                     streamReader.ReadBlock (chars, start, length)
                 )
             usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
-                while not lexbuf.IsPastEndOfStream do
-                    tokenCallback (Lexer.token lexargs skipWhitespace lexbuf) lexbuf.LexemeRange
+                lexbufCallback lexargs lexbuf
             )
+
+    let Lex pConfig sourceValue tokenCallback =
+        let skip = false
+        let errorLogger = CompilationErrorLogger("Lex", pConfig.tcConfig.errorSeverityOptions)
+        LexAux pConfig sourceValue errorLogger (fun lexargs lexbuf ->
+            while not lexbuf.IsPastEndOfStream do
+                tokenCallback (Lexer.token lexargs skip lexbuf) lexbuf.LexemeRange
+        )
 
 [<RequireQualifiedAccess>]
 module Parser =
 
     let Parse (pConfig: ParsingConfig) sourceValue =
+        let skip = true
+        let isLastCompiland = (pConfig.isLastFileOrScript, pConfig.isExecutable)
         let tcConfig = pConfig.tcConfig
         let filePath = pConfig.filePath
         let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
 
         let input =
-            match sourceValue with
-            | SourceValue.SourceText sourceText ->
-                ParseOneInputSourceText (pConfig.tcConfig, Lexhelp.LexResourceManager (), pConfig.conditionalCompilationDefines, filePath, sourceText.ToFSharpSourceText (), (pConfig.isLastFileOrScript, pConfig.isExecutable), errorLogger)
-            | SourceValue.Stream stream ->
-                ParseOneInputStream (pConfig.tcConfig, Lexhelp.LexResourceManager (), pConfig.conditionalCompilationDefines, filePath, stream, (pConfig.isLastFileOrScript, pConfig.isExecutable), errorLogger)
+                try
+                    Lexer.LexAux pConfig sourceValue errorLogger (fun lexargs lexbuf ->
+                        let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
+                        ParseInput(tokenizer.Lexer, errorLogger, lexbuf, None, filePath, isLastCompiland)
+                    ) |> Some
+                with
+                | _ -> None
         (input, errorLogger.GetErrors ())
