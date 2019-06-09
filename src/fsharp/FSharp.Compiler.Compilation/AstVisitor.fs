@@ -1,60 +1,14 @@
 ﻿namespace FSharp.Compiler.Compilation
 
-open System.IO
-open System.Threading
-open System.Collections.Immutable
-open System.Collections.Generic
-open System.Runtime.CompilerServices
-open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Host
-open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler
-open FSharp.Compiler.Text
-open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 
 [<AutoOpen>]
 module AstVisitorHelpers =
-
+    
     let isZeroRange (r: range) =
         posEq r.Start r.End
-
-    let tryVisit p m visit item =
-        if rangeContainsPos m p && not (isZeroRange m) then
-            visit item
-        else
-            None
-
-    let tryVisitList p xs : 'T option =
-        xs
-        |> List.sortWith (fun (getRange1, _) (getRange2, _)->
-            let r1 = getRange1 ()
-            let r2 = getRange2 ()
-            rangeOrder.Compare (r1, r2)
-        )
-        |> List.tryPick (fun (getRange, visit) ->
-            let r = getRange ()
-            if rangeContainsPos r p && not (isZeroRange r) then
-                visit ()
-            else
-                None
-        )
-        |> Option.orElseWith (fun () ->
-            xs
-            |> List.tryPick (fun (getRange, visit) ->
-                let r = getRange ()
-                if posGt p r.Start && not (isZeroRange r) then
-                    visit ()
-                else
-                    None
-            )
-        )
-
-    let mapVisitList getRange visit xs =
-        xs
-        |> List.map (fun x -> ((fun () -> getRange x), fun () -> visit x))
 
     type ParsedHashDirective with
 
@@ -301,16 +255,11 @@ module AstVisitorHelpers =
                     unionRanges ty.Range valInfoPossibleRange
 
 [<AbstractClass>]
-type AstVisitor<'T> (textSpan: range) =
-
-    let visitStack = Stack<obj> ()
+type AstVisitor<'T> () as this =
 
     let tryVisit m visit item =
-        if rangeContainsRange m textSpan && not (isZeroRange m) then
-            visitStack.Push item
-            let result = visit item
-            visitStack.Pop () |> ignore
-            result
+        if this.CanVisit m then
+            visit item
         else
             None
 
@@ -323,7 +272,7 @@ type AstVisitor<'T> (textSpan: range) =
         )
         |> List.tryPick (fun (getRange, visit) ->
             let r = getRange ()
-            if rangeContainsRange r textSpan && not (isZeroRange r) then
+            if this.CanVisit r then
                 visit ()
             else
                 None
@@ -331,24 +280,20 @@ type AstVisitor<'T> (textSpan: range) =
 
     let mapVisitList (getRange: 'Syn -> range) visit xs =
         xs
-        |> List.map (fun x -> ((fun () -> getRange x), fun () -> 
-            visitStack.Push x
-            let result = visit x
-            visitStack.Pop () |> ignore
-            result
-        ))
+        |> List.map (fun x -> ((fun () -> getRange x), fun () -> visit x))
 
-    member this.GetCurrentParentTree () =
-        visitStack.ToArray ()
-        |> ImmutableArray.CreateRange
+    abstract CanVisit: range -> bool  
+    default this.CanVisit _ = true
 
-    member this.Traverse parsedInput =
+    abstract VisitParsedInput: ParsedInput -> 'T option
+    default this.VisitParsedInput parsedInput =
         match parsedInput with
         | ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, modules, _)) -> 
             modules
             |> mapVisitList (fun x -> x.Range) this.VisitModuleOrNamespace
             |> tryVisitList
-        | ParsedInput.SigFile _ -> None
+        | ParsedInput.SigFile (ParsedSigFileInput (_, _, _, _, modules)) -> 
+            None
 
     abstract VisitModuleOrNamespace: SynModuleOrNamespace -> 'T option
     default this.VisitModuleOrNamespace moduleOrNamespace =

@@ -14,14 +14,107 @@ open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 
+[<AutoOpen>]
+module AstVisitorHelpers =
+
+    type ParsedHashDirective with
+
+        member Range: range
+
+    type SynTypeConstraint with
+
+        member Range: range
+
+    type SynMemberSig with
+
+        member Range: range
+
+    type SynValSig with
+
+        member Range: range
+
+    type SynField with
+
+        member Range: range
+
+    type SynTypeDefnSig with
+
+        member Range: range
+
+    type SynMeasure with
+
+        member PossibleRange: range
+
+    type SynRationalConst with
+
+        member PossibleRange: range
+
+    type SynArgInfo with
+
+        member PossibleRange: range
+
+    type SynValInfo with
+
+        member PossibleRange: range
+
+    type SynTypeDefnKind with
+
+        member PossibleRange: range
+
+    type SynTyparDecl with
+
+        member Range: range
+
+    type SynValTyparDecls with
+
+        member PossibleRange: range
+
+    type SynSimplePat with
+
+        member Range: range
+
+    type SynSimplePats with
+
+        member Range: range
+
+    type SynValData with
+
+        member Range: range
+
+    type SynBindingReturnInfo with
+
+        member Range: range
+
+    type SynConstructorArgs with
+
+        member PossibleRange: range
+
+    type SynInterfaceImpl with
+
+        member Range: range
+
+    type SynSimplePatAlternativeIdInfo with
+
+        member Range: range
+
+    type SynStaticOptimizationConstraint with
+
+        member Range: range
+
+    type SynUnionCaseType with
+
+        member PossibleRange: range
+
 [<AbstractClass>]
 type AstVisitor<'T> =
 
-    new: textSpan: range -> AstVisitor<'T>
+    new: unit -> AstVisitor<'T>
 
-    member GetCurrentParentTree: unit -> ImmutableArray<obj>
+    abstract CanVisit: range -> bool
+    default CanVisit: range -> bool
 
-    member Traverse: ParsedInput -> 'T option
+    abstract VisitParsedInput: ParsedInput -> 'T option
+    default VisitParsedInput: ParsedInput -> 'T option
 
     abstract VisitModuleOrNamespace: SynModuleOrNamespace -> 'T option
     default VisitModuleOrNamespace: SynModuleOrNamespace -> 'T option
