@@ -148,7 +148,7 @@ module FSharpSemanticModelHelpers =
                 | _ -> []
 
 [<Sealed>]
-type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>) =
+type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>, compilationObj: obj) =
 
     let getSyntaxTreeAsync =
         async {
@@ -201,3 +201,5 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
     member __.SyntaxTree =
         // This will go away when incremental checker doesn't build syntax trees.
         getSyntaxTreeAsync |> Async.RunSynchronously
+
+    member __.CompilationObj = compilationObj

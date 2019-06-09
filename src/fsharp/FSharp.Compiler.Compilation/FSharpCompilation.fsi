@@ -35,3 +35,10 @@ and [<Sealed>] FSharpCompilation =
     static member Create: assmeblyPath: string * projectDirectory: string * sourceSnapshots: ImmutableArray<FSharpSourceSnapshot> * metadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
 
     static member Create: FSharpCompilationOptions -> FSharpCompilation
+
+[<AutoOpen>]
+module FSharpSemanticModelExtensions =
+
+    type FSharpSemanticModel with
+
+        member Compilation: FSharpCompilation

@@ -149,8 +149,7 @@ type IncrementalCheckerState =
             |> Array.mapi (fun i result ->
                 // invalidate compilation results of the source and all sources below it.
                 if i = index then
-                    let isLastFile = (this.orderedResults.Length - 1) = i
-                    let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (this.tcConfig, this.options.parsingOptions, isLastFile, sourceSnapshot)
+                    let syntaxTree = result.SyntaxTree.WithChangedTextSnapshot sourceSnapshot
                     PartialCheckResult.NotParsed syntaxTree
                 elif i > index then
                     PartialCheckResult.NotParsed result.SyntaxTree

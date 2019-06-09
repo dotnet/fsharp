@@ -167,9 +167,9 @@ module TestModuleCompilationTest =
         let text2 = text.WithChanges ([textChange])
 
         let newTextSnapshot = storageService.CreateFSharpSourceSnapshot (semanticModel.SyntaxTree.FilePath, text2, CancellationToken.None)
-
-        let syntaxTree = semanticModel.SyntaxTree.WithChangedTextSnapshot newTextSnapshot
-        let tokenChanges = syntaxTree.GetIncrementalTokenChangesAsync () |> Async.RunSynchronously
+        let newCompilation = semanticModel.Compilation.ReplaceSourceSnapshot newTextSnapshot
+        let newSemanticModel = newCompilation.GetSemanticModel "test1.fs"
+        let tokenChanges = newSemanticModel.SyntaxTree.GetIncrementalTokenChangesAsync () |> Async.RunSynchronously
         Assert.True (tokenChanges.Length > 0)
 
 

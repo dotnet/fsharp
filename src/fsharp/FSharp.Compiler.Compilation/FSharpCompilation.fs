@@ -387,9 +387,9 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         checkFilePath sourceSnapshot.FilePath
         FSharpCompilation (id, state.ReplaceSourceSnapshot sourceSnapshot, version.GetNewerVersion ())
 
-    member __.GetSemanticModel filePath =
+    member this.GetSemanticModel filePath =
         checkFilePath filePath
-        FSharpSemanticModel (filePath, asyncLazyGetChecker)
+        FSharpSemanticModel (filePath, asyncLazyGetChecker, this)
 
     member __.GetSyntaxTree filePath =
         checkFilePath filePath
@@ -426,3 +426,11 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
                 MetadataReferences = metadataReferences
             }
         FSharpCompilation.Create options
+
+[<AutoOpen>]
+module FSharpSemanticModelExtensions =
+
+    type FSharpSemanticModel with
+
+        // this is a hack because of file ordering
+        member this.Compilation = this.CompilationObj :?> FSharpCompilation

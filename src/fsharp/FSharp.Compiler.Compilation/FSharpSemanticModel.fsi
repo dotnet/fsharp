@@ -5,7 +5,7 @@ open FSharp.Compiler.Compilation.Utilities
 [<Sealed>]
 type FSharpSemanticModel =
 
-    internal new: filePath: string * AsyncLazy<IncrementalChecker> -> FSharpSemanticModel
+    internal new: filePath: string * AsyncLazy<IncrementalChecker> * compilationObj: obj -> FSharpSemanticModel
 
     member TryFindSymbolAsync: line: int * column: int -> Async<FSharpSymbol option>
 
@@ -14,3 +14,5 @@ type FSharpSemanticModel =
     member GetCompletionSymbolsAsync: line: int * column: int -> Async<FSharpSymbol list>
 
     member SyntaxTree: FSharpSyntaxTree
+
+    member internal CompilationObj: obj
