@@ -666,27 +666,15 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                 return None
         })
 
+    let lex text =
+        let tokens = ImmutableArray.CreateBuilder ()
+        Lexer.Lex pConfig (SourceValue.SourceText text) (fun t m -> tokens.Add (t, m))
+        tokens.ToImmutable () |> ref
+
     let asyncLazyGetAllTokens =
         AsyncLazy(async {
-            let! ct = Async.CancellationToken
-            // If we already have a weakly cached source text as a result of calling GetSourceText, just use that value.
-            match asyncLazyWeakGetSourceText.TryGetValue () with
-            | ValueSome sourceText ->
-                let tokens = ImmutableArray.CreateBuilder ()
-                Lexer.Lex pConfig (SourceValue.SourceText sourceText) (fun t m -> tokens.Add (t, m))
-                return tokens.ToImmutable () |> ref
-            | _ ->
-                match sourceSnapshot.SourceStorage with
-                | SourceStorage.SourceText _ ->
-                    let! sourceText = asyncLazyWeakGetSourceTextFromSourceTextStorage.GetValueAsync ()
-                    let tokens = ImmutableArray.CreateBuilder ()
-                    Lexer.Lex pConfig (SourceValue.SourceText sourceText) (fun t m -> tokens.Add (t, m))
-                    return tokens.ToImmutable () |> ref
-                | SourceStorage.Stream storage ->
-                    let stream = storage.ReadStream ct
-                    let tokens = ImmutableArray.CreateBuilder ()
-                    Lexer.Lex pConfig (SourceValue.Stream stream) (fun t m -> tokens.Add (t, m))
-                    return tokens.ToImmutable () |> ref
+           let! text = asyncLazyWeakGetSourceText.GetValueAsync ()
+           return lex text
         })
 
     member __.GetAllTokensAsync () =
@@ -708,7 +696,6 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
 
             match inputOpt with
             | Some input ->
-                let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
                 let! tokens = this.GetAllTokensAsync ()
                 let tokens = !tokens
                 let p = mkPos line column
