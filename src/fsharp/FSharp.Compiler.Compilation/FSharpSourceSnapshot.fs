@@ -13,11 +13,42 @@ type SourceStorage =
     | Stream of ITemporaryStreamStorage
 
 [<Sealed>]
-type FSharpSourceSnapshot (filePath: string, sourceStorage: SourceStorage) =
+type FSharpSourceSnapshot (filePath: string, sourceStorage: SourceStorage, initialText: WeakReference<SourceText>) =
+
+    let mutable weakText = initialText
 
     member __.FilePath = filePath
 
-    member __.SourceStorage = sourceStorage
+    member this.GetText ct =
+        match this.TryGetText () with
+        | Some text -> text
+        | _ ->
+            let text =
+                match sourceStorage with
+                | SourceStorage.SourceText storage ->
+                    storage.ReadText ct
+                | SourceStorage.Stream storage ->
+                    let stream = storage.ReadStream ct
+                    SourceText.From stream
+            weakText <- WeakReference<_> text
+            text
+
+    member __.TryGetText () =
+        match weakText.TryGetTarget () with
+        | true, text -> Some text
+        | _ -> None
+
+    member __.IsStream =
+        match sourceStorage with
+        | SourceStorage.Stream _ -> true
+        | _ -> false
+
+    member __.TryGetStream ct =
+        match sourceStorage with
+        | SourceStorage.Stream storage ->
+            Some (storage.ReadStream ct)
+        | _ ->
+            None
 
 [<Sealed;AbstractClass;Extension>]
 type ITemporaryStorageServiceExtensions =
@@ -27,7 +58,7 @@ type ITemporaryStorageServiceExtensions =
         let storage = this.CreateTemporaryTextStorage ct
         storage.WriteText (sourceText, ct)
         let sourceStorage = SourceStorage.SourceText storage
-        FSharpSourceSnapshot (filePath, sourceStorage)
+        FSharpSourceSnapshot (filePath, sourceStorage, WeakReference<_> sourceText)
 
     [<Extension>]
     static member CreateFSharpSourceSnapshot (this: ITemporaryStorageService, filePath: string, ct) =
@@ -35,4 +66,4 @@ type ITemporaryStorageServiceExtensions =
         use stream = File.OpenRead filePath
         storage.WriteStream (stream, ct)
         let sourceStorage = SourceStorage.Stream storage
-        FSharpSourceSnapshot (filePath, sourceStorage)
+        FSharpSourceSnapshot (filePath, sourceStorage, WeakReference<_> null)

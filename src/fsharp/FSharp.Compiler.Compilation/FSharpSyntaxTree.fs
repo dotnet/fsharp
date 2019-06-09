@@ -609,32 +609,12 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
                 yield parent
         }
 
-and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot) as this =
-
-    let asyncLazyWeakGetSourceTextFromSourceTextStorage =
-        AsyncLazyWeak(async {
-            let! ct = Async.CancellationToken
-            match sourceSnapshot.SourceStorage with
-            | SourceStorage.SourceText storage ->
-                return storage.ReadText ct
-            | _ ->
-                return failwith "SyntaxTree Error: Expected SourceStorage.SourceText"
-        })
+and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot, changes: IReadOnlyList<TextChangeRange>) as this =
 
     let asyncLazyWeakGetSourceText =
         AsyncLazyWeak(async {
             let! ct = Async.CancellationToken
-            // If we already have a weakly cached source text as a result of calling GetParseResult, just use that value.
-            match asyncLazyWeakGetSourceTextFromSourceTextStorage.TryGetValue () with
-            | ValueSome sourceText ->
-                return sourceText
-            | _ ->
-                match sourceSnapshot.SourceStorage with
-                | SourceStorage.SourceText storage ->
-                    return storage.ReadText ct
-                | SourceStorage.Stream storage ->
-                    use stream = storage.ReadStream ct
-                    return SourceText.From stream
+            return sourceSnapshot.GetText ct
         })
 
     let asyncLazyWeakGetParseResult =
@@ -645,13 +625,14 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
             | ValueSome sourceText ->
                 return Parser.Parse pConfig (SourceValue.SourceText sourceText)
             | _ ->
-                match sourceSnapshot.SourceStorage with
-                | SourceStorage.SourceText _ ->
-                    let! sourceText = asyncLazyWeakGetSourceTextFromSourceTextStorage.GetValueAsync ()
-                    return Parser.Parse pConfig (SourceValue.SourceText sourceText)
-                | SourceStorage.Stream storage ->
-                    let stream = storage.ReadStream ct
-                    return Parser.Parse pConfig (SourceValue.Stream stream)
+                match sourceSnapshot.TryGetStream ct with
+                | Some stream ->
+                    let result = Parser.Parse pConfig (SourceValue.Stream stream)
+                    stream.Dispose ()
+                    return result
+                | _ ->
+                    let! text = asyncLazyWeakGetSourceText.GetValueAsync ()
+                    return Parser.Parse pConfig (SourceValue.SourceText text)
         })
 
     let createAsyncLazyGetTokenParent m =
@@ -711,12 +692,32 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                 return None
         }
 
-    member this.GetTextChangesAsync (oldSyntaxTree: FSharpSyntaxTree) =
+    member this.GetIncrementalTokenChangesAsync () =
+        let getTokenChanges (text: SourceText) =
+            let tokenChanges = ImmutableArray.CreateBuilder ()
+            for i = 0 to changes.Count - 1 do
+                let textChange = changes.[i]
+                let text = text.GetSubText (TextSpan(textChange.Span.Start, textChange.NewLength))
+                tokenChanges.Add ((lex text).contents)
+            tokenChanges.ToImmutable ()
         async {
-            let! text = this.GetSourceTextAsync ()
-            let! oldText = oldSyntaxTree.GetSourceTextAsync ()
-            return text.GetTextChanges oldText
+            let! text = asyncLazyWeakGetSourceText.GetValueAsync ()
+            return getTokenChanges text
         }
+
+    member this.WithChangedTextSnapshot (newTextSnapshot: FSharpSourceSnapshot) =
+        if obj.ReferenceEquals (sourceSnapshot, newTextSnapshot) then
+            this
+        else
+            match sourceSnapshot.TryGetText (), newTextSnapshot.TryGetText () with
+            | Some oldText, Some text ->
+                let changes = text.GetChangeRanges oldText
+                if changes.Count = 0 || (changes.[0].Span.Start = 0 && changes.[0].Span.Length = oldText.Length) then
+                    FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])
+                else
+                    FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, changes)
+            | _ ->
+                FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])
 
     member this.TryFindNodeAsync (line: int, column: int) =
         async {

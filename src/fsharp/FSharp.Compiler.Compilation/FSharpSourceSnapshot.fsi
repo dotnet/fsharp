@@ -1,21 +1,23 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System.IO
 open System.Runtime.CompilerServices
 open System.Threading
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
-
-[<RequireQualifiedAccess>]
-type internal SourceStorage =
-    | SourceText of ITemporaryTextStorage 
-    | Stream of ITemporaryStreamStorage
 
 [<Sealed>]
 type FSharpSourceSnapshot =
 
     member FilePath: string
 
-    member internal SourceStorage: SourceStorage
+    member internal GetText: CancellationToken -> SourceText
+
+    member internal TryGetText: unit -> SourceText option
+
+    member internal IsStream: bool
+
+    member internal TryGetStream: CancellationToken -> Stream option
     
 [<Sealed;AbstractClass;Extension>]
 type ITemporaryStorageServiceExtensions =

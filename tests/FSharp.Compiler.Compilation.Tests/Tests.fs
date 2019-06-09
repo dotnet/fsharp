@@ -40,12 +40,10 @@ module TestModule%i =
     let createSource name amount =
         (sprintf """namespace Test.%s""" name) + createTestModules name amount
 
-    let getSemanticModel (source: string) =
+    let getSemanticModel (text: SourceText) =
         let sources =
             [
-                ("test1.fs",
-                 source |> SourceText.From
-                )
+                ("test1.fs", text)
             ]
         let workspace = new AdhocWorkspace ()
         let temporaryStorage = workspace.Services.TemporaryStorage
@@ -82,7 +80,7 @@ module TestModule%i =
             |> FSharpMetadataReference.PortableExecutable
 
         let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, metadataReferences.Add fsharpCoreMetadataReference)
-        c.GetSemanticModel "test1.fs"
+        c.GetSemanticModel "test1.fs", temporaryStorage
 
 [<TestFixture>]
 type CompilationTests () =
@@ -109,8 +107,8 @@ type CompilationTests () =
 
     [<Test>]
     member __.``Find Symbol - Basic`` () =
-        let semanticModel = 
-            getSemanticModel """
+        let semanticModel, _ = 
+            getSemanticModel (SourceText.From """
 module TestModuleCompilationTest =
 
     type CompiltationTest () =
@@ -122,27 +120,58 @@ module TestModuleCompilationTest =
                     member val Z = 3
                     
     let testFunction (x: CompilationTest) =
-        x.X + x.Y + x.Z"""
+        x.X + x.Y + x.Z""")
 
         let symbol = semanticModel.TryFindSymbolAsync (4, 9) |> Async.RunSynchronously
         Assert.True (symbol.IsSome)
 
     [<Test>]
     member __.``Get Completion Symbols - Open Declaration`` () =
-        let semanticModel = 
-            getSemanticModel """
+        let semanticModel, _ = 
+            getSemanticModel (SourceText.From """
 module CompilationTest.Test
 open System.Collections
 open System. 
 
 let beef = obj ()
 let x = beef.
-let yopac = 1"""
+let yopac = 1""")
 
         let symbols = semanticModel.GetCompletionSymbolsAsync (4, 13) |> Async.RunSynchronously
         Assert.False (symbols.IsEmpty)
         let symbols = semanticModel.GetCompletionSymbolsAsync (7, 14) |> Async.RunSynchronously
         Assert.False (symbols.IsEmpty)
+
+    [<Test>]
+    member __.``Internal Token Changes - Additions`` () =
+        let text =
+            SourceText.From """
+module TestModuleCompilationTest =
+
+    type CompiltationTest () =
+
+            member val X = 1
+
+            member val Y = 2
+
+            member val Z = 3"""
+
+        let semanticModel, storageService = getSemanticModel text
+
+        let textChange =
+            TextChange(TextSpan(text.Length - 1, 0), """
+    let testFunction (x: CompilationTest) =
+        x.X + x.Y + x.Z
+            """)
+
+        let text2 = text.WithChanges ([textChange])
+
+        let newTextSnapshot = storageService.CreateFSharpSourceSnapshot (semanticModel.SyntaxTree.FilePath, text2, CancellationToken.None)
+
+        let syntaxTree = semanticModel.SyntaxTree.WithChangedTextSnapshot newTextSnapshot
+        let tokenChanges = syntaxTree.GetIncrementalTokenChangesAsync () |> Async.RunSynchronously
+        Assert.True (tokenChanges.Length > 0)
+
 
 [<TestFixture>]
 type UtilitiesTest () =

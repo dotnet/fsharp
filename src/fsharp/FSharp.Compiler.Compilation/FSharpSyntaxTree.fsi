@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System.Collections.Generic
 open System.Collections.Immutable
 open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis.Text
@@ -80,7 +81,7 @@ and [<Sealed>] FSharpSyntaxNode =
 
 and [<Sealed>] FSharpSyntaxTree =
 
-    internal new: filePath: string * ParsingConfig * FSharpSourceSnapshot -> FSharpSyntaxTree
+    internal new: filePath: string * ParsingConfig * FSharpSourceSnapshot * changes: IReadOnlyList<TextChangeRange> -> FSharpSyntaxTree
 
     member FilePath: string
 
@@ -92,6 +93,10 @@ and [<Sealed>] FSharpSyntaxTree =
     member GetSourceTextAsync: unit -> Async<SourceText>
 
     member TryFindTokenAsync: line: int * column: int -> Async<FSharpSyntaxToken option>
+
+    member internal GetIncrementalTokenChangesAsync: unit -> Async<ImmutableArray<ImmutableArray<Parser.token * range>>>
+
+    member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree
 
    // member TryFindNodeAsync: line: int * column: int -> Async<SyntaxNode option>
 
