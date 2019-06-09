@@ -11,17 +11,6 @@ open FSharp.Compiler
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 
-[<NoEquality; NoComparison>]
-type internal ParsingConfig =
-    {
-        tcConfig: TcConfig
-        isLastFileOrScript: bool
-        isExecutable: bool
-        conditionalCompilationDefines: string list
-        filePath: string
-    }
-
-
 [<NoEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSyntaxNodeKind =
     | ParsedInput of ParsedInput
