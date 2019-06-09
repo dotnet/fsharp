@@ -40,6 +40,50 @@ module TestModule%i =
     let createSource name amount =
         (sprintf """namespace Test.%s""" name) + createTestModules name amount
 
+    let getSemanticModel (source: string) =
+        let sources =
+            [
+                ("test1.fs",
+                 source |> SourceText.From
+                )
+            ]
+        let workspace = new AdhocWorkspace ()
+        let temporaryStorage = workspace.Services.TemporaryStorage
+
+        let sourceSnapshots =
+            sources
+            |> List.map (fun (filePath, sourceText) -> temporaryStorage.CreateFSharpSourceSnapshot (filePath, sourceText, CancellationToken.None))
+            |> ImmutableArray.CreateRange
+
+        let currentReferencedAssemblies =
+            let asmLocations =
+                AppDomain.CurrentDomain.GetAssemblies()
+                |> Array.choose (fun asm -> 
+                    if not asm.IsDynamic then
+                        Some asm.Location
+                    else
+                        None
+                )
+            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
+
+        let metadataReferences =
+            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
+            |> Seq.choose (fun filePath ->
+                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
+                    Some (PortableExecutableReference.CreateFromFile filePath)
+                else
+                    None
+            )
+            |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
+            |> ImmutableArray.CreateRange
+
+        let fsharpCoreMetadataReference =
+            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
+            |> FSharpMetadataReference.PortableExecutable
+
+        let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, metadataReferences.Add fsharpCoreMetadataReference)
+        c.GetSemanticModel "test1.fs"
+
 [<TestFixture>]
 type CompilationTests () =
 
@@ -65,102 +109,36 @@ type CompilationTests () =
 
     [<Test>]
     member __.``Find Symbol - Basic`` () =
-        let sources =
-            [
-                for i = 1 to 3 do
-                    yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 1))
-            ]
-        let workspace = new AdhocWorkspace ()
-        let temporaryStorage = workspace.Services.TemporaryStorage
+        let semanticModel = 
+            getSemanticModel """
+module TestModuleCompilationTest =
 
-        let sourceSnapshots =
-            sources
-            |> List.map (fun (filePath, sourceText) -> temporaryStorage.CreateFSharpSourceSnapshot (filePath, sourceText, CancellationToken.None))
-            |> ImmutableArray.CreateRange
+    type CompiltationTest () =
 
-        let currentReferencedAssemblies =
-            let asmLocations =
-                AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.choose (fun asm -> 
-                    if not asm.IsDynamic then
-                        Some asm.Location
-                    else
-                        None
-                )
-            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
+                    member val X = 1
 
-        let metadataReferences =
-            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
-            |> Seq.choose (fun filePath ->
-                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
-                    Some (PortableExecutableReference.CreateFromFile filePath)
-                else
-                    None
-            )
-            |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
-            |> ImmutableArray.CreateRange
+                    member val Y = 2
 
-        let fsharpCoreMetadataReference =
-            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
-            |> FSharpMetadataReference.PortableExecutable
+                    member val Z = 3
+                    
+    let testFunction (x: CompilationTest) =
+        x.X + x.Y + x.Z"""
 
-        let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, metadataReferences.Add fsharpCoreMetadataReference)
-        let semanticModel = c.GetSemanticModel "test1.fs"
         let symbol = semanticModel.TryFindSymbolAsync (4, 9) |> Async.RunSynchronously
         Assert.True (symbol.IsSome)
 
     [<Test>]
     member __.``Get Completion Symbols - Open Declaration`` () =
-        let sources =
-            [
-                ("test1.fs",
-                    """
+        let semanticModel = 
+            getSemanticModel """
 module CompilationTest.Test
 open System.Collections
 open System. 
 
 let beef = obj ()
 let x = beef.
-let yopac = 1
-                    """ |> SourceText.From
-                )
-            ]
-        let workspace = new AdhocWorkspace ()
-        let temporaryStorage = workspace.Services.TemporaryStorage
+let yopac = 1"""
 
-        let sourceSnapshots =
-            sources
-            |> List.map (fun (filePath, sourceText) -> temporaryStorage.CreateFSharpSourceSnapshot (filePath, sourceText, CancellationToken.None))
-            |> ImmutableArray.CreateRange
-
-        let currentReferencedAssemblies =
-            let asmLocations =
-                AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.choose (fun asm -> 
-                    if not asm.IsDynamic then
-                        Some asm.Location
-                    else
-                        None
-                )
-            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
-
-        let metadataReferences =
-            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
-            |> Seq.choose (fun filePath ->
-                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
-                    Some (PortableExecutableReference.CreateFromFile filePath)
-                else
-                    None
-            )
-            |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
-            |> ImmutableArray.CreateRange
-
-        let fsharpCoreMetadataReference =
-            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
-            |> FSharpMetadataReference.PortableExecutable
-
-        let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, metadataReferences.Add fsharpCoreMetadataReference)
-        let semanticModel = c.GetSemanticModel "test1.fs"
         let symbols = semanticModel.GetCompletionSymbolsAsync (4, 13) |> Async.RunSynchronously
         Assert.False (symbols.IsEmpty)
         let symbols = semanticModel.GetCompletionSymbolsAsync (7, 14) |> Async.RunSynchronously

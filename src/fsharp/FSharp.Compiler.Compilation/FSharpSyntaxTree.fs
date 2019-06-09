@@ -128,6 +128,103 @@ type FSharpSyntaxNodeKind =
     | AttributeList of SynAttributeList
     | Attribute of SynAttribute
 
+    member this.Range =
+        match this with
+        | FSharpSyntaxNodeKind.ParsedInput item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ModuleOrNamespace item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ModuleDecl item ->
+            item.Range
+        | FSharpSyntaxNodeKind.LongIdentWithDots item ->
+            item.Range
+        | FSharpSyntaxNodeKind.Ident item ->
+            item.idRange
+        | FSharpSyntaxNodeKind.ComponentInfo item ->
+            item.Range
+        | FSharpSyntaxNodeKind.TypeConstraint item ->
+            item.Range
+        | FSharpSyntaxNodeKind.MemberSig item ->
+            item.Range
+        | FSharpSyntaxNodeKind.TypeDefnSig item ->
+            item.Range
+        | FSharpSyntaxNodeKind.TypeDefnSigRepr item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ExceptionDefnRepr item ->
+            item.Range
+        | FSharpSyntaxNodeKind.UnionCase item ->
+            item.Range
+        | FSharpSyntaxNodeKind.UnionCaseType item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.ArgInfo item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.TypeDefnSimpleRepr item ->
+            item.Range
+        | FSharpSyntaxNodeKind.SimplePat item ->
+            item.Range
+        | FSharpSyntaxNodeKind.EnumCase item ->
+            item.Range
+        | FSharpSyntaxNodeKind.Const item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.Measure item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.RationalConst item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.TypeDefnKind item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.Field item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ValSig item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ValTyparDecls item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.Type item ->
+            item.Range
+        | FSharpSyntaxNodeKind.SimplePats item ->
+            item.Range
+        | FSharpSyntaxNodeKind.Typar item ->
+            item.Range
+        | FSharpSyntaxNodeKind.TyparDecl item ->
+            item.Range
+        | FSharpSyntaxNodeKind.Binding item ->
+            item.RangeOfBindingAndRhs
+        | FSharpSyntaxNodeKind.ValData item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ValInfo item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.Pat item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ConstructorArgs item ->
+            item.PossibleRange
+        | FSharpSyntaxNodeKind.BindingReturnInfo item ->
+            item.Range
+        | FSharpSyntaxNodeKind.Expr item ->
+            item.Range
+        | FSharpSyntaxNodeKind.StaticOptimizationConstraint item ->
+            item.Range
+        | FSharpSyntaxNodeKind.IndexerArg item ->
+            item.Range
+        | FSharpSyntaxNodeKind.SimplePatAlternativeIdInfo item ->
+            item.Range
+        | FSharpSyntaxNodeKind.MatchClause item ->
+            item.Range
+        | FSharpSyntaxNodeKind.InterfaceImpl item ->
+            item.Range
+        | FSharpSyntaxNodeKind.TypeDefn item ->
+            item.Range
+        | FSharpSyntaxNodeKind.TypeDefnRepr item ->
+            item.Range
+        | FSharpSyntaxNodeKind.MemberDefn item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ExceptionDefn item ->
+            item.Range
+        | FSharpSyntaxNodeKind.ParsedHashDirective item ->
+            item.Range
+        | FSharpSyntaxNodeKind.AttributeList item ->
+            item.Range
+        | FSharpSyntaxNodeKind.Attribute item ->
+            item.Range
+
 [<AbstractClass>]
 type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
     inherit AstVisitor<FSharpSyntaxNode> ()
@@ -271,179 +368,267 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
 
     override __.VisitLongIdentWithDots item =
         let node = createNode (FSharpSyntaxNodeKind.LongIdentWithDots item)
-        visit node (fun () -> base.VisitLongIdentWithDots item)
+        startVisit node
+        let resultOpt = base.VisitLongIdentWithDots item
+        endVisit resultOpt
 
     override __.VisitIdent item =
         let node = createNode (FSharpSyntaxNodeKind.Ident item)
-        visit node (fun () -> base.VisitIdent item)
+        startVisit node
+        let resultOpt = base.VisitIdent item
+        endVisit resultOpt
 
     override __.VisitComponentInfo item =
         let node = createNode (FSharpSyntaxNodeKind.ComponentInfo item)
-        visit node (fun () -> base.VisitComponentInfo item)
+        startVisit node
+        let resultOpt = base.VisitComponentInfo item
+        endVisit resultOpt
 
     override __.VisitTypeConstraint item =
         let node = createNode (FSharpSyntaxNodeKind.TypeConstraint item)
-        visit node (fun () -> base.VisitTypeConstraint item)
+        startVisit node
+        let resultOpt = base.VisitTypeConstraint item
+        endVisit resultOpt
 
     override __.VisitMemberSig item =
         let node = createNode (FSharpSyntaxNodeKind.MemberSig item)
-        visit node (fun () -> base.VisitMemberSig item)
+        startVisit node
+        let resultOpt = base.VisitMemberSig item
+        endVisit resultOpt
 
     override __.VisitTypeDefnSig item =
         let node = createNode (FSharpSyntaxNodeKind.TypeDefnSig item)
-        visit node (fun () -> base.VisitTypeDefnSig item)
+        startVisit node
+        let resultOpt = base.VisitTypeDefnSig item
+        endVisit resultOpt
 
     override __.VisitTypeDefnSigRepr item =
         let node = createNode (FSharpSyntaxNodeKind.TypeDefnSigRepr item)
-        visit node (fun () -> base.VisitTypeDefnSigRepr item)
+        startVisit node
+        let resultOpt = base.VisitTypeDefnSigRepr item
+        endVisit resultOpt
 
     override __.VisitExceptionDefnRepr item =
         let node = createNode (FSharpSyntaxNodeKind.ExceptionDefnRepr item)
-        visit node (fun () -> base.VisitExceptionDefnRepr item)
+        startVisit node
+        let resultOpt = base.VisitExceptionDefnRepr item
+        endVisit resultOpt
 
     override __.VisitUnionCase item =
         let node = createNode (FSharpSyntaxNodeKind.UnionCase item)
-        visit node (fun () -> base.VisitUnionCase item)
+        startVisit node
+        let resultOpt = base.VisitUnionCase item
+        endVisit resultOpt
 
     override __.VisitUnionCaseType item =
         let node = createNode (FSharpSyntaxNodeKind.UnionCaseType item)
-        visit node (fun () -> base.VisitUnionCaseType item)
+        startVisit node
+        let resultOpt = base.VisitUnionCaseType item
+        endVisit resultOpt
 
     override __.VisitArgInfo item =
         let node = createNode (FSharpSyntaxNodeKind.ArgInfo item)
-        visit node (fun () -> base.VisitArgInfo item)
+        startVisit node
+        let resultOpt = base.VisitArgInfo item
+        endVisit resultOpt
 
     override __.VisitTypeDefnSimpleRepr item =
         let node = createNode (FSharpSyntaxNodeKind.TypeDefnSimpleRepr item)
-        visit node (fun () -> base.VisitTypeDefnSimpleRepr item)
+        startVisit node
+        let resultOpt = base.VisitTypeDefnSimpleRepr item
+        endVisit resultOpt
 
     override __.VisitSimplePat item =
         let node = createNode (FSharpSyntaxNodeKind.SimplePat item)
-        visit node (fun () -> base.VisitSimplePat item)
+        startVisit node
+        let resultOpt = base.VisitSimplePat item
+        endVisit resultOpt
 
     override __.VisitEnumCase item =
         let node = createNode (FSharpSyntaxNodeKind.EnumCase item)
-        visit node (fun () -> base.VisitEnumCase item)
+        startVisit node
+        let resultOpt = base.VisitEnumCase item
+        endVisit resultOpt
 
     override __.VisitConst item =
         let node = createNode (FSharpSyntaxNodeKind.Const item)
-        visit node (fun () -> base.VisitConst item)
+        startVisit node
+        let resultOpt = base.VisitConst item
+        endVisit resultOpt
 
     override __.VisitMeasure item =
         let node = createNode (FSharpSyntaxNodeKind.Measure item)
-        visit node (fun () -> base.VisitMeasure item)
+        startVisit node
+        let resultOpt = base.VisitMeasure item
+        endVisit resultOpt
 
     override __.VisitRationalConst item =
         let node = createNode (FSharpSyntaxNodeKind.RationalConst item)
-        visit node (fun () -> base.VisitRationalConst item)
+        startVisit node
+        let resultOpt = base.VisitRationalConst item
+        endVisit resultOpt
 
     override __.VisitTypeDefnKind item =
         let node = createNode (FSharpSyntaxNodeKind.TypeDefnKind item)
-        visit node (fun () -> base.VisitTypeDefnKind item)
+        startVisit node
+        let resultOpt = base.VisitTypeDefnKind item
+        endVisit resultOpt
 
     override __.VisitField item =
         let node = createNode (FSharpSyntaxNodeKind.Field item)
-        visit node (fun () -> base.VisitField item)
+        startVisit node
+        let resultOpt = base.VisitField item
+        endVisit resultOpt
 
     override __.VisitValSig item =
         let node = createNode (FSharpSyntaxNodeKind.ValSig item)
-        visit node (fun () -> base.VisitValSig item)
+        startVisit node
+        let resultOpt = base.VisitValSig item
+        endVisit resultOpt
 
     override __.VisitValTyparDecls item =
         let node = createNode (FSharpSyntaxNodeKind.ValTyparDecls item)
-        visit node (fun () -> base.VisitValTyparDecls item)
+        startVisit node
+        let resultOpt = base.VisitValTyparDecls item
+        endVisit resultOpt
 
     override __.VisitType item =
         let node = createNode (FSharpSyntaxNodeKind.Type item)
-        visit node (fun () -> base.VisitType item)
+        startVisit node
+        let resultOpt = base.VisitType item
+        endVisit resultOpt
 
     override __.VisitSimplePats item =
         let node = createNode (FSharpSyntaxNodeKind.SimplePats item)
-        visit node (fun () -> base.VisitSimplePats item)
+        startVisit node
+        let resultOpt = base.VisitSimplePats item
+        endVisit resultOpt
 
     override __.VisitTypar item =
         let node = createNode (FSharpSyntaxNodeKind.Typar item)
-        visit node (fun () -> base.VisitTypar item)
+        startVisit node
+        let resultOpt = base.VisitTypar item
+        endVisit resultOpt
 
     override __.VisitTyparDecl item =
         let node = createNode (FSharpSyntaxNodeKind.TyparDecl item)
-        visit node (fun () -> base.VisitTyparDecl item)
+        startVisit node
+        let resultOpt = base.VisitTyparDecl item
+        endVisit resultOpt
 
     override __.VisitBinding item =
         let node = createNode (FSharpSyntaxNodeKind.Binding item)
-        visit node (fun () -> base.VisitBinding item)
+        startVisit node
+        let resultOpt = base.VisitBinding item
+        endVisit resultOpt
 
     override __.VisitValData item =
         let node = createNode (FSharpSyntaxNodeKind.ValData item)
-        visit node (fun () -> base.VisitValData item)
+        startVisit node
+        let resultOpt = base.VisitValData item
+        endVisit resultOpt
 
     override __.VisitValInfo item =
         let node = createNode (FSharpSyntaxNodeKind.ValInfo item)
-        visit node (fun () -> base.VisitValInfo item)
+        startVisit node
+        let resultOpt = base.VisitValInfo item
+        endVisit resultOpt
 
     override __.VisitPat item =
         let node = createNode (FSharpSyntaxNodeKind.Pat item)
-        visit node (fun () -> base.VisitPat item)
+        startVisit node
+        let resultOpt = base.VisitPat item
+        endVisit resultOpt
 
     override __.VisitConstructorArgs item =
         let node = createNode (FSharpSyntaxNodeKind.ConstructorArgs item)
-        visit node (fun () -> base.VisitConstructorArgs item)
+        startVisit node
+        let resultOpt = base.VisitConstructorArgs item
+        endVisit resultOpt
 
     override __.VisitBindingReturnInfo item =
         let node = createNode (FSharpSyntaxNodeKind.BindingReturnInfo item)
-        visit node (fun () -> base.VisitBindingReturnInfo item)
+        startVisit node
+        let resultOpt = base.VisitBindingReturnInfo item
+        endVisit resultOpt
 
     override __.VisitExpr item =
         let node = createNode (FSharpSyntaxNodeKind.Expr item)
-        visit node (fun () -> base.VisitExpr item)
+        startVisit node
+        let resultOpt = base.VisitExpr item
+        endVisit resultOpt
 
     override __.VisitStaticOptimizationConstraint item =
         let node = createNode (FSharpSyntaxNodeKind.StaticOptimizationConstraint item)
-        visit node (fun () -> base.VisitStaticOptimizationConstraint item)
+        startVisit node
+        let resultOpt = base.VisitStaticOptimizationConstraint item
+        endVisit resultOpt
 
     override __.VisitIndexerArg item =
         let node = createNode (FSharpSyntaxNodeKind.IndexerArg item)
-        visit node (fun () -> base.VisitIndexerArg item)
+        startVisit node
+        let resultOpt = base.VisitIndexerArg item
+        endVisit resultOpt
 
     override __.VisitSimplePatAlternativeIdInfo item =
         let node = createNode (FSharpSyntaxNodeKind.SimplePatAlternativeIdInfo item)
-        visit node (fun () -> base.VisitSimplePatAlternativeIdInfo item)
+        startVisit node
+        let resultOpt = base.VisitSimplePatAlternativeIdInfo item
+        endVisit resultOpt
 
     override __.VisitMatchClause item =
         let node = createNode (FSharpSyntaxNodeKind.MatchClause item)
-        visit node (fun () -> base.VisitMatchClause item)
+        startVisit node
+        let resultOpt = base.VisitMatchClause item
+        endVisit resultOpt
 
     override __.VisitInterfaceImpl item =
         let node = createNode (FSharpSyntaxNodeKind.InterfaceImpl item)
-        visit node (fun () -> base.VisitInterfaceImpl item)
+        startVisit node
+        let resultOpt = base.VisitInterfaceImpl item
+        endVisit resultOpt
 
     override __.VisitTypeDefn item =
         let node = createNode (FSharpSyntaxNodeKind.TypeDefn item)
-        visit node (fun () -> base.VisitTypeDefn item)
+        startVisit node
+        let resultOpt = base.VisitTypeDefn item
+        endVisit resultOpt
 
     override __.VisitTypeDefnRepr item =
         let node = createNode (FSharpSyntaxNodeKind.TypeDefnRepr item)
-        visit node (fun () -> base.VisitTypeDefnRepr item)
+        startVisit node
+        let resultOpt = base.VisitTypeDefnRepr item
+        endVisit resultOpt
 
     override __.VisitMemberDefn item =
         let node = createNode (FSharpSyntaxNodeKind.MemberDefn item)
-        visit node (fun () -> base.VisitMemberDefn item)
+        startVisit node
+        let resultOpt = base.VisitMemberDefn item
+        endVisit resultOpt
 
     override __.VisitExceptionDefn item =
         let node = createNode (FSharpSyntaxNodeKind.ExceptionDefn item)
-        visit node (fun () -> base.VisitExceptionDefn item)
+        startVisit node
+        let resultOpt = base.VisitExceptionDefn item
+        endVisit resultOpt
 
     override __.VisitParsedHashDirective item =
         let node = createNode (FSharpSyntaxNodeKind.ParsedHashDirective item)
-        visit node (fun () -> base.VisitParsedHashDirective item)
+        startVisit node
+        let resultOpt = base.VisitParsedHashDirective item
+        endVisit resultOpt
 
     override __.VisitAttributeList item =
         let node = createNode (FSharpSyntaxNodeKind.AttributeList item)
-        visit node (fun () -> base.VisitAttributeList item)
+        startVisit node
+        let resultOpt = base.VisitAttributeList item
+        endVisit resultOpt
 
     override __.VisitAttribute item =
         let node = createNode (FSharpSyntaxNodeKind.Attribute item)
-        visit node (fun () -> base.VisitAttribute item)
+        startVisit node
+        let resultOpt = base.VisitAttribute item
+        endVisit resultOpt
 
 and [<Sealed>] FSharpSyntaxFinder (findm: range, syntaxTree) =
     inherit FSharpSyntaxVisitor (syntaxTree)
@@ -458,19 +643,34 @@ and [<Sealed>] FSharpSyntaxFinder (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
-and [<Sealed>] FSharpSyntaxToken (parent: FSharpSyntaxNode, token: Parser.token, range: range) =
+and [<Sealed>] FSharpSyntaxToken (lazyParent: FSharpSyntaxNode, token: Parser.token, range: range) =
 
-    member __.Parent = parent
-
-    member __.Token = token
+    member __.Parent = lazyParent
 
     member __.Range = range
+
+    member __.IsKeyword =
+        match token with
+        | Parser.token.ABSTRACT -> true
+        | _ -> false
 
 and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
     member __.Parent = parent
+
+    member __.SyntaxTree = syntaxTree
     
     member __.Kind = kind
+
+    member __.Range = kind.Range
+    
+    member __.GetAncestors () =            
+        seq {
+            let mutable nodeOpt = parent
+            while nodeOpt.IsSome do
+                nodeOpt <- nodeOpt.Value.Parent
+                yield parent
+        }
 
 and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot) =
 
@@ -517,7 +717,7 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                     return Parser.Parse pConfig (SourceValue.Stream stream)
         })
 
-    let asyncLazyWeakGetTokens =
+    let asyncLazyWeakGetAllTokens =
         AsyncLazyWeak(async {
             let! ct = Async.CancellationToken
             // If we already have a weakly cached source text as a result of calling GetSourceText, just use that value.
@@ -540,6 +740,9 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                     return tokens.ToImmutable () |> ref
         })
 
+    member __.GetRawTokensAsync () =
+        asyncLazyWeakGetAllTokens.GetValueAsync ()
+
     member __.FilePath = filePath
 
     member __.ParsingConfig = pConfig
@@ -552,12 +755,12 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
 
     member this.TryFindTokenAsync (line: int, column: int) =
         async {
-            let! inputOpt, _ = asyncLazyWeakGetParseResult.GetValueAsync ()
+            let! inputOpt, _ = this.GetParseResultAsync ()
 
             match inputOpt with
             | Some input ->
                 let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
-                let! tokens = asyncLazyWeakGetTokens.GetValueAsync ()
+                let! tokens = this.GetRawTokensAsync ()
                 let tokens = !tokens
                 let p = mkPos line column
                 return

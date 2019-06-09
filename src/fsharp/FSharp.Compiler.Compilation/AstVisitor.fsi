@@ -49,6 +49,10 @@ module AstVisitorHelpers =
 
         member PossibleRange: range
 
+    type SynConst with
+
+        member PossibleRange: range
+
     type SynArgInfo with
 
         member PossibleRange: range

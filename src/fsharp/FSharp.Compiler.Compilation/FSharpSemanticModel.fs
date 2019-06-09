@@ -160,8 +160,6 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
     member __.TryFindSymbolAsync (line: int, column: int) : Async<FSharpSymbol option> =
         async {
             let! checker, _tcAcc, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
-            let syntaxTree = checker.GetSyntaxTree filePath
-            let! _ = syntaxTree.TryFindTokenAsync (line, column) // test
             return tryFindSymbol line column resolutions symbolEnv
         }
 
@@ -192,3 +190,8 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
                 let lineStr = sourceText.Lines.[line - 1].ToString().Replace("\n", "").Replace("\r", "").TrimEnd(' ')
                 return getCompletionSymbols line column lineStr parsedInput resolutions symbolEnv
         }
+
+    member __.SyntaxTree =
+        // This will go away when incremental checker doesn't build syntax trees.
+        let checker = asyncLazyChecker.GetValueAsync () |> Async.RunSynchronously
+        checker.GetSyntaxTree filePath

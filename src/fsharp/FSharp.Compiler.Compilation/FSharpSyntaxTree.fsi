@@ -9,6 +9,7 @@ open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler
 open FSharp.Compiler.Ast
+open FSharp.Compiler.Range
 
 [<NoEquality; NoComparison>]
 type internal ParsingConfig =
@@ -20,15 +21,75 @@ type internal ParsingConfig =
         filePath: string
     }
 
+
+[<NoEquality;NoComparison;RequireQualifiedAccess>]
+type FSharpSyntaxNodeKind =
+    | ParsedInput of ParsedInput
+    | ModuleOrNamespace of SynModuleOrNamespace
+    | ModuleDecl of SynModuleDecl
+    | LongIdentWithDots of LongIdentWithDots
+    | Ident of Ident
+    | ComponentInfo of SynComponentInfo
+    | TypeConstraint of SynTypeConstraint
+    | MemberSig of SynMemberSig
+    | TypeDefnSig of SynTypeDefnSig
+    | TypeDefnSigRepr of SynTypeDefnSigRepr
+    | ExceptionDefnRepr of SynExceptionDefnRepr
+    | UnionCase of SynUnionCase
+    | UnionCaseType of SynUnionCaseType
+    | ArgInfo of SynArgInfo
+    | TypeDefnSimpleRepr of SynTypeDefnSimpleRepr
+    | SimplePat of SynSimplePat
+    | EnumCase of SynEnumCase
+    | Const of SynConst
+    | Measure of SynMeasure
+    | RationalConst of SynRationalConst
+    | TypeDefnKind of SynTypeDefnKind
+    | Field of SynField
+    | ValSig of SynValSig
+    | ValTyparDecls of SynValTyparDecls
+    | Type of SynType
+    | SimplePats of SynSimplePats
+    | Typar of SynTypar
+    | TyparDecl of SynTyparDecl
+    | Binding of SynBinding
+    | ValData of SynValData
+    | ValInfo of SynValInfo
+    | Pat of SynPat
+    | ConstructorArgs of SynConstructorArgs
+    | BindingReturnInfo of SynBindingReturnInfo
+    | Expr of SynExpr
+    | StaticOptimizationConstraint of SynStaticOptimizationConstraint
+    | IndexerArg of SynIndexerArg
+    | SimplePatAlternativeIdInfo of SynSimplePatAlternativeIdInfo
+    | MatchClause of SynMatchClause
+    | InterfaceImpl of SynInterfaceImpl
+    | TypeDefn of SynTypeDefn
+    | TypeDefnRepr of SynTypeDefnRepr
+    | MemberDefn of SynMemberDefn
+    | ExceptionDefn of SynExceptionDefn
+    | ParsedHashDirective of ParsedHashDirective
+    | AttributeList of SynAttributeList
+    | Attribute of SynAttribute
+
 [<Sealed>]
 type FSharpSyntaxToken =
 
-    member internal Token: Parser.token
+    member Parent: FSharpSyntaxNode
 
     member Range: Range.range
 
-[<Sealed>]
-type FSharpSyntaxTree =
+and [<Sealed>] FSharpSyntaxNode =
+
+    member Parent: FSharpSyntaxNode option
+
+    member SyntaxTree: FSharpSyntaxTree
+
+    member Kind: FSharpSyntaxNodeKind
+
+    member Range: range
+
+and [<Sealed>] FSharpSyntaxTree =
 
     internal new: filePath: string * ParsingConfig * FSharpSourceSnapshot -> FSharpSyntaxTree
 
