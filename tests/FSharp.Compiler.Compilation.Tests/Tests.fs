@@ -142,60 +142,6 @@ let yopac = 1""")
         let symbols = semanticModel.GetCompletionSymbolsAsync (7, 14) |> Async.RunSynchronously
         Assert.False (symbols.IsEmpty)
 
-    [<Test>]
-    member __.``Internal Token Changes - Additions`` () =
-        let text =
-            SourceText.From """
-module TestModuleCompilationTest =
-
-    type CompiltationTest () =
-
-            member val X = 1
-
-            member val Y = 2
-
-            member val Z = 3"""
-
-        let semanticModel, storageService = getSemanticModel text
-
-        let textChange =
-            TextChange(TextSpan(text.Length - 1, 0), """
-    let testFunction (x: CompilationTest) =
-        x.X + x.Y + x.Z
-            """)
-
-        let text2 = text.WithChanges ([textChange])
-
-        let newTextSnapshot = storageService.CreateFSharpSourceSnapshot (semanticModel.SyntaxTree.FilePath, text2, CancellationToken.None)
-        let newCompilation = semanticModel.Compilation.ReplaceSourceSnapshot newTextSnapshot
-        let newSemanticModel = newCompilation.GetSemanticModel "test1.fs"
-        let tokenChanges = newSemanticModel.SyntaxTree.GetIncrementalTokenChangesAsync () |> Async.RunSynchronously
-        Assert.True (tokenChanges.Length > 0)
-
-    [<Test>]
-    member __.``Parse With Tokens`` () =
-        let text =
-            SourceText.From """
-namespace Test
-
-// This is a comment.
-
-/// This is a doc comment.
-type TestClass () =
-
-        member val X = 1
-
-        member val Y = 2
-
-        member val Z = 3"""
-
-        let semanticModel, storageService = getSemanticModel text
-
-        let realInput, realErrors = semanticModel.SyntaxTree.GetParseResultAsync () |> Async.RunSynchronously
-        let input, errors = semanticModel.SyntaxTree.TestParseWithTokens () |> Async.RunSynchronously
-        Assert.True input.IsSome
-
-
 [<TestFixture>]
 type UtilitiesTest () =
 

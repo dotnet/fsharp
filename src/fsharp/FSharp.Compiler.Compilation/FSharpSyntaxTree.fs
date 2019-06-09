@@ -580,9 +580,9 @@ and [<Sealed>] FSharpSyntaxFinder (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
-and [<Sealed>] FSharpSyntaxToken (asyncLazyGetParent: AsyncLazy<FSharpSyntaxNode option>, token: Parser.token, range: range) =
+and [<Sealed>] FSharpSyntaxToken (parent: FSharpSyntaxNode, token: Parser.token, range: range) =
 
-    member __.Parent = asyncLazyGetParent.GetValueAsync () |> Async.RunSynchronously
+    member __.Parent = parent
 
     member __.Range = range
 
@@ -591,7 +591,24 @@ and [<Sealed>] FSharpSyntaxToken (asyncLazyGetParent: AsyncLazy<FSharpSyntaxNode
         | Parser.token.ABSTRACT -> true
         | _ -> false
 
-and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
+and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) as this =
+
+    let lazyRange = lazy kind.Range
+
+    let asyncLazyGetAllTokens =
+        AsyncLazy(async {
+            let! tokens = syntaxTree.GetAllTokensAsync ()
+            let r = this.Range
+            return
+                tokens
+                |> Seq.choose (fun (t, m) ->
+                    if rangeContainsRange r m then
+                        let parentTokenNode = syntaxTree.GetTokenParentAsync m |> Async.RunSynchronously
+                        Some (FSharpSyntaxToken (parentTokenNode, t, m))
+                    else
+                        None
+                )
+        })
 
     member __.Parent = parent
 
@@ -599,7 +616,7 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
     
     member __.Kind = kind
 
-    member __.Range = kind.Range
+    member __.Range = lazyRange.Value
     
     member __.GetAncestors () =            
         seq {
@@ -608,6 +625,9 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
                 nodeOpt <- nodeOpt.Value.Parent
                 yield parent
         }
+
+    member this.GetAllTokensAsync () =
+        asyncLazyGetAllTokens.GetValueAsync ()
 
 and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot, changes: IReadOnlyList<TextChangeRange>) as this =
 
@@ -635,22 +655,17 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                     return Parser.Parse pConfig (SourceValue.SourceText text)
         })
 
-    let createAsyncLazyGetTokenParent m =
-        AsyncLazy(async {
-            let! inputOpt, _ = asyncLazyWeakGetParseResult.GetValueAsync ()
-            match inputOpt with
-            | Some input ->
-                let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
-                let finder = FSharpSyntaxFinder (m, this)
-                return finder.VisitNode rootNode
-            | _ ->
-                return None
-        })
+    let getTokenParent input m =
+        let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
+        let finder = FSharpSyntaxFinder (m, this)
+        let result = finder.VisitNode rootNode
+        if result.IsNone then failwith "should not happen"
+        result.Value
 
     let lex text =
-        let tokens = ImmutableArray.CreateBuilder ()
+        let tokens = ResizeArray ()
         Lexer.Lex pConfig (SourceValue.SourceText text) (fun t m -> tokens.Add (t, m))
-        tokens.ToImmutable () |> ref
+        tokens
 
     let asyncLazyGetAllTokens =
         AsyncLazy(async {
@@ -671,38 +686,33 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
     member __.GetSourceTextAsync () =
         asyncLazyWeakGetSourceText.GetValueAsync ()
 
+    member __.GetTokenParentAsync m =
+        async {
+            let! inputOpt, _ = this.GetParseResultAsync ()
+            match inputOpt with
+            | Some input ->
+                return getTokenParent input m
+            | _ ->
+                return failwith "should not happen"
+        }
+
     member this.TryFindTokenAsync (line: int, column: int) =
         async {
             let! inputOpt, _ = this.GetParseResultAsync ()
-
             match inputOpt with
             | Some input ->
                 let! tokens = this.GetAllTokensAsync ()
-                let tokens = !tokens
                 let p = mkPos line column
                 return
                     tokens
                     |> Seq.tryPick (fun (t, m) ->
                         if rangeContainsPos m p then
-                            Some (FSharpSyntaxToken (createAsyncLazyGetTokenParent m, t, m))
+                            Some (FSharpSyntaxToken (getTokenParent input m, t, m))
                         else
                             None
                     )
             | _ ->
                 return None
-        }
-
-    member this.GetIncrementalTokenChangesAsync () =
-        let getTokenChanges (text: SourceText) =
-            let tokenChanges = ImmutableArray.CreateBuilder ()
-            for i = 0 to changes.Count - 1 do
-                let textChange = changes.[i]
-                let text = text.GetSubText (TextSpan(textChange.Span.Start, textChange.NewLength))
-                tokenChanges.Add ((lex text).contents)
-            tokenChanges.ToImmutable ()
-        async {
-            let! text = asyncLazyWeakGetSourceText.GetValueAsync ()
-            return getTokenChanges text
         }
 
     member this.WithChangedTextSnapshot (newTextSnapshot: FSharpSourceSnapshot) =
@@ -718,10 +728,3 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                     FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, changes)
             | _ ->
                 FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])
-                
-    member this.TestParseWithTokens () =
-        async {
-            let! tokensRef = this.GetAllTokensAsync ()
-            let tokens = tokensRef.contents
-            return Parser.ParseWithTokens pConfig tokens
-        }

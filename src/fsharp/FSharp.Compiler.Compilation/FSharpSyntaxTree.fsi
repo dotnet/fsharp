@@ -65,7 +65,7 @@ type FSharpSyntaxNodeKind =
 [<Sealed>]
 type FSharpSyntaxToken =
 
-    member Parent: FSharpSyntaxNode option
+    member Parent: FSharpSyntaxNode
 
     member Range: Range.range
 
@@ -94,14 +94,4 @@ and [<Sealed>] FSharpSyntaxTree =
 
     member TryFindTokenAsync: line: int * column: int -> Async<FSharpSyntaxToken option>
 
-    member internal GetIncrementalTokenChangesAsync: unit -> Async<ImmutableArray<ImmutableArray<Parser.token * range>>>
-
     member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree
-
-    member internal TestParseWithTokens: unit -> Async<ParseResult>
-
-   // member TryFindNodeAsync: line: int * column: int -> Async<SyntaxNode option>
-
-    //member GetTokensAsync: line: int -> Async<ImmutableArray<FSharpTokenInfo>>
-
-    //member TryGetTokenAsync: line: int * column: int -> Async<FSharpTokenInfo option>

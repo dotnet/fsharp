@@ -34,6 +34,13 @@ module ImmutableArray =
         for i = 0 to arr.Length - 1 do
             f i arr.[i]
 
+    let inline map f (arr: ImmutableArray<_>) =
+        let builder = ImmutableArray.CreateBuilder (arr.Length)
+        builder.Count <- arr.Length
+        for i = 0 to arr.Length - 1 do
+            builder.[i] <- f arr.[i]
+        builder.ToImmutable ()
+
 type private AsyncLazyWeakMessage<'T> =
     | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken
 
@@ -134,10 +141,15 @@ type AsyncLazyWeak<'T when 'T : not struct> (computation: Async<'T>) =
        member __.TryGetValue () = tryGetResult ()
 
 [<Sealed>]
-type AsyncLazy<'T when 'T : not struct> (computation) =
+type AsyncLazy<'T> (computation) =
     
+    let computation =
+        async {
+            let! result = computation
+            return ref result
+        }
     let gate = obj ()
-    let mutable asyncLazyWeak = ValueSome (AsyncLazyWeak<'T> computation)
+    let mutable asyncLazyWeak = ValueSome (AsyncLazyWeak<'T ref> computation)
     let mutable cachedResult = ValueNone // hold strongly
 
     member __.GetValueAsync () =
@@ -151,7 +163,7 @@ type AsyncLazy<'T when 'T : not struct> (computation) =
                 lock gate <| fun () ->
                     // Make sure we set it only once.
                     if cachedResult.IsNone then
-                        cachedResult <- ValueSome result
+                        cachedResult <- ValueSome result.contents
                         asyncLazyWeak <- ValueNone // null out computation function so we don't strongly hold onto any references once we finished computing.
                 return cachedResult.Value
             | _ -> 
