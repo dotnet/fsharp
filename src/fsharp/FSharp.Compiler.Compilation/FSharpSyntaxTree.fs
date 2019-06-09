@@ -580,9 +580,9 @@ and [<Sealed>] FSharpSyntaxFinder (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
-and [<Sealed>] FSharpSyntaxToken (lazyParent: FSharpSyntaxNode, token: Parser.token, range: range) =
+and [<Sealed>] FSharpSyntaxToken (asyncLazyGetParent: AsyncLazy<FSharpSyntaxNode option>, token: Parser.token, range: range) =
 
-    member __.Parent = lazyParent
+    member __.Parent = asyncLazyGetParent.GetValueAsync () |> Async.RunSynchronously
 
     member __.Range = range
 
@@ -609,7 +609,7 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
                 yield parent
         }
 
-and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot) =
+and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot) as this =
 
     let asyncLazyWeakGetSourceTextFromSourceTextStorage =
         AsyncLazyWeak(async {
@@ -654,31 +654,43 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                     return Parser.Parse pConfig (SourceValue.Stream stream)
         })
 
-    let asyncLazyWeakGetAllTokens =
-        AsyncLazyWeak(async {
+    let createAsyncLazyGetTokenParent m =
+        AsyncLazy(async {
+            let! inputOpt, _ = asyncLazyWeakGetParseResult.GetValueAsync ()
+            match inputOpt with
+            | Some input ->
+                let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
+                let finder = FSharpSyntaxFinder (m, this)
+                return finder.VisitNode rootNode
+            | _ ->
+                return None
+        })
+
+    let asyncLazyGetAllTokens =
+        AsyncLazy(async {
             let! ct = Async.CancellationToken
             // If we already have a weakly cached source text as a result of calling GetSourceText, just use that value.
             match asyncLazyWeakGetSourceText.TryGetValue () with
             | ValueSome sourceText ->
                 let tokens = ImmutableArray.CreateBuilder ()
-                Lexer.Lex pConfig (SourceValue.SourceText sourceText) tokens.Add
+                Lexer.Lex pConfig (SourceValue.SourceText sourceText) (fun t m -> tokens.Add (t, m))
                 return tokens.ToImmutable () |> ref
             | _ ->
                 match sourceSnapshot.SourceStorage with
                 | SourceStorage.SourceText _ ->
                     let! sourceText = asyncLazyWeakGetSourceTextFromSourceTextStorage.GetValueAsync ()
                     let tokens = ImmutableArray.CreateBuilder ()
-                    Lexer.Lex pConfig (SourceValue.SourceText sourceText) tokens.Add
+                    Lexer.Lex pConfig (SourceValue.SourceText sourceText) (fun t m -> tokens.Add (t, m))
                     return tokens.ToImmutable () |> ref
                 | SourceStorage.Stream storage ->
                     let stream = storage.ReadStream ct
                     let tokens = ImmutableArray.CreateBuilder ()
-                    Lexer.Lex pConfig (SourceValue.Stream stream) tokens.Add
+                    Lexer.Lex pConfig (SourceValue.Stream stream) (fun t m -> tokens.Add (t, m))
                     return tokens.ToImmutable () |> ref
         })
 
-    member __.GetRawTokensAsync () =
-        asyncLazyWeakGetAllTokens.GetValueAsync ()
+    member __.GetAllTokensAsync () =
+        asyncLazyGetAllTokens.GetValueAsync ()
 
     member __.FilePath = filePath
 
@@ -697,17 +709,14 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
             match inputOpt with
             | Some input ->
                 let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
-                let! tokens = this.GetRawTokensAsync ()
+                let! tokens = this.GetAllTokensAsync ()
                 let tokens = !tokens
                 let p = mkPos line column
                 return
                     tokens
                     |> Seq.tryPick (fun (t, m) ->
                         if rangeContainsPos m p then
-                            let finder = FSharpSyntaxFinder (m, this)
-                            let parent = finder.VisitNode rootNode
-                            if parent.IsNone then failwith "not possible"
-                            Some (FSharpSyntaxToken (parent.Value, t, m))
+                            Some (FSharpSyntaxToken (createAsyncLazyGetTokenParent m, t, m))
                         else
                             None
                     )
@@ -715,11 +724,11 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourc
                 return None
         }
 
-    member this.GetTextChangeRangesAsync (oldSyntaxTree: FSharpSyntaxTree) =
+    member this.GetTextChangesAsync (oldSyntaxTree: FSharpSyntaxTree) =
         async {
             let! text = this.GetSourceTextAsync ()
             let! oldText = oldSyntaxTree.GetSourceTextAsync ()
-            return text.GetChangeRanges oldText
+            return text.GetTextChanges oldText
         }
 
     member this.TryFindNodeAsync (line: int, column: int) =

@@ -32,7 +32,7 @@ type internal SourceValue =
 [<RequireQualifiedAccess>]
 module internal Lexer =
 
-    val Lex: ParsingConfig -> SourceValue -> (Parser.token * range -> unit) -> unit
+    val Lex: ParsingConfig -> SourceValue -> (Parser.token -> range -> unit) -> unit
 
 [<RequireQualifiedAccess>]
 module internal Parser =

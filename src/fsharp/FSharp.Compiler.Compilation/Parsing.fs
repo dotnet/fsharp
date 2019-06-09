@@ -49,7 +49,7 @@ module Lexer =
             let lexbuf = UnicodeLexing.SourceTextAsLexbuf (sourceText.ToFSharpSourceText ())
             usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
                 while not lexbuf.IsPastEndOfStream do
-                    tokenCallback (Lexer.token lexargs skipWhitespace lexbuf, lexbuf.LexemeRange)
+                    tokenCallback (Lexer.token lexargs skipWhitespace lexbuf) lexbuf.LexemeRange
             )
         | SourceValue.Stream stream ->
             let streamReader = new StreamReader(stream) // don't dispose of stream reader
@@ -59,7 +59,7 @@ module Lexer =
                 )
             usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
                 while not lexbuf.IsPastEndOfStream do
-                    tokenCallback (Lexer.token lexargs skipWhitespace lexbuf, lexbuf.LexemeRange)
+                    tokenCallback (Lexer.token lexargs skipWhitespace lexbuf) lexbuf.LexemeRange
             )
 
 [<RequireQualifiedAccess>]
