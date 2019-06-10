@@ -182,6 +182,29 @@ type Class1 (* inside comment *) () =
         Assert.True token3.IsIdentifier
         Assert.AreEqual ("Class1", token3.TryGetText().Value)
 
+    [<Test>]
+    member __.``Syntax Tree - Function App`` () =
+        let textString = """
+namespace Test
+        
+module App =
+
+    let test (x: int) (y: int) = x + y
+
+    let useTheTest () =
+        test 
+"""         
+        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+
+        let text = "        test "
+        let position = textString.IndexOf(text) + text.Length - 1
+        let syntaxTree = semanticModel.SyntaxTree
+
+        let rootNode = syntaxTree.GetRootNode CancellationToken.None
+        let token = (rootNode.TryFindToken position).Value
+
+        Assert.IsTrue token.IsWhitespace
+
 [<TestFixture>]
 type UtilitiesTest () =
 

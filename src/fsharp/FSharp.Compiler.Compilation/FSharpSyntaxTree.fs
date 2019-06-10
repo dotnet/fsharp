@@ -690,16 +690,16 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
                     if rangeContainsRange m r && rangeContainsRange this.Range m then
 
                         // token heuristics
-                        match t with
-                        | Parser.token.IDENT _ 
-                        | Parser.token.STRING _ ->
+                        //match t with
+                        //| Parser.token.IDENT _ 
+                        //| Parser.token.STRING _ ->
                             let finder = FSharpSyntaxFinder (r, this)
                             let result = finder.VisitNode this
                             if result.IsNone then failwith "should not happen"
                             Some (FSharpSyntaxToken (result.Value, t, m, span))
-                        | _ ->
-                            let rootNode = this.GetRootNode ()
-                            Some (FSharpSyntaxToken (rootNode, t, m, span))
+                        //| _ ->
+                        //    let rootNode = this.GetRootNode ()
+                        //    Some (FSharpSyntaxToken (rootNode, t, m, span))
                     else
                         None
                 )
