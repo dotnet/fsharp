@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System
 open System.IO
 open System.Threading
 open System.Collections.Generic
@@ -14,6 +15,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 [<NoEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSyntaxNodeKind =
@@ -163,7 +165,7 @@ type FSharpSyntaxNodeKind =
             item.Range
 
 [<AbstractClass>]
-type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
+type FSharpSyntaxVisitor (rootNode: FSharpSyntaxNode) as this =
     inherit AstVisitor<FSharpSyntaxNode> ()
 
     let visitStack = Stack<FSharpSyntaxNode> ()
@@ -181,7 +183,7 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
                 Some (visitStack.Peek ())
             else
                 None
-        FSharpSyntaxNode (parent, syntaxTree, kind)
+        FSharpSyntaxNode (parent, rootNode.SyntaxTree, kind)
 
     abstract OnVisit: visitedNode: FSharpSyntaxNode * resultOpt: FSharpSyntaxNode option -> FSharpSyntaxNode option
     default __.OnVisit (_visitedNode: FSharpSyntaxNode, resultOpt: FSharpSyntaxNode option) =
@@ -591,24 +593,9 @@ and [<Sealed>] FSharpSyntaxToken (parent: FSharpSyntaxNode, token: Parser.token,
         | Parser.token.ABSTRACT -> true
         | _ -> false
 
-and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) as this =
+and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
     let lazyRange = lazy kind.Range
-
-    let asyncLazyGetAllTokens =
-        AsyncLazy(async {
-            let! tokens = syntaxTree.GetAllTokensAsync ()
-            let r = this.Range
-            return
-                tokens
-                |> Seq.choose (fun (t, m) ->
-                    if rangeContainsRange r m then
-                        let parentTokenNode = syntaxTree.GetTokenParentAsync m |> Async.RunSynchronously
-                        Some (FSharpSyntaxToken (parentTokenNode, t, m))
-                    else
-                        None
-                )
-        })
 
     member __.Parent = parent
 
@@ -626,100 +613,125 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
                 yield parent
         }
 
-    member this.GetAllTokensAsync () =
-        asyncLazyGetAllTokens.GetValueAsync ()
-
-and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, sourceSnapshot: FSharpSourceSnapshot, changes: IReadOnlyList<TextChangeRange>) as this =
-
-    let asyncLazyWeakGetSourceText =
-        AsyncLazyWeak(async {
-            let! ct = Async.CancellationToken
-            return sourceSnapshot.GetText ct
-        })
-
-    let asyncLazyWeakGetParseResult =
-        AsyncLazyWeak(async {
-            let! ct = Async.CancellationToken
-            // If we already have a weakly cached source text as a result of calling GetSourceText, just use that value.
-            match asyncLazyWeakGetSourceText.TryGetValue () with
-            | ValueSome sourceText ->
-                return Parser.Parse pConfig (SourceValue.SourceText sourceText)
+    member this.TryFindToken (position: int, ct) =
+        let text: SourceText = syntaxTree.GetText ct
+        let textLine = text.Lines.GetLineFromPosition position
+        match text.TrySpanToRange (syntaxTree.FilePath, textLine.Span) with
+        | ValueSome r ->
+            let allRawTokens: Dictionary<int, ResizeArray<Parser.token * range>> = syntaxTree.GetAllRawTokens ct
+            match allRawTokens.TryGetValue r.EndLine with
+            | true, lineTokens ->
+                lineTokens
+                |> Seq.tryPick (fun (t, m) ->
+                    if rangeContainsRange m r then
+                        let finder = FSharpSyntaxFinder (r, this)
+                        let result = finder.VisitNode this
+                        if result.IsNone then failwith "should not happen"
+                        Some (FSharpSyntaxToken (result.Value, t, m))
+                    else
+                        None
+                )
             | _ ->
-                match sourceSnapshot.TryGetStream ct with
-                | Some stream ->
-                    let result = Parser.Parse pConfig (SourceValue.Stream stream)
-                    stream.Dispose ()
-                    return result
-                | _ ->
-                    let! text = asyncLazyWeakGetSourceText.GetValueAsync ()
-                    return Parser.Parse pConfig (SourceValue.SourceText text)
-        })
+                None
+        | _ ->
+            None
 
-    let getTokenParent input m =
-        let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
-        let finder = FSharpSyntaxFinder (m, this)
-        let result = finder.VisitNode rootNode
-        if result.IsNone then failwith "should not happen"
-        result.Value
+    member this.TryFindNode (span: TextSpan, ct) =
+        let text = syntaxTree.GetText ct
+        match text.TrySpanToRange (syntaxTree.FilePath, span) with
+        | ValueSome r ->
+            let finder = FSharpSyntaxFinder (r, this)
+            finder.VisitNode this
+        | _ ->
+            None
 
-    let lex text =
-        let tokens = ResizeArray ()
-        Lexer.Lex pConfig (SourceValue.SourceText text) (fun t m -> tokens.Add (t, m))
-        tokens
+and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, changes: IReadOnlyList<TextChangeRange>) as this =
 
-    let asyncLazyGetAllTokens =
-        AsyncLazy(async {
-           let! text = asyncLazyWeakGetSourceText.GetValueAsync ()
-           return lex text
-        })
+    let gate = obj ()
+    let mutable lazyText = ValueNone
+    let mutable lazyAllRawTokens = Dictionary<int, ResizeArray<Parser.token * range>> ()
 
-    member __.GetAllTokensAsync () =
-        asyncLazyGetAllTokens.GetValueAsync ()
+    let mutable parseResult = ValueStrength.None
+
+    member __.GetAllRawTokens ct =
+        let text = this.GetText ct
+        lock gate (fun () ->
+            if lazyAllRawTokens.Count = 0 then
+                Lexer.Lex pConfig (SourceValue.SourceText text) (fun t m ->
+                    let lineTokens =
+                        match lazyAllRawTokens.TryGetValue m.EndLine with
+                        | true, lineTokens -> lineTokens
+                        | _ ->
+                            let lineTokens = ResizeArray ()
+                            lazyAllRawTokens.[m.EndLine] <- lineTokens
+                            lineTokens
+
+                    lineTokens.Add (t, m)
+                )
+                lazyAllRawTokens
+            else
+                lazyAllRawTokens
+        )
 
     member __.FilePath = filePath
 
     member __.ParsingConfig = pConfig
 
-    member __.GetParseResultAsync () =
-        asyncLazyWeakGetParseResult.GetValueAsync ()
+    member __.GetParseResult ct =
+        match parseResult.TryGetTarget () with
+        | true, parseResult -> parseResult
+        | _ ->
+            lock gate (fun () ->
+                let result =
+                    match lazyText with
+                    | ValueSome text ->
+                        Parser.Parse pConfig (SourceValue.SourceText text)
+                    | _ ->
+                        match textSnapshot.TryGetStream ct with
+                        | Some stream ->
+                            Parser.Parse pConfig (SourceValue.Stream stream)
+                        | _ ->
+                            let text = textSnapshot.GetText ct
+                            lazyText <- ValueSome text
+                            Parser.Parse pConfig (SourceValue.SourceText text)
+                parseResult <- ValueStrength.Weak (WeakReference<_> result)
+                result
+            )
 
-    member __.GetSourceTextAsync () =
-        asyncLazyWeakGetSourceText.GetValueAsync ()
-
-    member __.GetTokenParentAsync m =
-        async {
-            let! inputOpt, _ = this.GetParseResultAsync ()
-            match inputOpt with
-            | Some input ->
-                return getTokenParent input m
+    member __.TryGetText () =
+        lock gate (fun () ->
+            match lazyText with
+            | ValueSome text -> ValueSome text
             | _ ->
-                return failwith "should not happen"
-        }
+                match textSnapshot.TryGetText () with
+                | Some text ->
+                    lazyText <- ValueSome text
+                    ValueSome text
+                | _ ->
+                    ValueNone
+        )
 
-    member this.TryFindTokenAsync (line: int, column: int) =
-        async {
-            let! inputOpt, _ = this.GetParseResultAsync ()
-            match inputOpt with
-            | Some input ->
-                let! tokens = this.GetAllTokensAsync ()
-                let p = mkPos line column
-                return
-                    tokens
-                    |> Seq.tryPick (fun (t, m) ->
-                        if rangeContainsPos m p then
-                            Some (FSharpSyntaxToken (getTokenParent input m, t, m))
-                        else
-                            None
-                    )
+    member __.GetText ct =
+        lock gate (fun () ->
+            match lazyText with
+            | ValueSome text -> text
             | _ ->
-                return None
-        }
+                let text = textSnapshot.GetText ct
+                lazyText <- ValueSome text
+                text
+        )
+
+    member this.GetRootNode ct =
+        let inputOpt, _ = this.GetParseResult ct
+        if inputOpt.IsNone then failwith "parsed input does not exist"
+        let input = inputOpt.Value
+        FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
 
     member this.WithChangedTextSnapshot (newTextSnapshot: FSharpSourceSnapshot) =
-        if obj.ReferenceEquals (sourceSnapshot, newTextSnapshot) then
+        if obj.ReferenceEquals (textSnapshot, newTextSnapshot) then
             this
         else
-            match sourceSnapshot.TryGetText (), newTextSnapshot.TryGetText () with
+            match textSnapshot.TryGetText (), newTextSnapshot.TryGetText () with
             | Some oldText, Some text ->
                 let changes = text.GetChangeRanges oldText
                 if changes.Count = 0 || (changes.[0].Span.Start = 0 && changes.[0].Span.Length = oldText.Length) then

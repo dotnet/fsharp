@@ -184,16 +184,17 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
 
     member __.GetCompletionSymbolsAsync (line, column) =
         async {
+            let! ct = Async.CancellationToken
             let! checker, _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
 
             let syntaxTree = checker.GetSyntaxTree filePath
-            let! (parsedInputOpt, _) = syntaxTree.GetParseResultAsync ()
+            let (parsedInputOpt, _) = syntaxTree.GetParseResult ct
 
             match parsedInputOpt with
             | None -> 
                 return []
             | Some parsedInput ->
-                let! sourceText = syntaxTree.GetSourceTextAsync ()
+                let sourceText = syntaxTree.GetText ct
                 let lineStr = sourceText.Lines.[line - 1].ToString().Replace("\n", "").Replace("\r", "").TrimEnd(' ')
                 return getCompletionSymbols line column lineStr parsedInput resolutions symbolEnv
         }

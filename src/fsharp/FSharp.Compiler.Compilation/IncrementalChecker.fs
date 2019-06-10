@@ -98,7 +98,7 @@ type IncrementalCheckerState =
             |> ImmutableArray.iteri (fun i sourceSnapshot ->
                 let isLastFile = (orderedSourceSnapshots.Length - 1) = i
                 let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isLastFile, sourceSnapshot)
-                let parseResult = Async.RunSynchronously (syntaxTree.GetParseResultAsync (), cancellationToken = cancellationToken)
+                let parseResult = syntaxTree.GetParseResult cancellationToken
                 orderedResultsBuilder.[i] <- Parsed (syntaxTree, parseResult)
                 indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
             )
@@ -174,7 +174,7 @@ type IncrementalCheckerState =
 
             let! (tcAcc, cacheIndex) = this.GetPriorTcAccumulatorAsync (filePath)
             let syntaxTree = (this.GetPartialCheckResultByIndex cacheIndex).SyntaxTree
-            let! (inputOpt, parseErrors) = syntaxTree.GetParseResultAsync ()
+            let (inputOpt, parseErrors) = syntaxTree.GetParseResult ct
             match inputOpt with
             | Some input ->
                 let capturingErrorLogger = CompilationErrorLogger("CheckAsync", tcConfig.errorSeverityOptions)

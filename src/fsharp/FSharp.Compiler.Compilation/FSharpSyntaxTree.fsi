@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System.Threading
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Runtime.CompilerServices
@@ -88,10 +89,8 @@ and [<Sealed>] FSharpSyntaxTree =
     /// TODO: Make this public when we have a better way to handling ParsingInfo, perhaps have a better ParsingOptions?
     member internal ParsingConfig: ParsingConfig
 
-    member GetParseResultAsync: unit -> Async<ParseResult>
+    member GetParseResult: CancellationToken -> ParseResult
 
-    member GetSourceTextAsync: unit -> Async<SourceText>
-
-    member TryFindTokenAsync: line: int * column: int -> Async<FSharpSyntaxToken option>
+    member GetText: CancellationToken -> SourceText
 
     member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree

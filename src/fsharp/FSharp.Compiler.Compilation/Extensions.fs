@@ -3,6 +3,7 @@
 open System
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Text
+open FSharp.Compiler.Range
 
 module private SourceText =
 
@@ -96,3 +97,30 @@ module SourceTextExtensions =
         member this.ToFSharpSourceText() =
             SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
+        member this.TryRangeToSpan (r: range) =
+            let startLineIndex = r.StartLine - 1
+            let endLineIndex = r.EndLine - 1
+            if startLineIndex >= this.Lines.Count || endLineIndex >= this.Lines.Count || startLineIndex < 0 || endLineIndex < 0 then
+                ValueNone
+            else
+                let startLine = this.Lines.[startLineIndex]
+                let endLine = this.Lines.[endLineIndex]
+                
+                if r.StartColumn >= startLine.Span.Length || r.EndColumn >= endLine.Span.Length || r.StartColumn < 0 || r.EndColumn < 0 then
+                    ValueNone
+                else
+                    let start = startLine.Start + r.StartColumn
+                    let length = start - (endLine.Start + r.EndColumn)
+                    ValueSome (TextSpan (startLine.Start + r.StartColumn, length))
+
+        member this.TrySpanToRange (filePath: string, span: TextSpan) =
+            if span.Start + span.Length >= this.Length then
+                ValueNone
+            else
+                let startLine = (this.Lines.GetLineFromPosition span.Start)
+                let endLine = (this.Lines.GetLineFromPosition span.End)
+                mkRange 
+                    filePath
+                    (Pos.fromZ startLine.LineNumber (span.Start - startLine.Start))
+                    (Pos.fromZ endLine.LineNumber (span.End - endLine.Start))
+                |> ValueSome

@@ -8,7 +8,7 @@ open System.Collections.Generic
 open FSharp.Compiler.AbstractIL.Internal.Library
 
 [<RequireQualifiedAccess>]
-module Cancellable =
+module internal Cancellable =
 
     let toAsync e = 
         async { 
@@ -24,7 +24,7 @@ module Cancellable =
         }
 
 [<RequireQualifiedAccess>]
-module ImmutableArray =
+module internal ImmutableArray =
 
     let inline iter f (arr: ImmutableArray<_>) =
         for i = 0 to arr.Length - 1 do
@@ -40,6 +40,22 @@ module ImmutableArray =
         for i = 0 to arr.Length - 1 do
             builder.[i] <- f arr.[i]
         builder.ToImmutable ()
+
+[<RequireQualifiedAccess>]
+type internal ValueStrength<'T when 'T : not struct> =
+    | None
+    | Strong of 'T
+    | Weak of WeakReference<'T>
+
+    member this.TryGetTarget (value: outref<'T>) =
+        match this with
+        | ValueStrength.None -> 
+            false
+        | ValueStrength.Strong v ->
+            value <- v
+            true
+        | ValueStrength.Weak v ->
+            v.TryGetTarget &value
 
 type private AsyncLazyWeakMessage<'T> =
     | GetValue of AsyncReplyChannel<Result<'T, Exception>> * CancellationToken
