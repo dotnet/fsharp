@@ -10,25 +10,30 @@ module AstVisitorHelpers =
     let isZeroRange (r: range) =
         posEq r.Start r.End
 
+    type SynModuleOrNamespace with
+
+        member this.AdjustedRange =
+            match this with
+            | SynModuleOrNamespace (longId=longId;range=m) -> 
+                match longId with
+                | [] -> m
+                | _ ->
+                    let longIdRange =
+                        longId
+                        |> List.map (fun x -> x.idRange)
+                        |> List.reduce unionRanges
+                    unionRanges longIdRange m
+
     type ParsedInput with
 
-        member this.PossibleRange =
+        member this.AdjustedRange =
             match this with
             | ParsedInput.ImplFile (ParsedImplFileInput (modules=modules)) ->
                 match modules with
                 | [] -> range0
                 | _ ->
                     modules
-                    |> List.map (fun (SynModuleOrNamespace (longId=longId;range=m)) -> 
-                        match longId with
-                        | [] -> m
-                        | _ ->
-                            let longIdRange =
-                                longId
-                                |> List.map (fun x -> x.idRange)
-                                |> List.reduce unionRanges
-                            unionRanges longIdRange m
-                    )
+                    |> List.map (fun x -> x.AdjustedRange)
                     |> List.reduce (unionRanges)
             | ParsedInput.SigFile (ParsedSigFileInput (modules=modules)) ->
                 range0 // TODO:
@@ -313,7 +318,7 @@ type AstVisitor<'T> () as this =
         match parsedInput with
         | ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, modules, _)) -> 
             modules
-            |> mapVisitList (fun x -> x.Range) this.VisitModuleOrNamespace
+            |> mapVisitList (fun x -> x.AdjustedRange) this.VisitModuleOrNamespace
             |> tryVisitList
         | ParsedInput.SigFile (ParsedSigFileInput (_, _, _, _, modules)) -> 
             None

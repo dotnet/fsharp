@@ -6,6 +6,7 @@ open System.Threading
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Runtime.CompilerServices
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 open FSharp.Compiler.Compilation.Utilities
@@ -70,9 +71,9 @@ type FSharpSyntaxNodeKind =
     member this.Range =
         match this with
         | FSharpSyntaxNodeKind.ParsedInput item ->
-            item.PossibleRange
+            item.AdjustedRange
         | FSharpSyntaxNodeKind.ModuleOrNamespace item ->
-            item.Range
+            item.AdjustedRange
         | FSharpSyntaxNodeKind.ModuleDecl item ->
             item.Range
         | FSharpSyntaxNodeKind.LongIdentWithDots item ->
@@ -690,16 +691,16 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
                     if rangeContainsRange m r && rangeContainsRange this.Range m then
 
                         // token heuristics
-                        //match t with
-                        //| Parser.token.IDENT _ 
-                        //| Parser.token.STRING _ ->
+                        match t with
+                        | Parser.token.IDENT _ 
+                        | Parser.token.STRING _ ->
                             let finder = FSharpSyntaxFinder (r, this)
                             let result = finder.VisitNode this
                             if result.IsNone then failwith "should not happen"
                             Some (FSharpSyntaxToken (result.Value, t, m, span))
-                        //| _ ->
-                        //    let rootNode = this.GetRootNode ()
-                        //    Some (FSharpSyntaxToken (rootNode, t, m, span))
+                        | _ ->
+                            let rootNode = this.GetRootNode ()
+                            Some (FSharpSyntaxToken (rootNode, t, m, span))
                     else
                         None
                 )
@@ -818,3 +819,11 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                     FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, changes)
             | _ ->
                 FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])
+
+    //member this.GetDiagnostics ?ct =
+    //    let ct = defaultArg ct CancellationToken.None
+    //    let _, errors = this.GetParseResult ct
+    //    let diagnostics = ImmutableArray.CreateBuilder (errors.Length)
+    //    diagnostics.Count <- errors.Length
+    //    for i = 0 to errors.Length - 1 do
+    //        diagnostics.[i] <- Diagnostic.

@@ -165,7 +165,6 @@ type Class1 (* inside comment *) () =
 
         let rootNode = syntaxTree.GetRootNode CancellationToken.None
         let token = (rootNode.TryFindToken position).Value
-
         Assert.True token.IsIdentifier
         Assert.AreEqual ("Test", token.TryGetText().Value)
 

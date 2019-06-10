@@ -17,9 +17,13 @@ open FSharp.Compiler.Range
 [<AutoOpen>]
 module AstVisitorHelpers =
 
+    type SynModuleOrNamespace with
+
+        member AdjustedRange: range
+
     type ParsedInput with
 
-        member PossibleRange: range
+        member AdjustedRange: range
 
     type ParsedHashDirective with
 
