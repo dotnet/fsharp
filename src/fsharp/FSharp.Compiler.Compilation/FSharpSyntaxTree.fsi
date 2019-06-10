@@ -66,7 +66,7 @@ type FSharpSyntaxNodeKind =
 [<Sealed>]
 type FSharpSyntaxToken =
 
-    member Parent: FSharpSyntaxNode
+    member ParentNode: FSharpSyntaxNode
 
     member internal Range: Range.range
 
@@ -85,6 +85,8 @@ type FSharpSyntaxToken =
     member IsString: bool
 
     member TryGetText: unit -> string option
+
+    member TryGetNextToken: unit -> FSharpSyntaxToken option
 
 and [<Sealed>] FSharpSyntaxNode =
 

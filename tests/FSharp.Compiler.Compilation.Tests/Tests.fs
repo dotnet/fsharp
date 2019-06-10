@@ -181,6 +181,9 @@ type Class1 (* inside comment *) () =
         Assert.True token3.IsIdentifier
         Assert.AreEqual ("Class1", token3.TryGetText().Value)
 
+        let token4 = token3.TryGetNextToken().Value
+        Assert.True token4.IsWhitespace
+
     [<Test>]
     member __.``Syntax Tree - Function App`` () =
         let textString = """

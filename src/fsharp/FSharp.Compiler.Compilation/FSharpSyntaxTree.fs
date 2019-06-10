@@ -572,7 +572,7 @@ type FSharpSyntaxVisitor (rootNode: FSharpSyntaxNode) as this =
         let resultOpt = base.VisitAttribute item
         endVisit resultOpt
 
-and [<Sealed>] FSharpSyntaxFinder (findm: range, syntaxTree) =
+and [<Sealed>] FSharpSyntaxNodeFinder (findm: range, syntaxTree) =
     inherit FSharpSyntaxVisitor (syntaxTree)
 
     let isZeroRange (r: range) =
@@ -585,9 +585,9 @@ and [<Sealed>] FSharpSyntaxFinder (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
-and [<Sealed>] FSharpSyntaxToken (parent: FSharpSyntaxNode, token: Parser.token, range: range, span: TextSpan) =
+and [<Sealed>] FSharpSyntaxToken (lazyParent: Lazy<FSharpSyntaxNode>, token: Parser.token, range: range, span: TextSpan, columnIndex: int) =
 
-    member __.Parent = parent
+    member __.ParentNode = lazyParent.Value
 
     member __.Range = range
 
@@ -631,6 +631,34 @@ and [<Sealed>] FSharpSyntaxToken (parent: FSharpSyntaxNode, token: Parser.token,
         | Parser.token.IDENT idText -> Some idText
         | Parser.token.STRING str -> Some str
         | _ -> None
+
+    member this.TryGetNextToken () =
+        let allRawTokens: RawTokenLineMap = this.ParentNode.AllRawTokens
+
+        let rawTokenOpt =
+            match allRawTokens.TryGetValue range.EndLine with
+            | true, rawTokens ->
+                // Should we go to the next line?
+                if columnIndex >= (rawTokens.Count - 1) then
+                    match allRawTokens.TryGetValue (range.EndLine + 1) with
+                    | true, rawTokens ->
+                        if rawTokens.Count = 0 then
+                            ValueNone
+                        else
+                            ValueSome (rawTokens.[0], 0)
+                    | _ ->
+                        ValueNone
+                else
+                    let nextColumnIndex = columnIndex + 1
+                    ValueSome (rawTokens.[nextColumnIndex], nextColumnIndex)
+            | _ ->
+                failwith "should not happen"
+
+        match rawTokenOpt with
+        | ValueSome ((t, m, span), columnIndex) ->
+            Some (FSharpSyntaxToken (lazy this.ParentNode.FindNode m, t, m, span, columnIndex))
+        | _ ->
+            None
 
 and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
@@ -686,39 +714,45 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
         | ValueSome r ->
             match allRawTokens.TryGetValue r.EndLine with
             | true, lineTokens ->
+                let mutable columnIndex = -1
                 lineTokens
                 |> Seq.choose (fun (t, m, span) ->
+                    columnIndex <- columnIndex + 1
                     if rangeContainsRange m r && rangeContainsRange this.Range m then
 
                         // token heuristics
                         match t with
                         | Parser.token.IDENT _ 
                         | Parser.token.STRING _ ->
-                            let finder = FSharpSyntaxFinder (r, this)
-                            let result = finder.VisitNode this
-                            if result.IsNone then failwith "should not happen"
-                            Some (FSharpSyntaxToken (result.Value, t, m, span))
+                            Some (FSharpSyntaxToken (lazy this.FindNode m, t, m, span, columnIndex))
                         | _ ->
-                            let rootNode = this.GetRootNode ()
-                            Some (FSharpSyntaxToken (rootNode, t, m, span))
+                            Some (FSharpSyntaxToken (lazy this.GetRootNode (), t, m, span, columnIndex))
                     else
                         None
                 )
                 // Pick the innermost one.
-                |> Seq.sortByDescending (fun token -> Seq.length (token.Parent.GetAncestors ()))
+                |> Seq.sortByDescending (fun token -> Seq.length (token.ParentNode.GetAncestors ()))
                 |> Seq.tryHead
             | _ ->
                 None
         | _ ->
             None
 
+    member this.FindNode (m: range) =
+        match this.TryFindNode m with
+        | Some node -> node
+        | _ -> failwithf "Unable to find node at range: %A" m
+
+    member this.TryFindNode (m: range) =
+        let finder = FSharpSyntaxNodeFinder (m, this)
+        finder.VisitNode this
+
     member this.TryFindNode (span: TextSpan) =
         let text = this.Text
 
         match text.TrySpanToRange (syntaxTree.FilePath, span) with
         | ValueSome r ->
-            let finder = FSharpSyntaxFinder (r, this)
-            finder.VisitNode this
+            this.TryFindNode r
         | _ ->
             None
 
