@@ -106,15 +106,15 @@ module SourceTextExtensions =
                 let startLine = this.Lines.[startLineIndex]
                 let endLine = this.Lines.[endLineIndex]
                 
-                if r.StartColumn >= startLine.Span.Length || r.EndColumn >= endLine.Span.Length || r.StartColumn < 0 || r.EndColumn < 0 then
+                if r.StartColumn > startLine.Span.Length || r.EndColumn > endLine.Span.Length || r.StartColumn < 0 || r.EndColumn < 0 then
                     ValueNone
                 else
                     let start = startLine.Start + r.StartColumn
-                    let length = start - (endLine.Start + r.EndColumn)
+                    let length = (endLine.Start + r.EndColumn) - start
                     ValueSome (TextSpan (startLine.Start + r.StartColumn, length))
 
         member this.TrySpanToRange (filePath: string, span: TextSpan) =
-            if span.Start + span.Length >= this.Length then
+            if (span.Start + span.Length) > this.Length then
                 ValueNone
             else
                 let startLine = (this.Lines.GetLineFromPosition span.Start)

@@ -68,7 +68,23 @@ type FSharpSyntaxToken =
 
     member Parent: FSharpSyntaxNode
 
-    member Range: Range.range
+    member internal Range: Range.range
+
+    member Span: TextSpan
+
+    member IsKeyword: bool
+
+    member IsIdentifier: bool
+
+    member IsWhitespace: bool
+
+    member IsComment: bool
+
+    member IsComma: bool
+
+    member IsString: bool
+
+    member TryGetText: unit -> string option
 
 and [<Sealed>] FSharpSyntaxNode =
 
@@ -78,7 +94,13 @@ and [<Sealed>] FSharpSyntaxNode =
 
     member Kind: FSharpSyntaxNodeKind
 
-    member Range: range
+    member internal Range: range
+
+    member Span: TextSpan
+
+    member TryFindToken: position: int -> FSharpSyntaxToken option
+
+    member TryFindNode: span: TextSpan -> FSharpSyntaxNode option
 
 and [<Sealed>] FSharpSyntaxTree =
 
@@ -89,7 +111,9 @@ and [<Sealed>] FSharpSyntaxTree =
     /// TODO: Make this public when we have a better way to handling ParsingInfo, perhaps have a better ParsingOptions?
     member internal ParsingConfig: ParsingConfig
 
-    member GetParseResult: CancellationToken -> ParseResult
+    member internal GetParseResult: CancellationToken -> ParseResult
+
+    member GetRootNode: CancellationToken -> FSharpSyntaxNode
 
     member GetText: CancellationToken -> SourceText
 

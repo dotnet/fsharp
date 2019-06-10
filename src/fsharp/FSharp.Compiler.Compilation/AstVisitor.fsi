@@ -17,6 +17,10 @@ open FSharp.Compiler.Range
 [<AutoOpen>]
 module AstVisitorHelpers =
 
+    type ParsedInput with
+
+        member PossibleRange: range
+
     type ParsedHashDirective with
 
         member Range: range

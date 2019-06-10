@@ -142,6 +142,46 @@ let yopac = 1""")
         let symbols = semanticModel.GetCompletionSymbolsAsync (7, 14) |> Async.RunSynchronously
         Assert.False (symbols.IsEmpty)
 
+    [<Test>]
+    member __.``Syntax Tree - Find Token`` () =
+        let textString = """
+namespace Test
+        
+/// Doc comment
+type Class1 (* inside comment *) () =
+            
+    // normal comment
+    member val X = 1
+        
+    member val Y = 1
+        
+    member val Z = 1
+        
+"""         
+        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+
+        let position = textString.IndexOf("Test")
+        let syntaxTree = semanticModel.SyntaxTree
+
+        let rootNode = syntaxTree.GetRootNode CancellationToken.None
+        let token = (rootNode.TryFindToken position).Value
+
+        Assert.True token.IsIdentifier
+        Assert.AreEqual ("Test", token.TryGetText().Value)
+
+        let token2 = (rootNode.TryFindToken (position + 4)).Value
+
+        Assert.True token2.IsIdentifier
+        Assert.AreEqual ("Test", token2.TryGetText().Value)
+
+        //
+
+        let position = textString.IndexOf("Class1")
+        let token3 = (rootNode.TryFindToken position).Value
+
+        Assert.True token3.IsIdentifier
+        Assert.AreEqual ("Class1", token3.TryGetText().Value)
+
 [<TestFixture>]
 type UtilitiesTest () =
 

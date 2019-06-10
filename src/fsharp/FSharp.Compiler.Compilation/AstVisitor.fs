@@ -10,6 +10,29 @@ module AstVisitorHelpers =
     let isZeroRange (r: range) =
         posEq r.Start r.End
 
+    type ParsedInput with
+
+        member this.PossibleRange =
+            match this with
+            | ParsedInput.ImplFile (ParsedImplFileInput (modules=modules)) ->
+                match modules with
+                | [] -> range0
+                | _ ->
+                    modules
+                    |> List.map (fun (SynModuleOrNamespace (longId=longId;range=m)) -> 
+                        match longId with
+                        | [] -> m
+                        | _ ->
+                            let longIdRange =
+                                longId
+                                |> List.map (fun x -> x.idRange)
+                                |> List.reduce unionRanges
+                            unionRanges longIdRange m
+                    )
+                    |> List.reduce (unionRanges)
+            | ParsedInput.SigFile (ParsedSigFileInput (modules=modules)) ->
+                range0 // TODO:
+
     type ParsedHashDirective with
 
         member this.Range =

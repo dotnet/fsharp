@@ -57,7 +57,7 @@ module Lexer =
         )
 
     let Lex pConfig (sourceValue: SourceValue) tokenCallback =
-        let skip = true
+        let skip = false
         let errorLogger = CompilationErrorLogger("Lex", pConfig.tcConfig.errorSeverityOptions)
         LexAux pConfig (sourceValue.CreateLexbuf ()) errorLogger (fun lexargs lexbuf ->
             while not lexbuf.IsPastEndOfStream do
