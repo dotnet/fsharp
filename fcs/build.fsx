@@ -67,7 +67,7 @@ let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../artifacts/bin/fcs/Releas
 let release = LoadReleaseNotes (__SOURCE_DIRECTORY__ + "/RELEASE_NOTES.md")
 let isAppVeyorBuild = buildServer = BuildServer.AppVeyor
 let isJenkinsBuild = buildServer = BuildServer.Jenkins
-let isVersionTag tag = Version.TryParse tag |> fst
+let isVersionTag (tag: string) = Version.TryParse tag |> fst
 let hasRepoVersionTag = isAppVeyorBuild && AppVeyorEnvironment.RepoTag && isVersionTag AppVeyorEnvironment.RepoTagName
 let assemblyVersion = if hasRepoVersionTag then AppVeyorEnvironment.RepoTagName else release.NugetVersion
 
