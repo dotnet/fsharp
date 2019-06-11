@@ -15,7 +15,7 @@ module TextDocument =
                     if position.character = 0 then 0, 1
                     else position.character, position.character + 1
                 return Some { contents = { kind = MarkupKind.PlainText
-                                           value = "servivng textDocument/hover from LSP" }
+                                           value = "serving textDocument/hover from LSP" }
                               range = Some { start = { line = position.line; character = startCol }
                                              ``end`` = { line = position.line; character = endCol } }
                 }
