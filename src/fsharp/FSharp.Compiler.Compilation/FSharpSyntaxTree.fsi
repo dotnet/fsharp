@@ -19,7 +19,7 @@ type FSharpSyntaxNodeKind =
     | ModuleOrNamespace of SynModuleOrNamespace
     | ModuleDecl of SynModuleDecl
     | LongIdentWithDots of LongIdentWithDots
-    | Ident of Ident
+    | Ident of index: int * Ident
     | ComponentInfo of SynComponentInfo
     | TypeConstraint of SynTypeConstraint
     | MemberSig of SynMemberSig
@@ -99,6 +99,12 @@ and [<Sealed>] FSharpSyntaxNode =
     member internal Range: range
 
     member Span: TextSpan
+
+    member GetAncestors: unit -> FSharpSyntaxNode seq
+
+    member GetAncestorsAndSelf: unit -> FSharpSyntaxNode seq
+
+    member GetRoot: unit -> FSharpSyntaxNode
 
     member TryFindToken: position: int -> FSharpSyntaxToken option
 

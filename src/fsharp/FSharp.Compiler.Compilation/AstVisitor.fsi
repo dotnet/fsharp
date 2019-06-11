@@ -137,8 +137,8 @@ type AstVisitor<'T> =
     abstract VisitLongIdentWithDots: LongIdentWithDots -> 'T option
     default VisitLongIdentWithDots: LongIdentWithDots -> 'T option
 
-    abstract VisitIdent: Ident -> 'T option
-    default VisitIdent: Ident -> 'T option
+    abstract VisitIdent: index: int * Ident -> 'T option
+    default VisitIdent: index: int * Ident -> 'T option
 
     abstract VisitComponentInfo: SynComponentInfo -> 'T option
     default VisitComponentInfo: SynComponentInfo -> 'T option

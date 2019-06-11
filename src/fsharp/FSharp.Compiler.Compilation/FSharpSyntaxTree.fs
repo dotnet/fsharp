@@ -24,7 +24,7 @@ type FSharpSyntaxNodeKind =
     | ModuleOrNamespace of SynModuleOrNamespace
     | ModuleDecl of SynModuleDecl
     | LongIdentWithDots of LongIdentWithDots
-    | Ident of Ident
+    | Ident of index: int * Ident
     | ComponentInfo of SynComponentInfo
     | TypeConstraint of SynTypeConstraint
     | MemberSig of SynMemberSig
@@ -78,7 +78,7 @@ type FSharpSyntaxNodeKind =
             item.Range
         | FSharpSyntaxNodeKind.LongIdentWithDots item ->
             item.Range
-        | FSharpSyntaxNodeKind.Ident item ->
+        | FSharpSyntaxNodeKind.Ident (_, item) ->
             item.idRange
         | FSharpSyntaxNodeKind.ComponentInfo item ->
             item.Range
@@ -203,8 +203,8 @@ type FSharpSyntaxVisitor (rootNode: FSharpSyntaxNode) as this =
             this.VisitModuleDecl item
         | FSharpSyntaxNodeKind.LongIdentWithDots item ->
             this.VisitLongIdentWithDots item
-        | FSharpSyntaxNodeKind.Ident item ->
-            this.VisitIdent item
+        | FSharpSyntaxNodeKind.Ident (index, item) ->
+            this.VisitIdent (index, item)
         | FSharpSyntaxNodeKind.ComponentInfo item ->
             this.VisitComponentInfo item
         | FSharpSyntaxNodeKind.TypeConstraint item ->
@@ -314,10 +314,10 @@ type FSharpSyntaxVisitor (rootNode: FSharpSyntaxNode) as this =
         let resultOpt = base.VisitLongIdentWithDots item
         endVisit resultOpt
 
-    override __.VisitIdent item =
-        let node = createNode (FSharpSyntaxNodeKind.Ident item)
+    override __.VisitIdent (index, item) =
+        let node = createNode (FSharpSyntaxNodeKind.Ident (index, item))
         startVisit node
-        let resultOpt = base.VisitIdent item
+        let resultOpt = base.VisitIdent (index, item)
         endVisit resultOpt
 
     override __.VisitComponentInfo item =
@@ -703,7 +703,7 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
                 nodeOpt <- nodeOpt.Value.Parent
         }
 
-    member this.GetRootNode () =
+    member this.GetRoot () =
         this.GetAncestorsAndSelf ()
         |> Seq.last
 
@@ -726,7 +726,7 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
                         | Parser.token.STRING _ ->
                             Some (FSharpSyntaxToken (lazy this.FindNode m, t, m, span, columnIndex))
                         | _ ->
-                            Some (FSharpSyntaxToken (lazy this.GetRootNode (), t, m, span, columnIndex))
+                            Some (FSharpSyntaxToken (lazy this.GetRoot (), t, m, span, columnIndex))
                     else
                         None
                 )

@@ -307,6 +307,10 @@ type AstVisitor<'T> () as this =
         xs
         |> List.map (fun x -> ((fun () -> getRange x), fun () -> visit x))
 
+    let mapiVisitList (getRange: 'Syn -> range) visit xs =
+        xs
+        |> List.mapi (fun i x -> ((fun () -> getRange x), fun () -> visit (i, x)))
+
     abstract CanVisit: range -> bool  
     default this.CanVisit _ = true
 
@@ -326,7 +330,7 @@ type AstVisitor<'T> () as this =
         | SynModuleOrNamespace (longId, _, _, decls, _, attribs, _, _) ->
             let longId =
                 longId
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let decls =
                 decls
@@ -396,11 +400,11 @@ type AstVisitor<'T> () as this =
         match longDotId with
         | LongIdentWithDots (longId, _) ->
             longId
-            |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+            |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
             |> tryVisitList
 
-    abstract VisitIdent: Ident -> 'T option
-    default this.VisitIdent _id =
+    abstract VisitIdent: index: int * Ident -> 'T option
+    default this.VisitIdent (_, _) =
         None
 
     abstract VisitComponentInfo: SynComponentInfo -> 'T option
@@ -421,7 +425,7 @@ type AstVisitor<'T> () as this =
 
             let longId =
                 longId
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             (attribs @ typarDecls @ constraints @ longId)
             |> tryVisitList
@@ -594,7 +598,7 @@ type AstVisitor<'T> () as this =
                 match longIdOpt with
                 | Some longId ->
                     longId
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -611,7 +615,7 @@ type AstVisitor<'T> () as this =
 
             let ident =
                 [ident]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let unionCaseTy =
                 [unionCaseTy]
@@ -652,7 +656,7 @@ type AstVisitor<'T> () as this =
                 match idOpt with
                 | Some id ->
                     [id]
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -693,7 +697,7 @@ type AstVisitor<'T> () as this =
                         match idOpt with
                         | Some id ->
                             [id]
-                            |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                            |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                         | _ ->
                             []
 
@@ -740,7 +744,7 @@ type AstVisitor<'T> () as this =
         | SynSimplePat.Id (id, simplePatInfoOpt, _, _, _, m) ->
             let id =
                 [id]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let simplePatInfo =
                 match simplePatInfoOpt with
@@ -787,7 +791,7 @@ type AstVisitor<'T> () as this =
 
             let id =
                 [id]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let sconst =
                 [sconst]
@@ -818,7 +822,7 @@ type AstVisitor<'T> () as this =
         match measure with
         | SynMeasure.Named (longId, _) ->
             longId
-            |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+            |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
             |> tryVisitList
 
         | SynMeasure.Product (measure1, measure2, _) ->
@@ -900,7 +904,7 @@ type AstVisitor<'T> () as this =
                 match idOpt with
                 | Some id ->
                     [id]
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -921,7 +925,7 @@ type AstVisitor<'T> () as this =
 
             let id =
                 [id]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let valTyparDecls =
                 [valTyparDecls]
@@ -1003,7 +1007,7 @@ type AstVisitor<'T> () as this =
 
             let ids =
                 ids
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let tys =
                 tys
@@ -1107,7 +1111,7 @@ type AstVisitor<'T> () as this =
         match typar with
         | SynTypar.Typar (id, _, _) ->
             id
-            |> tryVisit id.idRange this.VisitIdent
+            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
     abstract VisitTyparDecl: SynTyparDecl -> 'T option
     default this.VisitTyparDecl typarDecl =
@@ -1167,7 +1171,7 @@ type AstVisitor<'T> () as this =
                 match idOpt with
                 | Some id ->
                     [id]
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -1207,7 +1211,7 @@ type AstVisitor<'T> () as this =
 
             let id =
                 [id]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             (pat @ id)
             |> tryVisitList
@@ -1255,7 +1259,7 @@ type AstVisitor<'T> () as this =
                 match idOpt with
                 | Some id ->
                     [id]
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -1299,11 +1303,11 @@ type AstVisitor<'T> () as this =
             let longIds =
                 longIds
                 |> List.reduce (@)
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let ids =
                 ids
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             (pats @ longIds @ ids)
             |> tryVisitList
@@ -1313,7 +1317,7 @@ type AstVisitor<'T> () as this =
 
         | SynPat.OptionalVal (id, _) ->
             id
-            |> tryVisit id.idRange this.VisitIdent
+            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
         | SynPat.IsInst (ty, _) ->
             ty
@@ -1329,13 +1333,13 @@ type AstVisitor<'T> () as this =
         | SynPat.InstanceMember (id1, id2, idOpt, _, _) ->
             let ids =
                 [id1;id2]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let idOpt =
                 match idOpt with
                 | Some id ->
                     [id]
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -1359,7 +1363,7 @@ type AstVisitor<'T> () as this =
 
             let ids =
                 ids
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let pats =
                 pats
@@ -1429,7 +1433,7 @@ type AstVisitor<'T> () as this =
 
             let ids =
                 ids
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let exprs =
                 exprs
@@ -1510,7 +1514,7 @@ type AstVisitor<'T> () as this =
                         match idOpt with
                         | Some id ->
                             [id]
-                            |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                            |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                         | _ ->
                             []
 
@@ -1537,7 +1541,7 @@ type AstVisitor<'T> () as this =
         | SynExpr.For (_, id, expr, _, toBody, doBody, _) ->
             let id =
                 [id]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let exprs =
                 [expr;toBody;doBody]
@@ -1676,7 +1680,7 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.Ident id ->
             id
-            |> tryVisit id.idRange this.VisitIdent
+            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
         | SynExpr.LongIdent (_, longDotId, simplePatAltIdInfoOpt, _) ->
             let longDotId =
@@ -1925,7 +1929,7 @@ type AstVisitor<'T> () as this =
 
             let longId =
                 longId
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             (expr @ longId)
             |> tryVisitList
@@ -1937,7 +1941,7 @@ type AstVisitor<'T> () as this =
 
             let longId =
                 longId
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             (exprs @ longId)
             |> tryVisitList
@@ -1993,11 +1997,11 @@ type AstVisitor<'T> () as this =
         match simplePatAltIdInfo with
         | Undecided id ->
             id
-            |> tryVisit id.idRange this.VisitIdent
+            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
         | Decided id ->
             id
-            |> tryVisit id.idRange this.VisitIdent
+            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
     abstract VisitMatchClause: SynMatchClause -> 'T option
     default this.VisitMatchClause matchClause =
@@ -2084,7 +2088,7 @@ type AstVisitor<'T> () as this =
         match memberDefn with
         | SynMemberDefn.Open (longId, _) ->
             longId
-            |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+            |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
             |> tryVisitList
 
         | SynMemberDefn.Member (binding, _) ->
@@ -2104,7 +2108,7 @@ type AstVisitor<'T> () as this =
                 match idOpt with
                 | Some id ->
                     [id]
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -2124,7 +2128,7 @@ type AstVisitor<'T> () as this =
                 match idOpt with
                 | Some id ->
                     [id]
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -2165,7 +2169,7 @@ type AstVisitor<'T> () as this =
                 match idOpt with
                 | Some id ->
                     [id]
-                    |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
                 | _ ->
                     []
 
@@ -2187,7 +2191,7 @@ type AstVisitor<'T> () as this =
 
             let id =
                 [id]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
 
             let tyOpt =
                 match tyOpt with
@@ -2245,7 +2249,7 @@ type AstVisitor<'T> () as this =
             match attrib.Target with
             | Some target ->
                 [target]
-                |> mapVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
             | _ ->
                 []
 
