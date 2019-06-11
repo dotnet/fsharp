@@ -107,8 +107,7 @@ type CompilationTests () =
 
     [<Test>]
     member __.``Find Symbol - Basic`` () =
-        let semanticModel, _ = 
-            getSemanticModel (SourceText.From """
+        let textString = """
 module TestModuleCompilationTest =
 
     type CompiltationTest () =
@@ -120,9 +119,12 @@ module TestModuleCompilationTest =
                     member val Z = 3
                     
     let testFunction (x: CompilationTest) =
-        x.X + x.Y + x.Z""")
+        x.X + x.Y + x.Z"""
 
-        let symbol = semanticModel.TryFindSymbolAsync (4, 9) |> Async.RunSynchronously
+        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+
+        let position = textString.IndexOf("""CompiltationTest ()""")
+        let symbol = semanticModel.TryGetEnclosingSymbol (position, CancellationToken.None)
         Assert.True (symbol.IsSome)
 
     [<Test>]

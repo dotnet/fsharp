@@ -24,10 +24,12 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
-open FSharp.Compiler.SourceCodeServices
+open Microsoft.CodeAnalysis.Text
 
 [<AutoOpen>]
 module FSharpSemanticModelHelpers =
+
+    open FSharp.Compiler.SourceCodeServices
 
     let tryGetBestCapturedEnv p (resolutions: TcResolutions) =
         let mutable bestSoFar = None
@@ -197,6 +199,59 @@ module FSharpSemanticModelHelpers =
 //                None
 
 [<Sealed>]
+type FSharpSyntaxReference (syntaxTree: FSharpSyntaxTree, span: TextSpan) =
+
+    member __.SyntaxTree = syntaxTree
+
+    member __.Span = span
+
+
+[<NoEquality;NoComparison;RequireQualifiedAccess>]
+type FSharpDefinitionLocation =
+    | Source of FSharpSyntaxReference
+    | Metadata
+
+type IFSharpDefinitionAndDeclarationFinder =
+
+    abstract FindDefinitions: FSharpSyntaxNode -> ImmutableArray<FSharpDefinitionLocation>
+
+    abstract FindDeclarations: FSharpSyntaxNode -> ImmutableArray<FSharpSyntaxReference>
+
+[<NoEquality;NoComparison;RequireQualifiedAccess>]
+type FSharpSymbolKind =
+    | Namespace
+
+[<Sealed>]
+type FSharpSymbol (internalSymbolUse: InternalFSharpSymbolUse) =
+
+    member __.InternalSymbolUse = internalSymbolUse
+
+    static member Create (cnr: CapturedNameResolution, senv: SymbolEnv) =
+        let internalSymbol = InternalFSharpSymbol.Create (senv, cnr.Item)
+        let internalSymbolUse = InternalFSharpSymbolUse (senv.g, cnr.DisplayEnv, internalSymbol, cnr.ItemOccurence, cnr.Range)
+        FSharpSymbol (internalSymbolUse)
+
+[<NoEquality;NoComparison;RequireQualifiedAccess>]
+type FSharpSymbolInfo =
+    | ReferredByNode of FSharpSymbol
+    | Candidates of ImmutableArray<FSharpSymbol>
+
+    member this.TryGetSymbol () =
+        match this with
+        | ReferredByNode symbol -> Some symbol
+        | _ -> None
+
+    member this.CandidateSymbols =
+        match this with
+        | Candidates candidateSymbols -> candidateSymbols
+        | _ -> ImmutableArray.Empty
+
+    member this.GetAllSymbols () =
+        match this.TryGetSymbol () with
+        | Some symbol -> ImmutableArray.Create symbol
+        | _ -> this.CandidateSymbols
+
+[<Sealed>]
 type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>, compilationObj: obj) =
 
     let lazySyntaxTree =
@@ -209,17 +264,8 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
         AsyncLazy(async {
             let! checker = asyncLazyChecker.GetValueAsync ()
             let! tcAcc, sink, symbolEnv = checker.CheckAsync filePath
-
-
-
             return (checker, tcAcc, sink.GetResolutions (), symbolEnv)
         })
-
-    member __.TryFindSymbolAsync (line: int, column: int) : Async<FSharpSymbol option> =
-        async {
-            let! checker, _tcAcc, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
-            return tryFindSymbol line column resolutions symbolEnv
-        }
 
     member __.FindSymbolUsesAsync symbol =
         async {
@@ -250,16 +296,36 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
                 return getCompletionSymbols line column lineStr parsedInput resolutions symbolEnv
         }
 
-    //member __.TryGetEnclosingSymbol (position: int, ct) =
-    //    let _checker, _tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
+    member __.GetSymbolInfo (node: FSharpSyntaxNode, ct) =
+        let _checker, _tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
 
+        let cnrs = resolutions.CapturedNameResolutions
+        let candidateSymbols = ImmutableArray.CreateBuilder ()
+        let mutable symbol = ValueNone
+        let mutable i = 0
+        while symbol.IsNone || i >= cnrs.Count do
+            let cnr = cnrs.[i]
+            if rangeContainsRange node.Range cnr.Range then
+                let candidateSymbol = FSharpSymbol.Create (cnr, symbolEnv)
+                candidateSymbols.Add candidateSymbol
+                if Range.equals node.Range cnr.Range then
+                    symbol <- ValueSome candidateSymbol // no longer a candidate
 
-    //member this.TryGetSymbol (node: FSharpSyntaxNode, ct: CancellationToken) =
-    //    if not (obj.ReferenceEquals (node.SyntaxTree, this.SyntaxTree)) then
-    //        None
-    //    else
-    //        let checker, _tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), ct)
+        match symbol with
+        | ValueSome symbol ->
+            FSharpSymbolInfo.ReferredByNode symbol
+        | _ ->
+            FSharpSymbolInfo.Candidates (candidateSymbols.ToImmutable ())
 
-    member __.SyntaxTree = lazySyntaxTree.Value
+    member this.TryGetEnclosingSymbol (position: int, ct) =
+        let rootNode = this.SyntaxTree.GetRootNode ct
+        match rootNode.TryFindToken position with
+        | Some token ->
+            let symbolInfo = this.GetSymbolInfo (token.ParentNode, ct)
+            symbolInfo.TryGetSymbol ()
+        | _ ->
+            None
+
+    member __.SyntaxTree: FSharpSyntaxTree = lazySyntaxTree.Value
 
     member __.CompilationObj = compilationObj
