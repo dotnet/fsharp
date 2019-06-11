@@ -10,7 +10,7 @@ type FSharpSymbol =
 
     member internal InternalSymbolUse: InternalFSharpSymbolUse
 
-[<Sealed;NoEquality;NoComparison>]
+[<Sealed>]
 type FSharpSymbolInfo =
 
     /// The symbol that was referred to by the syntax node, if any. If None is returned, it may
