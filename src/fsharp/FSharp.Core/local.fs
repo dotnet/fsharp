@@ -311,7 +311,7 @@ module internal List =
         | h1 :: t1, h2 :: t2, h3 :: t3 ->
             let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(mapping)
             let cons = freshConsNoTail (f.Invoke(h1, h2, h3))
-            map3ToFreshConsTail cons f t1 t2 t3 0
+            map3ToFreshConsTail cons f t1 t2 t3 1
             cons
         | xs1, xs2, xs3 ->
             invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length
