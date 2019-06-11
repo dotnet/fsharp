@@ -207,6 +207,30 @@ module App =
 
         Assert.IsTrue token.IsWhitespace
 
+    [<Test>]
+    member __.``Syntax Tree - String Token`` () =
+        let textString = """
+namespace Test
+        
+module App =
+
+    let x = "hello
+there
+    "
+
+    let y = 1
+"""         
+        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+
+        let text = "hello"
+        let position = textString.IndexOf(text)
+        let syntaxTree = semanticModel.SyntaxTree
+
+        let rootNode = syntaxTree.GetRootNode CancellationToken.None
+        let token = (rootNode.TryFindToken position).Value
+
+        Assert.IsTrue token.IsString
+
 [<TestFixture>]
 type UtilitiesTest () =
 

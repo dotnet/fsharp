@@ -135,17 +135,14 @@ module AstVisitorHelpers =
         member this.PossibleRange =
             match this with
             | SynValInfo (argInfos, argInfo) ->
-                let ranges =
+                match argInfos with
+                | [] -> range0
+                | _ ->
                     argInfos
                     |> List.reduce (@)
                     |> List.append [argInfo]
                     |> List.map (fun x -> x.PossibleRange)
                     |> List.filter (fun x -> not (isZeroRange x))
-
-                match ranges with
-                | [] -> range0
-                | _ ->
-                    ranges
                     |> List.reduce unionRanges
 
     type SynTypeDefnKind with
@@ -175,25 +172,25 @@ module AstVisitorHelpers =
         member this.Range =
             match this with
             | TyparDecl (attribs, typar) ->
-                attribs
-                |> List.map (fun x -> x.Range)
-                |> List.append [typar.Range]
-                |> List.reduce unionRanges
+                match attribs with
+                | [] -> typar.Range
+                | _ ->
+                    attribs
+                    |> List.map (fun x -> x.Range)
+                    |> List.append [typar.Range]
+                    |> List.reduce unionRanges
 
     type SynValTyparDecls with
 
         member this.PossibleRange =
             match this with
             | SynValTyparDecls (typarDecls, _, constraints) ->
-                let ranges =
+                match typarDecls with
+                | [] -> range0
+                | _ ->
                     typarDecls
                     |> List.map (fun x -> x.Range)
                     |> List.append (constraints |> List.map (fun x -> x.Range))
-
-                match ranges with
-                | [] -> range0
-                | _ ->
-                    ranges
                     |> List.reduce unionRanges
 
     type SynSimplePat with
