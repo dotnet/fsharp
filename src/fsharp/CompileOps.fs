@@ -3483,6 +3483,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
        else error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None
 
+
 [<Sealed>] 
 type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list, unresolved: UnresolvedAssemblyReference list) = 
 
