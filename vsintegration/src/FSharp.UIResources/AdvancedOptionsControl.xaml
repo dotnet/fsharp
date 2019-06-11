@@ -24,6 +24,10 @@
                     <CheckBox x:Name="toggleOutloning" IsChecked="{Binding IsOutliningEnabled}"
                               Content="{x:Static local:Strings.Show_Outlining}"/>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Use_out_of_process_language_server}">
+                    <CheckBox x:Name="usePreviewTextHover" IsChecked="{Binding UsePreviewTextHover}"
+                              Content="{x:Static local:Strings.Text_hover}" />
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>

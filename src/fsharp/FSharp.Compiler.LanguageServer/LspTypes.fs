@@ -2,8 +2,11 @@
 
 namespace FSharp.Compiler.LanguageServer
 
-// Interfaces as defined at https://microsoft.github.io/language-server-protocol/specification.  The properties on these
-// types are camlCased to match the underlying JSON properties to avoid attributes on every field:
+open Newtonsoft.Json.Linq
+open Newtonsoft.Json
+
+// Interfaces as defined at https://microsoft.github.io/language-server-protocol/specification.  The properties on
+// these types are camlCased to match the underlying JSON properties to avoid attributes on every field:
 //   [<JsonProperty("camlCased")>]
 
 /// Represents a zero-based line and column of a text document.
@@ -27,11 +30,11 @@ type DiagnosticRelatedInformation =
 
 type Diagnostic =
     { range: Range
-      severity: int
+      severity: int option
       code: string
-      source: string // "F#"
+      source: string option // "F#"
       message: string
-      relatedInformation: DiagnosticRelatedInformation[] }
+      relatedInformation: DiagnosticRelatedInformation[] option }
     static member Error = 1
     static member Warning = 2
     static member Information = 3
@@ -41,9 +44,23 @@ type PublishDiagnosticsParams =
     { uri: DocumentUri
       diagnostics: Diagnostic[] }
 
-type InitializeParams = string // TODO:
+type ClientCapabilities =
+    { workspace: JToken option // TODO: WorkspaceClientCapabilities
+      textDocument: JToken option // TODO: TextDocumentCapabilities
+      experimental: JToken option
+      supportsVisualStudioExtensions: bool option }
 
-// Note, this type has many more optional values that can be expanded as support is added.
+[<JsonConverter(typeof<JsonDUConverter>)>]
+type Trace =
+    | Off
+    | Messages
+    | Verbose
+
+type WorkspaceFolder =
+    { uri: DocumentUri
+      name: string }
+
+/// Note, this type has many more optional values that can be expanded as support is added.
 type ServerCapabilities =
     { hoverProvider: bool }
     static member DefaultCapabilities() =
@@ -52,6 +69,7 @@ type ServerCapabilities =
 type InitializeResult =
     { capabilities: ServerCapabilities }
 
+[<JsonConverter(typeof<JsonDUConverter>)>]
 type MarkupKind =
     | PlainText
     | Markdown
@@ -66,7 +84,3 @@ type Hover =
 
 type TextDocumentIdentifier =
     { uri: DocumentUri }
-
-type TextDocumentPositionParams =
-    { textDocument: TextDocumentIdentifier
-      position: Position }
