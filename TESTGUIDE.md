@@ -10,7 +10,7 @@ To run tests, use variations such as the following, depending on which test suit
     build.cmd vs test
     build.cmd all test
 
-You can also submit pull requests to http://github.com/Microsoft/visualfsharp and run the tests via continuous integration. Most people do wholesale testing that way.
+You can also submit pull requests to https://github.com/dotnet/fsharp and run the tests via continuous integration. Most people do wholesale testing that way.
 
 ## Prerequisites
 
