@@ -12591,15 +12591,18 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId: Ident list) =
     let ad = env.eAccessRights
     match longId with
-    | [] -> Result []
+    | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
         match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
-        | Result res -> Result res
-        | Exception err -> raze err
+        | Result res -> res
+        | Exception err ->
+            errorR(err); []
 
 let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) = 
-    let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId)
+    match TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId with
+    | [] -> env
+    | modrefs ->
 
     // validate opened namespace names
     for id in longId do
