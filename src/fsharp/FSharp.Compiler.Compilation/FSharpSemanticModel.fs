@@ -303,7 +303,7 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
         let candidateSymbols = ImmutableArray.CreateBuilder ()
         let mutable symbol = ValueNone
         let mutable i = 0
-        while symbol.IsNone || i >= cnrs.Count do
+        while symbol.IsNone && i < cnrs.Count do
             let cnr = cnrs.[i]
             if rangeContainsRange node.Range cnr.Range then
                 let candidateSymbol = FSharpSymbol.Create (cnr, symbolEnv)
