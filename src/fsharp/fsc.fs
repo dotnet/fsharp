@@ -838,7 +838,7 @@ module MainModuleBuilder =
             v
 
     let productVersionToILVersionInfo (version: string) : ILVersionInfo =
-        let parseOrZero v = match System.UInt16.TryParse v with (true, i) -> i | (false, _) -> 0us
+        let parseOrZero (v: string) = match System.UInt16.TryParse v with (true, i) -> i | (false, _) -> 0us
         let validParts =
             version.Split('.')
             |> Seq.map parseOrZero

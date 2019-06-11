@@ -56,13 +56,12 @@
     <VSMSBuildBinDir>$(VS150COMNTOOLS)\..\..\MSBuild\$(VisualStudioVersion)\Bin</VSMSBuildBinDir>
     <LanguageTargets Condition="Exists('$(VSMSBuildBinDir)')">$(VSMSBuildBinDir)\Microsoft.CSharp.targets</LanguageTargets>
   </PropertyGroup>
-  <Target Name="CoreCompile"/>
+
   <Target Name="WorkaroundForXAMLIntellisenseBuildIssue" AfterTargets="_CheckCompileDesignTimePrerequisite">
     <PropertyGroup>
       <BuildingProject>false</BuildingProject>
     </PropertyGroup>
   </Target>
 
-  <Target Name="CoreCompile">
-  </Target>
+  <Target Name="CoreCompile" />
 </Project>

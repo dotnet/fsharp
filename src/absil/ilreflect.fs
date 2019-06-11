@@ -663,9 +663,6 @@ let TypeBuilderInstantiationT =
     ty
 
 let typeIsNotQueryable (ty: Type) = 
-#if FX_RESHAPED_REFLECTION
-    let ty = ty.GetTypeInfo()
-#endif
     (ty :? TypeBuilder) || ((ty.GetType()).Equals(TypeBuilderInstantiationT))
 //----------------------------------------------------------------------------
 // convFieldSpec
@@ -1434,11 +1431,7 @@ let buildGenParamsPass1 _emEnv defineGenericParameters (gps: ILGenericParameterD
 
 
 let buildGenParamsPass1b cenv emEnv (genArgs: Type array) (gps: ILGenericParameterDefs) = 
-#if FX_RESHAPED_REFLECTION
-    let genpBs = genArgs |> Array.map (fun x -> (x.GetTypeInfo() :?> GenericTypeParameterBuilder)) 
-#else
     let genpBs = genArgs |> Array.map (fun x -> (x :?> GenericTypeParameterBuilder)) 
-#endif
     gps |> List.iteri (fun i (gp: ILGenericParameterDef) ->
         let gpB = genpBs.[i]
         // the Constraints are either the parent (base) type or interfaces.
@@ -1578,7 +1571,7 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
           // Method generic type parameters         
           buildGenParamsPass1 emEnv methB.DefineGenericParametersAndLog mdef.GenericParams
           let genArgs = getGenericArgumentsOfMethod methB 
-          let emEnv = envPushTyvars emEnv (Array.append (getGenericArgumentsOfType (typB.AsType())) genArgs)
+          let emEnv = envPushTyvars emEnv (Array.append (getGenericArgumentsOfType typB) genArgs)
           buildGenParamsPass1b cenv emEnv genArgs mdef.GenericParams
 
           // Set parameter and return types (may depend on generic args)
@@ -1625,7 +1618,7 @@ let rec buildMethodPass3 cenv tref modB (typB: TypeBuilder) emEnv (mdef: ILMetho
        
           let methB = envGetMethB emEnv mref
           let emEnv = envPushTyvars emEnv (Array.append
-                                             (getGenericArgumentsOfType (typB.AsType()))
+                                             (getGenericArgumentsOfType typB)
                                              (getGenericArgumentsOfMethod methB))
 
           if not (Array.isEmpty mdef.Return.CustomAttrs.AsArray) then
@@ -1728,7 +1721,7 @@ let buildEventPass3 cenv (typB: TypeBuilder) emEnv (eventDef: ILEventDef) =
 //----------------------------------------------------------------------------
   
 let buildMethodImplsPass3 cenv _tref (typB: TypeBuilder) emEnv (mimpl: IL.ILMethodImplDef) =
-    let bodyMethInfo = convMethodRef cenv emEnv (typB.AsType()) mimpl.OverrideBy.MethodRef // doc: must be MethodBuilder
+    let bodyMethInfo = convMethodRef cenv emEnv typB mimpl.OverrideBy.MethodRef // doc: must be MethodBuilder
     let (OverridesSpec (mref, dtyp)) = mimpl.Overrides
     let declMethTI = convType cenv emEnv dtyp 
     let declMethInfo = convMethodRef cenv emEnv declMethTI mref
@@ -1832,7 +1825,7 @@ and buildTypeTypeDef cenv emEnv modB (typB: TypeBuilder) nesting tdef =
 let rec buildTypeDefPass1b cenv nesting emEnv (tdef: ILTypeDef) = 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     let typB = envGetTypB emEnv tref
-    let genArgs = getGenericArgumentsOfType (typB.AsType())
+    let genArgs = getGenericArgumentsOfType typB
     let emEnv = envPushTyvars emEnv genArgs
     // Parent may reference types being defined, so has to come after it's Pass1 creation 
     tdef.Extends |> Option.iter (fun ty -> typB.SetParentAndLog (convType cenv emEnv ty))
@@ -1850,7 +1843,7 @@ let rec buildTypeDefPass1b cenv nesting emEnv (tdef: ILTypeDef) =
 let rec buildTypeDefPass2 cenv nesting emEnv (tdef: ILTypeDef) = 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     let typB = envGetTypB emEnv tref
-    let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
+    let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType typB)
     // add interface impls
     tdef.Implements |> convTypes cenv emEnv |> List.iter (fun implT -> typB.AddInterfaceImplementationAndLog implT)
     // add methods, properties
@@ -1870,7 +1863,7 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef: ILTypeDef) =
 let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef: ILTypeDef) =
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     let typB = envGetTypB emEnv tref
-    let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
+    let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType typB)
     // add method bodies, properties, events
     tdef.Methods |> Seq.iter (buildMethodPass3 cenv tref modB typB emEnv)
     tdef.Properties.AsList |> List.iter (buildPropertyPass3 cenv tref typB emEnv)

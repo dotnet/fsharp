@@ -509,7 +509,7 @@ let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showT
     reportTime showTimes "PDB: Closed"
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None 0L None
 
-let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk =
+let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes (fpdb:string) cvChunk pdbChunk =
     reportTime showTimes "PDB: Closed"
     let fn = Path.GetFileName fpdb
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) uncompressedLength (Some stream)

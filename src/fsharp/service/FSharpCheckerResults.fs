@@ -1590,7 +1590,7 @@ module internal ParseAndCheckFile =
         errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
 
 
-    let ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure: LoadClosure option, tcImports: TcImports, backgroundDiagnostics) = 
+    let ApplyLoadClosure(tcConfig, parsedMainInput, (mainInputFileName: string), loadClosure: LoadClosure option, tcImports: TcImports, backgroundDiagnostics) = 
 
         // If additional references were brought in by the preprocessor then we need to process them
         match loadClosure with
