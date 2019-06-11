@@ -30,7 +30,7 @@ module Utilities =
     type System.Object with
         member this.GetPropertyValue(propName) = this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
         member this.SetPropertyValue(propName, propValue) = this.GetType().GetProperty(propName, BindingFlags.Public).SetValue(this, propValue, null)
-        member this.GetMethod(methodName, argTypes) = this.GetType().GetMethod(methodName, argTypes, [||])
+        member this.GetMethod(methodName:string, argTypes:Type[]) = this.GetType().GetMethod(methodName, argTypes, [||])
 
     type TaskItem (itemSpec:string) =
         let assembly = Assembly.Load(new AssemblyName("Microsoft.Build.Utilities.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"))

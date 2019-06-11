@@ -207,9 +207,11 @@ function BuildSolution {
 
   # build bootstrap tools
   bootstrap_config=Proto
+  bootstrap_tfm=netcoreapp2.1
   MSBuild "$repo_root/src/buildtools/buildtools.proj" \
     /restore \
     /p:Configuration=$bootstrap_config \
+    /nodeReuse:false \
     /t:Build
 
   bootstrap_dir=$artifacts_dir/Bootstrap
@@ -217,14 +219,15 @@ function BuildSolution {
   cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
   cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
 
-  bootstrap_config=Proto
   MSBuild "$repo_root/proto.proj" \
     /restore \
     /p:Configuration=$bootstrap_config \
+    /p:TargetFrameworks=$bootstrap_tfm \
+    /nodeReuse:false \
     /t:Build
 
-  cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsi/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  cp $artifacts_dir/bin/fsc/$bootstrap_config/$bootstrap_tfm/* $bootstrap_dir
+  cp $artifacts_dir/bin/fsi/$bootstrap_config/$bootstrap_tfm/* $bootstrap_dir
 
   # do real build
   MSBuild $toolset_build_proj \
@@ -241,6 +244,7 @@ function BuildSolution {
     /p:ContinuousIntegrationBuild=$ci \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
+    /nodeReuse:false \
     $properties
 }
 

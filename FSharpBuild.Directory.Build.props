@@ -12,7 +12,7 @@
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
     <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
     <ProtoOutputPath Condition="'$(OS)' != 'Unix'">$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
-    <ProtoOutputPath Condition="'$(OS)' == 'Unix'">$(ArtifactsDir)/fsc/Proto/netcoreapp2.1</ProtoOutputPath>
+    <ProtoOutputPath Condition="'$(OS)' == 'Unix'">$(ArtifactsDir)/bin/fsc/Proto/netcoreapp2.1</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
   </PropertyGroup>
@@ -76,6 +76,7 @@
     <RepositoryUrl Condition="'$(RepositoryUrl)' == ''">https://github.com/Microsoft/visualfsharp</RepositoryUrl>
     <RepositoryType Condition="'$(RepositoryType)' == ''">git</RepositoryType>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(FSharpSourceBuild)' == 'true' AND '$(RepositoryCommit)' == ''">
     <_DotGitDir>$(RepoRoot).git</_DotGitDir>
     <_HeadFileContent Condition="Exists('$(_DotGitDir)/HEAD')">$([System.IO.File]::ReadAllText('$(_DotGitDir)/HEAD').Trim())</_HeadFileContent>
@@ -94,12 +95,34 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- SDK targets override -->
+ <!-- SDK targets override -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
     <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
     <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
     <FSharpOverridesTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+  </PropertyGroup>
+
+  <!-- configure compiler to build with on windows -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)') and '$(OS)' != 'Unix'">
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+    <FscToolPath>$(ProtoOutputPath)</FscToolPath>
+    <FsiToolPath>$(ProtoOutputPath)</FsiToolPath>
+    <FscToolExe>fsc.exe</FscToolExe>
+    <FsiToolExe>fsi.exe</FsiToolExe>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
+    <DotnetFsiCompilerPath></DotnetFsiCompilerPath>
+  </PropertyGroup>
+
+  <!-- configure compiler to build with on unix -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)') and '$(OS)' == 'Unix'">
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+    <FscToolPath>$([System.IO.Path]::GetDirectoryName('$(DOTNET_HOST_PATH)'))</FscToolPath>
+    <FsiToolPath>$([System.IO.Path]::GetDirectoryName('$(DOTNET_HOST_PATH)'))</FsiToolPath>
+    <FscToolExe>dotnet</FscToolExe>
+    <FsiToolExe>dotnet</FsiToolExe>
+    <DotnetFscCompilerPath>$(ProtoOutputPath)\fsc.exe</DotnetFscCompilerPath>
+    <DotnetFsiCompilerPath>$(ProtoOutputPath)\$(TargetFramework)\fsi.exe</DotnetFsiCompilerPath>
   </PropertyGroup>
 
 </Project>

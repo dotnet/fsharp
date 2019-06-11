@@ -2,10 +2,18 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
+  <PropertyGroup Condition="'$Configuration'=='Proto'">
+    <TargetFrameworks Condition="'$(TargetFrameworks)'=='' and '$(OS)' != 'Unix'">net472</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworks)'=='' and '$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$Configuration'!='Proto'">
     <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetExt>.exe</TargetExt>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>

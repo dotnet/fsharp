@@ -5,18 +5,20 @@
     <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)'==''">
+    <TargetFramework Condition="'$(OS)' != 'Unix'">net472</TargetFramework>
+    <TargetFramework Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
   <ItemGroup>
     <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj">
-      <AdditionalProperties Condition="'$(OS)' != 'Unix'">TargetFramework=net472</AdditionalProperties>
-      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=$(TargetFramework)</AdditionalProperties>
     </Projects>
     <Projects Include="src\fsharp\fsc\fsc.fsproj">
-      <AdditionalProperties Condition="'$(OS)' != 'Unix'">TargetFramework=net472</AdditionalProperties>
-      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=$(TargetFramework)</AdditionalProperties>
     </Projects>
     <Projects Include="src\fsharp\fsi\fsi.fsproj">
-      <AdditionalProperties Condition="'$(OS)' != 'Unix'">TargetFramework=net472</AdditionalProperties>
-      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=$(TargetFramework)</AdditionalProperties>
     </Projects>
   </ItemGroup>
 

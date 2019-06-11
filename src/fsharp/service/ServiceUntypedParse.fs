@@ -32,17 +32,17 @@ module SourceFile =
     let private singleFileProjectExtensions = CompileOps.FSharpScriptFileSuffixes
 
     /// Whether or not this file is compilable
-    let IsCompilable file =
+    let IsCompilable (file:string) =
         let ext = Path.GetExtension file
         compilableExtensions |> List.exists(fun e->0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
 
     /// Whether or not this file should be a single-file project
-    let MustBeSingleFileProject file =
+    let MustBeSingleFileProject (file:string) =
         let ext = Path.GetExtension file
         singleFileProjectExtensions |> List.exists(fun e-> 0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
 
 module SourceFileImpl =
-    let IsInterfaceFile file =
+    let IsInterfaceFile (file:string) =
         let ext = Path.GetExtension file
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 

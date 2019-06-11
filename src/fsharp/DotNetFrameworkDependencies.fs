@@ -112,7 +112,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                 None
         | _ -> None
 
-    let isInReferenceAssemblyPackDirectory filename =
+    let isInReferenceAssemblyPackDirectory (filename:string) =
         match getFrameworkRefsPackDirectoryPath with
         | Some appRefDir ->
             let path = Path.GetDirectoryName(filename)

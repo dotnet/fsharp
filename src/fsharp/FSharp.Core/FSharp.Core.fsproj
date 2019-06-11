@@ -2,10 +2,18 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
+  <PropertyGroup Condition="'$Configuration'=='Proto'">
+    <TargetFrameworks Condition="'$(TargetFrameworks)'=='' and '$(OS)' != 'Unix'">net472</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworks)'=='' and '$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$Configuration'!='Proto'">
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>

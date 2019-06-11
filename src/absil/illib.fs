@@ -556,14 +556,14 @@ module String =
     let split options (separator: string []) (value: string) = 
         if isNull value then null else value.Split(separator, options)
 
-    let (|StartsWith|_|) pattern value =
+    let (|StartsWith|_|) (pattern:string) value =
         if String.IsNullOrWhiteSpace value then
             None
         elif value.StartsWithOrdinal pattern then
             Some()
         else None
 
-    let (|Contains|_|) pattern value =
+    let (|Contains|_|) (pattern:string) value =
         if String.IsNullOrWhiteSpace value then
             None
         elif value.Contains pattern then
