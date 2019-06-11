@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.CompileOps
 
 open System
-open System.IO
 open System.Text
 open System.Collections.Generic
 open Internal.Utilities
@@ -645,7 +644,6 @@ type TcImports =
     static member BuildFrameworkTcImports     : CompilationThreadToken * TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> Cancellable<TcGlobals * TcImports>
     static member BuildNonFrameworkTcImports  : CompilationThreadToken * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> Cancellable<TcImports>
     static member BuildTcImports              : CompilationThreadToken * TcConfigProvider -> Cancellable<TcGlobals * TcImports>
-    static member BuildResolvedTcImports      : CompilationThreadToken * TcConfigProvider * AssemblyResolution list -> Cancellable<TcGlobals * TcImports>
 
 //----------------------------------------------------------------------------
 // Special resources in DLLs
@@ -710,12 +708,6 @@ val DefaultReferencesForScriptsAndOutOfProjectSources: bool -> string list
 
 /// Parse one input file
 val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: (bool * bool) * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
-
-/// Parse one input source text
-val ParseOneInputSourceText: TcConfig * Lexhelp.LexResourceManager * string list * string * ISourceText * isLastCompiland: (bool * bool) * ErrorLogger -> ParsedInput option
-
-/// Parse one input stream
-val ParseOneInputStream: TcConfig * Lexhelp.LexResourceManager * string list * string * Stream * isLastCompiland: (bool * bool) * ErrorLogger -> ParsedInput option
 
 //----------------------------------------------------------------------------
 // Type checking and querying the type checking state

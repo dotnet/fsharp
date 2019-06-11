@@ -72,7 +72,7 @@ module TcAccumulator =
                 }
             )
 
-        let! (tcGlobals, tcImports) = TcImports.BuildResolvedTcImports (ctok, tcConfigP, assemblyResolutions)
+        let! (tcGlobals, tcImports) = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, assemblyResolutions, [])
 
 #if !NO_EXTENSIONTYPING
         tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 

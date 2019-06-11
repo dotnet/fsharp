@@ -3482,22 +3482,6 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
             ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
        else error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None
-    
-let ParseOneInputSourceText (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, sourceText, isLastCompiland, errorLogger) =
-    try 
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf sourceText
-        ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
-    with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None
-    
-let ParseOneInputStream (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, stream: Stream, isLastCompiland, errorLogger) =
-    try 
-        let streamReader = new StreamReader(stream) // don't dispose of stream reader
-        let lexbuf = 
-            UnicodeLexing.FunctionAsLexbuf (fun (chars, start, length) ->
-                streamReader.ReadBlock (chars, start, length)
-            )
-        ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
-    with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None   
 
 [<Sealed>] 
 type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list, unresolved: UnresolvedAssemblyReference list) = 
@@ -4782,9 +4766,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkReferences, knownUnresolved)
         return tcGlobals, tcImports
       }
-
-    static member BuildResolvedTcImports(ctok, tcConfigP: TcConfigProvider, assemblyResolutions) =
-        TcImports.BuildFrameworkTcImports (ctok, tcConfigP, assemblyResolutions, [])
         
     interface System.IDisposable with 
         member tcImports.Dispose() = 
