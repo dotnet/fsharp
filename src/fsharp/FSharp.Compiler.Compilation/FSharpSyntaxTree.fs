@@ -165,6 +165,13 @@ type FSharpSyntaxNodeKind =
         | FSharpSyntaxNodeKind.Attribute item ->
             item.Range
 
+[<Flags>]
+type FSharpSyntaxTokenQueryFlags =
+    | None =                0x00
+    | IncludeComments =     0x01
+    | IncludeWhitespace =   0x10
+    | IncludeTrivia =       0x11
+
 type private RawTokenLineMap = Dictionary<int, ResizeArray<Parser.token * range * TextSpan>>
 
 [<AbstractClass>]
@@ -701,6 +708,26 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
             while nodeOpt.IsSome do
                 yield nodeOpt.Value
                 nodeOpt <- nodeOpt.Value.Parent
+        }
+
+    member this.GetDescendantTokens (?tokenQueryFlags: FSharpSyntaxTokenQueryFlags) =
+        let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
+        let allRawTokens: RawTokenLineMap = this.AllRawTokens
+
+        seq {
+            for i = this.Range.StartLine to this.Range.EndLine do
+                match allRawTokens.TryGetValue i with
+                | true, lineTokens ->
+                    for columnIndex = 0 to lineTokens.Count - 1 do
+                        let rawToken, range, span = lineTokens.[columnIndex]
+                        if rangeContainsRange this.Range range then
+                            match rawToken with
+                            | Parser.token.WHITESPACE _ when int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeWhitespace) = 0 -> ()
+                            | Parser.token.COMMENT _ when int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeComments) = 0 -> ()
+                            | _ ->
+                                yield FSharpSyntaxToken (lazy this.FindNode range, rawToken, range, span, columnIndex)
+                | _ ->
+                    ()
         }
 
     member this.GetRoot () =

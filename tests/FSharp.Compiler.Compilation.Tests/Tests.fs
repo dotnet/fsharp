@@ -210,6 +210,8 @@ type Class1 (* inside comment *) () =
         Assert.True token3.IsIdentifier
         Assert.AreEqual ("Class1", token3.TryGetText().Value)
 
+        let descendantTokens = token3.ParentNode.Parent.Value.Parent.Value.GetDescendantTokens () |> Array.ofSeq
+
         let token4 = token3.TryGetNextToken().Value
         Assert.True token4.IsWhitespace
 

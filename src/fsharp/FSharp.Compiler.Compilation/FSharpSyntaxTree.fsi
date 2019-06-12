@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System
 open System.Threading
 open System.Collections.Generic
 open System.Collections.Immutable
@@ -63,6 +64,13 @@ type FSharpSyntaxNodeKind =
     | AttributeList of SynAttributeList
     | Attribute of SynAttribute
 
+[<Flags>]
+type FSharpSyntaxTokenQueryFlags =
+    | None =                0x00
+    | IncludeComments =     0x01
+    | IncludeWhitespace =   0x10
+    | IncludeTrivia =       0x11
+
 [<Sealed>]
 type FSharpSyntaxToken =
 
@@ -103,6 +111,8 @@ and [<Sealed>] FSharpSyntaxNode =
     member GetAncestors: unit -> FSharpSyntaxNode seq
 
     member GetAncestorsAndSelf: unit -> FSharpSyntaxNode seq
+
+    member GetDescendantTokens: ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags -> FSharpSyntaxToken seq
 
     member GetRoot: unit -> FSharpSyntaxNode
 
