@@ -59,7 +59,7 @@ type internal InlineRenameLocationSet(locations: FSharpInlineRenameLocation [], 
                     match symbolKind with
                     | LexerSymbolKind.GenericTypeParameter
                     | LexerSymbolKind.StaticallyResolvedTypeParameter -> replacementText
-                    | _ -> Lexhelp.Keywords.NormalizeIdentifierBackticks replacementText
+                    | _ -> Keywords.NormalizeIdentifierBackticks replacementText
                 return 
                     { new IFSharpInlineRenameReplacementInfo with
                         member __.NewSolution = newSolution

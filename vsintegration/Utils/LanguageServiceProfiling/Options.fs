@@ -190,6 +190,8 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\service\ServiceUntypedParse.fs"
              @"src\utils\reshapedmsbuild.fs"
              @"src\fsharp\SimulatedMSBuildReferenceResolver.fs"
+             @"src\fsharp\service\FSharpCheckerResults.fsi"
+             @"src\fsharp\service\FSharpCheckerResults.fs"
              @"src\fsharp\service\service.fsi"
              @"src\fsharp\service\service.fs"
              @"src\fsharp\service\SimpleServices.fsi"

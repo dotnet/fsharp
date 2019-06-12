@@ -8,13 +8,11 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open FSharp.Compiler
 open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
 open System.Runtime.Caching
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
