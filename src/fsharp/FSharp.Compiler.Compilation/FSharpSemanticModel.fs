@@ -164,55 +164,6 @@ module FSharpSemanticModelHelpers =
 
                 | _ -> []
 
-//[<NoEquality;NoComparison>]
-//type BinderKind =
-//    | NormalBind of resolutions: Dictionary<int, ResizeArray<CapturedNameResolution>>
-//    | SpeculativeBind of m: range * nenv: NameResolutionEnv *ad: AccessibilityLogic.AccessorDomain
-
-//[<Sealed>]
-//type Binder (senv: SymbolEnv, kind: BinderKind) =
-
-//    member __.TryBindModuleOrNamespace (node: FSharpSyntaxNode) =
-//            match node.Kind, (node.Parent |> Option.map (fun x -> x.Kind)) with
-//            | FSharpSyntaxNodeKind.Ident (index, id), Some (FSharpSyntaxNodeKind.ModuleOrNamespace (SynModuleOrNamespace (longId=longId))) ->
-//                match kind with
-//                | NormalBind resolutions ->
-//                    match resolutions.TryGetValue node.Range.EndLine with
-//                    | true, cnrs ->
-//                        cnrs
-//                        |> Seq.tryFind (fun cnr -> Range.equals cnr.Range node.Range)
-//                        |> Option.map (fun cnr ->
-//                            cnr.NameResolutionEnv.
-//                            let symbol = FSharpSymbol.Create (senv, cnr.Item)
-//                            FSharpSymbolUse (senv.g, cnr.DisplayEnv, symbol, cnr.ItemOccurence, cnr.Range)
-//                        )
-//                    | _ ->
-//                        None
-//                | SpeculativeBind (m, nenv, ad) ->
-//                    match
-//                        ResolveLongIndentAsModuleOrNamespace 
-//                            TcResultsSink.NoSink 
-//                            ResultCollectionSettings.AtMostOneResult 
-//                            senv.amap
-//                            m
-//                            (index = 0)
-//                            OpenQualified
-//                            nenv
-//                            ad
-//                            id
-//                            longId.[..(index - 1)]
-//                            false with
-//                    | Result results ->
-//                        match results with
-//                        | [(_, modref, _)] -> 
-//                            let item = Item.ModuleOrNamespaces [modref]
-//                            let symbol = FSharpSymbol.Create (senv, item)
-//                            FSharpSymbolUse (senv.g, nenv.DisplayEnv, symbol, ItemOccurence.)
-//                        | _ -> None
-//                    | Exception _ -> None
-//            | _ ->
-//                None
-
 [<Sealed>]
 type FSharpSyntaxReference (syntaxTree: FSharpSyntaxTree, span: TextSpan) =
 
