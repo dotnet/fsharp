@@ -26,15 +26,34 @@ type ProtocolTests() =
             startInfo.RedirectStandardOutput <- true
             let proc = Process.Start(startInfo)
 
-            // create a fake client
+            // create a fake client over stdin/stdout
             let client = new JsonRpc(proc.StandardInput.BaseStream, proc.StandardOutput.BaseStream)
             client.StartListening()
 
             // initialize
-            let! capabilitites = client.InvokeAsync<ServerCapabilities>("initialize", "") |> Async.AwaitTask
-            Assert.True(capabilitites.hoverProvider)
+            let capabilities =
+                    { ClientCapabilities.workspace = None
+                      textDocument = None
+                      experimental = None
+                      supportsVisualStudioExtensions = None }
+            let! result =
+                client.InvokeAsync<InitializeResult>(
+                    "initialize", // method
+                    0, // processId
+                    "rootPath",
+                    "rootUri",
+                    null, // initializationOptions
+                    capabilities, // client capabilities
+                    "none") // trace
+                    |> Async.AwaitTask
+            Assert.True(result.capabilities.hoverProvider)
+            do! client.NotifyAsync("initialized") |> Async.AwaitTask
 
-            // shutdown the server
-            do! client.NotifyAsync("shutdown") |> Async.AwaitTask
+            // shutdown
+            let! shutdownResponse = client.InvokeAsync<obj>("shutdown") |> Async.AwaitTask
+            Assert.IsNull(shutdownResponse)
+
+            // exit
+            do! client.NotifyAsync("exit") |> Async.AwaitTask
             if not (proc.WaitForExit(5000)) then failwith "Expected server process to exit."
         } |> Async.StartAsTask :> Task
