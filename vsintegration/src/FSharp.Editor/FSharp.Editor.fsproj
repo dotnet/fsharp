@@ -171,6 +171,7 @@
     <PackageReference Include="System.Design" Version="$(SystemDesignVersion)" />
     <PackageReference Include="System.ValueTuple" Version="$(SystemValueTupleVersion)" />
     <PackageReference Include="VSSDK.VSLangProj" Version="$(VSSDKVSLangProjVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+	<PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
   </ItemGroup>
 
   <ItemGroup>
