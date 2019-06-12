@@ -27,8 +27,12 @@
                 <!-- this group box should be disabled for branch `release/dev16.2`, enabled otherwise -->
                 <!--
                 <GroupBox Header="{x:Static local:Strings.Use_out_of_process_language_server}">
-                    <CheckBox x:Name="usePreviewTextHover" IsChecked="{Binding UsePreviewTextHover}"
-                              Content="{x:Static local:Strings.Text_hover}" />
+                    <StackPanel>
+                        <CheckBox x:Name="usePreviewTextHover" IsChecked="{Binding UsePreviewTextHover}"
+                                  Content="{x:Static local:Strings.Text_hover}" />
+                        <CheckBox x:Name="usePreviewDiagnostics" IsChecked="{Binding UsePreviewDiagnostics}"
+                                  Content="{x:Static local:Strings.Diagnostics}" />
+                    </StackPanel>
                 </GroupBox>
                 -->
             </StackPanel>
