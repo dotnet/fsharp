@@ -11,8 +11,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="State.fs" />
+    <Compile Include="JsonDUConverter.fs" />
+    <Compile Include="JsonOptionConverter.fs" />
     <Compile Include="LspTypes.fs" />
+    <Compile Include="LspExternalAccess.fs" />
+    <Compile Include="State.fs" />
     <Compile Include="TextDocument.fs" />
     <Compile Include="Methods.fs" />
     <Compile Include="Server.fs" />
@@ -27,5 +30,20 @@
   <ItemGroup>
     <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
   </ItemGroup>
+
+  <Target Name="GatherPublishedProjectOutputGroupItems"
+          DependsOnTargets="Publish">
+    <ItemGroup>
+      <_PublishedProjectOutputGroupFiles Include="$(PublishDir)\**" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="PublishedProjectOutputGroup"
+          Returns="@(PublishedProjectOutputGroupOutput)"
+          DependsOnTargets="GatherPublishedProjectOutputGroupItems">
+    <ItemGroup>
+      <PublishedProjectOutputGroupOutput Include="@(_PublishedProjectOutputGroupFiles)" TargetPath="Agent\%(RecursiveDir)%(FileName)%(Extension)" />
+    </ItemGroup>
+  </Target>
 
 </Project>
