@@ -667,7 +667,7 @@ and [<Sealed>] FSharpSyntaxToken (lazyParent: Lazy<FSharpSyntaxNode>, token: Par
         | _ ->
             None
 
-and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
+and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
     let lazyRange = lazy kind.Range
 
@@ -783,7 +783,33 @@ and [<Sealed>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FS
         | _ ->
             None
 
+    member private this.DebugString = 
+        let span =
+            match this.Text.TryRangeToSpan kind.Range with
+            | ValueSome span -> span
+            | _ -> failwith "should not happen"
+        this.Text.GetSubText(span).ToString () 
+
 and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, changes: IReadOnlyList<TextChangeRange>) as this =
+
+    static let unnecessary = [|WellKnownDiagnosticTags.Unnecessary;WellKnownDiagnosticTags.Telemetry|]
+
+    static let convertError (error: FSharpErrorInfo) (location: Location) =
+        // Normalize the error message into the same format that we will receive it from the compiler.
+        // This ensures that IntelliSense and Compiler errors in the 'Error List' are de-duplicated.
+        // (i.e the same error does not appear twice, where the only difference is the line endings.)
+        let normalizedMessage = error.Message |> ErrorLogger.NormalizeErrorString |> ErrorLogger.NewlineifyErrorString
+
+        let id = "FS" + error.ErrorNumber.ToString("0000")
+        let emptyString = LocalizableString.op_Implicit("")
+        let description = LocalizableString.op_Implicit(normalizedMessage)
+        let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let customTags = 
+            match error.ErrorNumber with
+            | 1182 -> unnecessary
+            | _ -> null
+        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
+        Diagnostic.Create(descriptor, location)
 
     let gate = obj ()
     let mutable lazyText = ValueNone
@@ -881,10 +907,18 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
             | _ ->
                 FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])
 
-    //member this.GetDiagnostics ?ct =
-    //    let ct = defaultArg ct CancellationToken.None
-    //    let _, errors = this.GetParseResult ct
-    //    let diagnostics = ImmutableArray.CreateBuilder (errors.Length)
-    //    diagnostics.Count <- errors.Length
-    //    for i = 0 to errors.Length - 1 do
-    //        diagnostics.[i] <- Diagnostic.
+    member this.GetDiagnostics ?ct =
+        let ct = defaultArg ct CancellationToken.None
+        let text = this.GetText ct
+        let _, errors = this.GetParseResult ct
+        let diagnostics = ImmutableArray.CreateBuilder (errors.Length)
+        diagnostics.Count <- errors.Length
+        for i = 0 to errors.Length - 1 do
+            let error, severity = errors.[i]
+            let isError = match severity with FSharpErrorSeverity.Error -> true | _ -> false
+            let error = FSharpErrorInfo.CreateFromException (error, isError, range0, suggestNames = false)
+            let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn), LinePosition(error.EndLineAlternate - 1, error.EndColumn))
+            let textSpan = text.Lines.GetTextSpan(linePositionSpan)
+            let location = Location.Create(filePath, textSpan, linePositionSpan)
+            diagnostics.[i] <- convertError error location
+        diagnostics.ToImmutable ()

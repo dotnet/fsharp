@@ -108,24 +108,27 @@ type CompilationTests () =
     [<Test>]
     member __.``Find Symbol - Basic`` () =
         let textString = """
-module TestModuleCompilationTest =
+module TestModuleCompilationTest
 
-    type CompiltationTest<'T> () =
+type CompiltationTest<'T> () =
 
-                    member val X = 1
+                member val X = 1
 
-                    member val Y = 2
+                member val Y = 2
 
-                    member val Z = 3
+                member val Z = 3
                     
-    let testFunction (x: CompilationTest) =
-        x.X + x.Y + x.Z"""
+let testFunction (x: CompilationTest) =
+    x.X + x.Y + x.Z"""
 
         let semanticModel, _ = getSemanticModel (SourceText.From textString)
 
         let position = textString.IndexOf("""CompiltationTest<'T> ()""")
         let symbol = semanticModel.TryGetEnclosingSymbol (position, CancellationToken.None)
         Assert.True (symbol.IsSome)
+
+        let diagnostics = semanticModel.SyntaxTree.GetDiagnostics ()
+        Assert.True (diagnostics.IsEmpty)
 
     [<Test>]
     member __.``Find Symbol - Basic - Speculative`` () =

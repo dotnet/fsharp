@@ -13,6 +13,7 @@ open FSharp.Compiler.CompileOps
 open FSharp.Compiler
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
+open Microsoft.CodeAnalysis
 
 [<NoEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSyntaxNodeKind =
@@ -136,3 +137,5 @@ and [<Sealed>] FSharpSyntaxTree =
     member GetText: CancellationToken -> SourceText
 
     member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree
+
+    member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
