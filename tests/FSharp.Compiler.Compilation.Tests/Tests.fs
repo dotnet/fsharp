@@ -110,7 +110,7 @@ type CompilationTests () =
         let textString = """
 module TestModuleCompilationTest =
 
-    type CompiltationTest () =
+    type CompiltationTest<'T> () =
 
                     member val X = 1
 
@@ -123,7 +123,7 @@ module TestModuleCompilationTest =
 
         let semanticModel, _ = getSemanticModel (SourceText.From textString)
 
-        let position = textString.IndexOf("""CompiltationTest ()""")
+        let position = textString.IndexOf("""CompiltationTest<'T> ()""")
         let symbol = semanticModel.TryGetEnclosingSymbol (position, CancellationToken.None)
         Assert.True (symbol.IsSome)
 

@@ -310,6 +310,7 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
                 candidateSymbols.Add candidateSymbol
                 if Range.equals node.Range cnr.Range then
                     symbol <- ValueSome candidateSymbol // no longer a candidate
+            i <- i + 1
 
         match symbol with
         | ValueSome symbol ->
