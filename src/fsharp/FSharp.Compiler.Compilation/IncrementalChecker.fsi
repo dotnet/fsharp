@@ -30,6 +30,8 @@ type internal IncrementalChecker =
 
     member CheckAsync: filePath: string -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
 
+    member SpeculativeCheckAsync: filePath: string * TcState * Ast.SynExpr -> Async<(Tast.TType * TcResultsSinkImpl) option>
+
     member GetSyntaxTree: filePath: string -> FSharpSyntaxTree
 
     member TcInitial: TcInitial

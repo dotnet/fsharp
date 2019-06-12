@@ -35,6 +35,8 @@ type FSharpSemanticModel =
 
     member TryGetEnclosingSymbol: position: int * ct: CancellationToken -> FSharpSymbol option
 
+    member GetSpeculativeSymbolInfo: position: int * node: FSharpSyntaxNode * ct: CancellationToken -> FSharpSymbolInfo
+
     member SyntaxTree: FSharpSyntaxTree
 
     member internal CompilationObj: obj

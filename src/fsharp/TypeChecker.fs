@@ -220,6 +220,8 @@ type TcEnv =
 
     override tenv.ToString() = "TcEnv(...)"
 
+    interface ITypeCheckEnv
+
 /// Compute the value of this computed, cached field
 let computeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType = 
     AccessibleFrom (eAccessPath :: eInternalsVisibleCompPaths, eFamilyType) // env.eAccessRights 
@@ -323,6 +325,7 @@ let AddLocalValMap tcSink scopem (vals: Val NameMap) env =
             { env with
                 eNameResEnv = AddValMapToNameEnv vals env.eNameResEnv
                 eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
@@ -335,6 +338,7 @@ let AddLocalVals tcSink scopem (vals: Val list) env =
             { env with
                 eNameResEnv = AddValListToNameEnv vals env.eNameResEnv
                 eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
@@ -343,6 +347,7 @@ let AddLocalVal tcSink scopem v env =
     let env = { env with
                     eNameResEnv = AddValRefToNameEnv env.eNameResEnv (mkLocalValRef v)
                     eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems }
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
@@ -350,6 +355,8 @@ let AddLocalVal tcSink scopem v env =
 let AddLocalExnDefnAndReport tcSink scopem env (exnc: Tycon) =
     let env = { env with eNameResEnv = AddExceptionDeclsToNameEnv BulkAdd.No env.eNameResEnv (mkLocalEntityRef exnc) }
     // Also make VisualStudio think there is an identifier in scope at the range of the identifier text of its binding location
+    CallTypeCheckEnvSink tcSink (exnc.Range, env)
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (exnc.Range, env.NameEnv, env.eAccessRights)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
@@ -367,6 +374,7 @@ let AddLocalTycons g amap m (tycons: Tycon list) env =
 /// Add a list of type definitions to TcEnv and report them to the sink
 let AddLocalTyconsAndReport tcSink scopem g amap m tycons env = 
     let env = AddLocalTycons g amap m tycons env
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
@@ -375,6 +383,7 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
         { env with eNameResEnv = AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
     env
@@ -419,6 +428,7 @@ let AddLocalRootModuleOrNamespace tcSink g amap scopem env (mtyp: ModuleOrNamesp
     let env = { env with
                     eNameResEnv = if isNil tcrefs then env.eNameResEnv else AddTyconRefsToNameEnv BulkAdd.No false g amap scopem true env.eNameResEnv tcrefs
                     eUngeneralizableItems = addFreeItemOfModuleTy mtyp env.eUngeneralizableItems }
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
@@ -428,6 +438,7 @@ let AddModuleAbbreviationAndReport tcSink scopem id modrefs env =
         if isNil modrefs then env else
         { env with eNameResEnv = AddModuleAbbrevToNameEnv id env.eNameResEnv modrefs }
 
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     let item = Item.ModuleOrNamespaces modrefs
     CallNameResolutionSink tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
@@ -442,7 +453,8 @@ let AddLocalSubModule g amap m env (modul: ModuleOrNamespace) =
  
 /// Add a "module X = ..." definition to the TcEnv and report it to the sink
 let AddLocalSubModuleAndReport tcSink scopem g amap m env (modul: ModuleOrNamespace) =
-    let env = AddLocalSubModule g amap m env modul 
+    let env = AddLocalSubModule g amap m env modul
+    CallTypeCheckEnvSink tcSink (scopem, env)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
  
@@ -1528,7 +1540,8 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
 
     match cenv.tcSink.CurrentSink with 
     | Some _ when not vspec.IsCompilerGenerated && shouldNotifySink vspec -> 
-        let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
+        let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec)
+        CallTypeCheckEnvSink cenv.tcSink (vspec.Range, env)
         CallEnvSink cenv.tcSink (vspec.Range, nenv, env.eAccessRights)
         let item = Item.Value(mkLocalValRef vspec)
         CallNameResolutionSink cenv.tcSink (vspec.Range, nenv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.eAccessRights)
@@ -1866,6 +1879,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
             let values, vspecMap = 
                 let sink =
                     { new ITypecheckResultsSink with
+                        member this.NotifyEnv(_, _) = ()
                         member this.NotifyEnvWithScope(_, _, _) = () // ignore EnvWithScope reports
                         member this.NotifyNameResolution(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing) = 
                             if not m.IsSynthetic then
@@ -1890,6 +1904,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                         (AddFakeNamedValRefToNameEnv item.DisplayName nenv item), (unionRanges m merged)
                         )
                 // send notification about mergedNameEnv
+                CallTypeCheckEnvSink cenv.tcSink (mergedRange, env)
                 CallEnvSink cenv.tcSink (mergedRange, mergedNameEnv, ad)
                 // call CallNameResolutionSink for all captured name resolutions using mergedNameEnv
                 for (_, item, itemGroup, itemTyparInst, occurence, denv, _nenv, ad, m, _replacing) in nameResolutions do
@@ -7531,6 +7546,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     AddFakeNameToNameEnv nm nenv (Item.CustomOperation (nm, (fun () -> customOpUsageText (ident (nm, mBuilderVal))), Some methInfo))) }
 
     // Environment is needed for completions
+    CallTypeCheckEnvSink cenv.tcSink (comp.Range, env)
     CallEnvSink cenv.tcSink (comp.Range, env.NameEnv, ad)
 
     // Check for the [<ProjectionParameter>] attribute on an argument position
@@ -17737,3 +17753,8 @@ let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, condition
 
     return (tcEnv, sigFileType, cenv.createsGeneratedProvidedTypes)
  }
+
+let TypeCheckOneSynExpr (g, niceNameGen, amap, topCcu, conditionalDefines, tcSink, isInternalTestSpanStackReferring) env (rootSigOpt: ModuleOrNamespaceType option) isScript synExpr =
+    let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring)
+    let _, ty, _ = TcExprOfUnknownType cenv env emptyUnscopedTyparEnv synExpr
+    ty

@@ -22,6 +22,8 @@ type TcEnv =
     member NameEnv : NameResolution.NameResolutionEnv
     member AccessRights : AccessorDomain
 
+    interface NameResolution.ITypeCheckEnv
+
 val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
 val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
@@ -50,6 +52,14 @@ val TypeCheckOneSigFile :
       -> TcEnv                             
       -> ParsedSigFileInput
       -> Eventually<TcEnv * ModuleOrNamespaceType * bool>
+
+val TypeCheckOneSynExpr :
+      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * ConditionalDefines option * NameResolution.TcResultsSink * bool
+      -> TcEnv
+      -> Tast.ModuleOrNamespaceType option
+      -> isScript: bool
+      -> SynExpr
+      -> TType
 
 //-------------------------------------------------------------------------
 // Some of the exceptions arising from type checking. These should be moved to 

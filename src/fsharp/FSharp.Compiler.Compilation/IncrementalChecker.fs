@@ -247,6 +247,33 @@ type IncrementalCheckerState =
                 return (tcAcc, None)
         }
 
+    member this.SpeculativeCheckAsync (filePath: string, tcState: TcState, synExpr: SynExpr) =
+        let tcConfig = this.tcConfig
+        let tcGlobals = this.tcGlobals
+        let tcImports = this.tcImports
+
+        async {
+            let! ct = Async.CancellationToken
+
+            let syntaxTree = this.GetSyntaxTree filePath
+            let (inputOpt, _) = syntaxTree.GetParseResult ct
+            match inputOpt with
+            | Some input ->
+                let fullComputation =           
+                    CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->                        
+                        ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filePath) |> ignore
+                        let sink = TcResultsSinkImpl tcGlobals
+                        TryTypeCheckOneInputSynExpr (ctok, tcConfig, tcImports, tcGlobals, TcResultsSink.WithSink sink, tcState, input, synExpr)
+                        |> Option.map (fun ty ->
+                            (ty, sink)
+                        )
+                    )
+
+                return! fullComputation
+            | _ ->
+                return None
+        }
+
 [<Sealed>]
 type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
 
@@ -267,6 +294,9 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
             | None -> return raise (InvalidOperationException ())
             | Some (sink, symbolEnv) -> return (tcAcc, sink, symbolEnv)
         }
+
+    member __.SpeculativeCheckAsync (filePath, tcState, synExpr) =
+        state.SpeculativeCheckAsync (filePath, tcState, synExpr)
 
     member __.GetSyntaxTree filePath =
         state.GetSyntaxTree filePath

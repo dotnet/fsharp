@@ -287,8 +287,12 @@ type internal CapturedNameResolution =
     /// The starting and ending position
     member Range : range
 
+type ITypeCheckEnv = interface end
+
 [<Class>]
 type internal TcResolutions = 
+
+    member CapturedTypeCheckEnvs : ResizeArray<range * ITypeCheckEnv>
 
     /// Name resolution environments for every interesting region in the file. These regions may
     /// overlap, in which case the smallest region applicable should be used.
@@ -358,6 +362,8 @@ type FormatStringCheckContext =
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
 
+    abstract NotifyEnv : range * ITypeCheckEnv -> unit
+
     /// Record that an environment is active over the given scope range
     abstract NotifyEnvWithScope   : range * NameResolutionEnv * AccessorDomain -> unit
 
@@ -415,6 +421,8 @@ val internal WithNewTypecheckResultsSink : ITypecheckResultsSink * TcResultsSink
 
 /// Temporarily suspend reporting of name resolution and type checking results
 val internal TemporarilySuspendReportingTypecheckResultsToSink : TcResultsSink -> System.IDisposable
+
+val internal CallTypeCheckEnvSink       : TcResultsSink -> range * ITypeCheckEnv -> unit
 
 /// Report the active name resolution environment for a source range
 val internal CallEnvSink                : TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit

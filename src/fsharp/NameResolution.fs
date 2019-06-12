@@ -1255,8 +1255,11 @@ type FormatStringCheckContext =
     { SourceText: ISourceText
       LineStartPositions: int[] }
 
+type ITypeCheckEnv = interface end
+
 /// An abstract type for reporting the results of name resolution and type checking.
-type ITypecheckResultsSink =
+type ITypecheckResultsSink =  
+    abstract NotifyEnv: range * ITypeCheckEnv -> unit
     abstract NotifyEnvWithScope: range * NameResolutionEnv * AccessorDomain -> unit
     abstract NotifyExprHasType: pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
     abstract NotifyNameResolution: pos * Item * Item * TyparInst * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
@@ -1475,13 +1478,15 @@ type CapturedNameResolution(p: pos, i: Item, tpinst, io: ItemOccurence, de: Disp
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
-    (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
+    (capturedTypeCheckEnvs: ResizeArray<range * ITypeCheckEnv>,
+     capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
      capturedExprTypes: ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
 
-    static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
+    static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
 
+    member this.CapturedTypeCheckEnvs = capturedTypeCheckEnvs
     member this.CapturedEnvs = capturedEnvs
     member this.CapturedExpressionTypings = capturedExprTypes
     member this.CapturedNameResolutions = capturedNameResolutions
@@ -1526,6 +1531,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
 
 /// An accumulator for the results being emitted into the tcSink.
 type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
+    let capturedTypeCheckEnvs = ResizeArray<_>()
     let capturedEnvs = ResizeArray<_>()
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<_>()
@@ -1564,7 +1570,7 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
                   LineStartPositions = positions })
 
     member this.GetResolutions() =
-        TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
+        TcResolutions(capturedTypeCheckEnvs, capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
 
     member this.GetSymbolUses() =
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
@@ -1573,6 +1579,10 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
         capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
 
     interface ITypecheckResultsSink with
+        member sink.NotifyEnv(m, env) =
+            if allowedRange m then
+                capturedTypeCheckEnvs.Add((m, env))
+
         member sink.NotifyEnvWithScope(m, nenv, ad) =
             if allowedRange m then
                 capturedEnvs.Add((m, nenv, ad))
@@ -1638,6 +1648,10 @@ let TemporarilySuspendReportingTypecheckResultsToSink (sink: TcResultsSink) =
     sink.CurrentSink <- None
     { new System.IDisposable with member x.Dispose() = sink.CurrentSink <- old }
 
+let CallTypeCheckEnvSink (sink: TcResultsSink) (scopem, env) =
+    match sink.CurrentSink with
+    | None -> ()
+    | Some sink -> sink.NotifyEnv(scopem, env)
 
 /// Report the active name resolution environment for a specific source range
 let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =

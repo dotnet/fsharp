@@ -46,6 +46,21 @@ module FSharpSemanticModelHelpers =
 
         bestSoFar
 
+    let tryGetBestCapturedTypeCheckEnvEnv p (resolutions: TcResolutions) =
+        let mutable bestSoFar = None
+        
+        resolutions.CapturedTypeCheckEnvs 
+        |> ResizeArray.iter (fun (possm,env) -> 
+            if rangeContainsPos possm p then
+                match bestSoFar with 
+                | Some (bestm,_) -> 
+                    if rangeContainsRange bestm possm then 
+                      bestSoFar <- Some (possm,env)
+                | None -> 
+                    bestSoFar <- Some (possm,env))
+
+        bestSoFar
+
     let tryFindSymbol line column (resolutions: TcResolutions) (symbolEnv: SymbolEnv) =
         let mutable result = None
 
@@ -251,6 +266,8 @@ type FSharpSymbolInfo =
         | Some symbol -> ImmutableArray.Create symbol
         | _ -> this.CandidateSymbols
 
+    static member Empty = Candidates ImmutableArray.Empty
+
 [<Sealed>]
 type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>, compilationObj: obj) =
 
@@ -266,6 +283,25 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
             let! tcAcc, sink, symbolEnv = checker.CheckAsync filePath
             return (checker, tcAcc, sink.GetResolutions (), symbolEnv)
         })
+
+    static let getSymbolInfo symbolEnv (cnrs: ResizeArray<CapturedNameResolution>) (node: FSharpSyntaxNode) =
+        let candidateSymbols = ImmutableArray.CreateBuilder ()
+        let mutable symbol = ValueNone
+        let mutable i = 0
+        while symbol.IsNone && i < cnrs.Count do
+            let cnr = cnrs.[i]
+            if rangeContainsRange node.Range cnr.Range then
+                let candidateSymbol = FSharpSymbol.Create (cnr, symbolEnv)
+                candidateSymbols.Add candidateSymbol
+                if Range.equals node.Range cnr.Range then
+                    symbol <- ValueSome candidateSymbol // no longer a candidate
+            i <- i + 1
+
+        match symbol with
+        | ValueSome symbol ->
+            FSharpSymbolInfo.ReferredByNode symbol
+        | _ ->
+            FSharpSymbolInfo.Candidates (candidateSymbols.ToImmutable ())
 
     member __.FindSymbolUsesAsync symbol =
         async {
@@ -298,25 +334,8 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
 
     member __.GetSymbolInfo (node: FSharpSyntaxNode, ct) =
         let _checker, _tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
-
         let cnrs = resolutions.CapturedNameResolutions
-        let candidateSymbols = ImmutableArray.CreateBuilder ()
-        let mutable symbol = ValueNone
-        let mutable i = 0
-        while symbol.IsNone && i < cnrs.Count do
-            let cnr = cnrs.[i]
-            if rangeContainsRange node.Range cnr.Range then
-                let candidateSymbol = FSharpSymbol.Create (cnr, symbolEnv)
-                candidateSymbols.Add candidateSymbol
-                if Range.equals node.Range cnr.Range then
-                    symbol <- ValueSome candidateSymbol // no longer a candidate
-            i <- i + 1
-
-        match symbol with
-        | ValueSome symbol ->
-            FSharpSymbolInfo.ReferredByNode symbol
-        | _ ->
-            FSharpSymbolInfo.Candidates (candidateSymbols.ToImmutable ())
+        getSymbolInfo symbolEnv cnrs node
 
     member this.TryGetEnclosingSymbol (position: int, ct) =
         let rootNode = this.SyntaxTree.GetRootNode ct
@@ -326,6 +345,36 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
             symbolInfo.TryGetSymbol ()
         | _ ->
             None
+
+    /// VERY EXPERIMENTAL.
+    /// But, if we figure out the right heuristics, this can be fantastic.
+    member this.GetSpeculativeSymbolInfo (position: int, node: FSharpSyntaxNode, ct) =
+        let rootNode = this.SyntaxTree.GetRootNode ct
+        match rootNode.TryFindToken position with
+        | Some token ->
+            match node.GetAncestorsAndSelf () |> Seq.tryPick (fun x -> match x.Kind with FSharpSyntaxNodeKind.Expr synExpr -> Some synExpr | _ -> None) with
+            | Some synExpr ->
+                let checker, tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
+                match tryGetBestCapturedTypeCheckEnvEnv token.Range.Start resolutions with
+                | Some (m, env) ->
+                    match env with
+                    | :? TcEnv as tcEnv ->
+                        let tcState = tcAcc.tcState.NextStateAfterIncrementalFragment tcEnv
+                        let resultOpt = Async.RunSynchronously (checker.SpeculativeCheckAsync (filePath, tcState, synExpr), cancellationToken = ct)
+                        match resultOpt with
+                        | Some (ty, sink) ->
+                            let specCnrs = sink.GetResolutions().CapturedNameResolutions
+                            getSymbolInfo symbolEnv specCnrs node
+                        | _ ->
+                            FSharpSymbolInfo.Empty
+                    | _ ->
+                        FSharpSymbolInfo.Empty
+                | _ ->
+                    FSharpSymbolInfo.Empty
+            | _ ->
+                FSharpSymbolInfo.Empty
+        | _ ->
+            FSharpSymbolInfo.Empty
 
     member __.SyntaxTree: FSharpSyntaxTree = lazySyntaxTree.Value
 

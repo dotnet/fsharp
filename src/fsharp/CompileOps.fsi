@@ -762,6 +762,8 @@ val TypeCheckOneInputAndFinishEventually :
     checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
+val TryTypeCheckOneInputSynExpr: CompilationThreadToken * TcConfig * TcImports * TcGlobals * NameResolution.TcResultsSink * TcState * Ast.ParsedInput * Ast.SynExpr -> TType option
+
 /// Indicates if we should report a warning
 val ReportWarning: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
 

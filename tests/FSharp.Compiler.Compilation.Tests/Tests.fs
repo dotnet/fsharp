@@ -128,6 +128,33 @@ module TestModuleCompilationTest =
         Assert.True (symbol.IsSome)
 
     [<Test>]
+    member __.``Find Symbol - Basic - Speculative`` () =
+        let textString = """
+module TestModuleCompilationTest =
+
+    type CompiltationTest<'T> () =
+
+                    member val X = 1
+
+                    member val Y = 2
+
+                    member val Z = 3
+                    
+    let testFunction (x: CompilationTest<'T>) =
+        x.X + x.Y + x.Z"""
+
+        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+
+        let position = textString.IndexOf("""x.X + x.Y + x.Z""")
+        let token = ((semanticModel.SyntaxTree.GetRootNode CancellationToken.None).TryFindToken position).Value
+        let node = token.ParentNode
+        let symbol = semanticModel.TryGetEnclosingSymbol (position, CancellationToken.None)
+        let speculativeSymbolInfo = semanticModel.GetSpeculativeSymbolInfo (position, node, CancellationToken.None)
+        Assert.True (symbol.IsSome)
+        Assert.True (speculativeSymbolInfo.TryGetSymbol().IsSome)
+        Assert.True(symbol.Value.InternalSymbolUse.Symbol.IsEffectivelySameAs (speculativeSymbolInfo.TryGetSymbol().Value.InternalSymbolUse.Symbol))
+
+    [<Test>]
     member __.``Get Completion Symbols - Open Declaration`` () =
         let semanticModel, _ = 
             getSemanticModel (SourceText.From """
