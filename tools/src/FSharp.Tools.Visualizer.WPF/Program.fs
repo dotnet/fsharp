@@ -37,6 +37,7 @@ module rec App =
                 [
                     View.Menu ([ MenuItem.MenuItem ("_File", [ exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
                     View.TextBox (true, fun _ -> ())
+                    View.TreeView
                 ],
             model.WillExit
         )

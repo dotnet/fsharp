@@ -29,6 +29,7 @@ module rec Virtual =
         | DataGrid of columns: DataGridColumn list * data: IEnumerable
         | Menu of MenuItem list * dockTop: bool
         | TextBox of acceptsReturn: bool * onTextChanged: (SourceText -> unit)
+        | TreeView
 
 [<Sealed>]
 type internal ReferenceEqualityComparer () =
@@ -295,7 +296,17 @@ module internal Helpers =
                 g.EventSubscriptions.[wpfTextBox] <- 
                     (g.Events.[wpfTextBox] :?> IEvent<SourceText>).Subscribe onTextChanged
 
-            System.Windows.Controls.ScrollViewer(Content = wpfTextBox) :> System.Windows.UIElement
+            wpfTextBox.Width <- 1080.
+
+            wpfTextBox :> System.Windows.UIElement
+
+        | View.TreeView _ ->
+            let wpfTreeView =
+                match view with
+                | View.TreeView _ -> (wpfUIElement :?> System.Windows.Controls.TreeView)
+                | _ -> System.Windows.Controls.TreeView ()
+
+            wpfTreeView :> System.Windows.UIElement
                
 type FrameworkWindow<'Model, 'Msg> (app: System.Windows.Application, init: 'Model, update: 'Msg -> 'Model -> 'Model, view: 'Model -> ('Msg -> unit) -> View) as this =
     inherit System.Windows.Window ()
