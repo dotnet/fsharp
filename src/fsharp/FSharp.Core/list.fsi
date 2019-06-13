@@ -840,7 +840,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         /// <returns>The first resulting value or ValueNone.</returns>
         [<CompiledName("TryPickV")>]
-        val tryPickV: chooser:('T -> 'U voption) -> list:'T list -> 'U option
+        val tryPickV: chooser:('T -> 'U voption) -> list:'T list -> 'U voption
 
         /// <summary>Returns the first element for which the given function returns True.
         /// Return None if no such element exists.</summary>

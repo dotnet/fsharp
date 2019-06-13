@@ -26,6 +26,7 @@ open Microsoft.FSharp.Collections
 module internal List =
     val allPairs : 'T1 list -> 'T2 list -> ('T1 * 'T2) list
     val choose: ('T -> 'U option) -> 'T list -> 'U list
+    val chooseV: ('T -> 'U voption) -> 'T list -> 'U list
     val countBy : System.Collections.Generic.Dictionary<'T1, int> -> ('T1 -> 'T2) -> ('T2 * int) list
     val pairwise : 'T list -> ('T * 'T) list
     val groupBy : System.Collections.Generic.IEqualityComparer<'SafeKey> -> ('T->'SafeKey) -> ('SafeKey->'Key) -> 'T list -> ('Key*'T list) list
@@ -50,6 +51,7 @@ module internal List =
     val concat : seq<'T list> -> 'T list
     val iteri : action:(int -> 'T -> unit) -> 'T list -> unit
     val unfold : ('State -> ('T * 'State) option) -> 'State -> 'T list
+    val unfoldV : ('State -> ('T * 'State) voption) -> 'State -> 'T list
     val unzip : ('T1 * 'T2) list -> 'T1 list * 'T2 list
     val unzip3 : ('T1 * 'T2 * 'T3) list -> 'T1 list * 'T2 list * 'T3 list
     val windowed : int -> 'T list -> 'T list list

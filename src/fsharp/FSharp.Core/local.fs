@@ -184,6 +184,17 @@ module internal List =
                 setFreshConsTail cons cons2
                 chooseToFreshConsTail cons2 f t
 
+    let rec chooseToFreshConsTailV cons f xs =
+      match xs with
+      | [] -> setFreshConsTail cons []
+      | h :: t ->
+          match f h with
+          | ValueNone -> chooseToFreshConsTailV cons f t
+          | ValueSome x ->
+              let cons2 = freshConsNoTail x
+              setFreshConsTail cons cons2
+              chooseToFreshConsTailV cons2 f t
+
     let rec choose f xs =
         match xs with
         | [] -> []
@@ -193,6 +204,17 @@ module internal List =
             | Some x ->
                 let cons = freshConsNoTail x
                 chooseToFreshConsTail cons f t
+                cons
+
+    let rec chooseV f xs =
+        match xs with
+        | [] -> []
+        | h :: t ->
+            match f h with
+            | ValueNone -> chooseV f t
+            | ValueSome x ->
+                let cons = freshConsNoTail x
+                chooseToFreshConsTailV cons f t
                 cons
 
     let groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
@@ -778,12 +800,28 @@ module internal List =
             setFreshConsTail cons cons2
             unfoldToFreshConsTail cons2 f s'
 
+    let rec unfoldToFreshConsTailV cons f s =
+        match f s with
+        | ValueNone -> setFreshConsTail cons []
+        | ValueSome (x, s') ->
+            let cons2 = freshConsNoTail x
+            setFreshConsTail cons cons2
+            unfoldToFreshConsTailV cons2 f s'
+
     let unfold (f:'State -> ('T * 'State) option) (s:'State) =
         match f s with
         | None -> []
         | Some (x, s') ->
             let cons = freshConsNoTail x
             unfoldToFreshConsTail cons f s'
+            cons
+
+    let unfoldV (f:'State -> ('T * 'State) voption) (s:'State) =
+        match f s with
+        | ValueNone -> []
+        | ValueSome (x, s') ->
+            let cons = freshConsNoTail x
+            unfoldToFreshConsTailV cons f s'
             cons
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
