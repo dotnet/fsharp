@@ -264,6 +264,14 @@ module internal Helpers =
                 | _ -> 
                     let wpfTextBox = System.Windows.Controls.RichTextBox ()
                     wpfTextBox.AcceptsTab <- false
+                    wpfTextBox.FontFamily <- Windows.Media.FontFamily ("Consolas")
+                    wpfTextBox.Foreground <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(220uy, 220uy, 220uy)) 
+                    wpfTextBox.Document.LineHeight <- 1.
+                    wpfTextBox.Document.Background <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(30uy, 30uy, 30uy))
+                    wpfTextBox.FontSize <- 14.
+                    wpfTextBox.AutoWordSelection <- false
+                    wpfTextBox.BorderThickness <- Windows.Thickness(0.)
+                    wpfTextBox.CaretBrush <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(220uy, 220uy, 220uy)) 
                     wpfTextBox, false
 
             if oldAcceptsReturn <> acceptsReturn then
@@ -275,16 +283,9 @@ module internal Helpers =
                 g.Events.[wpfTextBox] <- 
                     wpfTextBox.TextChanged 
                     |> Event.map (fun args ->
-                        let changes = args.Changes |> Array.ofSeq
-                        let textChanges =
-                            changes
-                            |> Array.map (fun x ->
-                                let textRange = System.Windows.Documents.TextRange (wpfDocument.ContentStart.GetPositionAtOffset(x.Offset), wpfTextBox.Document.ContentStart.GetPositionAtOffset(x.Offset + x.AddedLength))
-                                let start = wpfDocument.GetCharIndexAtOffset(x.Offset)
-                                TextChange (TextSpan(start, x.RemovedLength), textRange.Text)
-                            )
-                        text <- text.WithChanges textChanges
-                        printfn "%A" (text.ToString ())
+                        // TODO: Optimize this.
+                        let textStr = System.Windows.Documents.TextRange(wpfDocument.ContentStart, wpfTextBox.Document.ContentEnd).Text
+                        text <- SourceText.From textStr
                         text
                     )
                 g.EventSubscriptions.[wpfTextBox] <- 
@@ -294,7 +295,7 @@ module internal Helpers =
                 g.EventSubscriptions.[wpfTextBox] <- 
                     (g.Events.[wpfTextBox] :?> IEvent<SourceText>).Subscribe onTextChanged
 
-            wpfTextBox :> System.Windows.UIElement
+            System.Windows.Controls.ScrollViewer(Content = wpfTextBox) :> System.Windows.UIElement
                
 type FrameworkWindow<'Model, 'Msg> (app: System.Windows.Application, init: 'Model, update: 'Msg -> 'Model -> 'Model, view: 'Model -> ('Msg -> unit) -> View) as this =
     inherit System.Windows.Window ()
