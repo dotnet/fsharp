@@ -820,36 +820,36 @@ let CompilePatternBasic
     let GetValsBoundByClause i refuted = (GetClause i refuted).BoundVals
     let GetWhenGuardOfClause i refuted = (GetClause i refuted).GuardExpr
 
-    // Different uses of parameterized active patterns have different identities as far as paths
-    // are concerned. Here we generate unique numbers that are completely different to any stamp
-    // by usig negative numbers.
+    // Different uses of parameterized active patterns have different identities as far as paths are concerned.
+    // Here we generate unique numbers that are completely different to any stamp by using negative numbers.
     let genUniquePathId() = - (newUnique())
 
-    // Build versions of these functions which apply a dummy instantiation to the overall type arguments
+    // Build versions of these functions which apply a dummy instantiation to the overall type arguments.
     let GetSubExprOfInput, getDiscrimOfPattern =
         let tyargs = List.map (fun _ -> g.unit_ty) origInputValTypars
         let unit_tpinst = mkTyparInst origInputValTypars tyargs
         GetSubExprOfInput g (origInputValTypars, tyargs, unit_tpinst),
         getDiscrimOfPattern g unit_tpinst
 
-    // The main recursive loop of the pattern match compiler
+    // The main recursive loop of the pattern match compiler.
     let rec InvestigateFrontiers refuted frontiers =
         match frontiers with
         | [] -> failwith "CompilePattern: compile - empty clauses: at least the final clause should always succeed"
-        | (Frontier (i, active, valMap)) :: rest ->
+        | Frontier (i, active, valMap) :: rest ->
 
-            // Check to see if we've got a succeeding clause.  There may still be a 'when' condition for the clause
+            // Check to see if we've got a succeeding clause. There may still be a 'when' condition for the clause.
             match active with
             | [] -> CompileSuccessPointAndGuard i refuted valMap rest
 
             | _ ->
-                (* Otherwise choose a point (i.e. a path) to investigate. *)
+                 // Otherwise choose a point (i.e. a path) to investigate.
                 let (Active(path, subexpr, pat))  = ChooseInvestigationPointLeftToRight frontiers
                 match pat with
                 // All these constructs should have been eliminated in BindProjectionPattern
-                | TPat_as _   | TPat_tuple _  | TPat_wild _      | TPat_disjs _  | TPat_conjs _  | TPat_recd _ -> failwith "Unexpected pattern"
+                | TPat_as _ | TPat_tuple _ | TPat_wild _ | TPat_disjs _ | TPat_conjs _ | TPat_recd _ ->
+                    failwith "Unexpected pattern"
 
-                // Leaving the ones where we have real work to do
+                // Leaving the ones where we have real work to do.
                 | _ ->
 
                     let simulSetOfEdgeDiscrims, fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
@@ -877,7 +877,6 @@ let CompilePatternBasic
                     finalDecisionTree
 
     and CompileSuccessPointAndGuard i refuted valMap rest =
-
         let vs2 = GetValsBoundByClause i refuted
         let es2 =
             vs2 |> List.map (fun v ->
