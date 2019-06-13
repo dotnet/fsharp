@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System.Threading
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 
@@ -33,6 +34,8 @@ and [<Sealed>] FSharpCompilation =
     member GetSyntaxTree: filePath: string -> FSharpSyntaxTree
 
     member SetOptions: FSharpCompilationOptions -> FSharpCompilation
+
+    member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
 
     static member Create: assmeblyPath: string * projectDirectory: string * sourceSnapshots: ImmutableArray<FSharpSourceSnapshot> * metadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
 

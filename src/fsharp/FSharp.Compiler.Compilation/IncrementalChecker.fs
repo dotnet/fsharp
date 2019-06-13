@@ -203,7 +203,7 @@ type IncrementalCheckerState =
 
                         let symbolEnv = SymbolEnv (tcGlobals, tcState.Ccu, Some ccuSigForFile, tcImports)
                                 
-                        let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
+                        let newErrors = capturingErrorLogger.GetErrorInfos ()
 
                         this.SetPartialCheckResultByIndex (cacheIndex, PartialCheckResult.Checked (syntaxTree, tcAcc))
 

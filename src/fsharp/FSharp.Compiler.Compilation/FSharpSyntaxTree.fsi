@@ -15,7 +15,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open Microsoft.CodeAnalysis
 
-[<NoEquality;NoComparison;RequireQualifiedAccess>]
+[<CustomEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSyntaxNodeKind =
     | ParsedInput of ParsedInput
     | ModuleOrNamespace of SynModuleOrNamespace
@@ -114,6 +114,14 @@ and [<Sealed>] FSharpSyntaxNode =
     member GetAncestorsAndSelf: unit -> FSharpSyntaxNode seq
 
     member GetDescendantTokens: ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags -> FSharpSyntaxToken seq
+
+    /// Get tokens whose parent is the current node.
+    member GetChildTokens: ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags -> FSharpSyntaxToken seq
+
+    member GetDescendants: ?span: TextSpan -> FSharpSyntaxNode seq
+
+    /// Get nodes whose parent is the current node.
+    member GetChildren: ?span: TextSpan -> FSharpSyntaxNode seq
 
     member GetRoot: unit -> FSharpSyntaxNode
 

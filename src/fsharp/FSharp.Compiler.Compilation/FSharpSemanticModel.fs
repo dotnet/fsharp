@@ -202,7 +202,7 @@ type FSharpSymbolInfo =
     | ReferredByNode of FSharpSymbol
     | Candidates of ImmutableArray<FSharpSymbol>
 
-    member this.TryGetSymbol () =
+    member this.Symbol =
         match this with
         | ReferredByNode symbol -> Some symbol
         | _ -> None
@@ -213,7 +213,7 @@ type FSharpSymbolInfo =
         | _ -> ImmutableArray.Empty
 
     member this.GetAllSymbols () =
-        match this.TryGetSymbol () with
+        match this.Symbol with
         | Some symbol -> ImmutableArray.Create symbol
         | _ -> this.CandidateSymbols
 
@@ -222,17 +222,29 @@ type FSharpSymbolInfo =
 [<Sealed>]
 type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>, compilationObj: obj) =
 
+    let getChecker ct =
+        Async.RunSynchronously (asyncLazyChecker.GetValueAsync (), cancellationToken = ct)
+
+    let check ct =
+        let checker = getChecker ct
+        Async.RunSynchronously (checker.CheckAsync filePath, cancellationToken = ct)
+
+    let getErrors ct =
+        let tcAcc, _, _ = check ct
+        tcAcc.tcErrorsRev.Head
+
     let lazySyntaxTree =
         lazy
             // This will go away when incremental checker doesn't build syntax trees.
-            let checker = asyncLazyChecker.GetValueAsync () |> Async.RunSynchronously
+            let checker = getChecker CancellationToken.None
             checker.GetSyntaxTree filePath
 
     let asyncLazyGetAllSymbols =
         AsyncLazy(async {
-            let! checker = asyncLazyChecker.GetValueAsync ()
-            let! tcAcc, sink, symbolEnv = checker.CheckAsync filePath
-            return (checker, tcAcc, sink.GetResolutions (), symbolEnv)
+            let! ct = Async.CancellationToken
+            let checker = getChecker ct
+            let tcAcc, sink, senv = check ct
+            return (checker, tcAcc, sink.GetResolutions (), senv)
         })
 
     static let getSymbolInfo symbolEnv (cnrs: ResizeArray<CapturedNameResolution>) (node: FSharpSyntaxNode) =
@@ -293,7 +305,7 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
         match rootNode.TryFindToken position with
         | Some token ->
             let symbolInfo = this.GetSymbolInfo (token.ParentNode, ct)
-            symbolInfo.TryGetSymbol ()
+            symbolInfo.Symbol
         | _ ->
             None
 
@@ -330,3 +342,26 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
     member __.SyntaxTree: FSharpSyntaxTree = lazySyntaxTree.Value
 
     member __.CompilationObj = compilationObj
+
+    member this.GetSyntaxDiagnostics ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
+        this.SyntaxTree.GetDiagnostics ct
+
+    member this.GetSemanticDiagnostics ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
+        let text = this.SyntaxTree.GetText ct
+        let errors = getErrors ct
+        errors.ToDiagnostics (filePath, text)
+
+    member this.GetDiagnostics ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
+        let syntaxDiagnostics = this.GetSyntaxDiagnostics ct
+        let semanticDiagnostics = this.GetSemanticDiagnostics ct
+
+        let builder = ImmutableArray.CreateBuilder(syntaxDiagnostics.Length + semanticDiagnostics.Length)
+        builder.AddRange syntaxDiagnostics
+        builder.AddRange semanticDiagnostics
+        builder.ToImmutable ()

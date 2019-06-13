@@ -25,7 +25,7 @@ type internal TcAccumulator =
       tcModuleNamesDict: ModuleNamesDict
 
       /// Accumulated errors, last file first
-      tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list }
+      tcErrorsRev: FSharp.Compiler.SourceCodeServices.FSharpErrorInfo [] list }
 
 [<RequireQualifiedAccess>]
 module internal TcAccumulator =

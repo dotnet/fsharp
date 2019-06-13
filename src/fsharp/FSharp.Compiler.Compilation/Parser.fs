@@ -81,7 +81,7 @@ module Parser =
                     ) |> Some
                 with
                 | _ -> None
-        (input, errorLogger.GetErrors ())
+        (input, errorLogger.GetErrorInfos ())
 
     let Parse pConfig (sourceValue: SourceValue) =
         let skip = true

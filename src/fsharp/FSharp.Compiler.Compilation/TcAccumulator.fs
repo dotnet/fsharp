@@ -40,7 +40,7 @@ type internal TcAccumulator =
       tcModuleNamesDict: ModuleNamesDict
 
       /// Accumulated errors, last file first
-      tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list }
+      tcErrorsRev: FSharp.Compiler.SourceCodeServices.FSharpErrorInfo [] list }
 
 module TcAccumulator =
 
@@ -98,14 +98,14 @@ module TcAccumulator =
         let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
         let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
         let loadClosureErrors = 
-           [ match loadClosureOpt with 
-             | None -> ()
-             | Some loadClosure -> 
+           [| match loadClosureOpt with 
+              | None -> ()
+              | Some loadClosure -> 
                 for inp in loadClosure.Inputs do
                     for (err, isError) in inp.MetaCommandDiagnostics do 
-                        yield err, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
+                        yield err, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) |]
 
-        let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetErrors())
+        let initialErrors = Array.append (loadClosureErrors.ToErrorInfos ()) (errorLogger.GetErrorInfos ())
 
         let tcAcc = 
             { tcState=tcState

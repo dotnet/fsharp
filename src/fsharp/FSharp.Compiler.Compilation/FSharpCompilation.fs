@@ -95,6 +95,14 @@ module FSharpCompilationHelpers =
         | Some (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some s
         | _ -> None
 
+    type PreEmitResult =
+        {
+            ilAssemblyRef: ILAssemblyRef
+            assemblyDataOpt: IRawFSharpAssemblyData option
+            assemblyExprOpt: TypedImplFile list option
+            finalAccWithErrors: TcAccumulator
+        }
+
     let preEmit (assemblyName: string) (outfile: string) (tcConfig: TcConfig) (tcGlobals: TcGlobals) (tcStates: TcAccumulator []) =
         let errorLogger = CompilationErrorLogger("preEmit", tcConfig.errorSeverityOptions)
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
@@ -164,10 +172,16 @@ module FSharpCompilationHelpers =
 
         let finalAccWithErrors = 
             { finalAcc with 
-                tcErrorsRev = errorLogger.GetErrors() :: finalAcc.tcErrorsRev 
+                tcErrorsRev = errorLogger.GetErrorInfos() :: finalAcc.tcErrorsRev 
                 topAttribs = Some topAttrs
             }
-        ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalAccWithErrors
+
+        {
+            ilAssemblyRef = ilAssemRef
+            assemblyDataOpt = tcAssemblyDataOpt
+            assemblyExprOpt = tcAssemblyExprOpt
+            finalAccWithErrors = finalAccWithErrors
+        }
 
 [<Struct>]
 type CompilationId private (_guid: Guid) =
@@ -298,7 +312,7 @@ and [<NoEquality; NoComparison>] CompilationState =
         filePathIndexMap: ImmutableDictionary<string, int>
         options: FSharpCompilationOptions
         asyncLazyGetChecker: AsyncLazy<IncrementalChecker>
-        asyncLazyGetRawFSharpAssemblyData: AsyncLazy<IRawFSharpAssemblyData option>
+        asyncLazyPreEmit: AsyncLazy<PreEmitResult>
     }
 
     static member Create options =
@@ -319,21 +333,21 @@ and [<NoEquality; NoComparison>] CompilationState =
                 )
             })
 
-        let asyncLazyGetRawFSharpAssemblyData =
+        let asyncLazyPreEmit =
             AsyncLazy (async {
                 let! checker = asyncLazyGetChecker.GetValueAsync ()
                 let! tcAccs = checker.FinishAsync ()
                 let tcInitial = checker.TcInitial
                 let tcGlobals = checker.TcGlobals
-                let _, assemblyDataOpt, _, _ = preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
-                return assemblyDataOpt
+                return preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
             })
+               
 
         {
             filePathIndexMap = filePathIndexMapBuilder.ToImmutableDictionary ()
             options = options
             asyncLazyGetChecker = asyncLazyGetChecker
-            asyncLazyGetRawFSharpAssemblyData = asyncLazyGetRawFSharpAssemblyData
+            asyncLazyPreEmit= asyncLazyPreEmit
         }
 
     member this.SetOptions options =
@@ -402,9 +416,45 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         })
 
     member __.GetAssemblyDataAsync () =
-        state.asyncLazyGetRawFSharpAssemblyData.GetValueAsync ()
+        async {
+            let! result = state.asyncLazyPreEmit.GetValueAsync ()
+            return result.assemblyDataOpt
+        }
 
     member __.OutputFilePath = state.options.AssemblyPath
+
+    member this.GetDiagnostics ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
+        let preEmitResult = Async.RunSynchronously (state.asyncLazyPreEmit.GetValueAsync (), cancellationToken = ct)
+        
+        let initialDiagnostics =
+            let errors =
+                preEmitResult.finalAccWithErrors.tcErrorsRev
+                |> List.head
+            errors.ToDiagnostics ()
+
+        let allSemanticModelDiagnostics =
+            let builder = ImmutableArray.CreateBuilder ()
+            state.options.SourceSnapshots
+            |> ImmutableArray.iter (fun x -> 
+                let semanticModel = this.GetSemanticModel x.FilePath
+                builder.AddRange(semanticModel.GetDiagnostics ct)
+            )
+            builder.ToImmutable ()
+
+        let finalDiagnostics =
+            let errors =
+                preEmitResult.finalAccWithErrors.tcErrorsRev
+                |> List.last
+            errors.ToDiagnostics ()
+        
+        let builder = ImmutableArray.CreateBuilder (allSemanticModelDiagnostics.Length + finalDiagnostics.Length + initialDiagnostics.Length)
+        builder.AddRange initialDiagnostics
+        builder.AddRange allSemanticModelDiagnostics
+        builder.AddRange finalDiagnostics
+        builder.ToImmutable ()
+
 
     static member Create options =
         FSharpCompilation (CompilationId.Create (), CompilationState.Create options, VersionStamp.Create ())

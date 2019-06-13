@@ -108,7 +108,7 @@ module rec App =
     type Msg =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
-        | UpdateSyntaxVisualizer of FSharpSyntaxTree
+        | UpdateVisualizers of FSharpSemanticModel
 
     let exitMenuItemView dispatch = MenuItem.MenuItem ("_Exit", [], fun _ -> dispatch Exit)
 
@@ -131,8 +131,8 @@ module rec App =
                 }
             callback updatedModel
             updatedModel
-        | UpdateSyntaxVisualizer syntaxTree ->
-            printfn "%A" (syntaxTree.GetDiagnostics ())
+        | UpdateVisualizers semanticModel ->
+            printfn "%A" (semanticModel.Compilation.GetDiagnostics ())
             model
 
     let view model dispatch =
@@ -147,12 +147,8 @@ module rec App =
                                     try
                                         use! _do = Async.OnCancel (fun () -> printfn "cancelled")
                                         do! Async.Sleep 150
-                                        let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
                                         let semanticModel = updatedModel.Compilation.GetSemanticModel "test1.fs"
-                                        semanticModel.TryGetEnclosingSymbol (0, updatedModel.CancellationTokenSource.Token) |> ignore
-                                        stopwatch.Stop ()
-                                        printfn "type check: %A ms" stopwatch.Elapsed.TotalMilliseconds
-                                        dispatch (UpdateSyntaxVisualizer (semanticModel.SyntaxTree))
+                                        dispatch (UpdateVisualizers semanticModel)
                                     with
                                     | ex -> ()
                                 }

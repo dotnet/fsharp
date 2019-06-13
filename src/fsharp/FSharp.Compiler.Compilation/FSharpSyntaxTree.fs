@@ -18,7 +18,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
-[<NoEquality;NoComparison;RequireQualifiedAccess>]
+[<CustomEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSyntaxNodeKind =
     | ParsedInput of ParsedInput
     | ModuleOrNamespace of SynModuleOrNamespace
@@ -165,6 +165,118 @@ type FSharpSyntaxNodeKind =
         | FSharpSyntaxNodeKind.Attribute item ->
             item.Range
 
+    member private this.Item =
+        match this with
+        | FSharpSyntaxNodeKind.ParsedInput item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ModuleOrNamespace item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ModuleDecl item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.LongIdentWithDots item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Ident (_, item) ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ComponentInfo item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.TypeConstraint item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.MemberSig item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.TypeDefnSig item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.TypeDefnSigRepr item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ExceptionDefnRepr item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.UnionCase item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.UnionCaseType item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ArgInfo item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.TypeDefnSimpleRepr item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.SimplePat item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.EnumCase item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Const item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Measure item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.RationalConst item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.TypeDefnKind item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Field item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ValSig item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ValTyparDecls item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Type item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.SimplePats item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Typar item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.TyparDecl item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Binding item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ValData item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ValInfo item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Pat item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ConstructorArgs item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.BindingReturnInfo item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Expr item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.StaticOptimizationConstraint item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.IndexerArg item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.SimplePatAlternativeIdInfo item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.MatchClause item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.InterfaceImpl item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.TypeDefn item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.TypeDefnRepr item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.MemberDefn item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ExceptionDefn item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.ParsedHashDirective item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.AttributeList item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.Attribute item ->
+            item :> obj
+
+    override this.GetHashCode () = 0
+
+    override this.Equals target =
+        if target = null then
+            false
+        else
+            if obj.ReferenceEquals (this, target) then
+                true
+            else
+                match target with
+                | :? FSharpSyntaxNodeKind as targetNodeKind ->
+                    obj.ReferenceEquals (this.Item, targetNodeKind.Item)
+                | _ ->
+                    false
+
 [<Flags>]
 type FSharpSyntaxTokenQueryFlags =
     | None =                0x00
@@ -175,7 +287,7 @@ type FSharpSyntaxTokenQueryFlags =
 type private RawTokenLineMap = Dictionary<int, ResizeArray<Parser.token * range * TextSpan>>
 
 [<AbstractClass>]
-type FSharpSyntaxVisitor (rootNode: FSharpSyntaxNode) as this =
+type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
     inherit AstVisitor<FSharpSyntaxNode> ()
 
     let visitStack = Stack<FSharpSyntaxNode> ()
@@ -193,13 +305,17 @@ type FSharpSyntaxVisitor (rootNode: FSharpSyntaxNode) as this =
                 Some (visitStack.Peek ())
             else
                 None
-        FSharpSyntaxNode (parent,  rootNode.SyntaxTree, kind)
+        FSharpSyntaxNode (parent, syntaxTree, kind)
+
+    member __.GetCurrentVisitStack () =
+        visitStack.ToImmutableArray ()
 
     abstract OnVisit: visitedNode: FSharpSyntaxNode * resultOpt: FSharpSyntaxNode option -> FSharpSyntaxNode option
     default __.OnVisit (_visitedNode: FSharpSyntaxNode, resultOpt: FSharpSyntaxNode option) =
         resultOpt
 
-    member this.VisitNode (node: FSharpSyntaxNode) =
+    abstract VisitNode: node: FSharpSyntaxNode -> FSharpSyntaxNode option
+    default this.VisitNode (node: FSharpSyntaxNode) =
         node.Parent |> Option.iter visitStack.Push
         match node.Kind with
         | FSharpSyntaxNodeKind.ParsedInput item ->
@@ -579,7 +695,7 @@ type FSharpSyntaxVisitor (rootNode: FSharpSyntaxNode) as this =
         let resultOpt = base.VisitAttribute item
         endVisit resultOpt
 
-and [<Sealed>] FSharpSyntaxNodeFinder (findm: range, syntaxTree) =
+and FSharpSyntaxNodeVisitor (findm: range, syntaxTree) =
     inherit FSharpSyntaxVisitor (syntaxTree)
 
     let isZeroRange (r: range) =
@@ -591,6 +707,56 @@ and [<Sealed>] FSharpSyntaxNodeFinder (findm: range, syntaxTree) =
         match resultOpt with
         | Some _ -> resultOpt
         | _ -> Some visitedNode
+
+and FSharpSyntaxNodeChildVisitor (findm, syntaxTree) =
+    inherit FSharpSyntaxNodeVisitor (findm, syntaxTree)
+
+    let mutable targetNode = None
+    let children = ImmutableArray.CreateBuilder ()
+
+    member __.GetChildNodes () = children.ToImmutable ()
+
+    override this.CanVisit m =
+        let visitStack = this.GetCurrentVisitStack ()
+
+        // We want to visit direct children only.
+        if visitStack.Length > 1 then
+            false
+        else
+            base.CanVisit m
+
+    override __.VisitNode node =
+        match targetNode with
+        | None -> targetNode <- Some node
+        | _ -> ()
+        base.VisitNode node
+
+    override __.OnVisit (visitedNode, _) =
+        if not (obj.ReferenceEquals (visitedNode, targetNode.Value)) then
+            children.Add visitedNode
+        None
+
+and FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree) =
+    inherit FSharpSyntaxNodeVisitor (findm, syntaxTree)
+    
+    let mutable targetNode = None
+    let descendants = ImmutableArray.CreateBuilder ()
+
+    member __.GetDescendantNodes () = descendants.ToImmutable ()
+
+    override __.CanVisit m =
+        base.CanVisit m
+
+    override __.VisitNode node =
+        match targetNode with
+        | None -> targetNode <- Some node
+        | _ -> ()
+        base.VisitNode node
+
+    override __.OnVisit (visitedNode, _) =
+        if not (obj.ReferenceEquals (visitedNode, targetNode.Value)) then
+            descendants.Add visitedNode
+        None
 
 and [<Sealed>] FSharpSyntaxToken (lazyParent: Lazy<FSharpSyntaxNode>, token: Parser.token, range: range, span: TextSpan, columnIndex: int) =
 
@@ -730,6 +896,38 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
                     ()
         }
 
+    member this.GetChildTokens ?tokenQueryFlags =
+        this.GetDescendantTokens (tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None)
+        |> Seq.filter (fun token ->
+            obj.ReferenceEquals (token.ParentNode, this)
+        )
+
+    member this.GetDescendants (?span: TextSpan) =
+        let span = defaultArg span this.Span
+
+        let text: SourceText = this.Text
+        match text.TrySpanToRange (syntaxTree.FilePath, span) with
+        | ValueSome m ->
+            // TODO: This isn't lazy, make it lazy so we don't try to evaluate everything. Will require work here and in the visitor.
+            let visitor = FSharpSyntaxNodeDescendantVisitor (m, syntaxTree)
+            visitor.VisitNode this |> ignore
+            visitor.GetDescendantNodes() :> FSharpSyntaxNode seq
+        | _ ->
+            Seq.empty
+
+    member this.GetChildren (?span: TextSpan) =
+        let span = defaultArg span this.Span
+
+        let text: SourceText = this.Text
+        match text.TrySpanToRange (syntaxTree.FilePath, span) with
+        | ValueSome m ->
+            // TODO: This isn't lazy, make it lazy so we don't try to evaluate everything. Will require work here and in the visitor.
+            let visitor = FSharpSyntaxNodeChildVisitor (m, syntaxTree)
+            visitor.VisitNode this |> ignore
+            visitor.GetChildNodes() :> FSharpSyntaxNode seq
+        | _ ->
+            Seq.empty
+
     member this.GetRoot () =
         this.GetAncestorsAndSelf ()
         |> Seq.last
@@ -771,8 +969,8 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         | _ -> failwithf "Unable to find node at range: %A" m
 
     member this.TryFindNode (m: range) =
-        let finder = FSharpSyntaxNodeFinder (m, this)
-        finder.VisitNode this
+        let visitor = FSharpSyntaxNodeVisitor (m, syntaxTree)
+        visitor.VisitNode this
 
     member this.TryFindNode (span: TextSpan) =
         let text = this.Text
@@ -789,6 +987,22 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
             | ValueSome span -> span
             | _ -> failwith "should not happen"
         this.Text.GetSubText(span).ToString () 
+
+    override this.Equals target =
+        if target = null then 
+            false
+        else
+            if obj.ReferenceEquals (this, target) then 
+                true
+            else
+                match target with
+                | :? FSharpSyntaxNode as targetNode ->
+                    this.Kind = targetNode.Kind
+                | _ ->
+                    false
+
+    override this.GetHashCode () =
+        this.Span.GetHashCode ()
 
 and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, changes: IReadOnlyList<TextChangeRange>) as this =
 
@@ -909,16 +1123,7 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
 
     member this.GetDiagnostics ?ct =
         let ct = defaultArg ct CancellationToken.None
+
         let text = this.GetText ct
         let _, errors = this.GetParseResult ct
-        let diagnostics = ImmutableArray.CreateBuilder (errors.Length)
-        diagnostics.Count <- errors.Length
-        for i = 0 to errors.Length - 1 do
-            let error, severity = errors.[i]
-            let isError = match severity with FSharpErrorSeverity.Error -> true | _ -> false
-            let error = FSharpErrorInfo.CreateFromException (error, isError, range0, suggestNames = false)
-            let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn), LinePosition(error.EndLineAlternate - 1, error.EndColumn))
-            let textSpan = text.Lines.GetTextSpan(linePositionSpan)
-            let location = Location.Create(filePath, textSpan, linePositionSpan)
-            diagnostics.[i] <- convertError error location
-        diagnostics.ToImmutable ()
+        errors.ToDiagnostics (filePath, text)

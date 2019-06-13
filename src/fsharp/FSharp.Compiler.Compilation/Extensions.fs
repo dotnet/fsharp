@@ -1,9 +1,15 @@
 ﻿namespace FSharp.Compiler.Compilation
 
 open System
+open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Range
+open Microsoft.CodeAnalysis
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open System.Runtime.CompilerServices
+open FSharp.Compiler.ErrorLogger
 
 module private SourceText =
 
@@ -124,3 +130,74 @@ module SourceTextExtensions =
                     (Pos.fromZ startLine.LineNumber (span.Start - startLine.Start))
                     (Pos.fromZ endLine.LineNumber (span.End - endLine.Start))
                 |> ValueSome
+
+[<AutoOpen>]
+module internal FSharpErrorInfoExtensions =
+
+    let private unnecessary = [|WellKnownDiagnosticTags.Unnecessary;WellKnownDiagnosticTags.Telemetry|]
+
+    let private convertError (error: FSharpErrorInfo) (location: Location) =
+        // Normalize the error message into the same format that we will receive it from the compiler.
+        // This ensures that IntelliSense and Compiler errors in the 'Error List' are de-duplicated.
+        // (i.e the same error does not appear twice, where the only difference is the line endings.)
+        let normalizedMessage = error.Message |> ErrorLogger.NormalizeErrorString |> ErrorLogger.NewlineifyErrorString
+
+        let id = "FS" + error.ErrorNumber.ToString("0000")
+        let emptyString = LocalizableString.op_Implicit("")
+        let description = LocalizableString.op_Implicit(normalizedMessage)
+        let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let customTags = 
+            match error.ErrorNumber with
+            | 1182 -> unnecessary
+            | _ -> null
+        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
+        Diagnostic.Create(descriptor, location)
+
+    type FSharpErrorInfo with
+
+        member error.ToDiagnostic () =
+            convertError error Location.None
+
+        member error.ToDiagnostic (filePath: string, text: SourceText) =
+            let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn), LinePosition(error.EndLineAlternate - 1, error.EndColumn))
+            let textSpan = text.Lines.GetTextSpan(linePositionSpan)
+            let location = Location.Create(filePath, textSpan, linePositionSpan)
+            convertError error location
+
+    [<AbstractClass;Extension>]
+    type CSharpStyleExtensions private () =
+
+        [<Extension>]
+        static member ToDiagnostics(errors: FSharpErrorInfo [], filePath: string, text: SourceText) =
+            let diagnostics = ImmutableArray.CreateBuilder (errors.Length)
+            diagnostics.Count <- errors.Length
+            for i = 0 to errors.Length - 1 do
+                diagnostics.[i] <- errors.[i].ToDiagnostic (filePath, text)
+            diagnostics.ToImmutable ()
+
+        [<Extension>]
+        static member ToDiagnostics(errors: FSharpErrorInfo []) =
+            let diagnostics = ImmutableArray.CreateBuilder (errors.Length)
+            diagnostics.Count <- errors.Length
+            for i = 0 to errors.Length - 1 do
+                diagnostics.[i] <- errors.[i].ToDiagnostic ()
+            diagnostics.ToImmutable ()
+
+[<AutoOpen>]
+module internal ErrorLoggerExtensions =
+
+    [<AbstractClass;Extension>]
+    type CSharpStyleExtensions private () =
+
+        [<Extension>]
+        static member ToErrorInfos(errors: (PhasedDiagnostic * FSharpErrorSeverity) []) =
+            errors
+            |> Array.map (fun (error, severity) ->
+                let isError = match severity with FSharpErrorSeverity.Error -> true | _ -> false
+                FSharpErrorInfo.CreateFromException (error, isError, range0, suggestNames = false)
+            )
+
+    type CompilationErrorLogger with
+
+        member this.GetErrorInfos () =
+            this.GetErrors().ToErrorInfos ()

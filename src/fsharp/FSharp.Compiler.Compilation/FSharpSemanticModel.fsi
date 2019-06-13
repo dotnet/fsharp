@@ -2,6 +2,7 @@
 
 open System.Threading
 open System.Collections.Immutable
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Compilation.Utilities
 
@@ -16,7 +17,7 @@ type FSharpSymbolInfo =
     /// The symbol that was referred to by the syntax node, if any. If None is returned, it may
     /// still be that case that we have one or more "best guesses" as to what symbol was
     /// intended. These best guesses are available via the CandidateSymbols property.
-    member TryGetSymbol: unit -> FSharpSymbol option
+    member Symbol: FSharpSymbol option
 
     member CandidateSymbols: ImmutableArray<FSharpSymbol>
 
@@ -40,3 +41,9 @@ type FSharpSemanticModel =
     member SyntaxTree: FSharpSyntaxTree
 
     member internal CompilationObj: obj
+
+    member GetSyntaxDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
+
+    member GetSemanticDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
+
+    member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
