@@ -11,6 +11,7 @@ open FSharp.Compiler.Text
 type SourceStorage =
     | SourceText of ITemporaryTextStorage 
     | Stream of ITemporaryStreamStorage
+    | DirectText of SourceText
 
 [<Sealed>]
 type FSharpSourceSnapshot (filePath: string, sourceStorage: SourceStorage, initialText: WeakReference<SourceText>) =
@@ -30,6 +31,8 @@ type FSharpSourceSnapshot (filePath: string, sourceStorage: SourceStorage, initi
                 | SourceStorage.Stream storage ->
                     let stream = storage.ReadStream ct
                     SourceText.From stream
+                | SourceStorage.DirectText text ->
+                    text
             weakText <- WeakReference<_> text
             text
 
@@ -49,6 +52,9 @@ type FSharpSourceSnapshot (filePath: string, sourceStorage: SourceStorage, initi
             Some (storage.ReadStream ct)
         | _ ->
             None
+
+    static member FromText (filePath: string, text: SourceText) =
+        FSharpSourceSnapshot (filePath, SourceStorage.DirectText text, WeakReference<_> text)
 
 [<Sealed;AbstractClass;Extension>]
 type ITemporaryStorageServiceExtensions =

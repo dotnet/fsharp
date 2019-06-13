@@ -18,6 +18,8 @@ type FSharpSourceSnapshot =
     member internal IsStream: bool
 
     member internal TryGetStream: CancellationToken -> Stream option
+
+    static member FromText: filePath: string * SourceText -> FSharpSourceSnapshot
     
 [<Sealed;AbstractClass;Extension>]
 type ITemporaryStorageServiceExtensions =
