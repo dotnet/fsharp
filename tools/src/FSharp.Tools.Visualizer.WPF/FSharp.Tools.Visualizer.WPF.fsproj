@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+	<PropertyGroup>
+		<FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>netcoreapp3.0</TargetFramework>
+		<UseWpf>true</UseWpf>
+		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+		<DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+		<DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="UIFramework.fs" />
+		<Compile Include="App.fs" />
+		<Compile Include="Program.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\src\fsharp\FSharp.Compiler.Compilation\FSharp.Compiler.Compilation.fsproj" />
+	  <ProjectReference Include="..\..\..\src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+	  <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+	</ItemGroup>
+
+</Project>
