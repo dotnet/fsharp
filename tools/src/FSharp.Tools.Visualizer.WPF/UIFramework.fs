@@ -79,7 +79,7 @@ module internal Helpers =
                         nextPointer <- nextPointer.GetNextInsertionPosition(Windows.Documents.LogicalDirection.Forward)
             count
 
-    let diffSeq (state: 'T seq) (newState: 'T seq) create update removeAt clear =
+    let diffSeq (state: 'T seq) (newState: 'T seq) create update (removeAt: int -> (unit -> unit)) clear =
         let mutable lastIndex = -1
         (state, newState)
         ||> Seq.iteri2 (fun i item newItem ->
@@ -93,9 +93,13 @@ module internal Helpers =
         if lastIndex = -1 && stateCount <> 0 then
             clear ()
 
+        let removes = ResizeArray ()
         if lastIndex <> -1 && stateCount - 1 > lastIndex then
             for i = lastIndex + 1 to stateCount - 1 do
-                removeAt i
+                removes.Add (removeAt i)
+
+        for remove in removes do
+            remove ()
 
         if newStateCount - 1 > lastIndex then
             newState
@@ -133,7 +137,7 @@ module internal Helpers =
                         wpfDockPanel.Children.RemoveAt i
                         wpfDockPanel.Children.Insert (i, updatedWpfChild)
                 )
-                wpfDockPanel.Children.RemoveAt
+                (fun i -> fun () -> wpfDockPanel.Children.Remove (wpfDockPanel.Children.[i]))
                 wpfDockPanel.Children.Clear
 
             wpfDockPanel :> System.Windows.UIElement
@@ -162,7 +166,7 @@ module internal Helpers =
                             wpfColumn.Binding <- System.Windows.Data.Binding (newBindingName)
                     | _ -> failwith "not supported yet"
                 )
-                wpfDataGrid.Columns.RemoveAt
+                (fun i -> fun () -> wpfDataGrid.Columns.Remove (wpfDataGrid.Columns.[i]) |> ignore)
                 wpfDataGrid.Columns.Clear
 
             if not (obj.ReferenceEquals (oldData, newData)) then
@@ -209,7 +213,7 @@ module internal Helpers =
                         let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.MenuItem
                         g.EventSubscriptions.[wpfMenuItem].Dispose ()
                         g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                        wpfMenu.Items.RemoveAt i
+                        fun () -> wpfMenu.Items.Remove (wpfMenuItem)
                     )
                     (fun () ->
                         for i = 0 to wpfMainMenuItem.Items.Count - 1 do
@@ -248,7 +252,7 @@ module internal Helpers =
                     let wpfMenuItem = wpfMenu.Items.[i] :?> System.Windows.Controls.MenuItem
                     g.EventSubscriptions.[wpfMenuItem].Dispose ()
                     g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                    wpfMenu.Items.RemoveAt i
+                    fun () -> wpfMenu.Items.Remove wpfMenuItem
                 )
                 (fun () ->
                     for i = 0 to wpfMenu.Items.Count - 1 do
@@ -331,19 +335,19 @@ module internal Helpers =
                             if oldHeader <> newHeader then
                                 wpfMenuItem.Header <- newHeader
 
-                            g.EventSubscriptions.[wpfMenuItem].Dispose()
+                            if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose()
                             g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> onClick ())
                     )
                     (fun i ->
-                        let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.MenuItem
-                        g.EventSubscriptions.[wpfMenuItem].Dispose ()
+                        let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
+                        if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
                         g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                        wpfTreeView.Items.RemoveAt i
+                        fun () -> wpfTreeView.Items.Remove wpfMenuItem
                     )
                     (fun () ->
                         for i = 0 to wpfMainMenuItem.Items.Count - 1 do
-                            let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.MenuItem
-                            g.EventSubscriptions.[wpfMenuItem].Dispose ()
+                            let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
+                            if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
                             g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
                         wpfMainMenuItem.Items.Clear ()
                     )
@@ -370,19 +374,19 @@ module internal Helpers =
                         if oldHeader <> newHeader then
                             wpfMenuItem.Header <- newHeader
 
-                        g.EventSubscriptions.[wpfMenuItem].Dispose()
+                        if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose()
                         g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> onClick ())
                 )
                 (fun i ->
                     let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                    g.EventSubscriptions.[wpfMenuItem].Dispose ()
+                    if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
                     g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                    wpfTreeView.Items.RemoveAt i
+                    fun () -> wpfTreeView.Items.Remove wpfMenuItem
                 )
                 (fun () ->
                     for i = 0 to wpfTreeView.Items.Count - 1 do
-                        let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.MenuItem
-                        g.EventSubscriptions.[wpfMenuItem].Dispose ()
+                        let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.TreeViewItem
+                        if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
                         g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
                     wpfTreeView.Items.Clear ()
                 )

@@ -307,8 +307,7 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
                 None
         FSharpSyntaxNode (parent, syntaxTree, kind)
 
-    member __.GetCurrentVisitStack () =
-        visitStack.ToImmutableArray ()
+    member __.VisitStackCount = visitStack.Count
 
     abstract OnVisit: visitedNode: FSharpSyntaxNode * resultOpt: FSharpSyntaxNode option -> FSharpSyntaxNode option
     default __.OnVisit (_visitedNode: FSharpSyntaxNode, resultOpt: FSharpSyntaxNode option) =
@@ -708,55 +707,32 @@ and FSharpSyntaxNodeVisitor (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
-and FSharpSyntaxNodeChildVisitor (findm, syntaxTree) =
-    inherit FSharpSyntaxNodeVisitor (findm, syntaxTree)
-
-    let mutable targetNode = None
-    let children = ImmutableArray.CreateBuilder ()
-
-    member __.GetChildNodes () = children.ToImmutable ()
-
-    override this.CanVisit m =
-        let visitStack = this.GetCurrentVisitStack ()
-
-        // We want to visit direct children only.
-        if visitStack.Length > 1 then
-            false
-        else
-            base.CanVisit m
-
-    override __.VisitNode node =
-        match targetNode with
-        | None -> targetNode <- Some node
-        | _ -> ()
-        base.VisitNode node
-
-    override __.OnVisit (visitedNode, _) =
-        if not (obj.ReferenceEquals (visitedNode, targetNode.Value)) then
-            children.Add visitedNode
-        None
-
 and FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree) =
     inherit FSharpSyntaxNodeVisitor (findm, syntaxTree)
+
+    let isZeroRange (r: range) =
+        posEq r.Start r.End
     
-    let mutable targetNode = None
     let descendants = ImmutableArray.CreateBuilder ()
 
     member __.GetDescendantNodes () = descendants.ToImmutable ()
 
-    override __.CanVisit m =
-        base.CanVisit m
+    override __.CanVisit m = rangeContainsRange findm m && not (isZeroRange m)
 
-    override __.VisitNode node =
-        match targetNode with
-        | None -> targetNode <- Some node
-        | _ -> ()
-        base.VisitNode node
-
-    override __.OnVisit (visitedNode, _) =
-        if not (obj.ReferenceEquals (visitedNode, targetNode.Value)) then
+    override this.OnVisit (visitedNode, _) =
+        if this.VisitStackCount > 1 then
             descendants.Add visitedNode
         None
+
+and FSharpSyntaxNodeChildVisitor (findm, syntaxTree) =
+    inherit FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree)
+
+    override this.CanVisit m =
+        // We want to visit direct children only.
+        if this.VisitStackCount > 2 then
+            false
+        else
+            base.CanVisit m
 
 and [<Sealed>] FSharpSyntaxToken (lazyParent: Lazy<FSharpSyntaxNode>, token: Parser.token, range: range, span: TextSpan, columnIndex: int) =
 
@@ -924,7 +900,7 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
             // TODO: This isn't lazy, make it lazy so we don't try to evaluate everything. Will require work here and in the visitor.
             let visitor = FSharpSyntaxNodeChildVisitor (m, syntaxTree)
             visitor.VisitNode this |> ignore
-            visitor.GetChildNodes() :> FSharpSyntaxNode seq
+            visitor.GetDescendantNodes() :> FSharpSyntaxNode seq
         | _ ->
             Seq.empty
 
@@ -1005,25 +981,6 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         this.Span.GetHashCode ()
 
 and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, changes: IReadOnlyList<TextChangeRange>) as this =
-
-    static let unnecessary = [|WellKnownDiagnosticTags.Unnecessary;WellKnownDiagnosticTags.Telemetry|]
-
-    static let convertError (error: FSharpErrorInfo) (location: Location) =
-        // Normalize the error message into the same format that we will receive it from the compiler.
-        // This ensures that IntelliSense and Compiler errors in the 'Error List' are de-duplicated.
-        // (i.e the same error does not appear twice, where the only difference is the line endings.)
-        let normalizedMessage = error.Message |> ErrorLogger.NormalizeErrorString |> ErrorLogger.NewlineifyErrorString
-
-        let id = "FS" + error.ErrorNumber.ToString("0000")
-        let emptyString = LocalizableString.op_Implicit("")
-        let description = LocalizableString.op_Implicit(normalizedMessage)
-        let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
-        let customTags = 
-            match error.ErrorNumber with
-            | 1182 -> unnecessary
-            | _ -> null
-        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
-        Diagnostic.Create(descriptor, location)
 
     let gate = obj ()
     let mutable lazyText = ValueNone

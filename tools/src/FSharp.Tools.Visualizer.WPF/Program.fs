@@ -93,6 +93,7 @@ module rec App =
             Compilation: FSharpCompilation
             Text: SourceText
             CancellationTokenSource: CancellationTokenSource
+            RootNode: FSharpSyntaxNode option
         }
 
         static member Default =
@@ -103,14 +104,13 @@ module rec App =
                 Compilation = createCompilation text
                 Text = text
                 CancellationTokenSource = new CancellationTokenSource ()
+                RootNode = None
             }
 
     type Msg =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
         | UpdateVisualizers of FSharpSemanticModel
-
-    let exitMenuItemView dispatch = MenuItem.MenuItem ("_Exit", [], fun _ -> dispatch Exit)
 
     let update msg model =
         match msg with
@@ -133,9 +133,25 @@ module rec App =
             updatedModel
         | UpdateVisualizers semanticModel ->
             printfn "%A" (semanticModel.Compilation.GetDiagnostics ())
-            model
+            { model with RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None) }
+
+    let exitMenuItemView dispatch = MenuItem.MenuItem ("_Exit", [], fun _ -> dispatch Exit)
 
     let view model dispatch =
+        let treeItems =
+            match model.RootNode with
+            | None -> []
+            | Some rootNode ->
+                let rec getTreeItem (node: FSharpSyntaxNode) =
+                    let nested =
+                        node.GetChildren ()
+                        |> Seq.map (fun childNode ->
+                            getTreeItem childNode
+                        )
+                        |> List.ofSeq
+                    TreeViewItem.TreeViewItem(node.Kind.GetType().Name, nested, fun () -> ())
+                [ getTreeItem rootNode ]
+
         View.Common (
             View.DockPanel 
                 [
@@ -155,14 +171,7 @@ module rec App =
                             Async.Start (computation, cancellationToken = updatedModel.CancellationTokenSource.Token)
                         ))
                     )
-                    View.TreeView (
-                        [
-                            TreeViewItem.TreeViewItem("Level1", 
-                                [
-                                    TreeViewItem.TreeViewItem ("Level2", [], fun _ -> ())
-                                ], fun _ -> ())
-                        ]
-                    )
+                    View.TreeView (treeItems)
                 ],
             model.WillExit
         )
