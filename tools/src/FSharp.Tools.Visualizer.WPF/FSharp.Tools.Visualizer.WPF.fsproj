@@ -14,6 +14,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="FSharpTextEditor.fs" />
 		<Compile Include="UIFramework.fs" />
 		<Compile Include="App.fs" />
 		<Compile Include="Program.fs" />

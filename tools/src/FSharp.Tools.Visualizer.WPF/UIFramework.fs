@@ -270,44 +270,12 @@ module internal Helpers =
         | View.Editor (highlights, errors, onTextChanged) ->
             let wpfTextBox =
                 match view with
-                | View.Editor (_) -> (wpfUIElement :?> ICSharpCode.AvalonEdit.TextEditor)
+                | View.Editor (_) -> (wpfUIElement :?> FSharpTextEditor)
                 | _ -> 
-                    let wpfTextBox = ICSharpCode.AvalonEdit.TextEditor ()
-                    wpfTextBox.ShowLineNumbers <- true
-                    wpfTextBox.Options.InheritWordWrapIndentation <- false
-                    wpfTextBox.Options.ConvertTabsToSpaces <- true
-                    wpfTextBox.IsTabStop <- false
-                    wpfTextBox.FontFamily <- Windows.Media.FontFamily ("Consolas")
-                    wpfTextBox.Foreground <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(220uy, 220uy, 220uy)) 
-                    wpfTextBox.Background <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(30uy, 30uy, 30uy))
-                    wpfTextBox.FontSize <- 14.
-                    wpfTextBox.BorderThickness <- Windows.Thickness(0.)
-                    wpfTextBox.AllowDrop <- false
-                    wpfTextBox
+                    FSharpTextEditor ()
 
             if not (g.EventSubscriptions.ContainsKey wpfTextBox) then
-                let mutable text = SourceText.From (String.Empty)
-                let queueTextChanges = Queue<TextChange>()
-                wpfTextBox.Document.Changing.Add (fun args ->
-                    printfn "offset: %i" args.Offset
-                    printfn "removalLength: %i" args.RemovalLength
-                    printfn "additionLength: %i" args.InsertionLength
-                    if args.InsertionLength > 0 then
-                        TextChange (TextSpan (args.Offset, 0), args.InsertedText.Text)
-                        |> queueTextChanges.Enqueue
-                    elif args.RemovalLength > 0 then
-                        TextChange (TextSpan (args.Offset, args.RemovalLength), String.Empty)
-                        |> queueTextChanges.Enqueue
-                )
-                let textChanged =
-                    wpfTextBox.Document.TextChanged
-                    |> Event.map (fun _ ->
-                        let textChanges = queueTextChanges.ToArray()
-                        queueTextChanges.Clear ()
-                        text <- (text, textChanges) ||> Array.fold (fun text textChange -> text.WithChanges textChange)
-                        text    
-                    )
-                g.Events.[wpfTextBox] <- textChanged
+                g.Events.[wpfTextBox] <- wpfTextBox.SourceTextChanged
                 g.EventSubscriptions.[wpfTextBox] <- 
                     (g.Events.[wpfTextBox] :?> IEvent<SourceText>).Subscribe onTextChanged
             else
