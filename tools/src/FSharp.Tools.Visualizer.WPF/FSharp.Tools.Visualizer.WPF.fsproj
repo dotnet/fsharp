@@ -20,6 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="AvalonEdit" Version="6.0.0-netcore3p4alpha1" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
 	</ItemGroup>
 

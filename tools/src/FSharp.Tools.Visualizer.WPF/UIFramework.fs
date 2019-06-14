@@ -5,6 +5,7 @@ open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
 open Microsoft.CodeAnalysis.Text
+open ICSharpCode.AvalonEdit
 
 [<AutoOpen>]
 module rec Virtual =
@@ -31,7 +32,7 @@ module rec Virtual =
         | DockPanel of View list
         | DataGrid of columns: DataGridColumn list * data: IEnumerable
         | Menu of MenuItem list * dockTop: bool
-        | TextBox of acceptsReturn: bool * onTextChanged: (SourceText -> unit)
+        | Editor of highlights: TextSpan list * errors: (TextSpan * string) list * onTextChanged: (SourceText -> unit)
         | TreeView of TreeViewItem list
 
 [<Sealed>]
@@ -68,11 +69,13 @@ module internal Helpers =
         member this.GetCharIndexAtOffset (offset: int) =
             let mutable nextPointer = this.ContentStart
             let mutable count = 0
+
             while nextPointer <> null && this.ContentStart.GetOffsetToPosition(nextPointer) < offset do
                 if nextPointer.CompareTo(this.ContentEnd) = 0 then
                     nextPointer <- null
                 else
-                    if nextPointer.GetPointerContext(Windows.Documents.LogicalDirection.Forward) = Windows.Documents.TextPointerContext.Text then
+                    let context = nextPointer.GetPointerContext(Windows.Documents.LogicalDirection.Forward)
+                    if context = Windows.Documents.TextPointerContext.Text || context = Windows.Documents.TextPointerContext.None  then
                         nextPointer <- nextPointer.GetNextInsertionPosition(Windows.Documents.LogicalDirection.Forward)
                         count <- count + 1
                     else
@@ -264,37 +267,47 @@ module internal Helpers =
 
             wpfMenu :> System.Windows.UIElement
 
-        | View.TextBox (acceptsReturn, onTextChanged) ->
-            let wpfTextBox, oldAcceptsReturn =
+        | View.Editor (highlights, errors, onTextChanged) ->
+            let wpfTextBox =
                 match view with
-                | View.TextBox (oldAcceptsReturn, _) -> (wpfUIElement :?> System.Windows.Controls.RichTextBox, oldAcceptsReturn)
+                | View.Editor (_) -> (wpfUIElement :?> ICSharpCode.AvalonEdit.TextEditor)
                 | _ -> 
-                    let wpfTextBox = System.Windows.Controls.RichTextBox ()
-                    wpfTextBox.AcceptsTab <- false
+                    let wpfTextBox = ICSharpCode.AvalonEdit.TextEditor ()
+                    wpfTextBox.ShowLineNumbers <- true
+                    wpfTextBox.Options.InheritWordWrapIndentation <- false
+                    wpfTextBox.Options.ConvertTabsToSpaces <- true
+                    wpfTextBox.IsTabStop <- false
                     wpfTextBox.FontFamily <- Windows.Media.FontFamily ("Consolas")
                     wpfTextBox.Foreground <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(220uy, 220uy, 220uy)) 
-                    wpfTextBox.Document.LineHeight <- 1.
-                    wpfTextBox.Document.Background <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(30uy, 30uy, 30uy))
+                    wpfTextBox.Background <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(30uy, 30uy, 30uy))
                     wpfTextBox.FontSize <- 14.
-                    wpfTextBox.AutoWordSelection <- false
                     wpfTextBox.BorderThickness <- Windows.Thickness(0.)
-                    wpfTextBox.CaretBrush <- Windows.Media.SolidColorBrush (Windows.Media.Color.FromRgb(220uy, 220uy, 220uy)) 
-                    wpfTextBox, false
-
-            if oldAcceptsReturn <> acceptsReturn then
-                wpfTextBox.AcceptsReturn <- acceptsReturn
+                    wpfTextBox.AllowDrop <- false
+                    wpfTextBox
 
             if not (g.EventSubscriptions.ContainsKey wpfTextBox) then
                 let mutable text = SourceText.From (String.Empty)
-                let wpfDocument = wpfTextBox.Document
-                g.Events.[wpfTextBox] <- 
-                    wpfTextBox.TextChanged 
-                    |> Event.map (fun args ->
-                        // TODO: Optimize this.
-                        let textStr = System.Windows.Documents.TextRange(wpfDocument.ContentStart, wpfTextBox.Document.ContentEnd).Text
-                        text <- SourceText.From textStr
-                        text
+                let queueTextChanges = Queue<TextChange>()
+                wpfTextBox.Document.Changing.Add (fun args ->
+                    printfn "offset: %i" args.Offset
+                    printfn "removalLength: %i" args.RemovalLength
+                    printfn "additionLength: %i" args.InsertionLength
+                    if args.InsertionLength > 0 then
+                        TextChange (TextSpan (args.Offset, 0), args.InsertedText.Text)
+                        |> queueTextChanges.Enqueue
+                    elif args.RemovalLength > 0 then
+                        TextChange (TextSpan (args.Offset, args.RemovalLength), String.Empty)
+                        |> queueTextChanges.Enqueue
+                )
+                let textChanged =
+                    wpfTextBox.Document.TextChanged
+                    |> Event.map (fun _ ->
+                        let textChanges = queueTextChanges.ToArray()
+                        queueTextChanges.Clear ()
+                        text <- (text, textChanges) ||> Array.fold (fun text textChange -> text.WithChanges textChange)
+                        text    
                     )
+                g.Events.[wpfTextBox] <- textChanged
                 g.EventSubscriptions.[wpfTextBox] <- 
                     (g.Events.[wpfTextBox] :?> IEvent<SourceText>).Subscribe onTextChanged
             else

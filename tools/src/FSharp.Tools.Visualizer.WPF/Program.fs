@@ -156,7 +156,7 @@ module rec App =
             View.DockPanel 
                 [
                     View.Menu ([ MenuItem.MenuItem ("_File", [ exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
-                    View.TextBox (true, fun text -> 
+                    View.Editor ([], [], fun text -> 
                         dispatch (UpdateText (text, fun updatedModel ->
                             let computation =
                                 async {
