@@ -149,7 +149,7 @@ module rec App =
                             getTreeItem childNode
                         )
                         |> List.ofSeq
-                    TreeViewItem.TreeViewItem(node.Kind.GetType().Name, nested, fun () -> ())
+                    TreeViewItem.TreeViewItem(string node, nested, fun () -> ())
                 [ getTreeItem rootNode ]
 
         View.Common (

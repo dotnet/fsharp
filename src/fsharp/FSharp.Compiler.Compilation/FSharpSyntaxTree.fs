@@ -980,6 +980,10 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
     override this.GetHashCode () =
         this.Span.GetHashCode ()
 
+    override this.ToString () =
+        let index = this.DebugString.IndexOf ("\n")
+        this.Kind.GetType().Name + ": " + if index <> -1 then this.DebugString.Substring(0, index) else this.DebugString
+
 and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, changes: IReadOnlyList<TextChangeRange>) as this =
 
     let gate = obj ()

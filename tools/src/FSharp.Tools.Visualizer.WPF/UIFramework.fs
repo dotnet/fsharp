@@ -213,7 +213,7 @@ module internal Helpers =
                         let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.MenuItem
                         g.EventSubscriptions.[wpfMenuItem].Dispose ()
                         g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                        fun () -> wpfMenu.Items.Remove (wpfMenuItem)
+                        fun () -> wpfMainMenuItem.Items.Remove (wpfMenuItem)
                     )
                     (fun () ->
                         for i = 0 to wpfMainMenuItem.Items.Count - 1 do
@@ -342,7 +342,7 @@ module internal Helpers =
                         let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
                         if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
                         g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                        fun () -> wpfTreeView.Items.Remove wpfMenuItem
+                        fun () -> wpfMainMenuItem.Items.Remove wpfMenuItem
                     )
                     (fun () ->
                         for i = 0 to wpfMainMenuItem.Items.Count - 1 do
