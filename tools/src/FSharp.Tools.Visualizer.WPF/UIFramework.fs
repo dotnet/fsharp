@@ -327,84 +327,26 @@ module internal Helpers =
                 | View.TreeView (oldMenuItems) -> (wpfUIElement :?> System.Windows.Controls.TreeView, oldMenuItems)
                 | _ -> System.Windows.Controls.TreeView (), []
 
-            let rec diffNestedMenuItems (wpfMainMenuItem: System.Windows.Controls.TreeViewItem) oldMenuItems newMenuItems =
-                diffSeq oldMenuItems newMenuItems
-                    (fun menuItem ->
-                        match menuItem with
-                        | TreeViewItem.TreeViewItem (header, nested, onClick) ->
-                            let wpfMenuItem = System.Windows.Controls.TreeViewItem(Header = header)
-
-                            diffNestedMenuItems wpfMenuItem [] nested
-
-                            let subscription = wpfMenuItem.Selected.Subscribe (fun _ -> if wpfMenuItem.IsSelected then onClick ())
-                            g.EventSubscriptions.Add(wpfMenuItem, subscription)
-                            wpfMainMenuItem.Items.Add wpfMenuItem |> ignore
-                    )
-                    (fun i oldMenuItem newMenuItem ->
-                        match oldMenuItem, newMenuItem with
-                        | TreeViewItem.TreeViewItem (oldHeader, oldNested, _), TreeViewItem.TreeViewItem (newHeader, newNested, onClick) ->
-                            let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
-
-                            diffNestedMenuItems wpfMenuItem oldNested newNested
-
-                            if oldHeader <> newHeader then
-                                wpfMenuItem.Header <- newHeader
-
-                            g.EventSubscriptions.[wpfMenuItem].Dispose()
-                            g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> if wpfMenuItem.IsSelected then onClick ())
-                    )
-                    (fun i ->
-                        let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                        g.EventSubscriptions.[wpfMenuItem].Dispose ()
-                        g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                        fun () -> wpfMainMenuItem.Items.Remove wpfMenuItem
-                    )
-                    (fun () ->
-                        for i = 0 to wpfMainMenuItem.Items.Count - 1 do
-                            let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                            g.EventSubscriptions.[wpfMenuItem].Dispose ()
-                            g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                        wpfMainMenuItem.Items.Clear ()
+            let rec updateTreeViewItems (treeViewItems: TreeViewItem list) acc =
+                match treeViewItems with
+                | [] -> List.rev acc
+                | (TreeViewItem.TreeViewItem (header, nested, onClick)) :: tail ->
+                    let wpfTreeViewItem = System.Windows.Controls.TreeViewItem()
+                    wpfTreeViewItem.Header <- header
+                    wpfTreeViewItem.Selected.Add (fun _ -> if wpfTreeViewItem.IsSelected then onClick ())
+                    wpfTreeViewItem.IsExpanded <- true
+                    updateTreeViewItems nested []
+                    |> List.iter (fun x ->
+                        wpfTreeViewItem.Items.Add x |> ignore
                     )
 
-            diffSeq oldMenuItems newMenuItems
-                (fun menuItem ->
-                    match menuItem with
-                    | TreeViewItem.TreeViewItem (header, nested, onClick) ->
-                        let wpfMenuItem = System.Windows.Controls.TreeViewItem(Header = header)
-                        let subscription = wpfMenuItem.Selected.Subscribe (fun _ -> if wpfMenuItem.IsSelected then onClick ())
+                    updateTreeViewItems tail (wpfTreeViewItem :: acc)
 
-                        diffNestedMenuItems wpfMenuItem [] nested
-
-                        g.EventSubscriptions.Add(wpfMenuItem, subscription)
-                        wpfTreeView.Items.Add wpfMenuItem |> ignore
-                )
-                (fun i oldMenuItem newMenuItem ->
-                    match oldMenuItem, newMenuItem with
-                    | TreeViewItem.TreeViewItem (oldHeader, oldNested, _), TreeViewItem.TreeViewItem (newHeader, newNested, onClick) ->
-                        let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.TreeViewItem
-
-                        diffNestedMenuItems wpfMenuItem oldNested newNested
-
-                        if oldHeader <> newHeader then
-                            wpfMenuItem.Header <- newHeader
-
-                        g.EventSubscriptions.[wpfMenuItem].Dispose()
-                        g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> if wpfMenuItem.IsSelected then onClick ())
-                )
-                (fun i ->
-                    let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                    g.EventSubscriptions.[wpfMenuItem].Dispose ()
-                    g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                    fun () -> wpfTreeView.Items.Remove wpfMenuItem
-                )
-                (fun () ->
-                    for i = 0 to wpfTreeView.Items.Count - 1 do
-                        let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                        g.EventSubscriptions.[wpfMenuItem].Dispose ()
-                        g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
-                    wpfTreeView.Items.Clear ()
-                )
+            wpfTreeView.Items.Clear ()
+            updateTreeViewItems newMenuItems []
+            |> List.iter (fun x ->
+                wpfTreeView.Items.Add x |> ignore
+            )
 
             wpfTreeView :> System.Windows.UIElement
                

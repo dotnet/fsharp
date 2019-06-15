@@ -65,10 +65,14 @@ module TestModule%i =
         let metadataReferences =
             Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
             |> Seq.choose (fun filePath ->
-                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
-                    Some (PortableExecutableReference.CreateFromFile filePath)
-                else
-                    None
+                try
+                    System.Reflection.AssemblyName.GetAssemblyName filePath |> ignore
+                    if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) then
+                        Some (PortableExecutableReference.CreateFromFile filePath)
+                    else
+                        None
+                with
+                | _ -> None
             )
             |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
             |> ImmutableArray.CreateRange
@@ -82,7 +86,6 @@ module TestModule%i =
             { compilation.Options with CommandLineArgs = ["--targetprofile:netcore"] }
         compilation.SetOptions options
 
-// will be important: https://www.codeproject.com/Articles/161871/Fast-Colored-TextBox-for-syntax-highlighting-2
 [<AutoOpen>]
 module rec App =
 
@@ -91,6 +94,7 @@ module rec App =
             FileMenuHeader: string
             WillExit: bool
             Compilation: FSharpCompilation
+            OldText: SourceText
             Text: SourceText
             CancellationTokenSource: CancellationTokenSource
             RootNode: FSharpSyntaxNode option
@@ -105,6 +109,7 @@ module rec App =
                 FileMenuHeader = "_File"
                 WillExit = false
                 Compilation = createCompilation text
+                OldText = text
                 Text = text
                 CancellationTokenSource = new CancellationTokenSource ()
                 RootNode = None
@@ -136,6 +141,7 @@ module rec App =
                     Compilation = model.Compilation.ReplaceSourceSnapshot textSnapshot
                     CancellationTokenSource = new CancellationTokenSource ()
                     WillRedraw = false
+                    NodeHighlight = None
                 }
             callback updatedModel
             updatedModel
@@ -157,9 +163,20 @@ module rec App =
                 )
                 |> List.ofSeq
 
+            let textChangeHighlights =
+                model.Text.GetTextChanges model.OldText
+                |> Seq.map (fun textChange ->
+                    if textChange.NewText = String.Empty then
+                        HighlightSpan (textChange.Span, Drawing.Color.Red, HighlightSpanKind.Background)
+                    else
+                        HighlightSpan (TextSpan (textChange.Span.Start, textChange.NewText.Length), Drawing.Color.Green, HighlightSpanKind.Background)
+                )
+                |> List.ofSeq
+
             { model with 
+                OldText = model.Text
                 RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None)
-                Highlights = highlights
+                Highlights = highlights @ textChangeHighlights
                 WillRedraw = true
             }
         | UpdateNodeHighlight node ->
