@@ -190,9 +190,9 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
     }
 
     if ($summary) {
-        $args += " /consoleloggerparameters:Verbosity=$verbosity;summary"
+        $args += " /consoleloggerparameters:Verbosity=minimal;summary"
     } else {        
-        $args += " /consoleloggerparameters:Verbosity=$verbosity"
+        $args += " /consoleloggerparameters:Verbosity=minimal"
     }
 
     if ($parallel) {
@@ -237,13 +237,13 @@ function Make-BootstrapBuild() {
     Create-Directory $dir
 
     # prepare FsLex and Fsyacc
-    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Publish" -logFileName "BuildTools" -configuration $bootstrapConfiguration -verbosity $verbosity
+    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Publish" -logFileName "BuildTools" -configuration $bootstrapConfiguration
     Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\fslex" -Force -Recurse
     Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\fsyacc" -Force  -Recurse
 
     # prepare compiler
     $projectPath = "$RepoRoot\proto.proj"
-    Run-MSBuild $projectPath "/restore /t:Publish" -logFileName "Bootstrap" -configuration $bootstrapConfiguration -verbosity $verbosity
+    Run-MSBuild $projectPath "/restore /t:Publish" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsc" -Force -Recurse
     Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsi" -Force -Recurse
 

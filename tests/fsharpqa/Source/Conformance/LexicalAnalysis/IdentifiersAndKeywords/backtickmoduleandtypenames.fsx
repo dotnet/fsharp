@@ -1,4 +1,4 @@
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 open System
 open System.Reflection
 

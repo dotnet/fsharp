@@ -6844,7 +6844,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 let 대신 사용됩니다.</target>
+        <target state="translated">IDisposable을 구현하는 값에 let 대신 사용되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,22 +7144,22 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">멤버 {0}에 지정된 구현이 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">멤버 {0}에 지정된 구현이 없습니다. 모든 인터페이스 멤버가 구현되어 적절한 'interface' 선언에 나열되어야 합니다(예: 'interface ... with member ...').</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">멤버 {0}에 지정된 구현이 없습니다(일부 결과는 생략됨).</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">멤버 {0}에 지정된 구현이 없습니다(일부 결과는 생략됨). 모든 인터페이스 멤버가 구현되어 적절한 'interface' 선언에 나열되어야 합니다(예: 'interface ... with member ...').</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

@@ -223,7 +223,6 @@ function BuildSolution {
   if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
     MSBuild "$repo_root/src/buildtools/buildtools.proj" \
       /restore \
-      /v:$verbosity \
       /p:Configuration=$bootstrap_config \
       /t:Publish
 
@@ -234,7 +233,6 @@ function BuildSolution {
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
       /restore \
-      /v:$verbosity \
       /p:Configuration=$bootstrap_config \
       /t:Publish
 
@@ -244,7 +242,6 @@ function BuildSolution {
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
-    /v:$verbosity \
     /p:Configuration=$configuration \
     /p:Projects="$projects" \
     /p:RepoRoot="$repo_root" \
@@ -270,6 +267,7 @@ BuildSolution
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=netcoreapp2.1
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.LanguageServer.UnitTests/FSharp.Compiler.LanguageServer.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
 fi

@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -459,7 +459,7 @@
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">F# Interactive に渡されるパスとコマンド ライン引数を変更します</target>
+        <target state="translated">F# インタラクティブに渡されるパスとコマンド ライン引数を変更します</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">

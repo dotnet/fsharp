@@ -2810,7 +2810,7 @@ app.config dosyasındaki yeni değer: '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_ConfirmRemoveServices">
         <source>Disabling application services will clear the default services for Authentication, Roles, and Settings.  Click OK to disable application services.</source>
-        <target state="translated">Uygulama hizmetlerini devre dışı bırakmak, Kimlik Doğrulama, Roller ve Ayarlar için varsayılan hizmetleri temizleyecek.  Uygulama hizmetlerini devre dışı bırakmak için Tamam'a tıklayın.</target>
+        <target state="translated">Uygulama hizmetlerini devre dışı bırakmak, Kimlik Doğrulaması, Roller ve Ayarlar için varsayılan hizmetleri temizleyecek.  Uygulama hizmetlerini devre dışı bırakmak için Tamam'a tıklayın.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_ConfirmRemoveServices_Caption">
@@ -2860,7 +2860,7 @@ app.config dosyasındaki yeni değer: '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_ConnectionStringsDontMatch">
         <source>Authentication, Roles and Web Settings providers have been configured via the Application configuration file such that they do not share a common connection string.</source>
-        <target state="translated">Kimlik Doğrulama, Roller ve Web Ayarları sağlayıcıları, Uygulama yapılandırma dosyası kullanılarak ortak bağlantı dizesini paylaşmayacak şekilde yapılandırıldı.</target>
+        <target state="translated">Kimlik Doğrulaması, Roller ve Web Ayarları sağlayıcıları, Uygulama yapılandırma dosyası kullanılarak ortak bağlantı dizesini paylaşmayacak şekilde yapılandırıldı.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_connectionStringValueDefaultDisplayValue">
