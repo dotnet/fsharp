@@ -336,7 +336,7 @@ module internal Helpers =
 
                             diffNestedMenuItems wpfMenuItem [] nested
 
-                            let subscription = wpfMenuItem.Selected.Subscribe (fun _ -> onClick ())
+                            let subscription = wpfMenuItem.Selected.Subscribe (fun _ -> if wpfMenuItem.IsSelected then onClick ())
                             g.EventSubscriptions.Add(wpfMenuItem, subscription)
                             wpfMainMenuItem.Items.Add wpfMenuItem |> ignore
                     )
@@ -351,7 +351,7 @@ module internal Helpers =
                                 wpfMenuItem.Header <- newHeader
 
                             g.EventSubscriptions.[wpfMenuItem].Dispose()
-                            g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> onClick ())
+                            g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> if wpfMenuItem.IsSelected then onClick ())
                     )
                     (fun i ->
                         let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
@@ -372,7 +372,7 @@ module internal Helpers =
                     match menuItem with
                     | TreeViewItem.TreeViewItem (header, nested, onClick) ->
                         let wpfMenuItem = System.Windows.Controls.TreeViewItem(Header = header)
-                        let subscription = wpfMenuItem.Selected.Subscribe (fun _ -> onClick ())
+                        let subscription = wpfMenuItem.Selected.Subscribe (fun _ -> if wpfMenuItem.IsSelected then onClick ())
 
                         diffNestedMenuItems wpfMenuItem [] nested
 
@@ -390,7 +390,7 @@ module internal Helpers =
                             wpfMenuItem.Header <- newHeader
 
                         g.EventSubscriptions.[wpfMenuItem].Dispose()
-                        g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> onClick ())
+                        g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> if wpfMenuItem.IsSelected then onClick ())
                 )
                 (fun i ->
                     let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.TreeViewItem
