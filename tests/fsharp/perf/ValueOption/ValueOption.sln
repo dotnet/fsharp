@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29009.5
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ValueOption", "ValueOption\ValueOption.fsproj", "{9B0B5493-1957-49B6-AC99-E6FAD14AD4CC}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core", "..\..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj", "{6AD3938C-E325-4651-9952-B5BBE1E46660}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9B0B5493-1957-49B6-AC99-E6FAD14AD4CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B0B5493-1957-49B6-AC99-E6FAD14AD4CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B0B5493-1957-49B6-AC99-E6FAD14AD4CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B0B5493-1957-49B6-AC99-E6FAD14AD4CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AD3938C-E325-4651-9952-B5BBE1E46660}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AD3938C-E325-4651-9952-B5BBE1E46660}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AD3938C-E325-4651-9952-B5BBE1E46660}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AD3938C-E325-4651-9952-B5BBE1E46660}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {29BD8449-EA3F-4AD2-BF78-197FECB5BA70}
+	EndGlobalSection
+EndGlobal
