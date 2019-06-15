@@ -22,19 +22,19 @@
   <ItemGroup>
     <Compile Include="console.fs" />
     <Compile Include="fsimain.fs" />
-    <CopyAndSubstituteText Include="App.config">
+    <NoneSubstituteText Include="App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
-    </CopyAndSubstituteText>
+    </NoneSubstituteText>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
 
     <!-- only used when '$(TargetFramework)' == 'net472' -->
-    <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">

@@ -567,7 +567,7 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_ExecuteCannotBeExcluded">
         <source>The SecurityPermission must be included in your application with the Execute flag set or your application will not run. The Execute flag has been added to the SecurityPermission in your manifest.</source>
-        <target state="translated">애플리케이션에 Execute 플래그가 설정된 SecurityPermission이 포함되지 않으면 애플리케이션이 실행되지 않습니다. 이 사용 권한을 "영역 기본값" 또는 "포함"으로 표시하세요.</target>
+        <target state="translated">애플리케이션에 Execute 플래그가 설정된 SecurityPermission이 포함되지 않으면 애플리케이션이 실행되지 않습니다. Execute 플래그는 사용자 매니페스트의 SecurityPermission에 추가되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_SwitchToFullTrustDialog">
@@ -2371,7 +2371,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_UnknownType">
         <source>Type '{0}' is not defined.</source>
-        <target state="translated">{0}' 형식이 정의되지 않았습니다.</target>
+        <target state="translated">'{0}' 형식이 정의되지 않았습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_UndoTran_NameChanged">

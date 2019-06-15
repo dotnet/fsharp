@@ -1324,7 +1324,7 @@
       </trans-unit>
       <trans-unit id="ShippingCalculator-Line1">
         <source>Next, define an interface type that represents an object to compute the shipping zone for the customer's zip code,</source>
-        <target state="translated">Definire quindi un tipo di interfaccia che rappresenta un oggetto per calcolare l'area di spedizione per il codice postale del cliente,</target>
+        <target state="translated">Definire quindi un tipo di interfaccia che rappresenta un oggetto per calcolare la zona di spedizione per il codice postale del cliente,</target>
         <note />
       </trans-unit>
       <trans-unit id="ShippingCalculator-Line2">
@@ -1334,7 +1334,7 @@
       </trans-unit>
       <trans-unit id="CalcShippingZone-Line1">
         <source>Next, calculate a shipping zone for a customer using a calculator instance.</source>
-        <target state="translated">Calcolare quindi un'area di spedizione per un cliente usando un'istanza della calcolatrice.</target>
+        <target state="translated">Calcolare quindi una zona di spedizione per un cliente usando un'istanza della calcolatrice.</target>
         <note />
       </trans-unit>
       <trans-unit id="CalcShippingZone-Line2">
