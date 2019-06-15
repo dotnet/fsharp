@@ -60,7 +60,7 @@ For Linux/Mac:
 
 Running tests:
 
-    ./build.sh -test
+    ./build.sh --test
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 
