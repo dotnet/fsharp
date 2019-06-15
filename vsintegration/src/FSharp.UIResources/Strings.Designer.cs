@@ -358,6 +358,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Text hover.
+        /// </summary>
+        public static string Text_hover {
+            get {
+                return ResourceManager.GetString("Text_hover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Time until stale results are used (in milliseconds).
         /// </summary>
         public static string Time_until_stale_completion {
@@ -399,6 +408,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Unused_opens_code_fix {
             get {
                 return ResourceManager.GetString("Unused_opens_code_fix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to (Preview) Use out of process language server.
+        /// </summary>
+        public static string Use_out_of_process_language_server {
+            get {
+                return ResourceManager.GetString("Use_out_of_process_language_server", resourceCulture);
             }
         }
     }

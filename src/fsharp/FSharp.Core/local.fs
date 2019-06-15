@@ -294,16 +294,16 @@ module internal List =
         | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
         | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
-    let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_, _, _, _>) xs1 xs2 xs3 =
+    let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_, _, _, _>) xs1 xs2 xs3 cut =
         match xs1, xs2, xs3 with
         | [], [], [] ->
             setFreshConsTail cons []
         | h1 :: t1, h2 :: t2, h3 :: t3 ->
             let cons2 = freshConsNoTail (f.Invoke(h1, h2, h3))
             setFreshConsTail cons cons2
-            map3ToFreshConsTail cons2 f t1 t2 t3
+            map3ToFreshConsTail cons2 f t1 t2 t3 (cut + 1)
         | xs1, xs2, xs3 ->
-            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length
+            invalidArg3ListsDifferent "list1" "list2" "list3" (xs1.Length + cut) (xs2.Length + cut) (xs3.Length + cut)
 
     let map3 mapping xs1 xs2 xs3 =
         match xs1, xs2, xs3 with
@@ -311,7 +311,7 @@ module internal List =
         | h1 :: t1, h2 :: t2, h3 :: t3 ->
             let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(mapping)
             let cons = freshConsNoTail (f.Invoke(h1, h2, h3))
-            map3ToFreshConsTail cons f t1 t2 t3
+            map3ToFreshConsTail cons f t1 t2 t3 1
             cons
         | xs1, xs2, xs3 ->
             invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length

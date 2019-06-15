@@ -28,15 +28,6 @@ let dispose (x:System.IDisposable?) =
 #endif
     match x with null -> () | NonNull x -> x.Dispose()
 
-type SaveAndRestoreConsoleEncoding () =
-    let savedOut = System.Console.Out
-
-    interface System.IDisposable with
-        member this.Dispose() = 
-            try 
-                System.Console.SetOut(savedOut)
-            with _ -> ()
-
 //-------------------------------------------------------------------------
 // Library: bits
 //------------------------------------------------------------------------

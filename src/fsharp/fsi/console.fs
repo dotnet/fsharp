@@ -5,8 +5,6 @@ namespace FSharp.Compiler.Interactive
 open System
 open System.Text
 open System.Collections.Generic
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL.Internal.Library
 
 /// System.Console.ReadKey appears to return an ANSI character (not the expected the unicode character).
 /// When this fix flag is true, this byte is converted to a char using the System.Console.InputEncoding.
