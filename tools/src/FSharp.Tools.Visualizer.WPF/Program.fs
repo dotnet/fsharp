@@ -173,10 +173,27 @@ module rec App =
                 )
                 |> List.ofSeq
 
+            let beef =
+                let textChanges = model.Text.GetTextChanges model.OldText
+                if textChanges.Count = 1 then
+                    match semanticModel.SyntaxTree.GetRootNode(CancellationToken.None).TryFindNode(textChanges.[0].Span) with
+                    | Some node ->
+                        match node.GetAncestorsAndSelf () |> Seq.tryFind (fun x -> match x.Kind with FSharpSyntaxNodeKind.ModuleDecl _ -> true | _ -> false) with
+                        | Some node -> Some node
+                        | _ -> None
+                    | _ ->
+                        None
+                else
+                    None
+                |> Option.map (fun node ->
+                    [ HighlightSpan (node.Span, Drawing.Color.DarkGreen, HighlightSpanKind.Background) ]
+                )
+                |> Option.defaultValue []
+
             { model with 
                 OldText = model.Text
                 RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None)
-                Highlights = highlights @ textChangeHighlights
+                Highlights = highlights @ beef
                 WillRedraw = true
             }
         | UpdateNodeHighlight node ->

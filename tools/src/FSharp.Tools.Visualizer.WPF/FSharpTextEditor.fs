@@ -9,6 +9,7 @@ open Microsoft.CodeAnalysis.Text
 open ICSharpCode.AvalonEdit
 open ICSharpCode.AvalonEdit.Highlighting
 open ICSharpCode.AvalonEdit.Rendering
+open ICSharpCode.AvalonEdit.CodeCompletion
 open System.Windows.Media
 
 type HighlightSpanKind = 
@@ -98,6 +99,16 @@ and FSharpTextEditor () as this =
             queueTextChanges.Clear ()
             sourceText <- (sourceText, textChanges) ||> Array.fold (fun text textChange -> text.WithChanges textChange)
             sourceTextChanged.Trigger sourceText    
+        )
+
+        let mutable completionWindow = null
+        this.TextArea.TextEntered.Add (fun args ->
+            if args.Text = "." then
+                completionWindow <- CompletionWindow (this.TextArea)
+                completionWindow.Show()
+                completionWindow.Closed.Add (fun _ ->
+                    completionWindow <- null
+                )
         )
         
     member __.SourceText = sourceText

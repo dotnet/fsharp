@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open Microsoft.CodeAnalysis.Text
 open ICSharpCode.AvalonEdit
 open ICSharpCode.AvalonEdit.Highlighting
+open ICSharpCode.AvalonEdit.CodeCompletion
 
 [<AutoOpen>]
 module rec Virtual =

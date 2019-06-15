@@ -138,12 +138,17 @@ module AstVisitorHelpers =
                 match argInfos with
                 | [] -> range0
                 | _ ->
-                    argInfos
-                    |> List.reduce (@)
-                    |> List.append [argInfo]
-                    |> List.map (fun x -> x.PossibleRange)
-                    |> List.filter (fun x -> not (isZeroRange x))
-                    |> List.reduce unionRanges
+                    let result =
+                        argInfos
+                        |> List.reduce (@)
+                        |> List.append [argInfo]
+                        |> List.map (fun x -> x.PossibleRange)
+                        |> List.filter (fun x -> not (isZeroRange x))
+                    match result with
+                    | [] -> range0
+                    | result ->
+                        result
+                        |> List.reduce unionRanges
 
     type SynTypeDefnKind with
 
@@ -234,9 +239,12 @@ module AstVisitorHelpers =
         member this.PossibleRange =
             match this with
             | Pats pats ->
-                pats
-                |> List.map (fun x -> x.Range)
-                |> List.reduce unionRanges
+                match pats with
+                | [] -> range0
+                | _ ->
+                    pats
+                    |> List.map (fun x -> x.Range)
+                    |> List.reduce unionRanges
 
             | NamePatPairs (_, m) -> m
 
