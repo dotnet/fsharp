@@ -94,6 +94,9 @@ module rec App =
             Text: SourceText
             CancellationTokenSource: CancellationTokenSource
             RootNode: FSharpSyntaxNode option
+            Highlights: HighlightSpan list
+            WillRedraw: bool
+            NodeHighlight: FSharpSyntaxNode option
         }
 
         static member Default =
@@ -105,12 +108,16 @@ module rec App =
                 Text = text
                 CancellationTokenSource = new CancellationTokenSource ()
                 RootNode = None
+                Highlights = []
+                WillRedraw = true
+                NodeHighlight = None
             }
 
     type Msg =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
         | UpdateVisualizers of FSharpSemanticModel
+        | UpdateNodeHighlight of FSharpSyntaxNode
 
     let update msg model =
         match msg with
@@ -128,12 +135,35 @@ module rec App =
                     Text = text
                     Compilation = model.Compilation.ReplaceSourceSnapshot textSnapshot
                     CancellationTokenSource = new CancellationTokenSource ()
+                    WillRedraw = false
                 }
             callback updatedModel
             updatedModel
-        | UpdateVisualizers semanticModel ->
-            printfn "%A" (semanticModel.Compilation.GetDiagnostics ())
-            { model with RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None) }
+        | UpdateVisualizers semanticModel ->         
+            let diagnostics = semanticModel.Compilation.GetDiagnostics ()
+
+            printfn "%A" diagnostics
+
+            let highlights =
+                diagnostics
+                |> Seq.map (fun x ->
+                    let span = x.Location.SourceSpan
+                    let color =
+                        match x.Severity with
+                        | DiagnosticSeverity.Error -> Drawing.Color.Red
+                        | _ -> Drawing.Color.LightGreen
+                    let kind = HighlightSpanKind.Underline
+                    HighlightSpan (span, color, kind)
+                )
+                |> List.ofSeq
+
+            { model with 
+                RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None)
+                Highlights = highlights
+                WillRedraw = true
+            }
+        | UpdateNodeHighlight node ->
+            { model with NodeHighlight = Some node }
 
     let exitMenuItemView dispatch = MenuItem.MenuItem ("_Exit", [], fun _ -> dispatch Exit)
 
@@ -149,14 +179,20 @@ module rec App =
                             getTreeItem childNode
                         )
                         |> List.ofSeq
-                    TreeViewItem.TreeViewItem(string node, nested, fun () -> ())
+                    TreeViewItem.TreeViewItem(string node, nested, fun () -> dispatch (UpdateNodeHighlight node))
                 [ getTreeItem rootNode ]
+
+        let otherHighlights =
+            match model.NodeHighlight with
+            | Some node ->
+                [ HighlightSpan(node.Span, Drawing.Color.Gray, HighlightSpanKind.Background) ]
+            | _ -> []
 
         View.Common (
             View.DockPanel 
                 [
                     View.Menu ([ MenuItem.MenuItem ("_File", [ exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
-                    View.Editor ([], [], fun text -> 
+                    View.Editor (model.Highlights @ otherHighlights, model.WillRedraw, fun text -> 
                         dispatch (UpdateText (text, fun updatedModel ->
                             let computation =
                                 async {

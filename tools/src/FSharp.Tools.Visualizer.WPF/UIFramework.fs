@@ -6,6 +6,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open Microsoft.CodeAnalysis.Text
 open ICSharpCode.AvalonEdit
+open ICSharpCode.AvalonEdit.Highlighting
 
 [<AutoOpen>]
 module rec Virtual =
@@ -32,7 +33,7 @@ module rec Virtual =
         | DockPanel of View list
         | DataGrid of columns: DataGridColumn list * data: IEnumerable
         | Menu of MenuItem list * dockTop: bool
-        | Editor of highlights: TextSpan list * errors: (TextSpan * string) list * onTextChanged: (SourceText -> unit)
+        | Editor of highlightSpans: HighlightSpan list * willRedraw: bool * onTextChanged: (SourceText -> unit)
         | TreeView of TreeViewItem list
 
 [<Sealed>]
@@ -267,7 +268,7 @@ module internal Helpers =
 
             wpfMenu :> System.Windows.UIElement
 
-        | View.Editor (highlights, errors, onTextChanged) ->
+        | View.Editor (highlightSpans, willRedraw, onTextChanged) ->
             let wpfTextBox =
                 match view with
                 | View.Editor (_) -> (wpfUIElement :?> FSharpTextEditor)
@@ -284,6 +285,39 @@ module internal Helpers =
                     (g.Events.[wpfTextBox] :?> IEvent<SourceText>).Subscribe onTextChanged
 
             wpfTextBox.Width <- 1080.
+
+            if willRedraw then
+                wpfTextBox.ClearAllTextSpanColors ()
+                highlightSpans
+                |> List.iter (fun (HighlightSpan (span, color, kind)) ->
+                    if wpfTextBox.SourceText.Length >= span.End && not (span.Length = 0) then
+                        let linePosSpan = wpfTextBox.SourceText.Lines.GetLinePositionSpan span
+                        let startLine = linePosSpan.Start.Line
+                        let endLine = linePosSpan.End.Line
+
+                        for lineNumber = startLine to endLine do
+
+                            let line = wpfTextBox.SourceText.Lines.[lineNumber]
+
+                            let start =
+                                if startLine = lineNumber then
+                                    span.Start
+                                else
+                                    line.Start
+
+                            let length =
+                                if endLine = lineNumber then
+                                    if startLine = lineNumber then
+                                        span.Length
+                                    else
+                                        span.End - line.Start
+                                else
+                                    line.End - line.Start
+
+                            let textSpanColors = wpfTextBox.GetTextSpanColors (lineNumber + 1)
+                            textSpanColors.Add (HighlightSpan (TextSpan(start, length), color, kind))
+                )
+                wpfTextBox.Redraw ()
 
             wpfTextBox :> System.Windows.UIElement
 
@@ -316,19 +350,19 @@ module internal Helpers =
                             if oldHeader <> newHeader then
                                 wpfMenuItem.Header <- newHeader
 
-                            if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose()
+                            g.EventSubscriptions.[wpfMenuItem].Dispose()
                             g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> onClick ())
                     )
                     (fun i ->
                         let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                        if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
+                        g.EventSubscriptions.[wpfMenuItem].Dispose ()
                         g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
                         fun () -> wpfMainMenuItem.Items.Remove wpfMenuItem
                     )
                     (fun () ->
                         for i = 0 to wpfMainMenuItem.Items.Count - 1 do
                             let wpfMenuItem = wpfMainMenuItem.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                            if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
+                            g.EventSubscriptions.[wpfMenuItem].Dispose ()
                             g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
                         wpfMainMenuItem.Items.Clear ()
                     )
@@ -355,19 +389,19 @@ module internal Helpers =
                         if oldHeader <> newHeader then
                             wpfMenuItem.Header <- newHeader
 
-                        if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose()
+                        g.EventSubscriptions.[wpfMenuItem].Dispose()
                         g.EventSubscriptions.[wpfMenuItem] <- wpfMenuItem.Selected.Subscribe (fun _ -> onClick ())
                 )
                 (fun i ->
                     let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                    if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
+                    g.EventSubscriptions.[wpfMenuItem].Dispose ()
                     g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
                     fun () -> wpfTreeView.Items.Remove wpfMenuItem
                 )
                 (fun () ->
                     for i = 0 to wpfTreeView.Items.Count - 1 do
                         let wpfMenuItem = wpfTreeView.Items.[i] :?> System.Windows.Controls.TreeViewItem
-                        if g.EventSubscriptions.ContainsKey wpfMenuItem then g.EventSubscriptions.[wpfMenuItem].Dispose ()
+                        g.EventSubscriptions.[wpfMenuItem].Dispose ()
                         g.EventSubscriptions.Remove(wpfMenuItem) |> ignore
                     wpfTreeView.Items.Clear ()
                 )
