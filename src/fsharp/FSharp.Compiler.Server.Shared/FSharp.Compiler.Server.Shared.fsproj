@@ -20,7 +20,6 @@
     <Compile Include="FSharpInteractiveServer.fs" />
   </ItemGroup>
 
-  <!-- when building the proto tools, use an FSharp.Core package as the latest FSharp.Core code may not build with LKG compiler -->
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>

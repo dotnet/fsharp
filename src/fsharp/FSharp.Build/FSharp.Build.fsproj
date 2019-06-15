@@ -39,7 +39,6 @@
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- when building the proto tools, use an FSharp.Core package as the latest FSharp.Core code may not build with LKG compiler -->
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
