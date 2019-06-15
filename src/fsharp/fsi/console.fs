@@ -10,7 +10,10 @@ open System.Collections.Generic
 /// When this fix flag is true, this byte is converted to a char using the System.Console.InputEncoding.
 /// This is a code-around for bug://1345.
 /// Fixes to System.Console.ReadKey may break this code around, hence the option here.
+[<AutoOpen>]
 module internal ConsoleOptions =
+
+  let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
 
   let readKeyFixup (c:char) =
 #if !FX_NO_SERVERCODEPAGES
@@ -354,7 +357,7 @@ type internal ReadLineConsole() =
             // REVIEW: the Ctrl-Z code is not recognised as EOF by the lexer.
             // REVIEW: looks like a relic of the port of readline, which is currently removable.
             let c = if (key.Key = ConsoleKey.F6) then '\x1A' else key.KeyChar
-            let c = ConsoleOptions.readKeyFixup c
+            let c = readKeyFixup c
             insertChar(c)
 
         let backspace() =
