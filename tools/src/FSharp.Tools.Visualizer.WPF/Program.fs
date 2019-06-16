@@ -101,6 +101,7 @@ module rec App =
             Highlights: HighlightSpan list
             WillRedraw: bool
             NodeHighlight: FSharpSyntaxNode option
+            CompletionItems: CompletionItem list
         }
 
         static member Default =
@@ -116,12 +117,13 @@ module rec App =
                 Highlights = []
                 WillRedraw = true
                 NodeHighlight = None
+                CompletionItems = []
             }
 
     type Msg =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
-        | UpdateVisualizers of FSharpSemanticModel
+        | UpdateVisualizers of FSharpSemanticModel * caretOffset: int
         | UpdateNodeHighlight of FSharpSyntaxNode
 
     let update msg model =
@@ -145,7 +147,7 @@ module rec App =
                 }
             callback updatedModel
             updatedModel
-        | UpdateVisualizers semanticModel ->         
+        | UpdateVisualizers (semanticModel, caretOffset) ->         
             let diagnostics = semanticModel.Compilation.GetDiagnostics ()
 
             printfn "%A" diagnostics
@@ -163,22 +165,12 @@ module rec App =
                 )
                 |> List.ofSeq
 
-            let textChangeHighlights =
-                model.Text.GetTextChanges model.OldText
-                |> Seq.map (fun textChange ->
-                    if textChange.NewText = String.Empty then
-                        HighlightSpan (textChange.Span, Drawing.Color.Red, HighlightSpanKind.Background)
-                    else
-                        HighlightSpan (TextSpan (textChange.Span.Start, textChange.NewText.Length), Drawing.Color.Green, HighlightSpanKind.Background)
-                )
-                |> List.ofSeq
-
-            let beef =
+            let symbolInfoOpt =
                 let textChanges = model.Text.GetTextChanges model.OldText
                 if textChanges.Count = 1 then
                     match semanticModel.SyntaxTree.GetRootNode(CancellationToken.None).TryFindNode(textChanges.[0].Span) with
                     | Some node ->
-                        match node.GetAncestorsAndSelf () |> Seq.tryFind (fun x -> match x.Kind with FSharpSyntaxNodeKind.ModuleDecl _ -> true | _ -> false) with
+                        match node.GetAncestorsAndSelf () |> Seq.tryFind (fun x -> match x.Kind with FSharpSyntaxNodeKind.Expr _ -> true | _ -> false) with
                         | Some node -> Some node
                         | _ -> None
                     | _ ->
@@ -193,7 +185,7 @@ module rec App =
             { model with 
                 OldText = model.Text
                 RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None)
-                Highlights = highlights @ beef
+                Highlights = highlights
                 WillRedraw = true
             }
         | UpdateNodeHighlight node ->
@@ -226,7 +218,7 @@ module rec App =
             View.DockPanel 
                 [
                     View.Menu ([ MenuItem.MenuItem ("_File", [ exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
-                    View.Editor (model.Highlights @ otherHighlights, model.WillRedraw, fun text -> 
+                    View.Editor (model.Highlights @ otherHighlights, model.WillRedraw, model.CompletionItems, fun (text, caretOffset) -> 
                         dispatch (UpdateText (text, fun updatedModel ->
                             let computation =
                                 async {
@@ -234,7 +226,7 @@ module rec App =
                                         use! _do = Async.OnCancel (fun () -> printfn "cancelled")
                                         do! Async.Sleep 150
                                         let semanticModel = updatedModel.Compilation.GetSemanticModel "test1.fs"
-                                        dispatch (UpdateVisualizers semanticModel)
+                                        dispatch (UpdateVisualizers (semanticModel, caretOffset))
                                     with
                                     | ex -> ()
                                 }

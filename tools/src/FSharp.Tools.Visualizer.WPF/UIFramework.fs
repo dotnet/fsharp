@@ -27,6 +27,8 @@ module rec Virtual =
     [<RequireQualifiedAccess>]
     type TreeViewItem = TreeViewItem of header: string * nested: TreeViewItem list * onClick: (unit -> unit)
 
+    type CompletionItem = CompletionItem of text: string
+
     [<RequireQualifiedAccess>]
     type View =
         | Empty
@@ -34,7 +36,7 @@ module rec Virtual =
         | DockPanel of View list
         | DataGrid of columns: DataGridColumn list * data: IEnumerable
         | Menu of MenuItem list * dockTop: bool
-        | Editor of highlightSpans: HighlightSpan list * willRedraw: bool * onTextChanged: (SourceText -> unit)
+        | Editor of highlightSpans: HighlightSpan list * willRedraw: bool * completionItems: CompletionItem list * onTextChanged: (SourceText * int -> unit)
         | TreeView of TreeViewItem list
 
 [<Sealed>]
@@ -269,7 +271,7 @@ module internal Helpers =
 
             wpfMenu :> System.Windows.UIElement
 
-        | View.Editor (highlightSpans, willRedraw, onTextChanged) ->
+        | View.Editor (highlightSpans, willRedraw, completionItems, onTextChanged) ->
             let wpfTextBox =
                 match view with
                 | View.Editor (_) -> (wpfUIElement :?> FSharpTextEditor)
@@ -279,11 +281,11 @@ module internal Helpers =
             if not (g.EventSubscriptions.ContainsKey wpfTextBox) then
                 g.Events.[wpfTextBox] <- wpfTextBox.SourceTextChanged
                 g.EventSubscriptions.[wpfTextBox] <- 
-                    (g.Events.[wpfTextBox] :?> IEvent<SourceText>).Subscribe onTextChanged
+                    (g.Events.[wpfTextBox] :?> IEvent<SourceText * int>).Subscribe onTextChanged
             else
                 g.EventSubscriptions.[wpfTextBox].Dispose ()
                 g.EventSubscriptions.[wpfTextBox] <- 
-                    (g.Events.[wpfTextBox] :?> IEvent<SourceText>).Subscribe onTextChanged
+                    (g.Events.[wpfTextBox] :?> IEvent<SourceText * int>).Subscribe onTextChanged
 
             wpfTextBox.Width <- 1080.
 
@@ -319,6 +321,29 @@ module internal Helpers =
                             textSpanColors.Add (HighlightSpan (TextSpan(start, length), color, kind))
                 )
                 wpfTextBox.Redraw ()
+
+            let completionData =
+                completionItems
+                |> List.map (fun (CompletionItem (text)) ->
+                    { new ICompletionData with
+
+                        member __.Image = null
+
+                        member __.Text = text
+
+                        // you can technically show a fancy UI element here
+                        member __.Content = text :> obj
+
+                        member __.Description = text :> obj
+
+                        member __.Complete (textArea, completionSegment, _) =
+                            textArea.Document.Replace(completionSegment, text)
+
+                        member __.Priority = 0.
+                    }
+                )
+
+            wpfTextBox.ShowCompletions completionData
 
             wpfTextBox :> System.Windows.UIElement
 

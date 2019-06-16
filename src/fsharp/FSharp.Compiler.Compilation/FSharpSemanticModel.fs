@@ -192,9 +192,9 @@ type FSharpSymbol (internalSymbolUse: InternalFSharpSymbolUse) =
 
     member __.InternalSymbolUse = internalSymbolUse
 
-    static member Create (cnr: CapturedNameResolution, senv: SymbolEnv) =
-        let internalSymbol = InternalFSharpSymbol.Create (senv, cnr.Item)
-        let internalSymbolUse = InternalFSharpSymbolUse (senv.g, cnr.DisplayEnv, internalSymbol, cnr.ItemOccurence, cnr.Range)
+    static member Create (displayEnv, senv: SymbolEnv, item, itemOccurence, range) =
+        let internalSymbol = InternalFSharpSymbol.Create (senv, item)
+        let internalSymbolUse = InternalFSharpSymbolUse (senv.g, displayEnv, internalSymbol, itemOccurence, range)
         FSharpSymbol (internalSymbolUse)
 
 [<NoEquality;NoComparison;RequireQualifiedAccess>]
@@ -254,7 +254,7 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
         while symbol.IsNone && i < cnrs.Count do
             let cnr = cnrs.[i]
             if rangeContainsRange node.Range cnr.Range then
-                let candidateSymbol = FSharpSymbol.Create (cnr, symbolEnv)
+                let candidateSymbol = FSharpSymbol.Create (cnr.DisplayEnv, symbolEnv, cnr.Item, cnr.ItemOccurence, cnr.Range)
                 candidateSymbols.Add candidateSymbol
                 if Range.equals node.Range cnr.Range then
                     symbol <- ValueSome candidateSymbol // no longer a candidate
@@ -338,6 +338,35 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
                 FSharpSymbolInfo.Empty
         | _ ->
             FSharpSymbolInfo.Empty
+
+    //member this.LookupSymbols (position: int, ct: CancellationToken) =
+    //    let rootNode = this.SyntaxTree.GetRootNode ct
+    //    match rootNode.TryFindToken position with
+    //    | Some token ->
+    //            let checker, tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
+    //            match tryGetBestCapturedTypeCheckEnvEnv token.Range.Start resolutions with
+    //            | Some (m, env) ->
+    //                match env with
+    //                | :? TcEnv as tcEnv ->
+    //                    let symbolsBuilder = ImmutableArray.CreateBuilder ()
+    //                    tcEnv.NameEnv.
+    //                    resolutions.CapturedNameResolutions
+    //                    |> Seq.choose (fun cnr ->
+    //                        if tcEnv.NameEnv.eUnqualifiedItems.ContainsKey cnr.AccessorDomain
+    //                    )
+    //                    tcEnv.NameEnv.eUnqualifiedItems.Values
+    //                    |> List.map (fun item ->
+    //                        FSharpSymbol.
+    //                    )
+    //                    FSharpSymbolInfo.Empty
+    //                | _ ->
+    //                    FSharpSymbolInfo.Empty
+    //            | _ ->
+    //                FSharpSymbolInfo.Empty
+    //        | _ ->
+    //            FSharpSymbolInfo.Empty
+    //    | _ ->
+    //        FSharpSymbolInfo.Empty
 
     member __.SyntaxTree: FSharpSyntaxTree = lazySyntaxTree.Value
 

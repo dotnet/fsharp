@@ -62,18 +62,14 @@ type private FSharpDocumentColorizingTransformer (editor: FSharpTextEditor) =
 and FSharpTextEditor () as this =
     inherit TextEditor ()
 
-    let sourceTextChanged = Event<SourceText> ()
+    let sourceTextChanged = Event<SourceText * int> ()
     let mutable sourceText = SourceText.From String.Empty
     let mutable prevTextChanges = [||]
-
-    let defaultColor = HighlightingColor (Name = "Default")
-    let symbolColor = HighlightingColor (Name = "Symbol")
+    let mutable completionWindow = CompletionWindow (this.TextArea)
 
     let foregroundColorizer = FSharpDocumentColorizingTransformer this
 
     do
-        let brush = SimpleHighlightingBrush (Windows.Media.Colors.Red)
-        symbolColor.Background <- brush
         this.ShowLineNumbers <- true
         this.Options.ConvertTabsToSpaces <- true
         this.FontFamily <- Windows.Media.FontFamily ("Consolas")
@@ -98,18 +94,18 @@ and FSharpTextEditor () as this =
             prevTextChanges <- textChanges
             queueTextChanges.Clear ()
             sourceText <- (sourceText, textChanges) ||> Array.fold (fun text textChange -> text.WithChanges textChange)
-            sourceTextChanged.Trigger sourceText    
+            sourceTextChanged.Trigger (sourceText, this.CaretOffset)    
         )
 
-        let mutable completionWindow = null
-        this.TextArea.TextEntered.Add (fun args ->
-            if args.Text = "." then
-                completionWindow <- CompletionWindow (this.TextArea)
-                completionWindow.Show()
-                completionWindow.Closed.Add (fun _ ->
-                    completionWindow <- null
-                )
-        )
+    member __.ShowCompletions (data: ICompletionData seq) =
+        completionWindow.CompletionList.CompletionData.Clear ()
+
+        if Seq.isEmpty data && completionWindow.IsActive then
+            completionWindow.Close ()
+        else
+            data
+            |> Seq.iter completionWindow.CompletionList.CompletionData.Add
+            completionWindow.Show ()
         
     member __.SourceText = sourceText
 
@@ -121,28 +117,3 @@ and FSharpTextEditor () as this =
 
     member this.Redraw () =
         this.TextArea.TextView.Redraw ()
-
-    interface IHighlightingDefinition with
-
-        member this.GetNamedColor(name: string): HighlightingColor = 
-            match name with
-            | "Symbol" -> symbolColor
-            | _ -> defaultColor
-
-        member this.GetNamedRuleSet(name: string): HighlightingRuleSet = 
-            HighlightingRuleSet ()
-
-        member this.MainRuleSet: HighlightingRuleSet = HighlightingRuleSet ()
-
-        member this.Name: string = "FSharpTextEditor"
-
-        member this.NamedHighlightingColors: IEnumerable<HighlightingColor> = 
-            [
-                defaultColor
-                symbolColor
-            ]
-            |> Seq.ofList
-
-        member this.Properties: IDictionary<string,string> = 
-            Dictionary () :> IDictionary<_, _>
-
