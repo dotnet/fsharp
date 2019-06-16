@@ -248,15 +248,16 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
         })
 
     static let getSymbolInfo symbolEnv (cnrs: ResizeArray<CapturedNameResolution>) (node: FSharpSyntaxNode) =
+        let nodeRange = node.SyntaxTree.ConvertSpanToRange node.Span
         let candidateSymbols = ImmutableArray.CreateBuilder ()
         let mutable symbol = ValueNone
         let mutable i = 0
         while symbol.IsNone && i < cnrs.Count do
             let cnr = cnrs.[i]
-            if rangeContainsRange node.Range cnr.Range then
+            if rangeContainsRange nodeRange cnr.Range then
                 let candidateSymbol = FSharpSymbol.Create (symbolEnv, cnr.Item)
                 candidateSymbols.Add candidateSymbol
-                if Range.equals node.Range cnr.Range then
+                if Range.equals nodeRange cnr.Range then
                     symbol <- ValueSome candidateSymbol // no longer a candidate
             i <- i + 1
 
@@ -318,7 +319,9 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
             match node.GetAncestorsAndSelf () |> Seq.tryPick (fun x -> match x.Kind with FSharpSyntaxNodeKind.Expr synExpr -> Some synExpr | _ -> None) with
             | Some synExpr ->
                 let checker, tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
-                match tryGetBestCapturedTypeCheckEnvEnv token.Range.Start resolutions with
+
+                let range = this.SyntaxTree.ConvertSpanToRange token.Span
+                match tryGetBestCapturedTypeCheckEnvEnv range.Start resolutions with
                 | Some (m, env) ->
                     match env with
                     | :? TcEnv as tcEnv ->
@@ -344,7 +347,9 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
         match rootNode.TryFindToken position with
         | Some token ->
                 let checker, tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
-                match tryGetBestCapturedTypeCheckEnvEnv token.Range.Start resolutions with
+
+                let range = this.SyntaxTree.ConvertSpanToRange token.Span
+                match tryGetBestCapturedTypeCheckEnvEnv range.Start resolutions with
                 | Some (m, env) ->
                     match env with
                     | :? TcEnv as tcEnv ->

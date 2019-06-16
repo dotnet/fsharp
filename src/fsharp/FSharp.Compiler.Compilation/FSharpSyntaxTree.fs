@@ -284,7 +284,7 @@ type FSharpSyntaxTokenQueryFlags =
     | IncludeWhitespace =   0x10
     | IncludeTrivia =       0x11
 
-type private RawTokenLineMap = Dictionary<int, ResizeArray<Parser.token * range * TextSpan>>
+type private RawTokenLineMap = Dictionary<int, ResizeArray<Parser.token * int * int>>
 
 [<AbstractClass>]
 type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
@@ -734,11 +734,22 @@ and FSharpSyntaxNodeChildVisitor (findm, syntaxTree) =
         else
             base.CanVisit m
 
-and [<Sealed>] FSharpSyntaxToken (lazyParent: Lazy<FSharpSyntaxNode>, token: Parser.token, range: range, span: TextSpan, columnIndex: int) =
+and [<Sealed>] FSharpSyntaxToken (syntaxTree: FSharpSyntaxTree, token: Parser.token, span: TextSpan) =
 
-    member __.ParentNode = lazyParent.Value
-
-    member __.Range = range
+    member __.ParentNode : FSharpSyntaxNode =
+        match syntaxTree.TryGetRootNode () with
+        | ValueSome (rootNode: FSharpSyntaxNode) ->
+            // token heuristics
+            match token with
+            | Parser.token.IDENT _ 
+            | Parser.token.STRING _ ->
+                match rootNode.TryFindNode span with
+                | Some node -> node
+                | _ -> failwith "should not happen"
+            | _ ->
+                rootNode
+        | _ ->
+            failwith "should not happen"
 
     member __.Span = span
 
@@ -884,36 +895,46 @@ and [<Sealed>] FSharpSyntaxToken (lazyParent: Lazy<FSharpSyntaxNode>, token: Par
         | _ -> None
 
     member this.TryGetNextToken () =
+        let text =
+            match syntaxTree.TryGetText () with
+            | ValueSome text -> text
+            | _ -> failwith "should not happen"
+
         let allRawTokens: RawTokenLineMap = this.ParentNode.AllRawTokens
+        let linePos = text.Lines.GetLinePosition span.End
 
         let rawTokenOpt =
-            match allRawTokens.TryGetValue range.EndLine with
+            match allRawTokens.TryGetValue linePos.Line with
             | true, rawTokens ->
+                let columnIndex =
+                    rawTokens
+                    |> Seq.findIndex (fun (_, _, endIndex) -> endIndex = linePos.Character)
                 // Should we go to the next line?
                 if columnIndex >= (rawTokens.Count - 1) then
-                    match allRawTokens.TryGetValue (range.EndLine + 1) with
+                    match allRawTokens.TryGetValue (linePos.Line + 1) with
                     | true, rawTokens ->
                         if rawTokens.Count = 0 then
                             ValueNone
                         else
-                            ValueSome (rawTokens.[0], 0)
+                            ValueSome rawTokens.[0]
                     | _ ->
                         ValueNone
                 else
-                    let nextColumnIndex = columnIndex + 1
-                    ValueSome (rawTokens.[nextColumnIndex], nextColumnIndex)
+                    ValueSome rawTokens.[columnIndex + 1]
             | _ ->
                 failwith "should not happen"
 
         match rawTokenOpt with
-        | ValueSome ((t, m, span), columnIndex) ->
-            Some (FSharpSyntaxToken (lazy this.ParentNode.FindNode m, t, m, span, columnIndex))
+        | ValueSome (t, columnStart, columnEnd) ->
+            let line = text.Lines.[linePos.Line]
+            let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
+            Some (FSharpSyntaxToken (syntaxTree, t, span))
         | _ ->
             None
 
 and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
-    let lazyRange = lazy kind.Range
+    let mutable lazySpan = TextSpan ()
 
     member __.Text: SourceText = 
         match syntaxTree.TryGetText () with
@@ -931,12 +952,16 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
     
     member __.Kind = kind
 
-    member __.Range = lazyRange.Value
-
     member this.Span =
-        match this.Text.TryRangeToSpan this.Range with
-        | ValueSome span -> span
-        | _ -> failwith "should not happen"
+        if lazySpan.Length = 0 then
+            lazySpan <-
+                match kind with
+                | FSharpSyntaxNodeKind.ParsedInput _ -> TextSpan (0, this.Text.Length)
+                | _ ->
+                    match this.Text.TryRangeToSpan kind.Range with
+                    | ValueSome span -> span
+                    | _ -> failwith "should not happen"
+        lazySpan
     
     member __.GetAncestors () =            
         seq {
@@ -956,20 +981,26 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
 
     member this.GetDescendantTokens (?tokenQueryFlags: FSharpSyntaxTokenQueryFlags) =
         let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
+
+        let text = this.Text
         let allRawTokens: RawTokenLineMap = this.AllRawTokens
+        let nodeSpan = this.Span
+        let linePosSpan = text.Lines.GetLinePositionSpan nodeSpan
 
         seq {
-            for i = this.Range.StartLine to this.Range.EndLine do
+            for i = linePosSpan.Start.Line to linePosSpan.End.Line do
                 match allRawTokens.TryGetValue i with
                 | true, lineTokens ->
                     for columnIndex = 0 to lineTokens.Count - 1 do
-                        let rawToken, range, span = lineTokens.[columnIndex]
-                        if rangeContainsRange this.Range range then
+                        let rawToken, columnStart, columnEnd = lineTokens.[columnIndex]
+                        let line = text.Lines.[i]
+                        let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
+                        if nodeSpan.Contains span then
                             match rawToken with
                             | Parser.token.WHITESPACE _ when int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeWhitespace) = 0 -> ()
                             | Parser.token.COMMENT _ when int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeComments) = 0 -> ()
                             | _ ->
-                                yield FSharpSyntaxToken (lazy this.FindNode range, rawToken, range, span, columnIndex)
+                                yield FSharpSyntaxToken (syntaxTree, rawToken, span)
                 | _ ->
                     ()
         }
@@ -1013,31 +1044,22 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
     member this.TryFindToken (position: int) =
         let text: SourceText = this.Text
         let allRawTokens: RawTokenLineMap = this.AllRawTokens
-        match text.TrySpanToRange (syntaxTree.FilePath, TextSpan (position, 0)) with
-        | ValueSome r ->
-            match allRawTokens.TryGetValue r.EndLine with
-            | true, lineTokens ->
-                let mutable columnIndex = -1
-                lineTokens
-                |> Seq.choose (fun (t, m, span) ->
-                    columnIndex <- columnIndex + 1
-                    if rangeContainsRange m r && rangeContainsRange this.Range m then
+        let nodeSpan = this.Span
+        let line = text.Lines.GetLineFromPosition position
 
-                        // token heuristics
-                        match t with
-                        | Parser.token.IDENT _ 
-                        | Parser.token.STRING _ ->
-                            Some (FSharpSyntaxToken (lazy this.FindNode m, t, m, span, columnIndex))
-                        | _ ->
-                            Some (FSharpSyntaxToken (lazy this.GetRoot (), t, m, span, columnIndex))
-                    else
-                        None
-                )
-                // Pick the innermost one.
-                |> Seq.sortByDescending (fun token -> Seq.length (token.ParentNode.GetAncestors ()))
-                |> Seq.tryHead
-            | _ ->
-                None
+        match allRawTokens.TryGetValue line.LineNumber with
+        | true, lineTokens ->
+            lineTokens
+            |> Seq.choose (fun (t, columnStart, columnEnd) ->
+                let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
+                if nodeSpan.Contains span then
+                    Some (FSharpSyntaxToken (syntaxTree, t, span))
+                else
+                    None
+            )
+            // Pick the innermost one.
+            |> Seq.sortByDescending (fun token -> Seq.length (token.ParentNode.GetAncestors ()))
+            |> Seq.tryHead
         | _ ->
             None
 
@@ -1091,16 +1113,30 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
     let gate = obj ()
     let mutable lazyText = ValueNone
     let mutable lazyAllRawTokens = ValueNone
+    let mutable lazyRootNode = ValueNone
 
     let mutable parseResult = ValueStrength.None
 
-    member __.TryGetText () =
+    member __.TryGetRootNode () =
+        lazyRootNode
+
+    member __.TryGetText () : SourceText voption =
         lazyText
 
     member __.TryGetAllRawTokens () =
         lazyAllRawTokens
 
-    member __.GetAllRawTokens ct : Dictionary<int, ResizeArray<Parser.token * range * TextSpan>> =
+    member this.ConvertSpanToRange (span: TextSpan) =
+        let text =
+            match this.TryGetText () with
+            | ValueSome text -> text
+            | _ -> failwith "should not happen"
+
+        match text.TrySpanToRange (filePath, span) with
+        | ValueSome range -> range
+        | _ -> failwith "Invalid span to range conversion."
+
+    member __.GetAllRawTokens ct : Dictionary<int, ResizeArray<Parser.token * int * int>> =
         let text = this.GetText ct
         lock gate (fun () ->
             match lazyAllRawTokens with
@@ -1109,19 +1145,16 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
             | _ ->
                 let allRawTokens = Dictionary ()
                 Lexer.Lex pConfig (SourceValue.SourceText text) (fun t m ->
-                    match text.TryRangeToSpan m with
-                    | ValueSome span ->
-                        let lineTokens =
-                            match allRawTokens.TryGetValue m.EndLine with
-                            | true, lineTokens -> lineTokens
-                            | _ ->
-                                let lineTokens = ResizeArray ()
-                                allRawTokens.[m.EndLine] <- lineTokens
-                                lineTokens
+                    let lineTokens =
+                        match allRawTokens.TryGetValue (m.EndLine - 1) with
+                        | true, lineTokens -> lineTokens
+                        | _ ->
+                            let lineTokens = ResizeArray ()
+                            allRawTokens.[m.EndLine - 1] <- lineTokens
+                            lineTokens
 
-                        lineTokens.Add (t, m, span)
-                    | _ ->
-                        failwith "Range is not valid for text span"
+                    if m.StartLine = m.EndLine then
+                        lineTokens.Add (t, m.StartColumn, m.EndColumn)
                 )
                 lazyAllRawTokens <- ValueSome allRawTokens
                 allRawTokens
@@ -1163,12 +1196,16 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
         )
 
     member this.GetRootNode ct =
-        let _text = this.GetText ct
-        let inputOpt, _ = this.GetParseResult ct
-        if inputOpt.IsNone then failwith "parsed input does not exist"
-        let input = inputOpt.Value
-        let _allRawTokens = this.GetAllRawTokens ct // go ahead and evaluate this as we need it.
-        FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
+        lock gate (fun () ->
+            let _text = this.GetText ct
+            let inputOpt, _ = this.GetParseResult ct
+            if inputOpt.IsNone then failwith "parsed input does not exist"
+            let input = inputOpt.Value
+            let _allRawTokens = this.GetAllRawTokens ct // go ahead and evaluate this as we need it.
+            let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
+            lazyRootNode <- ValueSome rootNode
+            rootNode
+        )
 
     member this.WithChangedTextSnapshot (newTextSnapshot: FSharpSourceSnapshot) =
         if obj.ReferenceEquals (textSnapshot, newTextSnapshot) then
@@ -1180,7 +1217,11 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                 if changes.Count = 0 || (changes.[0].Span.Start = 0 && changes.[0].Span.Length = oldText.Length) then
                     FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])
                 else
-                    FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, changes)
+                    match this.TryGetAllRawTokens () with
+                    | ValueSome rawTokens ->
+                        FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, changes)
+                    | _ ->
+                        FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, changes)
             | _ ->
                 FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, [])
 

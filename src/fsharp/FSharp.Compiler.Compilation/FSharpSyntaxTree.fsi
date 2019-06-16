@@ -77,8 +77,6 @@ type FSharpSyntaxToken =
 
     member ParentNode: FSharpSyntaxNode
 
-    member internal Range: Range.range
-
     member Span: TextSpan
 
     member IsKeyword: bool
@@ -104,8 +102,6 @@ and [<Sealed>] FSharpSyntaxNode =
     member SyntaxTree: FSharpSyntaxTree
 
     member Kind: FSharpSyntaxNodeKind
-
-    member internal Range: range
 
     member Span: TextSpan
 
@@ -139,6 +135,8 @@ and [<Sealed>] FSharpSyntaxTree =
     member internal ParsingConfig: ParsingConfig
 
     member internal GetParseResult: CancellationToken -> ParseResult
+
+    member internal ConvertSpanToRange: TextSpan -> range
 
     member GetRootNode: CancellationToken -> FSharpSyntaxNode
 
