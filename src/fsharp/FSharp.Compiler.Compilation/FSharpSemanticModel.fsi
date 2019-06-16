@@ -5,11 +5,14 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Compilation.Utilities
+open FSharp.Compiler.NameResolution
 
 [<Sealed>]
 type FSharpSymbol = 
 
-    member internal InternalSymbolUse: InternalFSharpSymbolUse
+    member internal Item: Item
+
+    member Name: string
 
 [<Sealed>]
 type FSharpSymbolInfo =
@@ -37,6 +40,8 @@ type FSharpSemanticModel =
     member TryGetEnclosingSymbol: position: int * ct: CancellationToken -> FSharpSymbol option
 
     member GetSpeculativeSymbolInfo: position: int * node: FSharpSyntaxNode * ct: CancellationToken -> FSharpSymbolInfo
+
+    member LookupSymbols: position: int * ct: CancellationToken -> ImmutableArray<FSharpSymbol>
 
     member SyntaxTree: FSharpSyntaxTree
 

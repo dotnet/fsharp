@@ -188,14 +188,14 @@ type FSharpSymbolKind =
     | Namespace
 
 [<Sealed>]
-type FSharpSymbol (internalSymbolUse: InternalFSharpSymbolUse) =
+type FSharpSymbol private (senv: SymbolEnv, item: Item) =
 
-    member __.InternalSymbolUse = internalSymbolUse
+    member __.Item = item
 
-    static member Create (displayEnv, senv: SymbolEnv, item, itemOccurence, range) =
-        let internalSymbol = InternalFSharpSymbol.Create (senv, item)
-        let internalSymbolUse = InternalFSharpSymbolUse (senv.g, displayEnv, internalSymbol, itemOccurence, range)
-        FSharpSymbol (internalSymbolUse)
+    member __.Name = item.DisplayName
+
+    static member Create (senv: SymbolEnv, item) =
+        FSharpSymbol (senv, item)
 
 [<NoEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSymbolInfo =
@@ -254,7 +254,7 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
         while symbol.IsNone && i < cnrs.Count do
             let cnr = cnrs.[i]
             if rangeContainsRange node.Range cnr.Range then
-                let candidateSymbol = FSharpSymbol.Create (cnr.DisplayEnv, symbolEnv, cnr.Item, cnr.ItemOccurence, cnr.Range)
+                let candidateSymbol = FSharpSymbol.Create (symbolEnv, cnr.Item)
                 candidateSymbols.Add candidateSymbol
                 if Range.equals node.Range cnr.Range then
                     symbol <- ValueSome candidateSymbol // no longer a candidate
@@ -339,34 +339,29 @@ type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalCheck
         | _ ->
             FSharpSymbolInfo.Empty
 
-    //member this.LookupSymbols (position: int, ct: CancellationToken) =
-    //    let rootNode = this.SyntaxTree.GetRootNode ct
-    //    match rootNode.TryFindToken position with
-    //    | Some token ->
-    //            let checker, tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
-    //            match tryGetBestCapturedTypeCheckEnvEnv token.Range.Start resolutions with
-    //            | Some (m, env) ->
-    //                match env with
-    //                | :? TcEnv as tcEnv ->
-    //                    let symbolsBuilder = ImmutableArray.CreateBuilder ()
-    //                    tcEnv.NameEnv.
-    //                    resolutions.CapturedNameResolutions
-    //                    |> Seq.choose (fun cnr ->
-    //                        if tcEnv.NameEnv.eUnqualifiedItems.ContainsKey cnr.AccessorDomain
-    //                    )
-    //                    tcEnv.NameEnv.eUnqualifiedItems.Values
-    //                    |> List.map (fun item ->
-    //                        FSharpSymbol.
-    //                    )
-    //                    FSharpSymbolInfo.Empty
-    //                | _ ->
-    //                    FSharpSymbolInfo.Empty
-    //            | _ ->
-    //                FSharpSymbolInfo.Empty
-    //        | _ ->
-    //            FSharpSymbolInfo.Empty
-    //    | _ ->
-    //        FSharpSymbolInfo.Empty
+    member this.LookupSymbols (position: int, ct: CancellationToken) =
+        let rootNode = this.SyntaxTree.GetRootNode ct
+        match rootNode.TryFindToken position with
+        | Some token ->
+                let checker, tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
+                match tryGetBestCapturedTypeCheckEnvEnv token.Range.Start resolutions with
+                | Some (m, env) ->
+                    match env with
+                    | :? TcEnv as tcEnv ->
+                        let symbolsBuilder = ImmutableArray.CreateBuilder ()
+                        tcEnv.NameEnv.eUnqualifiedItems.Values
+                        |> List.iter (fun item ->
+                            symbolsBuilder.Add (FSharpSymbol.Create (symbolEnv, item))
+                        )
+                        symbolsBuilder.ToImmutable ()
+                    | _ ->
+                        ImmutableArray.Empty
+                | _ ->
+                    ImmutableArray.Empty
+            | _ ->
+                ImmutableArray.Empty
+        | _ ->
+            ImmutableArray.Empty
 
     member __.SyntaxTree: FSharpSyntaxTree = lazySyntaxTree.Value
 

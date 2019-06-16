@@ -20,6 +20,38 @@ type HighlightSpanKind =
 [<Struct>]
 type HighlightSpan = HighlightSpan of span: TextSpan * color: Drawing.Color * kind: HighlightSpanKind
 
+// https://github.com/icsharpcode/AvalonEdit/issues/28
+type FSharpCompletionData (text: string) =
+
+    member __.Image = null
+
+    member __.Text = text
+
+    // you can technically show a fancy UI element here
+    member __.Content = text :> obj
+
+    member __.Description = text :> obj
+
+    member __.Complete (textArea: Editing.TextArea, completionSegment: Document.ISegment, _: EventArgs) : unit =
+        textArea.Document.Replace(completionSegment, text)
+
+    member __.Priority = 0.
+
+    interface ICompletionData with
+
+        member this.Image = this.Image
+
+        member this.Text = this.Text
+
+        // you can technically show a fancy UI element here
+        member this.Content = this.Content
+
+        member this.Description = this.Description
+
+        member this.Complete (textArea, completionSegment, args) = this.Complete (textArea, completionSegment, args)
+
+        member __.Priority = 0.
+
 type private FSharpDocumentColorizingTransformer (editor: FSharpTextEditor) =
     inherit DocumentColorizingTransformer ()
 
@@ -62,10 +94,11 @@ type private FSharpDocumentColorizingTransformer (editor: FSharpTextEditor) =
 and FSharpTextEditor () as this =
     inherit TextEditor ()
 
-    let sourceTextChanged = Event<SourceText * int> ()
+    let completionTriggered = Event<SourceText * int> ()
+    let sourceTextChanged = Event<SourceText * int * bool> ()
     let mutable sourceText = SourceText.From String.Empty
     let mutable prevTextChanges = [||]
-    let mutable completionWindow = CompletionWindow (this.TextArea)
+    let mutable completionWindow: CompletionWindow = null
 
     let foregroundColorizer = FSharpDocumentColorizingTransformer this
 
@@ -82,34 +115,49 @@ and FSharpTextEditor () as this =
 
         let queueTextChanges = Queue<TextChange>()
         this.Document.Changing.Add (fun args ->
-            if args.InsertionLength > 0 then
-                TextChange (TextSpan (args.Offset, 0), args.InsertedText.Text)
-                |> queueTextChanges.Enqueue
-            elif args.RemovalLength > 0 then
-                TextChange (TextSpan (args.Offset, args.RemovalLength), String.Empty)
-                |> queueTextChanges.Enqueue
+            TextChange (TextSpan (args.Offset, args.RemovalLength), args.InsertedText.Text)
+            |> queueTextChanges.Enqueue
         )
-        this.Document.TextChanged.Add (fun _ ->
+
+        let mutable willCompletionTrigger = false
+
+        this.TextArea.Document.TextChanged.Add (fun _ ->
             let textChanges = queueTextChanges.ToArray()
             prevTextChanges <- textChanges
             queueTextChanges.Clear ()
             sourceText <- (sourceText, textChanges) ||> Array.fold (fun text textChange -> text.WithChanges textChange)
-            sourceTextChanged.Trigger (sourceText, this.CaretOffset)    
+            sourceTextChanged.Trigger (sourceText, this.CaretOffset, willCompletionTrigger)
         )
 
-    member __.ShowCompletions (data: ICompletionData seq) =
-        completionWindow.CompletionList.CompletionData.Clear ()
+        this.TextArea.TextEntering.Add (fun args ->
+            if args.Text = " " || args.Text = "." then
+                willCompletionTrigger <- true
 
-        if Seq.isEmpty data && completionWindow.IsActive then
-            completionWindow.Close ()
-        else
-            data
-            |> Seq.iter completionWindow.CompletionList.CompletionData.Add
-            completionWindow.Show ()
+            if args.Text.Length > 0 && completionWindow <> null then
+                if not (Char.IsLetterOrDigit (args.Text.[0])) then
+                    completionWindow.CompletionList.RequestInsertion args
+        )
+        this.TextArea.TextEntered.Add (fun args ->
+            if willCompletionTrigger then
+                completionWindow <- CompletionWindow (this.TextArea)
+                completionWindow.Closed.Add (fun _ ->
+                    completionWindow <- null
+                )
+                willCompletionTrigger <- false
+        )
+
+    member this.ShowCompletions (data: FSharpCompletionData seq) =
+        if completionWindow <> null && not (Seq.isEmpty data) then
+            if not completionWindow.IsActive then
+                data
+                |> Seq.iter completionWindow.CompletionList.CompletionData.Add
+                completionWindow.Show ()
         
     member __.SourceText = sourceText
 
     member __.SourceTextChanged = sourceTextChanged.Publish
+
+    member __.CompletionTriggered = completionTriggered.Publish
 
     member __.GetTextSpanColors lineNumber = foregroundColorizer.GetTextSpanColors lineNumber
 

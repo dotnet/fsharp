@@ -123,7 +123,7 @@ module rec App =
     type Msg =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
-        | UpdateVisualizers of FSharpSemanticModel * caretOffset: int
+        | UpdateVisualizers of didCompletionTrigger: bool * caretOffset: int * CancellationToken
         | UpdateNodeHighlight of FSharpSyntaxNode
 
     let update msg model =
@@ -137,18 +137,21 @@ module rec App =
             model.CancellationTokenSource.Cancel ()
             model.CancellationTokenSource.Dispose ()
 
+            let compilation = model.Compilation.ReplaceSourceSnapshot textSnapshot
+
             let updatedModel =
                 { model with
                     Text = text
-                    Compilation = model.Compilation.ReplaceSourceSnapshot textSnapshot
+                    Compilation = compilation
                     CancellationTokenSource = new CancellationTokenSource ()
                     WillRedraw = false
                     NodeHighlight = None
                 }
             callback updatedModel
             updatedModel
-        | UpdateVisualizers (semanticModel, caretOffset) ->         
-            let diagnostics = semanticModel.Compilation.GetDiagnostics ()
+        | UpdateVisualizers (didCompletionTrigger, caretOffset, ct) ->  
+            let semanticModel = model.Compilation.GetSemanticModel "test1.fs"
+            let diagnostics = semanticModel.Compilation.GetDiagnostics ct
 
             printfn "%A" diagnostics
 
@@ -168,7 +171,7 @@ module rec App =
             let symbolInfoOpt =
                 let textChanges = model.Text.GetTextChanges model.OldText
                 if textChanges.Count = 1 then
-                    match semanticModel.SyntaxTree.GetRootNode(CancellationToken.None).TryFindNode(textChanges.[0].Span) with
+                    match semanticModel.SyntaxTree.GetRootNode(ct).TryFindNode(textChanges.[0].Span) with
                     | Some node ->
                         match node.GetAncestorsAndSelf () |> Seq.tryFind (fun x -> match x.Kind with FSharpSyntaxNodeKind.Expr _ -> true | _ -> false) with
                         | Some node -> Some node
@@ -182,12 +185,25 @@ module rec App =
                 )
                 |> Option.defaultValue []
 
+
+            let completionItems =
+                if didCompletionTrigger then
+                    semanticModel.LookupSymbols (caretOffset, ct)
+                    |> Seq.map (fun symbol ->
+                        CompletionItem (symbol.Name)
+                    )
+                    |> List.ofSeq
+                else
+                    []
+
             { model with 
                 OldText = model.Text
                 RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None)
                 Highlights = highlights
                 WillRedraw = true
+                CompletionItems = completionItems
             }
+
         | UpdateNodeHighlight node ->
             { model with NodeHighlight = Some node }
 
@@ -214,25 +230,30 @@ module rec App =
                 [ HighlightSpan(node.Span, Drawing.Color.Gray, HighlightSpanKind.Background) ]
             | _ -> []
 
+        let onTextChanged =
+            fun (text, caretOffset, didCompletionTrigger) -> 
+                dispatch (UpdateText (text, fun updatedModel ->
+                    let computation =
+                        async {
+                            try
+                                use! _do = Async.OnCancel (fun () -> printfn "cancelled")
+                                let! ct = Async.CancellationToken
+                                do! Async.Sleep 150
+                                dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
+                            with
+                            | ex -> ()
+                        }
+                    Async.Start (computation, cancellationToken = updatedModel.CancellationTokenSource.Token)
+                ))
+
+        let onCompletionTriggered =
+            fun (text, caretOffset) -> ()
+
         View.Common (
             View.DockPanel 
                 [
                     View.Menu ([ MenuItem.MenuItem ("_File", [ exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
-                    View.Editor (model.Highlights @ otherHighlights, model.WillRedraw, model.CompletionItems, fun (text, caretOffset) -> 
-                        dispatch (UpdateText (text, fun updatedModel ->
-                            let computation =
-                                async {
-                                    try
-                                        use! _do = Async.OnCancel (fun () -> printfn "cancelled")
-                                        do! Async.Sleep 150
-                                        let semanticModel = updatedModel.Compilation.GetSemanticModel "test1.fs"
-                                        dispatch (UpdateVisualizers (semanticModel, caretOffset))
-                                    with
-                                    | ex -> ()
-                                }
-                            Async.Start (computation, cancellationToken = updatedModel.CancellationTokenSource.Token)
-                        ))
-                    )
+                    View.Editor (model.Highlights @ otherHighlights, model.WillRedraw, model.CompletionItems, onTextChanged, onCompletionTriggered)
                     View.TreeView (treeItems)
                 ],
             model.WillExit
