@@ -17,7 +17,7 @@ open Microsoft.CodeAnalysis
 
 [<CustomEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSyntaxNodeKind =
-    | ParsedInput of ParsedInput
+    | ParsedInput of Lazy<ParsedInput>
     | ModuleOrNamespace of SynModuleOrNamespace
     | ModuleDecl of SynModuleDecl
     | LongIdentWithDots of LongIdentWithDots
@@ -127,8 +127,6 @@ and [<Sealed>] FSharpSyntaxNode =
 
 and [<Sealed>] FSharpSyntaxTree =
 
-    internal new: filePath: string * ParsingConfig * FSharpSourceSnapshot * changes: IReadOnlyList<TextChangeRange> -> FSharpSyntaxTree
-
     member FilePath: string
 
     /// TODO: Make this public when we have a better way to handling ParsingInfo, perhaps have a better ParsingOptions?
@@ -145,3 +143,5 @@ and [<Sealed>] FSharpSyntaxTree =
     member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree
 
     member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
+
+    static member internal Create: filePath: string * ParsingConfig * FSharpSourceSnapshot -> FSharpSyntaxTree

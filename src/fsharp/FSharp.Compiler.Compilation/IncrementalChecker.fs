@@ -151,7 +151,7 @@ type IncrementalCheckerState =
                 filePath = filePath
             }
 
-        FSharpSyntaxTree (filePath, pConfig, sourceSnapshot, [])
+        FSharpSyntaxTree.Create (filePath, pConfig, sourceSnapshot)
 
     static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSourceSnapshots: ImmutableArray<FSharpSourceSnapshot>) =
         cancellable {
