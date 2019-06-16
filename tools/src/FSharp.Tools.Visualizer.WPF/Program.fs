@@ -13,31 +13,6 @@ open FSharp.Compiler.Compilation
 [<AutoOpen>]
 module Helpers =
 
-    let createTestModules name amount =
-        [
-            for i = 1 to amount do
-                yield
-                    sprintf
-                    """
-module TestModule%i =
-
-    type %s () =
-
-                    member val X = 1
-
-                    member val Y = 2
-
-                    member val Z = 3
-                    
-    let testFunction (x: %s) =
-                    x.X + x.Y + x.Z
-                    """ i name name
-        ]
-        |> List.reduce (+)
-
-    let createSource name amount =
-        (sprintf """namespace Test.%s""" name) + createTestModules name amount
-
     let createCompilation (text: SourceText) =
         let sources =
             [
@@ -101,6 +76,7 @@ module rec App =
             Highlights: HighlightSpan list
             NodeHighlight: FSharpSyntaxNode option
             CompletionItems: CompletionItem list
+            WillRedraw: bool
         }
 
         static member Default =
@@ -116,12 +92,13 @@ module rec App =
                 Highlights = []
                 NodeHighlight = None
                 CompletionItems = []
+                WillRedraw = true
             }
 
     type Msg =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
-        | UpdateLexicalAnalysis of CancellationToken
+        | UpdateLexicalAnalysis of lexicalHighlights: HighlightSpan list * CancellationToken
         | UpdateVisualizers of didCompletionTrigger: bool * caretOffset: int * CancellationToken
         | UpdateNodeHighlight of FSharpSyntaxNode
 
@@ -136,11 +113,22 @@ module rec App =
         )
         |> List.ofSeq
 
+    let getLexicalAnalysis (model: Model) ct =
+        let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
+
+        let syntaxTree = model.Compilation.GetSyntaxTree "test1.fs"
+        let highlights = getLexicalHighlights syntaxTree ct
+
+        stopwatch.Stop ()
+        printfn "lexical analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
+        highlights
+
     let update msg model =
         match msg with
         | Exit ->
             { model with
                 WillExit = true
+                WillRedraw = false
             }
         | UpdateText (text, callback) ->
             let textSnapshot = FSharpSourceSnapshot.FromText ("test1.fs", text)
@@ -155,19 +143,16 @@ module rec App =
                     Compilation = compilation
                     CancellationTokenSource = new CancellationTokenSource ()
                     NodeHighlight = None
-                    Highlights = []
+                    WillRedraw = false
                 }
             callback updatedModel
             updatedModel
 
-        | UpdateLexicalAnalysis ct ->
-            let syntaxTree = model.Compilation.GetSyntaxTree "test1.fs"
-            let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
-            let highlights = getLexicalHighlights syntaxTree ct
-            stopwatch.Stop ()
-            printfn "lexical analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
+        | UpdateLexicalAnalysis (lexicalHighlights, ct) ->
+            ct.ThrowIfCancellationRequested ()
             { model with
-                Highlights = []
+                Highlights = lexicalHighlights
+                WillRedraw = true
             }           
 
         | UpdateVisualizers (didCompletionTrigger, caretOffset, ct) ->  
@@ -222,10 +207,11 @@ module rec App =
                 RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None)
                 Highlights = model.Highlights @ highlights
                 CompletionItems = completionItems
+                WillRedraw = true
             }
 
         | UpdateNodeHighlight node ->
-            { model with NodeHighlight = Some node }
+            { model with NodeHighlight = Some node; WillRedraw = true }
 
     let exitMenuItemView dispatch = MenuItem.MenuItem ("_Exit", [], fun _ -> dispatch Exit)
 
@@ -258,9 +244,11 @@ module rec App =
                             try
                                 use! _do = Async.OnCancel (fun () -> printfn "cancelled")
                                 let! ct = Async.CancellationToken
-                                dispatch (UpdateLexicalAnalysis ct)
-                                do! Async.Sleep 150
-                               // dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
+
+                                do! Async.Sleep 100
+                                let lexicalAnalysis = getLexicalAnalysis updatedModel ct
+                                dispatch (UpdateLexicalAnalysis (lexicalAnalysis, ct))
+                                dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
                             with
                             | ex -> ()
                         }
@@ -274,7 +262,7 @@ module rec App =
             View.DockPanel 
                 [
                     View.Menu ([ MenuItem.MenuItem ("_File", [ exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
-                    View.Editor (model.Highlights @ otherHighlights, false, model.CompletionItems, onTextChanged, onCompletionTriggered)
+                    View.Editor (model.Highlights @ otherHighlights, model.WillRedraw, model.CompletionItems, onTextChanged, onCompletionTriggered)
                     View.TreeView (treeItems)
                 ],
             model.WillExit

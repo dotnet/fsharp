@@ -13,11 +13,6 @@ open ICSharpCode.AvalonEdit.CodeCompletion
 module rec Virtual =
 
     [<RequireQualifiedAccess>]
-    type Command =
-        | Nop
-        | Update of (unit -> View)
-
-    [<RequireQualifiedAccess>]
     type DataGridColumn = 
         | Text of header: string * bindingName: string
 
@@ -52,18 +47,17 @@ type internal ReferenceEqualityComparer () =
 
 [<Sealed>]
 type internal WpfGlobals (app: System.Windows.Application, uiThread) =
-
-    let dispatchCommandsCalledEvent = Event<Command list>()
     
     member __.Application = app
 
     member val Events = Dictionary<obj, obj>()
     member val EventSubscriptions = Dictionary<obj, IDisposable>(ReferenceEqualityComparer())
 
-    member __.DispatchCommands (commands: Command list) = 
-        uiThread (fun () -> dispatchCommandsCalledEvent.Trigger commands)
-
-    member __.DispatchCommandsCalled = dispatchCommandsCalledEvent.Publish
+    member __.RunOnUIThread (f: unit -> unit) = 
+        if System.Threading.Thread.CurrentThread.ManagedThreadId = app.Dispatcher.Thread.ManagedThreadId then
+            f ()
+        else
+            uiThread f
 
 [<AutoOpen>]
 module internal Helpers =
@@ -278,6 +272,9 @@ module internal Helpers =
                 | _ -> 
                     FSharpTextEditor ()
 
+            wpfTextBox.WordWrap <- true
+            wpfTextBox.Width <- 1080.
+
             if not (g.EventSubscriptions.ContainsKey wpfTextBox) then
                 g.Events.[wpfTextBox] <- (wpfTextBox.SourceTextChanged, wpfTextBox.CompletionTriggered)
                 g.EventSubscriptions.[wpfTextBox] <- 
@@ -303,7 +300,7 @@ module internal Helpers =
                             e2.Dispose ()
                     }
 
-            wpfTextBox.Width <- 1080.
+            
 
             if willRedraw then
                 wpfTextBox.ClearAllTextSpanColors ()
@@ -382,33 +379,44 @@ type FrameworkWindow<'Model, 'Msg> (app: System.Windows.Application, init: 'Mode
 
     let g = WpfGlobals (app, this.Dispatcher.Invoke)
 
-    let mutable currentModel = init
-    let mutable currentView = View.Empty
+    let mutable currentState = (init, View.Empty)
+
+    let updateUI oldViewState viewState =
+        let content = updateUIElement g (this.Content :?> System.Windows.UIElement) oldViewState viewState
+        if not (obj.ReferenceEquals (this.Content, content)) then
+            this.Content <- content
 
     do
-        g.DispatchCommandsCalled.Add (fun commands ->
-            commands
-            |> List.iter (function
-                | Command.Nop -> ()
-                | Command.Update view ->
-                    let updatedView = view ()
-                    let content = updateUIElement g (this.Content :?> System.Windows.UIElement) currentView updatedView
-                    if not (obj.ReferenceEquals (this.Content, content)) then
-                        this.Content <- content
-                    currentView <- updatedView
-            )
-        )
-
         this.Closed.Add (fun _ ->
             g.EventSubscriptions
             |> Seq.iter (fun pair -> pair.Value.Dispose())
         )
 
         let mutable dispatch = Unchecked.defaultof<_>
-        dispatch <- (fun msg -> 
-                                g.DispatchCommands [ Command.Update (fun () -> 
-                                                                                currentModel <- (update msg currentModel)
-                                                                                view currentModel dispatch) ])
 
-        g.DispatchCommands [ Command.Update (fun () -> view currentModel dispatch) ]
+        let computeState msg =
+            let oldModel, _ = currentState
+            let model = update msg oldModel
+            let viewState = view model dispatch
+            (model, viewState)
 
+        let updateState (model, viewState) =
+            let _, oldViewState = currentState
+            currentState <- (model, viewState)
+            (oldViewState, viewState)
+
+        let update msg =
+            let state = computeState msg
+            let oldViewState, viewState = updateState state
+            updateUI oldViewState viewState
+
+        dispatch <- (fun msg ->
+            if System.Threading.Thread.CurrentThread.ManagedThreadId = g.Application.Dispatcher.Thread.ManagedThreadId then
+                update msg
+            else
+                g.RunOnUIThread (fun () -> update msg)
+        )
+
+
+        let oldViewState, viewState = updateState (init, view init dispatch)
+        updateUI oldViewState viewState

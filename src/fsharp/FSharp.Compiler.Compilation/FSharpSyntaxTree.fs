@@ -1163,7 +1163,7 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
         )
 
     member this.GetRootNode ct =
-        let text = this.GetText ct
+        let _text = this.GetText ct
         let inputOpt, _ = this.GetParseResult ct
         if inputOpt.IsNone then failwith "parsed input does not exist"
         let input = inputOpt.Value
