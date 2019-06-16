@@ -99,7 +99,6 @@ module rec App =
             CancellationTokenSource: CancellationTokenSource
             RootNode: FSharpSyntaxNode option
             Highlights: HighlightSpan list
-            WillRedraw: bool
             NodeHighlight: FSharpSyntaxNode option
             CompletionItems: CompletionItem list
         }
@@ -115,7 +114,6 @@ module rec App =
                 CancellationTokenSource = new CancellationTokenSource ()
                 RootNode = None
                 Highlights = []
-                WillRedraw = true
                 NodeHighlight = None
                 CompletionItems = []
             }
@@ -123,8 +121,20 @@ module rec App =
     type Msg =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
+        | UpdateLexicalAnalysis of CancellationToken
         | UpdateVisualizers of didCompletionTrigger: bool * caretOffset: int * CancellationToken
         | UpdateNodeHighlight of FSharpSyntaxNode
+
+    let getLexicalHighlights (syntaxTree: FSharpSyntaxTree) ct =
+        let rootNode = syntaxTree.GetRootNode ct
+        rootNode.GetDescendantTokens ()
+        |> Seq.choose (fun x ->
+            if x.IsKeyword then
+                Some (HighlightSpan (x.Span, Drawing.Color.FromArgb (86, 156, 214), HighlightSpanKind.Foreground))
+            else
+                None
+        )
+        |> List.ofSeq
 
     let update msg model =
         match msg with
@@ -144,11 +154,22 @@ module rec App =
                     Text = text
                     Compilation = compilation
                     CancellationTokenSource = new CancellationTokenSource ()
-                    WillRedraw = false
                     NodeHighlight = None
+                    Highlights = []
                 }
             callback updatedModel
             updatedModel
+
+        | UpdateLexicalAnalysis ct ->
+            let syntaxTree = model.Compilation.GetSyntaxTree "test1.fs"
+            let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
+            let highlights = getLexicalHighlights syntaxTree ct
+            stopwatch.Stop ()
+            printfn "lexical analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
+            { model with
+                Highlights = []
+            }           
+
         | UpdateVisualizers (didCompletionTrigger, caretOffset, ct) ->  
             let semanticModel = model.Compilation.GetSemanticModel "test1.fs"
             let diagnostics = semanticModel.Compilation.GetDiagnostics ct
@@ -199,8 +220,7 @@ module rec App =
             { model with 
                 OldText = model.Text
                 RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None)
-                Highlights = highlights
-                WillRedraw = true
+                Highlights = model.Highlights @ highlights
                 CompletionItems = completionItems
             }
 
@@ -210,19 +230,19 @@ module rec App =
     let exitMenuItemView dispatch = MenuItem.MenuItem ("_Exit", [], fun _ -> dispatch Exit)
 
     let view model dispatch =
-        let treeItems =
-            match model.RootNode with
-            | None -> []
-            | Some rootNode ->
-                let rec getTreeItem (node: FSharpSyntaxNode) =
-                    let nested =
-                        node.GetChildren ()
-                        |> Seq.map (fun childNode ->
-                            getTreeItem childNode
-                        )
-                        |> List.ofSeq
-                    TreeViewItem.TreeViewItem(string node, nested, fun () -> dispatch (UpdateNodeHighlight node))
-                [ getTreeItem rootNode ]
+        let treeItems = []
+            //match model.RootNode with
+            //| None -> []
+            //| Some rootNode ->
+            //    let rec getTreeItem (node: FSharpSyntaxNode) =
+            //        let nested =
+            //            node.GetChildren ()
+            //            |> Seq.map (fun childNode ->
+            //                getTreeItem childNode
+            //            )
+            //            |> List.ofSeq
+            //        TreeViewItem.TreeViewItem(string node, nested, fun () -> dispatch (UpdateNodeHighlight node))
+            //    [ getTreeItem rootNode ]
 
         let otherHighlights =
             match model.NodeHighlight with
@@ -238,8 +258,9 @@ module rec App =
                             try
                                 use! _do = Async.OnCancel (fun () -> printfn "cancelled")
                                 let! ct = Async.CancellationToken
+                                dispatch (UpdateLexicalAnalysis ct)
                                 do! Async.Sleep 150
-                                dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
+                               // dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
                             with
                             | ex -> ()
                         }
@@ -253,7 +274,7 @@ module rec App =
             View.DockPanel 
                 [
                     View.Menu ([ MenuItem.MenuItem ("_File", [ exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
-                    View.Editor (model.Highlights @ otherHighlights, model.WillRedraw, model.CompletionItems, onTextChanged, onCompletionTriggered)
+                    View.Editor (model.Highlights @ otherHighlights, false, model.CompletionItems, onTextChanged, onCompletionTriggered)
                     View.TreeView (treeItems)
                 ],
             model.WillExit

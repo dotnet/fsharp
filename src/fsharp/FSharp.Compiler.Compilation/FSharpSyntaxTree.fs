@@ -745,8 +745,110 @@ and [<Sealed>] FSharpSyntaxToken (lazyParent: Lazy<FSharpSyntaxNode>, token: Par
     member __.IsKeyword =
         match token with
         | Parser.token.ABSTRACT
-        | Parser.token.NAMESPACE -> true
-        // TODO:
+        | Parser.token.AND
+        | Parser.token.AS
+        | Parser.token.ASSERT
+        | Parser.token.BASE
+        | Parser.token.BEGIN
+        | Parser.token.CLASS
+        | Parser.token.DEFAULT
+        | Parser.token.DELEGATE
+        | Parser.token.DO
+        | Parser.token.DONE
+        | Parser.token.DOWNCAST
+        | Parser.token.DOWNTO
+        | Parser.token.ELIF
+        | Parser.token.ELSE
+        | Parser.token.END
+        | Parser.token.EXCEPTION
+        | Parser.token.EXTERN
+        | Parser.token.FALSE
+        | Parser.token.FINALLY
+        | Parser.token.FIXED
+        | Parser.token.FOR
+        | Parser.token.FUN
+        | Parser.token.FUNCTION
+        | Parser.token.GLOBAL
+        | Parser.token.IF
+        | Parser.token.IN
+        | Parser.token.INHERIT
+        | Parser.token.INLINE
+        | Parser.token.INTERFACE
+        | Parser.token.INTERNAL
+        | Parser.token.LAZY
+        | Parser.token.LET _ // "let" and "use"
+        | Parser.token.DO_BANG //  "let!", "use!" and "do!"
+        | Parser.token.MATCH
+        | Parser.token.MATCH_BANG
+        | Parser.token.MEMBER
+        | Parser.token.MODULE
+        | Parser.token.MUTABLE
+     
+        | Parser.token.NAMESPACE
+        | Parser.token.NEW
+        // | Parser.token.NOT // Not actually a keyword. However, not struct in combination is used as a generic parameter constraint.
+        | Parser.token.NULL
+        | Parser.token.OF
+        | Parser.token.OPEN
+        | Parser.token.OR
+        | Parser.token.OVERRIDE
+        | Parser.token.PRIVATE
+        | Parser.token.PUBLIC
+        | Parser.token.REC
+        | Parser.token.YIELD _ // "yield" and "return"
+        | Parser.token.YIELD_BANG _ // "yield!" and "return!"
+        | Parser.token.STATIC
+        | Parser.token.STRUCT
+        | Parser.token.THEN
+        | Parser.token.TO
+        | Parser.token.TRUE
+        | Parser.token.TRY
+        | Parser.token.TYPE
+        | Parser.token.UPCAST
+        | Parser.token.VAL
+        | Parser.token.VOID
+        | Parser.token.WHEN
+        | Parser.token.WHILE
+        | Parser.token.WITH
+
+        // * Reserved - from OCAML *
+        | Parser.token.ASR
+        | Parser.token.INFIX_STAR_DIV_MOD_OP "land"
+        | Parser.token.INFIX_STAR_DIV_MOD_OP "lor"
+        | Parser.token.INFIX_STAR_STAR_OP "lsl"
+        | Parser.token.INFIX_STAR_STAR_OP "lsr"
+        | Parser.token.INFIX_STAR_DIV_MOD_OP "lxor"
+        | Parser.token.INFIX_STAR_DIV_MOD_OP "mod"
+        | Parser.token.SIG
+
+        // * Reserved - for future *
+        // atomic
+        // break
+        // checked
+        // component
+        // const
+        // constraint
+        // constructor
+        // continue
+        // eager
+        // event
+        // external
+        // functor
+        // include
+        // method
+        // mixin
+        // object
+        // parallel
+        // process
+        // protected
+        // pure
+        // sealed
+        // tailcall
+        // trait
+        // virtual
+        // volatile
+        | Parser.token.RESERVED
+            -> true
         | _ -> false
 
     member __.IsIdentifier =
