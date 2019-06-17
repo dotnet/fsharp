@@ -734,7 +734,7 @@ and FSharpSyntaxNodeChildVisitor (findm, syntaxTree) =
         else
             base.CanVisit m
 
-and [<Sealed>] FSharpSyntaxToken (syntaxTree: FSharpSyntaxTree, token: Parser.token, span: TextSpan) =
+and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSyntaxTree, token: Parser.token, span: TextSpan) =
 
     member __.ParentNode : FSharpSyntaxNode =
         let rootNode: FSharpSyntaxNode = syntaxTree.GetRootNode CancellationToken.None

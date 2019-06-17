@@ -72,7 +72,7 @@ type FSharpSyntaxTokenQueryFlags =
     | IncludeWhitespace =   0x10
     | IncludeTrivia =       0x11
 
-[<Sealed>]
+[<Struct;NoEquality;NoComparison>]
 type FSharpSyntaxToken =
 
     member ParentNode: FSharpSyntaxNode

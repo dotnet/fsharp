@@ -148,7 +148,7 @@ module rec App =
             updatedModel
 
         | UpdateLexicalAnalysis (lexicalHighlights, ct) ->
-            ct.ThrowIfCancellationRequested ()
+          //  ct.ThrowIfCancellationRequested ()
             { model with
                 Highlights = lexicalHighlights
                 WillRedraw = true
@@ -244,7 +244,6 @@ module rec App =
                                 use! _do = Async.OnCancel (fun () -> printfn "cancelled")
                                 let! ct = Async.CancellationToken
 
-                                do! Async.Sleep 100
                                 let lexicalAnalysis = getLexicalAnalysis updatedModel ct
                                 dispatch (UpdateLexicalAnalysis (lexicalAnalysis, ct))
                                // dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))

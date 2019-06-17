@@ -86,7 +86,8 @@ module Parser =
 
     let Parse pConfig (sourceValue: SourceValue) (ct: CancellationToken) =
         let skip = true
-        ParseAux pConfig (sourceValue.CreateLexbuf ()) (fun lexargs -> ct.ThrowIfCancellationRequested (); Lexer.token lexargs skip)
+        ParseAux pConfig (sourceValue.CreateLexbuf ()) (fun lexargs -> 
+            (fun lexbuf -> ct.ThrowIfCancellationRequested (); Lexer.token lexargs skip lexbuf))
 
     let ParseWithTokens pConfig (tokens: ImmutableArray<Parser.token * range>) =
         if tokens.Length = 0 then
