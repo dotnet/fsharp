@@ -167,8 +167,7 @@ type IncrementalCheckerState =
             |> ImmutableArray.iteri (fun i sourceSnapshot ->
                 let isLastFile = (orderedSourceSnapshots.Length - 1) = i
                 let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isLastFile, sourceSnapshot)
-                let parseResult = syntaxTree.GetParseResult cancellationToken
-                orderedResultsBuilder.[i] <- Parsed (syntaxTree, parseResult)
+                orderedResultsBuilder.[i] <- NotParsed syntaxTree
                 indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
             )
 

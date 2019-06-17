@@ -246,7 +246,7 @@ module rec App =
                                 do! Async.Sleep 50
                                 let lexicalAnalysis = getLexicalAnalysis updatedModel ct
                                 dispatch (UpdateLexicalAnalysis lexicalAnalysis)
-                                dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
+                              //  dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
                             with
                             | :? OperationCanceledException -> ()
                             | ex ->

@@ -86,7 +86,7 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
         if m.StartLine <> m.EndLine then
             // This isn't allowed for now as it's difficult to handle multi-line tokens.
             // However, comments, strings, whitespace are not parsed as multi-line when LexFlags.LexEverything is enabled, except for the case of a new-line which we don't care.
-            failwith "a multi-line token is not allowed in the token cache"
+            failwithf "a multi-line token is not allowed in the token cache: %A %A" t m
 
         for lineNumber = m.StartLine - 1 to m.EndLine - 1 do                
             let lineTokens =
