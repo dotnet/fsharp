@@ -33,8 +33,7 @@ type FSharpCompletionData (text: string) =
     member __.Description = text :> obj
 
     member __.Complete (textArea: Editing.TextArea, completionSegment: Document.ISegment, _: EventArgs) : unit =
-       // textArea.Document.Replace(completionSegment, text)
-       ()
+        textArea.Document.Replace(completionSegment, text)
 
     member __.Priority = 0.
 
@@ -135,10 +134,6 @@ and FSharpTextEditor () as this =
                 willCompletionTrigger <- true
             else
                 willCompletionTrigger <- false
-
-            if args.Text.Length > 0 && completionWindow <> null then
-                if not (Char.IsLetterOrDigit (args.Text.[0])) then
-                    completionWindow.CompletionList.RequestInsertion args
         )
 
         this.TextArea.TextEntered.Add (fun args ->
@@ -152,8 +147,7 @@ and FSharpTextEditor () as this =
             if completionWindow = null then
                 if not (Seq.isEmpty data) then
                     completionWindow <- CompletionWindow (this.TextArea)
-                    completionWindow.CloseAutomatically <- false
-                    completionWindow.CloseWhenCaretAtBeginning <- false
+                    completionWindow.CloseAutomatically <- true
                     completionWindow.Closed.Add (fun _ ->
                         completionWindow <- null
                     )

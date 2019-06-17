@@ -727,21 +727,25 @@ and FSharpSyntaxNodeChildVisitor (findm, syntaxTree) =
 
 and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSyntaxTree, token: Parser.token, span: TextSpan) =
 
-    member __.ParentNode : FSharpSyntaxNode =
-        let rootNode: FSharpSyntaxNode = syntaxTree.GetRootNode CancellationToken.None
-        // token heuristics
-        match token with
-        | Parser.token.IDENT _ 
-        | Parser.token.STRING _ ->
-            match rootNode.TryFindNode span with
-            | Some node -> node
-            | _ -> failwith "should not happen"
-        | _ ->
-            rootNode
+    member __.IsNone = obj.ReferenceEquals (syntaxTree, null)
+
+    member this.GetParentNode ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
+        if this.IsNone then
+            failwith "Token's kind is None and will not have a parent. Check if the token's kind is None before calling GetParentNode."
+
+        let rootNode: FSharpSyntaxNode = syntaxTree.GetRootNode ct
+        match rootNode.TryFindNode span with
+        | Some node -> node
+        | _ -> failwith "should not happen"
 
     member __.Span = span
 
-    member __.IsKeyword =
+    member this.IsKeyword =
+        if this.IsNone then false
+        else
+
         match token with
         | Parser.token.ABSTRACT
         | Parser.token.AND
@@ -850,39 +854,23 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
             -> true
         | _ -> false
 
-    member __.IsIdentifier =
+    member this.IsIdentifier =
+        if this.IsNone then false
+        else
+
         match token with
         | Parser.token.IDENT _ -> true
         | _ -> false
 
-    member __.IsWhitespace =
+    member this.IsWhitespace =
+        if this.IsNone then false
+        else
+
         match token with
         | Parser.token.WHITESPACE _ -> true
         | _ -> false
 
-    member __.IsComment =
-        match token with
-        | Parser.token.COMMENT _
-        | Parser.token.LINE_COMMENT _ -> true
-        | _ -> false
-
-    member __.IsComma =
-        match token with
-        | Parser.token.COMMA -> true
-        | _ -> false
-
-    member __.IsString =
-        match token with
-        | Parser.token.STRING _ -> true
-        | _ -> false
-
-    member __.TryGetText () =
-        match token with
-        | Parser.token.IDENT idText -> Some idText
-        | Parser.token.STRING str -> Some str
-        | _ -> None
-
-    member __.RawToken = token
+    static member None = Unchecked.defaultof<FSharpSyntaxToken>
 
     // TODO: Implement TryGetNextToken / TryGetPreviousToken
 
@@ -932,12 +920,10 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
     member this.GetChildTokens () =
         this.GetDescendantTokens ()
         |> Seq.filter (fun (token: FSharpSyntaxToken) ->
-            obj.ReferenceEquals (token.ParentNode, this)
+            obj.ReferenceEquals (token.GetParentNode (), this)
         )
 
-    member this.GetDescendants (?span: TextSpan) =
-        let span = defaultArg span this.Span
-
+    member this.GetDescendants (span: TextSpan) =
         let text: SourceText = this.Text
         match text.TrySpanToRange (syntaxTree.FilePath, span) with
         | ValueSome m ->
@@ -948,9 +934,10 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         | _ ->
             Seq.empty
 
-    member this.GetChildren (?span: TextSpan) =
-        let span = defaultArg span this.Span
+    member this.GetDescendants () =
+        this.GetDescendants this.Span
 
+    member this.GetChildren (span: TextSpan) =
         let text: SourceText = this.Text
         match text.TrySpanToRange (syntaxTree.FilePath, span) with
         | ValueSome m ->
@@ -961,11 +948,14 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         | _ ->
             Seq.empty
 
+    member this.GetChildren () =
+        this.GetChildren this.Span
+
     member this.GetRoot () =
         this.GetAncestorsAndSelf ()
         |> Seq.last
 
-    member this.TryFindToken (position: int) =
+    member this.FindToken (position: int) =
         let text: SourceText = this.Text
 
         let nodeSpan = this.Span
@@ -973,27 +963,23 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
 
         syntaxTree.GetTokens (line.Span)
         |> Seq.filter (fun (token: FSharpSyntaxToken) ->
-            token.Span.Contains position && nodeSpan.Contains token.Span
+            (token.Span.Contains position || token.Span.End = position) && nodeSpan.Contains token.Span
         )
         // Pick the innermost one.
-        |> Seq.sortByDescending (fun token -> Seq.length (token.ParentNode.GetAncestors ()))
+        |> Seq.sortByDescending (fun (token: FSharpSyntaxToken) -> 
+            let parentNode: FSharpSyntaxNode = token.GetParentNode ()
+            Seq.length (parentNode.GetAncestors ())
+        )
         |> Seq.tryHead
-
-    member this.FindNode (m: range) =
-        match this.TryFindNode m with
-        | Some node -> node
-        | _ -> failwithf "Unable to find node at range: %A" m
-
-    member this.TryFindNode (m: range) =
-        let visitor = FSharpSyntaxNodeVisitor (m, syntaxTree)
-        visitor.VisitNode this
+        |> Option.defaultValue FSharpSyntaxToken.None
 
     member this.TryFindNode (span: TextSpan) =
         let text = this.Text
 
         match text.TrySpanToRange (syntaxTree.FilePath, span) with
-        | ValueSome r ->
-            this.TryFindNode r
+        | ValueSome m ->
+            let visitor = FSharpSyntaxNodeVisitor (m, syntaxTree)
+            visitor.VisitNode this
         | _ ->
             None
 
@@ -1063,7 +1049,9 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                 result
         )
 
-    member __.GetText ct =
+    member __.GetText ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
         match lazyText with
         | ValueSome text -> text
         | _ ->
@@ -1094,7 +1082,9 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
         let span = TextSpan (0, text.Length)
         this.GetTokens (span, ct)
 
-    member this.GetRootNode ct =
+    member this.GetRootNode ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
         lock gate (fun () ->
             let inputOpt, _ = this.GetParseResult ct
             if inputOpt.IsNone then failwith "parsed input does not exist"

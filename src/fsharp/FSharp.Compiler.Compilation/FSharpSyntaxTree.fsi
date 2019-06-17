@@ -68,7 +68,12 @@ type FSharpSyntaxNodeKind =
 [<Struct;NoEquality;NoComparison>]
 type FSharpSyntaxToken =
 
-    member ParentNode: FSharpSyntaxNode
+    member IsNone: bool
+
+    /// Gets the parent node that owns the token.
+    /// Does a full parse of the syntax tree if neccessary.
+    /// Throws an exception if the token is None.
+    member GetParentNode: ?ct: CancellationToken -> FSharpSyntaxNode
 
     member Span: TextSpan
 
@@ -78,13 +83,7 @@ type FSharpSyntaxToken =
 
     member IsWhitespace: bool
 
-    member IsComment: bool
-
-    member IsComma: bool
-
-    member IsString: bool
-
-    member TryGetText: unit -> string option
+    static member None: FSharpSyntaxToken
 
 and [<Sealed>] FSharpSyntaxNode =
 
@@ -105,14 +104,18 @@ and [<Sealed>] FSharpSyntaxNode =
     /// Get tokens whose parent is the current node.
     member GetChildTokens: unit -> FSharpSyntaxToken seq
 
-    member GetDescendants: ?span: TextSpan -> FSharpSyntaxNode seq
+    member GetDescendants: span: TextSpan -> FSharpSyntaxNode seq
+
+    member GetDescendants: unit -> FSharpSyntaxNode seq
 
     /// Get nodes whose parent is the current node.
-    member GetChildren: ?span: TextSpan -> FSharpSyntaxNode seq
+    member GetChildren: span: TextSpan -> FSharpSyntaxNode seq
+
+    member GetChildren: unit -> FSharpSyntaxNode seq
 
     member GetRoot: unit -> FSharpSyntaxNode
 
-    member TryFindToken: position: int -> FSharpSyntaxToken option
+    member FindToken: position: int -> FSharpSyntaxToken
 
     member TryFindNode: span: TextSpan -> FSharpSyntaxNode option
 
@@ -138,10 +141,10 @@ and [<Sealed>] FSharpSyntaxTree =
 
     /// Get the root node.
     /// Does a full parse.
-    member GetRootNode: CancellationToken -> FSharpSyntaxNode
+    member GetRootNode: ?ct: CancellationToken -> FSharpSyntaxNode
 
     /// Get the text associated with the syntax tree.
-    member GetText: CancellationToken -> SourceText
+    member GetText: ?ct: CancellationToken -> SourceText
 
     /// Creates a new syntax tree with the given text snapshot.
     member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree
