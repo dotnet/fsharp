@@ -11,7 +11,7 @@ type FSharpSourceSnapshot =
 
     member FilePath: string
 
-    member internal GetText: CancellationToken -> SourceText
+    member GetText: CancellationToken -> SourceText
 
     member internal TryGetText: unit -> SourceText option
 

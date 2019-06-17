@@ -65,13 +65,6 @@ type FSharpSyntaxNodeKind =
     | AttributeList of SynAttributeList
     | Attribute of SynAttribute
 
-[<Flags>]
-type FSharpSyntaxTokenQueryFlags =
-    | None =                0x00
-    | IncludeComments =     0x01
-    | IncludeWhitespace =   0x10
-    | IncludeTrivia =       0x11
-
 [<Struct;NoEquality;NoComparison>]
 type FSharpSyntaxToken =
 
@@ -93,8 +86,6 @@ type FSharpSyntaxToken =
 
     member TryGetText: unit -> string option
 
-    member TryGetNextToken: unit -> FSharpSyntaxToken option
-
 and [<Sealed>] FSharpSyntaxNode =
 
     member Parent: FSharpSyntaxNode option
@@ -109,10 +100,10 @@ and [<Sealed>] FSharpSyntaxNode =
 
     member GetAncestorsAndSelf: unit -> FSharpSyntaxNode seq
 
-    member GetDescendantTokens: ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags -> FSharpSyntaxToken seq
+    member GetDescendantTokens: unit -> FSharpSyntaxToken seq
 
     /// Get tokens whose parent is the current node.
-    member GetChildTokens: ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags -> FSharpSyntaxToken seq
+    member GetChildTokens: unit -> FSharpSyntaxToken seq
 
     member GetDescendants: ?span: TextSpan -> FSharpSyntaxNode seq
 
@@ -138,12 +129,12 @@ and [<Sealed>] FSharpSyntaxTree =
 
     /// Gets all the tokens by the given span.
     /// Does not require a full parse, therefore use this when you want lexical information without a full parse.
-    member GetTokens: span: TextSpan * ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags * ?ct: CancellationToken -> FSharpSyntaxToken seq
+    member GetTokens: span: TextSpan * ?ct: CancellationToken -> FSharpSyntaxToken seq
 
     /// Gets all the tokens.
     /// The same result as getting descendant tokens from the root node.
     /// Does not require a full parse, therefore use this when you want lexical information without a full parse.
-    member GetTokens: ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags * ?ct: CancellationToken -> FSharpSyntaxToken seq
+    member GetTokens: ?ct: CancellationToken -> FSharpSyntaxToken seq
 
     /// Get the root node.
     /// Does a full parse.

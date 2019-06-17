@@ -32,6 +32,8 @@
     <Compile Include="FSharpSourceSnapshot.fs" />
     <Compile Include="Parser.fsi" />
     <Compile Include="Parser.fs" />
+    <Compile Include="IncrementalLexer.fsi" />
+    <Compile Include="IncrementalLexer.fs" />
     <Compile Include="FSharpSyntaxTree.fsi" />
     <Compile Include="FSharpSyntaxTree.fs" />
     <Compile Include="IncrementalChecker.fsi" />

@@ -277,15 +277,6 @@ type FSharpSyntaxNodeKind =
                 | _ ->
                     false
 
-[<Flags>]
-type FSharpSyntaxTokenQueryFlags =
-    | None =                0x00
-    | IncludeComments =     0x01
-    | IncludeWhitespace =   0x10
-    | IncludeTrivia =       0x11
-
-type private RawTokenLineMap = Dictionary<int, ResizeArray<Parser.token * int * int>>
-
 [<AbstractClass>]
 type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
     inherit AstVisitor<FSharpSyntaxNode> ()
@@ -893,40 +884,7 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
 
     member __.RawToken = token
 
-    member this.TryGetNextToken () =
-        let text: SourceText = syntaxTree.GetText CancellationToken.None
-
-        let allRawTokens: RawTokenLineMap = this.ParentNode.AllRawTokens
-        let linePos = text.Lines.GetLinePosition span.End
-
-        let rawTokenOpt =
-            match allRawTokens.TryGetValue linePos.Line with
-            | true, rawTokens ->
-                let columnIndex =
-                    rawTokens
-                    |> Seq.findIndex (fun (_, _, endIndex) -> endIndex = linePos.Character)
-                // Should we go to the next line?
-                if columnIndex >= (rawTokens.Count - 1) then
-                    match allRawTokens.TryGetValue (linePos.Line + 1) with
-                    | true, rawTokens ->
-                        if rawTokens.Count = 0 then
-                            ValueNone
-                        else
-                            ValueSome rawTokens.[0]
-                    | _ ->
-                        ValueNone
-                else
-                    ValueSome rawTokens.[columnIndex + 1]
-            | _ ->
-                failwith "should not happen"
-
-        match rawTokenOpt with
-        | ValueSome (t, columnStart, columnEnd) ->
-            let line = text.Lines.[linePos.Line]
-            let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
-            Some (FSharpSyntaxToken (syntaxTree, t, span))
-        | _ ->
-            None
+    // TODO: Implement TryGetNextToken / TryGetPreviousToken
 
 and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
@@ -934,9 +892,6 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
 
     member __.Text: SourceText = 
         syntaxTree.GetText CancellationToken.None
-
-    member __.AllRawTokens =
-        syntaxTree.GetAllRawTokens CancellationToken.None
 
     member __.Parent = parent
 
@@ -971,13 +926,11 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
                 nodeOpt <- nodeOpt.Value.Parent
         }
 
-    member this.GetDescendantTokens (?tokenQueryFlags: FSharpSyntaxTokenQueryFlags) =
-        let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
+    member this.GetDescendantTokens () =
+        syntaxTree.GetTokens this.Span
 
-        syntaxTree.GetTokens (this.Span, tokenQueryFlags = tokenQueryFlags)
-
-    member this.GetChildTokens ?tokenQueryFlags =
-        this.GetDescendantTokens (tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None)
+    member this.GetChildTokens () =
+        this.GetDescendantTokens ()
         |> Seq.filter (fun (token: FSharpSyntaxToken) ->
             obj.ReferenceEquals (token.ParentNode, this)
         )
@@ -1014,25 +967,17 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
 
     member this.TryFindToken (position: int) =
         let text: SourceText = this.Text
-        let allRawTokens: RawTokenLineMap = this.AllRawTokens
+
         let nodeSpan = this.Span
         let line = text.Lines.GetLineFromPosition position
 
-        match allRawTokens.TryGetValue line.LineNumber with
-        | true, lineTokens ->
-            lineTokens
-            |> Seq.choose (fun (t, columnStart, columnEnd) ->
-                let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
-                if nodeSpan.Contains span then
-                    Some (FSharpSyntaxToken (syntaxTree, t, span))
-                else
-                    None
-            )
-            // Pick the innermost one.
-            |> Seq.sortByDescending (fun token -> Seq.length (token.ParentNode.GetAncestors ()))
-            |> Seq.tryHead
-        | _ ->
-            None
+        syntaxTree.GetTokens (line.Span)
+        |> Seq.filter (fun (token: FSharpSyntaxToken) ->
+            token.Span.Contains position && nodeSpan.Contains token.Span
+        )
+        // Pick the innermost one.
+        |> Seq.sortByDescending (fun token -> Seq.length (token.ParentNode.GetAncestors ()))
+        |> Seq.tryHead
 
     member this.FindNode (m: range) =
         match this.TryFindNode m with
@@ -1079,58 +1024,19 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         let index = this.DebugString.IndexOf ("\n")
         this.Kind.GetType().Name + ": " + if index <> -1 then this.DebugString.Substring(0, index) else this.DebugString
 
-and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, changes: Lazy<RawTokenLineMap option>) as this =
+and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, lexer: IncrementalLexer) =
 
     let gate = obj ()
     let mutable lazyText = ValueNone
-    let mutable lazyAllRawTokens = ValueNone
     let mutable lazyRootNode = ValueNone
 
     let mutable parseResult = ValueStrength.None
-
-    member private this.TryGetAllRawTokens () =
-        match lazyAllRawTokens with
-        | ValueSome allRawTokens -> ValueSome allRawTokens
-        | _ ->
-            match changes.Value with
-            | Some changes -> ValueSome changes
-            | _ -> ValueNone
 
     member this.ConvertSpanToRange (span: TextSpan) =
         let text = this.GetText CancellationToken.None
         match text.TrySpanToRange (filePath, span) with
         | ValueSome range -> range
         | _ -> failwith "Invalid span to range conversion."
-
-    member __.GetAllRawTokens ct : Dictionary<int, ResizeArray<Parser.token * int * int>> =
-        match changes.Value with
-        | Some changes -> changes
-        | _ ->           
-            let text = this.GetText ct
-            lock gate (fun () ->
-                match lazyAllRawTokens with
-                | ValueSome allRawTokens ->
-                    allRawTokens
-                | _ ->
-                    let allRawTokens = Dictionary ()
-                    Lexer.Lex pConfig (SourceValue.SourceText text) (fun t m ->
-                        let lineTokens =
-                            match allRawTokens.TryGetValue (m.EndLine - 1) with
-                            | true, lineTokens -> lineTokens
-                            | _ ->
-                                let lineTokens = ResizeArray ()
-                                allRawTokens.[m.EndLine - 1] <- lineTokens
-                                lineTokens
-
-                        match t with
-                        | Parser.token.EOF _ -> ()
-                        | _ ->
-                            if m.StartLine = m.EndLine then
-                                lineTokens.Add (t, m.StartColumn, m.EndColumn)
-                    ) ct
-                    lazyAllRawTokens <- ValueSome allRawTokens
-                    allRawTokens
-            )
 
     member __.FilePath = filePath
 
@@ -1171,44 +1077,22 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
             )
 
     member private this.GetAllTokens (span: TextSpan, ct) =
-        let text = this.GetText ct
-        let allRawTokens = this.GetAllRawTokens ct
+        lexer.GetTokens (span, ct)
+        |> Seq.map (fun (TokenItem (t, m)) ->
+            FSharpSyntaxToken (this, t, m)
+        )
 
-        let linePosSpan = text.Lines.GetLinePositionSpan span
-        seq {
-            for lineNumber = linePosSpan.Start.Line to linePosSpan.End.Line do
-                match allRawTokens.TryGetValue lineNumber with
-                | true, lineTokens ->
-                    let line = text.Lines.[lineNumber]
-                    for i = 0 to lineTokens.Count - 1 do
-                        let t, columnStart, columnEnd = lineTokens.[i]
-                        let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
-                        yield FSharpSyntaxToken(this, t, span)
-                | _ ->
-                    ()
-        }
-
-    member this.GetTokens (span: TextSpan, ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags, ?ct) =
-        let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
+    member this.GetTokens (span: TextSpan, ?ct) =
         let ct = defaultArg ct CancellationToken.None
 
         this.GetAllTokens (span, ct)
-        |> Seq.filter (fun (token: FSharpSyntaxToken) ->
-            if span.Contains token.Span then
-                if   token.IsWhitespace && int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeWhitespace) = 0 then false
-                elif token.IsComment && int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeComments) = 0 then false
-                else true
-            else
-                false
-        )
 
-    member this.GetTokens (?tokenQueryFlags: FSharpSyntaxTokenQueryFlags, ?ct) =
-        let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
+    member this.GetTokens ?ct =
         let ct = defaultArg ct CancellationToken.None
 
         let text = this.GetText ct
         let span = TextSpan (0, text.Length)
-        this.GetTokens (span, tokenQueryFlags, ct)
+        this.GetTokens (span, ct)
 
     member this.GetRootNode ct =
         lock gate (fun () ->
@@ -1224,70 +1108,7 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
         if obj.ReferenceEquals (textSnapshot, newTextSnapshot) then
             this
         else
-            match textSnapshot.TryGetText (), newTextSnapshot.TryGetText () with
-            | Some oldText, Some text ->
-                let changes = text.GetTextChanges oldText
-                if changes.Count = 0 || (changes.[0].Span.Start = 0 && changes.[0].Span.Length = oldText.Length) then
-                    FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, lazy None)
-                else
-                    match this.TryGetAllRawTokens () with
-                    | ValueSome rawTokens ->
-                        
-                        // incremental lexing
-                        let rawTokensOpt =
-                            lazy
-                                if changes.Count = 1 then
-                                    let change = changes.[0]
-                                    let newRawTokens = ResizeArray rawTokens.Values
-                                    let lineNumbersToEval = ResizeArray ()
-
-
-                                    let span = TextSpan (change.Span.Start, change.NewText.Length)
-
-                                    let oldLinePosSpan = oldText.Lines.GetLinePositionSpan change.Span
-                                    let linePosSpan = text.Lines.GetLinePositionSpan span
-
-                                    let oldStartLine = oldLinePosSpan.Start.Line
-                                    let oldLineLength = oldLinePosSpan.End.Line - oldLinePosSpan.Start.Line
-                                    let lineLength = linePosSpan.End.Line - oldLinePosSpan.Start.Line
-
-                                    for i = oldStartLine to oldStartLine + lineLength do
-                                        lineNumbersToEval.Add i
-
-                                    if lineLength > oldLineLength then
-                                        let start = oldStartLine + oldLineLength
-                                        let length = oldStartLine + lineLength - start
-                                        newRawTokens.InsertRange (start + 1, Array.init length (fun _ -> ResizeArray ()))
-
-                                    elif lineLength < oldLineLength then
-                                        let start = oldStartLine + lineLength
-                                        let length = oldStartLine + oldLineLength - start
-                                        newRawTokens.RemoveRange (start + 1, length)
-
-                                    for i = 0 to lineNumbersToEval.Count - 1 do
-                                        let lineNumber = lineNumbersToEval.[i]
-                                        let lineTokens = newRawTokens.[lineNumber]
-                                        lineTokens.Clear ()
-                                        Lexer.Lex pConfig (SourceValue.SourceText (text.GetSubText (text.Lines.[lineNumber].Span))) (fun t m ->
-                                            match t with
-                                            | Parser.token.EOF _ -> ()
-                                            | _ ->
-                                                if m.StartLine = m.EndLine then
-                                                    lineTokens.Add (t, m.StartColumn, m.EndColumn)
-                                        ) CancellationToken.None
-
-                                    let newRawTokensDict = Dictionary ()
-                                    for i = 0 to newRawTokens.Count - 1 do
-                                        newRawTokensDict.[i] <- newRawTokens.[i]
-                                    Some newRawTokensDict
-                                else
-                                    None
-
-                        FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, rawTokensOpt)
-                    | _ ->
-                        FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, lazy None)
-            | _ ->
-                FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, lazy None)
+            FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, lexer.WithChangedTextSnapshot newTextSnapshot)
 
     member this.GetDiagnostics ?ct =
         let ct = defaultArg ct CancellationToken.None
@@ -1297,4 +1118,4 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
         errors.ToDiagnostics (filePath, text)
 
     static member Create (filePath, pConfig, textSnapshot) =
-        FSharpSyntaxTree (filePath, pConfig, textSnapshot, lazy None)
+        FSharpSyntaxTree (filePath, pConfig, textSnapshot, IncrementalLexer.Create (pConfig, textSnapshot))
