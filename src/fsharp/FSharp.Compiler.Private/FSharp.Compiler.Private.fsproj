@@ -42,9 +42,6 @@
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="FSharp.LanguageService" />
     <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
     <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
