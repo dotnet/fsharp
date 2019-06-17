@@ -20,7 +20,7 @@ open FSharp.Compiler.SourceCodeServices
 
 [<CustomEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSyntaxNodeKind =
-    | ParsedInput of Lazy<ParsedInput>
+    | ParsedInput of ParsedInput
     | ModuleOrNamespace of SynModuleOrNamespace
     | ModuleDecl of SynModuleDecl
     | LongIdentWithDots of LongIdentWithDots
@@ -71,7 +71,7 @@ type FSharpSyntaxNodeKind =
     member this.Range =
         match this with
         | FSharpSyntaxNodeKind.ParsedInput item ->
-            item.Value.AdjustedRange
+            item.AdjustedRange
         | FSharpSyntaxNodeKind.ModuleOrNamespace item ->
             item.AdjustedRange
         | FSharpSyntaxNodeKind.ModuleDecl item ->
@@ -318,7 +318,7 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
         node.Parent |> Option.iter visitStack.Push
         match node.Kind with
         | FSharpSyntaxNodeKind.ParsedInput item ->
-            this.VisitParsedInput item.Value
+            this.VisitParsedInput item
         | FSharpSyntaxNodeKind.ModuleOrNamespace item ->
             this.VisitModuleOrNamespace item
         | FSharpSyntaxNodeKind.ModuleDecl item ->
@@ -413,7 +413,7 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
             this.VisitAttribute item
 
     override __.VisitParsedInput item =
-        let node = createNode (FSharpSyntaxNodeKind.ParsedInput (lazy item))
+        let node = createNode (FSharpSyntaxNodeKind.ParsedInput item)
         startVisit node
         let resultOpt = base.VisitParsedInput item
         endVisit resultOpt
@@ -891,6 +891,8 @@ and [<Sealed>] FSharpSyntaxToken (syntaxTree: FSharpSyntaxTree, token: Parser.to
         | Parser.token.STRING str -> Some str
         | _ -> None
 
+    member __.RawToken = token
+
     member this.TryGetNextToken () =
         let text: SourceText = syntaxTree.GetText CancellationToken.None
 
@@ -972,32 +974,11 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
     member this.GetDescendantTokens (?tokenQueryFlags: FSharpSyntaxTokenQueryFlags) =
         let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
 
-        let text = this.Text
-        let allRawTokens: RawTokenLineMap = this.AllRawTokens
-        let nodeSpan = this.Span
-        let linePosSpan = text.Lines.GetLinePositionSpan nodeSpan
-
-        seq {
-            for i = linePosSpan.Start.Line to linePosSpan.End.Line do
-                match allRawTokens.TryGetValue i with
-                | true, lineTokens ->
-                    for columnIndex = 0 to lineTokens.Count - 1 do
-                        let rawToken, columnStart, columnEnd = lineTokens.[columnIndex]
-                        let line = text.Lines.[i]
-                        let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
-                        if nodeSpan.Contains span then
-                            match rawToken with
-                            | Parser.token.WHITESPACE _ when int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeWhitespace) = 0 -> ()
-                            | Parser.token.COMMENT _ when int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeComments) = 0 -> ()
-                            | _ ->
-                                yield FSharpSyntaxToken (syntaxTree, rawToken, span)
-                | _ ->
-                    ()
-        }
+        syntaxTree.GetTokens (this.Span, tokenQueryFlags = tokenQueryFlags)
 
     member this.GetChildTokens ?tokenQueryFlags =
         this.GetDescendantTokens (tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None)
-        |> Seq.filter (fun token ->
+        |> Seq.filter (fun (token: FSharpSyntaxToken) ->
             obj.ReferenceEquals (token.ParentNode, this)
         )
 
@@ -1141,9 +1122,12 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                                 allRawTokens.[m.EndLine - 1] <- lineTokens
                                 lineTokens
 
-                        if m.StartLine = m.EndLine then
-                            lineTokens.Add (t, m.StartColumn, m.EndColumn)
-                    )
+                        match t with
+                        | Parser.token.EOF _ -> ()
+                        | _ ->
+                            if m.StartLine = m.EndLine then
+                                lineTokens.Add (t, m.StartColumn, m.EndColumn)
+                    ) ct
                     lazyAllRawTokens <- ValueSome allRawTokens
                     allRawTokens
             )
@@ -1160,15 +1144,15 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                 let result =
                     match lazyText with
                     | ValueSome text ->
-                        Parser.Parse pConfig (SourceValue.SourceText text)
+                        Parser.Parse pConfig (SourceValue.SourceText text) ct
                     | _ ->
                         match textSnapshot.TryGetStream ct with
                         | Some stream ->
-                            Parser.Parse pConfig (SourceValue.Stream stream)
+                            Parser.Parse pConfig (SourceValue.Stream stream) ct
                         | _ ->
                             let text = textSnapshot.GetText ct
                             lazyText <- ValueSome text
-                            Parser.Parse pConfig (SourceValue.SourceText text)
+                            Parser.Parse pConfig (SourceValue.SourceText text) ct
                 parseResult <- ValueStrength.Weak (WeakReference<_> result)
                 result
         )
@@ -1186,18 +1170,47 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                     text
             )
 
+    member private this.GetRootNodeTokens ct =
+        let text = this.GetText ct
+        let allRawTokens = this.GetAllRawTokens ct
+        seq {
+            for lineNumber = 0 to text.Lines.Count - 1 do
+                let lineTokens = allRawTokens.[lineNumber]
+                let line = text.Lines.[lineNumber]
+                for i = 0 to lineTokens.Count - 1 do
+                    let t, columnStart, columnEnd = lineTokens.[i]
+                    let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
+                    yield FSharpSyntaxToken(this, t, span)
+        }
+
+    member this.GetTokens (span: TextSpan, ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags, ?ct) =
+        let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
+        let ct = defaultArg ct CancellationToken.None
+
+        this.GetRootNodeTokens ct
+        |> Seq.filter (fun (token: FSharpSyntaxToken) ->
+            if span.Contains token.Span then
+                if   token.IsWhitespace && int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeWhitespace) = 0 then false
+                elif token.IsComment && int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeComments) = 0 then false
+                else true
+            else
+                false
+        )
+
+    member this.GetTokens (?tokenQueryFlags: FSharpSyntaxTokenQueryFlags, ?ct) =
+        let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
+        let ct = defaultArg ct CancellationToken.None
+
+        let text = this.GetText ct
+        let span = TextSpan (0, text.Length)
+        this.GetTokens (span, tokenQueryFlags, ct)
+
     member this.GetRootNode ct =
         lock gate (fun () ->
-            let lazyInput =
-                lazy
-                    let ct = CancellationToken.None
-                    let _text = this.GetText ct
-                    let inputOpt, _ = this.GetParseResult ct
-                    if inputOpt.IsNone then failwith "parsed input does not exist"
-                    let input = inputOpt.Value
-                    let _allRawTokens = this.GetAllRawTokens ct // go ahead and evaluate this as we need it.
-                    input
-            let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput lazyInput)
+            let inputOpt, _ = this.GetParseResult ct
+            if inputOpt.IsNone then failwith "parsed input does not exist"
+            let input = inputOpt.Value
+            let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
             lazyRootNode <- ValueSome rootNode
             rootNode
         )
@@ -1251,10 +1264,12 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                                         let lineTokens = newRawTokens.[lineNumber]
                                         lineTokens.Clear ()
                                         Lexer.Lex pConfig (SourceValue.SourceText (text.GetSubText (text.Lines.[lineNumber].Span))) (fun t m ->
-                                            if m.StartLine = m.EndLine then
-                                                lineTokens.Add (t, m.StartColumn, m.EndColumn)
-                                        )
-                                        printfn "lineLength: %A" lineTokens
+                                            match t with
+                                            | Parser.token.EOF _ -> ()
+                                            | _ ->
+                                                if m.StartLine = m.EndLine then
+                                                    lineTokens.Add (t, m.StartColumn, m.EndColumn)
+                                        ) CancellationToken.None
 
                                     let newRawTokensDict = Dictionary ()
                                     for i = 0 to newRawTokens.Count - 1 do

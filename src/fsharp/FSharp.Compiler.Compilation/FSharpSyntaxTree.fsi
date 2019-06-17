@@ -17,7 +17,7 @@ open Microsoft.CodeAnalysis
 
 [<CustomEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSyntaxNodeKind =
-    | ParsedInput of Lazy<ParsedInput>
+    | ParsedInput of ParsedInput
     | ModuleOrNamespace of SynModuleOrNamespace
     | ModuleDecl of SynModuleDecl
     | LongIdentWithDots of LongIdentWithDots
@@ -136,12 +136,26 @@ and [<Sealed>] FSharpSyntaxTree =
 
     member internal ConvertSpanToRange: TextSpan -> range
 
+    /// Gets all the tokens by the given span.
+    /// Does not require a full parse, therefore use this when you want lexical information without a full parse.
+    member GetTokens: span: TextSpan * ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags * ?ct: CancellationToken -> FSharpSyntaxToken seq
+
+    /// Gets all the tokens.
+    /// The same result as getting descendant tokens from the root node.
+    /// Does not require a full parse, therefore use this when you want lexical information without a full parse.
+    member GetTokens: ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags * ?ct: CancellationToken -> FSharpSyntaxToken seq
+
+    /// Get the root node.
+    /// Does a full parse.
     member GetRootNode: CancellationToken -> FSharpSyntaxNode
 
+    /// Get the text associated with the syntax tree.
     member GetText: CancellationToken -> SourceText
 
+    /// Creates a new syntax tree with the given text snapshot.
     member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree
 
+    /// Get diagnostics.
     member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
 
     static member internal Create: filePath: string * ParsingConfig * FSharpSourceSnapshot -> FSharpSyntaxTree

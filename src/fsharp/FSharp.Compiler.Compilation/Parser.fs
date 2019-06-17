@@ -56,11 +56,12 @@ module Lexer =
             lexbufCallback lexargs lexbuf
         )
 
-    let Lex pConfig (sourceValue: SourceValue) tokenCallback =
+    let Lex pConfig (sourceValue: SourceValue) tokenCallback (ct: CancellationToken) =
         let skip = false
         let errorLogger = CompilationErrorLogger("Lex", pConfig.tcConfig.errorSeverityOptions)
         LexAux pConfig (sourceValue.CreateLexbuf ()) errorLogger (fun lexargs lexbuf ->
             while not lexbuf.IsPastEndOfStream do
+                ct.ThrowIfCancellationRequested ()
                 tokenCallback (Lexer.token lexargs skip lexbuf) lexbuf.LexemeRange
         )
 
@@ -83,9 +84,9 @@ module Parser =
                 | _ -> None
         (input, errorLogger.GetErrorInfos ())
 
-    let Parse pConfig (sourceValue: SourceValue) =
+    let Parse pConfig (sourceValue: SourceValue) (ct: CancellationToken) =
         let skip = true
-        ParseAux pConfig (sourceValue.CreateLexbuf ()) (fun lexargs -> Lexer.token lexargs skip)
+        ParseAux pConfig (sourceValue.CreateLexbuf ()) (fun lexargs -> ct.ThrowIfCancellationRequested (); Lexer.token lexargs skip)
 
     let ParseWithTokens pConfig (tokens: ImmutableArray<Parser.token * range>) =
         if tokens.Length = 0 then

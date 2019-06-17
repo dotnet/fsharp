@@ -32,11 +32,11 @@ type internal SourceValue =
 [<RequireQualifiedAccess>]
 module internal Lexer =
 
-    val Lex: ParsingConfig -> SourceValue -> (Parser.token -> range -> unit) -> unit
+    val Lex: ParsingConfig -> SourceValue -> (Parser.token -> range -> unit) -> CancellationToken -> unit
 
 [<RequireQualifiedAccess>]
 module internal Parser =
 
-    val Parse: ParsingConfig -> SourceValue -> ParseResult
+    val Parse: ParsingConfig -> SourceValue -> CancellationToken  -> ParseResult
 
     val ParseWithTokens: ParsingConfig -> ImmutableArray<Parser.token * range> -> ParseResult
