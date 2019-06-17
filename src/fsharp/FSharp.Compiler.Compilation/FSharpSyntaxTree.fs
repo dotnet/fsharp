@@ -1170,24 +1170,29 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                     text
             )
 
-    member private this.GetRootNodeTokens ct =
+    member private this.GetAllTokens (span: TextSpan, ct) =
         let text = this.GetText ct
         let allRawTokens = this.GetAllRawTokens ct
+
+        let linePosSpan = text.Lines.GetLinePositionSpan span
         seq {
-            for lineNumber = 0 to text.Lines.Count - 1 do
-                let lineTokens = allRawTokens.[lineNumber]
-                let line = text.Lines.[lineNumber]
-                for i = 0 to lineTokens.Count - 1 do
-                    let t, columnStart, columnEnd = lineTokens.[i]
-                    let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
-                    yield FSharpSyntaxToken(this, t, span)
+            for lineNumber = linePosSpan.Start.Line to linePosSpan.End.Line do
+                match allRawTokens.TryGetValue lineNumber with
+                | true, lineTokens ->
+                    let line = text.Lines.[lineNumber]
+                    for i = 0 to lineTokens.Count - 1 do
+                        let t, columnStart, columnEnd = lineTokens.[i]
+                        let span = TextSpan (line.Start + columnStart, columnEnd - columnStart)
+                        yield FSharpSyntaxToken(this, t, span)
+                | _ ->
+                    ()
         }
 
     member this.GetTokens (span: TextSpan, ?tokenQueryFlags: FSharpSyntaxTokenQueryFlags, ?ct) =
         let tokenQueryFlags = defaultArg tokenQueryFlags FSharpSyntaxTokenQueryFlags.None
         let ct = defaultArg ct CancellationToken.None
 
-        this.GetRootNodeTokens ct
+        this.GetAllTokens (span, ct)
         |> Seq.filter (fun (token: FSharpSyntaxToken) ->
             if span.Contains token.Span then
                 if   token.IsWhitespace && int (tokenQueryFlags &&& FSharpSyntaxTokenQueryFlags.IncludeWhitespace) = 0 then false

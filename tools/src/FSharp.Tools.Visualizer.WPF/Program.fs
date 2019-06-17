@@ -98,7 +98,7 @@ module rec App =
     type Msg =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
-        | UpdateLexicalAnalysis of lexicalHighlights: HighlightSpan list * CancellationToken
+        | UpdateLexicalAnalysis of lexicalHighlights: HighlightSpan list
         | UpdateVisualizers of didCompletionTrigger: bool * caretOffset: int * CancellationToken
         | UpdateNodeHighlight of FSharpSyntaxNode
 
@@ -147,8 +147,7 @@ module rec App =
             callback updatedModel
             updatedModel
 
-        | UpdateLexicalAnalysis (lexicalHighlights, ct) ->
-          //  ct.ThrowIfCancellationRequested ()
+        | UpdateLexicalAnalysis lexicalHighlights ->
             { model with
                 Highlights = lexicalHighlights
                 WillRedraw = true
@@ -245,7 +244,7 @@ module rec App =
                                 let! ct = Async.CancellationToken
 
                                 let lexicalAnalysis = getLexicalAnalysis updatedModel ct
-                                dispatch (UpdateLexicalAnalysis (lexicalAnalysis, ct))
+                                dispatch (UpdateLexicalAnalysis lexicalAnalysis)
                                // dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
                             with
                             | ex -> ()
