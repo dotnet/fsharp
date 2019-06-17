@@ -10,6 +10,9 @@ type PrintfFormat<'Printer,'State,'Residue,'Result>(value:string) =
 
         member x.Value = value
         member val internal Captures: obj[] = Unchecked.defaultof<obj[]> with get, set
+        member x.GetCaptureTypes() =
+            if System.Object.ReferenceEquals(x.Captures, null) then [||]
+            else Microsoft.FSharp.Collections.Array.map (fun (c: obj) -> c.GetType()) x.Captures
         override __.ToString() = value
     
 type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value:string) = 
@@ -101,16 +104,18 @@ module internal PrintfImpl =
         member this.IsPrecisionSpecified = this.Precision <> NotSpecifiedValue
         member this.IsStarWidth = this.Width = StarValue
         member this.IsWidthSpecified = this.Width <> NotSpecifiedValue
+        member this.HasCapture = this.Capture.IsSome
 
         override this.ToString() = 
             let valueOf n = match n with StarValue -> "*" | NotSpecifiedValue -> "-" | n -> n.ToString()
             System.String.Format
                 (
-                    "'{0}', Precision={1}, Width={2}, Flags={3}", 
+                    "'{0}', Precision={1}, Width={2}, Flags={3}, Captures={4}", 
                     this.TypeChar, 
                     (valueOf this.Precision),
                     (valueOf this.Width), 
-                    this.Flags
+                    this.Flags,
+                    this.Capture
                 )
     
     /// Set of helpers to parse format string
@@ -151,7 +156,8 @@ module internal PrintfImpl =
 
         let rec parseFormatSpecifier (s:string) (i:int) =
 
-            System.Diagnostics.Debug.Assert(s.[i] = '%', "s.[i] = '%'")
+            // when called recursively for %{nn:FFF} i could point to ':'
+            System.Diagnostics.Debug.Assert(s.[i] = '%' || s.[i] = ':', "s.[i] = '%' || s.[i] = ':'")
 
             let isImm, i = if s.[i+1] = '{' 
                            then true, i+1
@@ -213,6 +219,7 @@ module internal PrintfImpl =
     type PrintfEnv<'State, 'Residue, 'Result> =
         val State: 'State
         val Captures: obj[]
+        new(s: 'State) = { State = s; Captures = Unchecked.defaultof<_> }
         new(s: 'State, caps: obj[]) = { State = s; Captures = caps }
         abstract Finish: unit -> 'Result
         abstract Write: string -> unit
@@ -283,12 +290,12 @@ module internal PrintfImpl =
 
         static member Final1C<'A>
             (
-                s0, conv1, s1, cap: 'A
+                s0, cap1: int, conv1, s1 
             ) =
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun () ->
                     let env = env()
-                    Utils.Write(env, s0, (conv1 cap), s1)
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap1]), s1)
                     env.Finish()
                 )
             )
@@ -1447,6 +1454,9 @@ module internal PrintfImpl =
 
         let builderStack = PrintfBuilderStack()
 
+        // XXX currently ContinuationOnStack is not updated anywhere.
+        // marking it a constant.
+        [<Literal>]
         let ContinuationOnStack = -1
 
         let buildPlain numberOfArgs prefix = 
@@ -1468,7 +1478,7 @@ module internal PrintfImpl =
             else
                 buildPlainFinal(plainArgs, plainTypes)
 
-        let rec parseFromFormatSpecifier (prefix: string) (s: string) (funcTy: Type) (i: int) (caps: obj[]) = 
+        let rec parseFromFormatSpecifier (prefix: string) (s: string) (funcTy: Type) (i: int) (cTy: Type[]) = 
             
             if i >= s.Length then 0
             else
@@ -1491,18 +1501,12 @@ module internal PrintfImpl =
                 let n = if isImm then n - 1 else n
 
                 System.Diagnostics.Debug.Assert(n >= 0, "n >= 0")
-                let argTys = extractCurriedArguments funcTy n
-                if isImm 
-                // insert captured value type back into argTys
-                then Array.ofSeq <| seq { 
-                    if argTys.Length > 1 then yield! argTys.[0..argTys.Length-2]
-                    yield caps.[imm].GetType()
-                    yield argTys.[argTys.Length-1] } 
-                else argTys
+                extractCurriedArguments funcTy n
 
+            // curry on
             let retTy = argTys.[argTys.Length - 1]
 
-            let numberOfArgs = parseFromFormatSpecifier suffix s retTy next caps
+            let numberOfArgs = parseFromFormatSpecifier suffix s retTy next cTy
 
             if spec.TypeChar = 'a' || spec.TypeChar = 't' || spec.IsStarWidth || spec.IsStarPrecision then
                 if numberOfArgs = ContinuationOnStack then
@@ -1546,11 +1550,18 @@ module internal PrintfImpl =
 
                         ContinuationOnStack
             else
+                // n = 0 || n = 1
                 if numberOfArgs = ContinuationOnStack then
                     let idx = argTys.Length - 2
                     builderStack.PushArgument suffix
                     builderStack.PushArgumentWithType((getValueConverter argTys.[idx] spec), argTys.[idx])
                     1
+                elif spec.HasCapture then
+                    let capture = spec.Capture.Value
+                    builderStack.PushArgument suffix
+                    builderStack.PushArgumentWithType(getValueConverter cTy.[capture] spec, cTy.[capture])
+                    // TODO figure out how exactly the build stack works...
+                    0
                 else
                     builderStack.PushArgument suffix
                     builderStack.PushArgumentWithType((getValueConverter argTys.[0] spec), argTys.[0])
@@ -1562,7 +1573,7 @@ module internal PrintfImpl =
                     else 
                         numberOfArgs + 1
 
-        let parseFormatString (s: string) (funcTy: System.Type) (caps: obj[]): obj = 
+        let parseFormatString (s: string) (funcTy: System.Type) (cTy: System.Type[]) : obj = 
             optimizedArgCount <- 0
             let prefixPos, prefix = FormatString.findNextFormatSpecifier s 0
             if prefixPos = s.Length then 
@@ -1572,17 +1583,15 @@ module internal PrintfImpl =
                     env.Finish()
                     )
             else
-                let n = parseFromFormatSpecifier prefix s funcTy prefixPos caps
+                let n = parseFromFormatSpecifier prefix s funcTy prefixPos cTy
                 
                 if n = ContinuationOnStack || n = 0 then
                     builderStack.PopValueUnsafe()
                 else
                     buildPlain n prefix
 
-        member __.Build<'T>(s: string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
-            parseFormatString s (typeof<'T>) (Unchecked.defaultof<obj[]>) :?> _, (2 * count + 1) - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
-        member __.Build<'T>(s: string, caps: obj[]) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
-            parseFormatString s typeof<'T> caps :?> _, (2 * count + 1) - optimizedArgCount 
+        member __.Build<'T>(s: string, cTy: Type[]) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
+            parseFormatString s (typeof<'T>) cTy :?> _, (2 * count + 1) - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
 
     /// Type of element that is stored in cache 
     /// Pair: factory for the printer + number of text blocks that printer will produce (used to preallocate buffers)
@@ -1593,10 +1602,10 @@ module internal PrintfImpl =
     /// printf is called in tight loop
     /// 2nd level is global dictionary that maps format string to the corresponding PrintfFactory
     type Cache<'T, 'State, 'Residue, 'Result>() =
-        static let generate fmt = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt)        
-        static let mutable map = System.Collections.Concurrent.ConcurrentDictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
+        static let generate(fmt, capTypes) = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt, capTypes)
+        static let mutable map = System.Collections.Concurrent.ConcurrentDictionary<string*Type[], CachedItem<'T, 'State, 'Residue, 'Result>>()
         static let getOrAddFunc = Func<_, _>(generate)
-        static let get (key: string) = map.GetOrAdd(key, getOrAddFunc)
+        static let get(key: string*Type[]) = map.GetOrAdd(key, getOrAddFunc)
 
         [<DefaultValue>]
         [<ThreadStatic>]
@@ -1607,7 +1616,7 @@ module internal PrintfImpl =
                 && key.Value.Equals (fst Cache<'T, 'State, 'Residue, 'Result>.last) then
                     snd Cache<'T, 'State, 'Residue, 'Result>.last
             else
-                let v = get key.Value
+                let v = get(key.Value, key.GetCaptureTypes())
                 Cache<'T, 'State, 'Residue, 'Result>.last <- (key.Value, v)
                 v
 
