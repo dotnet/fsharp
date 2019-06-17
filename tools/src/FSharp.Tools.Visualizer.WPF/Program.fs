@@ -243,11 +243,14 @@ module rec App =
                                 use! _do = Async.OnCancel (fun () -> printfn "cancelled")
                                 let! ct = Async.CancellationToken
 
+                                do! Async.Sleep 50
                                 let lexicalAnalysis = getLexicalAnalysis updatedModel ct
                                 dispatch (UpdateLexicalAnalysis lexicalAnalysis)
                                // dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
                             with
-                            | ex -> ()
+                            | :? OperationCanceledException -> ()
+                            | ex ->
+                                printfn "%A" ex.Message
                         }
                     Async.Start (computation, cancellationToken = updatedModel.CancellationTokenSource.Token)
                 ))
