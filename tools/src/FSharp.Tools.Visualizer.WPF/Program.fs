@@ -103,12 +103,15 @@ module rec App =
         | UpdateNodeHighlight of FSharpSyntaxNode
 
     let KeywordColor = Drawing.Color.FromArgb (86, 156, 214)
+    let StringColor = Drawing.Color.FromArgb (214, 157, 133)
 
     let getLexicalHighlights (syntaxTree: FSharpSyntaxTree) ct =
         syntaxTree.GetTokens (ct = ct)
         |> Seq.choose (fun x ->
             if x.IsKeyword then
                 Some (HighlightSpan (x.Span, KeywordColor, HighlightSpanKind.Foreground))
+            elif x.IsString then
+                Some (HighlightSpan (x.Span, StringColor, HighlightSpanKind.Foreground))
             else
                 None
         )

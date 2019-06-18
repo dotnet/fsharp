@@ -38,10 +38,10 @@ module LexerHelpers =
         let lexargs = mkLexargs (filePath, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, tcConfig.pathMap)
 
         let getNextToken =
-            let skip = int (flags &&& LexFlags.SkipTrivia) <> 0
+            let skip = (flags &&& LexFlags.SkipTrivia) = LexFlags.SkipTrivia
             let lexer = Lexer.token lexargs skip
 
-            if int (flags &&& LexFlags.UseLexFilter) <> 0 then
+            if (flags &&& LexFlags.UseLexFilter) = LexFlags.UseLexFilter then
                 (fun lexbuf ->
                     let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, tcConfig.compilingFslib, lexer, lexbuf)
                     tokenizer.Lexer lexbuf
@@ -82,11 +82,6 @@ type TokenCacheItem =
 type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: ResizeArray<ResizeArray<TokenCacheItem>>) =
 
     member __.Add (t: token, m: range) =
-        if m.StartLine <> m.EndLine then
-            // This isn't allowed for now as it's difficult to handle multi-line tokens.
-            // However, comments, strings, whitespace are not parsed as multi-line when LexFlags.LexEverything is enabled, except for the case of a new-line which we don't care.
-            failwithf "a multi-line token is not allowed in the token cache: %A %A" t m
-
         let lineNumber = m.StartLine - 1
         let lineTokens =
             if tokens.Count > lineNumber && tokens.[lineNumber] <> null then
@@ -152,7 +147,7 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                 let subText = (newText.GetSubText (newText.Lines.[lineNumber].Span))
 
                 let errorLogger = CompilationErrorLogger("TryCreateIncremental", pConfig.tcConfig.errorSeverityOptions)
-                lexText pConfig LexFlags.LexEverything errorLogger subText (fun lexbuf getNextToken ->
+                lexText pConfig LexFlags.SkipTrivia errorLogger subText (fun lexbuf getNextToken ->
                     while not lexbuf.IsPastEndOfStream do
                         match getNextToken lexbuf with
                         // EOFs will be created at the end of any given text.
@@ -160,13 +155,11 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                         | token.EOF _ when not ((newText.Lines.Count - 1) = lineNumber) -> ()
                         | t -> 
                             let m = lexbuf.LexemeRange
-                            if m.StartLine = m.EndLine then
-                                let m = lexbuf.LexemeRange
-                                let adjustedm = 
-                                    let startPos = (mkPos (m.Start.Line + lineNumber) m.Start.Column)
-                                    let endPos = (mkPos (m.End.Line + lineNumber) m.End.Column)
-                                    mkFileIndexRange m.FileIndex startPos endPos
-                                newTokens.Add (t, adjustedm)
+                            let adjustedm = 
+                                let startPos = (mkPos (m.Start.Line + lineNumber) m.Start.Column)
+                                let endPos = (mkPos (m.End.Line + lineNumber) m.End.Column)
+                                mkFileIndexRange m.FileIndex startPos endPos
+                            newTokens.Add (t, adjustedm)
                             
                 ) CancellationToken.None
 
@@ -226,7 +219,7 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
 
     let lexEverything lexCallback ct =
         let errorLogger = CompilationErrorLogger("simpleLexEverything", pConfig.tcConfig.errorSeverityOptions)
-        lex LexFlags.LexEverything errorLogger lexCallback ct
+        lex LexFlags.SkipTrivia errorLogger lexCallback ct
 
     let getCachedTokens ct =
         let text = textSnapshot.GetText ct
@@ -236,9 +229,7 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
             while not lexbuf.IsPastEndOfStream do
                 let t = getNextToken lexbuf
                 let m = lexbuf.LexemeRange
-
-                if m.StartLine = m.EndLine then
-                    tokenCache.Add (t, m)
+                tokenCache.Add (t, m)
         ) ct
 
         tokenCache

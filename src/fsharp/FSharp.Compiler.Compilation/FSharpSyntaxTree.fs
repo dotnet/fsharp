@@ -862,6 +862,14 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
         | Parser.token.IDENT _ -> true
         | _ -> false
 
+    member this.IsString =
+        if this.IsNone then false
+        else
+
+        match token with
+        | Parser.token.STRING _ -> true
+        | _ -> false
+
     member this.IsWhitespace =
         if this.IsNone then false
         else

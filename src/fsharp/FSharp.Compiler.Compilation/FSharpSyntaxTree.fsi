@@ -81,6 +81,8 @@ type FSharpSyntaxToken =
 
     member IsIdentifier: bool
 
+    member IsString: bool
+
     member IsWhitespace: bool
 
     static member None: FSharpSyntaxToken
