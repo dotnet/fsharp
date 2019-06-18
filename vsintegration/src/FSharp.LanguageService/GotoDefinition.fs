@@ -11,20 +11,13 @@ open Microsoft.VisualStudio.TextManager.Interop
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
-/// Contains the value this dead code uses from the internals of the parser.
-/// Now this value is just a constant here; as the actual tag value is unlikely to ever change, and this entire file is dead code only active in legacy tests that we have yet to migrate.
-module Constants =
-    [<Literal>]
-    let Parse_Ident_Tag_Value = 190
-
 module internal OperatorToken =
     
     let asIdentifier_DEPRECATED (token : TokenInfo) =
         // Typechecker reports information about all values in the same fashion no matter whether it is named value (let binding) or operator
         // here we piggyback on this fact and just pretend that we need data time for identifier
 
-        // Dead code (aside from legacy tests), ignore
-        let tagOfIdentToken = Constants.Parse_Ident_Tag_Value
+        let tagOfIdentToken = FSharpTokenTag.IDENT
 
         let endCol = token.EndIndex + 1 // EndIndex from GetTokenInfoAt points to the last operator char, but here it should point to column 'after' the last char 
         tagOfIdentToken, token.StartIndex, endCol
@@ -75,7 +68,7 @@ module internal GotoDefinition =
                 if typedResults.HasFullTypeCheckInfo then 
                     // Used to be the Parser's internal definition, now hard-coded to avoid an IVT into the parser itsef.
                     // Dead code (aside from legacy tests), ignore
-                    if tag <> Constants.Parse_Ident_Tag_Value then
+                    if tag <> FSharpTokenTag.IDENT then
                         Strings.GotoDefinitionFailed_NotIdentifier()
                         |> GotoDefinitionResult_DEPRECATED.MakeError
                     else
