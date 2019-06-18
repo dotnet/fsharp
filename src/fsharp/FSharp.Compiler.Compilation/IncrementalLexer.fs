@@ -75,7 +75,6 @@ type TokenCacheItem =
         columnStart: int
         columnEnd: int
         lineCount: int
-        lineIndex: int
     }
 
 // TODO: We need to chunk the tokens instead of having a large resize array.
@@ -88,22 +87,20 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
             // However, comments, strings, whitespace are not parsed as multi-line when LexFlags.LexEverything is enabled, except for the case of a new-line which we don't care.
             failwithf "a multi-line token is not allowed in the token cache: %A %A" t m
 
-        for lineNumber = m.StartLine - 1 to m.EndLine - 1 do                
-            let lineTokens =
-                if tokens.Count > lineNumber && tokens.[lineNumber] <> null then
-                    tokens.[lineNumber]
-                else
-                    if lineNumber >= tokens.Count then
-                        tokens.AddRange (Array.zeroCreate (lineNumber - (tokens.Count - 1)))
+        let lineNumber = m.StartLine - 1
+        let lineTokens =
+            if tokens.Count > lineNumber && tokens.[lineNumber] <> null then
+                tokens.[lineNumber]
+            else
+                if lineNumber >= tokens.Count then
+                    tokens.AddRange (Array.zeroCreate (lineNumber - (tokens.Count - 1)))
 
-                    let lineTokens = ResizeArray ()
-                    tokens.[lineNumber] <- lineTokens
-                    lineTokens
+                let lineTokens = ResizeArray ()
+                tokens.[lineNumber] <- lineTokens
+                lineTokens
 
-            let lineCount = m.EndLine - m.StartLine + 1
-            let lineIndex = lineNumber - (m.StartLine - 1)
-            let item = { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; lineCount = lineCount; lineIndex = lineIndex }
-            lineTokens.Add item
+        let x = { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; lineCount = m.EndLine - m.StartLine }
+        lineTokens.Add x
 
     member private __.InsertRange (index, collection) =
         tokens.InsertRange (index, collection)
@@ -118,6 +115,7 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
     member this.TryCreateIncremental (newText: SourceText) =
         let changes = newText.GetTextChanges text
         if changes.Count = 0 || changes.Count > 1 || (changes.[0].Span.Start = 0 && changes.[0].Span.Length = text.Length) then
+            printfn "no incremental"
             None
         else
             // For now, we only do incremental lexing on one change.
@@ -174,17 +172,25 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
 
             Some newTokens
 
-    member __.GetTokens (span: TextSpan) =
-        let linePosSpan = text.Lines.GetLinePositionSpan span
+    member __.GetTokens (span: TextSpan) : TokenItem seq =
+        let lines = text.Lines
+        let linePosSpan = lines.GetLinePositionSpan span
         seq {
             for lineNumber = linePosSpan.Start.Line to linePosSpan.End.Line do
-                let lineTokens = tokens.[lineNumber]
-                if lineTokens <> null then
-                    let line = text.Lines.[lineNumber]
-                    for i = 0 to lineTokens.Count - 1 do
-                        let tokenCacheItem = lineTokens.[i]
-                        let span = TextSpan (line.Start + tokenCacheItem.columnStart, tokenCacheItem.columnEnd - tokenCacheItem.columnStart)
-                        yield TokenItem (tokenCacheItem.t, span)
+                if tokens.Count > lineNumber then
+                    let lineTokens = tokens.[lineNumber]
+                    if lineTokens <> null then
+                        let line = lines.[lineNumber]
+                        for i = 0 to lineTokens.Count - 1 do
+                            let tokenCacheItem = lineTokens.[i]
+                            let span = 
+                                if tokenCacheItem.lineCount > 0 then
+                                    let start = line.Start + tokenCacheItem.columnStart
+                                    TextSpan (start, lines.[lineNumber + tokenCacheItem.lineCount].Start + tokenCacheItem.columnEnd - start)
+                                else
+                                    let start = line.Start + tokenCacheItem.columnStart
+                                    TextSpan (start, line.Start + tokenCacheItem.columnEnd - start)
+                            yield TokenItem (tokenCacheItem.t, span)
         }
 
     static member Create (pConfig, text) =
