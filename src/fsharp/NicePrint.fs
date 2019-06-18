@@ -1405,12 +1405,22 @@ module InfoMemberPrinting =
             | None -> tagProperty
             | Some vref -> tagProperty >> mkNav vref.DefinitionRange
         let nameL = DemangleOperatorNameAsLayout tagProp pinfo.PropertyName
+        let accessibilityText =
+            if pinfo.HasGetter && not pinfo.HasSetter then
+                "get"
+            elif pinfo.HasSetter && not pinfo.HasGetter then
+                "set"
+            else
+                "get, set"
+
         wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
         layoutTyconRef denv pinfo.ApparentEnclosingTyconRef ^^
         SepL.dot ^^
         nameL ^^
         RightL.colon ^^
-        layoutType denv rty
+        layoutType denv rty ^^
+        wordL (tagKeyword "with") ^^
+        wordL (tagText accessibilityText)
 
     let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
         let _, resL = prettyLayoutOfMethInfoFreeStyle amap m denv emptyTyparInst minfo 
