@@ -17,25 +17,70 @@ open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.Parser
+open Internal.Utilities
+
+[<Flags>]
+type LexerFlags =
+    | None                          = 0x00000
+    | LightSyntaxOn                 = 0x00001
+    | Compiling                     = 0x00010 
+    | CompilingFSharpCore           = 0x00110
+    | SkipTrivia                    = 0x01000
+    | SkipTriviaButResolveComments  = 0x10000
+
+type LexerConfig =
+    {
+        filePath: string
+        flags: LexerFlags
+        conditionalCompilationDefines: string list
+        pathMap: PathMap
+    }
+
+    member this.IsLightSyntaxOn =
+        (this.flags &&& LexerFlags.LightSyntaxOn) = LexerFlags.LightSyntaxOn
+
+    member this.IsCompiling =
+        (this.flags &&& LexerFlags.Compiling) = LexerFlags.Compiling
+
+    member this.IsCompilingFSharpCore =
+        (this.flags &&& LexerFlags.CompilingFSharpCore) = LexerFlags.CompilingFSharpCore
+
+    member this.CanSkipTrivia =
+        (this.flags &&& LexerFlags.SkipTrivia) = LexerFlags.SkipTrivia
+
+    member this.CanSkipTriviaButResolveComments =
+        (this.flags &&& LexerFlags.SkipTriviaButResolveComments) = LexerFlags.SkipTriviaButResolveComments
 
 [<AutoOpen>]
 module LexerHelpers =
 
     open FSharp.Compiler.Lexhelp
 
+    type ParsingConfig with
+    
+        member this.ToLexerConfig () =
+            let mutable flags = LexerFlags.SkipTrivia
+            flags <- if this.tcConfig.ComputeLightSyntaxInitialStatus this.filePath then flags ||| LexerFlags.LightSyntaxOn else flags
+            flags <- if this.tcConfig.compilingFslib then LexerFlags.CompilingFSharpCore else flags
+            {
+                filePath = this.filePath
+                flags = flags
+                conditionalCompilationDefines = this.conditionalCompilationDefines @ this.tcConfig.conditionalCompilationDefines
+                pathMap = this.tcConfig.pathMap
+            }
+
     [<Flags>]
     type LexFlags =
-        | LexEverything =   0x00
+        | None =        0x00
         | SkipTrivia =      0x01
         | UseLexFilter =    0x11 // lexfilter must skip all trivia
 
     let private lexLexbuf (pConfig: ParsingConfig) (flags: LexFlags) errorLogger lexbuf lexCallback (ct: CancellationToken) =
-        let tcConfig = pConfig.tcConfig
-        let filePath = pConfig.filePath
+        let lexConfig = pConfig.ToLexerConfig ()
 
-        let lightSyntaxStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filePath, true) 
-        let conditionalCompilationDefines = pConfig.conditionalCompilationDefines
-        let lexargs = mkLexargs (filePath, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, tcConfig.pathMap)
+        let filePath = lexConfig.filePath
+        let lightSyntaxStatus = LightSyntaxStatus (lexConfig.IsLightSyntaxOn, true) 
+        let lexargs = mkLexargs (filePath, lexConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, lexConfig.pathMap)
 
         let getNextToken =
             let skip = (flags &&& LexFlags.SkipTrivia) = LexFlags.SkipTrivia
@@ -43,7 +88,7 @@ module LexerHelpers =
 
             if (flags &&& LexFlags.UseLexFilter) = LexFlags.UseLexFilter then
                 (fun lexbuf ->
-                    let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, tcConfig.compilingFslib, lexer, lexbuf)
+                    let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, lexConfig.IsCompilingFSharpCore, lexer, lexbuf)
                     tokenizer.Lexer lexbuf
                 )
             else
@@ -188,11 +233,6 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
 
     static member Create (pConfig, text) =
         TokenCache (pConfig, text, ResizeArray ())
-
-[<Flags>]
-type LexerFlags =
-    | NoIncremental = 0
-    | Incremental = 1
 
 [<Sealed>]
 type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, incrementalTokenCacheOpt: Lazy<TokenCache option>) =
