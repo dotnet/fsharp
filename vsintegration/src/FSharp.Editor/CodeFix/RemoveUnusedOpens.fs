@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Range
 
@@ -21,7 +22,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
         projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = [IDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId]
+    let fixableDiagnosticIds = [FSharpIDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId]
         
     let createCodeFix (title: string, context: CodeFixContext) =
         CodeAction.Create(
