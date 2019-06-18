@@ -236,8 +236,8 @@ function BuildSolution {
       /p:Configuration=$bootstrap_config \
       /t:Publish
 
-  cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsi/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
+  fi
 
   # do real build
   MSBuild $toolset_build_proj \
