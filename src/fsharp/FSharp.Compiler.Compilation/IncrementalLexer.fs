@@ -251,7 +251,6 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
                 | Some tokens ->
                     tokens
                 | _ ->
-                   //  TODO: Turned off for now as it's buggy.
                     match incrementalTokenCacheOpt.Value with
                     | Some cachedTokens ->
                         lazyCachedTokens <- Some cachedTokens

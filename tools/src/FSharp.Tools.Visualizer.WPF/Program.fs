@@ -102,11 +102,13 @@ module rec App =
         | UpdateVisualizers of didCompletionTrigger: bool * caretOffset: int * CancellationToken
         | UpdateNodeHighlight of FSharpSyntaxNode
 
+    let KeywordColor = Drawing.Color.FromArgb (86, 156, 214)
+
     let getLexicalHighlights (syntaxTree: FSharpSyntaxTree) ct =
         syntaxTree.GetTokens (ct = ct)
         |> Seq.choose (fun x ->
             if x.IsKeyword then
-                Some (HighlightSpan (x.Span, Drawing.Color.FromArgb (86, 156, 214), HighlightSpanKind.Foreground))
+                Some (HighlightSpan (x.Span, KeywordColor, HighlightSpanKind.Foreground))
             else
                 None
         )
