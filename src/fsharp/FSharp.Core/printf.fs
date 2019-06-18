@@ -591,7 +591,7 @@ module internal PrintfImpl =
                 )
             )
 
-        static member ChainedCaptureFastStart3<'A, 'B, 'C, 'Tail>
+        static member ChainedFastStartCapture3<'A, 'B, 'C, 'Tail>
             (
                 cap, conv1, s1, conv2, s2, conv3,
                 next
@@ -621,7 +621,7 @@ module internal PrintfImpl =
                 )
             )
 
-        static member ChainedCaptureFastStart4<'A, 'B, 'C, 'D, 'Tail>
+        static member ChainedFastStartCapture4<'A, 'B, 'C, 'D, 'Tail>
             (
                 cap, conv1, s1, conv2, s2, conv3, s3, conv4,
                 next
@@ -651,7 +651,7 @@ module internal PrintfImpl =
                 )
             )
 
-        static member ChainedCaptureFastStart5<'A, 'B, 'C, 'D, 'E, 'Tail>
+        static member ChainedFastStartCapture5<'A, 'B, 'C, 'D, 'E, 'Tail>
             (
                 cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5,
                 next
@@ -1849,15 +1849,18 @@ module internal PrintfImpl =
             else
                 buildPlainFinal(plainArgs, plainTypes)
 
-        let buildCaptureFinal(spec, prefix, suffix, cTy) =
-            // TODO 0~5 pending args, currently only 0
+        let buildCaptureFinal(spec, prefix, suffix, cTy, pendingArgs: obj[], pendingTypes) =
             let capture = box(spec.Capture.Value)
             let conv = getValueConverter cTy spec
+            let argsCount = pendingArgs.Length
+            let suffix' = if argsCount > 0 then pendingArgs.[argsCount - 1].ToString() else suffix
+
+            // TODO maybe push some to stack?
             let methodName, args =
-                match prefix, suffix with
+                match prefix, suffix' with
                 | "", "" ->
                     optimizedArgCount <- optimizedArgCount + 2
-                    "FinalFastCapture", [|capture; conv|]
+                    "FinalFastCapture", Array.append [|capture; conv|] pendingTypes
                 | "", _ ->
                     optimizedArgCount <- optimizedArgCount + 1
                     "FinalFastStartCapture", [|capture; conv; suffix|]
@@ -1874,35 +1877,51 @@ module internal PrintfImpl =
             let mi = mi.MakeGenericMethod [| cTy |]
             mi.Invoke(null, args)
 
-        let buildCaptureChained(spec, prefix, cTy, cont, contTy) =
-            // TODO 0~5 pending args, currently only 0
+        let buildCaptureChained(spec, prefix, cTy, tail, retTy, pendingArgs, pendingTypes: Type[]) =
             let capture = box(spec.Capture.Value)
             let conv = getValueConverter cTy spec
             let methodName,args =
                 if prefix = "" then
                     optimizedArgCount <- optimizedArgCount + 1
-                    "ChainedFastStartCapture", [|capture; conv; cont|]
+                    "ChainedFastStartCapture", seq { 
+                        yield capture
+                        yield conv
+                        yield! pendingArgs
+                        yield tail
+                    }
                 else
-                    "ChainedCapture", [|prefix; capture; conv; cont|]
+                    "ChainedCapture", seq { 
+                        yield prefix
+                        yield capture
+                        yield conv
+                        yield! pendingArgs
+                        yield tail
+                    } 
 
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(methodName, NonPublicStatics)
+            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(methodName + (pendingTypes.Length + 1).ToString(), NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #endif
-            let mi = mi.MakeGenericMethod [| cTy; contTy |]
-            mi.Invoke(null, args)
+            let mi = mi.MakeGenericMethod(Array.ofSeq <| seq { 
+                yield cTy
+                yield! pendingTypes
+                yield retTy
+            })
+            mi.Invoke(null, Array.ofSeq args)
 
         let buildCapture(spec, prefix, suffix, cTy, numberOfArgs) = 
-            // TODO pending args are ignored.
+            let n = numberOfArgs * 2
             let hasCont = builderStack.HasContinuationOnStack numberOfArgs
+            let plainArgs, plainTypes = 
+                builderStack.GetArgumentAndTypesAsArrays(n, 0, n, numberOfArgs, 0, numberOfArgs)
+
             if hasCont then
                 let n = numberOfArgs * 2
-                let extra = if hasCont then 1 else 0
                 let cont, contTy = builderStack.PopContinuationWithType()
 
-                buildCaptureChained(spec, prefix, cTy, cont, contTy)
+                buildCaptureChained(spec, prefix, cTy, cont, contTy, plainArgs, plainTypes)
             else
-                buildCaptureFinal(spec, prefix, suffix, cTy)
+                buildCaptureFinal(spec, prefix, suffix, cTy, plainArgs, plainTypes)
 
 
         /// <summary>
@@ -1919,6 +1938,7 @@ module internal PrintfImpl =
         [<Literal>]
         let EndOfString = 0
 
+        /// <return> The number of pending arguments on the builder stack </return>
         let rec parseFromFormatSpecifier (prefix: string) (s: string) (funcTy: Type) (i: int) (cTy: Type[]) = 
             
             if i >= s.Length then EndOfString
@@ -1954,14 +1974,15 @@ module internal PrintfImpl =
                 if specialForm then raise <| exn "TODO"
                 let capture = spec.Capture.Value
                 if numberOfArgs = ContinuationOnStack then
+                    // no pending args between capture and cont
                     let cont, contTy = builderStack.PopContinuationWithType()
-                    let currentCont = buildCaptureChained(spec, prefix, cTy.[capture], cont, contTy)
+                    let currentCont = buildCaptureChained(spec, prefix, cTy.[capture], cont, contTy, [||], [||])
                     builderStack.PushContinuationWithType(currentCont, funcTy)
 
                 elif numberOfArgs = EndOfString then
                     // a "final" starting with a "capture" must not have pending args
                     System.Diagnostics.Debug.Assert(builderStack.IsEmpty, "builderStack.IsEmpty")
-                    let currentCont = buildCaptureFinal(spec, prefix, suffix, cTy.[capture])
+                    let currentCont = buildCaptureFinal(spec, prefix, suffix, cTy.[capture], [||], [||])
                     builderStack.PushContinuationWithType(currentCont, funcTy)
                 else
                     //build a "capture-starting" continuation with the pending params
