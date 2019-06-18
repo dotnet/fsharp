@@ -113,7 +113,7 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
 
     member private __.Item
         with get i = tokens.[i]
-        and  set value i = tokens.[i] <- value
+        and  set i value = tokens.[i] <- value
 
     member this.TryCreateIncremental (newText: SourceText) =
         let changes = newText.GetTextChanges text
@@ -150,8 +150,8 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
 
             for i = 0 to lineNumbersToEval.Count - 1 do
                 let lineNumber = lineNumbersToEval.[i]
-
-                let subText = (text.GetSubText (text.Lines.[lineNumber].Span))
+                newTokens.[lineNumber] <- ResizeArray ()
+                let subText = (newText.GetSubText (newText.Lines.[lineNumber].Span))
 
                 let errorLogger = CompilationErrorLogger("TryCreateIncremental", pConfig.tcConfig.errorSeverityOptions)
                 lexText pConfig LexFlags.LexEverything errorLogger subText (fun lexbuf getNextToken ->
@@ -163,7 +163,12 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                         | t -> 
                             let m = lexbuf.LexemeRange
                             if m.StartLine = m.EndLine then
-                                newTokens.Add (t, lexbuf.LexemeRange)
+                                let m = lexbuf.LexemeRange
+                                let adjustedm = 
+                                    let startPos = (mkPos (m.Start.Line + lineNumber) m.Start.Column)
+                                    let endPos = (mkPos (m.End.Line + lineNumber) m.End.Column)
+                                    mkFileIndexRange m.FileIndex startPos endPos
+                                newTokens.Add (t, adjustedm)
                             
                 ) CancellationToken.None
 
@@ -246,12 +251,12 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
                 | Some tokens ->
                     tokens
                 | _ ->
-                    // TODO: Turned off for now as it's buggy.
-                    //match incrementalTokenCacheOpt.Value with
-                    //| Some cachedTokens ->
-                    //    lazyCachedTokens <- Some cachedTokens
-                    //    cachedTokens
-                    //| _ ->
+                   //  TODO: Turned off for now as it's buggy.
+                    match incrementalTokenCacheOpt.Value with
+                    | Some cachedTokens ->
+                        lazyCachedTokens <- Some cachedTokens
+                        cachedTokens
+                    | _ ->
                         let tokens = getCachedTokens ct
                         lazyCachedTokens <- Some tokens
                         tokens
