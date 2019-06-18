@@ -143,7 +143,7 @@ function Process-Arguments() {
 }
 
 function Update-Arguments() {
-    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc.exe")) {
+    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe")) {
         $script:bootstrap = $True
     }
 }

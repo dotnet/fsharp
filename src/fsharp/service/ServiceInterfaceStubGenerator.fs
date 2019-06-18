@@ -4,7 +4,6 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Diagnostics
-open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
@@ -102,7 +101,7 @@ module internal CodeGenerationUtils =
 
 /// Capture information about an interface in ASTs
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type internal InterfaceData =
+type InterfaceData =
     | Interface of SynType * SynMemberDefns option
     | ObjExpr of SynType * SynBinding list
     member x.Range =
@@ -168,7 +167,7 @@ type internal InterfaceData =
             | _ ->
                 [||]
 
-module internal InterfaceStubGenerator =
+module InterfaceStubGenerator =
     [<NoComparison>]
     type internal Context =
         {

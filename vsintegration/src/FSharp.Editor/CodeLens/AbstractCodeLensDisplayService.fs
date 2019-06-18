@@ -2,7 +2,6 @@
 
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Windows.Controls
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
@@ -123,7 +122,9 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
         let startLineNumber = snapshot.GetLineNumberFromPosition(trackingSpan.GetStartPoint(snapshot).Position)
         let uiElement = 
             if self.UiElements.ContainsKey trackingSpan then
+#if DEBUG
                 logErrorf "Added a tracking span twice, this is not allowed and will result in invalid values! %A" (trackingSpan.GetText snapshot)
+#endif
                 self.UiElements.[trackingSpan]
             else
                 let defaultStackPanel = self.CreateDefaultStackPanel()
@@ -152,7 +153,12 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
             let firstLine = view.TextViewLines.FirstVisibleLine
             view.DisplayTextLineContainingBufferPosition (firstLine.Start, 0., ViewRelativePosition.Top)
             self.RelayoutRequested.Enqueue(())
-         with e -> logErrorf "Error in line lens provider: %A" e
+         with e ->
+#if DEBUG
+            logErrorf "Error in line lens provider: %A" e
+#else
+            ignore e
+#endif
     
     /// Public non-thread-safe method to add line lens for a given tracking span.
     /// Returns an UIElement which can be used to add Ui elements and to remove the line lens later.
@@ -171,20 +177,30 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
             self.UiElements.Remove trackingSpan |> ignore
             try
                 self.CodeLensLayer.RemoveAdornment(Grid) 
-            with e -> 
+            with e ->
+#if DEBUG
                 logExceptionWithContext(e, "Removing line lens")
+#else
+                ignore e
+#endif
+#if DEBUG
         else
             logWarningf "No ui element is attached to this tracking span!"
+#endif
         let lineNumber = 
             (trackingSpan.GetStartPoint self.CurrentBufferSnapshot).Position 
             |> self.CurrentBufferSnapshot.GetLineNumberFromPosition
         if self.TrackingSpans.ContainsKey lineNumber then
+#if DEBUG
             if self.TrackingSpans.[lineNumber].Remove trackingSpan |> not then
                 logWarningf "No tracking span is accociated with this line number %d!" lineNumber
+#endif
             if self.TrackingSpans.[lineNumber].Count = 0 then
                 self.TrackingSpans.Remove lineNumber |> ignore
+#if DEBUG
         else
             logWarningf "No tracking span is accociated with this line number %d!" lineNumber
+#endif
 
     abstract member AddUiElementToCodeLens : ITrackingSpan * UIElement -> unit
     default self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
@@ -234,7 +250,12 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
                             applyFuncOnLineStackPanels line (fun ui ->
                                 ui.Visibility <- Visibility.Hidden
                             )
-                        with e -> logErrorf "Error in non visible lines iteration %A" e
+                        with e ->
+#if DEBUG
+                            logErrorf "Error in non visible lines iteration %A" e
+#else
+                            ignore e
+#endif
                 for lineNumber in newVisibleLineNumbers do
                     try
                         let line = 
@@ -244,7 +265,12 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
                             ui.Visibility <- Visibility.Visible
                             self.LayoutUIElementOnLine view line ui
                         )
-                     with e -> logErrorf "Error in new visible lines iteration %A" e
+                     with e ->
+#if DEBUG
+                        logErrorf "Error in new visible lines iteration %A" e
+#else
+                        ignore e
+#endif
             if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
                 self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.
             if self.RelayoutRequested.Count > 0 then
@@ -267,7 +293,12 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 
             self.AsyncCustomLayoutOperation visibleLineNumbers buffer
             |> RoslynHelpers.StartAsyncSafe self.LayoutChangedCts.Token "HandleLayoutChanged"
-        with e -> logExceptionWithContext (e, "Layout changed")
+        with e ->
+#if DEBUG
+            logExceptionWithContext (e, "Layout changed")
+#else
+            ignore e
+#endif
 
     abstract LayoutUIElementOnLine : IWpfTextView -> ITextViewLine -> Grid -> unit
 

@@ -92,7 +92,7 @@
     <SystemThreadingTasksParallelVersion>4.3.0</SystemThreadingTasksParallelVersion>
     <SystemThreadingThreadVersion>4.3.0</SystemThreadingThreadVersion>
     <SystemThreadingThreadPoolVersion>4.3.0</SystemThreadingThreadPoolVersion>
-    <SystemValueTupleVersion>4.4.0</SystemValueTupleVersion>
+    <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
@@ -115,6 +115,7 @@
     <MicrosoftVisualStudioEditorVersion>16.0.467</MicrosoftVisualStudioEditorVersion>
     <MicrosoftVisualStudioImageCatalogVersion>16.0.28727</MicrosoftVisualStudioImageCatalogVersion>
     <MicrosoftVisualStudioImagingVersion>16.0.28729</MicrosoftVisualStudioImagingVersion>
+    <MicrosoftVisualStudioLanguageServerClientVersion>16.1.3121</MicrosoftVisualStudioLanguageServerClientVersion>
     <MicrosoftVisualStudioLanguageStandardClassificationVersion>16.0.467</MicrosoftVisualStudioLanguageStandardClassificationVersion>
     <MicrosoftVisualStudioLanguageVersion>16.0.467</MicrosoftVisualStudioLanguageVersion>
     <MicrosoftVisualStudioLanguageIntellisenseVersion>16.0.467</MicrosoftVisualStudioLanguageIntellisenseVersion>
