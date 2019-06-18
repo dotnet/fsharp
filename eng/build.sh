@@ -220,7 +220,7 @@ function BuildSolution {
   fi
 
   if [[ "$bootstrap" == true ]]; then
-      echo "Building bootstrap compiler: '$bootstrapTfm'"
+      echo "Building bootstrap compiler: '$bootstrap_tfm'"
       mkdir -p "$bootstrap_dir" 2>/dev/null;
       MSBuild "$repo_root/src/buildtools/buildtools.proj" \
         /restore \
