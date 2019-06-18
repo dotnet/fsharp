@@ -36,6 +36,7 @@ param (
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
     [string]$bootstrapTfm = "net472",
+    [string]$tfm = "",
     [switch][Alias('bl')]$binaryLog,
     [switch]$ci,
     [switch]$official,
@@ -67,7 +68,9 @@ function Print-Usage() {
     Write-Host "  -binaryLog                Create MSBuild binary log (short: -bl)"
     Write-Host ""
     Write-Host "Actions:"
+    Write-Host "  -bootstrap                Force the build of the bootstrap compiler"
     Write-Host "  -restore                  Restore packages (short: -r)"
+    Write-Host "  -norestore                Don't restore packages"
     Write-Host "  -build                    Build main solution (short: -b)"
     Write-Host "  -rebuild                  Rebuild main solution"
     Write-Host "  -pack                     Build NuGet packages, VS insertion manifests and installer"
@@ -90,7 +93,6 @@ function Print-Usage() {
     Write-Host "Advanced settings:"
     Write-Host "  -ci                       Set when running on CI server"
     Write-Host "  -official                 Set when building an official build"
-    Write-Host "  -bootstrap                Build using a bootstrap compiler"
     Write-Host "  -msbuildEngine <value>    Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
     Write-Host "  -procdump                 Monitor test runs with procdump"
     Write-Host "  -prepareMachine           Prepare machine for CI run, clean up processes after build"
@@ -143,7 +145,7 @@ function Process-Arguments() {
 }
 
 function Update-Arguments() {
-    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc.exe")) {
+    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\$BootstrapTfm\fsc.exe")) {
         $script:bootstrap = $True
     }
 }
@@ -166,6 +168,7 @@ function BuildSolution() {
 
     MSBuild $toolsetBuildProj `
         $bl `
+        /nodeReuse:false `
         /p:Configuration=$configuration `
         /p:Projects=$projects `
         /p:RepoRoot=$RepoRoot `

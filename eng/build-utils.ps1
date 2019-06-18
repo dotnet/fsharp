@@ -10,7 +10,6 @@ $VSSetupDir = Join-Path $ArtifactsDir "VSSetup\$configuration"
 $PackagesDir = Join-Path $ArtifactsDir "packages\$configuration"
 
 $binaryLog = if (Test-Path variable:binaryLog) { $binaryLog } else { $false }
-$nodeReuse = if (Test-Path variable:nodeReuse) { $nodeReuse } else { $false }
 $bootstrapDir = if (Test-Path variable:bootstrapDir) { $bootstrapDir } else { "" }
 $bootstrapConfiguration = if (Test-Path variable:bootstrapConfiguration) { $bootstrapConfiguration } else { "Proto" }
 $bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "net472" }
@@ -178,7 +177,7 @@ function Get-PackageDir([string]$name, [string]$version = "") {
     return $p
 }
 
-function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]$logFileName = "", [switch]$parallel = $true, [switch]$summary = $true, [switch]$warnAsError = $true, [string]$configuration = $script:configuration) {
+function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]$logFileName = "", [switch]$rebuild = $script:rebuild, [switch]$restore = $script:restore, [switch]$parallel = $true, [switch]$summary = $true, [switch]$warnAsError = $true, [string]$configuration = $script:configuration, [string]$tfm = $script:tfm) {
     # Because we override the C#/VB toolset to build against our LKG package, it is important
     # that we do not reuse MSBuild nodes from other jobs/builds on the machine. Otherwise,
     # we'll run into issues such as https://github.com/dotnet/roslyn/issues/6211.
@@ -189,9 +188,19 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
         $args += " /warnaserror"
     }
 
+    if ($rebuild) {
+        $args += " /t:rebuild"
+    } else {
+        $args += " /t:build"
+    }
+
+    if ($restore) {
+        $args += " /restore"
+    }
+
     if ($summary) {
         $args += " /consoleloggerparameters:Verbosity=minimal;summary"
-    } else {        
+    } else {
         $args += " /consoleloggerparameters:Verbosity=minimal"
     }
 
@@ -220,6 +229,10 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
         $args += " /p:BootstrapBuildPath=$bootstrapDir"
     }
 
+    if ($tfm -ne "") {
+        $args += " /p:TargetFramework=$tfm"
+    }
+
     $args += " $buildArgs"
     $args += " $projectFilePath"
     $args += " $properties"
@@ -234,22 +247,25 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
 # Important to not set $script:bootstrapDir here yet as we're actually in the process of
 # building the bootstrap.
 function Make-BootstrapBuild() {
-    Write-Host "Building bootstrap compiler"
 
-    $dir = Join-Path $ArtifactsDir "Bootstrap"
-    Remove-Item -re $dir -ErrorAction SilentlyContinue
-    Create-Directory $dir
+    $dir = Join-Path $ArtifactsDir "Bootstrap\$bootstrapTfm"
 
-    # prepare FsLex and Fsyacc
-    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Build" -logFileName "BuildTools" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir
+    if ($bootstrap) {
+        Write-Host "Building bootstrap compiler: '$bootstrapTfm'"
 
-    # prepare compiler
-    $projectPath = "$RepoRoot\proto.proj"
-    Run-MSBuild $projectPath "/restore /t:Build" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
-    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
+        Remove-Item -re $dir -ErrorAction SilentlyContinue
+        Create-Directory $dir
+
+        # prepare FsLex and Fsyacc
+        Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" -rebuild -logFileName "BuildTools" -configuration $bootstrapConfiguration -tfm $bootstrapTfm
+        Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
+        Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
+
+        # prepare compiler
+        Run-MSBuild "$RepoRoot\proto.proj" -rebuild -logFileName "Bootstrap" -configuration $bootstrapConfiguration -tfm $bootstrapTfm
+        Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
+        Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
+    }
 
     return $dir
 }

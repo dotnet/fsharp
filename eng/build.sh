@@ -13,6 +13,7 @@ usage()
   echo "  --binaryLog                Create MSBuild binary log (short: -bl)"
   echo ""
   echo "Actions:"
+  echo "  --bootstrap                Force the build of the bootstrap compiler"
   echo "  --restore                  Restore projects required to build (short: -r)"
   echo "  --build                    Build all projects (short: -b)"
   echo "  --rebuild                  Rebuild all projects"
@@ -54,6 +55,7 @@ test_core_clr=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
+bootstrap=false
 ci=false
 skip_analyzers=false
 prepare_machine=false
@@ -87,6 +89,9 @@ while [[ $# > 0 ]]; do
       ;;
     --binarylog|-bl)
       binary_log=true
+      ;;
+    --bootstrap)
+      bootstrap=true
       ;;
     --restore|-r)
       restore=true
@@ -179,14 +184,14 @@ function BuildSolution {
 
   InitializeToolset
   local toolset_build_proj=$_InitializeToolset
-  
+
   local bl=""
   if [[ "$binary_log" = true ]]; then
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
-  
+
   local projects="$repo_root/$solution" 
-  
+
   # https://github.com/dotnet/roslyn/issues/23736
   local enable_analyzers=!$skip_analyzers
   UNAME="$(uname)"
@@ -208,26 +213,35 @@ function BuildSolution {
   # build bootstrap tools
   bootstrap_config=Proto
   bootstrap_tfm=netcoreapp2.1
-  MSBuild "$repo_root/src/buildtools/buildtools.proj" \
-    /restore \
-    /p:Configuration=$bootstrap_config \
-    /nodeReuse:false \
-    /t:Build
+  bootstrap_dir=$artifacts_dir/Bootstrap/$bootstrap_tfm
 
-  bootstrap_dir=$artifacts_dir/Bootstrap
-  mkdir -p "$bootstrap_dir"
-  cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  if [[ ! -f "$bootstrap_dir/fsc.exe" || ! -f "$bootstrap_dir/fsi.exe" || ! -f "$bootstrap_dir/fslex.exe" || ! -f "$bootstrap_dir/fsyacc.exe" ]]; then
+    bootstrap=true
+  fi
 
-  MSBuild "$repo_root/proto.proj" \
-    /restore \
-    /p:Configuration=$bootstrap_config \
-    /p:TargetFrameworks=$bootstrap_tfm \
-    /nodeReuse:false \
-    /t:Build
+  if [[ "$bootstrap" == true ]]; then
+      echo "Building bootstrap compiler: '$bootstrapTfm'"
+      mkdir -p "$bootstrap_dir" 2>/dev/null;
+      MSBuild "$repo_root/src/buildtools/buildtools.proj" \
+        /restore \
+        /p:Configuration=$bootstrap_config \
+        /p:TargetFrameworks=$bootstrap_tfm \
+        /nodeReuse:false \
+        /t:Rebuild \
 
-  cp $artifacts_dir/bin/fsc/$bootstrap_config/$bootstrap_tfm/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsi/$bootstrap_config/$bootstrap_tfm/* $bootstrap_dir
+      cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+      cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+
+      MSBuild "$repo_root/proto.proj" \
+        /restore \
+        /p:Configuration=$bootstrap_config \
+        /p:TargetFrameworks=$bootstrap_tfm \
+        /nodeReuse:false \
+        /t:Rebuild
+
+      cp $artifacts_dir/bin/fsc/$bootstrap_config/$bootstrap_tfm/* $bootstrap_dir
+      cp $artifacts_dir/bin/fsi/$bootstrap_config/$bootstrap_tfm/* $bootstrap_dir
+  fi
 
   # do real build
   MSBuild $toolset_build_proj \
