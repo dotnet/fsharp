@@ -276,84 +276,395 @@ module internal PrintfImpl =
     /// <prefix-string> + <converter for arg1> + <suffix that comes after arg1> + ... <converter for arg-N> + <suffix that comes after arg-N>
     type Specializations<'State, 'Residue, 'Result> private ()=
 
-        static member FinalCapture<'A>
+        static member FinalCapture1<'A>
             (
-                s0, cap1, conv1, s1 
+                s0, cap, conv1, s1 
             ) =
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun () ->
                     let env = env()
-                    Utils.Write(env, s0, (conv1 env.Captures.[cap1]), s1)
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1)
                     env.Finish()
                 )
             )
 
-        static member FinalFastEndCapture<'A>
+        static member FinalFastEndCapture1<'A>
             (
-                s0, cap1, conv1
+                s0, cap, conv1
             ) =
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun () ->
                     let env = env()
-                    Utils.Write(env, s0, (conv1 env.Captures.[cap1]))
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]))
                     env.Finish()
                 )
             )
 
-        static member FinalFastStartCapture<'A>
+        static member FinalFastStartCapture1<'A>
             (
-                cap1, conv1, s1
+                cap, conv1, s1
             ) =
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun () ->
                     let env = env()
-                    Utils.Write(env, (conv1 env.Captures.[cap1]), s1)
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1)
                     env.Finish()
                 )
             )
 
-        static member FinalFastCapture<'A>
+        static member FinalFastCapture1<'A>
             (
-                cap1, conv1
+                cap, conv1
             ) =
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun () ->
                     let env = env()
-                    env.Write (conv1 env.Captures.[cap1])
+                    env.Write (conv1 env.Captures.[cap])
                     env.Finish()
                 )
             )
 
-        static member ChainedCapture<'A, 'Tail>
+        static member FinalCapture2<'A, 'B>
             (
-                s0, cap1, conv1,
+                s0, cap, conv1, s1, conv2, s2
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastEndCapture2<'A, 'B>
+            (
+                s0, cap, conv1, s1, conv2
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b))
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastStartCapture2<'A, 'B>
+            (
+                cap, conv1, s1, conv2, s2
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastCapture2<'A, 'B>
+            (
+                cap, conv1, s1, conv2
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b))
+                    env.Finish()
+                )
+            )
+
+        static member FinalCapture3<'A, 'B, 'C>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3, s3
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastEndCapture3<'A, 'B, 'C>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c))
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastStartCapture3<'A, 'B, 'C>
+            (
+                cap, conv1, s1, conv2, s2, conv3, s3
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastCapture3<'A, 'B, 'C>
+            (
+                cap, conv1, s1, conv2, s2, conv3
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c))
+                    env.Finish()
+                )
+            )
+
+        static member FinalCapture4<'A, 'B, 'C, 'D>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D)->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastEndCapture4<'A, 'B, 'C, 'D>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3, s3, conv4
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastStartCapture4<'A, 'B, 'C, 'D>
+            (
+                cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastCapture4<'A, 'B, 'C, 'D>
+            (
+                cap, conv1, s1, conv2, s2, conv3, s3, conv4
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
+                    env.Finish()
+                )
+            )
+
+        static member FinalCapture5<'A, 'B, 'C, 'D, 'E>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5, s5
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) (e: 'E) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e), s5)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastEndCapture5<'A, 'B, 'C, 'D, 'E>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) (e: 'E) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastStartCapture5<'A, 'B, 'C, 'D, 'E>
+            (
+                cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5, s5
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) (e: 'E) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e), s5)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastCapture5<'A, 'B, 'C, 'D, 'E>
+            (
+                cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) (e: 'E) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
+                    env.Finish()
+                )
+            )
+
+        static member ChainedCapture1<'A, 'Tail>
+            (
+                s0, cap, conv1,
                 next
             ) =
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun () ->
                     let env() = 
                         let env = env()
-                        Utils.Write(env, s0, (conv1 env.Captures.[cap1]))
+                        Utils.Write(env, s0, (conv1 env.Captures.[cap]))
                         env
                     next env : 'Tail
                 )
             )
 
-         static member ChainedFastStartCapture<'A, 'Tail>
+         static member ChainedFastStartCapture1<'A, 'Tail>
             (
-                cap1, conv1,
+                cap, conv1,
                 next
             ) =
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun () ->
                     let env() = 
                         let env = env()
-                        env.Write(conv1 env.Captures.[cap1])
+                        env.Write(conv1 env.Captures.[cap])
                         env
                     next env : 'Tail
                 )
             )
 
+        static member ChainedCapture2<'A, 'B, 'Tail>
+            (
+                s0, cap, conv1, s1, conv2,
+                next
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) ->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+         static member ChainedFastStartCapture2<'A, 'B, 'Tail>
+            (
+                cap, conv1, s1, conv2,
+                next
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) ->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, conv1 env.Captures.[cap], s1, (conv2 b))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+        static member ChainedCapture3<'A, 'B, 'C, 'Tail>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3,
+                next
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) ->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+        static member ChainedCaptureFastStart3<'A, 'B, 'C, 'Tail>
+            (
+                cap, conv1, s1, conv2, s2, conv3,
+                next
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) ->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+        static member ChainedCapture4<'A, 'B, 'C, 'D, 'Tail>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3, s3, conv4,
+                next
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D)->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+        static member ChainedCaptureFastStart4<'A, 'B, 'C, 'D, 'Tail>
+            (
+                cap, conv1, s1, conv2, s2, conv3, s3, conv4,
+                next
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D)->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+        static member ChainedCapture5<'A, 'B, 'C, 'D, 'E, 'Tail>
+            (
+                s0, cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5,
+                next
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) (e: 'E)->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, s0, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+        static member ChainedCaptureFastStart5<'A, 'B, 'C, 'D, 'E, 'Tail>
+            (
+                cap, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5,
+                next
+            ) =
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (b: 'B) (c: 'C) (d: 'D) (e: 'E)->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, (conv1 env.Captures.[cap]), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
+                        env
+                    next env : 'Tail
+                )
+            )
      
         static member Final1<'A>
             (

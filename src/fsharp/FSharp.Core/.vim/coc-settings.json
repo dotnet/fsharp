@@ -1,5 +1,4 @@
 {
-    "fsharp.codelens.references": false,
     "fsharp.project.otherFlags": [
         "--warnon:1182",
         "--compiling-fslib",
@@ -55,10 +54,7 @@
         "--define:FX_RESHAPED_MSBUILD",
         "--define:NETSTANDARD",
         "--define:NETSTANDARD1_6",
-        //"--keyfile:C:\Users\Yatao\.nuget\packages\microsoft.dotnet.arcade.sdk\1.0.0-beta.19264.13\tools\snk/MSFT.snk
-        //"--publicsign+
-        "--optimize-",
-        //"--resource:C:\Users\Yatao\git\visualfsharp\artifacts\obj\FSharp.Core\Debug\netstandard1.6\FSCore.resources
+        "--optimize-"
     ],
     "fsharp.project.includeCompileBefore": true
 }
