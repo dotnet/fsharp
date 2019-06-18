@@ -524,10 +524,14 @@ rule token args skip = parse
           // Construct the new position
           if args.applyLineDirectives then 
               lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> fileIndexOfFile f | None -> pos.FileIndex), line)
-
+          else
+              // add a newline when we don't apply a directive since we consumed a newline getting here
+              newline lexbuf
           token args skip lexbuf 
-        else 
-          if not skip then (HASH_LINE (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
+        else
+          // add a newline when we don't apply a directive since we consumed a newline getting here
+          newline lexbuf
+          (HASH_LINE (LexCont.Token !args.ifdefStack)) }
             
  | "<@" { checkExprOp lexbuf; LQUOTE ("<@ @>", false) }
  | "<@@" { checkExprOp lexbuf; LQUOTE ("<@@ @@>", true) }
