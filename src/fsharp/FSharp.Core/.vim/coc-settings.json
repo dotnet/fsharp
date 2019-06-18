@@ -1,5 +1,5 @@
 {
-    "fsharp.codelens.references": true,
+    "fsharp.codelens.references": false,
     "fsharp.project.otherFlags": [
         "--warnon:1182",
         "--compiling-fslib",
