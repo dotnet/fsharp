@@ -18,7 +18,6 @@
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <EmbeddedText Include="FSBuild.txt" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
-    <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="FSharpCommandLineBuilder.fs" />
     <Compile Include="Fsc.fs" />
     <Compile Include="Fsi.fs" />
