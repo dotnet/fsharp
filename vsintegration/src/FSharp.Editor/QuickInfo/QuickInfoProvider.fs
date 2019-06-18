@@ -163,7 +163,8 @@ type internal FSharpAsyncQuickInfoSource
         xmlMemberIndexService: IVsXMLMemberIndexService,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
-        textBuffer:ITextBuffer
+        textBuffer:ITextBuffer,
+        settings: EditorOptions
     ) =
 
     static let joinWithLineBreaks segments =
@@ -205,6 +206,9 @@ type internal FSharpAsyncQuickInfoSource
         // This method can be called from the background thread.
         // Do not call IServiceProvider.GetService here.
         override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
+            // if using LSP, just bail early
+            if settings.Advanced.UsePreviewTextHover then Task.FromResult<QuickInfoItem>(null)
+            else
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
             match triggerPoint.HasValue with
             | false -> Task.FromResult<QuickInfoItem>(null)
@@ -269,7 +273,8 @@ type internal FSharpAsyncQuickInfoSourceProvider
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider:FSharpCheckerProvider,
-        projectInfoManager:FSharpProjectOptionsManager
+        projectInfoManager:FSharpProjectOptionsManager,
+        settings: EditorOptions
     ) =
 
     interface IAsyncQuickInfoSourceProvider with
@@ -278,4 +283,4 @@ type internal FSharpAsyncQuickInfoSourceProvider
             // It is safe to do it here (see #4713)
             let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
             let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
-            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, projectInfoManager, textBuffer) :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, projectInfoManager, textBuffer, settings) :> IAsyncQuickInfoSource

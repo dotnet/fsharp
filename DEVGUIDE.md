@@ -4,7 +4,7 @@
 
 Get the latest source code from the master branch by running this git command:
 
-    git clone https://github.com/Microsoft/visualfsharp.git
+    git clone https://github.com/dotnet/fsharp.git
     
 Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
 
@@ -60,7 +60,7 @@ For Linux/Mac:
 
 Running tests:
 
-    ./build.sh -test
+    ./build.sh --test
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 

@@ -7,7 +7,6 @@ open System.Composition
 open System.Threading
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes

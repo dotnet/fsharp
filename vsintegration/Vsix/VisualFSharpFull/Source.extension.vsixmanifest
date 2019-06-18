@@ -20,6 +20,7 @@
       <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
       <Action Type="Ngen" Path="FSharp.Core.dll" />
       <Action Type="Ngen" Path="FSharp.Editor.dll" />
+      <Action Type="Ngen" Path="FSharp.Editor.Helpers.dll" />
       <Action Type="Ngen" Path="FSharp.UIResources.dll" />
       <Action Type="Ngen" Path="FSharp.LanguageService.Base.dll" />
       <Action Type="Ngen" Path="FSharp.LanguageService.dll" />
@@ -27,6 +28,7 @@
       <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
       <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
+      <Action Type="Ngen" Path="Agent\FSharp.Compiler.LanguageServer.exe" />
     </Actions>
   </Installer>
   <Dependencies>
