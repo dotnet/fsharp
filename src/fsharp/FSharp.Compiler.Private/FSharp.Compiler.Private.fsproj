@@ -42,11 +42,6 @@
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="FSharp.LanguageService" />
     <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
-    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
@@ -276,7 +271,6 @@
     <Compile Include="..\ReferenceResolver.fs">
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
-    
     <Compile Include="..\..\utils\reshapedmsbuild.fs">
       <Link>ReferenceResolution/reshapedmsbuild.fs</Link>
     </Compile>
