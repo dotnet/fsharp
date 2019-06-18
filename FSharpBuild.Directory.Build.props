@@ -9,8 +9,8 @@
 
   <!-- Default values for bootstrapTfm when one is not specified -->
   <PropertyGroup Condition="'$(BootStrapTfm)' == ''">
-    <BootstrapTfm Condition="'$(OS)' != 'Unix'">net472</BootstrapTfm>
-    <BootstrapTfm Condition="'$(OS)' == 'Unix'">netcoreapp2.1</BootstrapTfm>
+    <BootStrapTfm Condition="'$(OS)' != 'Unix'">net472</BootStrapTfm>
+    <BootStrapTfm Condition="'$(OS)' == 'Unix'">netcoreapp2.1</BootStrapTfm>
   </PropertyGroup>
 
   <!-- directory locations -->

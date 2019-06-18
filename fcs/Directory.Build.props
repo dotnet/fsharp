@@ -8,6 +8,12 @@
     </RestoreSources>
   </PropertyGroup>
 
+  <!-- Default values for bootstrapTfm when one is not specified -->
+  <PropertyGroup Condition="'$(BootStrapTfm)' == ''">
+    <BootStrapTfm Condition="'$(OS)' != 'Unix'">net472</BootStrapTfm>
+    <BootStrapTfm Condition="'$(OS)' == 'Unix'">netcoreapp2.1</BootStrapTfm>
+  </PropertyGroup>
+
   <PropertyGroup>
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' == 'Windows_NT'">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' != 'Windows_NT'">$(HOME)/.nuget/packages/</NuGetPackageRoot>
@@ -26,13 +32,14 @@
     <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..\src</FSharpSourcesRoot>
     <VersionPrefix>22.0.3</VersionPrefix>
     <OtherFlags>--version:$(VersionPrefix)</OtherFlags>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>    
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
     <ToolsetFsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</ToolsetFsiToolPath>
     <ToolsetFsiToolExe>fsi.exe</ToolsetFsiToolExe>
-    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net472</ProtoOutputPath>
+    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\$(BootStrapTfm)</ProtoOutputPath>
     <FcsFSharpCorePkgVersion>4.6.2</FcsFSharpCorePkgVersion>
     <FcsTargetNetFxFramework>net461</FcsTargetNetFxFramework>
   </PropertyGroup>
+
 </Project>

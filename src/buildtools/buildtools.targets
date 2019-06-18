@@ -20,9 +20,11 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <FsLexPath Condition="'$(FsLexPath)' == ''">$(ArtifactsDir)Bootstrap\$(BootstrapTfm)\fslex.exe</FsLexPath>
+        <FsLexPath Condition="'$(FsLexPath)' == '' and Exists('$(ArtifactsDir)Bootstrap\$(BootStrapTfm)\fslex.exe')">$(ArtifactsDir)Bootstrap\$(BootStrapTfm)\fslex.exe</FsLexPath>
+        <FsLexPath Condition="'$(FsLexPath)' == '' and Exists('$(ArtifactsDir)bin\fslex\Proto\$(BootStrapTfm)\fslex.exe')">$(ArtifactsDir)bin\fslex\Proto\$(BootStrapTfm)\fslex.exe</FsLexPath>
+
         <FsLexDotNetTool></FsLexDotNetTool>
-        <FsLexDotNetTool Condition="$(BootstrapTfm.StartsWith('netcoreapp'))">&quot;$(DotNetTool)&quot; </FsLexDotNetTool>
+        <FsLexDotNetTool Condition="$(BootStrapTfm.StartsWith('netcoreapp'))">&quot;$(DotNetTool)&quot; </FsLexDotNetTool>
     </PropertyGroup>
 
     <!-- Create the output directory -->
@@ -45,9 +47,11 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <FsYaccPath Condition="'$(FsYaccPath)' == ''">$(ArtifactsDir)Bootstrap\$(BootstrapTfm)\fsyacc.exe</FsYaccPath>
+        <FsYaccPath Condition="'$(FsYaccPath)' == '' and Exists('$(ArtifactsDir)Bootstrap\$(BootStrapTfm)\fsyacc.exe')">$(ArtifactsDir)Bootstrap\$(BootStrapTfm)\fsyacc.exe</FsYaccPath>
+        <FsYaccPath Condition="'$(FsYaccPath)' == '' and Exists('$(ArtifactsDir)bin\fsyacc\Proto\$(BootStrapTfm)\fsyacc.exe')">$(ArtifactsDir)bin\fsyacc\Proto\$(BootStrapTfm)\fsyacc.exe</FsYaccPath>
+
         <FsYaccDotNetTool></FsYaccDotNetTool>
-        <FsYaccDotNetTool Condition="$(BootstrapTfm.StartsWith('netcoreapp'))">&quot;$(DotNetTool)&quot; </FsYaccDotNetTool>
+        <FsYaccDotNetTool Condition="$(BootStrapTfm.StartsWith('netcoreapp'))">&quot;$(DotNetTool)&quot; </FsYaccDotNetTool>
     </PropertyGroup>
 
     <!-- Create the output directory -->
