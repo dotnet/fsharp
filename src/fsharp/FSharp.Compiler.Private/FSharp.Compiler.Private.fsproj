@@ -271,7 +271,10 @@
     <Compile Include="..\ReferenceResolver.fs">
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
-    
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>Service/reshapedmsbuild.fs</Link>
+    </Compile>
+
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
     <Compile Include="..\LegacyMSBuildReferenceResolver.fsi">
       <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fsi</Link>
@@ -634,9 +637,6 @@
     </Compile>
     <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Service/reshapedmsbuild.fs</Link>
     </Compile>
     <Compile Include="..\service\ExternalSymbol.fsi">
       <Link>Service/ExternalSymbol.fsi</Link>
