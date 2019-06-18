@@ -13,7 +13,9 @@ usage()
   echo "  --binaryLog                Create MSBuild binary log (short: -bl)"
   echo ""
   echo "Actions:"
+  echo "  --bootstrap                Force the build of the bootstrap compiler"
   echo "  --restore                  Restore projects required to build (short: -r)"
+  echo "  --norestore                Don't restore projects required to build"
   echo "  --build                    Build all projects (short: -b)"
   echo "  --rebuild                  Rebuild all projects"
   echo "  --pack                     Build nuget packages"
@@ -54,6 +56,7 @@ test_core_clr=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
+force_bootstrap=false
 ci=false
 skip_analyzers=false
 prepare_machine=false
@@ -87,6 +90,9 @@ while [[ $# > 0 ]]; do
       ;;
     --binarylog|-bl)
       binary_log=true
+      ;;
+    --bootstrap)
+      force_bootstrap=true
       ;;
     --restore|-r)
       restore=true
@@ -205,6 +211,9 @@ function BuildSolution {
     quiet_restore=true
   fi
 
+  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
+  node_reuse=false
+
   # build bootstrap tools
   bootstrap_config=Proto
   bootstrap_dir=$artifacts_dir/Bootstrap
@@ -233,6 +242,7 @@ function BuildSolution {
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
+    /v:$verbosity \
     /p:Configuration=$configuration \
     /p:Projects="$projects" \
     /p:RepoRoot="$repo_root" \

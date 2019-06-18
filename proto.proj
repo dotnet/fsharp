@@ -28,6 +28,10 @@
     <MSBuild Projects="@(Projects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
+  <Target Name="Publish">
+    <MSBuild Projects="@(Projects)" Targets="Publish" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+  </Target>
+
   <Target Name="Clean">
     <MSBuild Projects="@(Projects)" Targets="Clean" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
