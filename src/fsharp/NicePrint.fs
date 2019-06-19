@@ -1408,11 +1408,11 @@ module InfoMemberPrinting =
         let getterSetter =
             match pinfo.HasGetter, pinfo.HasSetter with
             | (true, false) ->
-                "with get" |> tagText |> wordL 
+                wordL (tagKeyword "with") ^^ wordL (tagText "get")
             | (false, true) ->
-                "with set"  |> tagText |> wordL
+                wordL (tagKeyword "with") ^^ wordL (tagText "set")
             | (true, true) ->
-                "with get, set"  |> tagText |> wordL
+                wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
             | (false, false) ->
                 emptyL
 
