@@ -11,8 +11,6 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Compilation
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Tools.Visualizer.WPF", "src\FSharp.Tools.Visualizer.WPF\FSharp.Tools.Visualizer.WPF.fsproj", "{A8058380-BAEE-4D57-A73A-FBB7A5E954D0}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Compilation.Tests", "..\tests\FSharp.Compiler.Compilation.Tests\FSharp.Compiler.Compilation.Tests.fsproj", "{D8E6BB19-F508-468E-8A13-20576879AF5A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,12 +42,6 @@ Global
 		{A8058380-BAEE-4D57-A73A-FBB7A5E954D0}.Proto|Any CPU.Build.0 = Debug|Any CPU
 		{A8058380-BAEE-4D57-A73A-FBB7A5E954D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A8058380-BAEE-4D57-A73A-FBB7A5E954D0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D8E6BB19-F508-468E-8A13-20576879AF5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D8E6BB19-F508-468E-8A13-20576879AF5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D8E6BB19-F508-468E-8A13-20576879AF5A}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
-		{D8E6BB19-F508-468E-8A13-20576879AF5A}.Proto|Any CPU.Build.0 = Debug|Any CPU
-		{D8E6BB19-F508-468E-8A13-20576879AF5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D8E6BB19-F508-468E-8A13-20576879AF5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
