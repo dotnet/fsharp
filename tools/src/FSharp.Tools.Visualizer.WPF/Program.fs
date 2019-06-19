@@ -95,8 +95,10 @@ module rec App =
 
     type Msg =
         | Exit
+        | ForceGC
         | UpdateText of SourceText * (Model -> unit)
         | UpdateLexicalAnalysis of lexicalHighlights: HighlightSpan list
+        | UpdateSyntacticAnalysis
         | UpdateVisualizers of highlights: HighlightSpan list * CompletionItem list * rootNode: FSharpSyntaxNode
         | UpdateNodeHighlight of FSharpSyntaxNode
 
@@ -124,6 +126,15 @@ module rec App =
         stopwatch.Stop ()
         printfn "lexical analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
         highlights
+
+    let getSyntacticAnalysis (model: Model) ct =
+        let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
+
+        let syntaxTree = model.Compilation.GetSyntaxTree "test1.fs"
+        let _rootNode = syntaxTree.GetRootNode ct
+
+        stopwatch.Stop ()
+        printfn "syntactic analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
 
     let getSemanticAnalysis (model: Model) didCompletionTrigger caretOffset ct =
         let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
@@ -168,6 +179,9 @@ module rec App =
                 WillExit = true
                 WillRedraw = false
             }
+        | ForceGC ->
+            GC.Collect ()
+            model
         | UpdateText (text, callback) ->
             let textSnapshot = FSharpSourceSnapshot.FromText ("test1.fs", text)
             model.CancellationTokenSource.Cancel ()
@@ -181,10 +195,15 @@ module rec App =
                     Compilation = compilation
                     CancellationTokenSource = new CancellationTokenSource ()
                     NodeHighlight = None
+                    Highlights = []
+                    CompletionItems = []
                     WillRedraw = false
                 }
             callback updatedModel
             updatedModel
+
+        | UpdateSyntacticAnalysis ->
+            model
 
         | UpdateLexicalAnalysis lexicalHighlights ->
             { model with
@@ -203,6 +222,7 @@ module rec App =
         | UpdateNodeHighlight node ->
             { model with NodeHighlight = Some node; WillRedraw = true }
 
+    let ForceGCMenuItemView dispatch = MenuItem.MenuItem ("_Force GC", [], fun _ -> dispatch ForceGC)
     let exitMenuItemView dispatch = MenuItem.MenuItem ("_Exit", [], fun _ -> dispatch Exit)
 
     let view model dispatch =
@@ -235,6 +255,7 @@ module rec App =
                                 use! _do = Async.OnCancel (fun () -> printfn "cancelled")
                                 let! ct = Async.CancellationToken
 
+                                do! Async.Sleep 50
                                 let s = System.Diagnostics.Stopwatch.StartNew ()
                                 let lexicalAnalysis = getLexicalAnalysis updatedModel ct
                                 s.Stop ()
@@ -243,6 +264,9 @@ module rec App =
                                     do! Async.Sleep sleep
 
                                 dispatch (UpdateLexicalAnalysis lexicalAnalysis)
+
+                                getSyntacticAnalysis updatedModel ct
+                                dispatch (UpdateSyntacticAnalysis)
 
                                 let highlights, completionItems, rootNode = getSemanticAnalysis updatedModel didCompletionTrigger caretOffset ct
                                 dispatch (UpdateVisualizers (highlights, completionItems, rootNode))
@@ -260,8 +284,8 @@ module rec App =
         View.Common (
             View.DockPanel 
                 [
-                    View.Menu ([ MenuItem.MenuItem ("_File", [ exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
-                    View.Editor (model.Highlights @ otherHighlights, model.WillRedraw, model.CompletionItems, onTextChanged, onCompletionTriggered)
+                    View.Menu ([ MenuItem.MenuItem ("_File", [ ForceGCMenuItemView dispatch; exitMenuItemView dispatch ], fun _ -> ()) ], dockTop = true)
+                    View.Editor (model.Highlights, model.WillRedraw, model.CompletionItems, onTextChanged, onCompletionTriggered)
                     View.TreeView (treeItems)
                 ],
             model.WillExit

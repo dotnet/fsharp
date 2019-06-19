@@ -12,7 +12,7 @@ type internal IncrementalLexer =
 
     member GetTokens: span: TextSpan * ct: CancellationToken -> TokenItem seq
 
-    member LexFilter: ErrorLogger.ErrorLogger * (UnicodeLexing.Lexbuf -> (UnicodeLexing.Lexbuf -> Parser.token) -> 'T) * CancellationToken -> 'T
+    member LexFilter: ErrorLogger.ErrorLogger * (UnicodeLexing.Lexbuf -> (UnicodeLexing.Lexbuf -> Parser.token) -> unit) * CancellationToken -> unit
 
     member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> IncrementalLexer
 

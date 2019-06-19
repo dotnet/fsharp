@@ -17,6 +17,7 @@ open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.Parser
+open System.Buffers
 open Internal.Utilities
 
 [<Flags>]
@@ -51,10 +52,10 @@ type LexerConfig =
     member this.CanSkipTriviaButResolveComments =
         (this.flags &&& LexerFlags.SkipTriviaButResolveComments) = LexerFlags.SkipTriviaButResolveComments
 
+open FSharp.Compiler.Lexhelp
+
 [<AutoOpen>]
 module LexerHelpers =
-
-    open FSharp.Compiler.Lexhelp
 
     type ParsingConfig with
     
@@ -75,13 +76,17 @@ module LexerHelpers =
         | SkipTrivia =      0x01
         | UseLexFilter =    0x11 // lexfilter must skip all trivia
 
-    let private lexLexbuf (pConfig: ParsingConfig) (flags: LexFlags) errorLogger lexbuf lexCallback (ct: CancellationToken) =
+    let lexLexbufCustom (lexConfig: LexerConfig) lexbuf getNextToken lexCallback (ct: CancellationToken) : unit =
+        usingLexbufForParsing (lexbuf, lexConfig.filePath) (fun lexbuf ->
+            lexCallback lexbuf (fun lexbuf -> ct.ThrowIfCancellationRequested (); getNextToken lexbuf)
+        )
+
+    let lexLexbuf (pConfig: ParsingConfig) (flags: LexFlags) errorLogger lexbuf lexCallback (ct: CancellationToken) : unit =
         let lexConfig = pConfig.ToLexerConfig ()
 
         let filePath = lexConfig.filePath
         let lightSyntaxStatus = LightSyntaxStatus (lexConfig.IsLightSyntaxOn, true) 
         let lexargs = mkLexargs (filePath, lexConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, lexConfig.pathMap)
-
         let lexargs = { lexargs with applyLineDirectives = not lexConfig.IsCompiling }
 
         let getNextToken =
@@ -96,15 +101,13 @@ module LexerHelpers =
             else
                 lexer
 
-        usingLexbufForParsing (lexbuf, filePath) (fun lexbuf ->
-            lexCallback lexbuf (fun lexbuf -> ct.ThrowIfCancellationRequested (); getNextToken lexbuf)
-        )
+        lexLexbufCustom lexConfig lexbuf getNextToken lexCallback ct
 
-    let lexText pConfig flags errorLogger (text: SourceText) lexCallback ct =
+    let lexText pConfig flags errorLogger (text: SourceText) lexCallback ct : unit =
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf (text.ToFSharpSourceText ())
         lexLexbuf pConfig flags errorLogger lexbuf lexCallback ct
 
-    let lexStream pConfig flags errorLogger (stream: Stream) lexCallback ct =
+    let lexStream pConfig flags errorLogger (stream: Stream) lexCallback ct : unit =
         let streamReader = new StreamReader (stream) // don't dispose of stream reader
         let lexbuf = 
             UnicodeLexing.FunctionAsLexbuf (fun (chars, start, length) ->
@@ -124,36 +127,24 @@ type TokenCacheItem =
         extraLineCount: int
     }
 
-// TODO: We need to chunk the tokens instead of having a large resize array.
 [<Sealed>]
-type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: ResizeArray<ResizeArray<TokenCacheItem>>) =
+type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: ResizeArray<TokenCacheItem> []) =
 
     member __.Add (t: token, m: range) =
         let lineNumber = m.StartLine - 1
         let lineTokens =
-            if tokens.Count > lineNumber && tokens.[lineNumber] <> null then
+            if tokens.[lineNumber] <> null then
                 tokens.[lineNumber]
             else
-                if lineNumber >= tokens.Count then
-                    tokens.AddRange (Array.zeroCreate (lineNumber - (tokens.Count - 1)))
-
                 let lineTokens = ResizeArray ()
                 tokens.[lineNumber] <- lineTokens
                 lineTokens
 
         lineTokens.Add { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; extraLineCount = m.EndLine - m.StartLine }
 
-    member private __.InsertRange (index, collection) =
-        tokens.InsertRange (index, collection)
-
-    member private __.RemoveRange (index, count) =
-        tokens.RemoveRange (index, count)
-
-    member private __.Item
-        with get i = tokens.[i]
-        and  set i value = tokens.[i] <- value
-
-    member this.TryCreateIncremental (newText: SourceText) =
+    // TODO: This is still incorrect. Incrementing by lines can work assuming a token can't be multi-line, but they can.
+    //       Instead we must actually increment by the column indices of a line as well.
+    member __.TryCreateIncremental (newText: SourceText) =
         let changes = newText.GetTextChanges text
         if changes.Count = 0 || changes.Count > 1 || (changes.[0].Span.Start = 0 && changes.[0].Span.Length = text.Length) then
             None
@@ -161,7 +152,6 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
             // For now, we only do incremental lexing on one change.
             let change = Seq.head changes
 
-            let newTokens = TokenCache (pConfig, newText, ResizeArray tokens)
             let lineNumbersToEval = ResizeArray ()
 
             let span = TextSpan (change.Span.Start, change.NewText.Length)
@@ -176,19 +166,17 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
             for i = startLine to startLine + newLineLength do
                 lineNumbersToEval.Add i
 
-            if newLineLength > lineLength then
-                let start = startLine + lineLength
-                let length = startLine + newLineLength - start
-                newTokens.InsertRange (start + 1, Array.init length (fun _ -> ResizeArray ()))
+            let newTokensArr = ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Rent newText.Lines.Count
+            let newTokens = TokenCache (pConfig, newText, newTokensArr)
 
-            elif newLineLength < lineLength then
-                let start = startLine + newLineLength
-                let length = startLine + lineLength - start
-                newTokens.RemoveRange (start + 1, length)
+            // copy lines that have not changed.
+            let dstOffset = startLine + newLineLength
+            Array.Copy (tokens, 0, newTokensArr, 0, startLine)
+            Array.Copy (tokens, startLine + lineLength, newTokensArr, dstOffset, newText.Lines.Count - dstOffset)
 
             for i = 0 to lineNumbersToEval.Count - 1 do
                 let lineNumber = lineNumbersToEval.[i]
-                newTokens.[lineNumber] <- ResizeArray ()
+                newTokensArr.[lineNumber] <- ResizeArray ()
                 let subText = (newText.GetSubText (newText.Lines.[lineNumber].Span))
 
                 let errorLogger = CompilationErrorLogger("TryCreateIncremental", pConfig.tcConfig.errorSeverityOptions)
@@ -208,85 +196,126 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                             
                 ) CancellationToken.None
 
+                let lineTokens = newTokensArr.[lineNumber] 
+                // nothing was added, so null it out
+                if lineTokens.Count = 0 then
+                    newTokensArr.[lineNumber] <- null
+
             Some newTokens
 
-    member __.GetTokens (span: TextSpan) : TokenItem seq =
+    member this.GetTokens (span: TextSpan) : TokenItem seq =
+        let linePosSpan = text.Lines.GetLinePositionSpan span
         let lines = text.Lines
-        let linePosSpan = lines.GetLinePositionSpan span
         seq {
             for lineNumber = linePosSpan.Start.Line to linePosSpan.End.Line do
-                if tokens.Count > lineNumber then
-                    let lineTokens = tokens.[lineNumber]
-                    if lineTokens <> null then
-                        let line = lines.[lineNumber]
-                        for i = 0 to lineTokens.Count - 1 do
-                            let tokenCacheItem = lineTokens.[i]
-                            let startPos = line.Start + tokenCacheItem.columnStart
-                            if tokenCacheItem.extraLineCount > 0 then
-                                let endPos = lines.[lineNumber + tokenCacheItem.extraLineCount].Start + tokenCacheItem.columnEnd
-                                let length = endPos - startPos
-                                if length > 0 && startPos >= span.Start && endPos <= span.End then
-                                    yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
-                            else
-                                let endPos = line.Start + tokenCacheItem.columnEnd
-                                let length = endPos - startPos
-                                if length > 0 && startPos >= span.Start && endPos <= span.End then
-                                    yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
+                let lineTokens = tokens.[lineNumber]
+                if lineTokens <> null then
+                    let line = lines.[lineNumber]
+                    for i = 0 to lineTokens.Count - 1 do
+                        let tokenCacheItem = lineTokens.[i]
+                        let startPos = line.Start + tokenCacheItem.columnStart
+                        if tokenCacheItem.extraLineCount > 0 then
+                            let endPos = lines.[lineNumber + tokenCacheItem.extraLineCount].Start + tokenCacheItem.columnEnd
+                            let length = endPos - startPos
+                            if length > 0 && startPos >= span.Start && endPos <= span.End then
+                                yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
+                        else
+                            let endPos = line.Start + tokenCacheItem.columnEnd
+                            let length = endPos - startPos
+                            if length > 0 && startPos >= span.Start && endPos <= span.End then
+                                yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
         }
 
-    member this.TryFindTokenItem (span: TextSpan) =
-        match Seq.tryExactlyOne (this.GetTokens span) with
-        | Some token -> Some token
-        | _ -> None
+    member this.GetTokensReverse (span: TextSpan) : TokenItem seq =
+        let linePosSpan = text.Lines.GetLinePositionSpan span
+        let lines = text.Lines
+        seq {
+            for lineNumber = linePosSpan.End.Line downto linePosSpan.Start.Line do
+                let lineTokens = tokens.[lineNumber]
+                if lineTokens <> null then
+                    let line = lines.[lineNumber]
+                    for i = 0 to lineTokens.Count - 1 do
+                        let tokenCacheItem = lineTokens.[i]
+                        let startPos = line.Start + tokenCacheItem.columnStart
+                        if tokenCacheItem.extraLineCount > 0 then
+                            let endPos = lines.[lineNumber + tokenCacheItem.extraLineCount].Start + tokenCacheItem.columnEnd
+                            let length = endPos - startPos
+                            if length > 0 && startPos >= span.Start && endPos <= span.End then
+                                yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
+                        else
+                            let endPos = line.Start + tokenCacheItem.columnEnd
+                            let length = endPos - startPos
+                            if length > 0 && startPos >= span.Start && endPos <= span.End then
+                                yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
+        }
 
     member this.TryFindTokenItem (position: int) =
-        let linePos = text.Lines.GetLinePosition position
-        let line = text.Lines.[linePos.Line]
+        let line = text.Lines.GetLineFromPosition position
         this.GetTokens line.Span
         |> Seq.tryFind (fun (TokenItem (_, span, _)) ->
-            span.Contains position || span.End = position
+            span.Contains position
         )
 
-    member this.TryCreateTokenItem (lineNumber, startIndex, tokenCacheItem: TokenCacheItem) =
-        let line = text.Lines.[lineNumber]
-        let startPos = line.Start + tokenCacheItem.columnStart
-        let endPos = line.Start + tokenCacheItem.columnEnd
-        let length = endPos - startPos
-        if length > 0 then
-            Some (TokenItem (tokenCacheItem.t, TextSpan (), startIndex))
-        else
-            None
+    member this.TryGetNextAvailableToken (position: int) =
+        let line = text.Lines.GetLineFromPosition position
+        this.GetTokens (TextSpan (line.Span.Start, text.Length - line.Span.End))
+        |> Seq.tryFind (fun (TokenItem (_, span, _)) ->
+            span.Start > position
+        )
 
-    member this.TryGetPreviousToken (span: TextSpan) =
-        match this.TryFindTokenItem span with
-        | Some (TokenItem (startIndex = startIndex)) ->
-            let lines = text.Lines
-            let linePosSpan = lines.GetLinePositionSpan span
-            let lineNumber = linePosSpan.Start.Line
-            
-            if startIndex = 0 then
-                let mutable lineNumber = lineNumber - 1
-                let mutable result = None
-                while lineNumber >= 0 && result.IsNone do
-                    let lineTokens = tokens.[lineNumber]
-                    if lineTokens <> null && lineTokens.Count > 0 then
-                        let lineTokens = tokens.[lineNumber]
-                        let startIndex = lineTokens.Count - 1
-                        let tokenCacheItem = lineTokens.[startIndex]
-                        result <- this.TryCreateTokenItem (lineNumber, startIndex, tokenCacheItem)
-                    lineNumber <- lineNumber - 1
-                result
-            else
-                let lineTokens = tokens.[lineNumber]
-                let startIndex = startIndex - 1
-                let tokenCacheItem = lineTokens.[startIndex]
-                this.TryCreateTokenItem (lineNumber, startIndex, tokenCacheItem)
-        | _ ->
-            None
+    member this.TryGetPreviousAvailableToken (position: int) =
+        let line = text.Lines.GetLineFromPosition position
+        this.GetTokensReverse (TextSpan (0, text.Length - line.Span.End))
+        |> Seq.tryFind (fun (TokenItem (_, span, _)) ->
+            span.Start > position
+        )
+        
+    member this.LexFilter (errorLogger, f, ct) =
+        let lineCount = text.Lines.Count
+        if lineCount > 0 then
+            let lexConfig = pConfig.ToLexerConfig ()
+
+            let filePath = lexConfig.filePath
+            let lightSyntaxStatus = LightSyntaxStatus (lexConfig.IsLightSyntaxOn, true) 
+            let lexargs = mkLexargs (filePath, lexConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, lexConfig.pathMap)
+            let lexargs = { lexargs with applyLineDirectives = not lexConfig.IsCompiling }
+
+            let dummyLexbuf =
+                Internal.Utilities.Text.Lexing.LexBuffer<char>.FromFunction (fun _ -> 0)
+
+            let fileIndex = Range.fileIndexOfFile filePath
+            let mutable line = 0
+            let mutable lineTokens = tokens.[line]
+            let mutable index = 0
+            let getNextToken = 
+                (fun (lexbuf: UnicodeLexing.Lexbuf) ->
+                    if index >= lineTokens.Count then
+                        line <- line + 1
+                        lineTokens <- tokens.[line]
+                        index <- 0
                     
+                    let item = lineTokens.[index]
+                    let startLine = line
+                    let endLine = line + item.extraLineCount
+                    lexbuf.StartPos <- Internal.Utilities.Text.Lexing.Position (fileIndex, startLine, startLine, 0, item.columnStart)
+                    lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position (fileIndex, endLine, endLine, 0, item.columnEnd)
+                    item.t
+                )
+
+            let getNextToken =
+                (fun lexbuf ->
+                    let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, lexConfig.IsCompilingFSharpCore, getNextToken, lexbuf)
+                    tokenizer.Lexer lexbuf
+                )
+
+            lexLexbufCustom (pConfig.ToLexerConfig ()) dummyLexbuf getNextToken f ct
+        
+    override __.Finalize () =
+        printfn "finalizer kicked off, returning array to pool"
+        ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Return tokens
 
     static member Create (pConfig, text) =
-        TokenCache (pConfig, text, ResizeArray (text.Lines.Count))
+        TokenCache (pConfig, text, ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Rent text.Lines.Count)
 
 [<Sealed>]
 type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, incrementalTokenCacheOpt: Lazy<TokenCache option>) =
