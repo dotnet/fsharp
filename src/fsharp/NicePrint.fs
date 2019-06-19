@@ -32,7 +32,7 @@ module internal PrintUtilities =
     let bracketIfL x lyt = if x then bracketL lyt else lyt
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
     let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
-    let braceL x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
+    let braceL x = wordL Literals.leftBrace ^^ x ^^ wordL Literals.rightBrace
     let braceBarL x = leftL Literals.leftBraceBar ^^ x ^^ rightL Literals.rightBraceBar
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
@@ -1445,7 +1445,7 @@ module private TastDefinitionPrinting =
         let lhs =
             tagRecordField fld.Name
             |> mkNav fld.DefinitionRange
-            |> wordL 
+            |> wordL
         let lhs = (if addAccess then layoutAccessibility denv fld.Accessibility lhs else lhs)
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
         (lhs ^^ RightL.colon) --- layoutType denv fld.FormalType
@@ -1727,7 +1727,7 @@ module private TastDefinitionPrinting =
                   match repr with 
                   | TRecdRepr _ ->
                       let recdFieldRefL fld = layoutRecdField false denv fld
-                      let recdL = tycon.TrueFieldsAsList |> List.map recdFieldRefL |> applyMaxMembers denv.maxMembers |> aboveListL |> braceL
+                      let recdL = tycon.TrueFieldsAsList |> List.map recdFieldRefL |> applyMaxMembers denv.maxMembers |> aboveListIndentOneL |> braceL
                       Some (addMembersAsWithEnd (addReprAccessL recdL))
                         
                   | TFSharpObjectRepr r -> 

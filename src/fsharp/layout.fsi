@@ -46,6 +46,7 @@ val bracketL              : Layout -> Layout
 val tupleL                : Layout list -> Layout
 val aboveL                : Layout -> Layout -> Layout
 val aboveListL            : Layout list -> Layout
+val aboveListIndentOneL : Layout list -> Layout
 
 val optionL               : ('a -> Layout) -> 'a option -> Layout    
 val listL                 : ('a -> Layout) -> 'a list   -> Layout

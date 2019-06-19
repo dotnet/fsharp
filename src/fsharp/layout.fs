@@ -256,6 +256,11 @@ let aboveListL = function
   | [x]   -> x
   | x :: ys -> List.fold (fun pre y -> pre @@ y) x ys
 
+let aboveListIndentOneL = function
+    | [] -> emptyL
+    | [x] -> x
+    | x :: xs -> (x, xs) ||> List.fold (fun pre y -> pre @@- y)
+
 let optionL xL = function
   | None   -> wordL (tagUnionCase "None")
   | Some x -> wordL (tagUnionCase "Some") -- (xL x)

@@ -154,9 +154,9 @@ module Test =
     let quickInfo = GetQuickInfoTextFromCode code
     let expected =
         expectedLines [ "type MyEmployee ="
-                        "  {mutable Name: string;"
-                        "   mutable Age: int;"
-                        "   mutable IsFTE: bool;}"
+                        "  { mutable Name: string"
+                        "    mutable Age: int"
+                        "    mutable IsFTE: bool }"
                         "Full name: FsTest.MyEmployee" ]
     Assert.AreEqual(expected, quickInfo)
     ()
