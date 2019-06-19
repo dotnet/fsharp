@@ -10,6 +10,8 @@ type internal TokenItem = TokenItem of rawToken: Parser.token * span: TextSpan *
 [<Sealed>]
 type internal IncrementalLexer =
 
+    member AreTokensCached: bool
+
     member GetTokens: span: TextSpan * ct: CancellationToken -> TokenItem seq
 
     member LexFilter: ErrorLogger.ErrorLogger * (UnicodeLexing.Lexbuf -> (UnicodeLexing.Lexbuf -> Parser.token) -> unit) * CancellationToken -> unit

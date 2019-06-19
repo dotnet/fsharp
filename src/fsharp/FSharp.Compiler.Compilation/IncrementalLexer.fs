@@ -95,7 +95,7 @@ module LexerHelpers =
 
             if (flags &&& LexFlags.UseLexFilter) = LexFlags.UseLexFilter then
                 (fun lexbuf ->
-                    let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, lexConfig.IsCompilingFSharpCore, lexer, lexbuf)
+                    let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, false, lexer, lexbuf)
                     tokenizer.Lexer lexbuf
                 )
             else
@@ -381,11 +381,13 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
                         tokens
             )
 
+    member this.AreTokensCached = lazyCachedTokens.IsSome
+
     member this.GetTokens (span, ct) =
         let tokens = this.GetCachedTokens ct
         tokens.GetTokens span
 
-    member __.LexFilter (errorLogger, f, ct) =
+    member this.LexFilter (errorLogger, f, ct) =
         lex LexFlags.UseLexFilter errorLogger f ct
 
     member this.WithChangedTextSnapshot (newTextSnapshot: FSharpSourceSnapshot) =

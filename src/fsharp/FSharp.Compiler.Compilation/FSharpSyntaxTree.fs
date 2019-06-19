@@ -1068,20 +1068,43 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
             match parseResult.TryGetTarget () with
             | true, parseResult -> parseResult
             | _ ->
-                let result =
-                    match lazyText with
-                    | ValueSome text ->
-                        Parser.Parse pConfig (SourceValue.SourceText text) ct
-                    | _ ->
-                        match textSnapshot.TryGetStream ct with
-                        | Some stream ->
-                            Parser.Parse pConfig (SourceValue.Stream stream) ct
-                        | _ ->
-                            let text = textSnapshot.GetText ct
-                            lazyText <- ValueSome text
+                if lexer.AreTokensCached then
+                        let tcConfig = pConfig.tcConfig
+                        let isLastCompiland = (pConfig.isLastFileOrScript, pConfig.isExecutable)
+                        let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
+                        let mutable result = Unchecked.defaultof<_>
+
+                        let result =
+                            try
+                                let parsedInput =
+                                    let mutable parsedResult = Unchecked.defaultof<_>
+                                    printfn "using incremental lexer"
+                                    lexer.LexFilter (errorLogger, ((fun lexbuf getNextToken ->
+                                        let parsedInput = ParseInput(getNextToken, errorLogger, lexbuf, None, filePath, isLastCompiland)
+                                        parsedResult <- parsedInput
+                                    )), ct)
+                                    parsedResult
+
+                                (Some parsedInput, errorLogger.GetErrorInfos ())
+                            with
+                            | _ -> (None, errorLogger.GetErrorInfos ())
+                        parseResult <- ValueStrength.Weak (WeakReference<_> result)
+                        result
+                else
+                    let result =
+                        match lazyText with
+                        | ValueSome text ->
                             Parser.Parse pConfig (SourceValue.SourceText text) ct
-                parseResult <- ValueStrength.Weak (WeakReference<_> result)
-                result
+                        | _ ->
+                            match textSnapshot.TryGetStream ct with
+                            | Some stream ->
+                                Parser.Parse pConfig (SourceValue.Stream stream) ct
+                            | _ ->
+                                let text = textSnapshot.GetText ct
+                                lazyText <- ValueSome text
+                                Parser.Parse pConfig (SourceValue.SourceText text) ct
+                    parseResult <- ValueStrength.Weak (WeakReference<_> result)
+                    result
         )
 
     member __.GetText ?ct =
