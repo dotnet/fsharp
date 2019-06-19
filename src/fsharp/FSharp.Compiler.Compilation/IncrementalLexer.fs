@@ -196,7 +196,7 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                     while not lexbuf.IsPastEndOfStream do
                         match getNextToken lexbuf with
                         // EOFs will be created at the end of any given text.
-                        // Because we are lexing multiple texts, we don't want to include EOF except when are on the last line.
+                        // Because we are lexing sub texts, we don't want to include EOF except when are on the last line.
                         | token.EOF _ when not ((newText.Lines.Count - 1) = lineNumber) -> ()
                         | t -> 
                             let m = lexbuf.LexemeRange
@@ -236,8 +236,16 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
 
     member this.TryFindTokenItem (span: TextSpan) =
         match Seq.tryExactlyOne (this.GetTokens span) with
-        | Some token -> ValueSome token
-        | _ -> ValueNone
+        | Some token -> Some token
+        | _ -> None
+
+    member this.TryFindTokenItem (position: int) =
+        let linePos = text.Lines.GetLinePosition position
+        let line = text.Lines.[linePos.Line]
+        this.GetTokens line.Span
+        |> Seq.tryFind (fun (TokenItem (_, span, _)) ->
+            span.Contains position || span.End = position
+        )
 
     member this.TryCreateTokenItem (lineNumber, startIndex, tokenCacheItem: TokenCacheItem) =
         let line = text.Lines.[lineNumber]
@@ -245,20 +253,20 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
         let endPos = line.Start + tokenCacheItem.columnEnd
         let length = endPos - startPos
         if length > 0 then
-            ValueSome (TokenItem (tokenCacheItem.t, TextSpan (), startIndex))
+            Some (TokenItem (tokenCacheItem.t, TextSpan (), startIndex))
         else
-            ValueNone
+            None
 
     member this.TryGetPreviousToken (span: TextSpan) =
         match this.TryFindTokenItem span with
-        | ValueSome (TokenItem (startIndex = startIndex)) ->
+        | Some (TokenItem (startIndex = startIndex)) ->
             let lines = text.Lines
             let linePosSpan = lines.GetLinePositionSpan span
             let lineNumber = linePosSpan.Start.Line
             
             if startIndex = 0 then
                 let mutable lineNumber = lineNumber - 1
-                let mutable result = ValueNone
+                let mutable result = None
                 while lineNumber >= 0 && result.IsNone do
                     let lineTokens = tokens.[lineNumber]
                     if lineTokens <> null && lineTokens.Count > 0 then
@@ -274,7 +282,7 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                 let tokenCacheItem = lineTokens.[startIndex]
                 this.TryCreateTokenItem (lineNumber, startIndex, tokenCacheItem)
         | _ ->
-            ValueNone
+            None
                     
 
     static member Create (pConfig, text) =
