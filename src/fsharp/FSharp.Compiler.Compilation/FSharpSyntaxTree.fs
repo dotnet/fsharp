@@ -816,6 +816,7 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
 
         // * Reserved - from OCAML *
         | Parser.token.ASR
+        | Parser.token.INFIX_STAR_STAR_OP "asr"
         | Parser.token.INFIX_STAR_DIV_MOD_OP "land"
         | Parser.token.INFIX_STAR_DIV_MOD_OP "lor"
         | Parser.token.INFIX_STAR_STAR_OP "lsl"
