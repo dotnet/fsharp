@@ -149,13 +149,17 @@ module TestModuleCompilationTest =
         let semanticModel, _ = getSemanticModel (SourceText.From textString)
 
         let position = textString.IndexOf("""x.X + x.Y + x.Z""")
-        let token = ((semanticModel.SyntaxTree.GetRootNode CancellationToken.None).TryFindToken position).Value
-        let node = token.ParentNode
+        let token = (semanticModel.SyntaxTree.GetRootNode ()).FindToken position
+
+        Assert.False (token.IsNone)
+        Assert.True (token.IsIdentifier)
+
+        let node = token.GetParentNode ()
         let symbol = semanticModel.TryGetEnclosingSymbol (position, CancellationToken.None)
         let speculativeSymbolInfo = semanticModel.GetSpeculativeSymbolInfo (position, node, CancellationToken.None)
+
         Assert.True (symbol.IsSome)
-        Assert.True (speculativeSymbolInfo.TryGetSymbol().IsSome)
-        Assert.True(symbol.Value.InternalSymbolUse.Symbol.IsEffectivelySameAs (speculativeSymbolInfo.TryGetSymbol().Value.InternalSymbolUse.Symbol))
+        Assert.True (speculativeSymbolInfo.Symbol.IsSome)
 
     [<Test>]
     member __.``Get Completion Symbols - Open Declaration`` () =
@@ -191,55 +195,28 @@ type Class1 (* inside comment *) () =
         
 """         
         let semanticModel, _ = getSemanticModel (SourceText.From textString)
+        let syntaxTree = semanticModel.SyntaxTree
+        let rootNode = semanticModel.SyntaxTree.GetRootNode ()
 
         let position = textString.IndexOf("Test")
-        let syntaxTree = semanticModel.SyntaxTree
+        let token = rootNode.FindToken position
 
-        let rootNode = syntaxTree.GetRootNode CancellationToken.None
-        let token = (rootNode.TryFindToken position).Value
-        Assert.True token.IsIdentifier
-        Assert.AreEqual ("Test", token.TryGetText().Value)
+        Assert.False (token.IsNone)
+        Assert.True (token.IsIdentifier)
+        Assert.AreEqual ("Test", token.Value.Value)
 
-        let token2 = (rootNode.TryFindToken (position + 4)).Value
+        let token2 = rootNode.FindToken (position + 4)
 
         Assert.True token2.IsIdentifier
-        Assert.AreEqual ("Test", token2.TryGetText().Value)
+        Assert.AreEqual ("Test", token2.Value.Value)
 
         //
 
         let position = textString.IndexOf("Class1")
-        let token3 = (rootNode.TryFindToken position).Value
+        let token3 = rootNode.FindToken position
 
         Assert.True token3.IsIdentifier
-        Assert.AreEqual ("Class1", token3.TryGetText().Value)
-
-        let descendantTokens = token3.ParentNode.Parent.Value.Parent.Value.GetDescendantTokens () |> Array.ofSeq
-
-        let token4 = token3.TryGetNextToken().Value
-        Assert.True token4.IsWhitespace
-
-    [<Test>]
-    member __.``Syntax Tree - Function App`` () =
-        let textString = """
-namespace Test
-        
-module App =
-
-    let test (x: int) (y: int) = x + y
-
-    let useTheTest () =
-        test 
-"""         
-        let semanticModel, _ = getSemanticModel (SourceText.From textString)
-
-        let text = "        test "
-        let position = textString.IndexOf(text) + text.Length - 1
-        let syntaxTree = semanticModel.SyntaxTree
-
-        let rootNode = syntaxTree.GetRootNode CancellationToken.None
-        let token = (rootNode.TryFindToken position).Value
-
-        Assert.IsTrue token.IsWhitespace
+        Assert.AreEqual ("Class1", token3.Value.Value)
 
     [<Test>]
     member __.``Syntax Tree - String Token`` () =
@@ -260,8 +237,8 @@ there
         let position = textString.IndexOf(text)
         let syntaxTree = semanticModel.SyntaxTree
 
-        let rootNode = syntaxTree.GetRootNode CancellationToken.None
-        let token = (rootNode.TryFindToken position).Value
+        let rootNode = syntaxTree.GetRootNode ()
+        let token = rootNode.FindToken position
 
         Assert.IsTrue token.IsString
 

@@ -83,7 +83,9 @@ type FSharpSyntaxToken =
 
     member IsString: bool
 
-    member IsWhitespace: bool
+    member Value: obj voption
+
+    member ValueText: string voption
 
     static member None: FSharpSyntaxToken
 

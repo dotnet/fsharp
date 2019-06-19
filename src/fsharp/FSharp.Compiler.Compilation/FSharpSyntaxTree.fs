@@ -851,6 +851,7 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
         // virtual
         // volatile
         | Parser.token.RESERVED
+        | Parser.token.KEYWORD_STRING _
             -> true
         | _ -> false
 
@@ -870,13 +871,38 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
         | Parser.token.STRING _ -> true
         | _ -> false
 
-    member this.IsWhitespace =
-        if this.IsNone then false
+    member this.Value =
+        if this.IsNone then 
+            ValueNone
         else
+            let value =
+                match token with
+                | Parser.token.STRING value -> value :> obj
+                | Parser.token.UINT8 value -> value :> obj
+                | Parser.token.INT8 value -> value :> obj
+                | Parser.token.UINT16 value -> value :> obj
+                | Parser.token.INT16 value -> value :> obj
+                | Parser.token.UINT32 value -> value :> obj
+                | Parser.token.INT32 value -> value :> obj
+                | Parser.token.UINT64 value -> value :> obj
+                | Parser.token.INT64 value -> value :> obj
+                | Parser.token.TRUE -> true :> obj
+                | Parser.token.FALSE -> false :> obj
+                | Parser.token.BYTEARRAY value -> value :> obj
+                | Parser.token.NATIVEINT value -> value :> obj
+                | Parser.token.UNATIVEINT value -> value :> obj
+                | Parser.token.KEYWORD_STRING value -> value :> obj
+                | Parser.token.IDENT value -> value :> obj
+                | _ -> null
+            if value = null then
+                ValueNone
+            else
+                ValueSome value
 
-        match token with
-        | Parser.token.WHITESPACE _ -> true
-        | _ -> false
+    member this.ValueText =
+        match this.Value with
+        | ValueSome value -> ValueSome (string value)
+        | _ -> ValueNone
 
     static member None = Unchecked.defaultof<FSharpSyntaxToken>
 
