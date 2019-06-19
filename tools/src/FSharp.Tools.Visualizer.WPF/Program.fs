@@ -235,8 +235,13 @@ module rec App =
                                 use! _do = Async.OnCancel (fun () -> printfn "cancelled")
                                 let! ct = Async.CancellationToken
 
-                                do! Async.Sleep 50
+                                let s = System.Diagnostics.Stopwatch.StartNew ()
                                 let lexicalAnalysis = getLexicalAnalysis updatedModel ct
+                                s.Stop ()
+                                let sleep = 50 - int s.ElapsedMilliseconds
+                                if sleep > 0 then
+                                    do! Async.Sleep sleep
+
                                 dispatch (UpdateLexicalAnalysis lexicalAnalysis)
 
                                 let highlights, completionItems, rootNode = getSemanticAnalysis updatedModel didCompletionTrigger caretOffset ct

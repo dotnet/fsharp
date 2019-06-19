@@ -1101,7 +1101,7 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
 
     member private this.GetAllTokens (span: TextSpan, ct) =
         lexer.GetTokens (span, ct)
-        |> Seq.map (fun (TokenItem (t, m)) ->
+        |> Seq.map (fun (TokenItem (t, m, _)) ->
             FSharpSyntaxToken (this, t, m)
         )
 
