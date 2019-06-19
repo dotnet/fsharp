@@ -6,11 +6,9 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
-open System.Text.RegularExpressions
 open System.Xml.Linq
 open NUnit.Framework
 open Salsa
-open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
@@ -141,26 +139,3 @@ type MultiTargeting() =
         validatePair (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(2,0,0))) "v2.0"
         validatePair (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(2,0,0,0))) "v2.0"
         validatePair (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(2,0,0,1))) "v2.0"
-
-        (*
-    [<Test>]
-    member public this.``Multitargeting.AddAppConfigIfRetargetTo40Full`` () =
-        DoWithTempFile "Test.fsproj" (fun projFile ->
-            let sp, ccn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier20()
-            
-            // add mock service for SLocalRegistry so that CreateInstance on it will return a text buffer
-            sp.AddService (typeof<SLocalRegistry>, box(VsMocks.vsLocalRegistry (fun () -> VsMocks.Vs.MakeTextLines())), false)
-            
-            let refLibPath = this.prepTest(projFile)
-            use project = TheTests.CreateProject(projFile, "true", ccn, sp)
-            let fn = new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(4, 0))
-            project.FixupAppConfigOnTargetFXChange(fn.ToString(), "4.3.0.0", false) |> ignore
-            let appFile = Path.Combine((Path.GetDirectoryName projFile), "app.config")
-            let appText = System.IO.File.ReadAllText(appFile)
-            Assert.IsTrue(appText.Contains("<supportedRuntime version=\"v4.0\" sku=\".NETFramework,Version=v4.0\" />"))
-            //Assert.IsTrue(appText.Contains("<supportedRuntime version=\"v4.0\" sku=\".NETFramework,Version=v4.0,Profile=Client\" />"))
-            //Assert.IsTrue(appText.Contains("<supportedRuntime version=\"v2.0.50727\" sku=\"Client\" />"))
-            //Assert.IsTrue(appText.Contains("<supportedRuntime version=\"v2.0.50727\" />"))
-            ()
-        )
-        *)

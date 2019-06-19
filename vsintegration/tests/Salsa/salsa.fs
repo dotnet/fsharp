@@ -526,9 +526,6 @@ module internal Salsa =
         abstract GetF1KeywordAtCursor: OpenFile -> string option
         abstract GotoDefinitionAtCursor: OpenFile * bool -> GotoDefnResult
         abstract CreatePhysicalProjectFileInMemory : files:(string*BuildAction*string option) list * references:(string*bool) list * projectReferences:string list * disabledWarnings:string list * defines:string list * versionFile: string * otherFlags:string * otherProjMisc:string * targetFrameworkVersion:string -> string
-                
-        /// True if files outside of the project cone are added as links.
-        abstract AutoCompleteMemberDataTipsThrowsScope : string -> System.IDisposable
         
         // VsOps capabilities.
         abstract OutOfConeFilesAreAddedAsLinks : bool
@@ -602,8 +599,7 @@ module internal Salsa =
         let Mask orig remove = orig &&& (0xffffffffu-remove)
         
         /// Create text of an MSBuild project with the given files and options.
-        let CreateMsBuildProjectText 
-                (useInstalledTargets : bool)
+        let CreateMsBuildProjectText
                 (files:(string*BuildAction*string option) list, 
                  references:(string*bool) list,
                  projectReferences:string list,
@@ -611,32 +607,21 @@ module internal Salsa =
                  defines:string list,
                  versionFile,
                  otherFlags:string,
-                 otherProjMisc:string,
-                 targetFrameworkVersion:string) =
+                 otherProjMisc:string) =
 
             // Determine which FSharp.targets file to use. If we use the installed
             // targets file then we check the registry for F#'s install path. Otherwise
             // we look in the same directory as the Unit Tests assembly.
-            let targetsFileFolder =
-                if useInstalledTargets 
-                then Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
-                else System.AppDomain.CurrentDomain.BaseDirectory
+            let targetsFileFolder =System.AppDomain.CurrentDomain.BaseDirectory
             
             let sb = new System.Text.StringBuilder()
             let Append (text:string) = 
                 sb.Append(text+"\r\n") |> ignore
             Append "<Project ToolsVersion='4.0' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>"
             Append "    <PropertyGroup>"
-//            The salsa layer does Configuration/Platform in a kind of hacky way
-//            Append "        <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>"
-//            Append "        <Platform Condition=\" '$(Platform)' == '' \">AnyCPU</Platform>"
             Append "        <OutputPath>bin\Debug\</OutputPath>"
             if versionFile<>null then Append (sprintf "        <VersionFile>%s</VersionFile>" versionFile)
             if otherFlags<>null then Append (sprintf "        <OtherFlags>%s --resolutions</OtherFlags>" otherFlags)
-//            if targetFrameworkVersion<>null then
-//                Append(sprintf "       <AllowCrossTargeting>true</AllowCrossTargeting>")
-//                Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" targetFrameworkVersion)
-//            else
             Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.7.2")
             Append "        <NoWarn>"
             for disabledWarning in disabledWarnings do
@@ -645,16 +630,8 @@ module internal Salsa =
             Append "        <DefineConstants>"
             for define in defines do
                 Append (sprintf "            %s;" define)                            
-            Append "        </DefineConstants>"            
-            
+            Append "        </DefineConstants>"
             Append "    </PropertyGroup>"
-//            Append "    <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' \">"
-//            Append "        <OutputPath>bin\Debug\</OutputPath>"
-//            Append "    </PropertyGroup>"
-//            Append "    <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' \">"
-//            Append "        <OutputPath>bin\Release\</OutputPath>"
-//            Append "    </PropertyGroup>"
-
             Append "    <ItemGroup>"
             
             for (reference,specificVersion) in references do
@@ -695,7 +672,7 @@ module internal Salsa =
             Append "</Project>"
             sb.ToString()
 
-        type MSBuildBehaviorHooks(useInstalledTargets) = 
+        type MSBuildBehaviorHooks() = 
             let mutable openProject : IOpenProject option = None
             let ConfPlat() = 
                 let s = openProject.Value.ConfigurationAndPlatform
@@ -707,9 +684,9 @@ module internal Salsa =
             let Conf() = let c,_ = ConfPlat() in c
             let Plat() = let _,p = ConfPlat() in p
             interface ProjectBehaviorHooks with 
-                member x.CreateProjectHook (projectName, files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion : string) =
+                member x.CreateProjectHook (projectName, files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, _targetFrameworkVersion : string) =
                     if File.Exists(projectName) then File.Delete(projectName)
-                    let text = CreateMsBuildProjectText useInstalledTargets (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion)
+                    let text = CreateMsBuildProjectText (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml)
                     File.WriteAllText(projectName,text+"\r\n")
 
                 member x.InitializeProjectHook op = openProject <- Some(op:?>IOpenProject)
@@ -1483,7 +1460,7 @@ module internal Salsa =
 
     /// Salsa tests which create .fsproj files for projects.
     type MSBuildTestFlavor(useInstalledTargets) = 
-        let behaviorHooks = Privates.MSBuildBehaviorHooks(useInstalledTargets) :> ProjectBehaviorHooks
+        let behaviorHooks = Privates.MSBuildBehaviorHooks() :> ProjectBehaviorHooks
         interface VsOps with
             member ops.BehaviourHooks = behaviorHooks
             member ops.CreateVisualStudio () = CreateSimple(ops)
@@ -1542,20 +1519,14 @@ module internal Salsa =
             member ops.TakeCoffeeBreak vs = VsImpl(vs).TakeCoffeeBreak() 
             member ops.ReplaceFileInMemory (file,contents,takeCoffeeBreak) = OpenFileSimpl(file).ReplaceAllText(contents, takeCoffeeBreak)
             member ops.SaveFileToDisk file = OpenFileSimpl(file).SaveFileToDisk()
-            member ops.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) = Privates.CreateMsBuildProjectText useInstalledTargets (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion)
+            member ops.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, _targetFrameworkVersion) = Privates.CreateMsBuildProjectText (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc)
             member ops.CleanUp vs = VsImpl(vs).CleanUp()
             member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = VsImpl(vs).ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            member ops.AutoCompleteMemberDataTipsThrowsScope message = 
-                SymbolHelpers.ToolTipFault <- Some message
-                { new System.IDisposable with member x.Dispose() = SymbolHelpers.ToolTipFault <- None }
             member ops.OutOfConeFilesAreAddedAsLinks = false                
             member ops.SupportsOutputWindowPane = false
             member ops.CleanInvisibleProject vs = VsImpl(vs).CleanInvisibleProject()
 
-    let BuiltMSBuildBehaviourHooks() = Privates.MSBuildBehaviorHooks(false) :> ProjectBehaviorHooks
+    let BuiltMSBuildBehaviourHooks() = Privates.MSBuildBehaviorHooks() :> ProjectBehaviorHooks
             
     /// Salsa tests which create .fsproj files using the freshly built version of Microsoft.FSharp.Targets and FSharp.Build
     let BuiltMSBuildTestFlavour() = MSBuildTestFlavor(false) :> VsOps
-
-    /// Salsa tests which create .fsproj files using the installed version of Microsoft.FSharp.Targets.
-    let InstalledMSBuildTestFlavour() = MSBuildTestFlavor(true) :> VsOps

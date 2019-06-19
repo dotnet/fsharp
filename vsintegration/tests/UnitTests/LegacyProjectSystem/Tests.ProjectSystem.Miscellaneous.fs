@@ -7,7 +7,6 @@ open System
 open System.Collections.Generic
 open System.Globalization
 open System.IO
-open System.Text
 open System.Text.RegularExpressions
 
 // VS namespaces 

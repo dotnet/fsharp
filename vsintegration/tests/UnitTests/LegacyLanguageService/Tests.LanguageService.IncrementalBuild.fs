@@ -2,6 +2,8 @@
 
 namespace Tests.LanguageService
 
+#if DISABLED_OLD_UNITTESTS
+
 open System
 open System.IO
 open System.Threading
@@ -625,4 +627,4 @@ type IncrementalBuild() =
         let evaled = Eval cache ctok save outputs  bound  |> Cancellable.runWithoutCancellation
         let outputs = GetVectorResult(outputs,evaled)
         ()               
-              
+#endif 

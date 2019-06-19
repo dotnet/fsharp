@@ -2,11 +2,7 @@
 
 namespace Tests.Compiler.InternalCollections
 
-open System
-open System.IO
 open NUnit.Framework
-open Internal.Utilities.Collections
-       
                 
 [<TestFixture>] 
 type MruCache = 
@@ -111,7 +107,6 @@ type MruCache =
         let s = m.Get (("w",6)) // forces discard of y
         printfn "discarded = %A" discarded.Value
         Assert.IsTrue(discarded.Value = ["y";"x";"Apple";"Banana"], "Check6")                                      
-#endif
 
 type AccessToken() = class end
             
@@ -219,3 +214,4 @@ type AgedLookup() =
     [<Test>] member public rb.WeakRef1() = WeakRefTest 1
     [<Test>] member public rb.WeakRef2() = WeakRefTest 2
     [<Test>] member public rb.WeakRef3() = WeakRefTest 3
+#endif

@@ -3,16 +3,12 @@
 namespace UnitTests.TestLib.LanguageService
 
 open System
-open System.Reflection
 open NUnit.Framework
 open System.Diagnostics
-open System.IO
 open Salsa.Salsa
 open Salsa.VsOpsUtils
-open Salsa.VsMocks
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
-open FSharp.Compiler
 open System.Text.RegularExpressions 
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp
@@ -155,6 +151,7 @@ type internal Helper =
             AssertMatches regex s
             i <- regexStr.IndexOf(c, i+1)       
 
+#if DISABLED_OLD_UNITTESTS
 type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, initialTypeCheckCount:int, initialEventNum:int, vs) =
     static member StartNew(vs) =
         TakeCoffeeBreak(vs)
@@ -216,7 +213,7 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
             Assert.Fail(msg)
         elif not ok then
             Assert.Fail(sprintf "Got expected events, but also: %s" note)
-
+#endif
 /// REVIEW: Should be able to get data tip when hovering over a class member method name ie  "member private art.attemptUpgradeToMSBuild hierarchy"
 
 (* Not Unittested Yet ----------------------------------------------------------------------------------------------------------------- *)        

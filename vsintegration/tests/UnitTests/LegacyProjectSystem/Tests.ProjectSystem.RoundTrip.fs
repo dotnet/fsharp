@@ -6,10 +6,8 @@ open System
 open System.IO
 open System.Text.RegularExpressions
 open NUnit.Framework
-open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
-open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
 [<TestFixture>][<Category "ProjectSystem">]

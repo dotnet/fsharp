@@ -160,7 +160,6 @@ module internal SymbolHelpers =
     val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
     val FullNameOfItem : TcGlobals -> Item -> string
     val ccuOfItem : TcGlobals -> Item -> CcuThunk option
-    val mutable ToolTipFault : string option
     val IsAttribute : InfoReader -> Item -> bool
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool
     val FlattenItems : TcGlobals -> range -> Item -> Item list

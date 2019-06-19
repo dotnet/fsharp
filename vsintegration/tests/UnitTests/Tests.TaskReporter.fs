@@ -16,7 +16,7 @@ open Microsoft.VisualStudio.Shell
 open Salsa.Salsa
 open Salsa.VsMocks
 
-(*
+#if DISABLED_OLD_UNITTESTS
 type TextSpan = Microsoft.VisualStudio.TextManager.Interop.TextSpan
 type DocumentTask = Microsoft.VisualStudio.FSharp.LanguageService.DocumentTask
 
@@ -367,4 +367,4 @@ type TaskReporterTests() =
         AssertEqual (backgroundTasks.GetLength(0)) 0
         
         ()                
-*)
+#endif

@@ -87,10 +87,7 @@ module FilesystemHelpers =
         r
 
 module Spawn = 
-    open System
-    open System.IO
     open System.Diagnostics
-    open System.Text
 
     /// Set this flag to true to see spawned commands.
     let mutable showSpawnedCommands = false

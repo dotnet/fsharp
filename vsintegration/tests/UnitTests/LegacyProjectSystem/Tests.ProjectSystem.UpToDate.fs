@@ -4,16 +4,11 @@ namespace Tests.ProjectSystem
 
 // System namespaces
 open System
-open System.Collections.Generic
-open System.Globalization
 open System.IO
-open System.Text
 open System.Text.RegularExpressions
 
 // VS namespaces 
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 

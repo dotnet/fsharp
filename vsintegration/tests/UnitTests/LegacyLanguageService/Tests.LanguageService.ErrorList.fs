@@ -2,13 +2,10 @@
 
 namespace Tests.LanguageService.ErrorList
 
-open System
-open System.IO
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp
 open Salsa.Salsa
 open Salsa.VsOpsUtils
-open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem

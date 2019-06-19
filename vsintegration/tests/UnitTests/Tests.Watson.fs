@@ -7,8 +7,6 @@ namespace Tests.Compiler.Watson
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.CompileOps
-open FSharp.Compiler.Driver
 open NUnit.Framework
 open System
 open System.Text.RegularExpressions 
@@ -16,6 +14,8 @@ open System.Diagnostics
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+
+#if DISABLED_OLD_UNITTESTS
 
 type Check = 
     static member public FscLevelException<'TException when 'TException :> exn>(simulationCode)  =
@@ -65,10 +65,6 @@ module WatsonTests =
     
     [<Test>]
     let FscInvalidOperation() = Check.FscLevelException<System.InvalidOperationException>("fsc-invop")        
-
-// As of .NET 4.0 some exception types cannot be caught. As a result, we cannot test this case. I did visually confirm a Watson report is sent, though.
-//    [<Test>]
-//    let FscAccessViolation() = Check.FscLevelException<System.AccessViolationException>("fsc-ac")        
 
     [<Test>]
     let FscArgumentOutOfRange() = Check.FscLevelException<System.ArgumentOutOfRangeException>("fsc-aor")        
@@ -172,4 +168,4 @@ module WatsonTests =
 
     [<Test>]
     let TypeCheckFailure() = Check.FscLevelException<System.Exception>("tc-fail")            
-
+#endif

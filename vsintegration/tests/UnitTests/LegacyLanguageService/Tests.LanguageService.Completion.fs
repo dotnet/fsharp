@@ -4568,7 +4568,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | _ -> ()
       
     // If there is a compile error that prevents a data tip from resolving then show that data tip.
-    [<Test>]
+    [<Ignore("This test is highly coupled to compiler internals. We removed those internals, so this test is disabled until it can simulate what it needs without coupling."); Test>]
     member public this.``MemberInfoCompileErrorsShowInDataTip``() =     
         let code = 
                                     [ 
@@ -4579,8 +4579,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                     ]
         let (_,_, file) = this.CreateSingleFileProject(code)
         MoveCursorToEndOfMarker(file,"foovalue.B") 
-    
-        use scope = AutoCompleteMemberDataTipsThrowsScope(this.VS, "Simulated compiler error")
+        
+        // Disabled: this test was highly coupled to compiler internals.
+        //use scope = AutoCompleteMemberDataTipsThrowsScope(this.VS, "Simulated compiler error")
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
         Assert.IsTrue(completions.Length>0)      
         for completion in completions do 

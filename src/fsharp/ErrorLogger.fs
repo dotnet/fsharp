@@ -395,10 +395,6 @@ module ErrorLoggerExtensions =
             x.ErrorR exn
             raise (ReportedError (Some exn))
 
-        member x.SimulateError   (ph: PhasedDiagnostic) = 
-            x.DiagnosticSink (ph, true)
-            raise (ReportedError (Some ph.Exception))
-
         member x.ErrorRecovery (exn: exn) (m: range) =
             // Never throws ReportedError.
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
@@ -475,9 +471,6 @@ let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
 
 /// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
 let error exn = CompileThreadStatic.ErrorLogger.Error exn
-
-/// Simulates an error. For test purposes only.
-let simulateError (p : PhasedDiagnostic) = CompileThreadStatic.ErrorLogger.SimulateError p
 
 let diagnosticSink (phasedError, isError) = CompileThreadStatic.ErrorLogger.DiagnosticSink (phasedError, isError)
 let errorSink pe = diagnosticSink (pe, true)

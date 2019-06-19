@@ -3,9 +3,6 @@
 namespace UnitTests.TestLib.ProjectSystem
 
 open System 
-open System.CodeDom
-open System.CodeDom.Compiler
-open System.Runtime.Serialization
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open System.Diagnostics
@@ -21,8 +18,6 @@ open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.Shell.Interop
 
-open Microsoft.Build.Execution
-open Microsoft.Build.Framework
         
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 open NUnit.Framework
@@ -567,7 +562,6 @@ and (*type*) MSBuildItems =
         | MSBuildItems(l) -> l
         
 module LanguageServiceExtension =
-    open UnitTests.TestLib.LanguageService
     open Salsa.Salsa
 
     type internal ProjInfo() =
@@ -737,8 +731,7 @@ module LanguageServiceExtension =
             member ops.SaveFileToDisk file = msbuild.SaveFileToDisk file 
             member ops.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) = msbuild.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) 
             member ops.CleanUp vs = msbuild.CleanUp vs 
-            member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = msbuild.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs 
-            member ops.AutoCompleteMemberDataTipsThrowsScope message = msbuild.AutoCompleteMemberDataTipsThrowsScope message 
+            member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = msbuild.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs
             member ops.CleanInvisibleProject vs = msbuild.CleanInvisibleProject vs 
     
     let internal ProjectSystemTestFlavour = ProjectSystemTestFlavour()

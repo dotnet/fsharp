@@ -2,13 +2,9 @@
 
 namespace Tests.LanguageService.ErrorRecovery
 
-open System
-open System.IO
 open NUnit.Framework
 open Salsa.Salsa
 open Salsa.VsOpsUtils
-open UnitTests.TestLib.Salsa
-open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 

@@ -7,14 +7,12 @@ open System
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Salsa.Salsa
 open Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
-open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
@@ -334,27 +332,6 @@ type UsingMSBuild() =
                "if specificIdent x <> x then exit 1"
                "exit 0"] 
                 )
-
-
-   /// Verifies that token info returns correct trigger classes 
-    /// - this is used in MPF for triggering various intellisense features
-    [<Test>]
-    member public this.``TokenInfo.TriggerClasses``() =      
-      let important = 
-        [ // Member select for dot completions
-          Parser.DOT, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
-          // for parameter info
-          Parser.LPAREN, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
-          Parser.COMMA,  (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
-          Parser.RPAREN, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces) ]
-      let matching =           
-        [ // Other cases where we expect MatchBraces
-          Parser.LQUOTE("", false); Parser.LBRACK; Parser.LBRACE; Parser.LBRACK_BAR;
-          Parser.RQUOTE("", false); Parser.RBRACK; Parser.RBRACE; Parser.BAR_RBRACK ]
-        |> List.map (fun n -> n, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces))
-      for tok, expected in List.concat [ important; matching ] do
-        let info = TestExpose.TokenInfo tok
-        AssertEqual(expected, info)
 
     [<Test>]
     member public this.``MatchingBraces.VerifyMatches``() = 

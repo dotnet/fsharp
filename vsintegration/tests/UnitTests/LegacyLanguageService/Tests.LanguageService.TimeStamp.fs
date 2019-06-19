@@ -2,13 +2,10 @@
 
 namespace Tests.LanguageService.TimeStamp
 
-open System
-open System.IO
 open NUnit.Framework
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
-open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 
 [<TestFixture>]
@@ -321,11 +318,8 @@ type UsingMSBuild()  =
 
 //Allow the TimeStampTests run under different context
 namespace Tests.LanguageService.TimeStamp
-open Tests.LanguageService
-open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 open NUnit.Framework
-open Salsa.Salsa
 
 // Context project system
 [<TestFixture>] 

@@ -2,16 +2,14 @@
 
 namespace Tests.LanguageService
 
-open System
 open NUnit.Framework
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
-open UnitTests.TestLib.Utils
 
 [<TestFixture>]
 type XmlDocComments() =
-    inherit UnitTests.TestLib.LanguageService.LanguageServiceBaseTests(VsOpts = InstalledMSBuildTestFlavour())
+    inherit UnitTests.TestLib.LanguageService.LanguageServiceBaseTests(VsOpts = BuiltMSBuildTestFlavour())
 
     // Work around an innocuous 'feature' with how QuickInfo is displayed, lines which
     // should have a "\r\n" just have a "\r"

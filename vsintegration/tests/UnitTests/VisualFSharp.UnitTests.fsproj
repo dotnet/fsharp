@@ -19,15 +19,6 @@
 
   <ItemGroup>
     <Compile Include="AssemblyResolver.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
-      <Link>Internal.Utilities.Collections.fsi</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fs">
-      <Link>Internal.Utilities.Collections.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
-      <Link>Internal.Utilities.CompilerLocationUtils.fs</Link>
-    </Compile>
     <Compile Include="TestLib.Utils.fs" />
     <Compile Include="TestLib.Salsa.fs" />
     <Compile Include="TestLib.LanguageService.fs" />
@@ -66,15 +57,15 @@
     <Compile Include="..\..\..\tests\service\Symbols.fs">
       <Link>CompilerService\Symbols.fs</Link>
     </Compile>
-    <Compile Include="..\..\..\tests\service\EditorTests.fs">
+    <!--<Compile Include="..\..\..\tests\service\EditorTests.fs">
       <Link>CompilerService\EditorTests.fs</Link>
-    </Compile>
+    </Compile>-->
     <Compile Include="..\..\..\tests\service\FileSystemTests.fs">
       <Link>CompilerService\FileSystemTests.fs</Link>
     </Compile>
-    <Compile Include="..\..\..\tests\service\ProjectAnalysisTests.fs">
+    <!--<Compile Include="..\..\..\tests\service\ProjectAnalysisTests.fs">
       <Link>CompilerService\ProjectAnalysisTests.fs</Link>
-    </Compile>
+    </Compile>-->
 <!-- TODO:  Fix this test
     <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
       <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>

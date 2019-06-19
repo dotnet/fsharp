@@ -2,7 +2,6 @@
 
 namespace Tests.LanguageService.GotoDefinition
 
-open System
 open System.IO
 open NUnit.Framework
 open Salsa.Salsa
@@ -10,7 +9,6 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open System.Collections.Generic
-open System.Text.RegularExpressions
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 

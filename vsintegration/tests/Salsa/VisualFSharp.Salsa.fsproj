@@ -17,9 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
-      <Link>CompilerLocationUtils.fs</Link>
-    </Compile>
     <Compile Include="..\unittests\TestLib.Utils.fs">
       <Link>UnitTests.TestLib.Utils.fs</Link>
     </Compile>

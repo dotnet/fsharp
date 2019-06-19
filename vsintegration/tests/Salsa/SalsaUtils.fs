@@ -4,10 +4,8 @@ namespace Salsa
 
 open System
 open System.IO
-open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
-open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 
 open Salsa.Salsa
@@ -139,7 +137,6 @@ module internal VsOpsUtils =
     let ReplaceFileInMemory(file :OpenFile) lines = (opsOfFile file).ReplaceFileInMemory(file,lines,true)
     let ReplaceFileInMemoryWithoutCoffeeBreak(file :OpenFile) lines   = (opsOfFile file).ReplaceFileInMemory(file,lines,false)
     let SaveFileToDisk(file :OpenFile)  = (opsOfFile file).SaveFileToDisk(file)
-    let AutoCompleteMemberDataTipsThrowsScope(vs : VisualStudio, message)  = vs.VsOps.AutoCompleteMemberDataTipsThrowsScope(message)
     let Cleanup(vs : VisualStudio) = vs.VsOps.CleanUp(vs) 
 
     let OutOfConeFilesAreAddedAsLinks(vs : VisualStudio) = vs.VsOps.OutOfConeFilesAreAddedAsLinks

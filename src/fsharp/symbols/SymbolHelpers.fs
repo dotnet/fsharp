@@ -646,8 +646,6 @@ module internal SymbolHelpers =
             GetXmlDocHelpSigOfItemForLookup infoReader m d
         else
             FSharpXmlDoc.Text result
-
-    let mutable ToolTipFault  = None
     
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) = 
         if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty then
@@ -661,11 +659,6 @@ module internal SymbolHelpers =
 
     /// Generate the structured tooltip for a method info
     let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos : FSharpStructuredToolTipElement = 
-        ToolTipFault |> Option.iter (fun msg -> 
-           let exn = Error((0, msg), range.Zero)
-           let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
-           simulateError ph)
-        
         let layouts = 
             [ for minfo in minfos -> 
                 let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader.amap m denv item.TyparInst minfo

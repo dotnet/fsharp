@@ -2,10 +2,7 @@
 
 module UnitTests.TestLib.Salsa
 
-open System
-open System.IO
 open NUnit.Framework
-open Salsa.Salsa
 open Salsa.VsOpsUtils
 open System.Text.RegularExpressions
 
@@ -66,11 +63,6 @@ let AssertMatchesRegex (c : char) (regexStr : string) (s:string) =
         AssertMatches regex s
         i <- regexStr.IndexOf(c, i+1)
         
-// Common TestFixture methods -------------------------------------------------
-
-open System.IO
-open UnitTests.TestLib.Utils
-
 // adds qualifier to the global functions
 // Non-controlled usage of these functions can easily lead to the violation of invariants in tests:
 // - modification of shared VS\solution is prohibited and the only permitted operation is CreateSingleFileProject

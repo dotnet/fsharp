@@ -2,13 +2,10 @@
 
 namespace Tests.ProjectSystem
 
-open System
 open System.IO
 open NUnit.Framework
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.ProjectSystem
-open Microsoft.VisualStudio.FSharp.ProjectSystem
-
 
 [<TestFixture>][<Category "ProjectSystem">]
 type ProjectItems() = 

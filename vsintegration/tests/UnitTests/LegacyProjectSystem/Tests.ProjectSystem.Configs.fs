@@ -3,10 +3,7 @@
 namespace Tests.ProjectSystem
 
 // System namespaces
-open System
-open System.Collections.Generic
 open System.IO
-open System.Text.RegularExpressions
 open System.Xml.Linq
 open NUnit.Framework
 
@@ -14,12 +11,9 @@ open NUnit.Framework
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp
-open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 // Internal unittest namespaces
-open Salsa
 open UnitTests.TestLib.Utils.Asserts
-open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
