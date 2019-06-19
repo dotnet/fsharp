@@ -665,8 +665,127 @@ module internal PrintfImpl =
                     next env : 'Tail
                 )
             )
+
+        static member LittleAFinalCapture<'A>(s1: string, cap: int, s2: string) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (f: 'State -> 'A ->'Residue) (a: 'A) -> 
+                    let env = env()
+                    env.Write s1
+                    env.WriteT(f env.State a)
+                    env.Write s2
+                    env.Finish()
+                )
+            )
+
+        static member LittleAChainedCapture<'A, 'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (f: 'State -> 'A ->'Residue) (a: 'A) -> 
+                    let env() = 
+                        let env = env()
+                        env.Write s1
+                        env.WriteT(f env.State a)
+                        env
+                    next env: 'Tail
+                )
+            )
+
+        static member StarFinal1Capture<'A>(s1: string, conv, s2: string) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (star1: int) (a: 'A) -> 
+                    let env = env()
+                    env.Write s1
+                    env.Write (conv a star1: string)
+                    env.Write s2
+                    env.Finish()
+                )
+            )   
+       
+        static member PercentStarFinal1Capture(s1: string, s2: string) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (_star1 : int) -> 
+                    let env = env()
+                    env.Write s1
+                    env.Write("%")
+                    env.Write s2
+                    env.Finish()
+                )
+            )
+
+        static member StarFinal2Capture<'A>(s1: string, conv, s2: string) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (star1: int) (star2: int) (a: 'A) -> 
+                    let env = env()
+                    env.Write s1
+                    env.Write (conv a star1 star2: string)
+                    env.Write s2
+                    env.Finish()
+                )
+            )
+
+        /// Handles case when '%*.*%' is used at the end of string
+        static member PercentStarFinal2Capture(s1: string, s2: string) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (_star1 : int) (_star2 : int) -> 
+                    let env = env()
+                    env.Write s1
+                    env.Write("%")
+                    env.Write s2
+                    env.Finish()
+                )
+            )
+
+        static member StarChained1Capture<'A, 'Tail>(s1: string, conv, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (star1: int) (a: 'A) -> 
+                    let env() =
+                        let env = env()
+                        env.Write s1
+                        env.Write(conv a star1 : string)
+                        env
+                    next env : 'Tail
+                )
+            )
+        
+        /// Handles case when '%*%' is used in the middle of the string so it needs to be chained to another printing block
+        static member PercentStarChained1Capture<'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (_star1 : int) -> 
+                    let env() =
+                        let env = env()
+                        env.Write s1
+                        env.Write("%")
+                        env
+                    next env: 'Tail
+                )
+            )
+
+        static member StarChained2Capture<'A, 'Tail>(s1: string, conv, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (star1: int) (star2: int) (a: 'A) -> 
+                    let env() =
+                        let env = env()
+                        env.Write s1
+                        env.Write(conv a star1 star2 : string)
+                        env
+                    next env : 'Tail
+                )
+            )
+        
+        /// Handles case when '%*.*%' is used in the middle of the string so it needs to be chained to another printing block
+        static member PercentStarChained2Capture<'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
+            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (_star1 : int) (_star2 : int) -> 
+                    let env() =
+                        let env = env()
+                        env.Write s1
+                        env.Write("%")
+                        env
+                    next env : 'Tail
+                )
+            )
+    
      
-        static member Final1<'A>
+        static member Final1Capture<'A>
             (
                 s0, conv1, s1
             ) =
@@ -1066,6 +1185,7 @@ module internal PrintfImpl =
                     env.Finish()
                 )
             )
+
         static member TChained<'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun (f: 'State -> 'Residue) -> 
@@ -1088,6 +1208,7 @@ module internal PrintfImpl =
                     env.Finish()
                 )
             )
+
         static member LittleAChained<'A, 'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun (f: 'State -> 'A ->'Residue) (a: 'A) -> 
@@ -1700,6 +1821,7 @@ module internal PrintfImpl =
     //  or grab the content of stack, build intermediate printer and push it back to stack (so it can later be consumed by as argument) 
     type private PrintfBuilder<'S, 'Re, 'Res>() =
     
+        let builderStack = PrintfBuilderStack()
         let mutable count = 0
         let mutable optimizedArgCount = 0
 #if DEBUG
@@ -1828,8 +1950,6 @@ module internal PrintfImpl =
             let mi = mi.MakeGenericMethod argTypes
             mi.Invoke(null, args)
 
-        let builderStack = PrintfBuilderStack()
-
         let buildPlain numberOfArgs prefix = 
             let n = numberOfArgs * 2
             let hasCont = builderStack.HasContinuationOnStack numberOfArgs
@@ -1849,33 +1969,56 @@ module internal PrintfImpl =
             else
                 buildPlainFinal(plainArgs, plainTypes)
 
-        let buildCaptureFinal(spec, prefix, suffix, cTy, pendingArgs: obj[], pendingTypes) =
+        let buildCaptureFinal(spec, prefix, suffix, cTy, pendingArgs: obj[], pendingTypes: Type[]) =
             let capture = box(spec.Capture.Value)
             let conv = getValueConverter cTy spec
             let argsCount = pendingArgs.Length
             let suffix' = if argsCount > 0 then pendingArgs.[argsCount - 1].ToString() else suffix
 
-            // TODO maybe push some to stack?
-            let methodName, args =
+            let methodName, (args: obj seq) =
                 match prefix, suffix' with
                 | "", "" ->
                     optimizedArgCount <- optimizedArgCount + 2
-                    "FinalFastCapture", Array.append [|capture; conv|] pendingTypes
+                    "FinalFastCapture", seq {
+                        yield capture 
+                        yield conv 
+                        if argsCount > 0 then
+                            yield box suffix
+                            yield! Seq.take (argsCount-1) pendingArgs
+                    }
                 | "", _ ->
                     optimizedArgCount <- optimizedArgCount + 1
-                    "FinalFastStartCapture", [|capture; conv; suffix|]
+                    "FinalFastStartCapture", seq {
+                        yield capture
+                        yield conv
+                        yield box suffix
+                        yield! pendingArgs
+                    }
                 | _, "" ->
                     optimizedArgCount <- optimizedArgCount + 1
-                    "FinalFastEndCapture", [|prefix; capture; conv|]
+                    "FinalFastEndCapture", seq {
+                        yield prefix
+                        yield capture
+                        yield conv
+                        if argsCount > 0 then
+                            yield box suffix
+                            yield! Seq.take (argsCount-1) pendingArgs
+                    }
                 | _, _ ->
-                    "FinalCapture",[|prefix; capture; conv; suffix|]
+                    "FinalCapture", seq {
+                        yield prefix
+                        yield capture
+                        yield conv
+                        yield suffix
+                        yield! pendingArgs
+                    }
 
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(methodName, NonPublicStatics)
+            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(methodName + (pendingTypes.Length + 1).ToString(), NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #endif
-            let mi = mi.MakeGenericMethod [| cTy |]
-            mi.Invoke(null, args)
+            let mi = mi.MakeGenericMethod(Array.append [| cTy |] pendingTypes)
+            mi.Invoke(null, Array.ofSeq args)
 
         let buildCaptureChained(spec, prefix, cTy, tail, retTy, pendingArgs, pendingTypes: Type[]) =
             let capture = box(spec.Capture.Value)
@@ -1922,6 +2065,85 @@ module internal PrintfImpl =
                 buildCaptureChained(spec, prefix, cTy, cont, contTy, plainArgs, plainTypes)
             else
                 buildCaptureFinal(spec, prefix, suffix, cTy, plainArgs, plainTypes)
+
+        let buildSpecialCaptureChained(spec: FormatSpecifier, argTys: Type[], prefix: string, tail: obj, retTy) = 
+            if spec.TypeChar = 'a' then
+                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAChained", NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#endif
+
+                let mi = mi.MakeGenericMethod([| argTys.[1];  retTy |])
+                let args = [| box prefix; tail   |]
+                mi.Invoke(null, args)
+            elif spec.TypeChar = 't' then
+                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TChained", NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#endif
+                let mi = mi.MakeGenericMethod([| retTy |])
+                let args = [| box prefix; tail |]
+                mi.Invoke(null, args)
+            else
+                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
+
+                let mi = 
+                    let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
+                    let prefix = if spec.TypeChar = '%' then "PercentStarChained" else "StarChained"
+                    let name = prefix + (string n)
+                    typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
+#if DEBUG                
+                verifyMethodInfoWasTaken mi
+#endif                
+                let argTypes, args =
+                    if spec.TypeChar = '%' then
+                        [| retTy |], [| box prefix; tail |]
+                    else
+                        let argTy = argTys.[argTys.Length - 2]
+                        let conv = getValueConverter argTy spec 
+                        [| argTy; retTy |], [| box prefix; box conv; tail |]
+                
+                let mi = mi.MakeGenericMethod argTypes
+                mi.Invoke(null, args)
+            
+        let buildSpecialCaptureFinal(spec: FormatSpecifier, argTys: Type[], prefix: string, suffix: string) =
+            if spec.TypeChar = 'a' then
+                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAFinal", NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#endif
+                let mi = mi.MakeGenericMethod(argTys.[1] : Type)
+                let args = [| box prefix; box suffix |]
+                mi.Invoke(null, args)
+            elif spec.TypeChar = 't' then
+                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TFinal", NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#endif
+                let args = [| box prefix; box suffix |]
+                mi.Invoke(null, args)
+            else
+                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
+
+                let mi = 
+                    let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
+                    let prefix = if spec.TypeChar = '%' then "PercentStarFinal" else "StarFinal"
+                    let name = prefix + (string n)
+                    typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#endif
+
+                let mi, args = 
+                    if spec.TypeChar = '%' then 
+                        mi, [| box prefix; box suffix  |]
+                    else
+                        let argTy = argTys.[argTys.Length - 2]
+                        let mi = mi.MakeGenericMethod argTy
+                        let conv = getValueConverter argTy spec 
+                        mi, [| box prefix; box conv; box suffix  |]
+
+                mi.Invoke(null, args)
 
 
         /// <summary>
