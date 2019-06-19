@@ -69,7 +69,6 @@ module rec App =
             FileMenuHeader: string
             WillExit: bool
             Compilation: FSharpCompilation
-            OldText: SourceText
             Text: SourceText
             CancellationTokenSource: CancellationTokenSource
             RootNode: FSharpSyntaxNode option
@@ -85,7 +84,6 @@ module rec App =
                 FileMenuHeader = "_File"
                 WillExit = false
                 Compilation = createCompilation text
-                OldText = text
                 Text = text
                 CancellationTokenSource = new CancellationTokenSource ()
                 RootNode = None
@@ -99,7 +97,7 @@ module rec App =
         | Exit
         | UpdateText of SourceText * (Model -> unit)
         | UpdateLexicalAnalysis of lexicalHighlights: HighlightSpan list
-        | UpdateVisualizers of didCompletionTrigger: bool * caretOffset: int * CancellationToken
+        | UpdateVisualizers of highlights: HighlightSpan list * CompletionItem list * rootNode: FSharpSyntaxNode
         | UpdateNodeHighlight of FSharpSyntaxNode
 
     let KeywordColor = Drawing.Color.FromArgb (86, 156, 214)
@@ -126,6 +124,42 @@ module rec App =
         stopwatch.Stop ()
         printfn "lexical analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
         highlights
+
+    let getSemanticAnalysis (model: Model) didCompletionTrigger caretOffset ct =
+        let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
+
+        let semanticModel = model.Compilation.GetSemanticModel "test1.fs"
+        let diagnostics = semanticModel.Compilation.GetDiagnostics ct
+
+        printfn "%A" diagnostics
+
+        let highlights =
+            diagnostics
+            |> Seq.map (fun x ->
+                let span = x.Location.SourceSpan
+                let color =
+                    match x.Severity with
+                    | DiagnosticSeverity.Error -> Drawing.Color.Red
+                    | _ -> Drawing.Color.LightGreen
+                let kind = HighlightSpanKind.Underline
+                HighlightSpan (span, color, kind)
+            )
+            |> List.ofSeq
+
+        let completionItems =
+            if didCompletionTrigger then
+                semanticModel.LookupSymbols (caretOffset, ct)
+                |> Seq.map (fun symbol ->
+                    CompletionItem (symbol.Name)
+                )
+                |> List.ofSeq
+            else
+                []
+
+        stopwatch.Stop ()
+        printfn "semantic analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
+
+        (highlights, completionItems, semanticModel.SyntaxTree.GetRootNode ct)
 
     let update msg model =
         match msg with
@@ -158,56 +192,9 @@ module rec App =
                 WillRedraw = true
             }           
 
-        | UpdateVisualizers (didCompletionTrigger, caretOffset, ct) ->  
-            let semanticModel = model.Compilation.GetSemanticModel "test1.fs"
-            let diagnostics = semanticModel.Compilation.GetDiagnostics ct
-
-            printfn "%A" diagnostics
-
-            let highlights =
-                diagnostics
-                |> Seq.map (fun x ->
-                    let span = x.Location.SourceSpan
-                    let color =
-                        match x.Severity with
-                        | DiagnosticSeverity.Error -> Drawing.Color.Red
-                        | _ -> Drawing.Color.LightGreen
-                    let kind = HighlightSpanKind.Underline
-                    HighlightSpan (span, color, kind)
-                )
-                |> List.ofSeq
-
-            let symbolInfoOpt =
-                let textChanges = model.Text.GetTextChanges model.OldText
-                if textChanges.Count = 1 then
-                    match semanticModel.SyntaxTree.GetRootNode(ct).TryFindNode(textChanges.[0].Span) with
-                    | Some node ->
-                        match node.GetAncestorsAndSelf () |> Seq.tryFind (fun x -> match x.Kind with FSharpSyntaxNodeKind.Expr _ -> true | _ -> false) with
-                        | Some node -> Some node
-                        | _ -> None
-                    | _ ->
-                        None
-                else
-                    None
-                |> Option.map (fun node ->
-                    [ HighlightSpan (node.Span, Drawing.Color.DarkGreen, HighlightSpanKind.Background) ]
-                )
-                |> Option.defaultValue []
-
-
-            let completionItems =
-                if didCompletionTrigger then
-                    semanticModel.LookupSymbols (caretOffset, ct)
-                    |> Seq.map (fun symbol ->
-                        CompletionItem (symbol.Name)
-                    )
-                    |> List.ofSeq
-                else
-                    []
-
+        | UpdateVisualizers (highlights, completionItems, rootNode) ->  
             { model with 
-                OldText = model.Text
-                RootNode = Some (semanticModel.SyntaxTree.GetRootNode CancellationToken.None)
+                RootNode = Some rootNode
                 Highlights = model.Highlights @ highlights
                 CompletionItems = completionItems
                 WillRedraw = true
@@ -251,7 +238,9 @@ module rec App =
                                 do! Async.Sleep 50
                                 let lexicalAnalysis = getLexicalAnalysis updatedModel ct
                                 dispatch (UpdateLexicalAnalysis lexicalAnalysis)
-                                dispatch (UpdateVisualizers (didCompletionTrigger, caretOffset, ct))
+
+                                let highlights, completionItems, rootNode = getSemanticAnalysis updatedModel didCompletionTrigger caretOffset ct
+                                dispatch (UpdateVisualizers (highlights, completionItems, rootNode))
                             with
                             | :? OperationCanceledException -> ()
                             | ex ->
