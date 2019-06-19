@@ -82,6 +82,8 @@ module LexerHelpers =
         let lightSyntaxStatus = LightSyntaxStatus (lexConfig.IsLightSyntaxOn, true) 
         let lexargs = mkLexargs (filePath, lexConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, lexConfig.pathMap)
 
+        let lexargs = { lexargs with applyLineDirectives = not lexConfig.IsCompiling }
+
         let getNextToken =
             let skip = (flags &&& LexFlags.SkipTrivia) = LexFlags.SkipTrivia
             let lexer = Lexer.token lexargs skip
@@ -119,7 +121,7 @@ type TokenCacheItem =
         t: token
         columnStart: int
         columnEnd: int
-        lineCount: int
+        extraLineCount: int
     }
 
 // TODO: We need to chunk the tokens instead of having a large resize array.
@@ -139,8 +141,7 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                 tokens.[lineNumber] <- lineTokens
                 lineTokens
 
-        let x = { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; lineCount = m.EndLine - m.StartLine }
-        lineTokens.Add x
+        lineTokens.Add { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; extraLineCount = m.EndLine - m.StartLine }
 
     member private __.InsertRange (index, collection) =
         tokens.InsertRange (index, collection)
@@ -155,7 +156,6 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
     member this.TryCreateIncremental (newText: SourceText) =
         let changes = newText.GetTextChanges text
         if changes.Count = 0 || changes.Count > 1 || (changes.[0].Span.Start = 0 && changes.[0].Span.Length = text.Length) then
-            printfn "no incremental"
             None
         else
             // For now, we only do incremental lexing on one change.
@@ -221,14 +221,18 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                         let line = lines.[lineNumber]
                         for i = 0 to lineTokens.Count - 1 do
                             let tokenCacheItem = lineTokens.[i]
-                            let span = 
-                                if tokenCacheItem.lineCount > 0 then
-                                    let start = line.Start + tokenCacheItem.columnStart
-                                    TextSpan (start, lines.[lineNumber + tokenCacheItem.lineCount].Start + tokenCacheItem.columnEnd - start)
-                                else
-                                    let start = line.Start + tokenCacheItem.columnStart
-                                    TextSpan (start, line.Start + tokenCacheItem.columnEnd - start)
-                            yield TokenItem (tokenCacheItem.t, span)
+                            let startPos = line.Start + tokenCacheItem.columnStart
+                            if tokenCacheItem.extraLineCount > 0 then
+                                let endPos = lines.[lineNumber + tokenCacheItem.extraLineCount].Start + tokenCacheItem.columnEnd
+                                let length = endPos - startPos
+                                if length > 0 then
+                                    yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length))
+                            else
+                                let start = line.Start + tokenCacheItem.columnStart
+                                let endPos = line.Start + tokenCacheItem.columnEnd
+                                let length = endPos - startPos
+                                if length > 0 then
+                                    yield TokenItem (tokenCacheItem.t, TextSpan (start, length))
         }
 
     static member Create (pConfig, text) =
