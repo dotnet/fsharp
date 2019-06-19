@@ -113,7 +113,7 @@ module LexerHelpers =
         lexLexbuf pConfig flags errorLogger lexbuf lexCallback ct
 
 [<Struct>]
-type TokenItem = TokenItem of rawToken: Parser.token * span: TextSpan
+type TokenItem = TokenItem of rawToken: Parser.token * span: TextSpan * startIndex: int
 
 [<Struct>]
 type TokenCacheItem =
@@ -225,18 +225,60 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                             if tokenCacheItem.extraLineCount > 0 then
                                 let endPos = lines.[lineNumber + tokenCacheItem.extraLineCount].Start + tokenCacheItem.columnEnd
                                 let length = endPos - startPos
-                                if length > 0 then
-                                    yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length))
+                                if length > 0 && startPos >= span.Start && endPos <= span.End then
+                                    yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
                             else
-                                let start = line.Start + tokenCacheItem.columnStart
                                 let endPos = line.Start + tokenCacheItem.columnEnd
                                 let length = endPos - startPos
-                                if length > 0 then
-                                    yield TokenItem (tokenCacheItem.t, TextSpan (start, length))
+                                if length > 0 && startPos >= span.Start && endPos <= span.End then
+                                    yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
         }
 
+    member this.TryFindTokenItem (span: TextSpan) =
+        match Seq.tryExactlyOne (this.GetTokens span) with
+        | Some token -> ValueSome token
+        | _ -> ValueNone
+
+    member this.TryCreateTokenItem (lineNumber, startIndex, tokenCacheItem: TokenCacheItem) =
+        let line = text.Lines.[lineNumber]
+        let startPos = line.Start + tokenCacheItem.columnStart
+        let endPos = line.Start + tokenCacheItem.columnEnd
+        let length = endPos - startPos
+        if length > 0 then
+            ValueSome (TokenItem (tokenCacheItem.t, TextSpan (), startIndex))
+        else
+            ValueNone
+
+    member this.TryGetPreviousToken (span: TextSpan) =
+        match this.TryFindTokenItem span with
+        | ValueSome (TokenItem (startIndex = startIndex)) ->
+            let lines = text.Lines
+            let linePosSpan = lines.GetLinePositionSpan span
+            let lineNumber = linePosSpan.Start.Line
+            
+            if startIndex = 0 then
+                let mutable lineNumber = lineNumber - 1
+                let mutable result = ValueNone
+                while lineNumber >= 0 && result.IsNone do
+                    let lineTokens = tokens.[lineNumber]
+                    if lineTokens <> null && lineTokens.Count > 0 then
+                        let lineTokens = tokens.[lineNumber]
+                        let startIndex = lineTokens.Count - 1
+                        let tokenCacheItem = lineTokens.[startIndex]
+                        result <- this.TryCreateTokenItem (lineNumber, startIndex, tokenCacheItem)
+                    lineNumber <- lineNumber - 1
+                result
+            else
+                let lineTokens = tokens.[lineNumber]
+                let startIndex = startIndex - 1
+                let tokenCacheItem = lineTokens.[startIndex]
+                this.TryCreateTokenItem (lineNumber, startIndex, tokenCacheItem)
+        | _ ->
+            ValueNone
+                    
+
     static member Create (pConfig, text) =
-        TokenCache (pConfig, text, ResizeArray ())
+        TokenCache (pConfig, text, ResizeArray (text.Lines.Count))
 
 [<Sealed>]
 type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, incrementalTokenCacheOpt: Lazy<TokenCache option>) =

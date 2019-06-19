@@ -5,7 +5,7 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler
 
 [<Struct>]
-type internal TokenItem = TokenItem of rawToken: Parser.token * span: TextSpan
+type internal TokenItem = TokenItem of rawToken: Parser.token * span: TextSpan * startIndex: int
 
 [<Sealed>]
 type internal IncrementalLexer =
