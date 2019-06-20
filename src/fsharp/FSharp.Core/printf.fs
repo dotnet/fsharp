@@ -666,126 +666,76 @@ module internal PrintfImpl =
                 )
             )
 
-        static member LittleAFinalCapture<'A>(s1: string, cap: int, s2: string) = 
+        static member LittleAFinalCapture<'A>(s1: string, cap, s2: string) = 
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (f: 'State -> 'A ->'Residue) (a: 'A) -> 
+                (fun (f: 'State -> 'A ->'Residue) -> 
                     let env = env()
                     env.Write s1
-                    env.WriteT(f env.State a)
+                    env.WriteT(f env.State (env.Captures.[cap] :?> 'A))
                     env.Write s2
                     env.Finish()
                 )
             )
 
-        static member LittleAChainedCapture<'A, 'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
+        static member LittleAChainedCapture<'A, 'Tail>(s1: string, cap, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (f: 'State -> 'A ->'Residue) (a: 'A) -> 
+                (fun (f: 'State -> 'A ->'Residue) -> 
                     let env() = 
                         let env = env()
                         env.Write s1
-                        env.WriteT(f env.State a)
+                        env.WriteT(f env.State (env.Captures.[cap] :?> 'A))
                         env
                     next env: 'Tail
                 )
             )
 
-        static member StarFinal1Capture<'A>(s1: string, conv, s2: string) = 
+        static member StarFinalCapture1<'A>(s1: string, cap, conv, s2: string) = 
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (star1: int) (a: 'A) -> 
+                (fun (star1: int) -> 
                     let env = env()
                     env.Write s1
-                    env.Write (conv a star1: string)
+                    env.Write (conv (env.Captures.[cap] :?> 'A) star1: string)
                     env.Write s2
                     env.Finish()
                 )
             )   
        
-        static member PercentStarFinal1Capture(s1: string, s2: string) = 
+        static member StarFinalCapture2<'A>(s1: string, cap, conv, s2: string) = 
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (_star1 : int) -> 
+                (fun (star1: int) (star2: int) -> 
                     let env = env()
                     env.Write s1
-                    env.Write("%")
+                    env.Write (conv (env.Captures.[cap] :?> 'A) star1 star2: string)
                     env.Write s2
                     env.Finish()
                 )
             )
 
-        static member StarFinal2Capture<'A>(s1: string, conv, s2: string) = 
+        static member StarChainedCapture1<'A, 'Tail>(s1: string, cap, conv, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (star1: int) (star2: int) (a: 'A) -> 
-                    let env = env()
-                    env.Write s1
-                    env.Write (conv a star1 star2: string)
-                    env.Write s2
-                    env.Finish()
-                )
-            )
-
-        /// Handles case when '%*.*%' is used at the end of string
-        static member PercentStarFinal2Capture(s1: string, s2: string) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (_star1 : int) (_star2 : int) -> 
-                    let env = env()
-                    env.Write s1
-                    env.Write("%")
-                    env.Write s2
-                    env.Finish()
-                )
-            )
-
-        static member StarChained1Capture<'A, 'Tail>(s1: string, conv, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (star1: int) (a: 'A) -> 
+                (fun (star1: int) -> 
                     let env() =
                         let env = env()
                         env.Write s1
-                        env.Write(conv a star1 : string)
+                        env.Write(conv (env.Captures.[cap] :?> 'A) star1 : string)
                         env
                     next env : 'Tail
                 )
             )
         
-        /// Handles case when '%*%' is used in the middle of the string so it needs to be chained to another printing block
-        static member PercentStarChained1Capture<'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
+        static member StarChainedCapture2<'A, 'Tail>(s1: string, cap, conv, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (_star1 : int) -> 
+                (fun (star1: int) (star2: int) -> 
                     let env() =
                         let env = env()
                         env.Write s1
-                        env.Write("%")
-                        env
-                    next env: 'Tail
-                )
-            )
-
-        static member StarChained2Capture<'A, 'Tail>(s1: string, conv, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (star1: int) (star2: int) (a: 'A) -> 
-                    let env() =
-                        let env = env()
-                        env.Write s1
-                        env.Write(conv a star1 star2 : string)
+                        env.Write(conv (env.Captures.[cap] :?> 'A) star1 star2 : string)
                         env
                     next env : 'Tail
                 )
             )
         
-        /// Handles case when '%*.*%' is used in the middle of the string so it needs to be chained to another printing block
-        static member PercentStarChained2Capture<'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (_star1 : int) (_star2 : int) -> 
-                    let env() =
-                        let env = env()
-                        env.Write s1
-                        env.Write("%")
-                        env
-                    next env : 'Tail
-                )
-            )
-    
-     
-        static member Final1Capture<'A>
+        static member Final1<'A>
             (
                 s0, conv1, s1
             ) =
@@ -1969,6 +1919,62 @@ module internal PrintfImpl =
             else
                 buildPlainFinal(plainArgs, plainTypes)
 
+        let buildCaptureSpecialChained(spec: FormatSpecifier, cTy: Type, prefix: string, tail: obj, retTy) = 
+            let capture = box spec.Capture.Value
+            if spec.TypeChar = 'a' then
+                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAChainedCapture", NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#endif
+
+                let mi = mi.MakeGenericMethod([| cTy; retTy |])
+                let args = [| box prefix; capture; tail   |]
+                mi.Invoke(null, args)
+            elif spec.TypeChar = 't' then raise (ArgumentException("format specifier '%t' may not be used with immediate captures"))
+            else
+                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
+                System.Diagnostics.Debug.Assert(spec.TypeChar <> '%', "spec.TypeChar <> '%'")
+
+                let mi = 
+                    let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
+                    let name = "StarChainedCapture" + (string n)
+                    typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
+#if DEBUG                
+                verifyMethodInfoWasTaken mi
+#endif                
+                let conv = getValueConverter cTy spec 
+                let args = [| box prefix; capture; box conv; tail |]
+                let mi = mi.MakeGenericMethod([| cTy; retTy |])
+                mi.Invoke(null, args)
+            
+        let buildCaptureSpecialFinal(spec: FormatSpecifier, cTy: Type, prefix: string, suffix: string) =
+            let capture = box spec.Capture.Value
+            if spec.TypeChar = 'a' then
+                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAFinalCapture", NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#endif
+                let mi = mi.MakeGenericMethod(cTy)
+                let args = [| box prefix; capture; box suffix |]
+                mi.Invoke(null, args)
+            elif spec.TypeChar = 't' then raise (ArgumentException("format specifier '%t' may not be used with immediate captures"))
+            else
+                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
+                System.Diagnostics.Debug.Assert(spec.TypeChar <> '%', "spec.TypeChar <> '%'")
+
+                let mi = 
+                    let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
+                    let name = "StarFinalCapture" + (string n)
+                    typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#endif
+
+                let conv = getValueConverter cTy spec 
+                let args = [| box prefix; capture; box conv; box suffix |]
+                let mi = mi.MakeGenericMethod(cTy)
+                mi.Invoke(null, args)
+
         let buildCaptureFinal(spec, prefix, suffix, cTy, pendingArgs: obj[], pendingTypes: Type[]) =
             let capture = box(spec.Capture.Value)
             let conv = getValueConverter cTy spec
@@ -2059,92 +2065,11 @@ module internal PrintfImpl =
                 builderStack.GetArgumentAndTypesAsArrays(n, 0, n, numberOfArgs, 0, numberOfArgs)
 
             if hasCont then
-                let n = numberOfArgs * 2
                 let cont, contTy = builderStack.PopContinuationWithType()
 
                 buildCaptureChained(spec, prefix, cTy, cont, contTy, plainArgs, plainTypes)
             else
                 buildCaptureFinal(spec, prefix, suffix, cTy, plainArgs, plainTypes)
-
-        let buildSpecialCaptureChained(spec: FormatSpecifier, argTys: Type[], prefix: string, tail: obj, retTy) = 
-            if spec.TypeChar = 'a' then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAChained", NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-
-                let mi = mi.MakeGenericMethod([| argTys.[1];  retTy |])
-                let args = [| box prefix; tail   |]
-                mi.Invoke(null, args)
-            elif spec.TypeChar = 't' then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TChained", NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-                let mi = mi.MakeGenericMethod([| retTy |])
-                let args = [| box prefix; tail |]
-                mi.Invoke(null, args)
-            else
-                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
-
-                let mi = 
-                    let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
-                    let prefix = if spec.TypeChar = '%' then "PercentStarChained" else "StarChained"
-                    let name = prefix + (string n)
-                    typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
-#if DEBUG                
-                verifyMethodInfoWasTaken mi
-#endif                
-                let argTypes, args =
-                    if spec.TypeChar = '%' then
-                        [| retTy |], [| box prefix; tail |]
-                    else
-                        let argTy = argTys.[argTys.Length - 2]
-                        let conv = getValueConverter argTy spec 
-                        [| argTy; retTy |], [| box prefix; box conv; tail |]
-                
-                let mi = mi.MakeGenericMethod argTypes
-                mi.Invoke(null, args)
-            
-        let buildSpecialCaptureFinal(spec: FormatSpecifier, argTys: Type[], prefix: string, suffix: string) =
-            if spec.TypeChar = 'a' then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAFinal", NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-                let mi = mi.MakeGenericMethod(argTys.[1] : Type)
-                let args = [| box prefix; box suffix |]
-                mi.Invoke(null, args)
-            elif spec.TypeChar = 't' then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TFinal", NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-                let args = [| box prefix; box suffix |]
-                mi.Invoke(null, args)
-            else
-                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
-
-                let mi = 
-                    let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
-                    let prefix = if spec.TypeChar = '%' then "PercentStarFinal" else "StarFinal"
-                    let name = prefix + (string n)
-                    typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-
-                let mi, args = 
-                    if spec.TypeChar = '%' then 
-                        mi, [| box prefix; box suffix  |]
-                    else
-                        let argTy = argTys.[argTys.Length - 2]
-                        let mi = mi.MakeGenericMethod argTy
-                        let conv = getValueConverter argTy spec 
-                        mi, [| box prefix; box conv; box suffix  |]
-
-                mi.Invoke(null, args)
-
 
         /// <summary>
         /// A sentinel value for parseFromFormatSpecifier return value,
@@ -2190,34 +2115,17 @@ module internal PrintfImpl =
             let retTy = argTys.[argTys.Length - 1]
 
             let numberOfArgs = parseFromFormatSpecifier suffix s retTy next cTy
-            let specialForm = spec.TypeChar = 'a' || spec.TypeChar = 't' || spec.IsStarWidth || spec.IsStarPrecision 
+            if spec.TypeChar = 'a' || spec.TypeChar = 't' || spec.IsStarWidth || spec.IsStarPrecision then
+                let cTy =
+                    if spec.HasCapture then Some cTy.[spec.Capture.Value]
+                    else None
 
-            if spec.HasCapture then
-                if specialForm then raise <| exn "TODO"
-                let capture = spec.Capture.Value
-                if numberOfArgs = ContinuationOnStack then
-                    // no pending args between capture and cont
-                    let cont, contTy = builderStack.PopContinuationWithType()
-                    let currentCont = buildCaptureChained(spec, prefix, cTy.[capture], cont, contTy, [||], [||])
-                    builderStack.PushContinuationWithType(currentCont, funcTy)
-
-                elif numberOfArgs = EndOfString then
-                    // a "final" starting with a "capture" must not have pending args
-                    System.Diagnostics.Debug.Assert(builderStack.IsEmpty, "builderStack.IsEmpty")
-                    let currentCont = buildCaptureFinal(spec, prefix, suffix, cTy.[capture], [||], [||])
-                    builderStack.PushContinuationWithType(currentCont, funcTy)
-                else
-                    //build a "capture-starting" continuation with the pending params
-                    let cont = buildCapture(spec, prefix, suffix, cTy.[capture], numberOfArgs)
-                    builderStack.PushContinuationWithType(cont, funcTy)
-
-                ContinuationOnStack
-
-            elif specialForm then
                 if numberOfArgs = ContinuationOnStack then
 
                     let cont, contTy = builderStack.PopContinuationWithType()
-                    let currentCont = buildSpecialChained(spec, argTys, prefix, cont, contTy)
+                    let currentCont = 
+                        if spec.HasCapture then buildCaptureSpecialChained(spec, cTy.Value, prefix, cont, contTy)
+                        else buildSpecialChained(spec, argTys, prefix, cont, contTy)
                     builderStack.PushContinuationWithType(currentCont, funcTy)
 
                     ContinuationOnStack
@@ -2225,7 +2133,9 @@ module internal PrintfImpl =
                     if numberOfArgs = EndOfString then
                         System.Diagnostics.Debug.Assert(builderStack.IsEmpty, "builderStack.IsEmpty")
 
-                        let currentCont = buildSpecialFinal(spec, argTys, prefix, suffix)
+                        let currentCont =
+                            if spec.HasCapture then buildCaptureSpecialFinal(spec, cTy.Value, prefix, suffix)
+                            else buildSpecialFinal(spec, argTys, prefix, suffix)
                         builderStack.PushContinuationWithType(currentCont, funcTy)
                         ContinuationOnStack
                     else
@@ -2250,10 +2160,33 @@ module internal PrintfImpl =
                             else
                                 buildPlainFinal(plainArgs, plainTypes)
                             
-                        let next = buildSpecialChained(spec, argTys, prefix, next, retTy)
+                        let next =
+                            if spec.HasCapture then buildCaptureSpecialChained(spec, cTy.Value, prefix, next, retTy)
+                            else buildSpecialChained(spec, argTys, prefix, next, retTy)
                         builderStack.PushContinuationWithType(next, funcTy)
 
                         ContinuationOnStack
+
+            elif spec.HasCapture then
+                let capture = spec.Capture.Value
+                if numberOfArgs = ContinuationOnStack then
+                    // no pending args between capture and cont
+                    let cont, contTy = builderStack.PopContinuationWithType()
+                    let currentCont = buildCaptureChained(spec, prefix, cTy.[capture], cont, contTy, [||], [||])
+                    builderStack.PushContinuationWithType(currentCont, funcTy)
+
+                elif numberOfArgs = EndOfString then
+                    // a "final" starting with a "capture" must not have pending args
+                    System.Diagnostics.Debug.Assert(builderStack.IsEmpty, "builderStack.IsEmpty")
+                    let currentCont = buildCaptureFinal(spec, prefix, suffix, cTy.[capture], [||], [||])
+                    builderStack.PushContinuationWithType(currentCont, funcTy)
+                else
+                    //build a "capture-starting" continuation with the pending params
+                    let cont = buildCapture(spec, prefix, suffix, cTy.[capture], numberOfArgs)
+                    builderStack.PushContinuationWithType(cont, funcTy)
+
+                ContinuationOnStack
+
             else
                 if numberOfArgs = ContinuationOnStack then
                     let idx = argTys.Length - 2
