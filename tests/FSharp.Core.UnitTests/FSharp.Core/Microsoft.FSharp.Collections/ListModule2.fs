@@ -842,7 +842,9 @@ type ListModule02() =
         // jagged lists
         CheckThrowsArgumentException (fun () -> List.transpose [[1; 2]; [3]] |> ignore)
         CheckThrowsArgumentException (fun () -> List.transpose [[1]; [2; 3]] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.transpose [[]; [1; 2]; [3; 4]] |> ignore)
         CheckThrowsArgumentException (fun () -> List.transpose [[1; 2]; []; [3; 4]] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.transpose [[1; 2]; [3; 4]; []] |> ignore)
 
     [<Test>]
     member this.Truncate() =
