@@ -698,6 +698,16 @@ and FSharpSyntaxNodeVisitor (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
+and FSharpSyntaxNodeAllDescendantVisitor (syntaxTree, f) =
+    inherit FSharpSyntaxVisitor (syntaxTree)
+
+    override __.CanVisit _ = true
+
+    override this.OnVisit (visitedNode, _) =
+        if this.VisitStackCount > 1 then
+            f visitedNode
+        None
+
 and FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree, f) =
     inherit FSharpSyntaxNodeVisitor (findm, syntaxTree)
 
@@ -968,7 +978,11 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
             Seq.empty
 
     member this.GetDescendants () =
-        this.GetDescendants this.Span
+        let result = ImmutableArray.CreateBuilder ()
+        // TODO: This isn't lazy, make it lazy so we don't try to evaluate everything. Will require work here and in the visitor.
+        let visitor = FSharpSyntaxNodeAllDescendantVisitor (syntaxTree, result.Add)
+        visitor.VisitNode this |> ignore
+        result :> FSharpSyntaxNode seq
 
     member this.GetChildren (span: TextSpan) =
         let text: SourceText = this.Text

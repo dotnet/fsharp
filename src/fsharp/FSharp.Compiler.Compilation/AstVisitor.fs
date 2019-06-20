@@ -314,6 +314,12 @@ type AstVisitor<'T> () as this =
         xs
         |> List.mapi (fun i x -> ((fun () -> getRange x), fun () -> visit (i, x)))
 
+    member inline private this.TryVisit (m, visit, item) =
+        if this.CanVisit m then
+            visit item
+        else
+            None
+
     abstract CanVisit: range -> bool  
     default this.CanVisit _ = true
 
@@ -1186,9 +1192,12 @@ type AstVisitor<'T> () as this =
         match valInfo with
         | SynValInfo (argInfos, returnInfo) ->
             let argInfos =
-                argInfos
-                |> List.reduce (@)
-                |> mapVisitList (fun x -> x.PossibleRange) this.VisitArgInfo
+                match argInfos with
+                | [] -> []
+                | _ ->
+                    argInfos
+                    |> List.reduce (@)
+                    |> mapVisitList (fun x -> x.PossibleRange) this.VisitArgInfo
 
             let returnInfo =
                 [returnInfo]

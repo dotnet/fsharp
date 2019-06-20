@@ -228,6 +228,17 @@ module rec App =
     let view model dispatch =
         let treeItems = []
 
+        let everything =
+            model.RootNode
+            |> Option.iter (fun x ->
+                let s = System.Diagnostics.Stopwatch.StartNew ()
+                let result = 
+                    x.GetDescendants ()
+                    |> Seq.iter (fun x -> ())
+                s.Stop ()
+                printfn "time to get everything: %A" s.Elapsed.TotalMilliseconds
+            )
+
         let otherHighlights =
             match model.NodeHighlight with
             | Some node ->
