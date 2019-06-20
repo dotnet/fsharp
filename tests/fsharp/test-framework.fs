@@ -152,10 +152,11 @@ type FSLibPaths =
 let requireFile nm = 
     if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
 
+let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+
 let config configurationName envVars =
 
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__
-    let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"
@@ -166,7 +167,7 @@ let config configurationName envVars =
     let fscArchitecture = "netcoreapp2.1"
     let fsiArchitecture = "netcoreapp2.1"
     let fsharpCoreArchitecture = "netstandard1.6"
-    let fsharpBuildArchitecture = "netstandard2.0"
+    let fsharpBuildArchitecture = "netcoreapp2.1"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."

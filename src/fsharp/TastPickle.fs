@@ -47,7 +47,7 @@ type PickledDataWithReferences<'rawData> =
         x.FixupThunks
         |> Array.iter(fun reqd->
             match loader reqd.AssemblyName with
-            | Some(loaded) -> reqd.Fixup(loaded)
+            | Some loaded -> reqd.Fixup loaded
             | None -> reqd.FixupOrphaned() )
         x.RawData
 
@@ -68,12 +68,12 @@ type Table<'T> =
         let n = tbl.count
         tbl.count <- tbl.count + 1
         tbl.tbl.[x] <- n
-        tbl.rows.Add(x)
+        tbl.rows.Add x
         n
     member tbl.FindOrAdd x =
-        let mutable res = Unchecked.defaultof<_>
-        let ok = tbl.tbl.TryGetValue(x, &res)
-        if ok then res else tbl.Add x
+        match tbl.tbl.TryGetValue x with
+        | true, res -> res
+        | _ -> tbl.Add x
 
 
     static member Create n =
@@ -200,13 +200,13 @@ let p_used_space1 f st =
 
 let p_bytes (s: byte[]) st =
     let len = s.Length
-    p_int32 (len) st
+    p_int32 len st
     st.os.EmitBytes s
 
 let p_prim_string (s: string) st =
     let bytes = Encoding.UTF8.GetBytes s
     let len = bytes.Length
-    p_int32 (len) st
+    p_int32 len st
     st.os.EmitBytes bytes
 
 let p_int c st = p_int32 c st
@@ -221,8 +221,8 @@ let p_int64 (i: int64) st =
 
 let p_uint64 (x: uint64) st = p_int64 (int64 x) st
 
-let bits_of_float32 (x: float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes(x), 0)
-let bits_of_float (x: float) = System.BitConverter.DoubleToInt64Bits(x)
+let bits_of_float32 (x: float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes x, 0)
+let bits_of_float (x: float) = System.BitConverter.DoubleToInt64Bits x
 
 let p_single i st = p_int32 (bits_of_float32 i) st
 let p_double i st = p_int64 (bits_of_float i) st
@@ -305,8 +305,8 @@ let u_int64 st =
     b1 ||| (b2 <<< 32)
 
 let u_uint64 st = uint64 (u_int64 st)
-let float32_of_bits (x: int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes(x), 0)
-let float_of_bits (x: int64) = System.BitConverter.Int64BitsToDouble(x)
+let float32_of_bits (x: int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes x, 0)
+let float_of_bits (x: int64) = System.BitConverter.Int64BitsToDouble x
 
 let u_single st = float32_of_bits (u_int32 st)
 let u_double st = float_of_bits (u_int64 st)
@@ -663,9 +663,9 @@ let u_lazy u st =
         lazy (let st = { st with is = st.is.CloneAndSeek idx1 }
               u st)
     /// Force the reading of the data as a "tripwire" for each of the OSGN thunks
-    for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.ientities.Get(i)) res done
-    for i = ovalsIdx1   to ovalsIdx2-1   do wire (st.ivals.Get(i))   res done
-    for i = otyparsIdx1 to otyparsIdx2-1 do wire (st.itypars.Get(i)) res done
+    for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.ientities.Get i) res done
+    for i = ovalsIdx1   to ovalsIdx2-1   do wire (st.ivals.Get i)   res done
+    for i = otyparsIdx1 to otyparsIdx2-1 do wire (st.itypars.Get i) res done
     res
 #else
     ignore (len, otyconsIdx1, otyconsIdx2, otyparsIdx1, otyparsIdx2, ovalsIdx1, ovalsIdx2)
@@ -721,7 +721,7 @@ let lookup_pubpath st pubpathTab x = lookup_uniq st pubpathTab x
 let u_encoded_pubpath = u_array u_int
 let u_pubpath st = lookup_uniq st st.ipubpaths (u_int st)
 
-let encode_pubpath stringTab pubpathTab (PubPath(a)) = encode_uniq pubpathTab (Array.map (encode_string stringTab) a)
+let encode_pubpath stringTab pubpathTab (PubPath a) = encode_uniq pubpathTab (Array.map (encode_string stringTab) a)
 let p_encoded_pubpath = p_array p_int
 let p_pubpath x st = p_int (encode_pubpath st.ostrings st.opubpaths x) st
 
@@ -1315,7 +1315,11 @@ let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
 
 let p_pos (x: pos) st = p_tup2 p_int p_int (x.Line, x.Column) st
-let p_range (x: range) st = p_tup3 p_string p_pos p_pos (x.FileName, x.Start, x.End) st
+
+let p_range (x: range) st =
+    let fileName = PathMap.apply st.oglobals.pathMap x.FileName
+    p_tup3 p_string p_pos p_pos (fileName, x.Start, x.End) st
+
 let p_dummy_range : range pickler   = fun _x _st -> ()
 let p_ident (x: Ident) st = p_tup2 p_string p_range (x.idText, x.idRange) st
 let p_xmldoc (XmlDoc x) st = p_array p_string x st
@@ -2020,8 +2024,9 @@ and u_tycon_repr st =
                         let rec find acc enclosingTypeNames (tdefs: ILTypeDefs) =
                             match enclosingTypeNames with
                             | [] -> List.rev acc, tdefs.FindByName iltref.Name
-                            | h::t -> let nestedTypeDef = tdefs.FindByName h
-                                      find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
+                            | h :: t ->
+                                let nestedTypeDef = tdefs.FindByName h
+                                find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
                         let nestedILTypeDefs, ilTypeDef = find [] iltref.Enclosing iILModule.TypeDefs
                         TILObjectRepr(TILObjectReprData(st.iilscope, nestedILTypeDefs, ilTypeDef))
                     with _ ->
@@ -2144,7 +2149,7 @@ and u_entity_spec_data st : Entity =
       entity_attribs=x6
       entity_tycon_repr=x7
       entity_tycon_tcaug=x9
-      entity_flags=EntityFlags(x11)
+      entity_flags=EntityFlags x11
       entity_cpath=x12
       entity_modul_contents=MaybeLazy.Lazy x13
       entity_il_repr_cache=newCache()
@@ -2283,7 +2288,7 @@ and u_ValData st =
       val_range        = (match x1a with None -> range0 | Some(a, _) -> a)
       val_type         = x2
       val_stamp        = newStamp()
-      val_flags        = ValFlags(x4)
+      val_flags        = ValFlags x4
       val_opt_data     =
           match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
           | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None
@@ -2336,7 +2341,7 @@ and p_const x st =
     | Const.String s  -> p_byte 14 st; p_string s st
     | Const.Unit      -> p_byte 15 st
     | Const.Zero      -> p_byte 16 st
-    | Const.Decimal s -> p_byte 17 st; p_array p_int32 (System.Decimal.GetBits(s)) st
+    | Const.Decimal s -> p_byte 17 st; p_array p_int32 (System.Decimal.GetBits s) st
 
 and u_const st =
     let tag = u_byte st
@@ -2358,7 +2363,7 @@ and u_const st =
     | 14 -> u_string st        |> Const.String
     | 15 -> Const.Unit
     | 16 -> Const.Zero
-    | 17 -> u_array u_int32 st |> (fun bits -> Const.Decimal (new System.Decimal(bits)))
+    | 17 -> u_array u_int32 st |> (fun bits -> Const.Decimal (System.Decimal bits))
     | _ -> ufailwith st "u_const"
 
 
@@ -2433,9 +2438,9 @@ and p_op x st =
          else
               p_byte 2 st
     | TOp.Recd (a, b)                 -> p_byte 3 st; p_tup2 p_recdInfo (p_tcref "recd op") (a, b) st
-    | TOp.ValFieldSet (a)            -> p_byte 4 st; p_rfref a st
-    | TOp.ValFieldGet (a)            -> p_byte 5 st; p_rfref a st
-    | TOp.UnionCaseTagGet (a)        -> p_byte 6 st; p_tcref "cnstr op" a st
+    | TOp.ValFieldSet a            -> p_byte 4 st; p_rfref a st
+    | TOp.ValFieldGet a            -> p_byte 5 st; p_rfref a st
+    | TOp.UnionCaseTagGet a        -> p_byte 6 st; p_tcref "cnstr op" a st
     | TOp.UnionCaseFieldGet (a, b)    -> p_byte 7 st; p_tup2 p_ucref p_int (a, b) st
     | TOp.UnionCaseFieldSet (a, b)    -> p_byte 8 st; p_tup2 p_ucref p_int (a, b) st
     | TOp.ExnFieldGet (a, b)          -> p_byte 9 st; p_tup2 (p_tcref "exn op") p_int (a, b) st
@@ -2447,15 +2452,15 @@ and p_op x st =
               p_byte 11 st; p_int a st
     | TOp.ILAsm (a, b)      -> p_byte 12 st; p_tup2 (p_list p_ILInstr) p_tys (a, b) st
     | TOp.RefAddrGet _               -> p_byte 13 st
-    | TOp.UnionCaseProof (a)         -> p_byte 14 st; p_ucref a st
+    | TOp.UnionCaseProof a         -> p_byte 14 st; p_ucref a st
     | TOp.Coerce                     -> p_byte 15 st
-    | TOp.TraitCall (b)              -> p_byte 16 st; p_trait b st
+    | TOp.TraitCall b              -> p_byte 16 st; p_trait b st
     | TOp.LValueOp (a, b)             -> p_byte 17 st; p_tup2 p_lval_op_kind (p_vref "lval") (a, b) st
     | TOp.ILCall (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d)
                                      -> p_byte 18 st; p_tup11 p_bool p_bool p_bool p_bool p_vrefFlags p_bool p_bool p_ILMethodRef p_tys p_tys p_tys (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d) st
     | TOp.Array                      -> p_byte 19 st
     | TOp.While _                    -> p_byte 20 st
-    | TOp.For(_, dir)                 -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
+    | TOp.For (_, dir)                 -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
     | TOp.Bytes bytes                -> p_byte 22 st; p_bytes bytes st
     | TOp.TryCatch _                 -> p_byte 23 st
     | TOp.TryFinally _               -> p_byte 24 st
@@ -2523,8 +2528,8 @@ and u_op st =
     | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | _ -> failwith "unknown for loop"
             TOp.For (NoSequencePointAtForLoop, dir)
     | 22 -> TOp.Bytes (u_bytes st)
-    | 23 -> TOp.TryCatch(NoSequencePointAtTry, NoSequencePointAtWith)
-    | 24 -> TOp.TryFinally(NoSequencePointAtTry, NoSequencePointAtFinally)
+    | 23 -> TOp.TryCatch (NoSequencePointAtTry, NoSequencePointAtWith)
+    | 24 -> TOp.TryFinally (NoSequencePointAtTry, NoSequencePointAtFinally)
     | 25 -> let a = u_rfref st
             TOp.ValFieldGetAddr (a, false)
     | 26 -> TOp.UInt16s (u_array u_uint16 st)
@@ -2536,7 +2541,7 @@ and u_op st =
     | 30 -> let a = u_int st
             TOp.TupleFieldGet (tupInfoStruct, a)
     | 31 -> let info = u_anonInfo st
-            TOp.AnonRecd (info)
+            TOp.AnonRecd info
     | 32 -> let info = u_anonInfo st
             let n = u_int st
             TOp.AnonRecdGet (info, n)
@@ -2547,7 +2552,7 @@ and p_expr expr st =
     | Expr.Link e -> p_expr !e st
     | Expr.Const (x, m, ty)              -> p_byte 0 st; p_tup3 p_const p_dummy_range p_ty (x, m, ty) st
     | Expr.Val (a, b, m)                 -> p_byte 1 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
-    | Expr.Op(a, b, c, d)                 -> p_byte 2 st; p_tup4 p_op  p_tys p_Exprs p_dummy_range (a, b, c, d) st
+    | Expr.Op (a, b, c, d)                 -> p_byte 2 st; p_tup4 p_op  p_tys p_Exprs p_dummy_range (a, b, c, d) st
     | Expr.Sequential (a, b, c, _, d)      -> p_byte 3 st; p_tup4 p_expr p_expr p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
     | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 4 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr p_dummy_range p_ty (a1, b0, b1, c, d, e) st
     | Expr.TyLambda (_, b, c, d, e)        -> p_byte 5 st; p_tup4 p_tyar_specs p_expr p_dummy_range p_ty (b, c, d, e) st
@@ -2555,10 +2560,10 @@ and p_expr expr st =
     | Expr.LetRec (a, b, c, _)            -> p_byte 7 st; p_tup3 p_binds p_expr p_dummy_range (a, b, c) st
     | Expr.Let (a, b, c, _)               -> p_byte 8 st; p_tup3 p_bind p_expr p_dummy_range (a, b, c) st
     | Expr.Match (_, a, b, c, d, e)         -> p_byte 9 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty (a, b, c, d, e) st
-    | Expr.Obj(_, b, c, d, e, f, g)          -> p_byte 10 st; p_tup6 p_ty (p_option p_Val) p_expr p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
-    | Expr.StaticOptimization(a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr p_expr p_dummy_range (a, b, c, d) st
+    | Expr.Obj (_, b, c, d, e, f, g)          -> p_byte 10 st; p_tup6 p_ty (p_option p_Val) p_expr p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
+    | Expr.StaticOptimization (a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr p_expr p_dummy_range (a, b, c, d) st
     | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr p_dummy_range (a, b, c) st
-    | Expr.Quote(ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
+    | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
 
 and u_expr st =
     let tag = u_byte st
@@ -2638,7 +2643,7 @@ and u_expr st =
 and p_static_optimization_constraint x st =
     match x with
     | TTyconEqualsTycon (a, b) -> p_byte 0 st; p_tup2 p_ty p_ty (a, b) st
-    | TTyconIsStruct(a) -> p_byte 1 st; p_ty a st
+    | TTyconIsStruct a -> p_byte 1 st; p_ty a st
 
 and p_slotparam (TSlotParam (a, b, c, d, e, f)) st = p_tup6 (p_option p_string) p_ty p_bool p_bool p_bool p_attribs (a, b, c, d, e, f) st
 and p_slotsig (TSlotSig (a, b, c, d, e, f)) st = p_tup6 p_string p_ty p_tyar_specs p_tyar_specs (p_list (p_list p_slotparam)) (p_option p_ty) (a, b, c, d, e, f) st

@@ -316,7 +316,7 @@ module Query =
     let asExpr x = (x :> Expression)
 
     let (|Getter|_|) (prop: PropertyInfo) =
-        match prop.GetGetMethod(true) with
+        match prop.GetGetMethod true with
         | null -> None
         | v -> Some v
 
@@ -350,7 +350,7 @@ module Query =
             | Let(v1, (TupleGet(Var pA, m) as e1), rest)
                   when p = pA && m = n->
                       let restvs, b = stripSuccessiveProjLets p (n+1) rest
-                      (v1, e1)::restvs, b
+                      (v1, e1) :: restvs, b
             | _ -> ([], expr)
         match lam with
         | Lambda(v, body) ->
@@ -363,7 +363,7 @@ module Query =
     let (|LambdasNoDetupling|_|) (inpExpr: Expr) =
         let rec loop rvs rprojs e =
             match  e with
-            | LambdaNoDetupling(v, projs, body) -> loop (v::rvs) (projs::rprojs) body
+            | LambdaNoDetupling(v, projs, body) -> loop (v :: rvs) (projs :: rprojs) body
             | _ ->
                 match rvs with
                 | [] -> None
@@ -400,18 +400,18 @@ module Query =
 
     let MakeGenericStaticMethod (methHandle:System.RuntimeMethodHandle) =
         let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
-        (fun (tyargs: Type list, args: Expr list) -> Expr.Call(BindGenericStaticMethod methInfo tyargs, args))
+        (fun (tyargs: Type list, args: Expr list) -> Expr.Call (BindGenericStaticMethod methInfo tyargs, args))
 
     let MakeGenericInstanceMethod (methHandle:System.RuntimeMethodHandle) =
         let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
-        (fun (obj:Expr, tyargs: Type list, args: Expr list) -> Expr.Call(obj, BindGenericStaticMethod methInfo tyargs, args))
+        (fun (obj:Expr, tyargs: Type list, args: Expr list) -> Expr.Call (obj, BindGenericStaticMethod methInfo tyargs, args))
 
     let ImplicitExpressionConversionHelperMethodInfo =
         methodhandleof (fun e -> LeafExpressionConverter.ImplicitExpressionConversionHelper e)
         |> System.Reflection.MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
-    let MakeImplicitExpressionConversion (x:Expr) = Expr.Call(ImplicitExpressionConversionHelperMethodInfo.MakeGenericMethod [| x.Type |], [ x ])
+    let MakeImplicitExpressionConversion (x:Expr) = Expr.Call (ImplicitExpressionConversionHelperMethodInfo.MakeGenericMethod [| x.Type |], [ x ])
 
     let NT = typedefof<System.Nullable<int>>
 
@@ -447,7 +447,7 @@ module Query =
     let qTyIsIQueryable (ty : System.Type) = not (ty.Equals(typeof<IEnumerable>))
 
     let FuncExprToDelegateExpr (srcTy, targetTy, v, body) =
-        Expr.NewDelegate(Linq.Expressions.Expression.GetFuncType [| srcTy; targetTy |], [v], body)
+        Expr.NewDelegate (Linq.Expressions.Expression.GetFuncType [| srcTy; targetTy |], [v], body)
 
     /// Project F# function expressions to Linq LambdaExpression nodes
     let FuncExprToLinqFunc2Expression (srcTy, targetTy, v, body) =
@@ -611,9 +611,9 @@ module Query =
                     // The F# implementation needs a QuerySource as a parameter.
                     let qTy = typeof<IEnumerable>
                     let ctor = typedefof<QuerySource<_, _>>.MakeGenericType([|srcItemTy; qTy|]).GetConstructors().[0]
-                    let src = Expr.NewObject(ctor, [src])
+                    let src = Expr.NewObject (ctor, [src])
                     // The F# implementation needs an FSharpFunc as a parameter.
-                    let selector = Expr.Lambda(v, res)
+                    let selector = Expr.Lambda (v, res)
                     ME (qb, [srcItemTy; qTy; resTyNoNullable], [src; selector])
 
         let Call (qb:obj, isIQ, srcItemTy:Type, resTyNoNullable:Type, src:obj, resTy:Type, v:Var, res:Expr) =
@@ -740,7 +740,7 @@ module Query =
 
     let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.Count x)) (methodhandleof (fun x -> Enumerable.Count x))
 
-    let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof (fun x -> Enumerable.DefaultIfEmpty(x)))
+    let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof (fun x -> Enumerable.DefaultIfEmpty x))
 
     /// Indicates if we can eliminate redundant 'Select(x=>x)' nodes
     type CanEliminate =
@@ -756,11 +756,11 @@ module Query =
 
             // Eliminate degenerate 'Select(x => x)', except for the very outer-most cases
             match f with
-            |  Patterns.Var(v2) when v = v2 && canElim = CanEliminate.Yes -> src
+            |  Patterns.Var v2 when v = v2 && canElim = CanEliminate.Yes -> src
             | _ ->
             let srcItemTy = v.Type
             let targetTy = f.Type
-            let selector = Expr.NewDelegate(MakeQueryFuncTy(srcItemTy, targetTy), [v], f)
+            let selector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, targetTy), [v], f)
 
             if isIQ then
                 let selector = MakeImplicitExpressionConversion selector
@@ -785,11 +785,11 @@ module Query =
 
     let MakeEnumerableEmpty =
         let F = MakeGenericStaticMethod (methodhandleof (fun _x -> Enumerable.Empty()))
-        fun (ty) ->
+        fun ty ->
             F ([ty], [])
 
     let MakeEmpty =
-        fun (ty) ->
+        fun ty ->
             MakeAsQueryable (ty, MakeEnumerableEmpty ty)
 
     let MakeSelectMany =
@@ -798,8 +798,8 @@ module Query =
         fun (isIQ, resTy:Type, src:Expr, srcItemVar:Var, interimSelectorBody:Expr, interimVar:Var, targetSelectorBody:Expr) ->
             let srcItemTy = srcItemVar.Type
             let interimTy = interimVar.Type
-            let interimSelector = Expr.NewDelegate(MakeQueryFuncTy(srcItemTy, MakeIEnumerableTy interimTy), [srcItemVar], interimSelectorBody)
-            let targetSelector = Expr.NewDelegate(MakeQueryFunc2Ty(srcItemTy, interimTy, resTy), [srcItemVar; interimVar], targetSelectorBody)
+            let interimSelector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, MakeIEnumerableTy interimTy), [srcItemVar], interimSelectorBody)
+            let targetSelector = Expr.NewDelegate (MakeQueryFunc2Ty(srcItemTy, interimTy, resTy), [srcItemVar; interimVar], targetSelectorBody)
 
             if isIQ then
                 let interimSelector = MakeImplicitExpressionConversion interimSelector
@@ -812,7 +812,7 @@ module Query =
         let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y:Expression<Func<_, _>>) -> System.Linq.Queryable.Where(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y:Func<_, _>) -> Enumerable.Where(x, y)))
         fun (isIQ, src:Expr, v:Var, f) ->
-            let selector = Expr.NewDelegate(MakeQueryFuncTy(v.Type, typeof<bool>), [v], f)
+            let selector = Expr.NewDelegate (MakeQueryFuncTy(v.Type, typeof<bool>), [v], f)
 
             if isIQ then
                 let selector = MakeImplicitExpressionConversion selector
@@ -824,7 +824,7 @@ module Query =
         fun (isIQ, src:Expr, v:Var, keySelector:Expr) ->
             let srcItemTy = v.Type
             let keyItemTy = keySelector.Type
-            let selector = Expr.NewDelegate(MakeQueryFuncTy(srcItemTy, keyItemTy), [v], keySelector)
+            let selector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, keyItemTy), [v], keySelector)
             if isIQ then
                 let selector = MakeImplicitExpressionConversion selector
                 FQ ([srcItemTy; keyItemTy], [src; selector])
@@ -865,7 +865,7 @@ module Query =
         let FE = MakeGenericStaticMethod  FE
         fun (isIQ, src:Expr, v:Var, predicate) ->
             let srcItemTy = v.Type
-            let selector = Expr.NewDelegate(MakeQueryFuncTy(srcItemTy, boolTy), [v], predicate)
+            let selector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, boolTy), [v], predicate)
             if isIQ then
                 let selector = MakeImplicitExpressionConversion selector
                 FQ ([srcItemTy], [src; selector])
@@ -916,7 +916,7 @@ module Query =
         fun (isIQ, src:Expr, v:Var, keySelector:Expr) ->
             let srcItemTy = v.Type
             let keyTy = keySelector.Type
-            let keySelector = Expr.NewDelegate(MakeQueryFuncTy(srcItemTy, keyTy), [v], keySelector)
+            let keySelector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, keyTy), [v], keySelector)
 
             if isIQ then
                 let keySelector = MakeImplicitExpressionConversion keySelector
@@ -928,8 +928,8 @@ module Query =
         let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y:Expression<Func<_, _>>, z:Expression<Func<_, _>>) -> System.Linq.Queryable.GroupBy(x, y, z)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y:Func<_, _>, z:Func<_, _>) -> Enumerable.GroupBy(x, y, z)))
         fun (isIQ, srcItemTy, keyTy, elementTy, src:Expr, v1, keySelector, v2, elementSelector) ->
-            let keySelector = Expr.NewDelegate(MakeQueryFuncTy(srcItemTy, keyTy), [v1], keySelector)
-            let elementSelector = Expr.NewDelegate(MakeQueryFuncTy(srcItemTy, elementTy), [v2], elementSelector)
+            let keySelector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, keyTy), [v1], keySelector)
+            let elementSelector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, elementTy), [v2], elementSelector)
 
             if isIQ then
                 let keySelector = MakeImplicitExpressionConversion keySelector
@@ -942,9 +942,9 @@ module Query =
         let FQ = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3:Expression<Func<_, _>>, a4:Expression<Func<_, _>>, a5:Expression<Func<_, _, _>>) -> System.Linq.Queryable.Join(a1, a2, a3, a4, a5)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3:Func<_, _>, a4:Func<_, _>, a5:Func<_, _, _>) -> Enumerable.Join(a1, a2, a3, a4, a5)))
         fun (isIQ, outerSourceTy, innerSourceTy, keyTy, resTy, outerSource:Expr, innerSource:Expr, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultKeyVar, innerResultKeyVar, elementSelector) ->
-            let outerKeySelector = Expr.NewDelegate(MakeQueryFuncTy(outerSourceTy, keyTy), [outerKeyVar], outerKeySelector)
-            let innerKeySelector = Expr.NewDelegate(MakeQueryFuncTy(innerSourceTy, keyTy), [innerKeyVar], innerKeySelector)
-            let elementSelector = Expr.NewDelegate(MakeQueryFunc2Ty(outerSourceTy, innerSourceTy, resTy), [outerResultKeyVar; innerResultKeyVar], elementSelector)
+            let outerKeySelector = Expr.NewDelegate (MakeQueryFuncTy(outerSourceTy, keyTy), [outerKeyVar], outerKeySelector)
+            let innerKeySelector = Expr.NewDelegate (MakeQueryFuncTy(innerSourceTy, keyTy), [innerKeyVar], innerKeySelector)
+            let elementSelector = Expr.NewDelegate (MakeQueryFunc2Ty(outerSourceTy, innerSourceTy, resTy), [outerResultKeyVar; innerResultKeyVar], elementSelector)
 
             if isIQ then
                 let outerKeySelector = MakeImplicitExpressionConversion outerKeySelector
@@ -958,9 +958,9 @@ module Query =
         let FQ = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3:Expression<Func<_, _>>, a4:Expression<Func<_, _>>, a5:Expression<Func<_, _, _>>) -> System.Linq.Queryable.GroupJoin(a1, a2, a3, a4, a5)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3:Func<_, _>, a4:Func<_, _>, a5:Func<_, _, _>) -> Enumerable.GroupJoin(a1, a2, a3, a4, a5)))
         fun (isIQ, outerSourceTy, innerSourceTy, keyTy, resTy, outerSource:Expr, innerSource:Expr, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultKeyVar, innerResultGroupVar, elementSelector) ->
-            let outerKeySelector = Expr.NewDelegate(MakeQueryFuncTy(outerSourceTy, keyTy), [outerKeyVar], outerKeySelector)
-            let innerKeySelector = Expr.NewDelegate(MakeQueryFuncTy(innerSourceTy, keyTy), [innerKeyVar], innerKeySelector)
-            let elementSelector = Expr.NewDelegate(MakeQueryFunc2Ty(outerSourceTy, MakeIEnumerableTy(innerSourceTy), resTy), [outerResultKeyVar; innerResultGroupVar], elementSelector)
+            let outerKeySelector = Expr.NewDelegate (MakeQueryFuncTy(outerSourceTy, keyTy), [outerKeyVar], outerKeySelector)
+            let innerKeySelector = Expr.NewDelegate (MakeQueryFuncTy(innerSourceTy, keyTy), [innerKeyVar], innerKeySelector)
+            let elementSelector = Expr.NewDelegate (MakeQueryFunc2Ty(outerSourceTy, MakeIEnumerableTy innerSourceTy, resTy), [outerResultKeyVar; innerResultGroupVar], elementSelector)
             if isIQ then
                 let outerKeySelector = MakeImplicitExpressionConversion outerKeySelector
                 let innerKeySelector = MakeImplicitExpressionConversion innerKeySelector
@@ -976,7 +976,7 @@ module Query =
             | None ->
             match p with
             | ExprShape.ShapeCombination(comb, args) -> ExprShape.RebuildShapeCombination(comb, List.map walk args)
-            | ExprShape.ShapeLambda(v, body) -> Expr.Lambda(v, walk body)
+            | ExprShape.ShapeLambda(v, body) -> Expr.Lambda (v, walk body)
             | ExprShape.ShapeVar _ -> p
         walk q
 
@@ -999,7 +999,7 @@ module Query =
             Some body
 
         // Macro
-        | PropertyGet(None, Getter(MethodWithReflectedDefinition(body)), []) ->
+        | PropertyGet(None, Getter(MethodWithReflectedDefinition body), []) ->
             Some body
 
         // Macro
@@ -1009,7 +1009,7 @@ module Query =
                 ||> List.map2 (fun vs arg -> 
                     match vs, arg with
                     | [v], arg -> [(v, arg)]
-                    | vs, NewTuple(args) -> List.zip vs args 
+                    | vs, NewTuple args -> List.zip vs args 
                     | _ -> List.zip vs [arg])
                 |> List.concat |> Map.ofSeq
             let body = body.Substitute tab.TryFind
@@ -1045,11 +1045,11 @@ module Query =
             | MacroReduction reduced -> Some (walk reduced)
             | _ -> None)
 
-    let (|CallQueryBuilderRunQueryable|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b :QueryBuilder, v) -> b.Run(v)))
+    let (|CallQueryBuilderRunQueryable|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b :QueryBuilder, v) -> b.Run v))
 
-    let (|CallQueryBuilderRunValue|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v : Expr<'a>) -> b.Run(v)) : 'a)
+    let (|CallQueryBuilderRunValue|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v : Expr<'a>) -> b.Run v) : 'a)
 
-    let (|CallQueryBuilderRunEnumerable|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v : Expr<QuerySource<_, IEnumerable>> ) -> b.Run(v)))
+    let (|CallQueryBuilderRunEnumerable|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v : Expr<QuerySource<_, IEnumerable>> ) -> b.Run v))
 
     let (|CallQueryBuilderFor|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder, source:QuerySource<int, _>, body) -> b.For(source, body)))
 
@@ -1109,7 +1109,7 @@ module Query =
 
     let (|CallForAll|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2) -> query.All(arg1, arg2)))
 
-    let (|CallDistinct|_|) = (|SpecificCall1|_|) (methodhandleof (fun (query:QueryBuilder, keySelector) -> query.Distinct(keySelector)))
+    let (|CallDistinct|_|) = (|SpecificCall1|_|) (methodhandleof (fun (query:QueryBuilder, keySelector) -> query.Distinct keySelector))
 
     let (|CallTake|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2) -> query.Take(arg1, arg2)))
 
@@ -1137,9 +1137,9 @@ module Query =
 
     let (|CallSumByNullable|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1:QuerySource<double, _>, arg2:(double->Nullable<double>)) -> query.SumByNullable(arg1, arg2)))
 
-    let (|CallCount|_|) = (|SpecificCall1|_|) (methodhandleof (fun (query:QueryBuilder, arg1) -> query.Count(arg1)))
+    let (|CallCount|_|) = (|SpecificCall1|_|) (methodhandleof (fun (query:QueryBuilder, arg1) -> query.Count arg1))
 
-    let (|CallHead|_|) = (|SpecificCall1|_|) (methodhandleof (fun (query:QueryBuilder, arg1) -> query.Head(arg1)))
+    let (|CallHead|_|) = (|SpecificCall1|_|) (methodhandleof (fun (query:QueryBuilder, arg1) -> query.Head arg1))
 
     let (|CallFind|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2) -> query.Find(arg1, arg2)))
 
@@ -1157,7 +1157,7 @@ module Query =
         | TupleConv convs ->
             Expr.NewTuple (convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
         | RecordConv (typ, convs) ->
-            Expr.NewRecord(typ, convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
+            Expr.NewRecord (typ, convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
 
         | SeqConv conv ->
 
@@ -1166,7 +1166,7 @@ module Query =
             let isIQ = IsIQueryableTy mutExpr.Type
             assert (IsIEnumerableTy mutExpr.Type || IsIQueryableTy mutExpr.Type)
             let mutElemTy = mutExpr.Type.GetGenericArguments().[0]
-            let mutExpr = if isIQ then Expr.Coerce(mutExpr, MakeIEnumerableTy mutElemTy) else mutExpr
+            let mutExpr = if isIQ then Expr.Coerce (mutExpr, MakeIEnumerableTy mutElemTy) else mutExpr
             // Generate "source.Select(fun v -> ...)" (remembering that Select is an extension member, i.e. static)
             let mutVar = new Var("v", mutElemTy)
             let mutToImmutConvExpr = ConvMutableToImmutable conv (Expr.Var mutVar)
@@ -1187,10 +1187,10 @@ module Query =
 
             // Construct an IGrouping
             let args =
-              [ Expr.PropertyGet(mutExpr, mutExpr.Type.GetProperty "Key")
+              [ Expr.PropertyGet (mutExpr, mutExpr.Type.GetProperty "Key")
                 MakeSelect(CanEliminate.Yes, false, mutExpr, var, convExpr) ]
 
-            Expr.Coerce(Expr.NewObject(immutGroupingTy.GetConstructors().[0], args), immutIGroupingTy)
+            Expr.Coerce (Expr.NewObject (immutGroupingTy.GetConstructors().[0], args), immutIGroupingTy)
 
         | NoConv ->
             mutExpr
@@ -1252,7 +1252,7 @@ module Query =
             // We eliminate the Select here to keep the information in 'mutSource' available, i.e. whether
             // the mutSource is a TransInnerResult.Source after elimination
             match mutSelectorBody with
-            |  Patterns.Var(v2) when mutSelectorVar = v2 && canElim = CanEliminate.Yes -> mutSource
+            |  Patterns.Var v2 when mutSelectorVar = v2 && canElim = CanEliminate.Yes -> mutSource
             | _ -> Select(canElim, isQTy, mutSource, mutSelectorVar, mutSelectorBody)
 
 
@@ -1340,7 +1340,7 @@ module Query =
                         | _ ->
                             let mutInterimSelectorBody = CommitTransInnerResult mutSelectorBodyInfo
                             let mutInterimVar = Var("x", mutElemTy)
-                            let mutTargetSelector = Expr.Var(mutInterimVar)
+                            let mutTargetSelector = Expr.Var mutInterimVar
                             mutInterimSelectorBody, mutInterimVar, mutTargetSelector
 
                     // IQueryable.SelectMany expects an IEnumerable return
@@ -1350,7 +1350,7 @@ module Query =
                             mutInterimSelectorBodyPreCoerce
                         else
                             let mutSeqTy = MakeIEnumerableTy mutInterimVar.Type
-                            Expr.Coerce(mutInterimSelectorBodyPreCoerce, mutSeqTy)
+                            Expr.Coerce (mutInterimSelectorBodyPreCoerce, mutSeqTy)
                     TransInnerResult.Other(MakeSelectMany(qTyIsIQueryable qTy, mutElemTy, CommitTransInnerResult mutSource, mutSelectorVar, mutInterimSelectorBody, mutInterimVar, mutTargetSelector)), selectorConv
 
 
@@ -1374,22 +1374,22 @@ module Query =
 
         | CallQueryBuilderYield (_, [elemTy; qTy], immutSelectorBody) ->
             let immutSelectorBody = CleanupLeaf immutSelectorBody
-            let enumExpr = Expr.Coerce(Expr.NewArray(elemTy, [ immutSelectorBody ]), MakeIEnumerableTy elemTy)
+            let enumExpr = Expr.Coerce (Expr.NewArray (elemTy, [ immutSelectorBody ]), MakeIEnumerableTy elemTy)
             let expr =
                 if qTyIsIQueryable qTy then
                     MakeAsQueryable(elemTy, enumExpr)
                 else
                     enumExpr
-            TransInnerResult.Other(expr), NoConv
+            TransInnerResult.Other expr, NoConv
 
         | IfThenElse (g, t, e) ->
             match MacroExpand e with
             | ZeroOnElseBranch ->
                 let t, tConv = TransInnerAndCommit CanEliminate.Yes check t
-                TransInnerResult.Other(Expr.IfThenElse(g, t, MakeEmpty t.Type)), tConv
+                TransInnerResult.Other(Expr.IfThenElse (g, t, MakeEmpty t.Type)), tConv
             | _ ->
                 if check then raise (NotSupportedException (SR.GetString(SR.unsupportedIfThenElse)) )
-                TransInnerResult.Other(e), NoConv
+                TransInnerResult.Other e, NoConv
 
         | CallSortBy (_, [_; qTy; _], source, Lambda(v, keySelector)) ->
             let source, sourceConv, v, keySelector = TransInnerApplicativeAndCommit check source (v, keySelector)
@@ -1555,10 +1555,10 @@ module Query =
             TransInner canElim check reduced
 
         | CallQueryBuilderSourceIQueryable(_, _, expr) ->
-            TransInnerResult.Source(expr), NoConv
+            TransInnerResult.Source expr, NoConv
 
         | CallQueryBuilderSourceIEnumerable (_, _, expr) ->
-            TransInnerResult.Source(expr), NoConv
+            TransInnerResult.Source expr, NoConv
 
         | Call (_, meth, _) when check ->
             raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryCall), meth.ToString())))
@@ -1622,7 +1622,7 @@ module Query =
                 // if result type of nested query is derived from IQueryable but not IQueryable itself (i.e. IOrderedQueryable)
                 // then add coercion to IQueryable so result type will match expected signature of QuerySource.Run
                 if (IQueryableTySpec.IsAssignableFrom replNestedQuery.Type) && not (IQueryableTySpec.Equals replNestedQuery.Type) then
-                    Expr.Coerce(replNestedQuery, IQueryableTySpec)
+                    Expr.Coerce (replNestedQuery, IQueryableTySpec)
                 else
                     replNestedQuery
             replNestedQuery, MakeSeqConv conv
@@ -1934,8 +1934,8 @@ module Query =
     do ForwardDeclarations.Query <-
         {
             new ForwardDeclarations.IQueryMethods with
-                member this.Execute(q) = QueryExecute q
-                member this.EliminateNestedQueries(e) = EliminateNestedQueries e
+                member this.Execute q = QueryExecute q
+                member this.EliminateNestedQueries e = EliminateNestedQueries e
         }
 
 

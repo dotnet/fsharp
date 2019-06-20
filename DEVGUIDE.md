@@ -4,7 +4,7 @@
 
 Get the latest source code from the master branch by running this git command:
 
-    git clone https://github.com/Microsoft/visualfsharp.git
+    git clone https://github.com/dotnet/fsharp.git
     
 Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
 
@@ -17,8 +17,7 @@ This will remove any files that are not under version control. This is necessary
 Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
 
 - [Developing the F# Compiler (Windows)](#developing-the-f-compiler-windows)
-- [Developing the F# Compiler (Linux)](#developing-the-f-compiler-linux)
-- [Developing the F# Compiler (macOS)](#developing-the-f-compiler-macos)
+- [Developing the F# Compiler (Linux/macOS)](#developing-the-f-compiler-linuxmacos)
 - [Developing the Visual F# IDE Tools (Windows Only)](#developing-the-visual-f-ide-tools-windows-only)
 - [Notes and Resources](#notes)
 
@@ -27,6 +26,7 @@ Follow the instructions below to build and develop the F# Compiler, Core Library
 Install
 
 - [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
+- [.NET Core 3 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.0)
 
 **NOTE on Windows:**
 
@@ -60,7 +60,7 @@ For Linux/Mac:
 
 Running tests:
 
-    ./build.sh -test
+    ./build.sh --test
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 
@@ -70,9 +70,7 @@ To build and test Visual F# IDE Tools, install these requirements:
 - Launch the Visual Studio Installer
   - Under the **"Windows"** workload, select **".NET desktop development"**
     - Select the optional component **"F# desktop language support"**
-  - Under the **"Mobile & Gaming"** workload, select **"Mobile development with .NET"**
   - Under the **"Other Toolsets"** workload, select **"Visual Studio extension development"**
-  - On the **"Individual Components"** tab, select **".NET Framework 4.7.2 SDK"** and **".NET Framework 4.7.2 targeting pack"**
 
 Steps to build:
 
@@ -179,13 +177,6 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 #### Updating FSComp.fs, FSComp.resx and XLF
 
-If you change error messages you may need to update FSComp.fs in `src\buildfromsource\FSharp.Compiler.Private`.
-
-To do this, build the non-buildfromsource version of FSharp.Compiler.Private (src\fsharp\FSharp.Compiler.Private) then check its obj\ directory for `FSComp.fs` and manually copy that into the buildfromsource directory.
-
-    .\build net40
-    copy /y artifacts\obj\FSharp.Compiler.Private\Release\net472\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
-
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
     pushd src\fsharp\FSharp.Compiler.Private
@@ -193,8 +184,6 @@ If your changes involve modifying the list of language keywords in any way, (e.g
     popd
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
-
-You can also change build.cmd to default COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES to 1 under ":ARGUMENTS_OK" label.
 
 #### Configuring proxy server
 

@@ -6,6 +6,7 @@ module internal FSharp.Compiler.CompileOps
 open System
 open System.Text
 open System.Collections.Generic
+open Internal.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -208,6 +209,14 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+/// The thread in which compilation calls will be enqueued and done work on.
+/// Note: This is currently only used when disposing of type providers and will be extended to all the other type provider calls when compilations can be done in parallel.
+///       Right now all calls in FCS to type providers are single-threaded through use of the reactor thread. 
+type ICompilationThread =
+
+    /// Enqueue work to be done on a compilation thread.
+    abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
+
 [<RequireQualifiedAccess>]
 type CompilerTarget = 
     | WinExe 
@@ -350,6 +359,7 @@ type TcConfigBuilder =
 #if !NO_EXTENSIONTYPING
       mutable showExtensionTypeMessages: bool
 #endif
+      mutable compilationThread: ICompilationThread
       mutable pause: bool 
       mutable alwaysCallVirt: bool
       mutable noDebugData: bool
@@ -361,6 +371,7 @@ type TcConfigBuilder =
       mutable exename: string option 
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
+      mutable useSdkRefs: bool
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -371,6 +382,8 @@ type TcConfigBuilder =
 
       /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
       mutable noConditionalErasure: bool
+
+      mutable pathMap : PathMap
     }
 
     static member Initial: TcConfigBuilder
@@ -394,11 +407,10 @@ type TcConfigBuilder =
     member RemoveReferencedAssemblyByPath: range * string -> unit
     member AddEmbeddedSourceFile: string -> unit
     member AddEmbeddedResource: string -> unit
+    member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
     
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
 
-
-    
 [<Sealed>]
 // Immutable TcConfig
 type TcConfig =
@@ -496,6 +508,7 @@ type TcConfig =
     member optSettings  : Optimizer.OptimizationSettings 
     member emitTailcalls: bool
     member deterministic: bool
+    member pathMap: PathMap
     member preferredUiLang: string option
     member optsOn       : bool 
     member productNameForBannerText: string
@@ -506,6 +519,7 @@ type TcConfig =
 #if !NO_EXTENSIONTYPING
     member showExtensionTypeMessages: bool
 #endif
+    member compilationThread: ICompilationThread
     member pause: bool 
     member alwaysCallVirt: bool
     member noDebugData: bool
@@ -531,6 +545,8 @@ type TcConfig =
 
     member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
+    member useSdkRefs: bool
+
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
@@ -585,6 +601,8 @@ type TcAssemblyResolutions =
     static member BuildFromPriorResolutions    : CompilationThreadToken * TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
 
 /// Represents a table of imported assemblies with their resolutions.
+/// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
+/// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 [<Sealed>] 
 type TcImports =
     interface System.IDisposable
@@ -702,7 +720,7 @@ val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlo
 [<Sealed>]
 /// Represents the incremental type checking state for a set of inputs
 type TcState =
-    member NiceNameGenerator: Ast.NiceNameGenerator
+    member NiceNameGenerator: NiceNameGenerator
 
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
@@ -723,7 +741,7 @@ type TcState =
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: 
-    range * string * TcConfig * TcGlobals * TcImports * Ast.NiceNameGenerator * TcEnv -> TcState
+    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
 
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
@@ -801,7 +819,7 @@ type LoadClosure =
     //
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
-    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * sourceText: ISourceText * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: ReduceMemoryFlag -> LoadClosure
+    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * sourceText: ISourceText * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * useSdkRefs: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: ReduceMemoryFlag -> LoadClosure
 
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
     /// Used from fsi.fs and fsc.fs, for #load and command line. 

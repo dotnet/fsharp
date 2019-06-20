@@ -30,6 +30,13 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
+    <Compile Include="Compiler\CompilerAssert.fs" />
+    <Compile Include="Compiler\ILHelpers.fs" />
+    <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\AnonRecordTests.fs" />
+    <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
+    <Compile Include="Compiler\Language\SpanTests.fs" />
+    <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
@@ -44,12 +51,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersPackageVersion)" />
-    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmPackageVersion)" />
-    <PackageReference Include="StrawberryPerl64" Version="$(StrawberryPerl64PackageVersion)" PrivateAssets="all" />
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryPackageVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
+    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+    <PackageReference Include="StrawberryPerl64" Version="$(StrawberryPerl64Version)" PrivateAssets="all" />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
   </ItemGroup>
 
 </Project>

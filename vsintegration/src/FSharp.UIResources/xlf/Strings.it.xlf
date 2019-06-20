@@ -102,6 +102,11 @@
         <target state="translated">Sottolineatura _continua</target>
         <note />
       </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="new">Text hover</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Rimuovi istruzioni OPEN inutilizzate</target>
@@ -109,7 +114,7 @@
       </trans-unit>
       <trans-unit id="Unused_declaration_code_fix">
         <source>Analyze and suggest fixes for unused values</source>
-        <target state="translated">Analizar y sugerir correcciones para valores no utilizados</target>
+        <target state="translated">Analizza e suggerisci correzioni per valori inutilizzati</target>
         <note />
       </trans-unit>
       <trans-unit id="Block_Structure">
@@ -190,6 +195,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Suggerisci nomi per gli identificatori non risolti</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_out_of_process_language_server">
+        <source>(Preview) Use out of process language server</source>
+        <target state="new">(Preview) Use out of process language server</target>
         <note />
       </trans-unit>
     </body>

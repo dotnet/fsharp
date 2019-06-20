@@ -439,7 +439,7 @@
       </trans-unit>
       <trans-unit id="9002">
         <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">適用於 F# 4.6 的 Microsoft Visual F# Tools</target>
+        <target state="translated">適用於 F# 4.6 的 Microsoft Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">

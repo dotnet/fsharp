@@ -231,4 +231,10 @@
   <data name="Suggest_names_for_errors_code_fix" xml:space="preserve">
     <value>Suggest names for unresolved identifiers</value>
   </data>
+  <data name="Use_out_of_process_language_server" xml:space="preserve">
+    <value>(Preview) Use out of process language server</value>
+  </data>
+  <data name="Text_hover" xml:space="preserve">
+    <value>Text hover</value>
+  </data>
 </root>

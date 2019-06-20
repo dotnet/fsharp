@@ -1,6 +1,6 @@
 ﻿#if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -35,7 +35,7 @@ let B = File1.A + File1.A"""
     interface IFileSystem with
         // Implement the service to open files for reading and writing
         member __.FileStreamReadShim(fileName) = 
-            match files.TryGetValue(fileName) with
+            match files.TryGetValue fileName with
             | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> defaultFileSystem.FileStreamReadShim(fileName)
             
@@ -49,7 +49,7 @@ let B = File1.A + File1.A"""
             defaultFileSystem.FileStreamWriteExistingShim(fileName)
 
         member __.ReadAllBytesShim(fileName) = 
-            match files.TryGetValue(fileName) with
+            match files.TryGetValue fileName with
             | true, text -> Encoding.UTF8.GetBytes(text)
             | _ -> defaultFileSystem.ReadAllBytesShim(fileName)
 

@@ -42,11 +42,11 @@ module internal Impl =
     let isNamedType(typ: Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
 
     let equivHeadTypes (ty1: Type) (ty2: Type) =
-        isNamedType(ty1) &&
+        isNamedType ty1 &&
         if ty1.IsGenericType then
           ty2.IsGenericType && (ty1.GetGenericTypeDefinition()).Equals(ty2.GetGenericTypeDefinition())
         else
-          ty1.Equals(ty2)
+          ty1.Equals ty2
 
     let func = typedefof<(obj -> obj)>
 
@@ -156,7 +156,7 @@ module internal Impl =
     let sortFreshArray f arr = Array.sortInPlaceWith f arr; arr
 
     let isFieldProperty (prop : PropertyInfo) =
-        match tryFindCompilationMappingAttributeFromMemberInfo(prop) with
+        match tryFindCompilationMappingAttributeFromMemberInfo prop with
         | None -> false
         | Some (flags, _n, _vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
 
@@ -185,7 +185,7 @@ module internal Impl =
         | null ->
             typ.GetMethods(staticMethodFlags ||| bindingFlags)
             |> Array.choose (fun minfo ->
-                match tryFindCompilationMappingAttributeFromMemberInfo(minfo) with
+                match tryFindCompilationMappingAttributeFromMemberInfo minfo with
                 | None -> None
                 | Some (flags, n, _vn) ->
                     if (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.UnionCase then
@@ -203,8 +203,8 @@ module internal Impl =
         | _ ->
             enumTyp.GetFields(staticFieldFlags ||| bindingFlags)
             |> Array.filter (fun (f: FieldInfo) -> f.IsStatic && f.IsLiteral)
-            |> sortFreshArray (fun f1 f2 -> compare (f1.GetValue (null) :?> int) (f2.GetValue (null) :?> int))
-            |> Array.map (fun tagfield -> (tagfield.GetValue (null) :?> int), tagfield.Name)
+            |> sortFreshArray (fun f1 f2 -> compare (f1.GetValue null :?> int) (f2.GetValue null :?> int))
+            |> Array.map (fun tagfield -> (tagfield.GetValue null :?> int), tagfield.Name)
 
     let getUnionCaseTyp (typ: Type, tag: int, bindingFlags) =
         let tagFields = getUnionTypeTagNameMap(typ, bindingFlags)
@@ -244,11 +244,11 @@ module internal Impl =
         isListType typ ||
         match tryFindSourceConstructFlagsOfType typ with
         | None -> false
-        | Some(flags) ->
+        | Some flags ->
           (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.SumType &&
           // We see private representations only if BindingFlags.NonPublic is set
-          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then
-              (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
+          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum 0 then
+              (bindingFlags &&& BindingFlags.NonPublic) <> enum 0
            else
               true)
 
@@ -427,26 +427,26 @@ module internal Impl =
                 | _ -> invalidArg "tys" (SR.GetString (SR.invalidTupleTypes))
 
             let tables = if isStruct then valueTupleTypes else refTupleTypes
-            match lock dictionaryLock (fun () -> tables.TryGetValue(asm)) with
+            match lock dictionaryLock (fun () -> tables.TryGetValue asm) with
             | false, _ ->
                 // the Dictionary<>s here could be ConcurrentDictionary<>'s, but then
                 // that would lock while initializing the Type array (maybe not an issue)
                 let a = ref (Array.init<Type> 8 (fun i -> makeIt (i + 1)))
                 lock dictionaryLock (fun () ->
-                    match tables.TryGetValue(asm) with
+                    match tables.TryGetValue asm with
                     | true, t -> a := t
                     | false, _ -> tables.Add(asm, !a))
                 !a
             | true, t -> t
 
         match tys.Length with
-        | 1 -> table.[0].MakeGenericType(tys)
-        | 2 -> table.[1].MakeGenericType(tys)
-        | 3 -> table.[2].MakeGenericType(tys)
-        | 4 -> table.[3].MakeGenericType(tys)
-        | 5 -> table.[4].MakeGenericType(tys)
-        | 6 -> table.[5].MakeGenericType(tys)
-        | 7 -> table.[6].MakeGenericType(tys)
+        | 1 -> table.[0].MakeGenericType tys
+        | 2 -> table.[1].MakeGenericType tys
+        | 3 -> table.[2].MakeGenericType tys
+        | 4 -> table.[3].MakeGenericType tys
+        | 5 -> table.[4].MakeGenericType tys
+        | 6 -> table.[5].MakeGenericType tys
+        | 7 -> table.[6].MakeGenericType tys
         | n when n >= maxTuple ->
             let tysA = tys.[0..tupleEncField-1]
             let tysB = tys.[maxTuple-1..]
@@ -534,7 +534,7 @@ module internal Impl =
           let ctor = getTupleConstructorMethod typ
           (fun (args: obj[]) ->
 #if FX_RESHAPED_REFLECTION
-              ctor.Invoke(args))
+              ctor.Invoke args)
 #else
               ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public, null, args, null))
 #endif
@@ -545,7 +545,7 @@ module internal Impl =
         let reader =
             if typ.IsValueType then
                 let fields = (typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
-                ((fun (obj: obj) -> fields |> Array.map (fun field -> field.GetValue (obj))))
+                ((fun (obj: obj) -> fields |> Array.map (fun field -> field.GetValue obj)))
             else
                 let props = (typ.GetProperties (instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
                 ((fun (obj: obj) -> props |> Array.map (fun prop -> prop.GetValue (obj, null))))
@@ -553,7 +553,7 @@ module internal Impl =
         then reader
         else
             let tyBenc = etys.[tupleEncField]
-            let reader2 = getTupleReader(tyBenc)
+            let reader2 = getTupleReader tyBenc
             (fun obj ->
                 let directVals = reader obj
                 let encVals = reader2 directVals.[tupleEncField]
@@ -566,7 +566,7 @@ module internal Impl =
         then maker1
         else
             let tyBenc = etys.[tupleEncField]
-            let maker2 = getTupleConstructor(tyBenc)
+            let maker2 = getTupleConstructor tyBenc
             (fun (args: obj[]) ->
                 let encVal = maker2 args.[tupleEncField..]
                 maker1 (Array.append args.[0..tupleEncField-1] [| encVal |]))
@@ -610,7 +610,7 @@ module internal Impl =
     let isModuleType (typ: Type) =
       match tryFindSourceConstructFlagsOfType typ with
       | None -> false
-      | Some(flags) ->
+      | Some flags ->
         (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Module
 
     let rec isClosureRepr typ =
@@ -620,11 +620,11 @@ module internal Impl =
     let isRecordType (typ: Type, bindingFlags: BindingFlags) =
       match tryFindSourceConstructFlagsOfType typ with
       | None -> false
-      | Some(flags) ->
+      | Some flags ->
         (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.RecordType &&
         // We see private representations only if BindingFlags.NonPublic is set
-        (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then
-            (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
+        (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum 0 then
+            (bindingFlags &&& BindingFlags.NonPublic) <> enum 0
          else
             true)
 
@@ -653,7 +653,7 @@ module internal Impl =
         let ctor = getRecordConstructorMethod(typ, bindingFlags)
         (fun (args: obj[]) ->
 #if FX_RESHAPED_REFLECTION
-            ctor.Invoke(args))
+            ctor.Invoke args)
 #else
             ctor.Invoke(BindingFlags.InvokeMethod  ||| BindingFlags.Instance ||| bindingFlags, null, args, null))
 #endif
@@ -664,11 +664,11 @@ module internal Impl =
     let isExceptionRepr (typ: Type, bindingFlags) =
         match tryFindSourceConstructFlagsOfType typ with
         | None -> false
-        | Some(flags) ->
+        | Some flags ->
           ((flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Exception) &&
           // We see private representations only if BindingFlags.NonPublic is set
-          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then
-              (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
+          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum 0 then
+              (bindingFlags &&& BindingFlags.NonPublic) <> enum 0
            else
               true)
 
@@ -730,9 +730,9 @@ type UnionCaseInfo(typ: System.Type, tag: int) =
         fieldsPropsOfUnionCase (typ, tag, BindingFlags.Public ||| BindingFlags.NonPublic)
 
     member __.GetCustomAttributes() =
-        getMethInfo().GetCustomAttributes(false)
+        getMethInfo().GetCustomAttributes false
 
-    member __.GetCustomAttributes(attributeType) =
+    member __.GetCustomAttributes attributeType =
         getMethInfo().GetCustomAttributes(attributeType, false)
 
     member __.GetCustomAttributesData() =
@@ -890,7 +890,7 @@ type FSharpValue =
         let domain, range = getFunctionTypeInfo functionType
         let dynCloMakerTy = typedefof<DynamicFunction<obj, obj>>
         let saverTy = dynCloMakerTy.MakeGenericType [| domain; range |]
-        let o = Activator.CreateInstance(saverTy)
+        let o = Activator.CreateInstance saverTy
         let (f : (obj -> obj) -> obj) = downcast o
         f implementation
 

@@ -13,11 +13,9 @@ open System.Windows.Media.Animation
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Classification
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 
@@ -27,9 +25,10 @@ open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
-open Microsoft.VisualStudio.Text.Formatting
 
 open Internal.Utilities.StructuredFormat
+
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
     member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
@@ -46,7 +45,7 @@ type internal FSharpCodeLensService
         checker: FSharpChecker,
         projectInfoManager: FSharpProjectOptionsManager,
         classificationFormatMapService: IClassificationFormatMapService,
-        typeMap: Lazy<ClassificationTypeMap>,
+        typeMap: Lazy<FSharpClassificationTypeMap>,
         codeLens : CodeLensDisplayService,
         settings: EditorOptions
     ) as self =
@@ -78,7 +77,7 @@ type internal FSharpCodeLensService
     let layoutTagToFormatting (layoutTag: LayoutTag) =
         layoutTag
         |> RoslynHelpers.roslynTag
-        |> ClassificationTags.GetClassificationTypeName
+        |> FSharpClassificationTags.GetClassificationTypeName
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties   
 
@@ -87,8 +86,10 @@ type internal FSharpCodeLensService
             do! Async.SwitchToContext uiContext
             let! res = lens.TaggedText
             match res with
-            | Some (taggedText, navigation) -> 
+            | Some (taggedText, navigation) ->
+#if DEBUG
                 logInfof "Tagged text %A" taggedText
+#endif
                 let textBlock = new TextBlock(Background = Brushes.AliceBlue, Opacity = 0.0, TextTrimming = TextTrimming.None)
                 DependencyObjectExtensions.SetDefaultTextProperties(textBlock, formatMap.Value)
 
@@ -140,15 +141,20 @@ type internal FSharpCodeLensService
     let executeCodeLenseAsync () =  
         asyncMaybe {
             do! Async.Sleep 800 |> liftAsync
+#if DEBUG
             logInfof "Rechecking code due to buffer edit!"
+#endif
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
             let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token)
             let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
+#if DEBUG
             logInfof "Getting uses of all symbols!"
+#endif
             let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
             let textSnapshot = buffer.CurrentSnapshot
+#if DEBUG
             logInfof "Updating due to buffer edit!"
-            
+#endif
             // Clear existing data and cache flags
             // The results which are left.
             let oldResults = Dictionary(lastResults)
@@ -168,13 +174,9 @@ type internal FSharpCodeLensService
                         if (lineNumber >= 0 || lineNumber < textSnapshot.LineCount) then
                             match func.FullTypeSafe with
                             | Some _ ->
-                                let! displayEnv = checkFileResults.GetDisplayEnvForPos func.DeclarationLocation.Start
+                                let! maybeContext = checkFileResults.GetDisplayContextForPos(func.DeclarationLocation.Start)
                             
-                                let displayContext =
-                                    match displayEnv with
-                                    | Some denv -> FSharpDisplayContext(fun _ -> denv)
-                                    | None -> displayContext
-
+                                let displayContext = Option.defaultValue displayContext maybeContext
                                 let typeLayout = func.FormatLayout displayContext
                                 let taggedText = ResizeArray()
                                     
@@ -184,17 +186,25 @@ type internal FSharpCodeLensService
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
                             | None -> 
+#if DEBUG
                                 logWarningf "Couldn't acquire CodeLens data for function %A" func
+#endif
                                 return None
                         else return None
                     with e -> 
+#if DEBUG
                         logErrorf "Error in lazy line lens computation. %A" e
+#else
+                        ignore e
+#endif
                         return None
                 }
             
             let inline setNewResultsAndWarnIfOverriden fullDeclarationText value = 
+#if DEBUG
                 if newResults.ContainsKey fullDeclarationText then
                     logWarningf "New results already contains: %A" fullDeclarationText
+#endif
                 newResults.[fullDeclarationText] <- value
 
             for symbolUse in symbolUses do
@@ -295,7 +305,11 @@ type internal FSharpCodeLensService
                             textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                         codeLensToAdd.Add (trackingSpan, res)
                         newResults.[fullDeclarationText] <- (trackingSpan, res)
-                    with e -> logExceptionWithContext (e, "Line Lens tracking tag span creation")
+                    with e ->
+#if DEBUG
+                        logExceptionWithContext (e, "Line Lens tracking tag span creation")
+#endif
+                        ignore e
                 ()
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
@@ -305,7 +319,9 @@ type internal FSharpCodeLensService
                         let! res = createTextBox codeLens
                         if res then
                             do! Async.SwitchToContext uiContext
+#if DEBUG
                             logInfof "Adding ui element for %A" (codeLens.TaggedText)
+#endif
                             let uiElement = codeLens.UiElement
                             let animation = 
                                 DoubleAnimation(
@@ -321,16 +337,16 @@ type internal FSharpCodeLensService
                             lineLens.RelayoutRequested.Enqueue ()
                             sb.Begin()
                         else
+#if DEBUG
                             logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
-                        // logInfo "Adding text box!"
+#endif
+                            ()
                     } |> (RoslynHelpers.StartAsyncSafe CancellationToken.None) "UIElement creation"
 
             for value in tagsToUpdate do
                 let trackingSpan, (newTrackingSpan, _, codeLens) = value.Key, value.Value
-                // logInfof "Adding ui element for %A" (codeLens.TaggedText)
                 lineLens.RemoveCodeLens trackingSpan |> ignore
                 let Grid = lineLens.AddCodeLens newTrackingSpan
-                // logInfof "Trackingspan %A is being added." trackingSpan 
                 if codeLens.Computed && (isNull codeLens.UiElement |> not) then
                     let uiElement = codeLens.UiElement
                     lineLens.AddUiElementToCodeLensOnce (newTrackingSpan, uiElement)
@@ -342,7 +358,9 @@ type internal FSharpCodeLensService
             for value in codeLensToAdd do
                 let trackingSpan, codeLens = value
                 let Grid = lineLens.AddCodeLens trackingSpan
-                logInfof "Trackingspan %A is being added." trackingSpan 
+#if DEBUG
+                logInfof "Trackingspan %A is being added." trackingSpan
+#endif
                 
                 Grid.IsVisibleChanged
                 |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
@@ -350,10 +368,10 @@ type internal FSharpCodeLensService
 
             for oldResult in oldResults do
                 let trackingSpan, _ = oldResult.Value
-                // logInfof "removing trackingSpan %A" trackingSpan
                 lineLens.RemoveCodeLens trackingSpan |> ignore
-
+#if DEBUG
             logInfof "Finished updating line lens."
+#endif
             
             if not firstTimeChecked then
                 firstTimeChecked <- true
@@ -369,8 +387,13 @@ type internal FSharpCodeLensService
                       do! executeCodeLenseAsync()
                       do! Async.Sleep(1000)
                   with
-                  | e -> logErrorf "Line Lens startup failed with: %A" e
-                         numberOfFails <- numberOfFails + 1
+                  | e ->
+#if DEBUG
+                      logErrorf "Line Lens startup failed with: %A" e
+#else
+                      ignore e
+#endif
+                      numberOfFails <- numberOfFails + 1
            } |> Async.Start
         end
 
@@ -379,4 +402,3 @@ type internal FSharpCodeLensService
         bufferChangedCts.Dispose()
         bufferChangedCts <- new CancellationTokenSource()
         executeCodeLenseAsync () |> Async.Ignore |> RoslynHelpers.StartAsyncSafe bufferChangedCts.Token "Buffer Changed"
-

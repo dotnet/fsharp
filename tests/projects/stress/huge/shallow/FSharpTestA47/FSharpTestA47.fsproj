@@ -5,12 +5,12 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>a534ebfa-92ae-480f-b9d7-e212e53abc56</ProjectGuid>
+    <ProjectGuid>3933669b-f444-4d2b-b9b1-0ebecdfbf95d</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>FSharpTestA47</RootNamespace>
     <AssemblyName>FSharpTestA47</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFSharpCoreVersion>4.6.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>FSharpTestA47</Name>
   </PropertyGroup>
@@ -35,8 +35,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
+    <Reference Include="FSharp.Core">
+      <HintPath>..\packages\FSharp.Core.4.6.2\lib\net45\FSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

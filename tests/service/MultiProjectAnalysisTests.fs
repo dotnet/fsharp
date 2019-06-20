@@ -1,7 +1,7 @@
 ﻿
 #if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -347,11 +347,6 @@ let ``Test ManyProjectsStressTest basic`` () =
 let ``Test ManyProjectsStressTest cache too small`` () = 
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest false
-
-    // Because the cache is too small, we need explicit calls to KeepAlive to avoid disposal of project information
-    let disposals = 
-        [ for p in ManyProjectsStressTest.jointProject :: ManyProjectsStressTest.projects do
-             yield checker.KeepProjectAlive p.Options |> Async.RunSynchronously ]
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
 

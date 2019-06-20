@@ -1,13 +1,17 @@
 <Project>
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-
   <PropertyGroup>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <VisualStudioInsertionComponent>Microsoft.FSharp</VisualStudioInsertionComponent>
     <OutputArchitecture>neutral</OutputArchitecture>
     <OutputLocalized>false</OutputLocalized>
     <OutputType>vsix</OutputType>
     <IsPackage>true</IsPackage>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
     <BinariesFolder>$(ArtifactsBinDir)</BinariesFolder>
   </PropertyGroup>
 

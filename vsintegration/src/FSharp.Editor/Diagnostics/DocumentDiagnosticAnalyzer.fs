@@ -11,6 +11,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices

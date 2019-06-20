@@ -2,11 +2,11 @@
 
 // Functions to retrieve framework dependencies
 
-
 module internal FSharp.Compiler.DotNetFrameworkDependencies
 
     open System
     open System.Collections.Generic
+    open System.Diagnostics
     open System.IO
     open System.Reflection
 
@@ -33,6 +33,103 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                 else
                     None
         with _ -> None
+
+    // Compare nuget version strings
+    //
+    // Format:
+    // =======
+    //      $(Major).$(Minor).$(Build) [-SomeSuffix]
+    //   Major, Minor, Build collates normally
+    //   Strings without -SomeSuffix collate higher than SomeSuffix, 
+    //   SomeSuffix collates using normal alphanumeric rules
+    //
+    let deconstructVersion (version:string)  =
+        let version, suffix =
+            let pos = version.IndexOf("-")
+            if pos >= 0 then
+                version.Substring(0, pos), version.Substring(pos + 1)
+            else version, ""
+
+        let elements = version.Split('.')
+        if elements.Length < 3 then
+            struct (0, 0, 0, suffix)
+        else
+            struct (Int32.Parse(elements.[0]), Int32.Parse(elements.[1]), Int32.Parse(elements.[2]), suffix)
+
+    let versionCompare c1 c2 =
+        if c1 = c2 then 0
+        else
+            try
+                let struct (major1, minor1, build1, suffix1 ) = deconstructVersion c1
+                let struct (major2, minor2, build2, suffix2 ) = deconstructVersion c2
+                let v = major1 - major2
+                if v <> 0 then v
+                else
+                    let v = minor1 - minor2
+                    if v <> 0 then v
+                    else
+                        let v = build1 - build2
+                        if v <> 0 then v
+                        else
+                            match String.IsNullOrEmpty(suffix1), String.IsNullOrEmpty(suffix2) with
+                            | true, true -> 0
+                            | true, false -> 1
+                            | false, true -> -1
+                            | false, false -> String.Compare(suffix1, suffix2, StringComparison.InvariantCultureIgnoreCase)
+            with _ -> 0
+
+    let executionTfm =
+        let file =
+            try
+                let depsJsonPath = Path.ChangeExtension(Assembly.GetEntryAssembly().Location, "deps.json")
+                File.ReadAllText(depsJsonPath)
+            with _ -> ""
+
+        let tfmPrefix=".NETCoreApp,Version=v"
+        let pattern = "\"name\": \"" + tfmPrefix
+        let startPos =
+            let startPos = file.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
+            if startPos >= 0  then startPos + (pattern.Length) else startPos
+
+        let length =
+            if startPos >= 0 then
+                let ep = file.IndexOf("\"", startPos)
+                if ep >= 0 then ep - startPos else ep
+            else -1
+        match startPos, length with
+        | -1, _
+        | _, -1 -> None
+        | pos, length -> Some ("netcoreapp" + file.Substring(pos, length))
+
+
+    let getFrameworkRefsPackDirectoryPath =
+        match executionTfm with
+        | Some _ ->
+            let appRefDir = Path.Combine(getFSharpCompilerLocation, "../../../packs/Microsoft.NETCore.App.Ref")
+            if Directory.Exists(appRefDir) then
+                Some appRefDir
+            else
+                None
+        | _ -> None
+
+    let isInReferenceAssemblyPackDirectory filename =
+        match getFrameworkRefsPackDirectoryPath with
+        | Some appRefDir ->
+            let path = Path.GetDirectoryName(filename)
+            path.StartsWith(appRefDir, StringComparison.OrdinalIgnoreCase)
+        | _ -> false
+
+    let getFrameworkRefsPackDirectory =
+        match executionTfm, getFrameworkRefsPackDirectoryPath with
+        | Some tfm, Some appRefDir ->
+            try
+                let refDirs = Directory.GetDirectories(appRefDir)
+                let versionPath = refDirs |> Array.sortWith (versionCompare) |> Array.last
+                Some(Path.Combine(versionPath, "ref", tfm))
+            with | _ -> None
+        | _ -> None
+
+
 
     let getDependenciesOf assemblyReferences =
         let assemblies = new Dictionary<string, string>()
@@ -94,7 +191,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         yield "System.Core"
         yield getDefaultFSharpCoreReference
         if useFsiAuxLib then yield getFsiLibraryName
- 
+
         // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources 
         match getDefaultSystemValueTupleReference() with
         | None -> ()
@@ -120,19 +217,38 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         yield "System.Numerics"
     ]
 
-    let fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib assumeDotNetFramework =
-        if assumeDotNetFramework then
-            getDesktopDefaultReferences useFsiAuxLib
-        else
-            // Coreclr supports netstandard assemblies only for now
-            (getDependenciesOf [
-                yield Path.Combine(frameworkDir, "netstandard.dll");
-                yield getDefaultFSharpCoreReference;
-                if useFsiAuxLib then yield getFsiLibraryName
-            ]).Values |> Seq.toList
+    let fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib useSdkRefs assumeDotNetFramework =
+        let results =
+            if assumeDotNetFramework then
+                getDesktopDefaultReferences useFsiAuxLib
+            else
+                let dependencies =
+                    let getImplementationReferences () =
+                        // Coreclr supports netstandard assemblies only for now
+                        (getDependenciesOf [
+                            yield Path.Combine(frameworkDir, "netstandard.dll")
+                            yield getDefaultFSharpCoreReference
+                            if useFsiAuxLib then yield getFsiLibraryName
+                        ]).Values |> Seq.toList
 
-    let defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework =
-        fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources false assumeDotNetFramework
+                    if useSdkRefs then
+                        // Go fetch references
+                        match getFrameworkRefsPackDirectory with
+                        | Some path ->
+                            try [ yield! Directory.GetFiles(path, "*.dll")
+                                  yield getDefaultFSharpCoreReference
+                                  if useFsiAuxLib then yield getFsiLibraryName
+                                ]
+                            with | _ -> List.empty<string>
+                        | None ->
+                            getImplementationReferences ()
+                    else
+                        getImplementationReferences ()
+                dependencies
+        results
+
+    let defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework useSdkRefs =
+        fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources false useSdkRefs assumeDotNetFramework
 
     // A set of assemblies to always consider to be system assemblies.  A common set of these can be used a shared 
     // resources between projects in the compiler services.  Also all assemblies where well-known system types exist
@@ -241,5 +357,5 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         ]
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 
-    let basicReferencesForScriptLoadClosure useFsiAuxLib assumeDotNetFramework =
-        fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib assumeDotNetFramework
+    let basicReferencesForScriptLoadClosure useFsiAuxLib useSdkRefs assumeDotNetFramework =
+        fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib useSdkRefs assumeDotNetFramework

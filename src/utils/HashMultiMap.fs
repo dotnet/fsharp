@@ -22,15 +22,15 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
         then seq |> Seq.iter (fun (k,v) -> x.Add(k,v))
 
     member x.GetRest(k) =
-        let mutable res = []
-        let ok = rest.TryGetValue(k,&res)
-        if ok then res else []
+        match rest.TryGetValue k with
+        | true, res -> res
+        | _ -> []
 
     member x.Add(y,z) = 
-        let mutable res = Unchecked.defaultof<'Value>
-        let ok = firstEntries.TryGetValue(y,&res)
-        if ok then 
+        match firstEntries.TryGetValue y with
+        | true, res ->
             rest.[y] <- res :: x.GetRest(y)
+        | _ -> ()
         firstEntries.[y] <- z
 
     member x.Clear() = 
@@ -52,16 +52,16 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
 
     member x.Item 
         with get(y : 'Key) = 
-            let mutable res = Unchecked.defaultof<'Value>
-            let ok = firstEntries.TryGetValue(y,&res)
-            if ok then res else raise (KeyNotFoundException("The item was not found in collection"))
+            match firstEntries.TryGetValue y with
+            | true, res -> res
+            | _ -> raise (KeyNotFoundException("The item was not found in collection"))
         and set (y:'Key) (z:'Value) = 
             x.Replace(y,z)
 
     member x.FindAll(y) = 
-        let mutable res = Unchecked.defaultof<'Value>
-        let ok = firstEntries.TryGetValue(y,&res)
-        if ok then res :: x.GetRest(y) else []
+        match firstEntries.TryGetValue y with
+        | true, res -> res :: x.GetRest(y)
+        | _ -> []
 
     member x.Fold f acc = 
         let mutable res = acc
@@ -88,33 +88,32 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
     member x.ContainsKey(y) = firstEntries.ContainsKey(y)
 
     member x.Remove(y) = 
-        let mutable res = Unchecked.defaultof<'Value>
-        let ok = firstEntries.TryGetValue(y,&res)
+        match firstEntries.TryGetValue y with
         // NOTE: If not ok then nothing to remove - nop
-        if ok then 
+        | true, _res ->
             // We drop the FirstEntry. Here we compute the new FirstEntry and residue MoreEntries
-            let mutable res = []
-            let ok = rest.TryGetValue(y,&res)
-            if ok then 
+            match rest.TryGetValue y with
+            | true, res ->
                 match res with 
                 | [h] -> 
                     firstEntries.[y] <- h; 
                     rest.Remove(y) |> ignore
-                | (h::t) -> 
+                | (h :: t) -> 
                     firstEntries.[y] <- h
                     rest.[y] <- t
                 | _ -> 
                     ()
-            else
+            | _ ->
                 firstEntries.Remove(y) |> ignore 
+        | _ -> ()
 
     member x.Replace(y,z) = 
         firstEntries.[y] <- z
 
     member x.TryFind(y) =
-        let mutable res = Unchecked.defaultof<'Value>
-        let ok = firstEntries.TryGetValue(y,&res)
-        if ok then Some(res) else None
+        match firstEntries.TryGetValue y with
+        | true, res -> Some res
+        | _ -> None
 
     member x.Count = firstEntries.Count
 

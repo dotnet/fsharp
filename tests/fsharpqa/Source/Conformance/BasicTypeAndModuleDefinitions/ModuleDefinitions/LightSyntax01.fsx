@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Modules 
 // Light syntax: begin/end can be omitted
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 module N1 =

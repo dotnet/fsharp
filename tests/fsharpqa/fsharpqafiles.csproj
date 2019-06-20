@@ -10,6 +10,7 @@
     <Content Include="**\*.log" />
     <Content Include="**\*.fsx" />
     <Content Include="**\*.fs" />
+    <Content Include="**\*.pl" />
   </ItemGroup>
   <Target Name="Build">
   </Target>

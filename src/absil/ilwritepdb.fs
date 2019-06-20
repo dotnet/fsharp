@@ -29,11 +29,11 @@ type BlobBuildingStream () =
     override this.CanWrite = true
     override this.CanRead  = false
     override this.CanSeek  = false
-    override this.Length   = int64(builder.Count)
+    override this.Length   = int64 (builder.Count)
 
     override this.Write(buffer: byte array, offset: int, count: int) = builder.WriteBytes(buffer, offset, count)
-    override this.WriteByte(value: byte) = builder.WriteByte(value)
-    member   this.WriteInt32(value: int) = builder.WriteInt32(value)
+    override this.WriteByte(value: byte) = builder.WriteByte value
+    member   this.WriteInt32(value: int) = builder.WriteInt32 value
     member   this.ToImmutableArray() = builder.ToImmutableArray()
     member   this.TryWriteBytes(stream: Stream, length: int) = builder.TryWriteBytes(stream, length)
 
@@ -135,11 +135,11 @@ let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvCh
         let path = (System.Text.Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
         let (offset, size) = (0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
-        Buffer.BlockCopy(BitConverter.GetBytes(cvMagicNumber), 0, buffer, offset, size)
+        Buffer.BlockCopy(BitConverter.GetBytes cvMagicNumber, 0, buffer, offset, size)
         let (offset, size) = (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
         let (offset, size) = (offset + size, sizeof<int32>)       // # of pdb files generated (1)
-        Buffer.BlockCopy(BitConverter.GetBytes(1), 0, buffer, offset, size)
+        Buffer.BlockCopy(BitConverter.GetBytes 1, 0, buffer, offset, size)
         let (offset, size) = (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
@@ -157,7 +157,7 @@ let pdbGetPdbDebugInfo (embeddedPDBChunk: BinaryChunk) (uncompressedLength: int6
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
         let (offset, size) = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
-        Buffer.BlockCopy(BitConverter.GetBytes(pdbMagicNumber), 0, buffer, offset, size)
+        Buffer.BlockCopy(BitConverter.GetBytes pdbMagicNumber, 0, buffer, offset, size)
         let (offset, size) = (offset + size, sizeof<int32>)        // Uncompressed size
         Buffer.BlockCopy(BitConverter.GetBytes((int uncompressedLength)), 0, buffer, offset, size)
         let (offset, size) = (offset + size, int(stream.Length))   // Uncompressed size
@@ -186,9 +186,9 @@ let hashSizeOfMD5 = 16
 // In this case, catch the failure, and not set a checksum. 
 let checkSum (url: string) =
     try
-        use file = FileSystem.FileStreamReadShim(url)
+        use file = FileSystem.FileStreamReadShim url
         use md5 = System.Security.Cryptography.MD5.Create()
-        let checkSum = md5.ComputeHash(file)
+        let checkSum = md5.ComputeHash file
         Some (guidSourceHashMD5, checkSum)
     with _ -> None
 
@@ -216,10 +216,10 @@ let sortMethods showTimes info =
 
 let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
-    tableRowCounts |> Seq.iter(fun x -> builder.Add(x))
+    tableRowCounts |> Seq.iter(fun x -> builder.Add x)
     builder.MoveToImmutable()
 
-let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (sourceLink: string) showTimes (info: PdbData) isDeterministic =
+let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (sourceLink: string) showTimes (info: PdbData) isDeterministic (pathMap: PathMap) =
     sortMethods showTimes info
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
@@ -229,19 +229,20 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
 
     let metadata = MetadataBuilder()
     let serializeDocumentName (name: string) =
+        let name = PathMap.apply pathMap name
         let count s c = s |> Seq.filter(fun ch -> if c = ch then true else false) |> Seq.length
 
         let s1, s2 = '/', '\\'
         let separator = if (count name s1) >= (count name s2) then s1 else s2
 
         let writer = new BlobBuilder()
-        writer.WriteByte(byte(separator))
+        writer.WriteByte(byte separator)
 
         for part in name.Split( [| separator |] ) do
-            let partIndex = MetadataTokens.GetHeapOffset(BlobHandle.op_Implicit(metadata.GetOrAddBlobUTF8(part)))
-            writer.WriteCompressedInteger(int(partIndex))
+            let partIndex = MetadataTokens.GetHeapOffset(BlobHandle.op_Implicit(metadata.GetOrAddBlobUTF8 part))
+            writer.WriteCompressedInteger(int partIndex)
 
-        metadata.GetOrAddBlob(writer)
+        metadata.GetOrAddBlob writer
 
     let corSymLanguageTypeId = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
     let embeddedSourceId     = System.Guid(0x0e8a571bu, 0x6926us, 0x466eus, 0xb4uy, 0xaduy, 0x8auy, 0xb0uy, 0x46uy, 0x11uy, 0xf5uy, 0xfeuy)
@@ -265,23 +266,23 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
             if not embedAllSource && not isInList || not (File.Exists file) then
                 None
             else
-                let stream = File.OpenRead(file)
+                let stream = File.OpenRead file
                 let length64 = stream.Length
-                if length64 > int64(Int32.MaxValue) then raise (new IOException("File is too long"))
+                if length64 > int64 (Int32.MaxValue) then raise (new IOException("File is too long"))
 
                 let builder = new BlobBuildingStream()
-                let length = int(length64)
+                let length = int length64
                 if length < sourceCompressionThreshold then
-                    builder.WriteInt32(0)
+                    builder.WriteInt32 0
                     builder.TryWriteBytes(stream, length) |> ignore
                 else
-                    builder.WriteInt32(length) |>ignore
+                    builder.WriteInt32 length |>ignore
                     use deflater = new DeflateStream(builder, CompressionMode.Compress, true)
-                    stream.CopyTo(deflater) |> ignore
+                    stream.CopyTo deflater |> ignore
                 Some (builder.ToImmutableArray())
 
         let mutable index = new Dictionary<string, DocumentHandle>(docs.Length)
-        let docLength = docs.Length + if String.IsNullOrEmpty(sourceLink) then 1 else 0
+        let docLength = docs.Length + if String.IsNullOrEmpty sourceLink then 1 else 0
         metadata.SetCapacity(TableIndex.Document, docLength)
         for doc in docs do
             let handle =
@@ -289,32 +290,32 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 | Some (hashAlg, checkSum) ->
                     let dbgInfo = 
                         (serializeDocumentName doc.File,
-                         metadata.GetOrAddGuid(hashAlg),
+                         metadata.GetOrAddGuid hashAlg,
                          metadata.GetOrAddBlob(checkSum.ToImmutableArray()),
-                         metadata.GetOrAddGuid(corSymLanguageTypeId)) |> metadata.AddDocument
+                         metadata.GetOrAddGuid corSymLanguageTypeId) |> metadata.AddDocument
                     match includeSource doc.File with
                     | None -> ()
                     | Some blob ->
-                        metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit(dbgInfo),
-                                                           metadata.GetOrAddGuid(embeddedSourceId),
-                                                           metadata.GetOrAddBlob(blob)) |> ignore
+                        metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit dbgInfo,
+                                                           metadata.GetOrAddGuid embeddedSourceId,
+                                                           metadata.GetOrAddBlob blob) |> ignore
                     dbgInfo
                 | None ->
                     let dbgInfo = 
                         (serializeDocumentName doc.File,
                          metadata.GetOrAddGuid(System.Guid.Empty),
                          metadata.GetOrAddBlob(ImmutableArray<byte>.Empty),
-                         metadata.GetOrAddGuid(corSymLanguageTypeId)) |> metadata.AddDocument
+                         metadata.GetOrAddGuid corSymLanguageTypeId) |> metadata.AddDocument
                     dbgInfo
             index.Add(doc.File, handle)
 
-        if not (String.IsNullOrEmpty(sourceLink)) then
-            let fs = File.OpenRead(sourceLink)
+        if not (String.IsNullOrEmpty sourceLink) then
+            let fs = File.OpenRead sourceLink
             let ms = new MemoryStream()
-            fs.CopyTo(ms)
+            fs.CopyTo ms
             metadata.AddCustomDebugInformation(
                 ModuleDefinitionHandle.op_Implicit(EntityHandle.ModuleDefinition),
-                metadata.GetOrAddGuid(sourceLinkId),
+                metadata.GetOrAddGuid sourceLinkId,
                 metadata.GetOrAddBlob(ms.ToArray())) |> ignore
         index
 
@@ -400,26 +401,26 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                             else offset
 
                         if i < 1 || offsetDelta > 0 then
-                            builder.WriteCompressedInteger(offsetDelta)
+                            builder.WriteCompressedInteger offsetDelta
 
                                                                                                         // Hidden-sequence-point-record
                             if startLine = 0xfeefee || endLine = 0xfeefee || (startColumn = 0 && endColumn = 0)
                             then
-                                builder.WriteCompressedInteger(0)
-                                builder.WriteCompressedInteger(0)
+                                builder.WriteCompressedInteger 0
+                                builder.WriteCompressedInteger 0
                             else                                                                        // Non-hidden-sequence-point-record
                                 let deltaLines = endLine - startLine                                    // lines
-                                builder.WriteCompressedInteger(deltaLines)
+                                builder.WriteCompressedInteger deltaLines
 
                                 let deltaColumns = endColumn - startColumn                              // Columns
                                 if deltaLines = 0 then
-                                    builder.WriteCompressedInteger(deltaColumns)
+                                    builder.WriteCompressedInteger deltaColumns
                                 else
-                                    builder.WriteCompressedSignedInteger(deltaColumns)
+                                    builder.WriteCompressedSignedInteger deltaColumns
 
                                 if previousNonHiddenStartLine < 0 then                                  // delta Start Line & Column:
-                                    builder.WriteCompressedInteger(startLine)
-                                    builder.WriteCompressedInteger(startColumn)
+                                    builder.WriteCompressedInteger startLine
+                                    builder.WriteCompressedInteger startColumn
                                 else
                                     builder.WriteCompressedSignedInteger(startLine - previousNonHiddenStartLine)
                                     builder.WriteCompressedSignedInteger(startColumn - previousNonHiddenStartColumn)
@@ -427,12 +428,12 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                                 previousNonHiddenStartLine <- startLine
                                 previousNonHiddenStartColumn <- startColumn
 
-                getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob(builder)
+                getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob builder
 
         metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore
 
         // Write the scopes
-        let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
+        let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit handle) + 1)
         let writeMethodScope scope =
             let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
                 if scope1.StartOffset > scope2.StartOffset then 1
@@ -472,8 +473,8 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
 
     let entryPoint =
         match info.EntryPoint with
-        | None -> MetadataTokens.MethodDefinitionHandle(0)
-        | Some x -> MetadataTokens.MethodDefinitionHandle(x)
+        | None -> MetadataTokens.MethodDefinitionHandle 0
+        | Some x -> MetadataTokens.MethodDefinitionHandle x
 
     let deterministicIdProvider isDeterministic  : System.Func<IEnumerable<Blob>, BlobContentId> = 
         match isDeterministic with
@@ -484,33 +485,33 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 let hash = content 
                            |> Seq.collect (fun c -> c.GetBytes().Array |> sha.ComputeHash)
                            |> Array.ofSeq |> sha.ComputeHash
-                BlobContentId.FromHash(hash)
+                BlobContentId.FromHash hash
             System.Func<IEnumerable<Blob>, BlobContentId>( convert )
 
     let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, deterministicIdProvider isDeterministic)
     let blobBuilder = new BlobBuilder()
-    let contentId= serializer.Serialize(blobBuilder)
+    let contentId= serializer.Serialize blobBuilder
     let portablePdbStream = new MemoryStream()
-    blobBuilder.WriteContentTo(portablePdbStream)
+    blobBuilder.WriteContentTo portablePdbStream
     reportTime showTimes "PDB: Created"
     (portablePdbStream.Length, contentId, portablePdbStream)
 
 let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobContentId) (stream: MemoryStream) =
     let compressedStream = new MemoryStream()
     use compressionStream = new DeflateStream(compressedStream, CompressionMode.Compress,true)
-    stream.WriteTo(compressionStream)
+    stream.WriteTo compressionStream
     (uncompressedLength, contentId, compressedStream)
 
-let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk =
+let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb pathMap cvChunk =
     try FileSystem.FileDelete fpdb with _ -> ()
     use pdbFile = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
-    stream.WriteTo(pdbFile)
+    stream.WriteTo pdbFile
     reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fpdb cvChunk None 0L None
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None 0L None
 
 let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk =
     reportTime showTimes "PDB: Closed"
-    let fn = Path.GetFileName(fpdb)
+    let fn = Path.GetFileName fpdb
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) uncompressedLength (Some stream)
 
 #if !FX_NO_PDB_WRITER
@@ -526,7 +527,7 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
     try
         pdbw := pdbInitialize f fpdb
-    with _ -> error(Error(FSComp.SR.ilwriteErrorCreatingPdb(fpdb), rangeCmdArgs))
+    with _ -> error(Error(FSComp.SR.ilwriteErrorCreatingPdb fpdb, rangeCmdArgs))
 
     match info.EntryPoint with 
     | None -> () 
@@ -636,22 +637,22 @@ let (?) this memb (args:'Args) : 'R =
     // Get array of 'obj' arguments for the reflection call
     let args = 
         if typeof<'Args> = typeof<unit> then [| |]
-        elif FSharpType.IsTuple typeof<'Args> then Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields(args)
+        elif FSharpType.IsTuple typeof<'Args> then Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields args
         else [| box args |]
     
     // Get methods and perform overload resolution
     let methods = this.GetType().GetMethods()
     let bestMatch = methods |> Array.tryFind (fun mi -> mi.Name = memb && mi.GetParameters().Length = args.Length)
     match bestMatch with
-    | Some(mi) -> unbox(mi.Invoke(this, args))        
-    | None -> error(Error(FSComp.SR.ilwriteMDBMemberMissing(memb), rangeCmdArgs))
+    | Some mi -> unbox(mi.Invoke(this, args))        
+    | None -> error(Error(FSComp.SR.ilwriteMDBMemberMissing memb, rangeCmdArgs))
 
 // Creating instances of needed classes from 'Mono.CompilerServices.SymbolWriter' assembly
 
 let monoCompilerSvc = new AssemblyName("Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
 let ctor (asmName: AssemblyName) clsName (args: obj[]) = 
-    let asm = Assembly.Load(asmName)
-    let ty = asm.GetType(clsName)
+    let asm = Assembly.Load asmName
+    let ty = asm.GetType clsName
     System.Activator.CreateInstance(ty, args)
 
 let createSourceMethodImpl (name: string) (token: int) (namespaceID: int) = 
@@ -678,7 +679,7 @@ let writeMdbInfo fmdb f info =
     let docs =
         [| for doc in info.Documents do
              let doc = wr?DefineDocument(doc.File)
-             let unit = wr?DefineCompilationUnit(doc)
+             let unit = wr?DefineCompilationUnit doc
              yield doc, unit |]
 
     let getDocument i = 
@@ -707,11 +708,11 @@ let writeMdbInfo fmdb f info =
                 for local in scope.Locals do
                     wr?DefineLocalVariable(local.Index, local.Name)
                 for child in scope.Children do 
-                    writeScope(child)
+                    writeScope child
                 wr?CloseScope(scope.EndOffset)          
             match meth.RootScope with
             | None -> ()
-            | Some rootscope -> writeScope(rootscope)
+            | Some rootscope -> writeScope rootscope
 
 
             // Finished generating debug information for the curretn method
@@ -720,7 +721,7 @@ let writeMdbInfo fmdb f info =
 
     // Finalize - MDB requires the MVID of the generated .NET module
     let moduleGuid = new System.Guid(info.ModuleID |> Array.map byte)
-    wr?WriteSymbolFile(moduleGuid)
+    wr?WriteSymbolFile moduleGuid
 #endif
 
 //---------------------------------------------------------------------
