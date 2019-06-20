@@ -298,11 +298,6 @@ type AstVisitor<'T> () as this =
 
     let tryVisitList xs : 'T option =
         xs
-        |> List.sortWith (fun (getRange1, _) (getRange2, _)->
-            let r1 = getRange1 ()
-            let r2 = getRange2 ()
-            rangeOrder.Compare (r1, r2)
-        )
         |> List.tryPick (fun (getRange, visit) ->
             let r = getRange ()
             if this.CanVisit r then
