@@ -227,18 +227,6 @@ module rec App =
 
     let view model dispatch =
         let treeItems = []
-            //match model.RootNode with
-            //| None -> []
-            //| Some rootNode ->
-            //    let rec getTreeItem (node: FSharpSyntaxNode) =
-            //        let nested =
-            //            node.GetChildren ()
-            //            |> Seq.map (fun childNode ->
-            //                getTreeItem childNode
-            //            )
-            //            |> List.ofSeq
-            //        TreeViewItem.TreeViewItem(string node, nested, fun () -> dispatch (UpdateNodeHighlight node))
-            //    [ getTreeItem rootNode ]
 
         let otherHighlights =
             match model.NodeHighlight with

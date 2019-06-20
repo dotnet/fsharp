@@ -698,25 +698,22 @@ and FSharpSyntaxNodeVisitor (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
-and FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree) =
+and FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree, f) =
     inherit FSharpSyntaxNodeVisitor (findm, syntaxTree)
 
     let isZeroRange (r: range) =
         posEq r.Start r.End
-    
-    let descendants = ImmutableArray.CreateBuilder ()
-
-    member __.GetDescendantNodes () = descendants.ToImmutable ()
+   
 
     override __.CanVisit m = rangeContainsRange findm m && not (isZeroRange m)
 
     override this.OnVisit (visitedNode, _) =
         if this.VisitStackCount > 1 then
-            descendants.Add visitedNode
+            f visitedNode
         None
 
-and FSharpSyntaxNodeChildVisitor (findm, syntaxTree) =
-    inherit FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree)
+and FSharpSyntaxNodeChildVisitor (findm, syntaxTree, f) =
+    inherit FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree, f)
 
     override this.CanVisit m =
         // We want to visit direct children only.
@@ -962,10 +959,11 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         let text: SourceText = this.Text
         match text.TrySpanToRange (syntaxTree.FilePath, span) with
         | ValueSome m ->
+            let result = ImmutableArray.CreateBuilder ()
             // TODO: This isn't lazy, make it lazy so we don't try to evaluate everything. Will require work here and in the visitor.
-            let visitor = FSharpSyntaxNodeDescendantVisitor (m, syntaxTree)
+            let visitor = FSharpSyntaxNodeDescendantVisitor (m, syntaxTree, result.Add)
             visitor.VisitNode this |> ignore
-            visitor.GetDescendantNodes() :> FSharpSyntaxNode seq
+            result :> FSharpSyntaxNode seq
         | _ ->
             Seq.empty
 
@@ -976,10 +974,11 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         let text: SourceText = this.Text
         match text.TrySpanToRange (syntaxTree.FilePath, span) with
         | ValueSome m ->
+            let result = ImmutableArray.CreateBuilder ()
             // TODO: This isn't lazy, make it lazy so we don't try to evaluate everything. Will require work here and in the visitor.
-            let visitor = FSharpSyntaxNodeChildVisitor (m, syntaxTree)
+            let visitor = FSharpSyntaxNodeChildVisitor (m, syntaxTree, result.Add)
             visitor.VisitNode this |> ignore
-            visitor.GetDescendantNodes() :> FSharpSyntaxNode seq
+            result :> FSharpSyntaxNode seq
         | _ ->
             Seq.empty
 
@@ -1068,29 +1067,29 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
             match parseResult.TryGetTarget () with
             | true, parseResult -> parseResult
             | _ ->
-                if lexer.AreTokensCached then
-                        let tcConfig = pConfig.tcConfig
-                        let isLastCompiland = (pConfig.isLastFileOrScript, pConfig.isExecutable)
-                        let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
-                        let mutable result = Unchecked.defaultof<_>
+                //if lexer.AreTokensCached then
+                //        let tcConfig = pConfig.tcConfig
+                //        let isLastCompiland = (pConfig.isLastFileOrScript, pConfig.isExecutable)
+                //        let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
+                //        let mutable result = Unchecked.defaultof<_>
 
-                        let result =
-                            try
-                                let parsedInput =
-                                    let mutable parsedResult = Unchecked.defaultof<_>
-                                    printfn "using incremental lexer"
-                                    lexer.LexFilter (errorLogger, ((fun lexbuf getNextToken ->
-                                        let parsedInput = ParseInput(getNextToken, errorLogger, lexbuf, None, filePath, isLastCompiland)
-                                        parsedResult <- parsedInput
-                                    )), ct)
-                                    parsedResult
+                //        let result =
+                //            try
+                //                let parsedInput =
+                //                    let mutable parsedResult = Unchecked.defaultof<_>
+                //                    printfn "using incremental lexer"
+                //                    lexer.LexFilter (errorLogger, ((fun lexbuf getNextToken ->
+                //                        let parsedInput = ParseInput(getNextToken, errorLogger, lexbuf, None, filePath, isLastCompiland)
+                //                        parsedResult <- parsedInput
+                //                    )), ct)
+                //                    parsedResult
 
-                                (Some parsedInput, errorLogger.GetErrorInfos ())
-                            with
-                            | _ -> (None, errorLogger.GetErrorInfos ())
-                        parseResult <- ValueStrength.Weak (WeakReference<_> result)
-                        result
-                else
+                //                (Some parsedInput, errorLogger.GetErrorInfos ())
+                //            with
+                //            | _ -> (None, errorLogger.GetErrorInfos ())
+                //        parseResult <- ValueStrength.Weak (WeakReference<_> result)
+                //        result
+                //else
                     let result =
                         match lazyText with
                         | ValueSome text ->
