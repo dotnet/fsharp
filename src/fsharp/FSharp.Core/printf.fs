@@ -4,15 +4,14 @@ namespace Microsoft.FSharp.Core
 
 type PrintfFormat<'Printer,'State,'Residue,'Result>(value:string) =
         
-        internal new(value, caps) as this = 
+        internal new(value, caps, types) as this = 
             PrintfFormat<_,_,_,_>(value)
             then this.Captures <- caps
+                 this.Types <- types
 
         member __.Value = value
         member val internal Captures: obj[] = Unchecked.defaultof<obj[]> with get, set
-        member x.GetCaptureTypes() =
-            if System.Object.ReferenceEquals(x.Captures, null) then [||]
-            else Microsoft.FSharp.Collections.Array.map (fun (c: obj) -> c.GetType()) x.Captures
+        member val internal Types: System.Type[] = Unchecked.defaultof<System.Type[]> with get, set
         override __.ToString() = value
     
 type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value:string) = 
@@ -2247,7 +2246,7 @@ module internal PrintfImpl =
                 && key.Value.Equals (fst Cache<'T, 'State, 'Residue, 'Result>.last) then
                     snd Cache<'T, 'State, 'Residue, 'Result>.last
             else
-                let v = get(key.Value, key.GetCaptureTypes())
+                let v = get(key.Value, key.Types)
                 Cache<'T, 'State, 'Residue, 'Result>.last <- (key.Value, v)
                 v
 
