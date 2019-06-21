@@ -17,6 +17,7 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.Features
 
 //-------------------------------------------------------------------------
 // Completeness of classes
@@ -154,12 +155,12 @@ module DispatchSlotChecking =
         (overrideBy.LogicalName = dispatchSlot.LogicalName)
           
     /// Check if an override matches a dispatch slot by name
-    let IsImplMatch g (dispatchSlot: MethInfo) (overrideBy: OverrideInfo) = 
+    let IsImplMatch (g: TcGlobals) (dispatchSlot: MethInfo) (overrideBy: OverrideInfo) = 
         // If the override is listed as only relevant to one type, and we're matching it against an abstract slot of an interface type,
         // then check that interface type is the right type.
         match overrideBy.CanImplement with 
         | CanImplementNoSlots -> false
-        | CanImplementAnySlot -> true 
+        | CanImplementAnySlot -> true
         | CanImplementAnyClassHierarchySlot -> not (isInterfaceTy g dispatchSlot.ApparentEnclosingType)
         | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType
 
@@ -520,21 +521,28 @@ module DispatchSlotChecking =
                          if minfo.IsDispatchSlot then
                              yield RequiredSlot(minfo, (*isOptional=*) not minfo.IsAbstract) ]
                 
-                
             // Compute the methods that are available to implement abstract slots from the base class
             //
             // This is used in CheckDispatchSlotsAreImplemented when we think a dispatch slot may not
             // have been implemented. 
             let availPriorOverrides : OverrideInfo list = 
-                if isInterfaceTy g reqdTy then 
+                let isInterface = isInterfaceTy g reqdTy
+                if isInterface && not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
                     []
-                else 
+                else
                     let reqdTy = 
-                        let baseTyOpt = if isObjExpr then Some reqdTy else GetSuperTypeOfType g amap reqdTyRange reqdTy 
-                        match baseTyOpt with 
-                        | None -> reqdTy
-                        | Some baseTy -> baseTy 
-                    [ // Get any class hierarchy methods on this type 
+                        if isInterface || isObjExpr then
+                            reqdTy
+                        else 
+                            match GetSuperTypeOfType g amap reqdTyRange reqdTy with
+                            | None -> reqdTy
+                            | Some baseTy -> baseTy 
+
+                    let parentType =
+                        if isInterface then CanImplementAnyInterfaceSlot
+                        else CanImplementAnyClassHierarchySlot
+        
+                    [ // Get any class hierarchy methods or default interface methods on this type 
                       //
                       // NOTE: What we have below is an over-approximation that will get too many methods 
                       // and not always correctly relate them to the slots they implement. For example,
@@ -542,8 +550,8 @@ module DispatchSlotChecking =
                       // slot in a subclass. 
                       for minfos in infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, reqdTyRange, reqdTy) do
                         for minfo in minfos do
-                          if not minfo.IsAbstract then 
-                              yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo   ]
+                          if not minfo.IsAbstract && (not isInterface || isInterfaceTy g minfo.ApparentEnclosingType) then 
+                              yield GetInheritedMemberOverrideInfo g amap reqdTyRange parentType minfo   ]
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x: PropInfo) = 

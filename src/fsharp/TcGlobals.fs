@@ -22,6 +22,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Features
 
 open Internal.Utilities
 
@@ -180,7 +181,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, noDebugData: bool,
-                      pathMap: PathMap) =
+                      pathMap: PathMap,
+                      langVersion: LanguageVersion) =
       
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -902,6 +904,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
   member __.pathMap = pathMap
+  member __.langVersion = langVersion
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu
