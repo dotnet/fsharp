@@ -30,7 +30,6 @@ type ActionOnFailure =
     | FailFilter
 
 [<NoEquality; NoComparison>]
-/// Represents type-checked patterns
 type Pattern =
     | TPat_const of Const * range
     | TPat_wild of range  (* note = TPat_disjs([], m), but we haven't yet removed that duplication *)
@@ -720,7 +719,9 @@ let rec erasePartialPatterns inpp =
     | TPat_range _
     | TPat_null _
     | TPat_isinst _ -> inpp
-and erasePartials inps = List.map erasePartialPatterns inps
+
+and erasePartials inps =
+    List.map erasePartialPatterns inps
 
 
 //---------------------------------------------------------------------------
@@ -740,118 +741,115 @@ let CompilePatternBasic
         (clausesL: TypedMatchClause list)
         inputTy
         resultTy =
-    // Add the targets to a match builder
-    // Note the input expression has already been evaluated and saved into a variable.
-    // Hence no need for a new sequence point.
-    let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, exprm)
-    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore)
+    // Add the targets to a match builder.
+    // Note the input expression has already been evaluated and saved into a variable,
+    // hence no need for a new sequence point.
+    let matchBuilder = MatchBuilder (NoSequencePointAtInvisibleBinding, exprm)
+    clausesL |> List.iter (fun c -> matchBuilder.AddTarget c.Target |> ignore)
 
-    // Add the incomplete or rethrow match clause on demand, printing a
-    // warning if necessary (only if it is ever exercised)
-    let incompleteMatchClauseOnce = ref None
+    // Add the incomplete or rethrow match clause on demand,
+    // printing a warning if necessary (only if it is ever exercised).
+    let mutable incompleteMatchClauseOnce = None
     let getIncompleteMatchClause refuted =
-        // This is lazy because emit a
-        // warning when the lazy thunk gets evaluated
-        match !incompleteMatchClauseOnce with
+        // This is lazy because emit a warning when the lazy thunk gets evaluated.
+        match incompleteMatchClauseOnce with
         | None ->
-                (* Emit the incomplete match warning *)
-                if warnOnIncomplete then
-                   match actionOnFailure with
-                   | ThrowIncompleteMatchException | IgnoreWithWarning ->
-                       let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
-                       match ShowCounterExample g denv matchm refuted with
-                       | Some(text, failingWhenClause, true) ->
-                           warning (EnumMatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), matchm))
-                       | Some(text, failingWhenClause, false) ->
-                           warning (MatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), matchm))
-                       | None ->
-                           warning (MatchIncomplete(ignoreWithWarning, None, matchm))
-                   | _ ->
-                        ()
+            // Emit the incomplete match warning. 
+            if warnOnIncomplete then
+                match actionOnFailure with
+                | ThrowIncompleteMatchException | IgnoreWithWarning ->
+                    let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
+                    match ShowCounterExample g denv matchm refuted with
+                    | Some(text, failingWhenClause, true) ->
+                        warning (EnumMatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), matchm))
+                    | Some(text, failingWhenClause, false) ->
+                        warning (MatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), matchm))
+                    | None ->
+                        warning (MatchIncomplete(ignoreWithWarning, None, matchm))
+                | _ ->
+                     ()
 
-                let throwExpr =
-                    match actionOnFailure with
-                      | FailFilter  ->
-                          // Return 0 from the .NET exception filter
-                          mkInt g matchm 0
+            let throwExpr =
+                match actionOnFailure with
+                | FailFilter  ->
+                    // Return 0 from the .NET exception filter.
+                    mkInt g matchm 0
 
-                      | Rethrow     ->
-                          // Rethrow unmatched try-catch exn. No sequence point at the target since its not
-                          // real code.
-                          mkReraise matchm resultTy
+                | Rethrow ->
+                    // Rethrow unmatched try-catch exn. No sequence point at the target since its not real code.
+                    mkReraise matchm resultTy
 
-                      | Throw       ->
-                          // We throw instead of rethrow on unmatched try-catch in a computation expression. But why?
-                          // Because this isn't a real .NET exception filter/handler but just a function we're passing
-                          // to a computation expression builder to simulate one.
-                          mkThrow   matchm resultTy (exprForVal matchm origInputVal)
+                | Throw ->
+                    // We throw instead of rethrow on unmatched try-catch in a computation expression. But why?
+                    // Because this isn't a real .NET exception filter/handler but just a function we're passing
+                    // to a computation expression builder to simulate one.
+                    mkThrow matchm resultTy (exprForVal matchm origInputVal)
 
-                      | ThrowIncompleteMatchException  ->
-                          mkThrow   matchm resultTy
-                              (mkExnExpr(mk_MFCore_tcref g.fslibCcu "MatchFailureException",
-                                            [ mkString g matchm matchm.FileName
-                                              mkInt g matchm matchm.StartLine
-                                              mkInt g matchm matchm.StartColumn], matchm))
+                | ThrowIncompleteMatchException ->
+                    mkThrow matchm resultTy
+                        (mkExnExpr(mk_MFCore_tcref g.fslibCcu "MatchFailureException",
+                                   [ mkString g matchm matchm.FileName
+                                     mkInt g matchm matchm.StartLine
+                                     mkInt g matchm matchm.StartColumn], matchm))
 
-                      | IgnoreWithWarning  ->
-                          mkUnit g matchm
+                | IgnoreWithWarning ->
+                    mkUnit g matchm
 
-                // We don't emit a sequence point at any of the above cases because they don't correspond to
-                // user code.
-                //
-                // Note we don't emit sequence points at either the succeeding or failing
-                // targets of filters since if the exception is filtered successfully then we
-                // will run the handler and hit the sequence point there.
-                // That sequence point will have the pattern variables bound, which is exactly what we want.
-                let tg = TTarget(List.empty, throwExpr, SuppressSequencePointAtTarget  )
-                mbuilder.AddTarget tg |> ignore
-                let clause = TClause(TPat_wild matchm, None, tg, matchm)
-                incompleteMatchClauseOnce := Some clause
-                clause
+            // We don't emit a sequence point at any of the above cases because they don't correspond to user code.
+            //
+            // Note we don't emit sequence points at either the succeeding or failing targets of filters since if
+            // the exception is filtered successfully then we will run the handler and hit the sequence point there.
+            // That sequence point will have the pattern variables bound, which is exactly what we want.
+            let tg = TTarget(List.empty, throwExpr, SuppressSequencePointAtTarget)
+            let _ = matchBuilder.AddTarget tg
+            let clause = TClause(TPat_wild matchm, None, tg, matchm)
+            incompleteMatchClauseOnce <- Some clause
+            clause
 
         | Some c -> c
 
-    // Helpers to get the variables bound at a target. We conceptually add a dummy clause that will always succeed with a "throw"
+    // Helpers to get the variables bound at a target.
+    // We conceptually add a dummy clause that will always succeed with a "throw"
     let clausesA = Array.ofList clausesL
-    let nclauses = clausesA.Length
+    let nClauses = clausesA.Length
     let GetClause i refuted =
-        if i < nclauses then
+        if i < nClauses then
             clausesA.[i]
-        elif i = nclauses then getIncompleteMatchClause refuted
+        elif i = nClauses then getIncompleteMatchClause refuted
         else failwith "GetClause"
     let GetValsBoundByClause i refuted = (GetClause i refuted).BoundVals
     let GetWhenGuardOfClause i refuted = (GetClause i refuted).GuardExpr
 
-    // Different uses of parameterized active patterns have different identities as far as paths
-    // are concerned. Here we generate unique numbers that are completely different to any stamp
-    // by usig negative numbers.
+    // Different uses of parameterized active patterns have different identities as far as paths are concerned.
+    // Here we generate unique numbers that are completely different to any stamp by using negative numbers.
     let genUniquePathId() = - (newUnique())
 
-    // Build versions of these functions which apply a dummy instantiation to the overall type arguments
+    // Build versions of these functions which apply a dummy instantiation to the overall type arguments.
     let GetSubExprOfInput, getDiscrimOfPattern =
         let tyargs = List.map (fun _ -> g.unit_ty) origInputValTypars
         let unit_tpinst = mkTyparInst origInputValTypars tyargs
         GetSubExprOfInput g (origInputValTypars, tyargs, unit_tpinst),
         getDiscrimOfPattern g unit_tpinst
 
-    // The main recursive loop of the pattern match compiler
+    // The main recursive loop of the pattern match compiler.
     let rec InvestigateFrontiers refuted frontiers =
         match frontiers with
         | [] -> failwith "CompilePattern: compile - empty clauses: at least the final clause should always succeed"
-        | (Frontier (i, active, valMap)) :: rest ->
+        | Frontier (i, active, valMap) :: rest ->
 
-            // Check to see if we've got a succeeding clause.  There may still be a 'when' condition for the clause
+            // Check to see if we've got a succeeding clause. There may still be a 'when' condition for the clause.
             match active with
             | [] -> CompileSuccessPointAndGuard i refuted valMap rest
 
             | _ ->
-                (* Otherwise choose a point (i.e. a path) to investigate. *)
+                 // Otherwise choose a point (i.e. a path) to investigate.
                 let (Active(path, subexpr, pat))  = ChooseInvestigationPointLeftToRight frontiers
                 match pat with
                 // All these constructs should have been eliminated in BindProjectionPattern
-                | TPat_as _   | TPat_tuple _  | TPat_wild _      | TPat_disjs _  | TPat_conjs _  | TPat_recd _ -> failwith "Unexpected pattern"
+                | TPat_as _ | TPat_tuple _ | TPat_wild _ | TPat_disjs _ | TPat_conjs _ | TPat_recd _ ->
+                    failwith "Unexpected pattern"
 
-                // Leaving the ones where we have real work to do
+                // Leaving the ones where we have real work to do.
                 | _ ->
 
                     let simulSetOfEdgeDiscrims, fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
@@ -879,7 +877,6 @@ let CompilePatternBasic
                     finalDecisionTree
 
     and CompileSuccessPointAndGuard i refuted valMap rest =
-
         let vs2 = GetValsBoundByClause i refuted
         let es2 =
             vs2 |> List.map (fun v ->
@@ -907,25 +904,25 @@ let CompilePatternBasic
 
         | None -> rhs'
 
-    /// Select the set of discriminators which we can handle in one test, or as a series of
-    /// iterated tests, e.g. in the case of TPat_isinst.  Ensure we only take at most one class of `TPat_query` at a time.
+    /// Select the set of discriminators which we can handle in one test, or as a series of iterated tests,
+    /// e.g. in the case of TPat_isinst. Ensure we only take at most one class of `TPat_query` at a time.
     /// Record the rule numbers so we know which rule the TPat_query cam from, so that when we project through
     /// the frontier we only project the right rule.
     and ChooseSimultaneousEdges frontiers path =
         frontiers |> chooseSimultaneousEdgeSet None (fun prevOpt (Frontier (i', active', _)) ->
-              if isMemOfActives path active' then
-                  let p = lookupActive path active' |> snd
-                  match getDiscrimOfPattern p with
-                  | Some discrim ->
-                      if (match prevOpt with None -> true | Some (EdgeDiscrim(_, discrimPrev, _)) -> discrimsHaveSameSimultaneousClass g discrim discrimPrev) then
-                          Some (EdgeDiscrim(i', discrim, p.Range)), true
-                      else
-                          None, false
+            if isMemOfActives path active' then
+                let _, p = lookupActive path active'
+                match getDiscrimOfPattern p with
+                | Some discrim ->
+                    if (match prevOpt with None -> true | Some (EdgeDiscrim(_, discrimPrev, _)) -> discrimsHaveSameSimultaneousClass g discrim discrimPrev) then
+                        Some (EdgeDiscrim(i', discrim, p.Range)), true
+                    else
+                        None, false
 
-                  | None ->
-                      None, true
-              else
-                  None, true)
+                | None ->
+                    None, true
+            else
+                None, true)
 
     and IsCopyableInputExpr origInputExpr =
         match origInputExpr with
@@ -1298,13 +1295,13 @@ let CompilePatternBasic
                 mkFrontiers investigations i)
           |> List.concat)
           @
-          mkFrontiers [([], ValMap<_>.Empty)] nclauses)
+          mkFrontiers [([], ValMap<_>.Empty)] nClauses)
     let dtree =
       InvestigateFrontiers
         []
         frontiers
 
-    let targets = mbuilder.CloseTargets()
+    let targets = matchBuilder.CloseTargets()
 
 
     // Report unused targets
@@ -1320,13 +1317,13 @@ let isPartialOrWhenClause (c: TypedMatchClause) = isPatternPartial c.Pattern || 
 
 
 let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: TypedMatchClause list) inputTy resultTy =
-  match clausesL with
-  | _ when List.exists isPartialOrWhenClause clausesL ->
+    match clausesL with
+    | _ when List.exists isPartialOrWhenClause clausesL ->
         // Partial clauses cause major code explosion if treated naively
         // Hence treat any pattern matches with any partial clauses clause-by-clause
 
         // First make sure we generate at least some of the obvious incomplete match warnings.
-        let warnOnUnused = false in (* we can't turn this on since we're pretending all partial's fail in order to control the complexity of this. *)
+        let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
         let warnOnIncomplete = true
         let clausesPretendAllPartialFail = List.collect (fun (TClause(p, whenOpt, tg, m)) -> [TClause(erasePartialPatterns p, whenOpt, tg, m)]) clausesL
         let _ = CompilePatternBasic g denv amap exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
@@ -1334,19 +1331,18 @@ let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (o
 
         let rec atMostOnePartialAtATime clauses =
             match List.takeUntil isPartialOrWhenClause clauses with
-            | l, []       ->
+            | l, [] ->
                 CompilePatternBasic g denv amap exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) l inputTy resultTy
             | l, (h :: t) ->
-                // Add the partial clause
+                // Add the partial clause.
                 doGroupWithAtMostOnePartial (l @ [h]) t
 
         and doGroupWithAtMostOnePartial group rest =
+            // Compile the remaining clauses.
+            let decisionTree, targets = atMostOnePartialAtATime rest
 
-            // Compile the remaining clauses
-            let dtree, targets = atMostOnePartialAtATime rest
-
-            // Make the expression that represents the remaining cases of the pattern match
-            let expr = mkAndSimplifyMatch NoSequencePointAtInvisibleBinding exprm matchm resultTy dtree targets
+            // Make the expression that represents the remaining cases of the pattern match.
+            let expr = mkAndSimplifyMatch NoSequencePointAtInvisibleBinding exprm matchm resultTy decisionTree targets
 
             // If the remainder of the match boiled away to nothing interesting.
             // We measure this simply by seeing if the range of the resulting expression is identical to matchm.
@@ -1362,5 +1358,5 @@ let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (o
 
         atMostOnePartialAtATime clausesL
 
-  | _ ->
-      CompilePatternBasic g denv amap exprm matchm warnOnUnused true actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
+    | _ ->
+        CompilePatternBasic g denv amap exprm matchm warnOnUnused true actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
