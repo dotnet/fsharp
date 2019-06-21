@@ -155,12 +155,12 @@ module DispatchSlotChecking =
         (overrideBy.LogicalName = dispatchSlot.LogicalName)
           
     /// Check if an override matches a dispatch slot by name
-    let IsImplMatch (g: TcGlobals) (dispatchSlot: MethInfo) (overrideBy: OverrideInfo) = 
+    let IsImplMatch g (dispatchSlot: MethInfo) (overrideBy: OverrideInfo) = 
         // If the override is listed as only relevant to one type, and we're matching it against an abstract slot of an interface type,
         // then check that interface type is the right type.
         match overrideBy.CanImplement with 
         | CanImplementNoSlots -> false
-        | CanImplementAnySlot -> true
+        | CanImplementAnySlot -> true 
         | CanImplementAnyClassHierarchySlot -> not (isInterfaceTy g dispatchSlot.ApparentEnclosingType)
         | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType
 
