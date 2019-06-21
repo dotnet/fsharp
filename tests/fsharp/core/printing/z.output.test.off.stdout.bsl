@@ -388,16 +388,16 @@ type 'a T1Pre with
   member E : IEvent<obj>
 
 > type r =
-  {f0: int;
-   f1: int;
-   f2: int;
-   f3: int;
-   f4: int;
-   f5: int;
-   f6: int;
-   f7: int;
-   f8: int;
-   f9: int;}
+  { f0: int
+    f1: int
+    f2: int
+    f3: int
+    f4: int
+    f5: int
+    f6: int
+    f7: int
+    f8: int
+    f9: int }
 val r10 : r
 val r10s : r []
 val r10s' : string * r []
@@ -1755,11 +1755,11 @@ val namedEx1 : exn
 val namedEx2 : exn
 
 > type optionRecord =
-  {x: int option;}
+  { x: int option }
 val x : optionRecord
 
 > type optionRecord =
-  {x: obj;}
+  { x: obj }
 val x : optionRecord
 
 > > > 
