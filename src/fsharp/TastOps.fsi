@@ -1496,9 +1496,6 @@ val isInterfaceTyconRef : TyconRef -> bool
 /// Determine if a type is a delegate type
 val isDelegateTy : TcGlobals -> TType -> bool
 
-/// Determine if a type is an interface type defined in FSharp
-val isFSharpInterfaceTy : TcGlobals -> TType -> bool
-
 /// Determine if a type is an interface type
 val isInterfaceTy : TcGlobals -> TType -> bool
 
