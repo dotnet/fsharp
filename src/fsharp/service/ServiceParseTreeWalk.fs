@@ -606,8 +606,10 @@ module public AstTraversal =
             match m with
             | SynMemberDefn.Open(_longIdent, _range) -> None
             | SynMemberDefn.Member(synBinding, _range) -> traverseSynBinding path synBinding
-            | SynMemberDefn.ImplicitCtor(_synAccessOption, _synAttributes, synSimplePatList, _identOption, _range) ->
-                visitor.VisitSimplePats(synSimplePatList)
+            | SynMemberDefn.ImplicitCtor(_synAccessOption, _synAttributes, simplePats, _identOption, _range) ->
+                match simplePats with
+                | SynSimplePats.SimplePats(simplePats, _) -> visitor.VisitSimplePats(simplePats)
+                | _ -> None
             | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range) -> 
                 [
                     dive () synType.Range (fun () -> 

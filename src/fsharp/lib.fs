@@ -23,15 +23,6 @@ let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) wi
 
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
 
-type SaveAndRestoreConsoleEncoding () =
-    let savedOut = System.Console.Out
-
-    interface System.IDisposable with
-        member this.Dispose() = 
-            try 
-                System.Console.SetOut(savedOut)
-            with _ -> ()
-
 //-------------------------------------------------------------------------
 // Library: bits
 //------------------------------------------------------------------------

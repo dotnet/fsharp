@@ -1,28 +1,29 @@
 <Project>
 
-  <Target Name="CopyAndSubstituteTextFiles"
-          Inputs="@(CopyAndSubstituteText)"
-          Outputs="@(CopyAndSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
-          BeforeTargets="BeforeBuild">
+  <Target Name="NoneSubstituteTextFiles"
+          Inputs="@(NoneSubstituteText)"
+          Outputs="@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
+          BeforeTargets="AssignTargetPaths;BeforeBuild">
 
     <PropertyGroup>
-      <__TargetFilePath>@(CopyAndSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')</__TargetFilePath>
-      <__TargetFileName>@(CopyAndSubstituteText->'%(Filename)%(Extension)')</__TargetFileName>
+      <__TargetFilePath>@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')</__TargetFilePath>
+      <__TargetFileName>@(NoneSubstituteText->'%(Filename)%(Extension)')</__TargetFileName>
 
-      <_ReplacementText>$([System.IO.File]::ReadAllText('%(CopyAndSubstituteText.FullPath)'))</_ReplacementText>
-      <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern1)', '%(CopyAndSubstituteText.Replacement1)'))</_ReplacementText>
-      <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern2)', '%(CopyAndSubstituteText.Replacement2)'))</_ReplacementText>
+      <_ReplacementText>$([System.IO.File]::ReadAllText('%(NoneSubstituteText.FullPath)'))</_ReplacementText>
+      <_ReplacementText Condition="'%(NoneSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern1)', '%(NoneSubstituteText.Replacement1)'))</_ReplacementText>
+      <_ReplacementText Condition="'%(NoneSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern2)', '%(NoneSubstituteText.Replacement2)'))</_ReplacementText>
+
+      <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' != ''">%(NoneSubstituteText.CopyToOutputDirectory)</_CopyToOutputDirectory>
+      <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' == ''">Never</_CopyToOutputDirectory>
     </PropertyGroup>
 
-    <MakeDir
-      Directories="$(IntermediateOutputPath)"
-      Condition="!Exists('$(IntermediateOutputPath)')" />
+    <MakeDir Directories="$(IntermediateOutputPath)"
+             Condition="!Exists('$(IntermediateOutputPath)')" />
     <WriteLinesToFile File="$(__TargetFilePath)" Lines="$(_ReplacementText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
     <!-- Make sure it will get cleaned  -->
     <ItemGroup >
-      <None Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' == 'App.config'" CopyToOutputDirectory="Never" />
-      <None Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' != 'App.config'" CopyToOutputDirectory="PreserveNewest" />
+      <None Include="$(__TargetFilePath)" CopyToOutputDirectory="$(_CopyToOutputDirectory)" />
       <FileWrites Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' != 'App.config'" />
     </ItemGroup>
   </Target>

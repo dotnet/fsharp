@@ -102,7 +102,16 @@ type ListModule02() =
         let longerList = [1; 2]
         CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)
         CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList longerList shortList |> ignore)
-        CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)  
+        CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)
+        
+        // exception message checking
+        let expectedMessage =
+            "The lists had different lengths.\n" +
+            sprintf " list1.Length = %i, list2.Length = %i, list3.Length = %i" shortList.Length shortList.Length longerList.Length +
+            Environment.NewLine + "Parameter name: list1, list2, list3"
+        let ex = Assert.Throws(typeof<ArgumentException>,
+                               (fun () -> List.map3 funcInt shortList shortList longerList |> ignore))
+        Assert.AreEqual(expectedMessage, ex.Message)
 
         // empty List
         let resultEpt = List.map3 funcInt List.empty List.empty List.empty
