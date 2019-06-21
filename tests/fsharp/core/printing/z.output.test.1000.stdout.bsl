@@ -1134,7 +1134,7 @@ end
   | B
 
 > type internal T2 =
-  {x: int;}
+  { x: int }
 
 > type internal T3
 
@@ -1148,28 +1148,28 @@ end
            | B
 
 > type T2 =
-  internal {x: int;}
+  internal { x: int }
 
 > type private T1 =
   | A
   | B
 
 > type private T2 =
-  {x: int;}
+  { x: int }
 
 > type T1 =
   private | A
           | B
 
 > type T2 =
-  private {x: int;}
+  private { x: int }
 
 > type internal T1 =
   private | A
           | B
 
 > type internal T2 =
-  private {x: int;}
+  private { x: int }
 
 > type private T3
 
@@ -1398,7 +1398,7 @@ val x1564_A3 : int = 3
     | A
     | B
   type T2 =
-    {x: int;}
+    { x: int }
   type T3
   type T4 =
     class
@@ -1408,22 +1408,22 @@ val x1564_A3 : int = 3
     | A
     | B
   type T6 =
-    {x: int;}
+    { x: int }
   type private T7 =
     | A
     | B
   type private T8 =
-    {x: int;}
+    { x: int }
   type T9 =
     private | A
             | B
   type T10 =
-    private {x: int;}
+    private { x: int }
   type T11 =
     private | A
             | B
   type T12 =
-    private {x: int;}
+    private { x: int }
   type private T13
   type private T14 =
     class
@@ -1446,7 +1446,7 @@ module internal PrivateM = begin
     | A
     | B
   type T2 =
-    {x: int;}
+    { x: int }
   type T3
   type T4 =
     class
@@ -1456,22 +1456,22 @@ module internal PrivateM = begin
     | A
     | B
   type T6 =
-    {x: int;}
+    { x: int }
   type private T7 =
     | A
     | B
   type private T8 =
-    {x: int;}
+    { x: int }
   type T9 =
     private | A
             | B
   type T10 =
-    private {x: int;}
+    private { x: int }
   type T11 =
     private | A
             | B
   type T12 =
-    private {x: int;}
+    private { x: int }
   type private T13
   type private T14 =
     class

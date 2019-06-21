@@ -1727,7 +1727,14 @@ module private TastDefinitionPrinting =
                   match repr with 
                   | TRecdRepr _ ->
                       let recdFieldRefL fld = layoutRecdField false denv fld
-                      let recdL = tycon.TrueFieldsAsList |> List.map recdFieldRefL |> applyMaxMembers denv.maxMembers |> aboveListIndentOneL |> braceL
+
+                      let recdL =
+                          tycon.TrueFieldsAsList
+                          |> List.map recdFieldRefL
+                          |> applyMaxMembers denv.maxMembers
+                          |> aboveListL
+                          |> braceL
+
                       Some (addMembersAsWithEnd (addReprAccessL recdL))
                         
                   | TFSharpObjectRepr r -> 
