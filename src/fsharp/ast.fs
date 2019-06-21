@@ -801,6 +801,10 @@ and
     /// 'use x = fixed expr'
     | Fixed of expr: SynExpr * range: range
 
+    /// F# syntax: interpolated string, e.g. "abc%{123}"
+    | InterpolatedString of text: string * range: range * captures: SynExpr list
+
+
     /// Get the syntactic range of source code covered by this construct.
     member e.Range =
         match e with
@@ -866,7 +870,8 @@ and
         | SynExpr.LetOrUseBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
-        | SynExpr.Fixed (range=m) -> m
+        | SynExpr.Fixed (range=m) 
+        | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
 
     /// range ignoring any (parse error) extra trailing dots
@@ -932,6 +937,7 @@ and
         | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeSansAnyExtraDot
         | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
         | SynExpr.Fixed (_, m) -> m
+        | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
 
     /// Attempt to get the range of the first token or initial portion only - this is extremely ad-hoc, just a cheap way to improve a certain 'query custom operation' error range
@@ -993,6 +999,7 @@ and
         | SynExpr.LetOrUseBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)  -> m
+        | SynExpr.InterpolatedString (range=m) -> m
         // these are better than just .Range, and also commonly applicable inside queries
         | SynExpr.Paren (_, m, _, _) -> m
         | SynExpr.Sequential (_, _, e1, _, _)
