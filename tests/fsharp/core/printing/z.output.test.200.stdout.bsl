@@ -557,46 +557,46 @@ type 'a T1Pre with
   member E : IEvent<obj>
 
 > type r =
-  {f0: int;
-   f1: int;
-   f2: int;
-   f3: int;
-   f4: int;
-   f5: int;
-   f6: int;
-   f7: int;
-   f8: int;
-   f9: int;}
-val r10 : r = {f0 = 0;
-               f1 = 1;
-               f2 = 2;
-               f3 = 3;
-               f4 = 4;
-               f5 = 5;
-               f6 = 6;
-               f7 = 7;
-               f8 = 8;
-               f9 = 9;}
-val r10s : r [] = [|{f0 = 0;
-                     f1 = 1;
-                     f2 = 2;
-                     f3 = 3;
-                     f4 = 4;
-                     f5 = 5;
-                     f6 = 6;
-                     f7 = 7;
-                     f8 = 8;
-                     f9 = 9;}; ...|]
-val r10s' : string * r [] = ("one extra node", [|{f0 = 0;
-                                                  f1 = 1;
-                                                  f2 = 2;
-                                                  f3 = 3;
-                                                  f4 = 4;
-                                                  f5 = 5;
-                                                  f6 = 6;
-                                                  f7 = 7;
-                                                  f8 = 8;
-                                                  f9 = ...;}; ...|])
+  { f0: int
+    f1: int
+    f2: int
+    f3: int
+    f4: int
+    f5: int
+    f6: int
+    f7: int
+    f8: int
+    f9: int }
+val r10 : r = { f0 = 0
+                f1 = 1
+                f2 = 2
+                f3 = 3
+                f4 = 4
+                f5 = 5
+                f6 = 6
+                f7 = 7
+                f8 = 8
+                f9 = 9 }
+val r10s : r [] = [|{ f0 = 0
+                      f1 = 1
+                      f2 = 2
+                      f3 = 3
+                      f4 = 4
+                      f5 = 5
+                      f6 = 6
+                      f7 = 7
+                      f8 = 8
+                      f9 = 9 }; ...|]
+val r10s' : string * r [] = ("one extra node", [|{ f0 = 0
+                                                   f1 = 1
+                                                   f2 = 2
+                                                   f3 = 3
+                                                   f4 = 4
+                                                   f5 = 5
+                                                   f6 = 6
+                                                   f7 = 7
+                                                   f8 = 8
+                                                   f9 = ... }; ...|])
 
 > val x1564_A1 : int = 1
 
@@ -1981,11 +1981,11 @@ val namedEx1 : exn = MyNamedException1 (5,"")
 val namedEx2 : exn = MyNamedException7 25
 
 > type optionRecord =
-  {x: int option;}
-val x : optionRecord = {x = None;}
+  { x: int option }
+val x : optionRecord = { x = None }
 
 > type optionRecord =
-  {x: obj;}
-val x : optionRecord = {x = null;}
+  { x: obj }
+val x : optionRecord = { x = null }
 
 > > > 
