@@ -290,12 +290,6 @@ module AstVisitorHelpers =
 [<AbstractClass>]
 type AstVisitor<'T> () as this =
 
-    let tryVisit m visit item =
-        if this.CanVisit m then
-            visit item
-        else
-            None
-
     let tryVisitList xs : 'T option =
         xs
         |> List.tryPick (fun (getRange, visit) ->
@@ -314,11 +308,28 @@ type AstVisitor<'T> () as this =
         xs
         |> List.mapi (fun i x -> ((fun () -> getRange x), fun () -> visit (i, x)))
 
-    member inline private this.TryVisit (m, visit, item) =
+    member inline private this.TryVisit m visit item =
         if this.CanVisit m then
             visit item
         else
             None
+
+    member inline private this.TryVisitList getRange visit items =
+        items
+        |> List.tryPick (fun item ->
+            this.TryVisit (getRange item) visit item
+        )
+
+    member inline private this.TryVisitListIndex getRange visit items =
+        let mutable i = 0
+        items
+        |> List.tryPick (fun item ->
+            if this.CanVisit (getRange item) then
+                visit i item
+            else
+                i <- i + 1
+                None
+        )
 
     abstract CanVisit: range -> bool  
     default this.CanVisit _ = true
@@ -377,7 +388,7 @@ type AstVisitor<'T> () as this =
 
         | SynModuleDecl.DoExpr (_, expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynModuleDecl.Types (typeDefns, _) ->
             typeDefns
@@ -386,7 +397,7 @@ type AstVisitor<'T> () as this =
 
         | SynModuleDecl.Exception (exDefn, _) ->
             exDefn
-            |> tryVisit exDefn.Range this.VisitExceptionDefn
+            |> this.TryVisit exDefn.Range this.VisitExceptionDefn
 
         | SynModuleDecl.Open _ ->
             None
@@ -398,11 +409,11 @@ type AstVisitor<'T> () as this =
 
         | SynModuleDecl.HashDirective (hashDirective, _) ->
             hashDirective
-            |> tryVisit hashDirective.Range this.VisitParsedHashDirective
+            |> this.TryVisit hashDirective.Range this.VisitParsedHashDirective
 
         | SynModuleDecl.NamespaceFragment moduleOrNamespace ->
             moduleOrNamespace
-            |> tryVisit moduleOrNamespace.Range this.VisitModuleOrNamespace
+            |> this.TryVisit moduleOrNamespace.Range this.VisitModuleOrNamespace
 
     abstract VisitLongIdentWithDots: LongIdentWithDots -> 'T option
     default this.VisitLongIdentWithDots longDotId =
@@ -444,27 +455,27 @@ type AstVisitor<'T> () as this =
         match c with
         | SynTypeConstraint.WhereTyparIsValueType (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
         | SynTypeConstraint.WhereTyparIsReferenceType (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
         | SynTypeConstraint.WhereTyparIsUnmanaged (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
         | SynTypeConstraint.WhereTyparSupportsNull (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
         | SynTypeConstraint.WhereTyparIsComparable (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
         | SynTypeConstraint.WhereTyparIsEquatable (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
         | SynTypeConstraint.WhereTyparDefaultsToType (typar, ty, _) ->
             let typar =
@@ -531,23 +542,23 @@ type AstVisitor<'T> () as this =
         match memberSig with
         | SynMemberSig.Member (valSig, _, _) ->
             valSig
-            |> tryVisit valSig.Range this.VisitValSig
+            |> this.TryVisit valSig.Range this.VisitValSig
 
         | SynMemberSig.Interface (ty, _) ->
             ty
-            |> tryVisit ty.Range this.VisitType
+            |> this.TryVisit ty.Range this.VisitType
 
         | SynMemberSig.Inherit (ty, _) ->
             ty
-            |> tryVisit ty.Range this.VisitType
+            |> this.TryVisit ty.Range this.VisitType
 
         | SynMemberSig.ValField (field, _) ->
             field
-            |> tryVisit field.Range this.VisitField
+            |> this.TryVisit field.Range this.VisitField
 
         | SynMemberSig.NestedType (typeDefnSig, _) ->
             typeDefnSig
-            |> tryVisit typeDefnSig.Range this.VisitTypeDefnSig
+            |> this.TryVisit typeDefnSig.Range this.VisitTypeDefnSig
 
     abstract VisitTypeDefnSig: SynTypeDefnSig -> 'T option
     default this.VisitTypeDefnSig typeDefnSig =
@@ -585,11 +596,11 @@ type AstVisitor<'T> () as this =
 
         | SynTypeDefnSigRepr.Simple (simpleRepr, _) ->
             simpleRepr
-            |> tryVisit simpleRepr.Range this.VisitTypeDefnSimpleRepr
+            |> this.TryVisit simpleRepr.Range this.VisitTypeDefnSimpleRepr
 
         | SynTypeDefnSigRepr.Exception exRepr ->
             exRepr
-            |> tryVisit exRepr.Range this.VisitExceptionDefnRepr
+            |> this.TryVisit exRepr.Range this.VisitExceptionDefnRepr
 
     abstract VisitExceptionDefnRepr: SynExceptionDefnRepr -> 'T option
     default this.VisitExceptionDefnRepr exRepr =
@@ -738,14 +749,14 @@ type AstVisitor<'T> () as this =
 
         | SynTypeDefnSimpleRepr.TypeAbbrev (_, ty, _) ->
             ty
-            |> tryVisit ty.Range this.VisitType
+            |> this.TryVisit ty.Range this.VisitType
 
         | SynTypeDefnSimpleRepr.None _ ->
             None
 
         | SynTypeDefnSimpleRepr.Exception exDefnRepr ->
             exDefnRepr
-            |> tryVisit exDefnRepr.Range this.VisitExceptionDefnRepr
+            |> this.TryVisit exDefnRepr.Range this.VisitExceptionDefnRepr
 
     abstract VisitSimplePat: SynSimplePat -> 'T option
     default this.VisitSimplePat simplePat =
@@ -869,7 +880,7 @@ type AstVisitor<'T> () as this =
 
         | SynMeasure.Var (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
     abstract VisitRationalConst: SynRationalConst -> 'T option
     default this.VisitRationalConst rationalConst =
@@ -882,7 +893,7 @@ type AstVisitor<'T> () as this =
 
         | SynRationalConst.Negate rationalConst ->
             rationalConst
-            |> tryVisit rationalConst.PossibleRange this.VisitRationalConst
+            |> this.TryVisit rationalConst.PossibleRange this.VisitRationalConst
 
     abstract VisitTypeDefnKind: SynTypeDefnKind -> 'T option
     default this.VisitTypeDefnKind typeDefnKind =
@@ -979,7 +990,7 @@ type AstVisitor<'T> () as this =
         match ty with
         | SynType.LongIdent longDotId ->
             longDotId
-            |> tryVisit longDotId.Range this.VisitLongIdentWithDots
+            |> this.TryVisit longDotId.Range this.VisitLongIdentWithDots
 
         | SynType.App (ty, _, tyArgs, _, _, _, _) ->
             let ty =
@@ -1027,7 +1038,7 @@ type AstVisitor<'T> () as this =
 
         | SynType.Array (_, ty, _) ->
             ty
-            |> tryVisit ty.Range this.VisitType
+            |> this.TryVisit ty.Range this.VisitType
 
         | SynType.Fun (argTy, returnTy, _) ->
             let argTy =
@@ -1043,7 +1054,7 @@ type AstVisitor<'T> () as this =
 
         | SynType.Var (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
         | SynType.Anon _ ->
             None
@@ -1062,7 +1073,7 @@ type AstVisitor<'T> () as this =
 
         | SynType.HashConstraint (ty, _) ->
             ty
-            |> tryVisit ty.Range this.VisitType
+            |> this.TryVisit ty.Range this.VisitType
 
         | SynType.MeasureDivide (dividendTy, divisorTy, _) ->
             let dividendTy =
@@ -1090,7 +1101,7 @@ type AstVisitor<'T> () as this =
 
         | SynType.StaticConstant (sconst, _) ->
             sconst
-            |> tryVisit sconst.PossibleRange this.VisitConst
+            |> this.TryVisit sconst.PossibleRange this.VisitConst
 
         | _ ->
             None
@@ -1120,7 +1131,7 @@ type AstVisitor<'T> () as this =
         match typar with
         | SynTypar.Typar (id, _, _) ->
             id
-            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
+            |> this.TryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
     abstract VisitTyparDecl: SynTyparDecl -> 'T option
     default this.VisitTyparDecl typarDecl =
@@ -1211,98 +1222,103 @@ type AstVisitor<'T> () as this =
         match pat with
         | SynPat.Const (sconst, _) ->
             sconst
-            |> tryVisit sconst.PossibleRange this.VisitConst
+            |> this.TryVisit sconst.PossibleRange this.VisitConst
 
         | SynPat.Wild _ ->
             None
 
         | SynPat.Named (pat, id, _, _, _) ->
             let pat =
-                [pat]
-                |> mapVisitList (fun x -> x.Range) this.VisitPat
+                pat
+                |> this.TryVisit pat.Range this.VisitPat
 
-            let id =
-                [id]
-                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
+            if pat.IsSome then pat
+            else
 
-            (pat @ id)
-            |> tryVisitList
+            id
+            |> this.TryVisit id.idRange (fun item -> this.VisitIdent (0, item))
 
         | SynPat.Typed (pat, ty, _) ->
             let pat =
-                [pat]
-                |> mapVisitList (fun x -> x.Range) this.VisitPat
+                pat
+                |> this.TryVisit pat.Range this.VisitPat
 
-            let ty =
-                [ty]
-                |> mapVisitList (fun x -> x.Range) this.VisitType
+            if pat.IsSome then pat
+            else
 
-            (pat @ ty)
-            |> tryVisitList
+            ty
+            |> this.TryVisit ty.Range this.VisitType
 
         | SynPat.Attrib (pat, attribs, _) ->
             let pat =
-                [pat]
-                |> mapVisitList (fun x -> x.Range) this.VisitPat
+                pat
+                |> this.TryVisit pat.Range this.VisitPat
 
-            let attribs =
-                attribs
-                |> mapVisitList (fun x -> x.Range) this.VisitAttributeList
+            if pat.IsSome then pat
+            else
 
-            (pat @ attribs)
-            |> tryVisitList
+            attribs
+            |> this.TryVisitList (fun x -> x.Range) this.VisitAttributeList
 
         | SynPat.Or (pat1, pat2, _) ->
-            [pat1;pat2]
-            |> mapVisitList (fun x -> x.Range) this.VisitPat
-            |> tryVisitList
+            let pat1 =
+                pat1
+                |> this.TryVisit pat1.Range this.VisitPat
+
+            if pat1.IsSome then pat1
+            else
+
+            pat2
+            |> this.TryVisit pat2.Range this.VisitPat
 
         | SynPat.Ands (pats, _) ->
             pats
-            |> mapVisitList (fun x -> x.Range) this.VisitPat
-            |> tryVisitList
+            |> this.TryVisitList (fun x -> x.Range) this.VisitPat
 
         | SynPat.LongIdent (longDotId, idOpt, valTyparDeclsOpt, ctorArgs, _, _) ->
             let longDotId =
-                [longDotId]
-                |> mapVisitList (fun x -> x.Range) this.VisitLongIdentWithDots
+                longDotId
+                |> this.TryVisit longDotId.Range this.VisitLongIdentWithDots
+
+            if longDotId.IsSome then longDotId
+            else
 
             let idOpt =
                 match idOpt with
                 | Some id ->
-                    [id]
-                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
+                    id
+                    |> this.TryVisit id.idRange (fun item -> this.VisitIdent (0, item))
                 | _ ->
-                    []
+                    None
+
+            if idOpt.IsSome then idOpt
+            else
 
             let valTyparDeclsOpt =
                 match valTyparDeclsOpt with
                 | Some valTyparDecls ->
-                    [valTyparDecls]
-                    |> mapVisitList (fun x -> x.PossibleRange) this.VisitValTyparDecls
+                    valTyparDecls
+                    |> this.TryVisit valTyparDecls.PossibleRange this.VisitValTyparDecls
                 | _ ->
-                    []
+                    None
 
-            let ctorArgs =
-                [ctorArgs]
-                |> mapVisitList (fun x -> x.PossibleRange) this.VisitConstructorArgs
+            if valTyparDeclsOpt.IsSome then valTyparDeclsOpt
+            else
 
-            (longDotId @ idOpt @ valTyparDeclsOpt @ ctorArgs)
-            |> tryVisitList
+            ctorArgs
+            |> this.TryVisit ctorArgs.PossibleRange this.VisitConstructorArgs
 
         | SynPat.Tuple (_, pats, _) ->
             pats
-            |> mapVisitList (fun x -> x.Range) this.VisitPat
-            |> tryVisitList
+            |> this.TryVisitList (fun x -> x.Range) this.VisitPat
 
         | SynPat.Paren (pat, _) ->
             pat
-            |> tryVisit pat.Range this.VisitPat
+            |> this.TryVisit pat.Range this.VisitPat
 
         | SynPat.ArrayOrList (_, pats, _) ->
             pats
-            |> mapVisitList (fun x -> x.Range) this.VisitPat
-            |> tryVisitList
+            |> this.TryVisitList (fun x -> x.Range) this.VisitPat
 
         | SynPat.Record (recdData, _) ->
             let recdData, pats = List.unzip recdData
@@ -1329,38 +1345,44 @@ type AstVisitor<'T> () as this =
 
         | SynPat.OptionalVal (id, _) ->
             id
-            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
+            |> this.TryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
         | SynPat.IsInst (ty, _) ->
             ty
-            |> tryVisit ty.Range this.VisitType
+            |> this.TryVisit ty.Range this.VisitType
 
         | SynPat.QuoteExpr (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynPat.DeprecatedCharRange (_, _, _) ->
             None
 
         | SynPat.InstanceMember (id1, id2, idOpt, _, _) ->
-            let ids =
-                [id1;id2]
-                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
+            let id1 =
+                id1
+                |> this.TryVisit id1.idRange (fun item -> this.VisitIdent (0, item))
 
-            let idOpt =
-                match idOpt with
-                | Some id ->
-                    [id]
-                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
-                | _ ->
-                    []
+            if id1.IsSome then id1
+            else
 
-            (ids @ idOpt)
-            |> tryVisitList
+            let id2 =
+                id2
+                |> this.TryVisit id2.idRange (fun item -> this.VisitIdent (1, item))
+
+            if id2.IsSome then id2
+            else
+
+            match idOpt with
+            | Some id ->
+                id
+                |> this.TryVisit id.idRange (fun item -> this.VisitIdent (2, item))
+            | _ ->
+                None
 
         | SynPat.FromParseError (pat, _) ->
             pat
-            |> tryVisit pat.Range this.VisitPat
+            |> this.TryVisit pat.Range this.VisitPat
 
     abstract VisitConstructorArgs: SynConstructorArgs -> 'T option
     default this.VisitConstructorArgs ctorArgs =
@@ -1404,7 +1426,7 @@ type AstVisitor<'T> () as this =
         match expr with
         | SynExpr.Paren (expr, _, _, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.Quote (opExpr, _, quoteExpr, _, _) ->
             [opExpr;quoteExpr]
@@ -1413,7 +1435,7 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.Const (sconst, _) ->
             sconst
-            |> tryVisit sconst.PossibleRange this.VisitConst
+            |> this.TryVisit sconst.PossibleRange this.VisitConst
 
         | SynExpr.Typed (expr, ty, _) ->
             let expr =
@@ -1576,11 +1598,11 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.ArrayOrListOfSeqExpr (_, expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.CompExpr (_, _, expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.Lambda (_, _, argSimplePats, bodyExpr, _) ->
             let argSimplePats =
@@ -1613,11 +1635,11 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.Do (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.Assert (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.App (_, _, funcExpr, argExpr, _) ->
             [funcExpr;argExpr]
@@ -1667,7 +1689,7 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.Lazy (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.Sequential (_, _, expr1, expr2, _) ->
             [expr1;expr2]
@@ -1692,7 +1714,7 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.Ident id ->
             id
-            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
+            |> this.TryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
         | SynExpr.LongIdent (_, longDotId, simplePatAltIdInfoOpt, _) ->
             let longDotId =
@@ -1837,18 +1859,18 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.InferredUpcast (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.InferredDowncast (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.Null _ ->
             None
 
         | SynExpr.AddressOf (_, expr, _, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.TraitCall (typars, memberSig, expr, _) ->
             let typars =
@@ -1876,11 +1898,11 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.YieldOrReturn (_, expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.YieldOrReturnFrom (_, expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.LetOrUseBang (_, _, _, pat, expr1, expr2, _) ->
             let pat =
@@ -1908,7 +1930,7 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.DoBang (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.LibraryOnlyILAssembly (_, tys1, exprs, tys2, _) ->
             let tys =
@@ -1963,15 +1985,15 @@ type AstVisitor<'T> () as this =
 
         | SynExpr.FromParseError (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
         | SynExpr.Fixed (expr, _) ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
                 
     abstract VisitStaticOptimizationConstraint: SynStaticOptimizationConstraint -> 'T option
     default this.VisitStaticOptimizationConstraint staticOptConstraint =
@@ -1990,7 +2012,7 @@ type AstVisitor<'T> () as this =
 
         | WhenTyparIsStruct (typar, _) ->
             typar
-            |> tryVisit typar.Range this.VisitTypar
+            |> this.TryVisit typar.Range this.VisitTypar
 
     abstract VisitIndexerArg: SynIndexerArg -> 'T option
     default this.VisitIndexerArg indexerArg =
@@ -2002,18 +2024,18 @@ type AstVisitor<'T> () as this =
 
         | SynIndexerArg.One expr ->
             expr
-            |> tryVisit expr.Range this.VisitExpr
+            |> this.TryVisit expr.Range this.VisitExpr
 
     abstract VisitSimplePatAlternativeIdInfo: SynSimplePatAlternativeIdInfo -> 'T option
     default this.VisitSimplePatAlternativeIdInfo simplePatAltIdInfo =
         match simplePatAltIdInfo with
         | Undecided id ->
             id
-            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
+            |> this.TryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
         | Decided id ->
             id
-            |> tryVisit id.idRange (fun x -> this.VisitIdent (0, x))
+            |> this.TryVisit id.idRange (fun x -> this.VisitIdent (0, x))
 
     abstract VisitMatchClause: SynMatchClause -> 'T option
     default this.VisitMatchClause matchClause =
@@ -2089,11 +2111,11 @@ type AstVisitor<'T> () as this =
 
         | SynTypeDefnRepr.Simple (simpleRepr, _) ->
             simpleRepr
-            |> tryVisit simpleRepr.Range this.VisitTypeDefnSimpleRepr
+            |> this.TryVisit simpleRepr.Range this.VisitTypeDefnSimpleRepr
 
         | SynTypeDefnRepr.Exception exRepr ->
             exRepr
-            |> tryVisit exRepr.Range this.VisitExceptionDefnRepr
+            |> this.TryVisit exRepr.Range this.VisitExceptionDefnRepr
 
     abstract VisitMemberDefn: SynMemberDefn -> 'T option
     default this.VisitMemberDefn memberDefn =
@@ -2105,7 +2127,7 @@ type AstVisitor<'T> () as this =
 
         | SynMemberDefn.Member (binding, _) ->
             binding
-            |> tryVisit binding.RangeOfBindingAndRhs this.VisitBinding
+            |> this.TryVisit binding.RangeOfBindingAndRhs this.VisitBinding
 
         | SynMemberDefn.ImplicitCtor (_, attribs, ctorArgs, idOpt, _) ->
             let attribs =
@@ -2154,7 +2176,7 @@ type AstVisitor<'T> () as this =
 
         | SynMemberDefn.AbstractSlot (valSig, _, _) ->
             valSig
-            |> tryVisit valSig.Range this.VisitValSig
+            |> this.TryVisit valSig.Range this.VisitValSig
 
         | SynMemberDefn.Interface (ty, memberDefnsOpt, _) ->
             let ty =
@@ -2190,11 +2212,11 @@ type AstVisitor<'T> () as this =
 
         | SynMemberDefn.ValField (field, _) ->
             field
-            |> tryVisit field.Range this.VisitField
+            |> this.TryVisit field.Range this.VisitField
 
         | SynMemberDefn.NestedType (typeDefn, _, _) ->
             typeDefn
-            |> tryVisit typeDefn.Range this.VisitTypeDefn
+            |> this.TryVisit typeDefn.Range this.VisitTypeDefn
 
         | SynMemberDefn.AutoProperty (attribs, _, id, tyOpt, _, _, _, _, expr, _, _) ->
             let attribs =
