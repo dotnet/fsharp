@@ -290,15 +290,18 @@ module AstVisitorHelpers =
 [<AbstractClass>]
 type AstVisitor<'T> () as this =
 
-    let tryVisitList xs : 'T option =
-        xs
-        |> List.tryPick (fun (getRange, visit) ->
-            let r = getRange ()
-            if this.CanVisit r then
-                visit ()
-            else
-                None
-        )
+    let tryVisitList (xs: ((unit -> range) * (unit -> 'T option)) list) : 'T option =
+        let mutable result = None
+        let mutable xs = xs
+        while not (List.isEmpty xs) && result.IsNone do
+            match xs with
+            | [] -> ()
+            | (getRange, visit) :: tail ->
+                xs <- tail
+                let r = getRange ()
+                if this.CanVisit r then
+                    result <- visit ()
+        result
 
     let mapVisitList (getRange: 'Syn -> range) visit xs =
         xs
@@ -315,21 +318,30 @@ type AstVisitor<'T> () as this =
             None
 
     member inline private this.TryVisitList getRange visit items =
-        items
-        |> List.tryPick (fun item ->
-            this.TryVisit (getRange item) visit item
-        )
+        let mutable result = None
+        let mutable items = items
+        while not (List.isEmpty items) && result.IsNone do
+            match items with
+            | [] -> ()
+            | item :: tail ->
+                items <- tail
+                if this.CanVisit (getRange item) then
+                    result <- visit item
+        result
 
     member inline private this.TryVisitListIndex getRange visit items =
         let mutable i = 0
-        items
-        |> List.tryPick (fun item ->
-            if this.CanVisit (getRange item) then
-                visit i item
-            else
+        let mutable result = None
+        let mutable items = items
+        while not (List.isEmpty items) && result.IsNone do
+            match items with
+            | [] -> ()
+            | item :: tail ->
+                items <- tail
+                if this.CanVisit (getRange item) then
+                    result <- visit i item
                 i <- i + 1
-                None
-        )
+        result
 
     abstract CanVisit: range -> bool  
     default this.CanVisit _ = true
