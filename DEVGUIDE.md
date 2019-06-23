@@ -5,7 +5,7 @@
 Get the latest source code from the master branch by running this git command:
 
     git clone https://github.com/dotnet/fsharp.git
-    
+
 Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
 
     git clean -xfd
@@ -106,7 +106,7 @@ The new builds of the Visual F# IDE Tools can no longer be installed into Visual
 
 You can install Visual Studio 2019 from https://www.visualstudio.com/downloads/.
 
-**Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
+**Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools
 components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
 
 For **Debug**, uninstall then reinstall:
@@ -197,4 +197,4 @@ Where you should set proper proxy address, user name and password.
 
 #### Resources
 
-The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
+The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
