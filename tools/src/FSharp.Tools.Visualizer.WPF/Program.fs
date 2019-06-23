@@ -98,8 +98,8 @@ module rec App =
         | ForceGC
         | UpdateText of SourceText * (Model -> unit)
         | UpdateLexicalAnalysis of lexicalHighlights: HighlightSpan list
-        | UpdateSyntacticAnalysis
-        | UpdateVisualizers of highlights: HighlightSpan list * CompletionItem list * rootNode: FSharpSyntaxNode
+        | UpdateSyntacticAnalysis of rootNode: FSharpSyntaxNode
+        | UpdateVisualizers of highlights: HighlightSpan list * CompletionItem list
         | UpdateNodeHighlight of FSharpSyntaxNode
 
     let KeywordColor = Drawing.Color.FromArgb (86, 156, 214)
@@ -131,10 +131,11 @@ module rec App =
         let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
 
         let syntaxTree = model.Compilation.GetSyntaxTree "test1.fs"
-        let _rootNode = syntaxTree.GetRootNode ct
+        let rootNode = syntaxTree.GetRootNode ct
 
         stopwatch.Stop ()
         printfn "syntactic analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
+        rootNode
 
     let getSemanticAnalysis (model: Model) didCompletionTrigger caretOffset ct =
         let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
@@ -170,7 +171,7 @@ module rec App =
         stopwatch.Stop ()
         printfn "semantic analysis: %A ms" stopwatch.Elapsed.TotalMilliseconds
 
-        (highlights, completionItems, semanticModel.SyntaxTree.GetRootNode ct)
+        (highlights, completionItems)
 
     let update msg model =
         match msg with
@@ -202,8 +203,8 @@ module rec App =
             callback updatedModel
             updatedModel
 
-        | UpdateSyntacticAnalysis ->
-            model
+        | UpdateSyntacticAnalysis rootNode ->
+            { model with RootNode = Some rootNode }
 
         | UpdateLexicalAnalysis lexicalHighlights ->
             { model with
@@ -211,9 +212,8 @@ module rec App =
                 WillRedraw = true
             }           
 
-        | UpdateVisualizers (highlights, completionItems, rootNode) ->  
+        | UpdateVisualizers (highlights, completionItems) ->  
             { model with 
-                RootNode = Some rootNode
                 Highlights = model.Highlights @ highlights
                 CompletionItems = completionItems
                 WillRedraw = true
@@ -264,11 +264,11 @@ module rec App =
 
                                 dispatch (UpdateLexicalAnalysis lexicalAnalysis)
 
-                                getSyntacticAnalysis updatedModel ct
-                                dispatch (UpdateSyntacticAnalysis)
+                                let rootNode = getSyntacticAnalysis updatedModel ct
+                                dispatch (UpdateSyntacticAnalysis rootNode)
 
-                                let highlights, completionItems, rootNode = getSemanticAnalysis updatedModel didCompletionTrigger caretOffset ct
-                                dispatch (UpdateVisualizers (highlights, completionItems, rootNode))
+                                let highlights, completionItems = getSemanticAnalysis updatedModel didCompletionTrigger caretOffset ct
+                                dispatch (UpdateVisualizers (highlights, completionItems))
                             with
                             | :? OperationCanceledException -> ()
                             | ex ->

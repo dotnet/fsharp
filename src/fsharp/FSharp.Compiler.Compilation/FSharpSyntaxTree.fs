@@ -293,9 +293,9 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
     let createNode kind =
         let parent =
             if visitStack.Count > 0 then
-                Some (visitStack.Peek ())
+                visitStack.Peek ()
             else
-                None
+                Unchecked.defaultof<_>
         FSharpSyntaxNode (parent, syntaxTree, kind)
 
     member __.VisitStackCount = visitStack.Count
@@ -916,14 +916,20 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
 
     // TODO: Implement TryGetNextToken / TryGetPreviousToken
 
-and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxNode (parent: FSharpSyntaxNode option, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
+and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxNode (parent: FSharpSyntaxNode, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
     let mutable lazySpan = TextSpan ()
 
     member __.Text: SourceText = 
         syntaxTree.GetText CancellationToken.None
 
-    member __.Parent = parent
+    member __.Parent = 
+        if obj.ReferenceEquals (parent, null) then
+            None
+        else
+            Some parent
+
+    member __.UnsafeParent = parent
 
     member __.SyntaxTree = syntaxTree
     
@@ -942,18 +948,18 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
     
     member __.GetAncestors () =            
         seq {
-            let mutable nodeOpt = parent
-            while nodeOpt.IsSome do
-                yield nodeOpt.Value
-                nodeOpt <- nodeOpt.Value.Parent
+            let mutable node = parent
+            while not (obj.ReferenceEquals (node, null)) do
+                yield node
+                node <- node.UnsafeParent
         }
 
     member this.GetAncestorsAndSelf () =
         seq {
-            let mutable nodeOpt = Some this
-            while nodeOpt.IsSome do
-                yield nodeOpt.Value
-                nodeOpt <- nodeOpt.Value.Parent
+            let mutable node = this
+            while not (obj.ReferenceEquals (node, null)) do
+                yield node
+                node <- node.UnsafeParent
         }
 
     member this.GetDescendantTokens () =
@@ -1160,7 +1166,7 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
             let inputOpt, _ = this.GetParseResult ct
             if inputOpt.IsNone then failwith "parsed input does not exist"
             let input = inputOpt.Value
-            let rootNode = FSharpSyntaxNode (None, this, FSharpSyntaxNodeKind.ParsedInput input)
+            let rootNode = FSharpSyntaxNode (Unchecked.defaultof<_>, this, FSharpSyntaxNodeKind.ParsedInput input)
             lazyRootNode <- ValueSome rootNode
             rootNode
         )
