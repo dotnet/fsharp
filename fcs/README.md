@@ -1,5 +1,3 @@
-
-
 # The FSharp.Compiler.Service components and NuGet package
 
 This directory contains the build, packaging, test and documentation-generation logic for the NuGet package ``FSharp.Compiler.Service``.  The source for this NuGet
@@ -68,7 +66,6 @@ You can push the packages if you have permissions, either automatically using ``
     ..\fsharp\.nuget\nuget.exe push %HOMEDRIVE%%HOMEPATH%\Downloads\FSharp.Compiler.Service.MSBuild.v12.22.0.3.nupkg %APIKEY%  -Source https://nuget.org
     ..\fsharp\.nuget\nuget.exe push %HOMEDRIVE%%HOMEPATH%\Downloads\FSharp.Compiler.Service.ProjectCracker.22.0.3.nupkg %APIKEY%  -Source https://nuget.org
 
-
 ### Use of Paket and FAKE
 
 Paket is only used to get FAKE and FSharp.Formatting tools.  Eventually we will likely remove this once we update the project files to .NET SDK 2.0.
@@ -79,21 +76,19 @@ FAKE is only used to run build.fsx.  Eventually we will likely remove this once 
 
 Testing reuses the test files from ..\tests\service which were are also FCS tests.
 
-
 ### Documentation Generation
 
     fcs\build GenerateDocs
 
-Output is in ``docs``.  In the ``FSharp.Compiler.Service`` repo this is checked in and hosted as https://fsharp.github.io/FSharp.Compiler.Service.
-
+Output is in ``docs``.  In the ``FSharp.Compiler.Service`` repo this is checked in and hosted as <https://fsharp.github.io/FSharp.Compiler.Service>.
 
 ## The two other NuGet packages
 
 It also contains both the source, build, packaging and test logic for
 
-* ``FSharp.Compiler.Service.MSBuild.v12`` adds legacy MSBuild v12 support to an instance of FSharp.Compiler.Service, if exact compatibility for scripting references such as ``#r "Foo, Version=1.3.4"`` is required.
+- ``FSharp.Compiler.Service.MSBuild.v12`` adds legacy MSBuild v12 support to an instance of FSharp.Compiler.Service, if exact compatibility for scripting references such as ``#r "Foo, Version=1.3.4"`` is required.
 
-* ``FSharp.Compiler.Service.ProjectCracker`` is part of ``FsAutoComplete`` and Ionide and is used to crack old-style project formats using MSBuild. It used to be part of the FCS API.
+- ``FSharp.Compiler.Service.ProjectCracker`` is part of ``FsAutoComplete`` and Ionide and is used to crack old-style project formats using MSBuild. It used to be part of the FCS API.
 
 Both of these components are gradually becoming obsolete
 
@@ -106,4 +101,3 @@ FSharp.Compiler.Service is a somewhat awkward component. There are some things w
 1. Drop the use of ``dotnet mergenupkg`` since we should be able to use cross targeting
 1. Make FCS a DLL similar ot the rest of the build and make this an official component from Microsoft (signed etc.)
 1. Replace FSharp.Compiler.Private by FSharp.Compiler.Service
-
