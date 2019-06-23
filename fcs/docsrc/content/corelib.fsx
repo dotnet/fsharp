@@ -17,7 +17,7 @@ Binding redirects for your application
 --------------------------------------
 
 The FSharp.Compiler.Service.dll component depends on FSharp.Core 4.4.0.0.  Normally your application will target
-a later version of FSharp.Core, and you may need a [binding redirect](http://msdn.microsoft.com/en-us/library/7wd6ex19(v=vs.110).aspx) to ensure
+a later version of FSharp.Core, and you may need a [binding redirect](https://docs.microsoft.com/en-us/dotnet/framework/configure-apps/redirect-assembly-versions) to ensure
 that other versions of FSharp.Core forward to the final version of FSharp.Core.dll your application uses.
 Binding redirect files are normally generated automatically by build tools. If not, you can use one like this
 (if your tool is called ``HostedCompiler.exe``, the binding redirect file is called ``HostedCompiler.exe.config``)
