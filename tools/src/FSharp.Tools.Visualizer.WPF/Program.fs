@@ -106,18 +106,16 @@ module rec App =
     let StringColor = Drawing.Color.FromArgb (214, 157, 133)
 
     let getLexicalHighlights (syntaxTree: FSharpSyntaxTree) ct =
-        syntaxTree.GetTokens (ct = ct) |> ignore
-        []
-        //syntaxTree.GetTokens (ct = ct)
-        //|> Seq.choose (fun x ->
-        //    if x.IsKeyword then
-        //        Some (HighlightSpan (x.Span, KeywordColor, HighlightSpanKind.Foreground))
-        //    elif x.IsString then
-        //        Some (HighlightSpan (x.Span, StringColor, HighlightSpanKind.Foreground))
-        //    else
-        //        None
-        //)
-        //|> List.ofSeq
+        syntaxTree.GetTokens (ct = ct)
+        |> Seq.choose (fun x ->
+            if x.IsKeyword then
+                Some (HighlightSpan (x.Span, KeywordColor, HighlightSpanKind.Foreground))
+            elif x.IsString then
+                Some (HighlightSpan (x.Span, StringColor, HighlightSpanKind.Foreground))
+            else
+                None
+        )
+        |> List.ofSeq
 
     let getLexicalAnalysis (model: Model) ct =
         let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
