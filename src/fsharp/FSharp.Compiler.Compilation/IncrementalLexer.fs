@@ -153,84 +153,95 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
 
         lineTokens.Add { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; extraLineCount = m.EndLine - m.StartLine }
 
-    //member private this.RedoLex (subTextSpan: TextSpan) =
-    //    let subText = text.GetSubText subTextSpan
-    //    let startLine = text.Lines.GetLineFromPosition subTextSpan.Start
-    //    let endLine = text.Lines.GetLineFromPosition subTextSpan.End
-    //    let lineCount = endLine.LineNumber - startLine.LineNumber
-    //    let isEof = subTextSpan.End = (text.Length - 1)
+    member private this.RedoLex (subTextSpan: TextSpan) =
+        let subText = text.GetSubText subTextSpan
+        let startLine = text.Lines.GetLineFromPosition subTextSpan.Start
+        let endLine = text.Lines.GetLineFromPosition subTextSpan.End
+        let lineCount = endLine.LineNumber - startLine.LineNumber
+        let isEof = subTextSpan.End = text.Length
 
-    //    let startLineTokens = tokens.[startLine.LineNumber]
-    //    let endLineTokens = tokens.[endLine.LineNumber]
-        
-    //    // ** Adjust Start Line
-    //    let startLength = subTextSpan.Start - startLine.Start
-    //    let mutable startIndex = -1
-    //    let mutable startCount = 0
-    //    let mutable startColumnOffset = 0
-    //    for i = 0 to startLineTokens.Count - 1 do
-    //        let token = startLineTokens.[i]
-    //        if startLength >= token.columnStart && ((startLength < token.columnEnd && token.extraLineCount = 0) || token.extraLineCount > 0) then
-    //            if startIndex = -1 then
-    //                startIndex <- i
-    //            startCount <- startCount + 1
-    //        else
-    //            startColumnOffset <- token.columnEnd
+        let startLineTokens = tokens.[startLine.LineNumber]
+        let endLineTokens = tokens.[endLine.LineNumber]
 
-    //    if startIndex >= 0 then
-    //        startLineTokens.RemoveRange (startIndex, startCount)
+    //    printfn "pre-before: %A" startLineTokens
 
-    //    if lineCount > 0 then
-    //        let endLength = (subTextSpan.End - endLine.Start)
-    //        // ** Adjust End Line
-    //        let mutable endIndex = -1
-    //        let mutable endCount = 0
-    //        let mutable endColumnOffset = 0
-    //        for i = 0 to endLineTokens.Count - 1 do
-    //            let token = endLineTokens.[i]
-    //            if endLength < token.columnStart then
-    //                if endIndex = -1 then
-    //                    endIndex <- i
-    //                endCount <- endCount + 1
-    //                endColumnOffset <- token.columnEnd
-    //            else
-    //                endLineTokens.[i] <- { token with columnStart = endLength + (token.columnStart - endColumnOffset) + (token.columnEnd - token.columnEnd) }
-    //                if endIndex = -1 then
-    //                    endIndex <- i
-    //                endCount <- endCount + 1
-            
-    //        endLineTokens.RemoveRange (0, endCount)
+        printfn "%A" (subText.ToString ())
 
-    //    let errorLogger = CompilationErrorLogger("RedoLex", pConfig.tcConfig.errorSeverityOptions)
-    //    lexText pConfig LexFlags.SkipTrivia errorLogger subText (fun lexbuf getNextToken ->
-    //        while not lexbuf.IsPastEndOfStream do
-    //            match getNextToken lexbuf with
-    //            | token.EOF _ when not isEof -> ()
-    //            | t -> 
-    //                let m = lexbuf.LexemeRange
+        // ** Adjust Start Line
+        let startLength = subTextSpan.Start - startLine.Start
+        let mutable startIndex = -1
+        let mutable startCount = 0
+        for i = 0 to startLineTokens.Count - 1 do
+            let token = startLineTokens.[i]
+            if startLength >= token.columnStart then
+                if startIndex = -1 then
+                    startIndex <- i
+                startCount <- startCount + 1
+        if startIndex >= 0 then
+            startLineTokens.RemoveRange (startIndex, startCount)
+
+        // ** Adjust End Line
+        let endLength = (subTextSpan.End - endLine.Start)
+        let mutable endIndex = -1
+        let mutable endCount = 0
+        let mutable endColumnOffset = 0
+        for i = 0 to endLineTokens.Count - 1 do
+            let token = endLineTokens.[i]
+            if endLength < token.columnStart then
+                if endIndex = -1 then
+                    endIndex <- i
+                endCount <- endCount + 1
+                endColumnOffset <- token.columnEnd
+            else
+                endLineTokens.[i] <- { token with columnStart = endLength + (token.columnStart - endColumnOffset) + (token.columnEnd - token.columnEnd) }           
+        if endIndex >= 0 then
+            printfn "removing stuff"
+            endLineTokens.RemoveRange (endIndex, endCount)
+
+        let addedEndLineTokens = ResizeArray ()
+        let errorLogger = CompilationErrorLogger("RedoLex", pConfig.tcConfig.errorSeverityOptions)
+        lexText pConfig LexFlags.SkipTrivia errorLogger subText (fun lexbuf getNextToken ->
+            while not lexbuf.IsPastEndOfStream do
+                match getNextToken lexbuf with
+                | token.EOF _ when not isEof -> ()
+                | t -> 
+                    let m = lexbuf.LexemeRange
                         
-    //                let isFirstLine = m.Start.Line = 1
-    //                let isLastLine = m.Start.Line = lineCount
+                    let isFirstLine = m.StartLine = 1
+                    let isLastLine = (m.StartLine - 1) = lineCount
 
-    //                let columnStartOffset =
-    //                    if isFirstLine then
-    //                        startColumnOffset
-    //                    else
-    //                        0
+                    let columnStartOffset =
+                        if isFirstLine then
+                            startLength
+                        else
+                            0
 
-    //                let adjustedm = 
-    //                    let startRangeLineNumber = m.Start.Line + startLine.LineNumber
-    //                    let endRangeLineNumber = m.End.Line + startLine.LineNumber
-    //                    let startPos = (mkPos startRangeLineNumber (m.Start.Column + columnStartOffset))
-    //                    let endPos = (mkPos endRangeLineNumber m.End.Column)
-    //                    mkFileIndexRange m.FileIndex startPos endPos
+                    let columnEndOffset =
+                        if isFirstLine && m.StartLine = m.EndLine then
+                            startLength
+                        else
+                            0
 
-    //                if isLastLine then
-    //                    endLineTokens.
-    //                else
-    //                    this.Add (t, adjustedm)
+                    let m = 
+                        let startRangeLineNumber = m.Start.Line + startLine.LineNumber
+                        let endRangeLineNumber = m.End.Line + startLine.LineNumber
+                        let startPos = (mkPos startRangeLineNumber (m.Start.Column + columnStartOffset))
+                        let endPos = (mkPos endRangeLineNumber (m.End.Column + columnEndOffset))
+                        mkFileIndexRange m.FileIndex startPos endPos
+
+                    if isLastLine then
+                        addedEndLineTokens.Add { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; extraLineCount = m.EndLine - m.StartLine }
+                    else
+                        this.Add (t, m)
                         
-    //    ) CancellationToken.None
+        ) CancellationToken.None
+
+     //   printfn "before: %A" startLineTokens
+
+        if addedEndLineTokens.Count > 0 then
+            endLineTokens.InsertRange (0, addedEndLineTokens)
+
+       // printfn "%A" startLineTokens
 
     member this.TryCreateIncremental (newText: SourceText) =
         let changes = newText.GetTextChanges text
@@ -239,81 +250,51 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
         else
             // For now, we only do incremental lexing on one change.
             let change = Seq.head changes
-
-            let newSpan = TextSpan (change.Span.Start, change.NewText.Length)
             let changedTokenSpan = this.GetTokenTextSpan change.Span
+            let subTextLength = change.NewText.Length + (changedTokenSpan.endPos - changedTokenSpan.startPos)
+            let subTextSpan = TextSpan (changedTokenSpan.startPos, subTextLength)
 
             let linePosSpan = text.Lines.GetLinePositionSpan change.Span
-            let newLinePosSpan = newText.Lines.GetLinePositionSpan newSpan
+            let newLinePosSpan = newText.Lines.GetLinePositionSpan subTextSpan
 
-            let startLineNumber = changedTokenSpan.startLineNumber
-            let extraLineLength = changedTokenSpan.endLineNumber - linePosSpan.End.Line
-            let lineLength = linePosSpan.End.Line - startLineNumber + extraLineLength
-            let newLineLength = newLinePosSpan.End.Line - startLineNumber + extraLineLength
+            let startLineNumber = linePosSpan.Start.Line
+            let endLineNumber = linePosSpan.Start.Line
+            let newEndLineNumber = newLinePosSpan.End.Line
 
             let newTokensArr = ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Rent newText.Lines.Count
             let newTokens = TokenCache (pConfig, newText, newTokensArr)
 
             // re-use previous lines
-            let lineNumberOffset = startLineNumber + newLineLength
-            Array.Copy (tokens, 0, newTokensArr, 0, startLineNumber)
-            Array.Copy (tokens, startLineNumber + lineLength, newTokensArr, lineNumberOffset, newText.Lines.Count - lineNumberOffset)
+            Array.Copy (tokens, 0, newTokensArr, 0, startLineNumber + 1)
+            if startLineNumber <> endLineNumber then
+                Array.Copy (tokens, endLineNumber, newTokensArr, newEndLineNumber, text.Lines.Count - endLineNumber)
 
             // change lines
-            for lineNumber = startLineNumber to lineNumberOffset do
-                newTokensArr.[lineNumber] <- ResizeArray ()
-                    //let lineTokens = newTokensArr.[lineNumber]
-                    //if lineNumber = startLineNumber || lineNumber = lineNumberOffset then
-                    //    if lineTokens = null then
-                    //        ResizeArray ()
-                    //    else
-                    //        ResizeArray lineTokens
-                    //else
-                    //    ResizeArray ()
+            for lineNumber = startLineNumber to newEndLineNumber do
+                newTokensArr.[lineNumber] <-
+                    let lineTokens = newTokensArr.[lineNumber]
+                    if lineNumber = startLineNumber || lineNumber = newEndLineNumber then
+                        if lineTokens = null then
+                            ResizeArray ()
+                        else
+                            ResizeArray lineTokens
+                    else
+                        ResizeArray ()
 
-                let subText = newText.GetSubText (newText.Lines.[lineNumber].Span)
-                let errorLogger = CompilationErrorLogger("TryCreateIncremental", pConfig.tcConfig.errorSeverityOptions)                
-                lexText pConfig LexFlags.SkipTrivia errorLogger subText (fun lexbuf getNextToken ->
-                while not lexbuf.IsPastEndOfStream do
-                    match getNextToken lexbuf with
-                    // EOFs will be created at the end of any given text.
-                    // Because we are lexing sub texts, we don't want to include EOF except when are on the last line.
-                    | token.EOF _ when not ((newText.Lines.Count - 1) = lineNumber) -> ()
-                    | t ->
-                        let m = lexbuf.LexemeRange
-                        let adjustedm =
-                            let startPos = (mkPos (m.Start.Line + lineNumber) m.Start.Column)
-                            let endPos = (mkPos (m.End.Line + lineNumber) m.End.Column)
-                            mkFileIndexRange m.FileIndex startPos endPos
-                        newTokens.Add (t, adjustedm)
-
-                ) CancellationToken.None
-
-                if newTokensArr.[lineNumber].Count = 0 then
-                    newTokensArr.[lineNumber] <- null
-            
-     //       let subTextLength =
-       //         change.NewText.Length + (change.Span.Start - changedTokenSpan.startPos) + (changedTokenSpan.endPos - change.Span.End)
-          //  newTokens.RedoLex (TextSpan (changedTokenSpan.startPos, subTextLength))
+            newTokens.RedoLex subTextSpan
 
             Some newTokens
 
     member this.GetTokenTextSpan (span: TextSpan) =
-        let startLineNumber, startIndex, startPos = 
-            match this.TryFindTokenItem span.Start with
-            | Some (TokenItem (span = span; startIndex = startIndex)) -> text.Lines.GetLinePosition(span.Start).Line, startIndex, span.Start
-            | _ ->
-                match this.TryGetPreviousAvailableToken span.Start with
-                | Some (TokenItem (span = span; startIndex = startIndex)) -> text.Lines.GetLinePosition(span.Start).Line, startIndex, span.Start
-                | _ -> 0, 0, 0
+        let startLineNumber, startIndex, startPos, startEndPos = 
+            match this.TryGetPreviousAvailableToken span.Start with
+            | Some (TokenItem (span = span; startIndex = startIndex)) -> text.Lines.GetLinePosition(span.Start).Line, startIndex, span.Start, span.End
+            | _ -> 0, 0, 0, 0
 
         let endLineNumber, endIndex, endPos =
-            match this.TryFindTokenItem span.End with
-            | Some (TokenItem (span = span; startIndex = startIndex)) -> text.Lines.GetLinePosition(span.Start).Line, startIndex, span.Start
-            | _ ->
-                match this.TryGetNextAvailableToken span.End with
-                | Some (TokenItem (span = span; startIndex = startIndex)) -> text.Lines.GetLinePosition(span.Start).Line, startIndex, span.Start
-                | _ -> failwith "EOF token not found"
+            match this.TryGetNextAvailableToken startEndPos with
+            | Some (TokenItem (span = span; startIndex = startIndex)) -> text.Lines.GetLinePosition(span.End).Line, startIndex, span.End
+            | _ -> failwith "EOF token not found"
 
         { startLineNumber = startLineNumber; startIndex = startIndex; startPos = startPos
           endLineNumber = endLineNumber; endIndex = endIndex; endPos = endPos }
@@ -332,12 +313,12 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                         if tokenCacheItem.extraLineCount > 0 then
                             let endPos = lines.[lineNumber + tokenCacheItem.extraLineCount].Start + tokenCacheItem.columnEnd
                             let length = endPos - startPos
-                            if startPos >= span.Start && endPos <= span.End then
+                            if length >= 0 && startPos >= span.Start && endPos <= span.End then
                                 yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
                         else
                             let endPos = line.Start + tokenCacheItem.columnEnd
                             let length = endPos - startPos
-                            if startPos >= span.Start && endPos <= span.End then
+                            if length >= 0 && startPos >= span.Start && endPos <= span.End then
                                 yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
         }
 
@@ -349,18 +330,18 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                 let lineTokens = tokens.[lineNumber]
                 if lineTokens <> null then
                     let line = lines.[lineNumber]
-                    for i = 0 to lineTokens.Count - 1 do
+                    for i = lineTokens.Count - 1 downto 0 do
                         let tokenCacheItem = lineTokens.[i]
                         let startPos = line.Start + tokenCacheItem.columnStart
                         if tokenCacheItem.extraLineCount > 0 then
                             let endPos = lines.[lineNumber + tokenCacheItem.extraLineCount].Start + tokenCacheItem.columnEnd
                             let length = endPos - startPos
-                            if startPos >= span.Start && endPos <= span.End then
+                            if length >= 0 && startPos >= span.Start && endPos <= span.End then
                                 yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
                         else
                             let endPos = line.Start + tokenCacheItem.columnEnd
                             let length = endPos - startPos
-                            if startPos >= span.Start && endPos <= span.End then
+                            if length >= 0 && startPos >= span.Start && endPos <= span.End then
                                 yield TokenItem (tokenCacheItem.t, TextSpan (startPos, length), i)
         }
 
@@ -372,17 +353,18 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
         )
 
     member this.TryGetNextAvailableToken (position: int) =
-        let line = text.Lines.GetLineFromPosition position
         this.GetTokens (TextSpan (position, text.Length - position))
-        |> Seq.tryFind (fun (TokenItem (_, span, _)) ->
-            span.Start >= position
+        |> Seq.tryFind (fun (TokenItem (t, span, _)) ->
+            span.End >= position
         )
 
     member this.TryGetPreviousAvailableToken (position: int) =
-        let line = text.Lines.GetLineFromPosition position
         this.GetTokensReverse (TextSpan (0, position))
-        |> Seq.tryFind (fun (TokenItem (_, span, _)) ->
-            span.Start > position
+        |> Seq.tryFind (fun (TokenItem (t, span, _)) ->
+            match t with
+            | token.EOF _ -> false
+            | _ ->
+                span.Start <= position
         )
         
     member this.LexFilter (errorLogger, f, ct) =
@@ -427,7 +409,7 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
         
     override __.Finalize () =
         printfn "finalizer kicked off, returning array to pool"
-        ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Return tokens
+        ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Return (tokens, clearArray = true)
 
     static member Create (pConfig, text) =
         TokenCache (pConfig, text, ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Rent text.Lines.Count)

@@ -328,7 +328,7 @@ module internal Helpers =
                                     else
                                         span.End - line.Start
                                 else
-                                    line.End - line.Start
+                                    line.End - span.Start
 
                             let textSpanColors = wpfTextBox.GetTextSpanColors (lineNumber + 1)
                             textSpanColors.Add (HighlightSpan (TextSpan(start, length), color, kind))
