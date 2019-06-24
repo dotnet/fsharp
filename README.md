@@ -101,7 +101,7 @@ Members of the [F# Software Foundation](https://fsharp.org) are invited to the [
 
 Additionally, you can use the `#fsharp` tag on Twitter if you have general F# questions, including about this repository. Chances are you'll get multiple responses.
 
-## About F#
+## About F\#
 
 If you're curious about F# itself, check out these links:
 

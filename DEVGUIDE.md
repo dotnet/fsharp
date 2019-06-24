@@ -173,7 +173,7 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
    - We first need an existing F# compiler. We use the one in the `lkg` directory. Let's assume this compiler has an `FSharp.Core.dll` with version X.
    - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
    - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
-   s- We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
+   - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
 
 ### Updating FSComp.fs, FSComp.resx and XLF
 
