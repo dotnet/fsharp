@@ -36,7 +36,7 @@ let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        if isNull name || not (name.StartsWith("( ") && name.EndsWith(" )")) then
+        if isNull name || not (name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")) then
             false
         else
             let mutable i = 2
