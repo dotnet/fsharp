@@ -311,7 +311,7 @@ type internal FSharpCodeLensService
                         let trackingSpan = 
                             textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                         codeLensToAdd.Add (trackingSpan, res)
-                        newResults.[fullDeclarationText] <- (trackingSpan, res)
+                        newResults.[funcID] <- (trackingSpan, res)
                     with e ->
 #if DEBUG
                         logExceptionWithContext (e, "Line Lens tracking tag span creation")
