@@ -36,11 +36,16 @@ let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        if not (name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")) then
+        if isNull name || not (name.StartsWith("( ") && name.EndsWith(" )")) then
             false
         else
-            let name = name.[2..name.Length - 3]
-            name |> Seq.forall (fun c -> c <> ' ')
+            let mutable i = 2
+            let mutable isNormal = false
+            while not isNormal && i < name.Length - 3 do
+                if name.[i] = ' ' then
+                    isNormal <- true
+                i <- i + 1
+            not isNormal
 
     if allSuggestions.Contains idText then [] else // some other parsing error occurred
     let dotIdText = "." + idText
