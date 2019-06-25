@@ -198,8 +198,8 @@ type internal FSharpCodeLensService
 #endif
                                 return None
                         else return None
-#if DEBUG
                     with e ->
+#if DEBUG
                         logErrorf "Error in lazy line lens computation. %A" e
 #else
                         ignore e
