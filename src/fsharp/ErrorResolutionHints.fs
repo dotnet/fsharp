@@ -40,12 +40,12 @@ let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =
             false
         else
             let mutable i = 2
-            let mutable isNormal = false
-            while not isNormal && i < name.Length - 3 do
+            let mutable isOperator = true
+            while isOperator && i < name.Length - 3 do
                 if name.[i] = ' ' then
-                    isNormal <- true
+                    isOperator <- false
                 i <- i + 1
-            not isNormal
+            isOperator
 
     if allSuggestions.Contains idText then [] else // some other parsing error occurred
     let dotIdText = "." + idText
