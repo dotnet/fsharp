@@ -5,11 +5,8 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Windows.Controls
-open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
-open System.Windows
-open System.Collections.Generic
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 
@@ -29,9 +26,11 @@ type internal LineLensDisplayService (view, buffer) =
                 try
                     let bounds = line.GetCharacterBounds(line.Start)
                     line.TextRight + 5.0, bounds.Top - 1.
-                with e -> 
+                with e ->
 #if DEBUG
                     logExceptionWithContext (e, "Error in layout ui element on line")
+#else
+                    ignore e
 #endif
                     Canvas.GetLeft ui, Canvas.GetTop ui
         Canvas.SetLeft(ui, left)
@@ -65,11 +64,10 @@ type internal LineLensDisplayService (view, buffer) =
                                     view.GetTextViewLineContainingBufferPosition l.Start
                                 self.LayoutUIElementOnLine view line grid
                             )
+            with e ->
 #if DEBUG
-            with e -> 
                 logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
 #else
-            with _ ->
-                ()
-#endif 
+                ignore e
+#endif
         } |> Async.Ignore

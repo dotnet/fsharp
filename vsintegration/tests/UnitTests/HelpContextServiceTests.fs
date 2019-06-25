@@ -10,7 +10,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 open UnitTests.TestLib.Utils
@@ -234,7 +234,7 @@ type HelpContextServiceTests() =
                 Some "N1"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -252,7 +252,7 @@ type HelpContextServiceTests() =
                 Some "N1.T"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``EndOfLine``() =

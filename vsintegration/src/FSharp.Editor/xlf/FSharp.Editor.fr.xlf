@@ -157,6 +157,11 @@
         <target state="translated">CodeLens</target>
         <note />
       </trans-unit>
+      <trans-unit id="6014">
+        <source>Formatting</source>
+        <target state="translated">Mise en forme</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

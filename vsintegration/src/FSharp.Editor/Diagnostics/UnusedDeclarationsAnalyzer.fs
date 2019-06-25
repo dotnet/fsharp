@@ -10,7 +10,8 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal UnusedDeclarationsAnalyzer() =
@@ -29,7 +30,7 @@ type internal UnusedDeclarationsAnalyzer() =
             category = DiagnosticCategory.Style,
             defaultSeverity = DiagnosticSeverity.Hidden,
             isEnabledByDefault = true,
-            customTags = DiagnosticCustomTags.Unnecessary)
+            customTags = FSharpDiagnosticCustomTags.Unnecessary)
     
     let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
         match symbol with
@@ -70,7 +71,7 @@ type internal UnusedDeclarationsAnalyzer() =
             |> Array.map (fun (m, _) -> m)
 
         //#if DEBUG
-        //let formatRange (x: Microsoft.FSharp.Compiler.Range.range) = sprintf "(%d, %d) - (%d, %d)" x.StartLine x.StartColumn x.EndLine x.EndColumn
+        //let formatRange (x: FSharp.Compiler.Range.range) = sprintf "(%d, %d) - (%d, %d)" x.StartLine x.StartColumn x.EndLine x.EndColumn
 
         //symbolsUses
         //|> Array.map (fun su -> sprintf "%s, %s, is definition = %b, Symbol (def range = %A)" 
@@ -106,8 +107,8 @@ type internal UnusedDeclarationsAnalyzer() =
 
             do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
-            match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
-            | Some (_parsingOptions, projectOptions) ->
+            match! getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken) with
+            | (_parsingOptions, projectOptions) ->
                 let! sourceText = document.GetTextAsync()
                 let checker = getChecker document
                 let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
@@ -117,7 +118,6 @@ type internal UnusedDeclarationsAnalyzer() =
                     unusedRanges
                     |> Seq.map (fun m -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
                     |> Seq.toImmutableArray
-            | None -> return ImmutableArray.Empty
         }
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken

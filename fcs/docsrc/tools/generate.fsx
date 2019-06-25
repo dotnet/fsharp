@@ -4,7 +4,7 @@
 // --------------------------------------------------------------------------------------
 
 // Binaries that have XML documentation (in a corresponding generated XML file)
-let referenceBinaries = [ "FSharp.Compiler.Service.dll" ] 
+let referenceBinaries = [ "FSharp.Compiler.Service.dll" ]
 // Web site location for the generated documentation
 let website = "https://fsharp.github.io/FSharp.Compiler.Service"
 
@@ -13,7 +13,7 @@ let info =
   [ "project-name", "F# Compiler Services"
     "project-author", "Microsoft Corporation, Dave Thomas, Anh-Dung Phan, Tomas Petricek"
     "project-summary", "F# compiler services for creating IDE tools, language extensions and for F# embedding"
-    "project-github", "http://github.com/fsharp/FSharp.Compiler.Service"
+    "project-github", "https://github.com/fsharp/FSharp.Compiler.Service"
     "project-nuget", "https://www.nuget.org/packages/FSharp.Compiler.Service" ]
 
 // --------------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ open FSharp.MetadataFormat
 let root = "."
 
 // Paths with template/source/output locations
-let bin         = __SOURCE_DIRECTORY__ @@ "../../../release/fcs/net45"
+let bin         = __SOURCE_DIRECTORY__ @@ "../../../release/fcs/net461"
 let content     = __SOURCE_DIRECTORY__ @@ "../content"
 let output      = __SOURCE_DIRECTORY__ @@ "../../../docs"
 let files       = __SOURCE_DIRECTORY__ @@ "../files"
@@ -42,7 +42,7 @@ let docTemplate = formatting @@ "templates/docpage.cshtml"
 
 // Where to look for *.csproj templates (in this order)
 let layoutRoots =
-  [ templates; 
+  [ templates;
     formatting @@ "templates"
     formatting @@ "templates/reference" ]
 
@@ -50,7 +50,7 @@ let layoutRoots =
 let copyFiles () =
   CopyRecursive files output true |> Log "Copying file: "
   ensureDirectory (output @@ "content")
-  CopyRecursive (formatting @@ "styles") (output @@ "content") true 
+  CopyRecursive (formatting @@ "styles") (output @@ "content") true
     |> Log "Copying styles and scripts: "
 
 let clr =  System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
@@ -61,7 +61,7 @@ let buildReference () =
   CleanDir (output @@ "reference")
   for lib in referenceBinaries do
     MetadataFormat.Generate
-      ( bin @@ lib, output @@ "reference", layoutRoots, 
+      ( bin @@ lib, output @@ "reference", layoutRoots,
         parameters = ("root", root)::info,
         sourceRepo = "https://github.com/fsharp/FSharp.Compiler.Service/tree/master/src",
         sourceFolder = @"..\..\..\src",

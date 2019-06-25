@@ -1,0 +1,24 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- for everything else, $(PackageOutputPath) is interpreted as a directory, but for the SWIX toolset a file name -->
+    <PackageOutputPath>$(ArtifactsDir)\VSSetup\$(Configuration)\Insertion\$(OutputName).vsix</PackageOutputPath>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <SwrProperty>
+      <Visible>false</Visible>
+    </SwrProperty>
+  </ItemDefinitionGroup>
+
+  <Target Name="Build"
+          DependsOnTargets="ResolveProjectReferences"
+          Condition="'$(DotNetBuildFromSource)' != 'true'">
+    <MakeDir Directories="$(IntermediateOutputPath)" ContinueOnError="True"/>
+  </Target>
+
+  <Target Name="Test" />
+
+</Project>

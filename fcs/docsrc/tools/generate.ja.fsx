@@ -11,16 +11,16 @@ let info =
   [ "project-name", "F# Compiler Services"
     "project-author", "Microsoft Corporation, Dave Thomas, Anh-Dung Phan, Tomas Petricek"
     "project-summary", "F# compiler services for creating IDE tools, language extensions and for F# embedding"
-    "project-github", "http://github.com/fsharp/FSharp.Compiler.Service"
+    "project-github", "https://github.com/fsharp/FSharp.Compiler.Service"
     "project-nuget", "https://www.nuget.org/packages/FSharp.Compiler.Service" ]
 
 // --------------------------------------------------------------------------------------
 // For typical project, no changes are needed below
 // --------------------------------------------------------------------------------------
 
-#I "../../packages/FSharpVSPowerTools.Core/lib/net45"
+#I "../../packages/FSharpVSPowerTools.Core/lib/net461"
 #I "../../packages/FSharp.Formatting/lib/net40"
-#I "../../packages/FSharp.Compiler.Service/lib/net45"
+#I "../../packages/FSharp.Compiler.Service/lib/net461"
 #I "../../packages/FAKE/tools"
 #r "FSharpVSPowerTools.Core.dll"
 #r "System.Web.Razor.dll"
@@ -41,7 +41,7 @@ open FSharp.MetadataFormat
 let root = "."
 
 // Paths with template/source/output locations
-let bin         = __SOURCE_DIRECTORY__ @@ "../../../release/fcs/net45"
+let bin         = __SOURCE_DIRECTORY__ @@ "../../../release/fcs/net461"
 let content     = __SOURCE_DIRECTORY__ @@ "../content/ja"
 let outputJa    = __SOURCE_DIRECTORY__ @@ "../../../docs/ja"
 let files       = __SOURCE_DIRECTORY__ @@ "../files"

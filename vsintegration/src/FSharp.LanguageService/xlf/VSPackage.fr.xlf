@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Identifier">
         <source>Identifier</source>
-        <target state="translated">Identificateur</target>
+        <target state="translated">identificateur</target>
         <note />
       </trans-unit>
       <trans-unit id="Keyword">

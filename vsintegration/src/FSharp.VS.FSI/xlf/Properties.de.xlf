@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="translated">Sonstiges</target>
+        <target state="translated">Verschiedenes</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">

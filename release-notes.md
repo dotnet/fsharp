@@ -1,10 +1,39 @@
-    Copyright (c) Microsoft Corporation.  All Rights Reserved.  
+    Copyright (c) Microsoft Corporation.  All Rights Reserved.
     See License.txt in the project root for license information.
-    
+
 ## About the release notes
 
-We deliver F# and F# components in Visual Studio and .NET Core releases. These can include bug fixes, new tooling features, new compiler features, performance improvements, infrastructure improvements, and new langauge versions. The most recent release of F# or any F# component will be at the top of this document.
-    
+We deliver F# and F# tools for Visual Studio and .NET Core releases. These can include bug fixes, new tooling features, new compiler features, performance improvements, infrastructure improvements, and new language versions. The most recent release of F# or any F# component will be at the top of this document.
+
+## Visual Studio 15.9
+
+You can find all tracked VS 15.9 items in the [15.9 milestone](https://github.com/Microsoft/visualfsharp/milestone/24).
+
+### F# Compiler
+
+* Fix (#4637) - Can't debug FCS when compiled with portable pdb debug symbols, by [Jason Imison](https://github.com/nosami).
+* Fix (#5355) - We fixed a bug where extension methods that take `byref` values could mutate an immutable value.
+* Fix (#5446) - We improved the compile error information for overloads on `byref`/`inref`/`outref`, rather than displaying the previously obscure error.
+* Fix (#5354) - Optional Type Extensions on `byref`s are now disallowed entirely. They could be declared previously, but were unusable, resulting in a confusing user experience.
+* Fix (#5294) - We fixed a bug where `CompareTo` on a struct tuple and causing a type equivalence with an aliased struct tuple would result in a runtime exception.
+* Fix (#5621) - We fixed a bug where use of `System.Void` in the context of authoring a Type Provider for .NET Standard could fail to find the `System.Void` type at design-time.
+* Fix (#5468) - We fixed a bug where an internal error could occur when a partially applied Discriminated Union constructor is mismatched with an annotated or inferred type for the Discriminated Union.
+* Fix (#5540) - We modified the compiler error message when attempting to take an address of an expression (such as accessing a property) to make it more clear that it violates scoping rules for `byref` types.
+* Fix (#5536) - We fixed a bug where your program could crash at runtime when partially applying a `byref` type to a method or function. An error message will now display.
+* Fix (#5459) - We fixed an issue where an invalid combination of a `byref` and a reference type (such as `byref<int> option`) would fail at runtime and not emit an error message. We now emit an error message.
+
+### F# Tools for Visual Studio
+
+* Fix (#5657) - We resolved an issue where metadata for F# assemblies built with the .NET Core SDK was not shown in file properties on Windows. You can now see this metadata by right-clicking an assembly on Windows and selecting **Properties**.
+* Fix (#5615) - We fixed a bug where use of `module global` in F# source could cause Visual Studio to become unresponsive.
+* Fix (#5515) - We fixed a bug where extension methods using `inref<'T>` would not show in completion lists.
+* Fix (#5514) - We fixed a bug where the TargetFramework dropdown in Project Properties for .NET Framework F# projects was empty.
+* Fix (#5507) - We fixed a bug where File | New Project on a .NET Framework 4.0 project would fail.
+
+### F# OSS Build
+
+* Feature (#5027) - Set VisualFSharpFull as the default startup project, by [Robert Jeppesen](https://github.com/rojepp).
+
 ## Visual Studio 15.8.5
 
 * Fix (#5504) - Internal MSBuild Error when building non-.NET SDK projects with MSBuild parallelism
@@ -215,7 +244,7 @@ Includes commits up to `dd8252eb8d20aaedf7b1c7576cd2a8a82d24f587`
 * Other new APIs
   * `Option.filter`, `Option.toObj`, `Option.ofObj`, `Option.toNullable`, `Option.ofNullable`
   * `String.filter`
-  * `Checked.int8`, `Checked.uint8` 
+  * `Checked.int8`, `Checked.uint8`
   * `Async.AwaitTask` (non-generic)
   * `WebClient.AsyncDownloadFile`, `WebClient.AsyncDownloadData`
   * `tryUnbox`, `isNull`
@@ -398,7 +427,7 @@ Includes commits up to `3385e58aabc91368c8e1f551650ba48705aaa285`
 * Bugfix: Errors when attempting to add reference to .NET core library
 * Bugfix: Crash in `FSComp.SR.RunStartupValidation()`
 
-[4.0.0]: http://fsharp.org
+[4.0.0]: https://fsharp.org
 [3.1.2]: http://blogs.msdn.com/b/fsharpteam/archive/2014/08/20/announcing-the-release-of-visual-f-tools-3-1-2.aspx
 [3.1.1]: http://blogs.msdn.com/b/fsharpteam/archive/2014/01/22/announcing-visual-f-3-1-1-and-support-for-desktop-express.aspx
 

@@ -1,28 +1,8 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
-        <!-- rename to FSharp.Core when done -->
-        <id>FSharp.Core</id>
-        <title>FSharp.Core for F# 4.5</title>
-        <summary>FSharp.Core for F# 4.5</summary>
-        <description>
-            FSharp.Core redistributables from Visual F# Tools version 10.2 For F# 4.5
-                Supported Platforms:
-                    .NET Framework 4.5+ (net45)
-                    netstandard1.6      (netstandard1.6)
-                    netstandard2.0      (netstandard2.0)
-
-                Commit hash: $githeadsha$.
-        </description>
-        <owners>$owners$</owners>
-        <version>$version$</version>
-        <authors>$authors$</authors>
-        <copyright>$copyright$</copyright>
-        <licenseUrl>$licenseUrl$</licenseUrl>
-        <projectUrl>$projectUrl$</projectUrl>
-        <iconUrl>http://fsharp.org/img/logo.png</iconUrl>
-        <tags>$tags$</tags>
-        <requireLicenseAcceptance>$requireLicenseAcceptance$</requireLicenseAcceptance>
+        $CommonMetadataElements$
+        <iconUrl>https://fsharp.org/img/logo.png</iconUrl>
         <language>en-US</language>
         <dependencies>
             <group targetFramework=".NETStandard1.6">
@@ -57,18 +37,18 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="coreclr\bin\FSharp.Core.dll"          target="lib\netstandard1.6" />
-        <file src="coreclr\bin\FSharp.Core.sigdata"      target="lib\netstandard1.6" />
-        <file src="coreclr\bin\FSharp.Core.optdata"      target="lib\netstandard1.6" />
-        <file src="coreclr\bin\FSharp.Core.xml"          target="lib\netstandard1.6" />
+        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.dll"     target="lib\netstandard1.6" />
+        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.sigdata" target="lib\netstandard1.6" />
+        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.optdata" target="lib\netstandard1.6" />
+        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.xml"     target="lib\netstandard1.6" />
 
-        <file src="net40\bin\FSharp.Core.dll"            target="lib\net45" />
-        <file src="net40\bin\FSharp.Core.sigdata"        target="lib\net45" />
-        <file src="net40\bin\FSharp.Core.optdata"        target="lib\net45" />
-        <file src="net40\bin\FSharp.Core.xml"            target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.dll"     target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.sigdata" target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.optdata" target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.xml"     target="lib\net45" />
 
         <!-- resources -->
-        <file src="coreclr\bin\**\FSharp.Core.resources.dll" target="lib\netstandard1.6" />
-        <file src="net40\bin\**\FSharp.Core.resources.dll"   target="lib\net45" />
+        <file src="FSharp.Core\$Configuration$\netstandard1.6\**\FSharp.Core.resources.dll" target="lib\netstandard1.6" />
+        <file src="FSharp.Core\$Configuration$\net45\**\FSharp.Core.resources.dll"          target="lib\net45" />
     </files>
 </package>

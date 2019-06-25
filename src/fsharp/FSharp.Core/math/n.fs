@@ -1505,8 +1505,8 @@ module internal BigNatModule =
       let degn = degree n
       let rec route prior k ten2k =
         if degree ten2k > degn
-        then (k,ten2k)::prior
-        else route ((k,ten2k)::prior) (k+1) (mul ten2k ten2k)
+        then (k,ten2k) :: prior
+        else route ((k,ten2k) :: prior) (k+1) (mul ten2k ten2k)
       let kten2ks = route [] 0 (embed 10)
       let rec collect isLeading digits n = function
         | [] ->
@@ -1518,7 +1518,7 @@ module internal BigNatModule =
 #endif
             if isLeading && n=0 then digits // suppress leading 0  
             else string n :: digits
-        | (_,ten2k)::prior ->
+        | (_,ten2k) :: prior ->
 #if CHECKED
             if checks then check (lt n (mul ten2k ten2k)) "string_of_int: bound n";
 #endif

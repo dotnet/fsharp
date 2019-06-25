@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
+using FSLib = FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -348,7 +348,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             Guid emptyGuid = Guid.Empty;
             int result = 0;
+#pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
             ThreadHelper.Generic.Invoke(() =>
+#pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
             {
                 ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(0u, ref emptyGuid, title, message, null, 0u, OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST, icon, 0, out result));
             });

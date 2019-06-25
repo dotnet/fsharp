@@ -1,8 +1,8 @@
 ﻿module internal  LanguageServiceProfiling.Options
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 
@@ -142,6 +142,7 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\ConstraintSolver.fs"
              @"src\fsharp\CheckFormatStrings.fsi"
              @"src\fsharp\CheckFormatStrings.fs"
+             @"src\fsharp\FindUnsolved.fsi"
              @"src\fsharp\FindUnsolved.fs"
              @"src\fsharp\QuotationTranslator.fsi"
              @"src\fsharp\QuotationTranslator.fs"
@@ -155,7 +156,9 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\DetupleArgs.fs"
              @"src\fsharp\InnerLambdasToTopLevelFuncs.fsi"
              @"src\fsharp\InnerLambdasToTopLevelFuncs.fs"
+             @"src\fsharp\LowerCallsAndSeqs.fsi"
              @"src\fsharp\LowerCallsAndSeqs.fs"
+             @"src\fsharp\autobox.fsi"
              @"src\fsharp\autobox.fs"
              @"src\fsharp\IlxGen.fsi"
              @"src\fsharp\IlxGen.fs"
@@ -187,6 +190,8 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\service\ServiceUntypedParse.fs"
              @"src\utils\reshapedmsbuild.fs"
              @"src\fsharp\SimulatedMSBuildReferenceResolver.fs"
+             @"src\fsharp\service\FSharpCheckerResults.fsi"
+             @"src\fsharp\service\FSharpCheckerResults.fs"
              @"src\fsharp\service\service.fsi"
              @"src\fsharp\service\service.fs"
              @"src\fsharp\service\SimpleServices.fsi"

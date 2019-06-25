@@ -12,8 +12,8 @@ open Microsoft.CodeAnalysis.DocumentHighlighting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 type internal FSharpHighlightSpan =
     { IsDefinition: bool
@@ -59,7 +59,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, languageServicePerformanceOptions,  userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions,  userOpName = userOpName)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return 
@@ -75,7 +75,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
     interface IDocumentHighlightsService with
         member __.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<DocumentHighlights>> =
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) 
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions

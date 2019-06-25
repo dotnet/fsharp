@@ -102,6 +102,11 @@
         <target state="translated">Sublinhado _sólido</target>
         <note />
       </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="new">Text hover</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Remover instruções abertas não usadas</target>
@@ -164,22 +169,37 @@
       </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
-        <target state="new">Always add new line on enter</target>
+        <target state="translated">Sempre adicionar uma nova linha ao pressionar enter</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_never">
         <source>Never add new line on enter</source>
-        <target state="new">Never add new line on enter</target>
+        <target state="translated">Nunca adicionar uma nova linha ao entrar</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_only">
         <source>Only add new line on enter after end of fully typed word</source>
-        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <target state="translated">Somente adiciona uma nova linha após digitar toda palavra</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_Key_Rule">
         <source>Enter key behavior</source>
-        <target state="new">Enter key behavior</target>
+        <target state="translated">Inserir comportamento da tecla</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Format_on_paste">
+        <source>Re-format indentation on paste</source>
+        <target state="translated">Reformatar o recuo ao colar</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">Sugerir nomes para identificadores não resolvidos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_out_of_process_language_server">
+        <source>(Preview) Use out of process language server</source>
+        <target state="new">(Preview) Use out of process language server</target>
         <note />
       </trans-unit>
     </body>

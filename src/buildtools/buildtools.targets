@@ -1,69 +1,61 @@
-<!--
-***********************************************************************************************
-FsLexYacc.targets
+<Project>
 
-WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
-		  created a backup copy.  Incorrect changes to this file will make it
-		  impossible to load or build your projects from the command-line or the IDE.
+  <PropertyGroup>
+    <!-- during a regular build `dotnet(.exe)` is expected to be on the path -->
+    <DotNetExe Condition="'$(OS)' == 'Unix'">dotnet</DotNetExe>
+    <DotNetExe Condition="'$(OS)' != 'Unix'">dotnet.exe</DotNetExe>
+    <!-- if already running under dotnet, use that instance -->
+    <DotNetExe Condition="'$(DOTNET_HOST_PATH)' != ''">$(DOTNET_HOST_PATH)</DotNetExe>
+    <DotNetExePath>$(DotNetExe)</DotNetExePath>
 
-PowerPack build rules.
+    <!-- this is usually set by Arcade, but non-arcade builds won't have it -->
+    <DotNetTool Condition="'$(DotNetTool)' == ''">$(DotNetExePath)</DotNetTool>
+  </PropertyGroup>
 
-Copyright (C) Microsoft Corporation. All rights reserved.
-***********************************************************************************************
--->
+  <!-- Build FsLex files. -->
+  <Target Name="CallFsLex"
+          Inputs="@(FsLex)"
+          Outputs="@(FsLex->'$(FsLexOutputFolder)%(Filename).fs')"
+          Condition="'@(FsLex)'!=''"
+          BeforeTargets="CoreCompile">
 
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<PropertyGroup>
-		<CompileDependsOn>CallFsLex;CallFsYacc;$(CompileDependsOn)</CompileDependsOn>
-		<FsLexToolPath Condition="'$(FsLexToolPath)' == ''">$(MSBuildThisFileDirectory)</FsLexToolPath>
-		<FsLexToolExe Condition="'$(FsLexToolExe)' == ''">fslex.exe</FsLexToolExe>
-		<FsYaccToolPath Condition="'$(FsYaccToolPath)' == ''">$(MSBuildThisFileDirectory)</FsYaccToolPath>
-		<FsYaccToolExe Condition="'$(FsYaccToolExe)' == ''">fsyacc.exe</FsYaccToolExe>
-	</PropertyGroup>
+    <PropertyGroup>
+        <FsLexPath Condition="'$(FsLexPath)' == ''">$(ArtifactsDir)\Bootstrap\fslex\fslex.dll</FsLexPath>
+    </PropertyGroup>
 
-	<!-- Build FsLex files. -->
-	<Target
-		Name="CallFsLex"
-		Inputs="@(FsLex)"
-		Outputs="@(FsLex->'$(FsLexOutputFolder)%(Filename).fs')"
-		Condition="'@(FsLex)'!=''">
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsLexOutputFolder)"/>
 
-		<!-- Create the output directory -->
-		<MakeDir Directories="$(FsLexOutputFolder)"/>
-		<!-- Call FsLex -->
-		<Exec Command="&quot;$(FsLexToolPath)\$(FsLexToolExe)&quot;  -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" Condition="'$(OS)' != 'Unix'" />
-		<Exec Command="mono &quot;$(FsLexToolPath)\$(FsLexToolExe)&quot;  -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" Condition="'$(OS)' == 'Unix'" />
-		<!-- Make sure it will get cleaned  -->
-		<CreateItem Include="$(FsLexOutputFolder)%(FsLex.Filename).fs">
-			<Output TaskParameter="Include" ItemName="FileWrites"/>
-		</CreateItem>
-	</Target>
+    <!-- Run the tool -->
+    <Exec Command="&quot;$(DotNetTool)&quot; &quot;$(FsLexPath)&quot; -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" />
 
-	<!-- Build FsYacc files. -->
-	<Target
-		Name="CallFsYacc"
-		Inputs="@(FsYacc)"
-		Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs')"
-		Condition="'@(FsYacc)'!=''">
+    <!-- Make sure it will get cleaned -->
+    <CreateItem Include="$(FsLexOutputFolder)%(FsLex.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+  </Target>
 
-		<!-- Create the output directory -->
-		<MakeDir Directories="$(FsYaccOutputFolder)"/>
-		<Exec Command="&quot;$(FsYaccToolPath)\$(FsYaccToolExe)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" Condition="'$(OS)' != 'Unix'" />
-		<Exec Command="mono &quot;$(FsYaccToolPath)\$(FsYaccToolExe)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" Condition="'$(OS)' == 'Unix'" />
+  <!-- Build FsYacc files. -->
+  <Target Name="CallFsYacc"
+          Inputs="@(FsYacc)"
+          Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs')"
+          Condition="'@(FsYacc)'!=''"
+          BeforeTargets="CoreCompile">
 
-		<!-- Make sure it will get cleaned  -->
-		<CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">
-			<Output TaskParameter="Include" ItemName="FileWrites"/>
-		</CreateItem>
-	</Target>
-	<ItemGroup>
-		<AvailableItemName Include="FsLex">
-			<Visible>false</Visible>
-		</AvailableItemName>
-		<AvailableItemName Include="FsYacc">
-			<Visible>false</Visible>
-		</AvailableItemName>
-	</ItemGroup>
+    <PropertyGroup>
+        <FsYaccPath Condition="'$(FsYaccPath)' == ''">$(ArtifactsDir)\Bootstrap\fsyacc\fsyacc.dll</FsYaccPath>
+    </PropertyGroup>
+
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsYaccOutputFolder)" />
+
+    <!-- Run the tool -->
+    <Exec Command="&quot;$(DotNetTool)&quot; &quot;$(FsYaccPath)&quot; -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
+
+    <!-- Make sure it will get cleaned -->
+    <CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+  </Target>
+
 </Project>
-
-

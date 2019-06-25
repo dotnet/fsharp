@@ -12,7 +12,15 @@ open System.Runtime.InteropServices
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-    let FSharpBannerVersion = "10.2.3 for F# 4.5"
+#if LOCALIZATION_FSBUILD
+    let FSharpBannerVersion = FSBuild.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
+#else
+#if LOCALIZATION_FSCOMP
+    let FSharpBannerVersion = FSComp.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
+#else
+    let FSharpBannerVersion = sprintf "%s for F# %s" (FSharp.BuildProperties.fsProductVersion) (FSharp.BuildProperties.fsLanguageVersion)
+#endif
+#endif
 
     let versionOf<'t> =
 #if FX_RESHAPED_REFLECTION
@@ -36,19 +44,6 @@ module internal FSharpEnvironment =
             | "" -> None
             | s  -> Some(s)
         with _ -> None
-
-
-    // The F# team version number. This version number is used for
-    //     - the F# version number reported by the fsc.exe and fsi.exe banners in the CTP release
-    //     - the F# version number printed in the HTML documentation generator
-    //     - the .NET DLL version number for all VS2008 DLLs
-    //     - the VS2008 registry key, written by the VS2008 installer
-    //         HKEY_LOCAL_MACHINE\Software\Microsoft\.NETFramework\AssemblyFolders\Microsoft.FSharp-" + FSharpTeamVersionNumber
-    // Also
-    //     - for Beta2, the language revision number indicated on the F# language spec
-    //
-    // It is NOT the version number listed on FSharp.Core.dll
-    let FSharpTeamVersionNumber = "2.0.0.0"
 
     // The F# binary format revision number. The first three digits of this form the significant part of the 
     // format revision number for F# binary signature and optimization metadata. The last digit is not significant.
@@ -225,7 +220,6 @@ module internal FSharpEnvironment =
                 // For the prototype compiler, we can just use the current domain
                 tryCurrentDomain()
         with e -> 
-            System.Diagnostics.Debug.Assert(false, "Error while determining default location of F# compiler")
             None
 
 

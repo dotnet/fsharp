@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis.Formatting
 
 open UnitTests.TestLib.LanguageService
@@ -19,7 +19,7 @@ open UnitTests.TestLib.LanguageService
 [<TestFixture>][<Category "Roslyn Services">]
 type IndentationServiceTests()  =
     let filePath = "C:\\test.fs"
-    let projectOptions: FSharpProjectOptions = { 
+    let projectOptions: FSharpProjectOptions = {
         ProjectFileName = "C:\\test.fsproj"
         ProjectId = None
         SourceFiles =  [| filePath |]
@@ -37,22 +37,22 @@ type IndentationServiceTests()  =
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let tabSize = 4
     let indentStyle = FormattingOptions.IndentStyle.Smart
-    
+
     let indentComment = System.Text.RegularExpressions.Regex(@"\$\s*Indent:\s*(\d+)\s*\$")
 
     let consoleProjectTemplate = "
-// Learn more about F# at http://fsharp.org
+// Learn more about F# at https://fsharp.org
 // See the 'F# Tutorial' project for more help.
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
     printfn \"%A\" argv
     0 // return an integer exit code"
 
     let libraryProjectTemplate = "
 namespace ProjectNamespace
 
-type Class1() = 
+type Class1() =
     member this.X = \"F#\""
 
     let nestedTypesTemplate = "
@@ -67,12 +67,12 @@ let plus x y =
     x + y // $Indent: 4$
 
 let mutable x = 0
-x <-     
+x <-
     10 * 2 // $Indent: 4$
 
 match some 10 with
 | None -> 0
-| Some x -> 
+| Some x ->
     x + 1 // $Indent: 4$
 
 try
@@ -132,7 +132,7 @@ while true do
     // Even if the line before only had comment like this
 // The follwing line should inherit that indentation too $Indent: 4$
 "
-    
+
     let testCases = [|
         ( None,     0, consoleProjectTemplate )
         ( None,     1, consoleProjectTemplate )
@@ -143,14 +143,14 @@ while true do
         ( Some(4),  6, consoleProjectTemplate )
         ( Some(4),  7, consoleProjectTemplate )
         ( Some(4),  8, consoleProjectTemplate )
-        
+
         ( None,     0, libraryProjectTemplate )
         ( None,     1, libraryProjectTemplate )
         ( Some(0),  2, libraryProjectTemplate )
         ( Some(0),  3, libraryProjectTemplate )
         ( Some(4),  4, libraryProjectTemplate )
         ( Some(4),  5, libraryProjectTemplate )
-        
+
         ( None,     0, nestedTypesTemplate )
         ( None,     1, nestedTypesTemplate )
         ( Some(0),  2, nestedTypesTemplate )
@@ -171,8 +171,8 @@ while true do
             ( Some(expectedIndentation), lineNumber, autoIndentTemplate ))
 
     [<Test>]
-    member this.TestIndentation() = 
-        for (expectedIndentation, lineNumber, template) in testCases do 
+    member this.TestIndentation() =
+        for (expectedIndentation, lineNumber, template) in testCases do
             let sourceText = SourceText.From(template)
 
             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
@@ -181,13 +181,13 @@ while true do
             | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
             | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
 
-    [<Test>]    
-    member this.TestAutoIndentation() = 
-        for (expectedIndentation, lineNumber, template) in autoIndentTestCases do 
+    [<Test>]
+    member this.TestAutoIndentation() =
+        for (expectedIndentation, lineNumber, template) in autoIndentTestCases do
 
-          
+
             let sourceText = SourceText.From(template)
-        
+
             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
             let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some (parsingOptions, projectOptions))
             match expectedIndentation with

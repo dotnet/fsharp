@@ -22,6 +22,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
     <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
     <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
+    <SimpleResolution>true</SimpleResolution>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">
@@ -39,7 +40,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' " >mscorlib</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >netcore</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' >= '2.0' " >netstandard</TargetProfile>
-    <OtherFlags>$(OtherFlags) --simpleresolution --nocopyfsharpcore</OtherFlags>
   </PropertyGroup>
 
   <Import Project="Microsoft.FSharp.Targets" />
@@ -50,6 +50,12 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <!-- When the developer specifies UseFSharpPreview=true then resolve the highest preview package from the F# myget feed -->
+  <PropertyGroup Condition="'$(UseFSharpPreview)' == 'true'">
+    <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePreviewPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <RestoreSources>$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
   </PropertyGroup>
 
   <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">

@@ -14,8 +14,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 [<TestFixture>][<Category "Roslyn Services">]
 type LanguageDebugInfoServiceTests()  =
@@ -39,6 +39,7 @@ let main argv =
 
     0 // return an integer exit code
     "
+
     static member private testCases: Object[][] = [|
         [| "123456";                    None |] // Numeric literals are not interesting
         [| "is a string";               Some("\"This is a string\"") |]

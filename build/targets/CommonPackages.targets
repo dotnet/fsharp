@@ -1,7 +1,0 @@
-<Project>
-
-  <ItemGroup>
-    <PackageReference Include="XliffTasks" Version="$(XliffTasksPackageVersion)" />
-  </ItemGroup>
-
-</Project>

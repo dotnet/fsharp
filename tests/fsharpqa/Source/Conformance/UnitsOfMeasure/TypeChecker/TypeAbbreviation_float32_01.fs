@@ -1,7 +1,7 @@
 // #Regression #Conformance #UnitsOfMeasure #TypeInference #TypeConstraints 
 // Regression tests for FSHARP1.0:3427 and 3423
 // 
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 module WithFloat32 =
