@@ -769,9 +769,6 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
           os.Append(PossibleOverloadE().Format minfo (buf.ToString())) |> ignore
 
-      //| PossibleBestOverload(_, minfo, m) -> 
-      //    Printf.bprintf os "\n\nPossible best overload: '%s'." minfo
-
       | FunctionExpected _ ->
           os.Append(FunctionExpectedE().Format) |> ignore
 
