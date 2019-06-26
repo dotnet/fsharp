@@ -823,10 +823,17 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
       | UndefinedName(_, k, id, suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
           if suggestNames then
-              let filtered = ErrorResolutionHints.FilterPredictions suggestionsF id.idText 
-              if List.isEmpty filtered |> not then
-                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
-          
+              let buffer = ErrorResolutionHints.SuggestionBuffer(id.idText)
+              if not buffer.Disabled then
+                  suggestionsF buffer.Add
+                  let values = buffer.Values()
+                  if not (Array.isEmpty values) then
+                      os.Append " " |> ignore
+                      os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
+                      for value in values do
+                          os.AppendLine() |> ignore
+                          os.Append "   " |> ignore
+                          os.Append(DecompileOpName value) |> ignore
 
       | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
           let _, errs = f(smr, ccuName, s)  
@@ -1364,9 +1371,17 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
       | ErrorWithSuggestions ((_, s), _, idText, suggestionF) -> 
           os.Append(DecompileOpName s) |> ignore
           if suggestNames then
-              let filtered = ErrorResolutionHints.FilterPredictions suggestionF idText
-              if List.isEmpty filtered |> not then
-                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
+              let buffer = ErrorResolutionHints.SuggestionBuffer(idText)
+              if not buffer.Disabled then
+                  suggestionF buffer.Add
+                  let values = buffer.Values()
+                  if not (Array.isEmpty values) then
+                      os.Append " " |> ignore
+                      os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
+                      for value in values do
+                          os.AppendLine() |> ignore
+                          os.Append "   " |> ignore
+                          os.Append(DecompileOpName value) |> ignore
 
       | NumberedError ((_, s), _) -> os.Append s |> ignore
 

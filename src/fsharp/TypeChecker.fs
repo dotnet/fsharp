@@ -4544,23 +4544,17 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
     | Some res -> checkRes res
     | None -> 
         if newOk = NoNewTypars then
-            let predictTypeParameters() =
-                let predictions1 =
-                    env.eNameResEnv.eTypars
-                    |> Seq.map (fun p -> "'" + p.Key)
+            let suggestTypeParameters (addToBuffer:string -> unit) =
+                for p in env.eNameResEnv.eTypars do
+                    addToBuffer ("'" + p.Key)
 
-                let predictions2 =
-                    match tpenv with
-                    | UnscopedTyparEnv elements ->
-                        elements
-                        |> Seq.map (fun p -> "'" + p.Key)
+                match tpenv with
+                | UnscopedTyparEnv elements ->
+                    for p in elements do
+                        addToBuffer ("'" + p.Key)
 
-                [ yield! predictions1 
-                  yield! predictions2 ]
-                |> HashSet
-            
             let reportedId = Ident("'" + id.idText, id.idRange)
-            error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, predictTypeParameters))
+            error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, suggestTypeParameters))
         
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
@@ -6548,10 +6542,9 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty: TType) virtNameAndArit
                 tcref.MembersOfFSharpTyconByName
                 |> Seq.exists (fun kv -> kv.Value |> List.exists (fun valRef -> valRef.DisplayName = bindName))
 
-            let suggestVirtualMembers() =
-                virtNameAndArityPairs
-                |> List.map (fst >> fst)
-                |> HashSet
+            let suggestVirtualMembers (addToBuffer: string -> unit) =
+                for ((x,_),_) in virtNameAndArityPairs do
+                    addToBuffer x
 
             if containsNonAbstractMemberWithSameName then
                 errorR(ErrorWithSuggestions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName), mBinding, bindName, suggestVirtualMembers))
