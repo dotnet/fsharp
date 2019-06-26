@@ -826,11 +826,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
               let buffer = ErrorResolutionHints.SuggestionBuffer(id.idText)
               if not buffer.Disabled then
                   suggestionsF buffer.Add
-                  let values = buffer.Values()
-                  if not (Array.isEmpty values) then
+                  if not buffer.IsEmpty then
                       os.Append " " |> ignore
                       os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
-                      for value in values do
+                      for value in buffer do
                           os.AppendLine() |> ignore
                           os.Append "   " |> ignore
                           os.Append(DecompileOpName value) |> ignore
@@ -1374,11 +1373,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
               let buffer = ErrorResolutionHints.SuggestionBuffer(idText)
               if not buffer.Disabled then
                   suggestionF buffer.Add
-                  let values = buffer.Values()
-                  if not (Array.isEmpty values) then
+                  if not buffer.IsEmpty then
                       os.Append " " |> ignore
                       os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
-                      for value in values do
+                      for value in buffer do
                           os.AppendLine() |> ignore
                           os.Append "   " |> ignore
                           os.Append(DecompileOpName value) |> ignore

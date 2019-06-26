@@ -5,6 +5,8 @@ module internal FSharp.Compiler.ErrorResolutionHints
 
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.Internal.Library
+open System.Collections
+open System.Collections.Generic
 
 let maxSuggestions = 5
 let minThresholdForSuggestions = 0.7
@@ -30,42 +32,41 @@ let DemangleOperator (nm:string) =
     else 
         nm
 
+type SuggestionBufferEnumerator(tail:int, data: KeyValuePair<float,string> []) =
+    let mutable current = data.Length
+    interface IEnumerator<string> with
+        member __.Current 
+            with get () = 
+                let kvpr = &data.[current]
+                kvpr.Value
+    interface System.Collections.IEnumerator with
+        member __.Current with get () = box data.[current].Value
+        member __.MoveNext() =
+            current <- current - 1
+            current > tail || (current = tail && data.[current] <> Unchecked.defaultof<_>)
+        member __.Reset () = current <- data.Length
+    interface System.IDisposable with
+        member __.Dispose () = ()
+
 type SuggestionBuffer(idText:string) = 
-    let data = Array.zeroCreate<System.Collections.Generic.KeyValuePair<float,string>>(maxSuggestions)
+    let data = Array.zeroCreate<KeyValuePair<float,string>>(maxSuggestions)
+    let mutable tail = maxSuggestions - 1
     let uppercaseText = idText.ToUpperInvariant()
     let dotIdText = "." + idText
-
-    let mutable elements = 0
     let mutable disableSuggestions = idText.Length < minStringLengthForSuggestion
 
-    let isSmaller i k =
-        if i >= elements then false else
-        let kvpr : byref<_> = &data.[i] 
-        kvpr.Key < k
-
-    let insert (k,v) =
-        let mutable pos = 0
-        while pos < maxSuggestions && isSmaller pos k do
+    let insert (k,v) = 
+        let mutable pos = tail
+        while pos < maxSuggestions && (let kv = &data.[pos] in kv.Key < k) do
             pos <- pos + 1
-        
-        if pos < maxSuggestions then
-            for i = maxSuggestions-1 downto (pos+1) do
-                data.[i] <- data.[i-1]
-            data.[pos] <- System.Collections.Generic.KeyValuePair(k,v)
 
-        elements <- elements + 1
-
-    member __.Values() : string [] =
-        if disableSuggestions then 
-            [||]
-        else
-            [| let hashSet = System.Collections.Generic.HashSet<string>()
-               let bound = min (maxSuggestions-1) (elements-1)
-               for i in 0..bound do
-                    let x = data.[i].Value
-                    if hashSet.Add x then yield x |]
-    
-    member __.Disabled with get () = disableSuggestions
+        if pos > 0 then
+            if pos >= maxSuggestions || (let kv = &data.[pos] in k <> kv.Key || v <> kv.Value) then
+                if tail < pos - 1 then
+                    for i = tail to pos - 2 do 
+                        data.[i] <- data.[i + 1]
+                data.[pos - 1] <- KeyValuePair(k,v)
+                if tail > 0 then tail <- tail - 1
 
     member __.Add (suggestion:string) =
         if not disableSuggestions then
@@ -84,4 +85,22 @@ type SuggestionBuffer(idText:string) =
                     suggestion.EndsWithOrdinal dotIdText ||
                     (similarity >= minThresholdForSuggestions && IsInEditDistanceProximity uppercaseText suggestedText)
                 then
-                    insert(similarity, suggestion)
+                    insert(similarity, suggestion) |> ignore
+    
+    member __.Disabled with get () = disableSuggestions
+
+    member __.IsEmpty with get () = disableSuggestions || (tail = maxSuggestions - 1)
+
+    interface IEnumerable<string> with
+        member this.GetEnumerator () = 
+            if this.IsEmpty then
+                Seq.empty.GetEnumerator()
+            else
+                new SuggestionBufferEnumerator(tail, data) :> IEnumerator<string>
+
+    interface IEnumerable with
+        member this.GetEnumerator () = 
+            if this.IsEmpty then
+                Seq.empty.GetEnumerator() :> IEnumerator
+            else
+                new SuggestionBufferEnumerator(tail, data) :> IEnumerator

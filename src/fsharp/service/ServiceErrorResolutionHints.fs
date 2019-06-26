@@ -8,7 +8,7 @@ module ErrorResolutionHints =
     let getSuggestedNames (suggestionsF: FSharp.Compiler.ErrorLogger.Suggestions) (unresolvedIdentifier: string) =
         let buffer = SuggestionBuffer(unresolvedIdentifier)
         if buffer.Disabled then
-            [||]
+            Seq.empty
         else
             suggestionsF buffer.Add
-            buffer.Values()
+            buffer :> seq<string>
