@@ -157,7 +157,7 @@ function Update-Arguments() {
             $script:bootstrap = $True
         }
     } else {
-        if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe")) {
+        if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe") -or (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
     }
