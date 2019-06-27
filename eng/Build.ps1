@@ -53,6 +53,7 @@ param (
     [switch]$testVs,
     [switch]$testAll,
     [string]$officialSkipTests = "false",
+    [switch]$compiler,
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
 
@@ -96,6 +97,7 @@ function Print-Usage() {
     Write-Host "  -procdump                 Monitor test runs with procdump"
     Write-Host "  -prepareMachine           Prepare machine for CI run, clean up processes after build"
     Write-Host "  -useGlobalNuGetCache      Use global NuGet cache."
+    Write-Host "  -compiler                 Only build fsc and fsi as .NET Core applications. No VS required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -145,8 +147,19 @@ function Process-Arguments() {
 }
 
 function Update-Arguments() {
-    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe")) {
-        $script:bootstrap = $True
+    if ($script:compiler) {
+        $script:bootstrapTfm = "netcoreapp2.1"
+        $script:msbuildEngine = "dotnet"
+    }
+
+    if ($bootstrapTfm -eq "netcoreapp2.1") {
+        if (-Not (Test-Path "$ArtifactsDir\Bootstrap\netcoreapp2.1\fsc\fsc.exe")) {
+            $script:bootstrap = $True
+        }
+    } else {
+        if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe")) {
+            $script:bootstrap = $True
+        }
     }
 }
 
@@ -231,6 +244,25 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
     Exec-Console $dotnetExe $args
 }
 
+function BuildCompiler() {
+    if ($bootstrapTfm -eq "netcoreapp2.1") {
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+        $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
+        $fsiProject = "$RepoRoot\src\fsharp\fsi\fsi.fsproj"
+        $protoOutputPath = "$ArtifactsDir\Bootstrap\netcoreapp2.1"
+        
+        $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
+        $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
+
+        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp2.1 /p:ProtoOutputPath=$protoOutputPath" + $argNoRestore + $argNoIncremental
+        Exec-Console $dotnetExe $args
+
+        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp2.1 /p:ProtoOutputPath=$protoOutputPath" + $argNoRestore + $argNoIncremental
+        Exec-Console $dotnetExe $args
+    }
+}
+
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
@@ -259,7 +291,11 @@ try {
     }
 
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
-        BuildSolution
+        if ($compiler) {
+            BuildCompiler
+        } else {
+            BuildSolution
+        }
     }
 
     if ($build) {
