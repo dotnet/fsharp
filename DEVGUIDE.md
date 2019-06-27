@@ -28,6 +28,8 @@ Install
 - [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
 - [.NET Core 3 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.0)
 
+For the .NET Core 3 SDK it might be necessary to update the version in the [global.json](https://github.com/dotnet/fsharp/blob/master/global.json#L3) to the exact version installed if the local installed version differs from the one specified in there. 
+
 **NOTE on Windows:**
 
 1. It is recommended to run `build.cmd` in a command prompt with path set to have the location of MSBuild. If you have Visual Studio, we can run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
