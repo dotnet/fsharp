@@ -178,7 +178,7 @@ function Get-PackageDir([string]$name, [string]$version = "") {
     return $p
 }
 
-function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]$logFileName = "", [switch]$parallel = $true, [switch]$summary = $true, [switch]$warnAsError = $true, [string]$configuration = $script:configuration, [string]$verbosity = $script:verbosity, [string]$protoOutputPath = "") {
+function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]$logFileName = "", [switch]$parallel = $true, [switch]$summary = $true, [switch]$warnAsError = $true, [string]$configuration = $script:configuration, [string]$verbosity = $script:verbosity) {
     # Because we override the C#/VB toolset to build against our LKG package, it is important
     # that we do not reuse MSBuild nodes from other jobs/builds on the machine. Otherwise,
     # we'll run into issues such as https://github.com/dotnet/roslyn/issues/6211.
@@ -216,10 +216,6 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
         $args += " /p:ContinuousIntegrationBuild=true"
     }
 
-    if (-not ($protoOutputPath -eq "")) {
-        $args += " /p:ProtoOutputPath=$protoOutputPath"
-    }
-
     $args += " $buildArgs"
     $args += " $projectFilePath"
     $args += " $properties"
@@ -245,13 +241,9 @@ function Make-BootstrapBuild() {
     Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\fslex" -Force -Recurse
     Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\fsyacc" -Force  -Recurse
 
-    if ($bootstrapTfm -eq "netcoreapp2.1") {
-        $dir = Join-Path $ArtifactsDir "Bootstrap\netcoreapp2.1"
-    }
-
     # prepare compiler
     $projectPath = "$RepoRoot\proto.proj"
-    Run-MSBuild $projectPath "/restore /t:Publish /p:TargetFramework=$bootstrapTfm;ProtoTargetFramework=$bootstrapTfm" -logFileName "Bootstrap" -configuration $bootstrapConfiguration -protoOutputPath $dir
+    Run-MSBuild $projectPath "/restore /t:Publish /p:TargetFramework=$bootstrapTfm;ProtoTargetFramework=$bootstrapTfm" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsc" -Force -Recurse
     Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsi" -Force -Recurse
 
