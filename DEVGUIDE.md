@@ -52,6 +52,10 @@ After you build the first time you can open and use this solution:
 
 If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
 
+If you do not have Visual Studio installed and want to simply build the compiler as a .NET Core application, use this:
+
+    Build.cmd -noVisualStudio
+
 ### Developing the F# Compiler (Linux/macOS)
 
 For Linux/Mac:
