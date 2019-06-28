@@ -602,6 +602,19 @@ let (|InvalidArgument|_|) (exn: exn) = match exn with :? ArgumentException as e 
 
 let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames: bool) =
 
+    let suggestNames suggestionsF idText =
+        if suggestNames then
+            let buffer = ErrorResolutionHints.SuggestionBuffer idText
+            if not buffer.Disabled then
+              suggestionsF buffer.Add
+              if not buffer.IsEmpty then
+                  os.Append " " |> ignore
+                  os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
+                  for value in buffer do
+                      os.AppendLine() |> ignore
+                      os.Append "   " |> ignore
+                      os.Append(DecompileOpName value) |> ignore
+
     let rec OutputExceptionR (os: StringBuilder) error = 
 
       match error with
@@ -822,17 +835,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
       | UndefinedName(_, k, id, suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          if suggestNames then
-              let buffer = ErrorResolutionHints.SuggestionBuffer(id.idText)
-              if not buffer.Disabled then
-                  suggestionsF buffer.Add
-                  if not buffer.IsEmpty then
-                      os.Append " " |> ignore
-                      os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
-                      for value in buffer do
-                          os.AppendLine() |> ignore
-                          os.Append "   " |> ignore
-                          os.Append(DecompileOpName value) |> ignore
+          suggestNames suggestionsF id.idText
 
       | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
           let _, errs = f(smr, ccuName, s)  
@@ -1369,17 +1372,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
       | ErrorWithSuggestions ((_, s), _, idText, suggestionF) -> 
           os.Append(DecompileOpName s) |> ignore
-          if suggestNames then
-              let buffer = ErrorResolutionHints.SuggestionBuffer(idText)
-              if not buffer.Disabled then
-                  suggestionF buffer.Add
-                  if not buffer.IsEmpty then
-                      os.Append " " |> ignore
-                      os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
-                      for value in buffer do
-                          os.AppendLine() |> ignore
-                          os.Append "   " |> ignore
-                          os.Append(DecompileOpName value) |> ignore
+          suggestNames suggestionF idText
 
       | NumberedError ((_, s), _) -> os.Append s |> ignore
 
