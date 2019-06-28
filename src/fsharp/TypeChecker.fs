@@ -4544,7 +4544,7 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
     | Some res -> checkRes res
     | None -> 
         if newOk = NoNewTypars then
-            let suggestTypeParameters (addToBuffer:string -> unit) =
+            let suggestTypeParameters (addToBuffer: string -> unit) =
                 for p in env.eNameResEnv.eTypars do
                     addToBuffer ("'" + p.Key)
 

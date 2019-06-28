@@ -1838,7 +1838,7 @@ let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m first fullyQu
     else
         let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
         let namespaceNotFound = lazy(
-            let suggestModulesAndNamespaces (addToBuffer:string -> unit) =
+            let suggestModulesAndNamespaces (addToBuffer: string -> unit) =
                 for kv in moduleOrNamespaces do
                     for modref in kv.Value do
                         if IsEntityAccessible amap m ad modref then
@@ -1852,7 +1852,7 @@ let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m first fullyQu
             match moduleNotFoundErrorCache with
             | Some (oldId, error) when Range.equals oldId id.idRange -> error
             | _ ->
-                let suggestNames (addToBuffer:string -> unit) =
+                let suggestNames (addToBuffer: string -> unit) =
                     for kv in mty.ModulesAndNamespacesByDemangledName do
                         if IsEntityAccessible amap m ad (modref.NestedTyconRef kv.Value) then
                             addToBuffer kv.Value.DisplayName
@@ -2227,7 +2227,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
     match nestedSearchAccessible with
     | Result res when not (isNil res) -> nestedSearchAccessible
     | _ ->
-        let suggestMembers (addToBuffer:string -> unit) =
+        let suggestMembers (addToBuffer: string -> unit) =
             for p in ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad m ty do
                 addToBuffer p.PropertyName
 
@@ -2559,7 +2559,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                   | _ ->
                       let innerSearch = search +++ (moduleSearch AccessibleFromSomeFSharpCode) +++ (tyconSearch AccessibleFromSomeFSharpCode)
 
-                      let suggestEverythingInScope (addToBuffer:string -> unit) =
+                      let suggestEverythingInScope (addToBuffer: string -> unit) =
                           for kv in nenv.ModulesAndNamespaces fullyQualified do
                               for modref in kv.Value do
                                   if IsEntityAccessible ncenv.amap m ad modref then
@@ -2773,7 +2773,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInf
         match tcrefs with
         | tcref :: _ -> success tcref
         | [] ->
-            let suggestTypes (addToBuffer:string -> unit) =
+            let suggestTypes (addToBuffer: string -> unit) =
                 for e in tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange do
                     addToBuffer e.Value.DisplayName
 
@@ -2793,7 +2793,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInf
             match tcrefs with
             | _ :: _ -> tcrefs |> CollectAtMostOneResult (fun (resInfo, tcref) -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref id2 rest2)
             | [] ->
-                let suggestTypes (addToBuffer:string -> unit) =
+                let suggestTypes (addToBuffer: string -> unit) =
                     for e in tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange do
                         addToBuffer e.Value.DisplayName
 
@@ -2816,7 +2816,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
 
 /// Create an UndefinedName error with details
 let SuggestTypeLongIdentInModuleOrNamespace depth (modref: ModuleOrNamespaceRef) amap ad m (id: Ident) =
-    let suggestPossibleTypes (addToBuffer:string -> unit) =
+    let suggestPossibleTypes (addToBuffer: string -> unit) =
         for e in modref.ModuleOrNamespaceType.AllEntities do
             if IsEntityAccessible amap m ad (modref.NestedTyconRef e) then
                 addToBuffer e.DisplayName
@@ -2844,7 +2844,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace sink nenv (ncenv: NameRe
                 let resInfo = resInfo.AddEntity(id.idRange, submodref)
                 ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType id2 rest2
             | _ ->
-                let suggestPossibleModules (addToBuffer:string -> unit) =
+                let suggestPossibleModules (addToBuffer: string -> unit) =
                     for kv in modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName do
                         if IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value) then
                             addToBuffer kv.Value.DisplayName
@@ -2857,7 +2857,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace sink nenv (ncenv: NameRe
             match tcrefs with
             | _ :: _ -> tcrefs |> CollectResults (fun tcref -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref id2 rest2)
             | [] ->
-                let suggestTypes (addToBuffer:string -> unit) =
+                let suggestTypes (addToBuffer: string -> unit) =
                     for e in modref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange do
                         addToBuffer e.Value.DisplayName
 
@@ -2891,7 +2891,7 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                     //CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities tcref rest typeNameResInfo m
                     success(ResolutionInfo.Empty, tcref)
                 | [] ->
-                    let suggestPossibleTypes (addToBuffer:string -> unit) =
+                    let suggestPossibleTypes (addToBuffer: string -> unit) =
                         for kv in nenv.TyconsByDemangledNameAndArity fullyQualified do
                             if IsEntityAccessible ncenv.amap m ad kv.Value then
                                 addToBuffer kv.Value.DisplayName
@@ -3025,7 +3025,7 @@ let SuggestOtherLabelsOfSameRecordType g (nenv: NameResolutionEnv) ty (id: Ident
     labelsOfPossibleRecord
 
 let SuggestLabelsOfRelatedRecords g (nenv: NameResolutionEnv) (id: Ident) (allFields: Ident list) =
-    let suggestLabels (addToBuffer:string -> unit) =
+    let suggestLabels (addToBuffer: string -> unit) =
         let givenFields = allFields |> List.map (fun fld -> fld.idText) |> List.filter ((<>) id.idText) |> HashSet
         let fullyQualified =
             if givenFields.Count = 0 then

@@ -26,13 +26,13 @@ let IsInEditDistanceProximity idText suggestion =
     editDistance <= threshold
 
 /// Demangles a suggestion
-let DemangleOperator (nm:string) =
+let DemangleOperator (nm: string) =
     if nm.StartsWithOrdinal("( ") && nm.EndsWithOrdinal(" )") then
         nm.[2..nm.Length - 3]
     else 
         nm
 
-type SuggestionBufferEnumerator(tail:int, data: KeyValuePair<float,string> []) =
+type SuggestionBufferEnumerator(tail: int, data: KeyValuePair<float,string> []) =
     let mutable current = data.Length
     interface IEnumerator<string> with
         member __.Current 
@@ -48,7 +48,7 @@ type SuggestionBufferEnumerator(tail:int, data: KeyValuePair<float,string> []) =
     interface System.IDisposable with
         member __.Dispose () = ()
 
-type SuggestionBuffer(idText:string) = 
+type SuggestionBuffer(idText: string) = 
     let data = Array.zeroCreate<KeyValuePair<float,string>>(maxSuggestions)
     let mutable tail = maxSuggestions - 1
     let uppercaseText = idText.ToUpperInvariant()
@@ -68,7 +68,7 @@ type SuggestionBuffer(idText:string) =
                 data.[pos - 1] <- KeyValuePair(k,v)
                 if tail > 0 then tail <- tail - 1
 
-    member __.Add (suggestion:string) =
+    member __.Add (suggestion: string) =
         if not disableSuggestions then
             if suggestion = idText then // some other parse error happened
                 disableSuggestions <- true
