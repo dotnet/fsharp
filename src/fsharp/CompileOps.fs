@@ -600,7 +600,20 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn: exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames: bool) =
+let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNames: bool) =
+
+    let suggestNames suggestionsF idText =
+        if canSuggestNames then
+            let buffer = ErrorResolutionHints.SuggestionBuffer idText
+            if not buffer.Disabled then
+              suggestionsF buffer.Add
+              if not buffer.IsEmpty then
+                  os.Append " " |> ignore
+                  os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
+                  for value in buffer do
+                      os.AppendLine() |> ignore
+                      os.Append "   " |> ignore
+                      os.Append(DecompileOpName value) |> ignore
 
     let rec OutputExceptionR (os: StringBuilder) error = 
 
@@ -822,14 +835,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
       | UndefinedName(_, k, id, suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          if suggestNames then
-              let filtered = ErrorResolutionHints.FilterPredictions suggestionsF id.idText 
-              if List.isEmpty filtered |> not then
-                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
-          
+          suggestNames suggestionsF id.idText
 
       | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
-          let _, errs = f(smr, ccuName, s)  
+          let _, errs = f(smr, ccuName, s)
           os.Append errs |> ignore  
 
       | FieldNotMutable _ -> 
@@ -1363,10 +1372,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
       | ErrorWithSuggestions ((_, s), _, idText, suggestionF) -> 
           os.Append(DecompileOpName s) |> ignore
-          if suggestNames then
-              let filtered = ErrorResolutionHints.FilterPredictions suggestionF idText
-              if List.isEmpty filtered |> not then
-                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
+          suggestNames suggestionF idText
 
       | NumberedError ((_, s), _) -> os.Append s |> ignore
 
@@ -1582,10 +1588,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
 
 // remove any newlines and tabs
-let OutputPhasedDiagnostic (os: System.Text.StringBuilder) (err: PhasedDiagnostic) (flattenErrors: bool) (suggestNames: bool) =
+let OutputPhasedDiagnostic (os: System.Text.StringBuilder) (err: PhasedDiagnostic) (flattenErrors: bool) (canSuggestNames: bool) =
     let buf = new System.Text.StringBuilder()
 
-    OutputPhasedErrorR buf err suggestNames
+    OutputPhasedErrorR buf err canSuggestNames
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
     
     os.Append s |> ignore
@@ -1635,7 +1641,7 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err: PhasedDiagnostic, suggestNames: bool) =
+let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err: PhasedDiagnostic, canSuggestNames: bool) =
     let outputWhere (showFullPaths, errorStyle) m: DiagnosticLocation =
         if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
@@ -1708,7 +1714,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             let canonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedDiagnostic os mainError flattenErrors suggestNames
+                OutputPhasedDiagnostic os mainError flattenErrors canSuggestNames
                 os.ToString()
             
             let entry: DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
@@ -1723,7 +1729,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     let relCanonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedDiagnostic os err flattenErrors suggestNames
+                        OutputPhasedDiagnostic os err flattenErrors canSuggestNames
                         os.ToString()
 
                     let entry: DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1731,7 +1737,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedDiagnostic os err flattenErrors suggestNames
+                    OutputPhasedDiagnostic os err flattenErrors canSuggestNames
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
         
             relatedErrors |> List.iter OutputRelatedError
@@ -1752,7 +1758,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 /// prints error and related errors to the specified StringBuilder
 let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError) os (err: PhasedDiagnostic) = 
     
-    // 'true' for "suggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
+    // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
     let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err, true)
     for e in errors do
         Printf.bprintf os "\n"
