@@ -245,6 +245,10 @@ type cenv =
       
       /// Used to apply forced inlining optimizations to witnesses generated late during codegen
       mutable optimizeDuringCodeGen: (Expr -> Expr)
+
+      /// What depth are we at when generating an expression?
+      mutable exprRecursionDepth: int
+      mutable exprStack: Stack<unit -> unit>
     }
 
 
@@ -2133,8 +2137,21 @@ let DoesGenExprStartWithSequencePoint g sp expr =
 //-------------------------------------------------------------------------
 // Generate expressions
 //-------------------------------------------------------------------------
+let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
+    cenv.exprRecursionDepth <- cenv.exprRecursionDepth + 1
 
-let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
+    if cenv.exprRecursionDepth > 1 then
+        if cenv.exprRecursionDepth >= 400 then
+            GenExprAux cenv cgbuf eenv sp expr sequel
+        else
+            GenExprAux cenv cgbuf eenv sp expr sequel
+    else
+        GenExprAux cenv cgbuf eenv sp expr sequel
+        assert (cenv.exprRecursionDepth = 1)
+
+    cenv.exprRecursionDepth <- cenv.exprRecursionDepth - 1
+
+and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   let g = cenv.g
   let expr = stripExpr expr
 
@@ -7668,7 +7685,9 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               casApplied = casApplied
               intraAssemblyInfo = intraAssemblyInfo
               opts = codeGenOpts
-              optimizeDuringCodeGen = (fun x -> x) }
+              optimizeDuringCodeGen = (fun x -> x)
+              exprRecursionDepth = 0
+              exprStack = Stack () }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value

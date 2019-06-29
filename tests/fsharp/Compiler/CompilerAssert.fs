@@ -81,6 +81,18 @@ module CompilerAssert =
                 Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
             )
 
+    let Compile (source: string) =
+        lock lockObj <| fun () ->
+            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions defaultProjectOptions
+            let parseResults = checker.ParseFile ("test.fs", SourceText.ofString source, parsingOptions) |> Async.RunSynchronously
+            let errors, _, assemblyOpt = checker.CompileToDynamicAssembly ([ parseResults.ParseTree.Value ], "test.dll", [], None) |> Async.RunSynchronously
+
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile test had errors: %A" errors)
+
+            if assemblyOpt.IsNone then
+                Assert.Fail ("Compile test resulted in no assembly output.")
+
     let RunScript (source: string) (expectedErrorMessages: string list) =
         lock lockObj <| fun () ->
             // Intialize output and input streams
