@@ -333,6 +333,8 @@ function MSBuild {
 ResolvePath "${BASH_SOURCE[0]}"
 _script_dir=`dirname "$_ResolvePath"`
 
+. "$_script_dir/pipeline-logging-functions.sh"
+
 eng_root=`cd -P "$_script_dir/.." && pwd`
 repo_root=`cd -P "$_script_dir/../.." && pwd`
 artifacts_dir="$repo_root/artifacts"
