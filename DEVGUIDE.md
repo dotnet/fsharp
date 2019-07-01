@@ -5,7 +5,7 @@
 Get the latest source code from the master branch by running this git command:
 
     git clone https://github.com/dotnet/fsharp.git
-    
+
 Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
 
     git clean -xfd
@@ -51,6 +51,10 @@ After you build the first time you can open and use this solution:
     .\VisualFSharp.sln
 
 If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
+
+If you do not have Visual Studio installed and want to simply build the compiler as a .NET Core application, use this:
+
+    Build.cmd -noVisualStudio
 
 ### Developing the F# Compiler (Linux/macOS)
 
@@ -104,9 +108,9 @@ Or hard crash on launch ("Unknown Error"), delete these folders:
 
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
 
-You can install Visual Studio 2019 from https://www.visualstudio.com/downloads/.
+You can install Visual Studio 2019 from <https://www.visualstudio.com/downloads/>.
 
-**Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
+**Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools
 components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
 
 For **Debug**, uninstall then reinstall:
@@ -157,25 +161,25 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 ## Notes
 
-#### Windows: Links to  Additional frameworks
+### Windows: Links to  Additional frameworks
 
-- [Git for windows](http://msysgit.github.io/)
-- [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
-- [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
+- [Git for windows](https://gitforwindows.org/)
+- [.NET 4.6](https://www.microsoft.com/en-us/download/details.aspx?id=48137)
+- [Windows 8.1 SDK](https://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 - [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
-#### Notes on the Windows .NET Framework build
+### Notes on the Windows .NET Framework build
 
 1. The `update.cmd` script adds required strong name validation skips and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
 1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
 1. The overall bootstrapping process executes as follows
- - We first need an existing F# compiler. We use the one in the `lkg` directory. Let's assume this compiler has an `FSharp.Core.dll` with version X.
- - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
- - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
- - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
+   - We first need an existing F# compiler. We use the one in the `lkg` directory. Let's assume this compiler has an `FSharp.Core.dll` with version X.
+   - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
+   - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
+   - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
 
-#### Updating FSComp.fs, FSComp.resx and XLF
+### Updating FSComp.fs, FSComp.resx and XLF
 
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
@@ -185,7 +189,7 @@ If your changes involve modifying the list of language keywords in any way, (e.g
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
 
-#### Configuring proxy server
+### Configuring proxy server
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
@@ -195,6 +199,6 @@ If you are behind a proxy server, NuGet client tool must be configured to use it
 
 Where you should set proper proxy address, user name and password.
 
-#### Resources
+### Resources
 
-The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
+The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
