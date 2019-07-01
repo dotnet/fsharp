@@ -272,10 +272,6 @@
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Service/reshapedmsbuild.fs</Link>
-    </Compile>
-    
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
       <Link>ReferenceResolution/reshapedmsbuild.fs</Link>
     </Compile>
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
