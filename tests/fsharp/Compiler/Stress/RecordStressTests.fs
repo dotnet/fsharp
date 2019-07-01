@@ -11,7 +11,6 @@ module RecordStressTests =
     let LargeRecordDoesNotStackOverflow() =
         CompilerAssert.Compile
             """
-[<NoEquality;NoComparison>]
 type TestRecord =
     {
         test1: int

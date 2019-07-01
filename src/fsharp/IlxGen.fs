@@ -2141,15 +2141,21 @@ let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth + 1
 
     if cenv.exprRecursionDepth > 1 then
-        if cenv.exprRecursionDepth >= 400 then
-            GenExprAux cenv cgbuf eenv sp expr sequel
-        else
-            GenExprAux cenv cgbuf eenv sp expr sequel
-    else
+        StackGuard.EnsureSufficientExecutionStack cenv.exprRecursionDepth
         GenExprAux cenv cgbuf eenv sp expr sequel
-        assert (cenv.exprRecursionDepth = 1)
+    else
+        GenExprWithStackGuard cenv cgbuf eenv sp expr sequel
 
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth - 1
+
+and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
+    assert (cenv.exprRecursionDepth = 1)
+    try
+        GenExprAux cenv cgbuf eenv sp expr sequel
+        assert (cenv.exprRecursionDepth = 1)
+    with
+    | :? System.InsufficientExecutionStackException ->
+        reraise ()
 
 and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   let g = cenv.g
