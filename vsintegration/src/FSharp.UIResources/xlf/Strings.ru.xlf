@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="Text_hover">
         <source>Text hover</source>
-        <target state="new">Text hover</target>
+        <target state="translated">Текст, отображаемый при наведении</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="Use_out_of_process_language_server">
         <source>(Preview) Use out of process language server</source>
-        <target state="new">(Preview) Use out of process language server</target>
+        <target state="translated">(Предварительная версия) Использование сервера языка процессов</target>
         <note />
       </trans-unit>
     </body>

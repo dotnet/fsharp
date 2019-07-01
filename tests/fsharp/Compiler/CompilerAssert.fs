@@ -3,9 +3,10 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Text
-open System.Diagnostics
+
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
@@ -16,7 +17,6 @@ open NUnit.Framework
 module CompilerAssert =
 
     let checker = FSharpChecker.Create()
-
     let private config = TestFramework.initializeSuite ()
 
     let private defaultProjectOptions =
@@ -34,9 +34,10 @@ module CompilerAssert =
                     |> Path.GetDirectoryName
                     |> Directory.EnumerateFiles
                     |> Seq.toArray
-                    |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system."))
+                    |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system.") || x.ToLowerInvariant().EndsWith("netstandard.dll"))
                     |> Array.map (fun x -> sprintf "-r:%s" x)
                 Array.append [|"--targetprofile:netcore"; "--noframework"|] assemblies
+
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -47,7 +48,7 @@ module CompilerAssert =
             ExtraProjectInfo = None
             Stamp = None
         }
-        
+
     let lockObj = obj ()
 
     let Pass (source: string) =
@@ -116,4 +117,3 @@ module CompilerAssert =
                 ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
                 )
-        

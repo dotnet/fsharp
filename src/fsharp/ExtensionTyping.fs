@@ -140,9 +140,7 @@ module internal ExtensionTyping =
 
     let StripException (e: exn) =
         match e with
-#if !FX_REDUCED_EXCEPTIONS
         |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
-#endif
         |   :? TypeInitializationException as e -> e.InnerException
         |   _ -> e
 
