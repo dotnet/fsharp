@@ -76,15 +76,15 @@ type TryPick() =
     [<Benchmark(Baseline=true)>]
     member this.Option () =
       match this.Type with
-      | "int" -> this.ints |> List.tryPick (fun x -> Some x) |> ignore
-      | "record" -> this.recs |> List.tryPick (fun x -> Some x) |> ignore
+      | "int" -> this.ints |> List.tryPick (fun x -> None) |> ignore
+      | "record" -> this.recs |> List.tryPick (fun x -> None) |> ignore
       | _ -> failwith "Should never happen"
 
     [<Benchmark>]
     member this.ValueOption () =
       match this.Type with
-      | "int" -> this.ints |> List.tryPickV (fun x -> ValueSome x) |> ignore
-      | "record" -> this.recs |> List.tryPickV (fun x -> ValueSome x) |> ignore
+      | "int" -> this.ints |> List.tryPickV (fun x -> ValueNone) |> ignore
+      | "record" -> this.recs |> List.tryPickV (fun x -> ValueNone) |> ignore
       | _ -> failwith "Should never happen"
 
 
@@ -92,4 +92,5 @@ type TryPick() =
 let main argv =
     let summaries = BenchmarkRunner.Run(typeof<Choose>.Assembly)
     printfn "%A" summaries
+    System.Console.ReadLine() |> ignore
     0
