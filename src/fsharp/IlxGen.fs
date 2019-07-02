@@ -214,6 +214,8 @@ type IlxGenOptions =
       alwaysCallVirt: bool 
     }
 
+let MaxDelayedGenRecursionDepth = 1000000
+
 /// Compilation environment for compiling a fragment of an assembly
 [<NoEquality; NoComparison>]
 type cenv =
@@ -248,7 +250,7 @@ type cenv =
 
       /// What depth are we at when generating an expression?
       mutable exprRecursionDepth: int
-      mutable exprStack: Stack<unit -> unit>
+      mutable delayedGen: Queue<unit -> unit>
     }
 
 
@@ -2141,8 +2143,14 @@ let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth + 1
 
     if cenv.exprRecursionDepth > 1 then
-        StackGuard.EnsureSufficientExecutionStack cenv.exprRecursionDepth
-        GenExprAux cenv cgbuf eenv sp expr sequel
+        if cenv.exprRecursionDepth >= 100 then
+            async {
+                do! Async.SwitchToNewThread ()
+                GenExpr { cenv with exprRecursionDepth = 0 } cgbuf eenv sp expr sequel
+            } |> Async.RunSynchronously
+        else
+            StackGuard.EnsureSufficientExecutionStack cenv.exprRecursionDepth
+            GenExprAux cenv cgbuf eenv sp expr sequel
     else
         GenExprWithStackGuard cenv cgbuf eenv sp expr sequel
 
@@ -2156,6 +2164,10 @@ and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
     with
     | :? System.InsufficientExecutionStackException ->
         reraise ()
+
+    while cenv.delayedGen.Count > 0 do
+        let gen = cenv.delayedGen.Dequeue ()
+        gen ()
 
 and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   let g = cenv.g
@@ -2178,7 +2190,10 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | Expr.Match (spBind, exprm, tree, targets, m, ty) ->
       GenMatch cenv cgbuf eenv (spBind, exprm, tree, targets, m, ty) sequel
   | Expr.Sequential (e1, e2, dir, spSeq, m) ->
-      GenSequential cenv cgbuf eenv sp (e1, e2, dir, spSeq, m) sequel
+      if cenv.exprRecursionDepth >= MaxDelayedGenRecursionDepth then
+        cenv.delayedGen.Enqueue (fun () -> GenSequential cenv cgbuf eenv sp (e1, e2, dir, spSeq, m) sequel)
+      else
+        GenSequential cenv cgbuf eenv sp (e1, e2, dir, spSeq, m) sequel
   | Expr.LetRec (binds, body, m, _) ->
       GenLetRec cenv cgbuf eenv (binds, body, m) sequel
   | Expr.Let (bind, body, _, _) ->
@@ -5233,7 +5248,11 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         let tps, ctorThisValOpt, baseValOpt, vsl, body', bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo rhsExpr
         let methodVars = List.concat vsl
         CommitStartScope cgbuf startScopeMarkOpt
-        GenMethodForBinding cenv cgbuf eenv (vspec, mspec, access, paramInfos, retInfo) (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty)
+
+        if cenv.exprRecursionDepth >= MaxDelayedGenRecursionDepth then
+            cenv.delayedGen.Enqueue (fun () -> GenMethodForBinding cenv cgbuf eenv (vspec, mspec, access, paramInfos, retInfo) (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty))
+        else
+            GenMethodForBinding cenv cgbuf eenv (vspec, mspec, access, paramInfos, retInfo) (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty)
 
     | StaticProperty (ilGetterMethSpec, optShadowLocal) ->
 
@@ -7693,7 +7712,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               opts = codeGenOpts
               optimizeDuringCodeGen = (fun x -> x)
               exprRecursionDepth = 0
-              exprStack = Stack () }
+              delayedGen = Queue () }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value
