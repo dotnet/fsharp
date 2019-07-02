@@ -32,6 +32,7 @@
   <ItemGroup>
     <Compile Include="NUnitFrameworkShims.fs" />
     <Compile Include="LibraryTestFx.fs" />
+
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
@@ -80,8 +81,9 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
     <Compile Include="StructTuples.fs" />
-    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp')) and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
-    <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4')) and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
+
+    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp'))" />
+    <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
 
   <ItemGroup>
