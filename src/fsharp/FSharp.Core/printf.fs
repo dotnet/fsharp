@@ -2,23 +2,16 @@
 
 namespace Microsoft.FSharp.Core
 
-type PrintfFormat<'Printer,'State,'Residue,'Result>(value:string) =
-        
-        internal new(value, caps, types) as this = 
-            PrintfFormat<_,_,_,_>(value)
-            then this.Captures <- caps
-                 this.Types <- types
+type PrintfFormat<'Printer,'State,'Residue,'Result>(value: string, captures: obj[], types: Type[]) =
+    new(value) = new PrintfFormat<'Printer,'State,'Residue,'Result>(value, null, null)
+    member __.Value = value
+    member __.Captures = captures
+    member __.Types = types
+    override __.ToString() = value
 
-        member __.Value = value
-        member val internal Captures: obj[] = Unchecked.defaultof<obj[]> with get, set
-        member val internal Types: System.Type[] = Unchecked.defaultof<System.Type[]> with get, set
-        override __.ToString() = value
-    
-type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value:string) = 
-    inherit PrintfFormat<'Printer,'State,'Residue,'Result>(value)
-    internal new(value, caps) as this =
-        PrintfFormat<_,_,_,_,_>(value)
-        then this.Captures <- caps
+type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value: string, captures: obj[], types: Type[]) = 
+    inherit PrintfFormat<'Printer,'State,'Residue,'Result>(value, captures, types)
+    new(value) = new PrintfFormat<'Printer,'State,'Residue,'Result, 'Tuple>(value, null, null)
 
 type Format<'Printer,'State,'Residue,'Result> = PrintfFormat<'Printer,'State,'Residue,'Result>
 type Format<'Printer,'State,'Residue,'Result,'Tuple> = PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>
