@@ -113,6 +113,9 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseFile: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
 
+    /// Parse a source code file, returning a handle that can be used for obtaining navigation bar information.
+    member ParseFileNoCache: fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
+
     /// <summary>
     /// <para>Parse a source code file, returning a handle that can be used for obtaining navigation bar information
     /// To get the full information, call 'CheckFileInProject' method on the result</para>
