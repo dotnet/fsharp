@@ -214,8 +214,6 @@ type IlxGenOptions =
       alwaysCallVirt: bool 
     }
 
-let MaxDelayedGenRecursionDepth = 1000000
-
 /// Compilation environment for compiling a fragment of an assembly
 [<NoEquality; NoComparison>]
 type cenv =
@@ -2143,14 +2141,8 @@ let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth + 1
 
     if cenv.exprRecursionDepth > 1 then
-        if cenv.exprRecursionDepth >= 100 then
-            async {
-                do! Async.SwitchToNewThread ()
-                GenExpr { cenv with exprRecursionDepth = 0 } cgbuf eenv sp expr sequel
-            } |> Async.RunSynchronously
-        else
-            StackGuard.EnsureSufficientExecutionStack cenv.exprRecursionDepth
-            GenExprAux cenv cgbuf eenv sp expr sequel
+        StackGuard.EnsureSufficientExecutionStack cenv.exprRecursionDepth
+        GenExprAux cenv cgbuf eenv sp expr sequel
     else
         GenExprWithStackGuard cenv cgbuf eenv sp expr sequel
 
@@ -2164,10 +2156,6 @@ and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
     with
     | :? System.InsufficientExecutionStackException ->
         reraise ()
-
-    while cenv.delayedGen.Count > 0 do
-        let gen = cenv.delayedGen.Dequeue ()
-        gen ()
 
 and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   let g = cenv.g
@@ -2189,11 +2177,6 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
       GenConstant cenv cgbuf eenv (c, m, ty) sequel
   | Expr.Match (spBind, exprm, tree, targets, m, ty) ->
       GenMatch cenv cgbuf eenv (spBind, exprm, tree, targets, m, ty) sequel
-  | Expr.Sequential (e1, e2, dir, spSeq, m) ->
-      if cenv.exprRecursionDepth >= MaxDelayedGenRecursionDepth then
-        cenv.delayedGen.Enqueue (fun () -> GenSequential cenv cgbuf eenv sp (e1, e2, dir, spSeq, m) sequel)
-      else
-        GenSequential cenv cgbuf eenv sp (e1, e2, dir, spSeq, m) sequel
   | Expr.LetRec (binds, body, m, _) ->
       GenLetRec cenv cgbuf eenv (binds, body, m) sequel
   | Expr.Let (bind, body, _, _) ->
@@ -2240,6 +2223,9 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   // for large lists we have to process the linearity separately
   | LinearOpExpr _ -> 
       GenLinearExpr cenv cgbuf eenv expr sequel id |> ignore<FakeUnit>
+
+  | Expr.Sequential _ ->
+      GenSequentialExpr cenv cgbuf eenv sp expr sequel (fun expr -> (GenExpr cenv cgbuf eenv sp expr sequel); Fake) |> ignore<FakeUnit>
 
   | Expr.Op (op, tyargs, args, m) -> 
       match op, args, tyargs with 
@@ -2561,6 +2547,7 @@ and GenLinearExpr cenv cgbuf eenv expr sequel (contf: FakeUnit -> FakeUnit) =
             GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
             GenSequel cenv eenv.cloc cgbuf sequel
             Fake))
+
     | _ -> 
         GenExpr cenv cgbuf eenv SPSuppress expr sequel
         contf Fake
@@ -3517,23 +3504,30 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
 // Generate seq
 //--------------------------------------------------------------------------
 
-and GenSequential cenv cgbuf eenv spIn (e1, e2, specialSeqFlag, spSeq, _m) sequel =
+and GenSequentialExpr cenv cgbuf eenv spIn expr sequel (contf: Expr -> FakeUnit) =
+    match expr with 
+    | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
+        // Compiler generated sequential executions result in suppressions of sequence points on both
+        // left and right of the sequence
+        let spAction, spExpr =
+            (match spSeq with
+             | SequencePointsAtSeq -> SPAlways, SPAlways
+             | SuppressSequencePointOnExprOfSequential -> SPSuppress, spIn
+             | SuppressSequencePointOnStmtOfSequential -> spIn, SPSuppress)
+        match specialSeqFlag with
+        | NormalSeq ->
+            GenExpr cenv cgbuf eenv spAction e1 discard
+            GenSequentialExpr cenv cgbuf eenv spExpr e2 sequel (fun e2R ->
+                GenExpr cenv cgbuf eenv spExpr e2R sequel
+                Fake)
+        | ThenDoSeq ->
+            GenExpr cenv cgbuf eenv spExpr e1 Continue
+            GenExpr cenv cgbuf eenv spAction e2 discard
+            GenSequel cenv eenv.cloc cgbuf sequel
+            Fake
 
-    // Compiler generated sequential executions result in suppressions of sequence points on both
-    // left and right of the sequence
-    let spAction, spExpr =
-        (match spSeq with
-         | SequencePointsAtSeq -> SPAlways, SPAlways
-         | SuppressSequencePointOnExprOfSequential -> SPSuppress, spIn
-         | SuppressSequencePointOnStmtOfSequential -> spIn, SPSuppress)
-    match specialSeqFlag with
-    | NormalSeq ->
-        GenExpr cenv cgbuf eenv spAction e1 discard
-        GenExpr cenv cgbuf eenv spExpr e2 sequel
-    | ThenDoSeq ->
-        GenExpr cenv cgbuf eenv spExpr e1 Continue
-        GenExpr cenv cgbuf eenv spAction e2 discard
-        GenSequel cenv eenv.cloc cgbuf sequel
+    | _ ->
+        contf expr
 
 //--------------------------------------------------------------------------
 // Generate IL assembly code.
@@ -5248,11 +5242,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         let tps, ctorThisValOpt, baseValOpt, vsl, body', bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo rhsExpr
         let methodVars = List.concat vsl
         CommitStartScope cgbuf startScopeMarkOpt
-
-        if cenv.exprRecursionDepth >= MaxDelayedGenRecursionDepth then
-            cenv.delayedGen.Enqueue (fun () -> GenMethodForBinding cenv cgbuf eenv (vspec, mspec, access, paramInfos, retInfo) (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty))
-        else
-            GenMethodForBinding cenv cgbuf eenv (vspec, mspec, access, paramInfos, retInfo) (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty)
+        GenMethodForBinding cenv cgbuf.mgbuf eenv (vspec, mspec, access, paramInfos, retInfo) (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty)
 
     | StaticProperty (ilGetterMethSpec, optShadowLocal) ->
 
@@ -5691,8 +5681,14 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
 
-and GenMethodForBinding
-        cenv cgbuf eenv
+and GenMethodForBinding cenv (mgbuf: AssemblyBuilder) eenv info1 info2 =
+    if cenv.exprRecursionDepth >= StackGuard.MaxUncheckedRecursionDepth then
+        cenv.delayedGen.Enqueue (fun () -> GenMethodForBindingAux { cenv with exprRecursionDepth = 0 } mgbuf eenv info1 info2)
+    else
+        GenMethodForBindingAux cenv mgbuf eenv info1 info2
+
+and GenMethodForBindingAux
+        cenv (mgbuf: AssemblyBuilder) eenv
         (v: Val, mspec, access, paramInfos, retInfo)
         (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body, returnTy) =
 
@@ -5756,7 +5752,7 @@ and GenMethodForBinding
                 else
                     body
             
-            let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
+            let ilCode = CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
             // This is the main code generation for most methods
             false, MethodBody.IL ilCode, false
@@ -5822,7 +5818,7 @@ and GenMethodForBinding
             else
                 mdef
         CountMethodDef()
-        cgbuf.mgbuf.AddMethodDef(tref, mdef)
+        mgbuf.AddMethodDef(tref, mdef)
             
 
     match v.MemberInfo with
@@ -5859,7 +5855,7 @@ and GenMethodForBinding
                    let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
                    // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
-                   cgbuf.mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
+                   mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
                    mdef
                else
                    mkILGenericNonVirtualMethod (v.CompiledName g.CompilerGlobalState, access, ilMethTypars, ilParams, ilReturn, ilMethodBody)
@@ -5886,7 +5882,7 @@ and GenMethodForBinding
                    // Emit the pseudo-property as an event, but not if its a private method impl
                    if mdef.Access <> ILMemberAccess.Private then
                        let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy
-                       cgbuf.mgbuf.AddEventDef(tref, edef)
+                       mgbuf.AddEventDef(tref, edef)
                    // The method def is dropped on the floor here
                
                else
@@ -5896,7 +5892,7 @@ and GenMethodForBinding
                        let ilPropTy = GenType cenv.amap m eenvUnderMethTypeTypars.tyenv vtyp
                        let ilArgTys = v |> ArgInfosOfPropertyVal g |> List.map fst |> GenTypes cenv.amap m eenvUnderMethTypeTypars.tyenv
                        let ilPropDef = GenPropertyForMethodDef compileAsInstance tref mdef v memberInfo ilArgTys ilPropTy (mkILCustomAttrs ilAttrsThatGoOnPrimaryItem) compiledName
-                       cgbuf.mgbuf.AddOrMergePropertyDef(tref, ilPropDef, m)
+                       mgbuf.AddOrMergePropertyDef(tref, ilPropDef, m)
 
                    // Add the special name flag for all properties               
                    let mdef = mdef.WithSpecialName.With(customAttrs= mkILCustomAttrs ((GenAttrs cenv eenv attrsAppliedToGetterOrSetter) @ sourceNameAttribs @ ilAttrsCompilerGenerated))
@@ -6428,6 +6424,10 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
 
     | TMDefs mdefs ->
         GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs
+
+    while cenv.delayedGen.Count > 0 do
+        let gen = cenv.delayedGen.Dequeue ()
+        gen ()
 
 
 // Generate a module binding
