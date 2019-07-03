@@ -16,6 +16,10 @@
     <DotnetFsiCompilerPath></DotnetFsiCompilerPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+    <DefineConstants>($(DefineConstants);TESTING_ON_LINUX</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'coreclr'">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
 
