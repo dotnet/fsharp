@@ -168,8 +168,8 @@ type AsyncModule() =
 
     let dispose(d : #IDisposable) = d.Dispose()
 
-    let testErrorAndCancelRace computation = 
-        for _ in 1..20 do
+    let testErrorAndCancelRace testcaseName computation =
+        for i in 1..20 do
             let cts = new System.Threading.CancellationTokenSource()
             use barrier = new System.Threading.ManualResetEvent(false)
             async { cts.Cancel() } 
@@ -180,7 +180,7 @@ type AsyncModule() =
 
             Async.StartWithContinuations(
                 computation,
-                (fun _ -> failwith "success not expected"),
+                (fun _ -> failwith (sprintf "%s -- success not expected -- iteration %d" testcaseName i)),
                 (fun _ -> incr()),
                 (fun _ -> incr()),
                 cts.Token
@@ -428,11 +428,11 @@ type AsyncModule() =
         let disposedEvent = new System.Threading.ManualResetEvent(false)
         dispose disposedEvent
 
-        testErrorAndCancelRace(Async.AwaitWaitHandle disposedEvent)
+        testErrorAndCancelRace "RaceBetweenCancellationAndError.AwaitWaitHandle" (Async.AwaitWaitHandle disposedEvent)
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Sleep``() =
-        testErrorAndCancelRace (Async.Sleep (-5))
+        testErrorAndCancelRace "RaceBetweenCancellationAndError.Sleep" (Async.Sleep -5)
 
 #if EXPENSIVE
 #if NET46
@@ -667,7 +667,7 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Parallel``() =
         [| for i in 1 .. 1000 -> async { return i } |]
         |> fun cs -> Async.Parallel(cs, 1)
-        |> testErrorAndCancelRace
+        |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel`"
 
     [<Test>]
     member this.``error on one workflow should cancel all others with maxDegreeOfParallelism``() =
