@@ -1,6 +1,6 @@
 ﻿// #Regression #Conformance #ObjectOrientedTypes #Classes #Inheritance 
 // Regression test DevDiv:370485 ([Portable] Cannot override sealed method)
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 // This is the repro case for the bug. There should be no error.
 
 type T1() =

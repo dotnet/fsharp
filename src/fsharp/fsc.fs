@@ -148,8 +148,8 @@ type InProcErrorLoggerProvider() =
                             CollectDiagnostic
                                 (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
                                  tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err, true)
-                        let container = if isError then errors else warnings 
-                        container.AddRange errs } 
+                        let container = if isError then errors else warnings
+                        container.AddRange(errs) }
                 :> ErrorLogger }
 
     member __.CapturedErrors = errors.ToArray()
@@ -2176,7 +2176,13 @@ let typecheckAndCompile
         defaultCopyFSharpCore, exiter: Exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use d = new DisposablesTracker()
-    use e = new SaveAndRestoreConsoleEncoding()
+    let savedOut = System.Console.Out
+    use __ =
+        { new IDisposable with
+            member __.Dispose() = 
+                try 
+                    System.Console.SetOut(savedOut)
+                with _ -> ()}
 
     main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, d)
     |> main1

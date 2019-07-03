@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Dash_underline">
         <source>D_ash underline</source>
-        <target state="translated">短线下划线(_A）</target>
+        <target state="translated">短线下划线(_A)</target>
         <note />
       </trans-unit>
       <trans-unit id="Dot_underline">
@@ -100,6 +100,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">实线下划线(_S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="new">Text hover</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -190,6 +195,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">为未解析标识符建议名称</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_out_of_process_language_server">
+        <source>(Preview) Use out of process language server</source>
+        <target state="new">(Preview) Use out of process language server</target>
         <note />
       </trans-unit>
     </body>

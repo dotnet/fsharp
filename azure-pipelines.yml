@@ -2,10 +2,12 @@
 trigger:
 - master
 - dev16.1
+- feature/*
 - release/*
 pr:
 - master
 - dev16.1
+- feature/*
 - release/*
 
 variables:
@@ -19,6 +21,12 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+
+# Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
+# Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
+#variables:
+#- name: SkipTests
+#  defaultValue: false
 
 jobs:
 
@@ -55,6 +63,7 @@ jobs:
                   -configuration $(_BuildConfig)
                   -prepareMachine
                   -testAll
+                  -officialSkipTests $(SkipTests)
                   /p:SignType=$(_SignType)
                   /p:DotNetSignType=$(_SignType)
                   /p:MicroBuild_SigningEnabled=true
@@ -70,6 +79,40 @@ jobs:
                   /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                   /p:PublishToSymbolServer=true
                   /p:VisualStudioDropName=$(VisualStudioDropName)
+        - task: PublishTestResults@2
+          displayName: Publish Test Results
+          inputs:
+            testResultsFormat: 'NUnit'
+            testResultsFiles: '*.xml'
+            searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+          continueOnError: true
+          condition: ne(variables['SkipTests'], 'true')
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Test Logs
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)'
+            ArtifactName: 'Test Logs'
+            publishLocation: Container
+          continueOnError: true
+          condition: ne(variables['SkipTests'], 'true')
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Packages
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+            ArtifactName: 'Packages'
+          condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact VSSetup
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+            ArtifactName: 'VSSetup'
+          condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Nightly
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpFull.vsix'
+            ArtifactName: 'Nightly'
+          condition: succeeded()
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                     PR builds                                                       #
@@ -111,6 +154,22 @@ jobs:
           clean: true
         - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
           displayName: Build / Test
+        - task: PublishTestResults@2
+          displayName: Publish Test Results
+          inputs:
+            testResultsFormat: 'NUnit'
+            testResultsFiles: '*.xml'
+            searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
+          continueOnError: true
+          condition: ne(variables['_testKind'], 'testFSharpQA')
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Test Logs
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
+            ArtifactName: 'Windows $(_configuration) $(_testKind) test logs'
+            publishLocation: Container
+          continueOnError: true
+          condition: eq(variables['_testKind'], 'testFSharpQA')
 
       # Linux
       - job: Linux
@@ -124,6 +183,14 @@ jobs:
           clean: true
         - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
           displayName: Build / Test
+        - task: PublishTestResults@2
+          displayName: Publish Test Results
+          inputs:
+            testResultsFormat: 'NUnit'
+            testResultsFiles: '*.xml'
+            searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+          continueOnError: true
+          condition: always()
 
       # MacOS
       - job: MacOS
@@ -137,6 +204,14 @@ jobs:
           clean: true
         - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
           displayName: Build / Test
+        - task: PublishTestResults@2
+          displayName: Publish Test Results
+          inputs:
+            testResultsFormat: 'NUnit'
+            testResultsFiles: '*.xml'
+            searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+          continueOnError: true
+          condition: always()
 
       # Source Build Linux
       - job: SourceBuild_Linux
@@ -157,6 +232,19 @@ jobs:
           clean: true
         - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
           displayName: Build
+
+      # Up-to-date
+      - job: UpToDate_Windows
+        pool:
+          vmImage: windows-2019
+        steps:
+        - checkout: self
+          clean: true
+        - task: PowerShell@2
+          displayName: Run up-to-date build check
+          inputs:
+            filePath: eng\tests\UpToDate.ps1
+            arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    FCS builds                                                       #
@@ -184,6 +272,14 @@ jobs:
           clean: true
         - script: fcs\build.cmd TestAndNuget
           displayName: Build / Test
+        - task: PublishTestResults@2
+          displayName: Publish Test Results
+          inputs:
+            testResultsFormat: 'NUnit'
+            testResultsFiles: '*.xml'
+            searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+          continueOnError: true
+          condition: always()
 
       - job: Linux_FCS
         pool:

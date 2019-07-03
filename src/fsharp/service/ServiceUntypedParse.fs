@@ -111,15 +111,15 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
        ErrorScope.Protect Range.range0 
             (fun () -> 
                 match input with
-                | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = modules))) ->
-                    NavigationImpl.getNavigationFromImplFile modules 
-                | Some (ParsedInput.SigFile (ParsedSigFileInput _)) ->
-                    NavigationImpl.empty
+                | Some (ParsedInput.ImplFile _ as p) ->
+                    FSharpNavigation.getNavigation p
+                | Some (ParsedInput.SigFile _) ->
+                    FSharpNavigation.empty
                 | _ -> 
-                    NavigationImpl.empty )
+                    FSharpNavigation.empty)
             (fun err -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetNavigationItemsImpl: '%s'" err)
-                NavigationImpl.empty)   
+                FSharpNavigation.empty)
             
     member private scope.ValidateBreakpointLocationImpl pos =
         let isMatchRange m = rangeContainsPos m pos || m.StartLine = pos.Line
@@ -723,7 +723,7 @@ module UntypedParseImpl =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
 
-        and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, r)) =
+        and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(_, _, _, decls, _, Attributes attrs, _, r)) =
             List.tryPick walkAttribute attrs
             |> Option.orElse (ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
@@ -733,7 +733,7 @@ module UntypedParseImpl =
 
         and walkTypar (Typar (ident, _, _)) = ifPosInRange ident.idRange (fun _ -> Some EntityKind.Type)
 
-        and walkTyparDecl (SynTyparDecl.TyparDecl (attrs, typar)) = 
+        and walkTyparDecl (SynTyparDecl.TyparDecl (Attributes attrs, typar)) = 
             List.tryPick walkAttribute attrs
             |> Option.orElse (walkTypar typar)
             
@@ -757,7 +757,7 @@ module UntypedParseImpl =
                 if isPosInRange nameRange then None
                 else walkPat pat
             | SynPat.Typed(pat, t, _) -> walkPat pat |> Option.orElse (walkType t)
-            | SynPat.Attrib(pat, attrs, _) -> walkPat pat |> Option.orElse (List.tryPick walkAttribute attrs)
+            | SynPat.Attrib(pat, Attributes attrs, _) -> walkPat pat |> Option.orElse (List.tryPick walkAttribute attrs)
             | SynPat.Or(pat1, pat2, _) -> List.tryPick walkPat [pat1; pat2]
             | SynPat.LongIdent(_, _, typars, ConstructorPats pats, _, r) -> 
                 ifPosInRange r (fun _ -> kind)
@@ -776,7 +776,7 @@ module UntypedParseImpl =
 
         and walkPat = walkPatWithKind None
 
-        and walkBinding (SynBinding.Binding(_, _, _, _, attrs, _, _, pat, returnInfo, e, _, _)) =
+        and walkBinding (SynBinding.Binding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
             List.tryPick walkAttribute attrs
             |> Option.orElse (walkPat pat)
             |> Option.orElse (walkExpr e)
@@ -892,15 +892,15 @@ module UntypedParseImpl =
         and walkExpr = walkExprWithKind None
 
         and walkSimplePat = function
-            | SynSimplePat.Attrib (pat, attrs, _) ->
+            | SynSimplePat.Attrib (pat, Attributes attrs, _) ->
                 walkSimplePat pat |> Option.orElse (List.tryPick walkAttribute attrs)
             | SynSimplePat.Typed(pat, t, _) -> walkSimplePat pat |> Option.orElse (walkType t)
             | _ -> None
 
-        and walkField (SynField.Field(attrs, _, _, t, _, _, _, _)) =
+        and walkField (SynField.Field(Attributes attrs, _, _, t, _, _, _, _)) =
             List.tryPick walkAttribute attrs |> Option.orElse (walkType t)
 
-        and walkValSig (SynValSig.ValSpfn(attrs, _, _, t, _, _, _, _, _, _, _)) =
+        and walkValSig (SynValSig.ValSpfn(Attributes attrs, _, _, t, _, _, _, _, _, _, _)) =
             List.tryPick walkAttribute attrs |> Option.orElse (walkType t)
 
         and walkMemberSig = function
@@ -916,8 +916,8 @@ module UntypedParseImpl =
         and walkMember = function
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member(binding, _) -> walkBinding binding
-            | SynMemberDefn.ImplicitCtor(_, attrs, pats, _, _) -> 
-                List.tryPick walkAttribute attrs |> Option.orElse (List.tryPick walkSimplePat pats)
+            | SynMemberDefn.ImplicitCtor(_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _) -> 
+                List.tryPick walkAttribute attrs |> Option.orElse (List.tryPick walkSimplePat simplePats)
             | SynMemberDefn.ImplicitInherit(t, e, _, _) -> walkType t |> Option.orElse (walkExpr e)
             | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.tryPick walkBinding bindings
             | SynMemberDefn.Interface(t, members, _) -> 
@@ -925,19 +925,19 @@ module UntypedParseImpl =
             | SynMemberDefn.Inherit(t, _, _) -> walkType t
             | SynMemberDefn.ValField(field, _) -> walkField field
             | SynMemberDefn.NestedType(tdef, _, _) -> walkTypeDefn tdef
-            | SynMemberDefn.AutoProperty(attrs, _, _, t, _, _, _, _, e, _, _) -> 
+            | SynMemberDefn.AutoProperty(Attributes attrs, _, _, t, _, _, _, _, e, _, _) -> 
                 List.tryPick walkAttribute attrs
                 |> Option.orElse (Option.bind walkType t)
                 |> Option.orElse (walkExpr e)
             | _ -> None
 
-        and walkEnumCase (EnumCase(attrs, _, _, _, _)) = List.tryPick walkAttribute attrs
+        and walkEnumCase (EnumCase(Attributes attrs, _, _, _, _)) = List.tryPick walkAttribute attrs
 
         and walkUnionCaseType = function
             | SynUnionCaseType.UnionCaseFields fields -> List.tryPick walkField fields
             | SynUnionCaseType.UnionCaseFullType(t, _) -> walkType t
 
-        and walkUnionCase (UnionCase(attrs, _, t, _, _, _)) = 
+        and walkUnionCase (UnionCase(Attributes attrs, _, t, _, _, _)) = 
             List.tryPick walkAttribute attrs |> Option.orElse (walkUnionCaseType t)
 
         and walkTypeDefnSimple = function
@@ -947,7 +947,7 @@ module UntypedParseImpl =
             | SynTypeDefnSimpleRepr.TypeAbbrev(_, t, _) -> walkType t
             | _ -> None
 
-        and walkComponentInfo isModule (ComponentInfo(attrs, typars, constraints, _, _, _, _, r)) =
+        and walkComponentInfo isModule (ComponentInfo(Attributes attrs, typars, constraints, _, _, _, _, r)) =
             if isModule then None else ifPosInRange r (fun _ -> Some EntityKind.Type)
             |> Option.orElse (
                 List.tryPick walkAttribute attrs
@@ -1051,7 +1051,7 @@ module UntypedParseImpl =
             | false, false, true -> Struct
             | _ -> Invalid
 
-        let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _, _, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
+        let GetCompletionContextForInheritSynMember ((ComponentInfo(Attributes synAttributes, _, _, _, _, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
             
             let success k = Some (CompletionContext.Inherit (k, completionPath))
 

@@ -52,6 +52,8 @@ param (
     [switch]$testFSharpQA,
     [switch]$testVs,
     [switch]$testAll,
+    [string]$officialSkipTests = "false",
+    [switch]$noVisualStudio,
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
 
@@ -67,6 +69,7 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Actions:"
     Write-Host "  -restore                  Restore packages (short: -r)"
+    Write-Host "  -norestore                Don't restore packages"
     Write-Host "  -build                    Build main solution (short: -b)"
     Write-Host "  -rebuild                  Rebuild main solution"
     Write-Host "  -pack                     Build NuGet packages, VS insertion manifests and installer"
@@ -84,6 +87,7 @@ function Print-Usage() {
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
+    Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
     Write-Host "  -ci                       Set when running on CI server"
@@ -93,6 +97,7 @@ function Print-Usage() {
     Write-Host "  -procdump                 Monitor test runs with procdump"
     Write-Host "  -prepareMachine           Prepare machine for CI run, clean up processes after build"
     Write-Host "  -useGlobalNuGetCache      Use global NuGet cache."
+    Write-Host "  -noVisualStudio           Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -104,12 +109,24 @@ function Process-Arguments() {
        Print-Usage
        exit 0
     }
+    $script:nodeReuse = $False;
 
     if ($testAll) {
         $script:testDesktop = $True
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
         $script:testVs = $True
+    }
+
+    if ([System.Boolean]::Parse($script:officialSkipTests)) {
+        $script:testAll = $False
+        $script:testCambridge = $False
+        $script:testCompiler = $False
+        $script:testDesktop = $False
+        $script:testCoreClr = $False
+        $script:testFSharpCore = $False
+        $script:testFSharpQA = $False
+        $script:testVs = $False
     }
 
     if ($noRestore) {
@@ -130,8 +147,19 @@ function Process-Arguments() {
 }
 
 function Update-Arguments() {
-    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc.exe")) {
-        $script:bootstrap = $True
+    if ($script:noVisualStudio) {
+        $script:bootstrapTfm = "netcoreapp2.1"
+        $script:msbuildEngine = "dotnet"
+    }
+
+    if ($bootstrapTfm -eq "netcoreapp2.1") {
+        if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
+            $script:bootstrap = $True
+        }
+    } else {
+        if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe") -or (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
+            $script:bootstrap = $True
+        }
     }
 }
 
@@ -164,7 +192,6 @@ function BuildSolution() {
         /p:Publish=$publish `
         /p:ContinuousIntegrationBuild=$ci `
         /p:OfficialBuildId=$officialBuildId `
-        /p:BootstrapBuildPath=$bootstrapDir `
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
@@ -198,7 +225,7 @@ function UpdatePath() {
 }
 
 function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\fsi.exe"
+    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\publish\fsi.exe"
 
     # Only verify versions on CI or official build
     if ($ci -or $official) {
@@ -213,8 +240,35 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
-    $args = "test $testProject --no-restore --no-build -c $configuration -f $targetFramework -v n --test-adapter-path . --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path . --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+
+    if (-not $noVisualStudio -or $norestore) {
+        $args += " --no-restore"
+    }
+
+    if (-not $noVisualStudio) {
+        $args += " --no-build"
+    }
+
     Exec-Console $dotnetExe $args
+}
+
+function BuildCompiler() {
+    if ($bootstrapTfm -eq "netcoreapp2.1") {
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+        $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
+        $fsiProject = "$RepoRoot\src\fsharp\fsi\fsi.fsproj"
+        
+        $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
+        $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
+
+        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp2.1" + $argNoRestore + $argNoIncremental
+        Exec-Console $dotnetExe $args
+
+        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp2.1" + $argNoRestore + $argNoIncremental
+        Exec-Console $dotnetExe $args
+    }
 }
 
 function Prepare-TempDir() {
@@ -245,7 +299,11 @@ try {
     }
 
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
-        BuildSolution
+        if ($noVisualStudio) {
+            BuildCompiler
+        } else {
+            BuildSolution
+        }
     }
 
     if ($build) {
@@ -255,8 +313,9 @@ try {
     $desktopTargetFramework = "net472"
     $coreclrTargetFramework = "netcoreapp2.1"
 
-    if ($testDesktop) {
+    if ($testDesktop -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
@@ -264,12 +323,13 @@ try {
 
     if ($testCoreClr) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
-    if ($testFSharpQA) {
+    if ($testFSharpQA -and -not $noVisualStudio) {
         Push-Location "$RepoRoot\tests\fsharpqa\source"
         $resultsRoot = "$ArtifactsDir\TestResults\$configuration"
         $resultsLog = "test-net40-fsharpqa-results.log"
@@ -288,21 +348,27 @@ try {
     }
 
     if ($testFSharpCore) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        }
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
     if ($testCompiler) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        }
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
     if ($testCambridge) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
+        if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
+        }
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
-    if ($testVs) {
+    if ($testVs -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework
     }
