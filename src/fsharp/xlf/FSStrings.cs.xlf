@@ -77,11 +77,6 @@
         <target state="translated">Možné přetížení: {0}. {1}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\nNejlepší možné přetížení: {0}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Tato funkce přebírá příliš mnoho argumentů, nebo se používá v kontextu, ve kterém se funkce neočekává.</target>

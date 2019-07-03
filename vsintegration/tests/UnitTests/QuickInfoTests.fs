@@ -440,6 +440,6 @@ module Test =
         }
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "property MyDistance.asNautical: MyDistance"
+    let expected = "property MyDistance.asNautical: MyDistance with get"
     Assert.AreEqual(expected, quickInfo)
     ()

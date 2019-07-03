@@ -77,11 +77,6 @@
         <target state="translated">使用できるオーバーロードは '{0}' です。{1}。</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\n使用できる中で最適なオーバーロードは '{0}' です。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">この関数の引数が多すぎるか、関数を使用できない場所で関数が使用されています</target>
