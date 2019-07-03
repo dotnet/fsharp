@@ -1,8 +1,8 @@
-# Notes on FsLex and FsYacc 
+# Notes on FsLex and FsYacc
 
 For better or worse the F# compiler contains three tokenizers (`*.fsl`) and three
 grammars (`*.fsy`) implemented using FsLex and FsYacc respectively, including the all-important F# grammar itself.
-The canonical home for FsLex and FsYacc is http://github.com/fsprojects/FsLexYacc.
+The canonical home for FsLex and FsYacc is https://github.com/fsprojects/FsLexYacc.
 FsLex and FsYacc are themselves built using earlier versions of FsLex and FsYacc.
 
 **If you would like to improve, modify, extend, test or document these

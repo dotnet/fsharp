@@ -162,9 +162,6 @@
   <data name="PossibleOverload" xml:space="preserve">
     <value>Possible overload: '{0}'. {1}.</value>
   </data>
-  <data name="PossibleBestOverload" xml:space="preserve">
-    <value>\n\nPossible best overload: '{0}'.</value>
-  </data>
   <data name="FunctionExpected" xml:space="preserve">
     <value>This function takes too many arguments, or is used in a context where a function is not expected</value>
   </data>
