@@ -7182,6 +7182,16 @@
         <target state="translated">Реализация для этих членов отсутствует (некоторые результаты опущены): {0}Обратите внимание, что каждый член интерфейса должен быть реализован и указан в соответствующем объявлении "interface", например, "интерфейс ... с членом ...".</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">Сопоставляет физические пути с исходными путями в выходных данных компилятора</target>

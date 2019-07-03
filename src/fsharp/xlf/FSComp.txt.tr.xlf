@@ -7182,6 +7182,16 @@
         <target state="translated">Bu üyelere uygulama verilmedi (bazı sonuçlar atlandı): {0}Tüm arabirim üyelerinin uygulanması ve uygun bir "arabirim" bildirimi (ör. "arabirim ... ile üye ..." kapsamında listelenmesi gerektiğini unutmayın.</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">Fiziksel yolları derleyiciye göre kaynak yol adları çıkışıyla eşler</target>
