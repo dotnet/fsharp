@@ -1736,7 +1736,7 @@ module internal PrintfImpl =
 
             cont, contTy
 
-        member __.popValueUnsafe() = args.Pop()
+        member __.PopValueUnsafe() = args.Pop()
 
         member this.PushContinuationWithType (cont: obj, contTy: Type) = 
             System.Diagnostics.Debug.Assert(this.IsEmpty, "this.IsEmpty")
@@ -2216,7 +2216,7 @@ module internal PrintfImpl =
                 let n = parseFromFormatSpecifier prefix s funcTy prefixPos cTy
                 
                 if n = ContinuationOnStack || n = 0 then
-                    builderStack.popValueUnsafe()
+                    builderStack.PopValueUnsafe()
                 else
                     buildPlain n prefix
 
