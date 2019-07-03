@@ -4549,23 +4549,17 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
     | Some res -> checkRes res
     | None -> 
         if newOk = NoNewTypars then
-            let predictTypeParameters() =
-                let predictions1 =
-                    env.eNameResEnv.eTypars
-                    |> Seq.map (fun p -> "'" + p.Key)
+            let suggestTypeParameters (addToBuffer: string -> unit) =
+                for p in env.eNameResEnv.eTypars do
+                    addToBuffer ("'" + p.Key)
 
-                let predictions2 =
-                    match tpenv with
-                    | UnscopedTyparEnv elements ->
-                        elements
-                        |> Seq.map (fun p -> "'" + p.Key)
+                match tpenv with
+                | UnscopedTyparEnv elements ->
+                    for p in elements do
+                        addToBuffer ("'" + p.Key)
 
-                [ yield! predictions1 
-                  yield! predictions2 ]
-                |> HashSet
-            
             let reportedId = Ident("'" + id.idText, id.idRange)
-            error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, predictTypeParameters))
+            error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, suggestTypeParameters))
         
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
@@ -6553,10 +6547,9 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty: TType) virtNameAndArit
                 tcref.MembersOfFSharpTyconByName
                 |> Seq.exists (fun kv -> kv.Value |> List.exists (fun valRef -> valRef.DisplayName = bindName))
 
-            let suggestVirtualMembers() =
-                virtNameAndArityPairs
-                |> List.map (fst >> fst)
-                |> HashSet
+            let suggestVirtualMembers (addToBuffer: string -> unit) =
+                for ((x,_),_) in virtNameAndArityPairs do
+                    addToBuffer x
 
             if containsNonAbstractMemberWithSameName then
                 errorR(ErrorWithSuggestions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName), mBinding, bindName, suggestVirtualMembers))
@@ -12565,15 +12558,18 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId: Ident list) =
     let ad = env.eAccessRights
     match longId with
-    | [] -> Result []
+    | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
         match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
-        | Result res -> Result res
-        | Exception err -> raze err
+        | Result res -> res
+        | Exception err ->
+            errorR(err); []
 
 let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) = 
-    let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId)
+    match TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId with
+    | [] -> env
+    | modrefs ->
 
     // validate opened namespace names
     for id in longId do

@@ -40,16 +40,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
-    <InternalsVisibleTo Include="FSharp.Build" />
-    <InternalsVisibleTo Include="fsi" />
-    <InternalsVisibleTo Include="fsiAnyCpu" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
-    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
-    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
@@ -654,6 +644,12 @@
     </Compile>
     <Compile Include="..\service\QuickParse.fs">
       <Link>Service/QuickParse.fs</Link>
+    </Compile>
+    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fsi">
+      <Link>Service/FSharpCheckerResults.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fs">
+      <Link>Service/FSharpCheckerResults.fs</Link>
     </Compile>
     <Compile Include="..\service\service.fsi">
       <Link>Service/service.fsi</Link>

@@ -3,10 +3,11 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
+open System.Windows
+open System.Windows.Controls
+open FSharp.Compiler.LanguageServer
 open Microsoft.VisualStudio.Shell
-
 open Microsoft.VisualStudio.FSharp.UIResources
-open Microsoft.VisualStudio.Shell
 
 module DefaultTuning = 
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
@@ -91,10 +92,12 @@ type CodeLensOptions =
 [<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
-      IsOutliningEnabled: bool }
+      IsOutliningEnabled: bool
+      UsePreviewTextHover: bool }
     static member Default =
       { IsBlockStructureEnabled = true
-        IsOutliningEnabled = true }
+        IsOutliningEnabled = true
+        UsePreviewTextHover = false }
 
 [<CLIMutable>]
 type FormattingOptions =
@@ -195,6 +198,15 @@ module internal OptionsUI =
         inherit AbstractOptionPage<AdvancedOptions>()
         override __.CreateView() =
             upcast AdvancedOptionsControl()
+        override this.OnApply(args) =
+            base.OnApply(args)
+            async {
+                let lspService = this.GetService<LspService>()
+                let settings = this.GetService<EditorOptions>()
+                let options =
+                    { Options.usePreviewTextHover = settings.Advanced.UsePreviewTextHover }
+                do! lspService.SetOptions options
+            } |> Async.Start
 
     [<Guid(Guids.formattingOptionPageIdString)>]
     type internal FormattingOptionPage() =
