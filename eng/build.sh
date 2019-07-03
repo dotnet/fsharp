@@ -176,7 +176,11 @@ function TestUsingNUnit() {
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
   args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
-  "$DOTNET_INSTALL_DIR/dotnet" $args
+  "$DOTNET_INSTALL_DIR/dotnet" $args || {
+    local exit_code=$?
+    echo "dotnet test failed (exit code '$exit_code')." >&2
+    ExitWithExitCode $exit_code
+  }
 }
 
 function BuildSolution {
