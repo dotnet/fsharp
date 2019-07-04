@@ -4,7 +4,27 @@
     <body>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="new">{0} for F# {1}</target>
+        <target state="translated">{0} dla języka F# {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="new">Supported language versions:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="new">Unrecognized value '{0}' for --langversion use --langversion:? for complete list</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="new">Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -144,7 +164,7 @@
       </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
-        <target state="new">Use reference assemblies for .NET framework references when available (Enabled by default).</target>
+        <target state="translated">Użyj zestawów odwołań dla odwołań do programu .NET Framework, gdy są dostępne (domyślnie włączone).</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -2825,11 +2845,6 @@
       <trans-unit id="tcInvalidObjectExpressionSyntaxForm">
         <source>Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.</source>
         <target state="translated">Nieprawidłowe wyrażenie obiektu. Obiekty bez przesłonięć lub interfejsy powinny używać wyrażenia w postaci „new Typ(argumenty)” bez nawiasów.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Nieprawidłowe wyrażenie obiektu, sekwencji lub rekordu</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
@@ -5549,7 +5564,7 @@
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
         <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="needs-review-translation">Kompilacje deterministyczne obsługują tylko przenośne pliki PDB (--debug:portable lub --debug:embedded)</target>
+        <target state="translated">Deterministyczne kompilacje obsługują tylko przenośne pliki PDB (--debug:portable lub --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -7162,19 +7177,29 @@
         <target state="translated">Nie podano implementacji dla tych składowych (niektóre wyniki zostały pominięte): {0}Pamiętaj, że wszystkie składowe interfejsów muszą być zaimplementowane i wymienione w ramach odpowiedniej deklaracji „interface” np. „interface ... with member ...”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
-        <target state="new">Maps physical paths to source path names output by the compiler</target>
+        <target state="translated">Mapuje ścieżki fizyczne na wyjściowe nazwy ścieżek źródłowych z kompilatora</target>
         <note />
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
+        <target state="translated">Argumentu --pathmap można używać tylko z przenośnymi plikami PDB  (--debug:portable lub --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
-        <target state="new">Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</target>
+        <target state="translated">Nieprawidłowe mapowanie ścieżek. Mapowania muszą być rozdzielone przecinkami i mieć format „path=sourcePath”</target>
         <note />
       </trans-unit>
     </body>
