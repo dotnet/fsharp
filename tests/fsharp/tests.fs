@@ -29,7 +29,6 @@ let FSI_BASIC = FSI_FILE
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-#if KEVIN //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 module CoreTests = 
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
@@ -1804,7 +1803,6 @@ module CoreTests =
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
 #endif
-#endif //@@@@@@@@@@@@@@@@@
 
 module VersionTests =
     [<Test>]
@@ -1830,8 +1828,6 @@ module VersionTests =
 
     [<Test>]
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/version47" FSI_BASIC "preview"
-
-#if KEVIN //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
@@ -2897,4 +2893,3 @@ module OverloadResolution =
         let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass03.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass03"
         let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass04.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass04"
 #endif
-#endif //@@@@@@@@@@@@@@@@@@@@
