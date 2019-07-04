@@ -24,6 +24,7 @@ open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Text
+open FSharp.Compiler.Features
 open System.Collections.Generic
 
 #if !NO_EXTENSIONTYPING
@@ -2475,7 +2476,15 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | Exception e -> typeError := Some e; None
 
                 | true, res ->
-                    Some (FreshenUnqualifiedItem ncenv m res, [])
+                    let fresh = FreshenUnqualifiedItem ncenv m res, []
+                    match fresh |> fst with
+                    | Item.Value value ->
+                        let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref value
+                        if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then
+                            None
+                         else
+                            Some fresh
+                    | _ -> Some fresh
                 | _ ->
                     None
 

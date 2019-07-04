@@ -22,6 +22,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Features
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
@@ -3206,10 +3207,10 @@ let isSizeOfValRef g vref =
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "sizeof") 
 
-let isNameOfValRef g vref = 
-    valRefEq g vref g.nameof_vref 
+let isNameOfValRef g vref =
+    valRefEq g vref g.nameof_vref
     // There is an internal version of nameof defined in prim-types.fs that needs to be detected
-    || (g.compilingFslib && vref.LogicalName = "nameof") 
+    || (g.compilingFslib && vref.LogicalName = "nameof")
 
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
@@ -8569,7 +8570,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | UncheckedDefaultOfExpr g _ 
         | SizeOfExpr g _ 
         | TypeOfExpr g _ 
-        | NameOfExpr g _ -> true
+        | NameOfExpr g _ when g.langVersion.SupportsFeature LanguageFeature.NameOf -> true
         // All others are not simple constant expressions
         | _ -> false
 

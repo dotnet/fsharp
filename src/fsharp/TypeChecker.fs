@@ -36,6 +36,7 @@ open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Features
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -8769,9 +8770,9 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
-    | ValueSome (domainTy, resultTy) -> 
+    | ValueSome (domainTy, resultTy) ->
         match expr with
-        | ApplicableExpr(_, NameOfExpr cenv.g _, _) ->
+        | ApplicableExpr(_, NameOfExpr cenv.g _, _) when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf ->
             let replacementExpr = TcNameOfExpr cenv env tpenv synArg
             TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
         | _ ->
