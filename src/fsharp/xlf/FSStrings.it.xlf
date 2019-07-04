@@ -77,11 +77,6 @@
         <target state="translated">Possibile overload: '{0}'. {1}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\nPossibile overload migliore: '{0}'.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Questa funzione utilizza troppi argomenti oppure è utilizzata in un contesto in cui non è prevista una funzione</target>
@@ -1174,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">Parola chiave</target>
+        <target state="translated">parola chiave </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">

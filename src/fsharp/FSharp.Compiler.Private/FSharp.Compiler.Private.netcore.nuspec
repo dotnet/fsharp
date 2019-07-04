@@ -4,7 +4,7 @@
         <id>FSharp.Compiler.Private.netcore</id>
         <description>
             .NET Core compatible version of the fsharp compiler service dll
-            Supported Platforms: - .NET Core (netstandard1.6)
+            Supported Platforms: - .NET Core (netstandard2.0)
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
@@ -15,7 +15,7 @@
         <tags>$tags$</tags>
         <dependencies>
             <group>
-                <dependency id="NETStandard.Library" version="1.6.0" />
+                <dependency id="NETStandard.Library" version="2.0.0" />
                 <dependency id="System.Collections.Immutable" version="1.5.0" />
                 <dependency id="System.Diagnostics.Process" version="4.1.0" />
                 <dependency id="System.Diagnostics.TraceSource" version="4.0.0" />

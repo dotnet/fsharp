@@ -5,7 +5,6 @@ namespace FSharp.Compiler.Interactive
 open System
 open System.Text
 open System.Collections.Generic
-open Internal.Utilities
 
 /// System.Console.ReadKey appears to return an ANSI character (not the expected the unicode character).
 /// When this fix flag is true, this byte is converted to a char using the System.Console.InputEncoding.
@@ -14,8 +13,6 @@ open Internal.Utilities
 module internal ConsoleOptions =
 
   let readKeyFixup (c:char) =
-#if FX_NO_SERVERCODEPAGES
-#else
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
       // Convert it to a Unicode char through the encoding.
       if 0 <= int c && int c <= 255 then
@@ -27,7 +24,6 @@ module internal ConsoleOptions =
           c // no fix up
       else
         assert("readKeyFixHook: given char is outside the 0..255 byte range" = "")
-#endif
         c
 
 type internal Style = Prompt | Out | Error

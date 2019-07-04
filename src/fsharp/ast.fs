@@ -12,6 +12,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
 
@@ -1172,7 +1173,13 @@ and
             | None -> unionRanges e.Range m
             | Some x -> unionRanges (unionRanges e.Range m) x.Range
 
-and SynAttributes = SynAttribute list
+and
+    /// List of attributes enclosed in [< ... >].
+    SynAttributeList =
+    { Attributes: SynAttribute list
+      Range: range }
+
+and SynAttributes = SynAttributeList list
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1304,7 +1311,7 @@ and
 
     /// An object oriented type definition. This is not a parse-tree form, but represents the core
     /// type representation which the type checker splits out from the "ObjectModel" cases of type definitions.
-    | General of SynTypeDefnKind * (SynType * range * Ident option) list * (SynValSig * MemberFlags) list * SynField list  * bool * bool * SynSimplePat list option * range: range
+    | General of SynTypeDefnKind * (SynType * range * Ident option) list * (SynValSig * MemberFlags) list * SynField list  * bool * bool * SynSimplePats option * range: range
 
     /// A type defined by using an IL assembly representation. Only used in FSharp.Core.
     ///
@@ -1519,7 +1526,7 @@ and
     | Member of memberDefn: SynBinding * range: range
 
     /// implicit ctor args as a defn line, 'as' specification
-    | ImplicitCtor of accessiblity: SynAccess option * attributes: SynAttributes * ctorArgs: SynSimplePat list * selfIdentifier: Ident option * range: range
+    | ImplicitCtor of accessiblity: SynAccess option * attributes: SynAttributes * ctorArgs: SynSimplePats * selfIdentifier: Ident option * range: range
 
     /// inherit <typ>(args...) as base
     | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
@@ -1966,35 +1973,50 @@ let PushCurriedPatternsToExpr synArgNameGenerator wholem isMember pats rhs =
             expr
     spatsl, expr
 
-/// Helper for parsing the inline IL fragments.
+let internal internalParseAssemblyCodeInstructions s isFeatureSupported m =
 #if NO_INLINE_IL_PARSER
-let ParseAssemblyCodeInstructions _s m =
+    ignore s
+    ignore isFeatureSupported
+
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     [| |]
 #else
-let ParseAssemblyCodeInstructions s m =
-    try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
+    try
+        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf s)
+           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
     with RecoverableParseError ->
-      errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [| |]
+      errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
+let ParseAssemblyCodeInstructions s m =
+    // Public API can not answer the isFeatureSupported questions, so here we support everything
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    internalParseAssemblyCodeInstructions s isFeatureSupported m
 
-/// Helper for parsing the inline IL fragments.
+let internal internalParseAssemblyCodeType s isFeatureSupported m =
+    ignore s
+    ignore isFeatureSupported
+
 #if NO_INLINE_IL_PARSER
-let ParseAssemblyCodeType _s m =
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     IL.EcmaMscorlibILGlobals.typ_Object
 #else
-let ParseAssemblyCodeType s m =
-    try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    try
+        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf s)
+           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
       IL.EcmaMscorlibILGlobals.typ_Object
 #endif
+
+/// Helper for parsing the inline IL fragments.
+let ParseAssemblyCodeType s m =
+    // Public API can not answer the isFeatureSupported questions, so here we support everything
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    internalParseAssemblyCodeType s isFeatureSupported m
 
 //------------------------------------------------------------------------
 // AST constructors
@@ -2118,6 +2140,18 @@ type SynExpr with
 type SynReturnInfo = SynReturnInfo of (SynType * SynArgInfo) * range: range
 
 
+let mkAttributeList attrs range =
+    [{ Attributes = attrs
+       Range = range }]
+
+let ConcatAttributesLists (attrsLists: SynAttributeList list) =
+    attrsLists
+    |> List.map (fun x -> x.Attributes)
+    |> List.concat
+
+let (|Attributes|) synAttributes =
+    ConcatAttributesLists synAttributes
+
 /// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
 ///
 /// Function and member definitions have strongly syntactically constrained arities.  We infer
@@ -2186,7 +2220,7 @@ module SynInfo =
     let AritiesOfArgs (SynValInfo(args, _)) = List.map List.length args
 
     /// Get the argument attributes from the syntactic information for an argument.
-    let AttribsOfArgData (SynArgInfo(attribs, _, _)) = attribs
+    let AttribsOfArgData (SynArgInfo(Attributes attribs, _, _)) = attribs
 
     /// Infer the syntactic argument info for a single argument from a simple pattern.
     let rec InferSynArgInfoFromSimplePat attribs p =

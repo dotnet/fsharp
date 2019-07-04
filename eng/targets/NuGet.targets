@@ -5,16 +5,4 @@
     <NuspecProperty Include="Owners=$(Authors)" />
   </ItemGroup>
 
-  <Target Name="_GeneratePackGroupOutput"
-          DependsOnTargets="_GetOutputItemsFromPack;Pack">
-    <ItemGroup>
-      <PackGroupOutput Include="@(_OutputPackItems->'%(FullPath)')" Condition="'%(_OutputPackItems.Extension)' == '.nupkg'" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name="PackOutputGroup"
-          Outputs="@(PackGroupOutput)"
-          DependsOnTargets="_GeneratePackGroupOutput">
-  </Target>
-
 </Project>

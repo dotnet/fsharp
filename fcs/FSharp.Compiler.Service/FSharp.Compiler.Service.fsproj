@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
   <PropertyGroup>
@@ -34,7 +34,6 @@
     <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WIN_REGISTRY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
@@ -67,9 +66,6 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fs">
       <Link>Logger.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/utils/reshapedreflection.fs">
-      <Link>Reshaped/reshapedreflection.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/sformat.fsi">
       <Link>ErrorText/sformat.fsi</Link>
     </Compile>
@@ -81,6 +77,12 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/sr.fs">
       <Link>ErrorText/sr.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LanguageFeatures.fsi">
+      <Link>Driver\LanguageFeatures.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LanguageFeatures.fs">
+      <Link>Driver\LanguageFeatures.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/prim-lexing.fsi">
       <Link>LexYaccRuntime/prim-lexing.fsi</Link>
@@ -157,6 +159,9 @@
     <Compile Include="$(FSharpSourcesRoot)/absil/bytes.fs">
       <Link>Utilities/bytes.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/XmlAdapters.fs">
+      <Link>Utilities\XmlAdapters.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/lib.fs">
       <Link>Utilities/lib.fs</Link>
     </Compile>
@@ -183,9 +188,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ErrorResolutionHints.fs">
       <Link>ErrorLogging/ErrorResolutionHints.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/ReferenceResolver.fs">
-      <Link>ReferenceResolution/ReferenceResolver.fs</Link>
     </Compile>
     <FsLex Include="$(FSharpSourcesRoot)\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -266,6 +268,15 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/absil/ilreflect.fs">
       <Link>AbsIL/ilreflect.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\utils\reshapedmsbuild.fs">
+      <Link>ReferenceResolution/reshapedmsbuild.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/ReferenceResolver.fs">
+      <Link>ReferenceResolution/ReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\SimulatedMSBuildReferenceResolver.fs">
+      <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/CompilerLocationUtils.fs">
       <Link>CompilerLocation/CompilerLocationUtils.fs</Link>
@@ -543,17 +554,17 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fsi">
-      <Link>Service/IncrementalBuild.fsi</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fs">
-      <Link>Service/IncrementalBuild.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\Reactor.fsi">
       <Link>Service/Reactor.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\Reactor.fs">
       <Link>Service/Reactor.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fsi">
+      <Link>Service/IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fs">
+      <Link>Service/IncrementalBuild.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
@@ -585,12 +596,6 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceUntypedParse.fs">
       <Link>Service/ServiceUntypedParse.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\utils\reshapedmsbuild.fs">
-      <Link>Service/reshapedmsbuild.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\SimulatedMSBuildReferenceResolver.fs">
-      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceDeclarationLists.fsi">
       <Link>Service/ServiceDeclarationLists.fsi</Link>
     </Compile>
@@ -620,6 +625,12 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fs">
       <Link>Service/QuickParse.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\FSharpCheckerResults.fsi">
+      <Link>Service/FSharpCheckerResults.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\FSharpCheckerResults.fs">
+      <Link>Service/FSharpCheckerResults.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\service.fsi">
       <Link>Service/service.fsi</Link>

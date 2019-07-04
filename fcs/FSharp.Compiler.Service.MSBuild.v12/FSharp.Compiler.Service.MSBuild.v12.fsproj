@@ -17,7 +17,7 @@
     <PackageTags>F#, compiler, msbuild</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\src\fsharp\MSBuildReferenceResolver.fs">
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\LegacyMSBuildReferenceResolver.fs">
       <Link>Service/MSBuildReferenceResolver.fs</Link>
     </Compile>
   </ItemGroup>

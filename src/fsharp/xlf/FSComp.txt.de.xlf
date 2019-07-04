@@ -4,7 +4,27 @@
     <body>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="new">{0} for F# {1}</target>
+        <target state="translated">{0} für F# {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="new">Supported language versions:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="new">Unrecognized value '{0}' for --langversion use --langversion:? for complete list</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="new">Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -144,7 +164,7 @@
       </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
-        <target state="new">Use reference assemblies for .NET framework references when available (Enabled by default).</target>
+        <target state="translated">Verweisassemblys für .NET Framework-Verweise verwenden, wenn verfügbar (standardmäßig aktiviert).</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -2804,7 +2824,7 @@
       </trans-unit>
       <trans-unit id="tcSyntaxErrorUnexpectedQMark">
         <source>Syntax error - unexpected '?' symbol</source>
-        <target state="translated">Syntaxfehler - unerwartetes Symbol "?".</target>
+        <target state="translated">Syntaxfehler – unerwartetes Symbol "?".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionCountMisMatch">
@@ -4424,7 +4444,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownArgumentToTheTestSwitch">
         <source>Unknown --test argument: '{0}'</source>
-        <target state="translated">Unbekannt - Testargument: '{0}'</target>
+        <target state="translated">Unbekannt – Testargument: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
@@ -5454,7 +5474,7 @@
       </trans-unit>
       <trans-unit id="fscQuotationLiteralsStaticLinking0">
         <source>Code in this assembly makes uses of quotation literals. Static linking may not include components that make use of quotation literals unless all assemblies are compiled with at least F# 4.0.</source>
-        <target state="translated">Der Code in dieser Assembly verwendet Quotation-Literale. Statische Verknüpfungen schließen unter Umständen Komponenten nicht ein, die Quotation-Literale verwenden, sofern nicht alle Assemblys mindestens mit F# kompiliert sind.</target>
+        <target state="translated">Der Code in dieser Assembly verwendet Quotation-Literale. Statische Verknüpfungen schließen unter Umständen Komponenten nicht ein, die Quotation-Literale verwenden, sofern nicht alle Assemblys mindestens mit F# 4.0 kompiliert sind.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoEXE">
@@ -5549,7 +5569,7 @@
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
         <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="needs-review-translation">Deterministische Builds unterstützen nur portierbare PDbs ("--debug:portable" oder "--debug:embedded").</target>
+        <target state="translated">Deterministische Builds unterstützen nur portable PDB-Dateien (--debug:portable oder --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -6609,7 +6629,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionDowncast">
         <source>Used to convert to a type that is lower in the inheritance chain.</source>
-        <target state="translated">Wird zum Konvertieren in einen Typ verwendet, der in Vererbungskette niedriger ist. </target>
+        <target state="translated">Wird zum Konvertieren in einen Typ verwendet, der in Vererbungskette höher ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionDownto">
@@ -6839,12 +6859,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUpcast">
         <source>Used to convert to a type that is higher in the inheritance chain.</source>
-        <target state="translated">Wird zum Konvertieren in einen Typ verwendet, der in Vererbungskette höher ist. </target>
+        <target state="translated">Wird zum Konvertieren in einen Typ verwendet, der in Vererbungskette niedriger ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">Wird anstelle von "let" für Werte verwendet, bei denen die "Dispose" zum Freigeben von Ressourcen erforderlich ist.</target>
+        <target state="translated">Wird anstelle von "let" für Werte verwendet, die die IDisposable-Schnittstelle implementieren</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7144,37 +7164,47 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveral">
         <source>No implementation was given for those members: {0}</source>
-        <target state="new">No implementation was given for those members: {0}</target>
+        <target state="translated">Für folgende Member wurde keine Implementierung angegeben: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Für folgende Member wurde keine Implementierung angegeben: {0} Beachten Sie, dass alle Schnittstellenmember implementiert und in einer entsprechenden interface-Deklaration aufgeführt werden müssen, z.B. "interface ... with member ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
         <source>No implementation was given for those members (some results omitted): {0}</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <target state="translated">Für folgende Member wurde keine Implementierung angegeben (einige Ergebnisse ausgelassen): {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <target state="translated">Für folgende Member wurde keine Implementierung angegeben (einige Ergebnisse ausgelassen): {0} Beachten Sie, dass alle Schnittstellenmember implementiert und in einer entsprechenden interface-Deklaration aufgeführt werden müssen, z.B. "interface ... with member ...".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
-        <target state="new">Maps physical paths to source path names output by the compiler</target>
+        <target state="translated">Ordnet der Ausgabe von Quellpfadnamen des Compilers physische Pfade zu</target>
         <note />
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
+        <target state="translated">--pathmap kann nur mit portablen PDB-Dateien verwendet werden (--debug:portable oder --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
-        <target state="new">Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</target>
+        <target state="translated">Ungültige Pfadzuordnung. Zuordnungen müssen durch Kommas getrennt werden und das Format 'path=sourcePath' aufweisen</target>
         <note />
       </trans-unit>
     </body>

@@ -294,16 +294,16 @@ module internal List =
         | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
         | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
-    let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_, _, _, _>) xs1 xs2 xs3 =
+    let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_, _, _, _>) xs1 xs2 xs3 cut =
         match xs1, xs2, xs3 with
         | [], [], [] ->
             setFreshConsTail cons []
         | h1 :: t1, h2 :: t2, h3 :: t3 ->
             let cons2 = freshConsNoTail (f.Invoke(h1, h2, h3))
             setFreshConsTail cons cons2
-            map3ToFreshConsTail cons2 f t1 t2 t3
+            map3ToFreshConsTail cons2 f t1 t2 t3 (cut + 1)
         | xs1, xs2, xs3 ->
-            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length
+            invalidArg3ListsDifferent "list1" "list2" "list3" (xs1.Length + cut) (xs2.Length + cut) (xs3.Length + cut)
 
     let map3 mapping xs1 xs2 xs3 =
         match xs1, xs2, xs3 with
@@ -311,7 +311,7 @@ module internal List =
         | h1 :: t1, h2 :: t2, h3 :: t3 ->
             let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(mapping)
             let cons = freshConsNoTail (f.Invoke(h1, h2, h3))
-            map3ToFreshConsTail cons f t1 t2 t3
+            map3ToFreshConsTail cons f t1 t2 t3 1
             cons
         | xs1, xs2, xs3 ->
             invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length
@@ -717,25 +717,28 @@ module internal List =
                         invalidArgDifferentListLength "list.[0]" (System.String.Format("list.[{0}]", j)) t.Length
                 [], [], 0
             | h :: t ->
+                let mutable j = 0
+                for t' in tail do
+                    j <- j + 1
+                    if t'.IsEmpty then
+                        invalidArgDifferentListLength (System.String.Format("list.[{0}]", j)) "list.[0]" (t.Length + 1)
                 let headsCons = freshConsNoTail h
                 let tailsCons = freshConsNoTail t
                 let headCount = transposeGetHeadsFreshConsTail headsCons tailsCons tail 1
                 headsCons, tailsCons, headCount
 
     /// Append the next element to the transposed list
-    let rec transposeToFreshConsTail cons list expectedCount =
+    let rec transposeToFreshConsTail cons list =
         match list with
         | [] -> setFreshConsTail cons []
         | _ ->
             match transposeGetHeads list with
             | [], _, _ ->
                 setFreshConsTail cons []
-            | heads, tails, headCount ->
-                if headCount < expectedCount then
-                    invalidArgDifferentListLength (System.String.Format("list.[{0}]", headCount)) "list.[0]" <| tails.[0].Length + 1
+            | heads, tails, _ ->
                 let cons2 = freshConsNoTail heads
                 setFreshConsTail cons cons2
-                transposeToFreshConsTail cons2 tails expectedCount
+                transposeToFreshConsTail cons2 tails
 
     /// Build the transposed list
     let transpose (list: 'T list list) =
@@ -746,7 +749,7 @@ module internal List =
             let heads, tails, headCount = transposeGetHeads list
             if headCount = 0 then [] else
             let cons = freshConsNoTail heads
-            transposeToFreshConsTail cons tails headCount
+            transposeToFreshConsTail cons tails
             cons
 
     let rec truncateToFreshConsTail cons count list =

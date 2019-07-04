@@ -302,11 +302,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           StringLimit: int;
 #endif
           FormatProvider: System.IFormatProvider
-#if FX_RESHAPED_REFLECTION
-          ShowNonPublic : bool
-#else
           BindingFlags: System.Reflection.BindingFlags
-#endif
           PrintWidth : int 
           PrintDepth : int 
           PrintLength : int
@@ -341,11 +337,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
 #if FSHARP_CORE   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
 
-#if FX_RESHAPED_REFLECTION
-        val anyToStringForPrintf: options:FormatOptions -> showNonPublicMembers : bool -> value:'T * Type -> string
-#else
         val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T * Type -> string
-#endif
 #else
         val asTaggedTextWriter: writer: TextWriter -> TaggedTextWriter
         val any_to_layout   : options:FormatOptions -> value:'T * Type -> Layout
