@@ -370,11 +370,11 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
-/// Adjust the TcEnv to account for opening the set of modules and namespaces implied by an `open` declaration
-let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
+/// Adjust the TcEnv to account for opening the set of modules, namespaces or static classes implied by an `open` declaration
+let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
-        { env with eNameResEnv = AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
+        { env with eNameResEnv = AddEntitiesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
     env
@@ -644,11 +644,11 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap scopem true true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
-                OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
+                OpenEntities tcSink g amap scopem false env modrefs openDecl
             | Exception _ -> env
         | _ -> env
 
@@ -6892,7 +6892,7 @@ and TcConstExpr cenv overallTy env m tpenv c =
         let expr = 
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) -> 
@@ -8704,37 +8704,87 @@ and delayRest rest mPrior delayed =
         let mPriorAndLongId = unionRanges mPrior (rangeOfLid longId)
         DelayedDotLookup (rest, mPriorAndLongId) :: delayed
 
+/// Typecheck "nameof" expressions
+and TcNameOfExpr cenv env tpenv (synArg: SynExpr) = 
 
+    let rec stripParens expr =
+        match expr with
+        | SynExpr.Paren(expr, _, _, _) -> stripParens expr
+        | _ -> expr
+
+    let cleanSynArg = stripParens synArg
+    let m = cleanSynArg.Range
+    let rec check overallTyOpt expr (delayed: DelayedItem list) = 
+        match expr with
+        | LongOrSingleIdent (false, (LongIdentWithDots(longId, _) as lidd), _, _) when longId.Length > 0 ->
+            let ad = env.eAccessRights
+            let id, rest = List.headAndTail longId
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest true with 
+            | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) -> 
+                () // resolved to a module or namespace, done with checks
+            | _ -> 
+                let (TypeNameResolutionInfo(_, staticArgsInfo)) = GetLongIdentTypeNameInfo delayed
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad longId staticArgsInfo PermitDirectReferenceToGeneratedType.No with
+                | Result tcref when IsEntityAccessible cenv.amap m ad tcref -> 
+                    () // resolved to a type name, done with checks
+                | _ -> 
+                    let overallTy = match overallTyOpt with None -> NewInferenceType() | Some t -> t 
+                    let _, _ = TcLongIdentThen cenv overallTy env tpenv lidd delayed
+                    () // checked as an expression, done with checks
+            List.last longId
+
+        | SynExpr.TypeApp (hd, _, types, _, _, _, m) ->
+            check overallTyOpt hd (DelayedTypeApp(types, m, m) :: delayed)
+
+        | SynExpr.Paren(expr, _, _, _) when overallTyOpt.IsNone && delayed.IsEmpty -> 
+            check overallTyOpt expr []
+
+        | SynExpr.Typed (synBodyExpr, synType, _m) when delayed.IsEmpty && overallTyOpt.IsNone ->
+            let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType  env tpenv synType
+            check (Some tgtTy) synBodyExpr []
+
+        | _ -> 
+            error (Error(FSComp.SR.expressionHasNoName(), m))
+
+    let lastIdent = check None cleanSynArg [] 
+    let constRange = mkRange m.FileName m.Start (mkPos m.StartLine (m.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes
+    Expr.Const(Const.String(lastIdent.idText), constRange, cenv.g.string_ty)
+    
 //-------------------------------------------------------------------------
 // TcFunctionApplicationThen: Typecheck "expr x" + projections
 //------------------------------------------------------------------------- 
 
 and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (synArg: SynExpr) atomicFlag delayed = 
-    
     let denv = env.DisplayEnv
     let mArg = synArg.Range
     let mFunExpr = expr.Range
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
     | ValueSome (domainTy, resultTy) -> 
-
-        // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
-        // Set a flag in the syntax tree to say we noticed a leading 'seq'
-        match synArg with 
-        | SynExpr.CompExpr (false, isNotNakedRefCell, _comp, _m) -> 
-            isNotNakedRefCell := 
-                !isNotNakedRefCell
-                || 
-                (match expr with 
-                 | ApplicableExpr(_, Expr.Op (TOp.Coerce, _, [Expr.App (Expr.Val (vf, _, _), _, _, _, _)], _), _) when valRefEq cenv.g vf cenv.g.seq_vref -> true 
-                 | _ -> false)
-        | _ -> ()
-
-        let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
-        let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
-        TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
-    | _ -> 
+        match expr with
+        | ApplicableExpr(_, NameOfExpr cenv.g _, _) ->
+            let replacementExpr = TcNameOfExpr cenv env tpenv synArg
+            TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
+        | _ ->
+            // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
+            // Set a flag in the syntax tree to say we noticed a leading 'seq'
+            match synArg with 
+            | SynExpr.CompExpr (false, isNotNakedRefCell, _comp, _m) -> 
+                isNotNakedRefCell := 
+                    !isNotNakedRefCell
+                    || 
+                    (match expr with 
+                     | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [SeqExpr cenv.g], _), _) -> true 
+                     | _ -> false)
+            | _ -> ()
+            
+            let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
+            let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
+            TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
+            
+    | ValueNone -> 
         // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
         match synArg with 
         | SynExpr.CompExpr (false, _isNotNakedRefCell, comp, _m) -> 
@@ -8747,25 +8797,26 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
 // TcLongIdentThen: Typecheck "A.B.C<D>.E.F ... " constructs
 //------------------------------------------------------------------------- 
 
+and GetLongIdentTypeNameInfo delayed =
+    // Given 'MyOverloadedType<int>.MySubType...' use the number of given type arguments to help 
+    // resolve type name lookup of 'MyOverloadedType' 
+    // Also determine if type names should resolve to Item.Types or Item.CtorGroup 
+    match delayed with 
+    | DelayedTypeApp (tyargs, _, _) :: (DelayedDot | DelayedDotLookup _) :: _ -> 
+        // cases like 'MyType<int>.Sth' 
+        TypeNameResolutionInfo(ResolveTypeNamesToTypeRefs, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
+
+    | DelayedTypeApp (tyargs, _, _) :: _ -> 
+        // Note, this also covers the case 'MyType<int>.' (without LValue_get), which is needed for VS (when typing)
+        TypeNameResolutionInfo(ResolveTypeNamesToCtors, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
+
+    | _ -> 
+        TypeNameResolutionInfo.Default
+
 and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId, _)) delayed =
 
     let ad = env.eAccessRights
-    let typeNameResInfo = 
-        // Given 'MyOverloadedType<int>.MySubType...' use arity of #given type arguments to help 
-        // resolve type name lookup of 'MyOverloadedType' 
-        // Also determine if type names should resolve to Item.Types or Item.CtorGroup 
-        match delayed with 
-        | DelayedTypeApp (tyargs, _, _) :: (DelayedDot | DelayedDotLookup _) :: _ -> 
-            // cases like 'MyType<int>.Sth' 
-            TypeNameResolutionInfo(ResolveTypeNamesToTypeRefs, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
-
-        | DelayedTypeApp (tyargs, _, _) :: _ -> 
-            // Note, this also covers the case 'MyType<int>.' (without LValue_get), which is needed for VS (when typing)
-            TypeNameResolutionInfo(ResolveTypeNamesToCtors, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
-
-        | _ -> 
-            TypeNameResolutionInfo.Default
-
+    let typeNameResInfo = GetLongIdentTypeNameInfo delayed
     let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
     TcItemThen cenv overallTy env tpenv nameResolutionResult delayed
 
@@ -12535,19 +12586,19 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 // Bind 'open' declarations
 //------------------------------------------------------------------------- 
 
-let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId: Ident list) =
+let TcOpenLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
     let ad = env.eAccessRights
     match longId with
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
+        match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap m true true OpenQualified env.eNameResEnv ad id rest true with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
 
 let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) = 
-    match TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId with
+    match TcOpenLidAndPermitAutoResolve tcSink env amap longId with
     | [] -> env
     | modrefs ->
 
@@ -12599,7 +12650,7 @@ let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) =
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
     let openDecl = OpenDeclaration.Create (longId, modrefs, scopem, false)
-    let env = OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
+    let env = OpenEntities tcSink g amap scopem false env modrefs openDecl
     env    
 
 
@@ -14074,7 +14125,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+            | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
         let mvvs = ForceRaise resolved
         if isNil mvvs then env else
         let modrefs = mvvs |> List.map p23
@@ -16901,7 +16952,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+                | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
@@ -17455,7 +17506,7 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     | ValueNone -> warn()
     | ValueSome _ -> 
         let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
-        OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+        OpenEntities TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible) = 

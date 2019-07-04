@@ -32,6 +32,7 @@
   <ItemGroup>
     <Compile Include="NUnitFrameworkShims.fs" />
     <Compile Include="LibraryTestFx.fs" />
+
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
@@ -65,6 +66,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
     <None Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsTestGenerator.fsx" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\NameOfTests.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\OptionModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\PrintfTests.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\ResultTests.fs" />
@@ -80,8 +82,9 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
     <Compile Include="StructTuples.fs" />
-    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp')) and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
-    <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4')) and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
+
+    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp'))" />
+    <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
 
   <ItemGroup>
@@ -94,9 +97,9 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' != 'true'">
-    <PackageReference Include="FSharp.Core" Version="4.6.0" />
-    <PackageReference Include="FsCheck" Version="3.0.0-alpha4" />
-  </ItemGroup>
+   <PackageReference Include="FSharp.Core" Version="4.6.0" />
+   <PackageReference Include="FsCheck" Version="3.0.0-alpha4" />
+ </ItemGroup>
 
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
     <PackageReference Include="xunit" Version="2.4.1"  PrivateAssets="All" />
