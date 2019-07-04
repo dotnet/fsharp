@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,8 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <SwrFile Include="Files.swr" />
-    <SwrFile Include="Dependencies.swr" />
+    <SwrFile Include="Package.swr" />
   </ItemGroup>
 
 </Project>

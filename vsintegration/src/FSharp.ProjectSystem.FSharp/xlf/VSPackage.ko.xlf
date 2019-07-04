@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../VSPackage.resx">
     <body>
@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Application">
         <source>Application</source>
-        <target state="translated">응용 프로그램</target>
+        <target state="translated">애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="GeneralCaption">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="OutputTypeDescription">
         <source>The type of application to build.</source>
-        <target state="translated">빌드할 응용 프로그램의 유형입니다.</target>
+        <target state="translated">빌드할 애플리케이션의 유형입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefaultNamespace">
@@ -54,17 +54,17 @@
       </trans-unit>
       <trans-unit id="StartupObjectDescription">
         <source>The name of the class that contains the static Main method that you want called when you launch your application.</source>
-        <target state="translated">응용 프로그램을 시작할 때 호출할 정적 Main 메서드를 포함하는 클래스의 이름입니다.</target>
+        <target state="translated">애플리케이션을 시작할 때 호출할 정적 Main 메서드를 포함하는 클래스의 이름입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ApplicationIcon">
         <source>Application Icon</source>
-        <target state="translated">응용 프로그램 아이콘</target>
+        <target state="translated">애플리케이션 아이콘</target>
         <note />
       </trans-unit>
       <trans-unit id="ApplicationIconDescription">
         <source>Sets the .ico file to use as your application icon.</source>
-        <target state="translated">응용 프로그램 아이콘으로 사용할 .ico 파일을 설정합니다.</target>
+        <target state="translated">애플리케이션 아이콘으로 사용할 .ico 파일을 설정합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Project">
@@ -204,12 +204,12 @@
       </trans-unit>
       <trans-unit id="5014">
         <source>Console Application (.NET Framework)</source>
-        <target state="translated">콘솔 응용 프로그램(.NET Framework)</target>
+        <target state="translated">콘솔 애플리케이션(.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
         <source>A project for creating a command-line application</source>
-        <target state="translated">명령줄 응용 프로그램을 만드는 프로젝트입니다.</target>
+        <target state="translated">명령줄 애플리케이션을 만드는 프로젝트입니다</target>
         <note />
       </trans-unit>
       <trans-unit id="5016">
@@ -244,12 +244,12 @@
       </trans-unit>
       <trans-unit id="5022">
         <source>Application Configuration File</source>
-        <target state="translated">응용 프로그램 구성 파일</target>
+        <target state="translated">애플리케이션 구성 파일</target>
         <note />
       </trans-unit>
       <trans-unit id="5023">
         <source>A file for storing application configuration and settings values</source>
-        <target state="translated">응용 프로그램 구성 및 설정 값을 저장하는 파일입니다.</target>
+        <target state="translated">애플리케이션 구성 및 설정 값을 저장하는 파일입니다</target>
         <note />
       </trans-unit>
       <trans-unit id="5024">
@@ -414,7 +414,7 @@
       </trans-unit>
       <trans-unit id="6002">
         <source>F# Project Files (*.fsproj);*.fsproj</source>
-        <target state="translated">F# 프로젝트 파일 (*.fsproj);*.fsproj</target>
+        <target state="translated">F# 프로젝트 파일(*.fsproj);*.fsproj</target>
         <note />
       </trans-unit>
       <trans-unit id="6003">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">F# 4.5용 Microsoft Visual F# Tools 10.2</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">F# 4.6용 Microsoft Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">F# 4.5용 Microsoft Visual F# Tools 10.2</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">F# 4.6용 Microsoft Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">F# 4.5용 Visual F# Tools 10.2</target>
+        <source>Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">F# 4.6용 Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

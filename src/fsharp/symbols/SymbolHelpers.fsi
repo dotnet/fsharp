@@ -37,8 +37,8 @@ type public FSharpErrorInfo =
     member Message:string
     member Subcategory:string
     member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedDiagnostic * isError: bool * range -> FSharpErrorInfo
+    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * range * lastPosInFile:(int*int) * suggestNames: bool -> FSharpErrorInfo
+    static member internal CreateFromException : PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpErrorInfo
 
 //----------------------------------------------------------------------------
 // Object model for quick info
@@ -200,5 +200,5 @@ type internal CompilationGlobalsScope =
     interface IDisposable
 
 module internal ErrorHelpers = 
-    val ReportError: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpErrorSeverity) -> FSharpErrorInfo list
-    val CreateErrorInfos: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpErrorSeverity)> -> FSharpErrorInfo[]
+    val ReportError: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpErrorSeverity) * suggestNames: bool -> FSharpErrorInfo list
+    val CreateErrorInfos: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpErrorSeverity)> * suggestNames: bool -> FSharpErrorInfo[]

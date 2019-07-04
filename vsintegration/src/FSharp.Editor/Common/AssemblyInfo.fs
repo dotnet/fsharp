@@ -4,11 +4,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open Microsoft.VisualStudio.Shell
 
-[<assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.Editor.dll")>]
-[<assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-
-do()
-
 // This is needed to load XAML resource dictionaries from FSharp.UIResources assembly because ProvideCodeBase attribute does not work for that purpose.
 // This adds $PackageFolder$ to the directories probed for assemblies to load.
 // The attribute is inexplicably class-targeted, hence the dummy class.

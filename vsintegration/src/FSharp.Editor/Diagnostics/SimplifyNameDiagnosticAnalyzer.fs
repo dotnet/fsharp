@@ -7,14 +7,13 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open FSharp.Compiler
 open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
 open System.Runtime.Caching
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 type private TextVersionHash = int
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
@@ -39,7 +38,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             category = DiagnosticCategory.Style, 
             defaultSeverity = DiagnosticSeverity.Hidden, 
             isEnabledByDefault = true, 
-            customTags = DiagnosticCustomTags.Unnecessary)
+            customTags = FSharpDiagnosticCustomTags.Unnecessary)
 
     static member LongIdentPropertyKey = "FullName"
     override __.Priority = 100 // Default = 50
@@ -51,7 +50,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
             do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
-            let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
+            let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = textVersion.GetHashCode()
             let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync
@@ -93,7 +92,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                         match rest with
                                         | [] -> return current
                                         | headIdent :: restPlid ->
-                                            let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item, userOpName=userOpName) 
+                                            let! res = checkResults.IsRelativeNameResolvableFromSymbol(posAtStartOfName, current, symbolUse.Symbol, userOpName=userOpName)
                                             if res then return current
                                             else return! loop restPlid (headIdent :: current)
                                     }

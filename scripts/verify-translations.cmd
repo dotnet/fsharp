@@ -1,3 +1,3 @@
 @echo off
 
-%~dp0..\artifacts\bin\fsi\Release\net46\fsi.exe %~dp0VerifyAllTranslations.fsx -- %~dp0
+%~dp0..\artifacts\bin\fsi\Release\net472\fsi.exe %~dp0VerifyAllTranslations.fsx -- %~dp0

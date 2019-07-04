@@ -1,7 +1,7 @@
 ﻿
 #if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -347,11 +347,6 @@ let ``Test ManyProjectsStressTest basic`` () =
 let ``Test ManyProjectsStressTest cache too small`` () = 
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest false
-
-    // Because the cache is too small, we need explicit calls to KeepAlive to avoid disposal of project information
-    let disposals = 
-        [ for p in ManyProjectsStressTest.jointProject :: ManyProjectsStressTest.projects do
-             yield checker.KeepProjectAlive p.Options |> Async.RunSynchronously ]
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
 
@@ -913,7 +908,7 @@ let ``Type provider project references should not throw exceptions`` () =
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)
-    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, FSharp.Compiler.Text.SourceText.ofString fileSource, options) |> Async.RunSynchronously
     let fileCheckResults = 
         match fileCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
@@ -1010,7 +1005,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)
-    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, FSharp.Compiler.Text.SourceText.ofString fileSource, options) |> Async.RunSynchronously
     let fileCheckResults = 
         match fileCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res

@@ -56,7 +56,7 @@ module internal FSharpQuickInfo =
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
 
             // project options need to be retrieved because the signature file could be in another project
-            let! extParsingOptions, _extSite, extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
+            let! extParsingOptions, extProjectOptions = projectInfoManager.TryGetOptionsByProject(document.Project, cancellationToken)
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing extParsingOptions
             let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true)
             let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, sourceText=extSourceText, userOpName = userOpName)
@@ -92,7 +92,7 @@ module internal FSharpQuickInfo =
 
         asyncMaybe {
             let! sourceText = document.GetTextAsync cancellationToken
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, true)
             let idRange = lexerSymbol.Ident.idRange  
@@ -163,7 +163,8 @@ type internal FSharpAsyncQuickInfoSource
         xmlMemberIndexService: IVsXMLMemberIndexService,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
-        textBuffer:ITextBuffer
+        textBuffer:ITextBuffer,
+        settings: EditorOptions
     ) =
 
     static let joinWithLineBreaks segments =
@@ -175,7 +176,7 @@ type internal FSharpAsyncQuickInfoSource
     // test helper
     static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int, languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
         asyncMaybe {
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, languageServicePerformanceOptions, userOpName=FSharpQuickInfo.userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions, userOpName=FSharpQuickInfo.userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -205,6 +206,9 @@ type internal FSharpAsyncQuickInfoSource
         // This method can be called from the background thread.
         // Do not call IServiceProvider.GetService here.
         override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
+            // if using LSP, just bail early
+            if settings.Advanced.UsePreviewTextHover then Task.FromResult<QuickInfoItem>(null)
+            else
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
             match triggerPoint.HasValue with
             | false -> Task.FromResult<QuickInfoItem>(null)
@@ -269,7 +273,8 @@ type internal FSharpAsyncQuickInfoSourceProvider
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider:FSharpCheckerProvider,
-        projectInfoManager:FSharpProjectOptionsManager
+        projectInfoManager:FSharpProjectOptionsManager,
+        settings: EditorOptions
     ) =
 
     interface IAsyncQuickInfoSourceProvider with
@@ -278,4 +283,4 @@ type internal FSharpAsyncQuickInfoSourceProvider
             // It is safe to do it here (see #4713)
             let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
             let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
-            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, projectInfoManager, textBuffer) :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, projectInfoManager, textBuffer, settings) :> IAsyncQuickInfoSource

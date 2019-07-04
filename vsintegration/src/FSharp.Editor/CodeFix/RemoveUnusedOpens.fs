@@ -6,7 +6,6 @@ open System.Composition
 open System.Threading
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -32,7 +31,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
                     let document = context.Document
                     let! sourceText = document.GetTextAsync()
                     let checker = checkerProvider.Checker
-                    let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken)
                     let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
                     let changes =
                         unusedOpens

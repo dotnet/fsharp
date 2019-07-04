@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../BuildPropPage.resx">
     <body>
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">&amp;Cesta výstupu:</target>
+        <target state="translated">&amp;Výstupní cesta:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">Definovat konstantu DEB&amp;UG</target>
+        <target state="translated">Definovat konstant&amp;u DEBUG</target>
         <note />
       </trans-unit>
     </body>

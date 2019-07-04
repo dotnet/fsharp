@@ -12,7 +12,15 @@ open System.Runtime.InteropServices
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-    let FSharpBannerVersion = "10.2.3 for F# 4.5"
+#if LOCALIZATION_FSBUILD
+    let FSharpBannerVersion = FSBuild.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
+#else
+#if LOCALIZATION_FSCOMP
+    let FSharpBannerVersion = FSComp.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
+#else
+    let FSharpBannerVersion = sprintf "%s for F# %s" (FSharp.BuildProperties.fsProductVersion) (FSharp.BuildProperties.fsLanguageVersion)
+#endif
+#endif
 
     let versionOf<'t> =
 #if FX_RESHAPED_REFLECTION
@@ -212,7 +220,6 @@ module internal FSharpEnvironment =
                 // For the prototype compiler, we can just use the current domain
                 tryCurrentDomain()
         with e -> 
-            System.Diagnostics.Debug.Assert(false, "Error while determining default location of F# compiler")
             None
 
 

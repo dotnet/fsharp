@@ -4,7 +4,7 @@
 // FSHARP1.0:1117, Bindings that look like function definitions are interpreted as pattern matches without warning. Add a warning for this case to allow for later language design change here.
 // FSHARP1.0:2552, name scoping bug
 
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 type t = F of int * int
 

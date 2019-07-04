@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
 // IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)
 // is internal to Microsoft.CodeAnalysis.Workspaces which we don't have internals visible to. Rather than add yet another
@@ -21,7 +22,7 @@ open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.SourceCodeServices
 
-[<ExportLanguageService(typeof<IEditorClassificationService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpClassificationService>)>]
 type internal FSharpClassificationService
     [<ImportingConstructor>]
     (
@@ -30,7 +31,7 @@ type internal FSharpClassificationService
     ) =
     static let userOpName = "SemanticColorization"
 
-    interface IEditorClassificationService with
+    interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
         member __.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
         
@@ -47,7 +48,7 @@ type internal FSharpClassificationService
             asyncMaybe {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
-                let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
+                let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.

@@ -26,6 +26,7 @@ param (
     [switch][Alias('b')]$build,
     [switch]$rebuild,
     [switch]$sign,
+    [switch]$noSign,
     [switch]$pack,
     [switch]$publish,
     [switch]$launch,
@@ -34,7 +35,7 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net46",
+    [string]$bootstrapTfm = "net472",
     [switch][Alias('bl')]$binaryLog,
     [switch]$ci,
     [switch]$official,
@@ -45,9 +46,13 @@ param (
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
+    [switch]$testCambridge,
+    [switch]$testCompiler,
+    [switch]$testFSharpCore,
     [switch]$testFSharpQA,
     [switch]$testVs,
     [switch]$testAll,
+    [string]$officialSkipTests = "false",
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
 
@@ -63,6 +68,7 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Actions:"
     Write-Host "  -restore                  Restore packages (short: -r)"
+    Write-Host "  -norestore                Don't restore packages"
     Write-Host "  -build                    Build main solution (short: -b)"
     Write-Host "  -rebuild                  Rebuild main solution"
     Write-Host "  -pack                     Build NuGet packages, VS insertion manifests and installer"
@@ -73,10 +79,14 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Test actions"
     Write-Host "  -testAll                  Run all tests"
+    Write-Host "  -testCambridge            Run Cambridge tests"
+    Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
+    Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
+    Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
     Write-Host "  -ci                       Set when running on CI server"
@@ -97,6 +107,7 @@ function Process-Arguments() {
        Print-Usage
        exit 0
     }
+    $script:nodeReuse = $False;
 
     if ($testAll) {
         $script:testDesktop = $True
@@ -105,8 +116,23 @@ function Process-Arguments() {
         $script:testVs = $True
     }
 
+    if ([System.Boolean]::Parse($script:officialSkipTests)) {
+        $script:testAll = $False
+        $script:testCambridge = $False
+        $script:testCompiler = $False
+        $script:testDesktop = $False
+        $script:testCoreClr = $False
+        $script:testFSharpCore = $False
+        $script:testFSharpQA = $False
+        $script:testVs = $False
+    }
+
     if ($noRestore) {
         $script:restore = $False;
+    }
+
+    if ($noSign) {
+        $script:sign = $False;
     }
 
     foreach ($property in $properties) {
@@ -119,7 +145,7 @@ function Process-Arguments() {
 }
 
 function Update-Arguments() {
-    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc.exe")) {
+    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe")) {
         $script:bootstrap = $True
     }
 }
@@ -153,7 +179,6 @@ function BuildSolution() {
         /p:Publish=$publish `
         /p:ContinuousIntegrationBuild=$ci `
         /p:OfficialBuildId=$officialBuildId `
-        /p:BootstrapBuildPath=$bootstrapDir `
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
@@ -182,15 +207,15 @@ function UpdatePath() {
     }
     TestAndAddToPath $subdir
 
-    TestAndAddToPath "$ArtifactsDir\bin\fsc\$configuration\net46"
-    TestAndAddToPath "$ArtifactsDir\bin\fsiAnyCpu\$configuration\net46"
+    TestAndAddToPath "$ArtifactsDir\bin\fsc\$configuration\net472"
+    TestAndAddToPath "$ArtifactsDir\bin\fsiAnyCpu\$configuration\net472"
 }
 
 function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\$configuration\net46\fsi.exe"
+    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\publish\fsi.exe"
 
-    # desktop fsi isn't always built
-    if (Test-Path $fsiPath) {
+    # Only verify versions on CI or official build
+    if ($ci -or $official) {
         $asmVerCheckPath = "$RepoRoot\scripts"
         Exec-Console $fsiPath """$asmVerCheckPath\AssemblyVersionCheck.fsx"" -- ""$ArtifactsDir"""
     }
@@ -222,6 +247,11 @@ try {
 
     if ($ci) {
         Prepare-TempDir
+
+        # enable us to build netcoreapp2.1 binaries
+        $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
+        InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
+        InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
     }
 
     if ($bootstrap) {
@@ -236,11 +266,12 @@ try {
         VerifyAssemblyVersions
     }
 
-    $desktopTargetFramework = "net46"
-    $coreclrTargetFramework = "netcoreapp2.0"
+    $desktopTargetFramework = "net472"
+    $coreclrTargetFramework = "netcoreapp2.1"
 
     if ($testDesktop) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
@@ -248,6 +279,7 @@ try {
 
     if ($testCoreClr) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
@@ -264,16 +296,29 @@ try {
         UpdatePath
         $env:HOSTED_COMPILER = 1
         $env:CSC_PIPE = "$env:USERPROFILE\.nuget\packages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
-        $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net46\FSharp.Core.dll"
+        $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
         Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
         Pop-Location
     }
 
+    if ($testFSharpCore) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
+    if ($testCompiler) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
+    if ($testCambridge) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
     if ($testVs) {
-        Write-Host "Environment Variables"
-        Get-Childitem Env:
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework
     }

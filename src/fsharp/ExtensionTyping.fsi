@@ -181,9 +181,7 @@ module internal ExtensionTyping =
         ProvidedMethodInfo = 
         inherit ProvidedMethodBase
         member ReturnType : ProvidedType
-#if !FX_NO_REFLECTION_METADATA_TOKENS
         member MetadataToken : int
-#endif
 
     and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedParameterInfo = 
