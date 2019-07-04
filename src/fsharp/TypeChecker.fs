@@ -8604,7 +8604,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     else 
                         exprty
 
-                UnifyTypesAndRecover cenv env mExpr overallTy exprty
+                UnifyTypes cenv env mExpr overallTy exprty
 
         | DelayedDot :: _
         | DelayedSet _ :: _
