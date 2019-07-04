@@ -2847,11 +2847,6 @@
         <target state="translated">개체 식이 잘못되었습니다. 재정의 또는 인터페이스가 없는 개체는 중괄호 없이 식 형식 'new Type(args)'을 사용해야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">개체, 시퀀스 또는 레코드 식이 잘못되었습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">레코드, 시퀀스 또는 계산 식이 잘못되었습니다. 시퀀스 식의 형식은 'seq {{ ... }}'여야 합니다.</target>
