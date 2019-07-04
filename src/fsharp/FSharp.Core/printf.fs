@@ -2,6 +2,8 @@
 
 namespace Microsoft.FSharp.Core
 
+open System
+
 type PrintfFormat<'Printer,'State,'Residue,'Result>(value: string, captures: obj[], types: Type[]) =
     new(value) = new PrintfFormat<'Printer,'State,'Residue,'Result>(value, null, null)
     member __.Value = value
