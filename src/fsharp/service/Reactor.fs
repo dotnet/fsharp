@@ -35,7 +35,7 @@ type Reactor() =
 
     // We need to store the culture for the VS thread that is executing now, 
     // so that when the reactor picks up a thread from the threadpool we can set the culture
-    let culture = new CultureInfo(CultureInfo.CurrentUICulture.Name)
+    let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
 
     let mutable bgOpCts = new CancellationTokenSource()
     /// Mailbox dispatch function.
@@ -130,6 +130,17 @@ type Reactor() =
                 with e -> 
                     Debug.Assert(false, String.Format("unexpected failure in reactor loop {0}, restarting", e))
         }
+
+    member __.SetPreferredUILang(preferredUiLang: string option) = 
+        match preferredUiLang with
+        | Some s -> 
+            culture <- CultureInfo s
+#if FX_RESHAPED_GLOBALIZATION
+            CultureInfo.CurrentUICulture <- culture
+#else
+            Thread.CurrentThread.CurrentUICulture <- culture
+#endif
+        | None -> ()
 
     // [Foreground Mailbox Accessors] -----------------------------------------------------------                
     member r.SetBackgroundOp(bgOpOpt) = 

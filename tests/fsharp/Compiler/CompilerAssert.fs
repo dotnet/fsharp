@@ -25,7 +25,7 @@ module CompilerAssert =
             ProjectId = None
             SourceFiles = [|"test.fs"|]
 #if !NETCOREAPP
-            OtherOptions = [||]
+            OtherOptions = [|"--preferreduilang:en-US";|]
 #else
             OtherOptions = 
                 // Hack: Currently a hack to get the runtime assemblies for netcore in order to compile.
@@ -36,8 +36,7 @@ module CompilerAssert =
                     |> Seq.toArray
                     |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system.") || x.ToLowerInvariant().EndsWith("netstandard.dll"))
                     |> Array.map (fun x -> sprintf "-r:%s" x)
-                Array.append [|"--targetprofile:netcore"; "--noframework"|] assemblies
-
+                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"|] assemblies
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
