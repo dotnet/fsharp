@@ -7182,6 +7182,16 @@
         <target state="translated">Non è stata specificata alcuna implementazione per tali membri (alcuni risultati sono stati omessi): {0}. Si noti che tutti i membri dell'interfaccia devono essere implementati ed elencati in una dichiarazione 'interface' appropriata, ad esempio 'interface ... with member ...'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">Esegue il mapping dei percorsi fisici ai nomi di percorso di origine restituiti dal compilatore</target>

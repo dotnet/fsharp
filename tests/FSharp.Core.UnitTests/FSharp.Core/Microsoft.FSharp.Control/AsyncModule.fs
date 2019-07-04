@@ -168,7 +168,7 @@ type AsyncModule() =
 
     let dispose(d : #IDisposable) = d.Dispose()
 
-    let testErrorAndCancelRace testcaseName computation =
+    let testErrorAndCancelRace testCaseName computation = 
         for i in 1..20 do
             let cts = new System.Threading.CancellationTokenSource()
             use barrier = new System.Threading.ManualResetEvent(false)
@@ -180,7 +180,7 @@ type AsyncModule() =
 
             Async.StartWithContinuations(
                 computation,
-                (fun _ -> failwith (sprintf "%s -- success not expected -- iteration %d" testcaseName i)),
+                (fun _ -> failwith (sprintf "Testcase: %s  --- success not expected iterations 1 .. 20 - failed on iteration %d" testCaseName i)),
                 (fun _ -> incr()),
                 (fun _ -> incr()),
                 cts.Token
@@ -427,12 +427,11 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
         let disposedEvent = new System.Threading.ManualResetEvent(false)
         dispose disposedEvent
-
         testErrorAndCancelRace "RaceBetweenCancellationAndError.AwaitWaitHandle" (Async.AwaitWaitHandle disposedEvent)
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Sleep``() =
-        testErrorAndCancelRace "RaceBetweenCancellationAndError.Sleep" (Async.Sleep -5)
+        testErrorAndCancelRace "RaceBetweenCancellationAndError.Sleep" (Async.Sleep (-5))
 
 #if EXPENSIVE
 #if NET46
@@ -663,11 +662,14 @@ type AsyncModule() =
             Assert.AreEqual("maxDegreeOfParallelism", exc.ParamName)
             Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was -1"))
 
+//  This has been failing very regularly on LINUX --- issue   :  https://github.com/dotnet/fsharp/issues/7112
+#if !TESTING_ON_LINUX
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Parallel``() =
         [| for i in 1 .. 1000 -> async { return i } |]
         |> fun cs -> Async.Parallel(cs, 1)
-        |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel`"
+        |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel"
+#endif
 
     [<Test>]
     member this.``error on one workflow should cancel all others with maxDegreeOfParallelism``() =

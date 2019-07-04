@@ -7182,6 +7182,16 @@
         <target state="translated">멤버 {0}에 지정된 구현이 없습니다(일부 결과는 생략됨). 모든 인터페이스 멤버가 구현되어 적절한 'interface' 선언에 나열되어야 합니다(예: 'interface ... with member ...').</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">컴파일러에서 실제 경로를 소스 경로 이름 출력에 매핑합니다.</target>
