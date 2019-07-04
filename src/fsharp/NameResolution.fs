@@ -2476,15 +2476,16 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | Exception e -> typeError := Some e; None
 
                 | true, res ->
-                    let fresh = FreshenUnqualifiedItem ncenv m res, []
-                    match fresh |> fst with
+                    let fresh = FreshenUnqualifiedItem ncenv m res
+                    match fresh with
                     | Item.Value value ->
                         let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref value
                         if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then
+                            // Do not resolve `nameof` if the feature is unsupported, even if it is FSharp.Core
                             None
                          else
-                            Some fresh
-                    | _ -> Some fresh
+                            Some (fresh, [])
+                    | _ -> Some (fresh, [])
                 | _ ->
                     None
 
