@@ -103,28 +103,32 @@ type public FSharpChecker =
     member MatchBraces: filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<(range * range)[]>
 
     /// <summary>
-    /// <para>Parse a source code file, returning a handle that can be used for obtaining navigation bar information
-    /// To get the full information, call 'CheckFileInProject' method on the result</para>
+    /// Parses a source code for a file and caches the results. Returns an AST that can be traversed for various features.
     /// </summary>
     ///
-    /// <param name="filename">The filename for the file.</param>
-    /// <param name="sourceText">The full source for the file.</param>
+    /// <param name="filename">The path for the file. The file name is used as a module name for implicit top level modules (e.g. in scripts).</param>
+    /// <param name="sourceText">The source to be parsed.</param>
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseFile: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
 
-    /// Parse a source code file, returning a handle that can be used for obtaining navigation bar information.
-    member ParseFileNoCache: fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
-
     /// <summary>
-    /// <para>Parse a source code file, returning a handle that can be used for obtaining navigation bar information
-    /// To get the full information, call 'CheckFileInProject' method on the result</para>
-    /// <para>All files except the one being checked are read from the FileSystem API</para>
+    /// Parses a source code for a file. Returns an AST that can be traversed for various features.
     /// </summary>
     ///
-    /// <param name="filename">The filename for the file.</param>
-    /// <param name="source">The full source for the file.</param>
-    /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
+    /// <param name="filename">The path for the file. The file name is also as a module name for implicit top level modules (e.g. in scripts).</param>
+    /// <param name="sourceText">The source to be parsed.</param>
+    /// <param name="options">Parsing options for the project or script.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member ParseFileNoCache: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
+
+    /// <summary>
+    /// Parses a source code for a file. Returns an AST that can be traversed for various features.
+    /// </summary>
+    ///
+    /// <param name="filename">The path for the file. The file name is also as a module name for implicit top level modules (e.g. in scripts).</param>
+    /// <param name="sourceText">The source to be parsed.</param>
+    /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("Please call checker.ParseFile instead.  To do this, you must also pass FSharpParsingOptions instead of FSharpProjectOptions. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
     member ParseFileInProject: filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults>
