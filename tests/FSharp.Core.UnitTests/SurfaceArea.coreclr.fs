@@ -755,9 +755,9 @@ Microsoft.FSharp.Control.ObservableModule: System.Type GetType()
 Microsoft.FSharp.Control.ObservableModule: Void Add[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], System.IObservable`1[T])
 Microsoft.FSharp.Control.WebExtensions: Boolean Equals(System.Object)
 Microsoft.FSharp.Control.WebExtensions: Int32 GetHashCode()
-Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Net.WebResponse] AsyncGetResponse(System.Net.WebRequest)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncDownloadFile(System.Net.WebClient, System.Uri, System.String)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Byte[]] AsyncDownloadData(System.Net.WebClient, System.Uri)
+Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Net.WebResponse] AsyncGetResponse(System.Net.WebRequest)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.String] AsyncDownloadString(System.Net.WebClient, System.Uri)
 Microsoft.FSharp.Control.WebExtensions: System.String ToString()
 Microsoft.FSharp.Control.WebExtensions: System.Type GetType()
@@ -2732,6 +2732,7 @@ Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
 Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
 #endif
                                                                 @"
+Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
 Microsoft.FSharp.Core.Operators: System.String ToString()
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)

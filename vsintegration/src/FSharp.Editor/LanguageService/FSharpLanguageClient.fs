@@ -7,7 +7,6 @@ open System.Diagnostics
 open System.IO
 open System.Threading
 open System.Threading.Tasks
-open FSharp.Compiler.LanguageServer
 open Microsoft.FSharp.Control
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Helpers
@@ -64,5 +63,4 @@ type internal FSharpLanguageClient
         member __.CustomMessageTarget = null
         member __.MiddleLayer = null
         member __.AttachForCustomMessageAsync(rpc: JsonRpc) =
-            rpc.JsonSerializer.Converters.Add(JsonOptionConverter()) // ensure we can set `'T option` values
             lspService.SetJsonRpc(rpc) |> Async.StartAsTask :> Task

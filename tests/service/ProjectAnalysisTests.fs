@@ -5291,7 +5291,7 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
     for e in checkResults1.Errors do 
         printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.FileName
 
-    [ for e in checkResults1.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(4, 4, ProjectLineDirectives.fileName1)]
+    [ for e in checkResults1.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
 
