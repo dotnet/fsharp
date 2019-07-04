@@ -1054,7 +1054,7 @@ module Patterns =
                 let res = typesEqual (resT :: argTs) (haveResT :: haveArgTs)
                 res
             // return MethodInfo for (generic) type's (generic) method
-            match List.tryFind select methInfos with
+            match List.tryFind select methInfos with    
             | None -> raise <| System.InvalidOperationException (SR.GetString SR.QcannotBindToMethod)
             | Some methInfo -> methInfo
 

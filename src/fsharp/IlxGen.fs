@@ -6073,13 +6073,13 @@ and GenMethodForBinding
            else
                let mdef =
                    if not compileAsInstance then
-                       mkILStaticMethod (ilMethTypars, v.CompiledName g.CompilerGlobalState, access, ilParams, ilReturn, ilMethodBody)
+                       mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
 
                    elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                         memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
 
                        let flagFixups = ComputeFlagFixupsForMemberBinding cenv (v, memberInfo)
-                       let mdef = mkILGenericVirtualMethod (v.CompiledName g.CompilerGlobalState, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                       let mdef = mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
                        let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
                        // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
