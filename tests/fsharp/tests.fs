@@ -1817,6 +1817,18 @@ module VersionTests =
     [<Test>]
     let ``indent-version4.7``() = singleTestBuildAndRunVersion "core/indent/version47" FSC_BUILDONLY "preview"
 
+    [<Test>]
+    let ``nameof-version4.6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
+
+    [<Test>]
+    let ``nameof-version4.7``() = singleTestBuildAndRunVersion "core/nameof/version47" FSC_BUILDONLY "preview"
+
+    [<Test>]
+    let ``nameof-execute``() = singleTestBuildAndRunVersion "core/nameof/version47" FSC_BASIC "preview"
+
+    [<Test>]
+    let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/version47" FSI_BASIC "preview"
+
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module ToolsTests = 

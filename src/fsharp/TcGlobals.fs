@@ -22,6 +22,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Features
 
 open Internal.Utilities
 
@@ -180,8 +181,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, noDebugData: bool,
-                      pathMap: PathMap) =
-      
+                      pathMap: PathMap, langVersion: LanguageVersion) =
+
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
   let varc = NewRigidTypar "c" envRange
@@ -239,7 +240,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   // Search for a type. If it is not found, leave a dangling CCU reference with some useful diagnostic information should
   // the type actually be dereferenced
   let findSysTypeCcu path typeName =
-      match tryFindSysTypeCcu path typeName with 
+      match tryFindSysTypeCcu path typeName with
       | None -> CcuThunk.CreateDelayed(dummyAssemblyNameCarryingUsefulErrorInformation path typeName)
       | Some ccu -> ccu
 
@@ -904,6 +905,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
   member __.pathMap = pathMap
+  member __.langVersion = langVersion
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu
