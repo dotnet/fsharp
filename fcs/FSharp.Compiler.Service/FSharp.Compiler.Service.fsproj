@@ -40,7 +40,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.fs">
+    <Compile Include="..\FSharp.Compiler.Service\AssemblyInfo.fs">
       <Link>AssemblyInfo/AssemblyInfo.fs</Link>
     </Compile>
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
