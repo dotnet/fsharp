@@ -423,6 +423,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 return res
         }
 
+    member bc.ParseFileNoCache(filename, sourceText, options, userOpName) =
+        async {
+            let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile(sourceText, filename, options, userOpName, false)
+            return FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, options.SourceFiles)
+        }
+
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
     member __.GetBackgroundParseResultsForFileInProject(filename, options, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "GetBackgroundParseResultsForFileInProject ", filename, fun ctok -> 
@@ -518,6 +524,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                          keepAssemblyContents,
                                          suggestNamesForErrors)
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
+                                reactor.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
                                 bc.RecordTypeCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, sourceText.GetHashCode()) 
                                 return checkAnswer
                             finally
@@ -635,6 +642,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     
                         // Do the parsing.
                         let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
+                        reactor.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
                         let parseErrors, parseTreeOpt, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
                         let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
@@ -958,6 +966,11 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseFile(filename, sourceText, options, userOpName)
+
+    member ic.ParseFileNoCache(filename, sourceText, options, ?userOpName) =
+        let userOpName = defaultArg userOpName "Unknown"
+        ic.CheckMaxMemoryReached()
+        backgroundCompiler.ParseFileNoCache(filename, sourceText, options, userOpName)
 
     member ic.ParseFileInProject(filename, source: string, options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
