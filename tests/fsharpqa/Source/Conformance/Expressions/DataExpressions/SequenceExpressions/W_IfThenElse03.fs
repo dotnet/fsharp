@@ -1,11 +1,11 @@
 // #Regression #Conformance #DataExpressions #Sequences 
-// Regression test for FSHARP1.0:4527
-//<Expects id="FS0035" span="(10,9-10,45)" status="error">.+'if ... then ... else'</Expects>
+// Note, implicit yield is enabled because no 'yield' is used
 
-// warning FS0035: This construct is deprecated: This list or array
-// expression includes an element of the form 'if ... then ... else'. Parenthesize
-// this expression to indicate it is an individual element of the list or array, to
-// disambiguate this from a list generated using a sequence expression.
 
-let p = [ if true then printfn "hello"; () ];;
-(if p = [ () ] then 0 else 1) |> exit
+
+
+
+
+
+let p : unit list = [ if true then printfn "hello"; () ];; // note, both unit-typed expressions interpreted as side-effecting operations
+(match p with [ ] -> 0 | _ -> 1) |> exit
