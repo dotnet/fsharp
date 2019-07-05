@@ -1766,8 +1766,7 @@ module private TastDefinitionPrinting =
                                   | _ -> []
                               let vsprs = 
                                   tycon.MembersOfFSharpTyconSorted
-                                  |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs) 
-                                  |> List.filter (fun v -> v.IsDispatchSlot)
+                                  |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs && v.IsDispatchSlot) 
                                   |> List.map (fun vref -> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv vref.Deref)
                               let staticValsLs = 
                                   tycon.TrueFieldsAsList
