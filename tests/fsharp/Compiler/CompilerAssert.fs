@@ -25,7 +25,7 @@ module CompilerAssert =
             ProjectId = None
             SourceFiles = [|"test.fs"|]
 #if !NETCOREAPP
-            OtherOptions = [||]
+            OtherOptions = [|"--preferreduilang:en-US";|]
 #else
             OtherOptions = 
                 // Hack: Currently a hack to get the runtime assemblies for netcore in order to compile.
@@ -36,8 +36,7 @@ module CompilerAssert =
                     |> Seq.toArray
                     |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system.") || x.ToLowerInvariant().EndsWith("netstandard.dll"))
                     |> Array.map (fun x -> sprintf "-r:%s" x)
-                Array.append [|"--targetprofile:netcore"; "--noframework"|] assemblies
-
+                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"|] assemblies
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -55,25 +54,26 @@ module CompilerAssert =
         lock lockObj <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
-            Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
+            Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
 
             match fileAnswer with
             | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
             | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            Assert.True(typeCheckResults.Errors.Length = 0, sprintf "Type Check errors: %A" typeCheckResults.Errors)
+            Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
+
 
     let TypeCheckSingleError (source: string) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         lock lockObj <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
-            Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
+            Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
 
             match fileAnswer with
             | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
             | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            Assert.True(typeCheckResults.Errors.Length = 1, sprintf "Expected one type check error: %A" typeCheckResults.Errors)
+            Assert.AreEqual(1, typeCheckResults.Errors.Length, sprintf "Expected one type check error: %A" typeCheckResults.Errors)
             typeCheckResults.Errors
             |> Array.iter (fun info ->
                 Assert.AreEqual(FSharpErrorSeverity.Error, info.Severity)
