@@ -2847,11 +2847,6 @@
         <target state="translated">無效的物件運算式。沒有覆寫或介面的物件應該使用不加大括號的運算式形式 'new Type(args)'。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">無效的物件、順序或記錄運算式</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">無效的記錄、循序項或計算運算式。循序項運算式應該是 'seq {{ ... }}' 形式。</target>

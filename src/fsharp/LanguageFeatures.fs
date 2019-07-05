@@ -24,6 +24,7 @@ type LanguageFeature =
     | SingleUnderscorePattern = 2
     | WildCardInForLoop = 3
     | RelaxWhitespace = 4
+    | NameOf = 5
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
@@ -47,8 +48,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.SingleUnderscorePattern, previewVersion
         LanguageFeature.WildCardInForLoop, previewVersion
         LanguageFeature.RelaxWhitespace, previewVersion
-
-        // Add new LanguageFeatures here ...
+        LanguageFeature.NameOf, previewVersion
         |]
 
     let specified =
