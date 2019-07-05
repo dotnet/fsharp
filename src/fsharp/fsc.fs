@@ -1066,13 +1066,10 @@ module MainModuleBuilder =
             elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") || runningOnMono then ""
             // otherwise, include the default manifest
             else
-#if FX_NO_RUNTIMEENVIRONMENT
-                // On coreclr default manifest is alongside the compiler
-                Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
-#else
-                // On the desktop default manifest is alongside the clr
-                Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
-#endif
+                let path = Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
+                if File.Exists(path) then path
+                else Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
+
         let nativeResources = 
             [ for av in assemblyVersionResources findAttribute assemblyVersion do
                   yield ILNativeResource.Out av
@@ -1720,11 +1717,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
     let setProcessThreadLocals tcConfigB =
                     match tcConfigB.preferredUiLang with
-#if FX_RESHAPED_GLOBALIZATION
-                    | Some s -> CultureInfo.CurrentUICulture <- new CultureInfo(s)
-#else
                     | Some s -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(s)
-#endif
                     | None -> ()
                     if tcConfigB.utf8output then 
                         Console.OutputEncoding <- Encoding.UTF8
