@@ -3547,6 +3547,9 @@ let test () : unit =
     if largeList.[499] <> 500 then
         failwith "Last element is not 500"
 
-test ()
+[<EntryPoint>]
+let main _ =
+    test ()
+    0
 """
         CompilerAssert.CompileAndRunSuccessfully script

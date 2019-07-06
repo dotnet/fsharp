@@ -56,9 +56,10 @@ module CompilerAssert =
             let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
             let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), ".exe")
             let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
-            let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(config.FSCOREDLLPATH))
+            let fsCoreDllPath = config.FSCOREDLLPATH
+            let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
             try
-                File.Copy (config.FSCOREDLLPATH, tmpFsCoreFilePath)
+                File.Copy (fsCoreDllPath , tmpFsCoreFilePath, true)
                 File.WriteAllText (inputFilePath, source)
                 File.WriteAllText (runtimeConfigFilePath, """
 {
@@ -76,9 +77,6 @@ module CompilerAssert =
                     defaultProjectOptions.OtherOptions
                     |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; "--target:exe"; "--nowin32manifest" |]
                 let errors, _ = checker.Compile args |> Async.RunSynchronously
-
-                if errors.Length > 0 then
-                    Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
                 f (errors, outputFilePath)
 
@@ -120,10 +118,16 @@ module CompilerAssert =
             )
 
     let CompileSuccessfully (source: string) =
-        compile source (fun _ -> ())
+        compile source (fun (errors, _) -> 
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
     let CompileAndRunSuccessfully (source: string) =
-        compile source (fun (_, outputExe) ->
+        compile source (fun (errors, outputExe) ->
+
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+
             let pInfo = ProcessStartInfo ()
 #if NETCOREAPP
             pInfo.FileName <- config.DotNetExe

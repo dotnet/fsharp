@@ -2538,9 +2538,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) :
         match specialSeqFlag with
         | NormalSeq ->
             GenExpr cenv cgbuf eenv spAction e1 discard
-            GenLinearExpr cenv cgbuf eenv spExpr e2 sequel (fun Fake ->
-                GenExpr cenv cgbuf eenv spExpr e2 sequel
-                Fake)
+            GenLinearExpr cenv cgbuf eenv spExpr e2 sequel contf
         | ThenDoSeq ->
             GenExpr cenv cgbuf eenv spExpr e1 Continue
             GenExpr cenv cgbuf eenv spAction e2 discard
@@ -2568,9 +2566,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) :
     
         // Generate the body
         let endLocalScopeSequel = EndLocalScope(sequel, endScope)
-        GenLinearExpr cenv cgbuf eenv spBody body endLocalScopeSequel (fun Fake ->
-            GenExpr cenv cgbuf eenv spBody body endLocalScopeSequel
-            Fake)
+        GenLinearExpr cenv cgbuf eenv spBody body endLocalScopeSequel contf
 
     | _ -> 
         GenExpr cenv cgbuf eenv sp expr sequel
