@@ -5672,7 +5672,7 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
 
 and GenMethodForBinding cenv (mgbuf: AssemblyBuilder) eenv info1 info2 =
-    if cenv.exprRecursionDepth >= StackGuard.MaxUncheckedRecursionDepth then
+    if cenv.exprRecursionDepth > StackGuard.MaxUncheckedRecursionDepth then
         cenv.delayedGen.Enqueue (fun cenv -> GenMethodForBindingAux cenv mgbuf eenv info1 info2)
     else
         GenMethodForBindingAux cenv mgbuf eenv info1 info2
