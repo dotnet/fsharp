@@ -2565,8 +2565,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) :
            | NoSequencePointAtStickyBinding -> SPSuppress
     
         // Generate the body
-        let endLocalScopeSequel = EndLocalScope(sequel, endScope)
-        GenLinearExpr cenv cgbuf eenv spBody body endLocalScopeSequel contf
+        GenLinearExpr cenv cgbuf eenv spBody body (EndLocalScope(sequel, endScope)) contf
 
     | _ -> 
         GenExpr cenv cgbuf eenv sp expr sequel
