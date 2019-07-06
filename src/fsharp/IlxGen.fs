@@ -250,7 +250,7 @@ type cenv =
       mutable exprRecursionDepth: int
 
       /// Delayed Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
-      mutable delayedGen: Queue<cenv -> unit>
+      delayedGen: Queue<cenv -> unit>
     }
 
 
