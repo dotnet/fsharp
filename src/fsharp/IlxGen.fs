@@ -2522,10 +2522,10 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) :
     match expr with 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) -> 
         GenExprs cenv cgbuf eenv argsFront
-        GenLinearExpr cenv cgbuf eenv sp argLast Continue (fun Fake -> 
+        GenLinearExpr cenv cgbuf eenv sp argLast Continue (contf << (fun Fake -> 
             GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
             GenSequel cenv eenv.cloc cgbuf sequel
-            Fake)
+            Fake))
 
     | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
         // Compiler generated sequential executions result in suppressions of sequence points on both
@@ -2572,7 +2572,9 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) :
             GenExpr cenv cgbuf eenv spBody body endLocalScopeSequel
             Fake)
 
-    | _ -> contf Fake
+    | _ -> 
+        GenExpr cenv cgbuf eenv sp expr sequel
+        contf Fake
 
 and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
     let ty = GenNamedTyApp cenv.amap m eenv.tyenv tcref argtys
