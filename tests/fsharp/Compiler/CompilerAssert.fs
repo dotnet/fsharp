@@ -11,6 +11,7 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
 
 open NUnit.Framework
+open System.Reflection.Emit
 
 [<RequireQualifiedAccess>]
 module CompilerAssert =
@@ -48,7 +49,41 @@ module CompilerAssert =
             Stamp = None
         }
         
-    let lockObj = obj ()
+    let private lockObj = obj ()
+
+    let private compile source f =
+        lock lockObj <| fun () ->
+            let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+            let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), ".exe")
+            let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
+            try
+                File.WriteAllText (inputFilePath, source)
+                File.WriteAllText (runtimeConfigFilePath, """
+{
+  "runtimeOptions": {
+    "tfm": "netcoreapp2.1",
+    "framework": {
+      "name": "Microsoft.NETCore.App",
+      "version": "2.1.0"
+    }
+  }
+}
+                """)
+
+                let args =
+                    defaultProjectOptions.OtherOptions
+                    |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; "--target:exe"; "--nowin32manifest" |]
+                let errors, _ = checker.Compile args |> Async.RunSynchronously
+
+                if errors.Length > 0 then
+                    Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+
+                f (errors, outputFilePath)
+
+            finally
+                try File.Delete inputFilePath with | _ -> ()
+                try File.Delete outputFilePath with | _ -> ()
+                try File.Delete runtimeConfigFilePath with | _ -> ()
 
     let Pass (source: string) =
         lock lockObj <| fun () ->
@@ -81,18 +116,30 @@ module CompilerAssert =
                 Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
             )
 
-    let Compile (source: string) =
-        lock lockObj <| fun () ->
-            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions defaultProjectOptions
-            let parseResults = checker.ParseFile ("test.fs", SourceText.ofString source, parsingOptions) |> Async.RunSynchronously
-            let errors, _, assemblyOpt = checker.CompileToDynamicAssembly ([ parseResults.ParseTree.Value ], "test.dll", [], None) |> Async.RunSynchronously
+    let CompileSuccessfully (source: string) =
+        compile source (fun _ -> ())
 
-            if errors.Length > 0 then
-                Assert.Fail (sprintf "Compile test had errors: %A" errors)
+    let CompileAndRunSuccessfully (source: string) =
+        compile source (fun (_, outputExe) ->
+            let pInfo = ProcessStartInfo ()
+#if NETCOREAPP
+            pInfo.FileName <- config.DotNetExe
+            pInfo.Arguments <- outputExe
+#else
+            pInfo.FileName <- outputExe
+#endif
 
-            if assemblyOpt.IsNone then
-                Assert.Fail ("Compile test resulted in no assembly output.")
+            pInfo.RedirectStandardError <- true
+            pInfo.UseShellExecute <- false
+            
+            let p = Process.Start(pInfo)
 
+            p.WaitForExit()
+            let errors = p.StandardError.ReadToEnd ()
+            if not (String.IsNullOrWhiteSpace errors) then
+                Assert.Fail errors
+        )
+ 
     let RunScript (source: string) (expectedErrorMessages: string list) =
         lock lockObj <| fun () ->
             // Intialize output and input streams

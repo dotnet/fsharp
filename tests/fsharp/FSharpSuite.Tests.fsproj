@@ -37,7 +37,7 @@
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
-    <Compile Include="Compiler\Stress\RecordStressTests.fs" />
+    <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />

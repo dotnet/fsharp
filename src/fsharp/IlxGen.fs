@@ -248,7 +248,9 @@ type cenv =
 
       /// What depth are we at when generating an expression?
       mutable exprRecursionDepth: int
-      mutable delayedGen: Queue<unit -> unit>
+
+      /// Delayed Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
+      mutable delayedGen: Queue<cenv -> unit>
     }
 
 
@@ -2179,28 +2181,6 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
       GenMatch cenv cgbuf eenv (spBind, exprm, tree, targets, m, ty) sequel
   | Expr.LetRec (binds, body, m, _) ->
       GenLetRec cenv cgbuf eenv (binds, body, m) sequel
-  | Expr.Let (bind, body, _, _) ->
-     // This case implemented here to get a guaranteed tailcall
-     // Make sure we generate the sequence point outside the scope of the variable
-     let startScope, endScope as scopeMarks = StartDelayedLocalScope "let" cgbuf
-     let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-     let spBind = GenSequencePointForBind cenv cgbuf bind
-     GenBindingAfterSequencePoint cenv cgbuf eenv spBind bind (Some startScope)
-
-     // Work out if we need a sequence point for the body. For any "user" binding then the body gets SPAlways.
-     // For invisible compiler-generated bindings we just use "sp", unless its body is another invisible binding
-     // For sticky bindings arising from inlining we suppress any immediate sequence point in the body
-     let spBody =
-        match bind.SequencePointInfo with
-        | SequencePointAtBinding _
-        | NoSequencePointAtLetBinding
-        | NoSequencePointAtDoBinding -> SPAlways
-        | NoSequencePointAtInvisibleBinding -> sp
-        | NoSequencePointAtStickyBinding -> SPSuppress
-    
-     // Generate the body
-     GenExpr cenv cgbuf eenv spBody body (EndLocalScope(sequel, endScope))
-
   | Expr.Lambda _ | Expr.TyLambda _ ->
       GenLambda cenv cgbuf eenv false None expr sequel
   | Expr.App (Expr.Val (vref, _, m) as v, _, tyargs, [], _) when
@@ -2221,11 +2201,10 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
   // This is because the element of expansion happens to be the final thing generated in most cases. However
   // for large lists we have to process the linearity separately
+  | Expr.Sequential _
+  | Expr.Let _
   | LinearOpExpr _ -> 
-      GenLinearExpr cenv cgbuf eenv expr sequel id |> ignore<FakeUnit>
-
-  | Expr.Sequential _ ->
-      GenSequentialExpr cenv cgbuf eenv sp expr sequel (fun expr -> (GenExpr cenv cgbuf eenv sp expr sequel); Fake) |> ignore<FakeUnit>
+      GenLinearExpr cenv cgbuf eenv sp expr sequel id |> ignore<FakeUnit>
 
   | Expr.Op (op, tyargs, args, m) -> 
       match op, args, tyargs with 
@@ -2539,18 +2518,61 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
     GenAllocUnionCaseCore cenv cgbuf eenv (c,tyargs,args.Length,m)
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenLinearExpr cenv cgbuf eenv expr sequel (contf: FakeUnit -> FakeUnit) =
+and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) : FakeUnit =
     match expr with 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) -> 
         GenExprs cenv cgbuf eenv argsFront
-        GenLinearExpr cenv cgbuf eenv argLast Continue (contf << (fun Fake -> 
+        GenLinearExpr cenv cgbuf eenv sp argLast Continue (fun Fake -> 
             GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
             GenSequel cenv eenv.cloc cgbuf sequel
-            Fake))
+            Fake)
 
-    | _ -> 
-        GenExpr cenv cgbuf eenv SPSuppress expr sequel
-        contf Fake
+    | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
+        // Compiler generated sequential executions result in suppressions of sequence points on both
+        // left and right of the sequence
+        let spAction, spExpr =
+            (match spSeq with
+             | SequencePointsAtSeq -> SPAlways, SPAlways
+             | SuppressSequencePointOnExprOfSequential -> SPSuppress, sp
+             | SuppressSequencePointOnStmtOfSequential -> sp, SPSuppress)
+        match specialSeqFlag with
+        | NormalSeq ->
+            GenExpr cenv cgbuf eenv spAction e1 discard
+            GenLinearExpr cenv cgbuf eenv spExpr e2 sequel (fun Fake ->
+                GenExpr cenv cgbuf eenv spExpr e2 sequel
+                Fake)
+        | ThenDoSeq ->
+            GenExpr cenv cgbuf eenv spExpr e1 Continue
+            GenExpr cenv cgbuf eenv spAction e2 discard
+            GenSequel cenv eenv.cloc cgbuf sequel
+            Fake
+
+    | Expr.Let (bind, body, _, _) ->
+        // This case implemented here to get a guaranteed tailcall
+        // Make sure we generate the sequence point outside the scope of the variable
+        let startScope, endScope as scopeMarks = StartDelayedLocalScope "let" cgbuf
+        let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
+        let spBind = GenSequencePointForBind cenv cgbuf bind
+        GenBindingAfterSequencePoint cenv cgbuf eenv spBind bind (Some startScope)
+
+        // Work out if we need a sequence point for the body. For any "user" binding then the body gets SPAlways.
+        // For invisible compiler-generated bindings we just use "sp", unless its body is another invisible binding
+        // For sticky bindings arising from inlining we suppress any immediate sequence point in the body
+        let spBody =
+           match bind.SequencePointInfo with
+           | SequencePointAtBinding _
+           | NoSequencePointAtLetBinding
+           | NoSequencePointAtDoBinding -> SPAlways
+           | NoSequencePointAtInvisibleBinding -> sp
+           | NoSequencePointAtStickyBinding -> SPSuppress
+    
+        // Generate the body
+        let endLocalScopeSequel = EndLocalScope(sequel, endScope)
+        GenLinearExpr cenv cgbuf eenv spBody body endLocalScopeSequel (fun Fake ->
+            GenExpr cenv cgbuf eenv spBody body endLocalScopeSequel
+            Fake)
+
+    | _ -> contf Fake
 
 and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
     let ty = GenNamedTyApp cenv.amap m eenv.tyenv tcref argtys
@@ -3499,35 +3521,6 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
 
     // SEQUENCE POINTS: Emit a sequence point to cover 'done' if present
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
-
-//--------------------------------------------------------------------------
-// Generate seq
-//--------------------------------------------------------------------------
-
-and GenSequentialExpr cenv cgbuf eenv spIn expr sequel (contf: Expr -> FakeUnit) =
-    match expr with 
-    | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
-        // Compiler generated sequential executions result in suppressions of sequence points on both
-        // left and right of the sequence
-        let spAction, spExpr =
-            (match spSeq with
-             | SequencePointsAtSeq -> SPAlways, SPAlways
-             | SuppressSequencePointOnExprOfSequential -> SPSuppress, spIn
-             | SuppressSequencePointOnStmtOfSequential -> spIn, SPSuppress)
-        match specialSeqFlag with
-        | NormalSeq ->
-            GenExpr cenv cgbuf eenv spAction e1 discard
-            GenSequentialExpr cenv cgbuf eenv spExpr e2 sequel (fun e2R ->
-                GenExpr cenv cgbuf eenv spExpr e2R sequel
-                Fake)
-        | ThenDoSeq ->
-            GenExpr cenv cgbuf eenv spExpr e1 Continue
-            GenExpr cenv cgbuf eenv spAction e2 discard
-            GenSequel cenv eenv.cloc cgbuf sequel
-            Fake
-
-    | _ ->
-        contf expr
 
 //--------------------------------------------------------------------------
 // Generate IL assembly code.
@@ -5683,7 +5676,7 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
 
 and GenMethodForBinding cenv (mgbuf: AssemblyBuilder) eenv info1 info2 =
     if cenv.exprRecursionDepth >= StackGuard.MaxUncheckedRecursionDepth then
-        cenv.delayedGen.Enqueue (fun () -> GenMethodForBindingAux { cenv with exprRecursionDepth = 0 } mgbuf eenv info1 info2)
+        cenv.delayedGen.Enqueue (fun cenv -> GenMethodForBindingAux cenv mgbuf eenv info1 info2)
     else
         GenMethodForBindingAux cenv mgbuf eenv info1 info2
 
@@ -6427,7 +6420,7 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
 
     while cenv.delayedGen.Count > 0 do
         let gen = cenv.delayedGen.Dequeue ()
-        gen ()
+        gen cenv
 
 
 // Generate a module binding
