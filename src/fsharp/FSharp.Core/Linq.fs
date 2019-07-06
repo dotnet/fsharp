@@ -744,7 +744,12 @@ module LeafExpressionConverter =
             Expression.Lambda(dty, bodyP, vsP) |> asExpr
 
         | Patterns.NewTuple args ->
-             let tupTy = args |> List.map (fun arg -> arg.Type) |> Array.ofList |> Reflection.FSharpType.MakeTupleType
+             let tupTy = 
+                let argTypes = args |> List.map (fun arg -> arg.Type) |> Array.ofList
+                if inp.Type.IsValueType then 
+                    Reflection.FSharpType.MakeStructTupleType(inp.Type.Assembly, argTypes)
+                else
+                    Reflection.FSharpType.MakeTupleType(argTypes)
              let argsP = ConvExprsToLinq env args
              let rec build ty (argsP: Expression[]) =
                  match Reflection.FSharpValue.PreComputeTupleConstructorInfo ty with
