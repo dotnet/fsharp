@@ -56,7 +56,9 @@ module CompilerAssert =
             let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
             let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), ".exe")
             let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
+            let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(config.FSCOREDLLPATH))
             try
+                File.Copy (config.FSCOREDLLPATH, tmpFsCoreFilePath)
                 File.WriteAllText (inputFilePath, source)
                 File.WriteAllText (runtimeConfigFilePath, """
 {
@@ -84,6 +86,7 @@ module CompilerAssert =
                 try File.Delete inputFilePath with | _ -> ()
                 try File.Delete outputFilePath with | _ -> ()
                 try File.Delete runtimeConfigFilePath with | _ -> ()
+                try File.Delete tmpFsCoreFilePath with | _ -> ()
 
     let Pass (source: string) =
         lock lockObj <| fun () ->
