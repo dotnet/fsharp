@@ -15,7 +15,7 @@ open TestFramework
 [<RequireQualifiedAccess>]
 module ILChecker =
 
-    let checker = CompilerAssert.checker
+    let checker = CheckerSingleton.checker
 
     let config = initializeSuite ()
 
@@ -34,16 +34,76 @@ module ILChecker =
             (fun me -> String.Empty)
         )
 
-    let private checkAux extraDlls source expectedIL =
-        let tmp = Path.GetTempFileName()
-        let tmpFs = Path.ChangeExtension(tmp, ".fs")
-        let tmpDll = Path.ChangeExtension(tmp, ".dll")
-        let tmpIL = Path.ChangeExtension(tmp, ".il")
+    let private checkILAux ildasmArgs dllFilePath expectedIL =
+        let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
 
         let mutable errorMsgOpt = None
         try
             let ildasmPath = config.ILDASM
 
+            exec ildasmPath (ildasmArgs @ [ sprintf "%s /out=%s" dllFilePath ilFilePath ]) |> ignore
+
+            let text = File.ReadAllText(ilFilePath)
+            let blockComments = @"/\*(.*?)\*/"
+            let lineComments = @"//(.*?)\r?\n"
+            let strings = @"""((\\[^\n]|[^""\n])*)"""
+            let verbatimStrings = @"@(""[^""]*"")+"
+            let textNoComments =
+                System.Text.RegularExpressions.Regex.Replace(text, 
+                    blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings, 
+                    (fun me -> 
+                        if (me.Value.StartsWith("/*") || me.Value.StartsWith("//")) then
+                            if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
+                        else
+                            me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
+                |> filterSpecialComment
+                    
+            expectedIL
+            |> List.iter (fun (ilCode: string) ->
+                let expectedLines = ilCode.Split('\n')
+                let startIndex = textNoComments.IndexOf(expectedLines.[0])
+                if startIndex = -1 || textNoComments.Length < startIndex + ilCode.Length then
+                    errorMsgOpt <- Some("==EXPECTED CONTAINS==\n" + ilCode + "\n")
+                else
+                    let errors = ResizeArray()
+                    let actualLines = textNoComments.Substring(startIndex, textNoComments.Length - startIndex).Split('\n')
+                    for i = 0 to expectedLines.Length - 1 do
+                        let expected = expectedLines.[i].Trim()
+                        let actual = actualLines.[i].Trim()
+                        if expected <> actual then
+                            errors.Add(sprintf "\n==\nName: %s\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
+
+                    if errors.Count > 0 then
+                        let msg = String.concat "\n" errors + "\n\n\n==EXPECTED==\n" + ilCode + "\n"
+                        errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
+            )
+
+            if expectedIL.Length = 0 then
+                errorMsgOpt <- Some ("No Expected IL")
+
+            match errorMsgOpt with
+            | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ENTIRE ACTUAL==\n" + textNoComments)
+            | _ -> ()
+        finally
+            try File.Delete(ilFilePath) with | _ -> ()
+
+            match errorMsgOpt with
+            | Some(errorMsg) -> 
+                Assert.Fail(errorMsg)
+            | _ -> ()
+
+    let checkILItem item dllFilePath expectedIL =
+        checkILAux [ sprintf "/item:%s" item ] dllFilePath expectedIL
+
+    let checkILItemWithLineNumbers item dllFilePath expectedIL =
+        checkILAux [ sprintf "/item:\"%s\"" item; "/linenum" ] dllFilePath expectedIL
+
+    let private checkAux extraDlls source expectedIL =
+        let tmp = Path.GetTempFileName()
+        let tmpFs = Path.ChangeExtension(tmp, ".fs")
+        let tmpDll = Path.ChangeExtension(tmp, ".dll")
+
+        try
             File.WriteAllText(tmpFs, source)
 
             let extraReferences = extraDlls |> Array.ofList |> Array.map (fun reference -> "-r:" + reference)
@@ -68,61 +128,13 @@ module ILChecker =
                 String.concat "\n" (errors |> Array.map (fun x -> x.Message))
 
             if exitCode = 0 then
-                exec ildasmPath [ sprintf "%s /out=%s" tmpDll tmpIL ] |> ignore
-
-                let text = File.ReadAllText(tmpIL)
-                let blockComments = @"/\*(.*?)\*/"
-                let lineComments = @"//(.*?)\r?\n"
-                let strings = @"""((\\[^\n]|[^""\n])*)"""
-                let verbatimStrings = @"@(""[^""]*"")+"
-                let textNoComments =
-                    System.Text.RegularExpressions.Regex.Replace(text, 
-                        blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings, 
-                        (fun me -> 
-                            if (me.Value.StartsWith("/*") || me.Value.StartsWith("//")) then
-                                if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
-                            else
-                                me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
-                    |> filterSpecialComment
-                
-                expectedIL
-                |> List.iter (fun (ilCode: string) ->
-                    let expectedLines = ilCode.Split('\n')
-                    let startIndex = textNoComments.IndexOf(expectedLines.[0])
-                    if startIndex = -1 || textNoComments.Length < startIndex + ilCode.Length then
-                        errorMsgOpt <- Some("==EXPECTED CONTAINS==\n" + ilCode + "\n")
-                    else
-                        let errors = ResizeArray()
-                        let actualLines = textNoComments.Substring(startIndex, textNoComments.Length - startIndex).Split('\n')
-                        for i = 0 to expectedLines.Length - 1 do
-                            let expected = expectedLines.[i].Trim()
-                            let actual = actualLines.[i].Trim()
-                            if expected <> actual then
-                                errors.Add(sprintf "\n==\nName: %s\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
-
-                        if errors.Count > 0 then
-                            let msg = String.concat "\n" errors + "\n\n\n==EXPECTED==\n" + ilCode + "\n"
-                            errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
-                )
-
-                if expectedIL.Length = 0 then
-                    errorMsgOpt <- Some ("No Expected IL")
-
-                match errorMsgOpt with
-                | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ENTIRE ACTUAL==\n" + textNoComments)
-                | _ -> ()
+                checkILAux [] tmpDll expectedIL
             else
-                errorMsgOpt <- Some(errors)
+                Assert.Fail(errors)
         finally
             try File.Delete(tmp) with | _ -> ()
             try File.Delete(tmpFs) with | _ -> ()
             try File.Delete(tmpDll) with | _ -> ()
-            try File.Delete(tmpIL) with | _ -> ()
-
-            match errorMsgOpt with
-            | Some(errorMsg) -> 
-                Assert.Fail(errorMsg)
-            | _ -> ()
 
     let getPackageDlls name version framework dllNames =
         dllNames

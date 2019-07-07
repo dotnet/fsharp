@@ -13,10 +13,19 @@ open FSharp.Compiler.Interactive.Shell
 open NUnit.Framework
 open System.Reflection.Emit
 
+[<Sealed>]
+type ILVerifier (dllFilePath: string) =
+
+    member this.VerifyIL (qualifiedMethodName: string, expectedIL: string) =
+        ILChecker.checkILItem qualifiedMethodName dllFilePath [ expectedIL ]
+
+    member this.VerifyILWithLineNumbers (qualifiedMethodName: string, expectedIL: string) =
+        ILChecker.checkILItemWithLineNumbers qualifiedMethodName dllFilePath [ expectedIL ]
+
 [<RequireQualifiedAccess>]
 module CompilerAssert =
 
-    let checker = FSharpChecker.Create()
+    let checker = CheckerSingleton.checker
 
     let private config = TestFramework.initializeSuite ()
 
@@ -51,10 +60,10 @@ module CompilerAssert =
         
     let private lockObj = obj ()
 
-    let private compile source f =
+    let private compile isExe source f =
         lock lockObj <| fun () ->
             let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-            let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), ".exe")
+            let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
             let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
             let fsCoreDllPath = config.FSCOREDLLPATH
             let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
@@ -75,7 +84,7 @@ module CompilerAssert =
 
                 let args =
                     defaultProjectOptions.OtherOptions
-                    |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; "--target:exe"; "--nowin32manifest" |]
+                    |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
                 let errors, _ = checker.Compile args |> Async.RunSynchronously
 
                 f (errors, outputFilePath)
@@ -117,13 +126,13 @@ module CompilerAssert =
                 Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
             )
 
-    let CompileSuccessfully (source: string) =
-        compile source (fun (errors, _) -> 
+    let CompileExe (source: string) =
+        compile true source (fun (errors, _) -> 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
-    let CompileAndRunSuccessfully (source: string) =
-        compile source (fun (errors, outputExe) ->
+    let CompileExeAndRun (source: string) =
+        compile true source (fun (errors, outputExe) ->
 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
@@ -145,6 +154,14 @@ module CompilerAssert =
             let errors = p.StandardError.ReadToEnd ()
             if not (String.IsNullOrWhiteSpace errors) then
                 Assert.Fail errors
+        )
+
+    let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
+        compile false source (fun (errors, outputFilePath) -> 
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+
+            f (ILVerifier outputFilePath)
         )
  
     let RunScript (source: string) (expectedErrorMessages: string list) =

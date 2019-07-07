@@ -2518,7 +2518,7 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
     GenAllocUnionCaseCore cenv cgbuf eenv (c,tyargs,args.Length,m)
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) : FakeUnit =
+and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) =
     match expr with 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) -> 
         GenExprs cenv cgbuf eenv argsFront

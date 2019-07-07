@@ -9,7 +9,7 @@ module LargeExprTests =
 
     [<Test>]
     let LargeRecordDoesNotStackOverflow() =
-        CompilerAssert.CompileSuccessfully
+        CompilerAssert.CompileExe
             """
 type TestRecord =
     {
@@ -1021,7 +1021,7 @@ let main _ = 0
 
     [<Test>]
     let LargeExprDoesNotStackOverflow() =
-        CompilerAssert.CompileSuccessfully
+        CompilerAssert.CompileExe
             """
 module Test =
     let test () =
@@ -3033,7 +3033,7 @@ let main _ = 0
 
     [<Test>]
     let LargeListExprDoesNotStackOverflow() =
-        let script = """
+        let source = """
 let test () : unit =
     let largeList =
         [
@@ -3541,15 +3541,13 @@ let test () : unit =
     if largeList.Length <> 500 then
         failwith "Length is not 500"
 
-    if largeList.[0] <> 1 then
-        failwith "First element is not 1"
-
-    if largeList.[499] <> 500 then
-        failwith "Last element is not 500"
+    for i = 1 to 500 do
+        if largeList.[i - 1] <> i then
+            failwithf "Element was %i. Expecting %i." largeList.[i - 1] i
 
 [<EntryPoint>]
 let main _ =
     test ()
     0
 """
-        CompilerAssert.CompileAndRunSuccessfully script
+        CompilerAssert.CompileExeAndRun source
