@@ -752,10 +752,13 @@ and ConvObjectModelCall cenv env m callInfo =
 
 and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, objArgs, witnessArgsR, untupledCurriedArgs) =
     let tyargsR = ConvTypes cenv env m tyargs
-    let callArgs = (objArgs::untupledCurriedArgs) |> List.concat
-    let callArgsR = ConvLValueArgs cenv env callArgs
-    let allArgsR = witnessArgsR @ callArgsR
-    
+    let tupledCurriedArgs = untupledCurriedArgs |> List.concat
+    let allArgsR = 
+        match objArgs with
+        | [ obj ] -> ConvLValueExpr cenv env obj :: (witnessArgsR @ ConvExprs cenv env tupledCurriedArgs)
+        | [] -> witnessArgsR @ ConvExprs cenv env tupledCurriedArgs
+        | _ -> failwith "unreachable"
+
     if isPropGet || isPropSet then
         assert witnessArgTypesR.IsEmpty
         let propName = ChopPropertyName methName
