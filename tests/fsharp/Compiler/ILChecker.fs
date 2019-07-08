@@ -7,15 +7,10 @@ open System.IO
 open System.Diagnostics
 
 open NUnit.Framework
-
-open FSharp.Compiler.SourceCodeServices
-
 open TestFramework
 
 [<RequireQualifiedAccess>]
 module ILChecker =
-
-    let checker = CheckerSingleton.checker
 
     let config = initializeSuite ()
 
@@ -98,55 +93,5 @@ module ILChecker =
     let checkILItemWithLineNumbers item dllFilePath expectedIL =
         checkILAux [ sprintf "/item:\"%s\"" item; "/linenum" ] dllFilePath expectedIL
 
-    let private checkAux extraDlls source expectedIL =
-        let tmp = Path.GetTempFileName()
-        let tmpFs = Path.ChangeExtension(tmp, ".fs")
-        let tmpDll = Path.ChangeExtension(tmp, ".dll")
-
-        try
-            File.WriteAllText(tmpFs, source)
-
-            let extraReferences = extraDlls |> Array.ofList |> Array.map (fun reference -> "-r:" + reference)
-
-#if NETCOREAPP
-            // Hack: Currently a hack to get the runtime assemblies for netcore in order to compile.
-            let runtimeAssemblies =
-                typeof<obj>.Assembly.Location
-                |> Path.GetDirectoryName
-                |> Directory.EnumerateFiles
-                |> Seq.toArray
-                |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system."))
-                |> Array.map (fun x -> sprintf "-r:%s" x)
-
-            let extraReferences = Array.append runtimeAssemblies extraReferences
-
-            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs; "--targetprofile:netcore"; "--noframework" |] extraReferences) |> Async.RunSynchronously
-#else
-            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs |] extraReferences) |> Async.RunSynchronously
-#endif
-            let errors =
-                String.concat "\n" (errors |> Array.map (fun x -> x.Message))
-
-            if exitCode = 0 then
-                checkILAux [] tmpDll expectedIL
-            else
-                Assert.Fail(errors)
-        finally
-            try File.Delete(tmp) with | _ -> ()
-            try File.Delete(tmpFs) with | _ -> ()
-            try File.Delete(tmpDll) with | _ -> ()
-
-    let getPackageDlls name version framework dllNames =
-        dllNames
-        |> List.map (fun dllName ->
-            requireFile (packagesDir ++ name ++ version ++ "lib" ++ framework ++ dllName)
-        )
-            
-    /// Compile the source and check to see if the expected IL exists.
-    /// The first line of each expected IL string is found first.
-    let check source expectedIL =
-        checkAux [] source expectedIL
-
-    let checkWithDlls extraDlls source expectedIL =
-        checkAux extraDlls source expectedIL
-
+    let checkIL dllFilePath expectedIL =
+        checkILAux [] dllFilePath expectedIL

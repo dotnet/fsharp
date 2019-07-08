@@ -16,16 +16,19 @@ open System.Reflection.Emit
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
-    member this.VerifyIL (qualifiedMethodName: string, expectedIL: string) =
-        ILChecker.checkILItem qualifiedMethodName dllFilePath [ expectedIL ]
+    member this.VerifyIL (qualifiedItemName: string, expectedIL: string) =
+        ILChecker.checkILItem qualifiedItemName dllFilePath [ expectedIL ]
 
-    member this.VerifyILWithLineNumbers (qualifiedMethodName: string, expectedIL: string) =
-        ILChecker.checkILItemWithLineNumbers qualifiedMethodName dllFilePath [ expectedIL ]
+    member this.VerifyIL (expectedIL: string list) =
+        ILChecker.checkIL dllFilePath expectedIL
+
+    member this.VerifyILWithLineNumbers (qualifiedItemName: string, expectedIL: string) =
+        ILChecker.checkILItemWithLineNumbers qualifiedItemName dllFilePath [ expectedIL ]
 
 [<RequireQualifiedAccess>]
 module CompilerAssert =
 
-    let checker = CheckerSingleton.checker
+    let checker = FSharpChecker.Create()
 
     let private config = TestFramework.initializeSuite ()
 
@@ -58,10 +61,10 @@ module CompilerAssert =
             Stamp = None
         }
         
-    let private lockObj = obj ()
+    let private gate = obj ()
 
     let private compile isExe source f =
-        lock lockObj <| fun () ->
+        lock gate <| fun () ->
             let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
             let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
             let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
@@ -96,7 +99,7 @@ module CompilerAssert =
                 try File.Delete tmpFsCoreFilePath with | _ -> ()
 
     let Pass (source: string) =
-        lock lockObj <| fun () ->
+        lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
             Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
@@ -108,7 +111,7 @@ module CompilerAssert =
             Assert.True(typeCheckResults.Errors.Length = 0, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
     let TypeCheckSingleError (source: string) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
-        lock lockObj <| fun () ->
+        lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
             Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
@@ -165,7 +168,7 @@ module CompilerAssert =
         )
  
     let RunScript (source: string) (expectedErrorMessages: string list) =
-        lock lockObj <| fun () ->
+        lock gate <| fun () ->
             // Intialize output and input streams
             use inStream = new StringReader("")
             use outStream = new StringWriter()
