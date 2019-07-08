@@ -67,20 +67,24 @@ type MapModule() =
     member this.Change() =
 
         let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
-        let b = Map.change 4 (fun current -> Assert.AreEqual(current, None); 16) a
+        let b = Map.change 4 (fun current -> Assert.AreEqual(current, None); Some 16) a
         Assert.AreEqual(b.[4], 16)
-        let c = Map.change 4 (fun current -> Assert.AreEqual(current, Some 16); 25) b
+        let c = Map.change 4 (fun current -> Assert.AreEqual(current, Some 16); Some 25) b
         Assert.AreEqual(c.[4], 25)
 
         // empty Map
         let eptMap = Map.empty
-        let resultEpt = Map.change 1 (fun current -> Assert.AreEqual(current, None); "a") eptMap
+        let resultEpt = Map.change 1 (fun current -> Assert.AreEqual(current, None); Some "a") eptMap
         Assert.AreEqual(resultEpt.[1], "a")
 
         // One-element Map
         let oeleMap = Map.ofSeq [(1, "one")]
-        let resultOele = Map.change 7 (fun current -> Assert.AreEqual(current, None); "seven") oeleMap
+        let resultOele = Map.change 7 (fun current -> Assert.AreEqual(current, None); Some "seven") oeleMap
         Assert.AreEqual(resultOele.[7], "seven")
+
+        // Remove element
+        let resultRm = Map.change 1 (fun current -> Assert.AreEqual(current, Some 1); None) c
+        Assert.AreFalse(resultRm.ContainsKey 1, false)
 
         ()
 

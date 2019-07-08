@@ -134,20 +134,6 @@ module MapTree =
             elif c = 0 then MapNode (k, v, l, r, h)
             else rebalance l k2 v2 (add comparer k v r) 
 
-    let rec change (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value) (m: MapTree<'Key, 'Value>) =
-        match m with
-        | MapEmpty -> MapOne (k, u None)
-        | MapOne (k2, v2) ->
-            let c = comparer.Compare(k, k2)
-            if c < 0   then MapNode (k, u None, MapEmpty, m, 2)
-            elif c = 0 then MapOne (k, u (Some v2))
-            else            MapNode (k, u None, m, MapEmpty, 2)
-        | MapNode (k2, v2, l, r, h) ->
-            let c = comparer.Compare(k, k2)
-            if c < 0 then rebalance (change comparer k u l) k2 v2 r
-            elif c = 0 then MapNode (k, u (Some v2), l, r, h)
-            else rebalance l k2 v2 (change comparer k u r)
-
     let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) = 
         match m with 
         | MapEmpty -> false
@@ -231,6 +217,43 @@ module MapTree =
                     let sk, sv, r' = spliceOutSuccessor r 
                     mk l sk sv r'
             else rebalance l k2 v2 (remove comparer k r) 
+
+    let rec change (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value option) (m: MapTree<'Key, 'Value>) =
+        match m with
+        | MapEmpty ->
+            match u None with
+            | None -> m
+            | Some v -> MapOne (k, v)
+        | MapOne (k2, v2) ->
+            let c = comparer.Compare(k, k2)
+            if c < 0 then
+                match u None with
+                | None -> m
+                | Some v -> MapNode (k, v, MapEmpty, m, 2)
+            elif c = 0 then
+                match u (Some v2) with
+                | None -> MapEmpty
+                | Some v -> MapOne (k, v)
+            else
+                match u None with
+                | None -> m
+                | Some v -> MapNode (k, v, m, MapEmpty, 2)
+        | MapNode (k2, v2, l, r, h) ->
+            let c = comparer.Compare(k, k2)
+            if c < 0 then
+                rebalance (change comparer k u l) k2 v2 r
+            elif c = 0 then
+                match u (Some v2) with
+                | None -> 
+                    match l, r with
+                    | MapEmpty, _ -> r
+                    | _, MapEmpty -> l
+                    | _ ->
+                        let sk, sv, r' = spliceOutSuccessor r
+                        mk l sk sv r'
+                | Some v -> MapNode (k, v, l, r, h)
+            else 
+                rebalance l k2 v2 (change comparer k u r)
 
     let rec mem (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
         match m with 

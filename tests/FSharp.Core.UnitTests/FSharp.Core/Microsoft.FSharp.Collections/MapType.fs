@@ -262,17 +262,20 @@ type MapType() =
     member this.Change() =
 
         let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
-        let b = a.Change(4, fun current -> Assert.AreEqual(current, None); 16)
+        let b = a.Change(4, fun current -> Assert.AreEqual(current, None); Some 16)
         Assert.AreEqual(b.[4], 16)
-        let c = b.Change(4, fun current -> Assert.AreEqual(current, Some 16); 25)
+        let c = b.Change(4, fun current -> Assert.AreEqual(current, Some 16); Some 25)
         Assert.AreEqual(c.[4], 25)
 
         let e  = Map.empty<int,string>
-        let ue = e.Change(1, fun current -> Assert.AreEqual(current, None); "Monday")
+        let ue = e.Change(1, fun current -> Assert.AreEqual(current, None); Some "Monday")
         Assert.AreEqual(ue.[1], "Monday")
 
-        let uo = ue.Change(1, fun current -> Assert.AreEqual(current, Some "Monday"); "Tuesday")
+        let uo = ue.Change(1, fun current -> Assert.AreEqual(current, Some "Monday"); Some "Tuesday")
         Assert.AreEqual(uo.[1], "Tuesday")
+
+        let resultRm = c.Change 1 (fun current -> Assert.AreEqual(current, Some 1); None)
+        Assert.AreFalse(resultRm.ContainsKey 1, false)
     
     [<Test>]
     member this.ContainsKey() =
