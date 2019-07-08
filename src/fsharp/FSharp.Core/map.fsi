@@ -22,6 +22,10 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The resulting map.</returns>
         member Add: key:'Key * value:'Value -> Map<'Key,'Value>
 
+        /// <summary>Returns a new map with the value stored under key changed according to f.</summary>
+        /// <param name="key">The input key.</param>
+        /// <param name="f">The change function.</param>
+        /// <returns>The resulting map.</returns>
         member Change: key:'Key * f:('Value option -> 'Value option) -> Map<'Key,'Value>
 
         /// <summary>Returns true if there are no bindings in the map.</summary>
@@ -88,6 +92,11 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Add")>]
         val add: key:'Key -> value:'T -> table:Map<'Key,'T> -> Map<'Key,'T>
 
+        /// <summary>Returns a new map with the value stored under key changed according to f.</summary>
+        /// <param name="key">The input key.</param>
+        /// <param name="f">The change function.</param>
+        /// <param name="table">The input map.</param>
+        /// <returns>The resulting map.</returns>
         [<CompiledName("Change")>]
         val change: key:'Key -> f:('T option -> 'T option) -> table:Map<'Key,'T> -> Map<'Key,'T>
 
