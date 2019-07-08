@@ -2154,9 +2154,18 @@ let DoesGenExprStartWithSequencePoint g sp expr =
     FirstEmittedCodeWillBeSequencePoint g sp expr ||
     EmitSequencePointForWholeExpr g sp expr
 
+let ProcessSequencePointForExpr (cenv: cenv) (cgbuf: CodeGenBuffer) sp expr = 
+    let g = cenv.g
+    if not (FirstEmittedCodeWillBeSequencePoint g sp expr) then
+      if EmitSequencePointForWholeExpr g sp expr then
+          CG.EmitSeqPoint cgbuf (RangeOfSequencePointForWholeExpr g expr)
+      elif EmitHiddenCodeMarkerForWholeExpr g sp expr then
+          cgbuf.EmitStartOfHiddenCode()
+
 //-------------------------------------------------------------------------
 // Generate expressions
 //-------------------------------------------------------------------------
+
 let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth + 1
 
@@ -2181,12 +2190,9 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   let g = cenv.g
   let expr = stripExpr expr
 
-  if not (FirstEmittedCodeWillBeSequencePoint g sp expr) then
-      if EmitSequencePointForWholeExpr g sp expr then
-          CG.EmitSeqPoint cgbuf (RangeOfSequencePointForWholeExpr g expr)
-      elif EmitHiddenCodeMarkerForWholeExpr g sp expr then
-          cgbuf.EmitStartOfHiddenCode()
+  ProcessSequencePointForExpr cenv cgbuf sp expr
 
+  // A sequence expression will always match Expr.App.
   match (if compileSequenceExpressions then LowerCallsAndSeqs.LowerSeqExpr g cenv.amap expr else None) with
   | Some info ->
       GenSequenceExpr cenv cgbuf eenv info sequel
@@ -2222,7 +2228,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | Expr.Sequential _
   | Expr.Let _
   | LinearOpExpr _ -> 
-      GenLinearExpr cenv cgbuf eenv sp expr sequel id |> ignore<FakeUnit>
+      GenLinearExpr cenv cgbuf eenv SPSuppress expr sequel id |> ignore<FakeUnit>
 
   | Expr.Op (op, tyargs, args, m) -> 
       match op, args, tyargs with 
@@ -2537,10 +2543,14 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) =
+    let expr = stripExpr expr
+
+    ProcessSequencePointForExpr cenv cgbuf sp expr
+
     match expr with 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) -> 
         GenExprs cenv cgbuf eenv argsFront
-        GenLinearExpr cenv cgbuf eenv sp argLast Continue (contf << (fun Fake -> 
+        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (contf << (fun Fake -> 
             GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
             GenSequel cenv eenv.cloc cgbuf sequel
             Fake))
@@ -2561,7 +2571,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) =
             GenExpr cenv cgbuf eenv spExpr e1 Continue
             GenExpr cenv cgbuf eenv spAction e2 discard
             GenSequel cenv eenv.cloc cgbuf sequel
-            Fake
+            contf Fake
 
     | Expr.Let (bind, body, _, _) ->
         // This case implemented here to get a guaranteed tailcall
