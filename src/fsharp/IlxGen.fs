@@ -214,6 +214,24 @@ type IlxGenOptions =
       alwaysCallVirt: bool 
     }
 
+type IlxMethodInfo =
+    {
+        vspec: Val
+        mspec: ILMethodSpec
+        access: ILMemberAccess
+        paramInfos: ArgReprInfo list
+        retInfo: ArgReprInfo
+
+        topValInfo: ValReprInfo
+        ctorThisValOpt: Val option
+        baseValOpt: Val option
+        tps: Typars
+        methodVars: Val list
+        methodArgTys: TType list
+        body: Expr
+        bodyty: TType
+    }
+
 /// Compilation environment for compiling a fragment of an assembly
 [<NoEquality; NoComparison>]
 type cenv =
@@ -249,8 +267,8 @@ type cenv =
       /// What depth are we at when generating an expression?
       mutable exprRecursionDepth: int
 
-      /// Delayed Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
-      delayedGen: Queue<cenv -> unit>
+      /// Delayed Method Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
+      delayedGenMethods: Queue<IlxMethodInfo>
     }
 
 
@@ -5232,7 +5250,23 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         let tps, ctorThisValOpt, baseValOpt, vsl, body', bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo rhsExpr
         let methodVars = List.concat vsl
         CommitStartScope cgbuf startScopeMarkOpt
-        GenMethodForBinding cenv cgbuf.mgbuf eenv (vspec, mspec, access, paramInfos, retInfo) (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty)
+        DelayGenMethodForBinding cenv
+            {
+                vspec = vspec
+                mspec = mspec
+                access = access
+                paramInfos = paramInfos
+                retInfo = retInfo
+
+                topValInfo = topValInfo
+                ctorThisValOpt = ctorThisValOpt
+                baseValOpt = baseValOpt
+                tps = tps
+                methodVars = methodVars
+                methodArgTys = methodArgTys
+                body = body'
+                bodyty = bodyty
+            }
 
     | StaticProperty (ilGetterMethSpec, optShadowLocal) ->
 
@@ -5671,16 +5705,27 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
 
-and GenMethodForBinding cenv (mgbuf: AssemblyBuilder) eenv info1 info2 =
-    if cenv.exprRecursionDepth > StackGuard.MaxUncheckedRecursionDepth then
-        cenv.delayedGen.Enqueue (fun cenv -> GenMethodForBindingAux cenv mgbuf eenv info1 info2)
-    else
-        GenMethodForBindingAux cenv mgbuf eenv info1 info2
+and DelayGenMethodForBinding cenv ilxMethInfo =
+    cenv.delayedGenMethods.Enqueue ilxMethInfo
 
-and GenMethodForBindingAux
+and GenMethodForBinding
         cenv (mgbuf: AssemblyBuilder) eenv
-        (v: Val, mspec, access, paramInfos, retInfo)
-        (topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body, returnTy) =
+        {
+            vspec = v
+            mspec = mspec
+            access = access
+            paramInfos = paramInfos
+            retInfo = retInfo
+
+            topValInfo = topValInfo
+            ctorThisValOpt = ctorThisValOpt
+            baseValOpt = baseValOpt
+            tps = tps
+            methodVars = methodVars
+            methodArgTys = methodArgTys
+            body = body
+            bodyty = returnTy
+        } =
 
     let g = cenv.g
     let m = v.Range
@@ -6415,9 +6460,9 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
     | TMDefs mdefs ->
         GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs
 
-    while cenv.delayedGen.Count > 0 do
-        let gen = cenv.delayedGen.Dequeue ()
-        gen cenv
+    while cenv.delayedGenMethods.Count > 0 do
+        let ilxMethInfo = cenv.delayedGenMethods.Dequeue ()
+        GenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfo
 
 
 // Generate a module binding
@@ -7702,7 +7747,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               opts = codeGenOpts
               optimizeDuringCodeGen = (fun x -> x)
               exprRecursionDepth = 0
-              delayedGen = Queue () }
+              delayedGenMethods = Queue () }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value

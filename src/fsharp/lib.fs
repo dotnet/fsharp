@@ -542,7 +542,7 @@ module StackGuard =
     open System.Runtime.CompilerServices
 
     [<Literal>] 
-    let MaxUncheckedRecursionDepth = 20
+    let private MaxUncheckedRecursionDepth = 20
 
     let EnsureSufficientExecutionStack recursionDepth =
         if recursionDepth > MaxUncheckedRecursionDepth then
