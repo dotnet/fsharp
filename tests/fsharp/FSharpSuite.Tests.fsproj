@@ -30,7 +30,6 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
-    <Compile Include="Compiler\CheckerSingleton.fs" />
     <Compile Include="Compiler\ILChecker.fs" />
     <Compile Include="Compiler\CompilerAssert.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
@@ -38,7 +37,6 @@
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
-    <Compile Include="Compiler\CodeGen\EmittedIL\AsyncExpressionSteppingTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
