@@ -134,7 +134,7 @@ module MapTree =
             elif c = 0 then MapNode (k, v, l, r, h)
             else rebalance l k2 v2 (add comparer k v r) 
 
-    let rec update (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value) (m: MapTree<'Key, 'Value>) =
+    let rec change (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value) (m: MapTree<'Key, 'Value>) =
         match m with
         | MapEmpty -> MapOne (k, u None)
         | MapOne (k2, v2) ->
@@ -144,9 +144,9 @@ module MapTree =
             else            MapNode (k, u None, m, MapEmpty, 2)
         | MapNode (k2, v2, l, r, h) ->
             let c = comparer.Compare(k, k2)
-            if c < 0 then rebalance (update comparer k u l) k2 v2 r
+            if c < 0 then rebalance (change comparer k u l) k2 v2 r
             elif c = 0 then MapNode (k, u (Some v2), l, r, h)
-            else rebalance l k2 v2 (update comparer k u r)
+            else rebalance l k2 v2 (change comparer k u r)
 
     let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) = 
         match m with 
@@ -526,8 +526,8 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 #endif
         new Map<'Key, 'Value>(comparer, MapTree.add comparer key value tree)
 
-    member m.Update(key, updater) : Map<'Key, 'Value> =
-        new Map<'Key, 'Value>(comparer, MapTree.update comparer key updater tree)
+    member m.Change(key, f) : Map<'Key, 'Value> =
+        new Map<'Key, 'Value>(comparer, MapTree.change comparer key f tree)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member m.IsEmpty = MapTree.isEmpty tree
@@ -746,9 +746,9 @@ module Map =
     let add key value (table: Map<_, _>) =
         table.Add (key, value)
 
-    [<CompiledName("Update")>]
-    let update key updater (table: Map<_, _>) =
-        table.Update (key, updater)
+    [<CompiledName("Change")>]
+    let change key f (table: Map<_, _>) =
+        table.Change (key, f)
 
     [<CompiledName("Find")>]
     let find key (table: Map<_, _>) =
