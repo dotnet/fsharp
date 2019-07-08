@@ -2175,7 +2175,7 @@ and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
         assert (cenv.exprRecursionDepth = 1)
     with
     | :? System.InsufficientExecutionStackException ->
-        reraise ()
+        error(InternalError("Expression is too large or complex to emit.", expr.Range))
 
 and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   let g = cenv.g
