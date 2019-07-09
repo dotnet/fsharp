@@ -2177,6 +2177,13 @@ let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
 
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth - 1
 
+    ProcessDelayedGenMethods cenv cgbuf.mgbuf eenv
+
+and ProcessDelayedGenMethods cenv mgbuf eenv =
+    while cenv.delayedGenMethods.Count > 0 do
+        let ilxMethInfo = cenv.delayedGenMethods.Dequeue ()
+        GenMethodForBinding cenv mgbuf eenv ilxMethInfo
+
 and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
     assert (cenv.exprRecursionDepth = 1)
     try
@@ -5262,7 +5269,8 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         let tps, ctorThisValOpt, baseValOpt, vsl, body', bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo rhsExpr
         let methodVars = List.concat vsl
         CommitStartScope cgbuf startScopeMarkOpt
-        DelayGenMethodForBinding cenv
+
+        let ilxMethInfo =
             {
                 vspec = vspec
                 mspec = mspec
@@ -5279,6 +5287,11 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
                 body = body'
                 bodyty = bodyty
             }
+        // if we have any expression recursion depth, we should delay the generation of a method to prevent stack overflows
+        if cenv.exprRecursionDepth > 0 then
+            DelayGenMethodForBinding cenv ilxMethInfo
+        else
+            GenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfo
 
     | StaticProperty (ilGetterMethSpec, optShadowLocal) ->
 
@@ -6471,10 +6484,6 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
 
     | TMDefs mdefs ->
         GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs
-
-    while cenv.delayedGenMethods.Count > 0 do
-        let ilxMethInfo = cenv.delayedGenMethods.Dequeue ()
-        GenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfo
 
 
 // Generate a module binding
