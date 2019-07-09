@@ -268,7 +268,7 @@ type cenv =
       mutable exprRecursionDepth: int
 
       /// Delayed Method Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
-      delayedGenMethods: Queue<IlxMethodInfo>
+      delayedGenMethods: Queue<cenv -> unit>
     }
 
 
@@ -2177,12 +2177,13 @@ let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
 
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth - 1
 
-    ProcessDelayedGenMethods cenv cgbuf.mgbuf eenv
+    if cenv.exprRecursionDepth = 0 then
+        ProcessDelayedGenMethods cenv
 
-and ProcessDelayedGenMethods cenv mgbuf eenv =
+and ProcessDelayedGenMethods cenv =
     while cenv.delayedGenMethods.Count > 0 do
-        let ilxMethInfo = cenv.delayedGenMethods.Dequeue ()
-        GenMethodForBinding cenv mgbuf eenv ilxMethInfo
+        let gen = cenv.delayedGenMethods.Dequeue ()
+        gen cenv
 
 and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
     assert (cenv.exprRecursionDepth = 1)
@@ -5289,7 +5290,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
             }
         // if we have any expression recursion depth, we should delay the generation of a method to prevent stack overflows
         if cenv.exprRecursionDepth > 0 then
-            DelayGenMethodForBinding cenv ilxMethInfo
+            DelayGenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfo
         else
             GenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfo
 
@@ -5730,8 +5731,8 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
 
-and DelayGenMethodForBinding cenv ilxMethInfo =
-    cenv.delayedGenMethods.Enqueue ilxMethInfo
+and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfo =
+    cenv.delayedGenMethods.Enqueue (fun cenv -> GenMethodForBinding cenv mgbuf eenv ilxMethInfo)
 
 and GenMethodForBinding
         cenv (mgbuf: AssemblyBuilder) eenv
