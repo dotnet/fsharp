@@ -86,7 +86,7 @@ module CompilerAssert =
                 """)
 
                 let args =
-                    [|"--targetprofile:netcore"|]
+                    defaultProjectOptions.OtherOptions
                     |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
                 let errors, _ = checker.Compile args |> Async.RunSynchronously
 
