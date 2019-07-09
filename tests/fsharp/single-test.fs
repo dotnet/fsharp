@@ -379,9 +379,13 @@ let singleTestBuildAndRunVersion dir p version =
     let cfg = testConfig dir
     singleTestBuildAndRunCore cfg "" p version
 
-let singleNegTest (cfg: TestConfig) testname = 
+let singleVersionedNegTest (cfg: TestConfig) version testname =
 
-    let cfg = { cfg with fsc_flags = sprintf "%s --define:NEGATIVE" cfg.fsc_flags }
+    let cfg = {
+        cfg with
+            fsc_flags = sprintf "%s %s --define:NEGATIVE" cfg.fsc_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            fsi_flags = sprintf "%s %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            }
 
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)
     let VSBSLFILE = 
@@ -405,7 +409,9 @@ let singleNegTest (cfg: TestConfig) testname =
         ]
 
     if fileExists cfg (testname + "-pre.fs")
-        then fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
+        then
+            printfn "Here"
+            fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
         else ()
 
     if fileExists cfg (testname + "-pre.fsx") then
@@ -421,6 +427,7 @@ let singleNegTest (cfg: TestConfig) testname =
         if cfg.fsc_flags.Contains("--warnaserror-") then String.Empty
         else "--warnaserror"
 
+    printfn "And Here"
     fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags warnaserror testname sources
 
     let diff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
@@ -444,3 +451,5 @@ let singleNegTest (cfg: TestConfig) testname =
         log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname 
         log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
         failwithf "%s.err %s.bsl differ; %A; %s.vserr %s differ; %A" testname testname l1 testname VSBSLFILE l2
+
+let singleNegTest (cfg: TestConfig) testname = singleVersionedNegTest (cfg: TestConfig) "" testname

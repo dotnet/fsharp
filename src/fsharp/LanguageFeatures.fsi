@@ -12,6 +12,8 @@ type LanguageFeature =
     | WildCardInForLoop = 3
     | RelaxWhitespace = 4
     | NameOf = 5
+    | ImplicitYield = 6
+
 
 /// LanguageVersion management
 type LanguageVersion =

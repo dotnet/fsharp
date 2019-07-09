@@ -2847,6 +2847,11 @@
         <target state="translated">Expresión de objeto no válida. Los objetos sin invalidaciones ni interfaces deben usar el formato de expresión 'new Type(args)' sin llaves.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
+        <source>Invalid object, sequence or record expression</source>
+        <target state="translated">Expresión de objeto, secuencia o registro no válida.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Expresión de registro, secuencia o cómputo no válida. Las expresiones de secuencia deben tener el formato 'seq {{ ... }}'.</target>
