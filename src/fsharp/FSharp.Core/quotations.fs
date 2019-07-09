@@ -209,22 +209,25 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
                 | CombTerm(ValueOp(v1, ty1, _), []), CombTerm(ValueOp(v2, ty2, _), []) -> (v1 = v2) && (ty1 = ty2)
 
                 // We strip off InstanceMethodCallWOp to ensure that CallWithWitness = Call
-                | CombTerm(InstanceMethodCallWOp(minfo1, _minfoW1, nWitnesses1), args1), _ ->
-                    let argsWithoutWitnesses1 = List.skip nWitnesses1 args1
-                    eq (CombTerm(InstanceMethodCallOp(minfo1), argsWithoutWitnesses1)) t2
+                | CombTerm(InstanceMethodCallWOp(minfo1, _minfoW1, nWitnesses1), obj1::args1WithoutObj), _ ->
+                    if nWitnesses1 <= args1WithoutObj.Length then
+                        let args1WithoutWitnesses = List.skip nWitnesses1 args1WithoutObj
+                        eq (CombTerm(InstanceMethodCallOp(minfo1), obj1::args1WithoutWitnesses)) t2
+                    else 
+                        false
 
                 // We strip off InstanceMethodCallWOp to ensure that CallWithWitness = Call
-                | _, CombTerm(InstanceMethodCallWOp(minfo2, _minfoW2, nWitnesses2), args2) ->
-                    let argsWithoutWitnesses2 = List.skip nWitnesses2 args2
-                    eq t1 (CombTerm(InstanceMethodCallOp(minfo2), argsWithoutWitnesses2))
+                | _, CombTerm(InstanceMethodCallWOp(minfo2, _minfoW2, nWitnesses2), obj2::args2WithoutObj) when nWitnesses2 <= args2WithoutObj.Length ->
+                    let args2WithoutWitnesses = List.skip nWitnesses2 args2WithoutObj
+                    eq t1 (CombTerm(InstanceMethodCallOp(minfo2), obj2::args2WithoutWitnesses))
 
                 // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
-                | CombTerm(StaticMethodCallWOp(minfo1, _minfoW1, nWitnesses1), args1), _ ->
+                | CombTerm(StaticMethodCallWOp(minfo1, _minfoW1, nWitnesses1), args1), _ when nWitnesses1 <= args1.Length ->
                     let argsWithoutWitnesses1 = List.skip nWitnesses1 args1
                     eq (CombTerm(StaticMethodCallOp(minfo1), argsWithoutWitnesses1)) t2
 
                 // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
-                | _, CombTerm(StaticMethodCallWOp(minfo2, _minfoW2, nWitnesses2), args2) ->
+                | _, CombTerm(StaticMethodCallWOp(minfo2, _minfoW2, nWitnesses2), args2) when nWitnesses2 <= args2.Length ->
                     let argsWithoutWitnesses2 = List.skip nWitnesses2 args2
                     eq t1 (CombTerm(StaticMethodCallOp(minfo2), argsWithoutWitnesses2))
 
@@ -286,17 +289,20 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
         | CombTerm(ValueOp(v, _, Some nm), []) -> combL "ValueWithName" [objL v; wordL (tagLocal nm)]
         | CombTerm(ValueOp(v, _, None), []) -> combL "Value" [objL v]
         | CombTerm(WithValueOp(v, _), [defn]) -> combL "WithValue" [objL v; expr defn]
-        | CombTerm(InstanceMethodCallOp(minfo), obj::args) -> combL "Call"     [someL obj; minfoL minfo; listL (exprs args)]
-        | CombTerm(StaticMethodCallOp(minfo), args) -> combL "Call" [noneL; minfoL minfo; listL (exprs args)]
 
-        | CombTerm(InstanceMethodCallWOp(minfo, _minfoW, nWitnesses), args) ->
+        | CombTerm(InstanceMethodCallOp(minfo), obj::args) ->
+            combL "Call"     [someL obj; minfoL minfo; listL (exprs args)]
+        
+        | CombTerm(StaticMethodCallOp(minfo), args) ->
+            combL "Call" [noneL; minfoL minfo; listL (exprs args)]
+
+        | CombTerm(InstanceMethodCallWOp(minfo, _minfoW, nWitnesses), obj::argsWithoutObj) when nWitnesses <= argsWithoutObj.Length ->
+            let argsWithoutWitnesses = List.skip nWitnesses argsWithoutObj
+            combL "Call" [someL obj; minfoL minfo; listL (exprs argsWithoutWitnesses)]
+
+        | CombTerm(StaticMethodCallWOp(minfo, _minfoW, nWitnesses), args) when nWitnesses <= args.Length  ->
             let argsWithoutWitnesses = List.skip nWitnesses args
-            match argsWithoutWitnesses with
-            | objArg :: argsWithoutObj -> combL "Call" [someL objArg; minfoL minfo; listL (exprs argsWithoutObj)]
-            | _ -> failwithf "Unexpected term in layout %A" x.Tree
-
-        | CombTerm(StaticMethodCallWOp(minfo, _minfoW, nWitnesses), args) ->
-            combL "Call" [noneL; minfoL minfo; listL (exprs (List.skip nWitnesses args))]
+            combL "Call" [noneL; minfoL minfo; listL (exprs argsWithoutWitnesses)]
 
         | CombTerm(InstancePropGetOp(pinfo), (obj::args)) -> combL "PropertyGet"  [someL obj; pinfoL pinfo; listL (exprs args)]
         | CombTerm(StaticPropGetOp(pinfo), args) -> combL "PropertyGet"  [noneL;     pinfoL pinfo; listL (exprs args)]
@@ -551,31 +557,37 @@ module Patterns =
     let (|Call|_|)          input =
         match input with
         | E(CombTerm(StaticMethodCallOp minfo, args)) -> Some(None, minfo, args)
+
         | E(CombTerm(InstanceMethodCallOp minfo, (obj::args))) -> Some(Some(obj), minfo, args)
 
-        | E(CombTerm(StaticMethodCallWOp (minfo, _minfoW, nWitnesses), args)) ->
+        // A StaticMethodCallWOp matches as if it were a StaticMethodCallOp
+        | E(CombTerm(StaticMethodCallWOp (minfo, _minfoW, nWitnesses), args)) when nWitnesses <= args.Length  ->
             Some(None, minfo, List.skip nWitnesses args)
 
-        | E(CombTerm(InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), args)) ->
-            let argsWithoutWitnesses = List.skip nWitnesses args
-            match argsWithoutWitnesses with
-            | obj :: argsWithoutObj -> Some (Some obj, minfo, argsWithoutObj)
-            | _ -> None
+        // A InstanceMethodCallWOp matches as if it were a InstanceMethodCallOp
+        | E(CombTerm(InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), obj::argsWithoutObj)) when nWitnesses <= argsWithoutObj.Length  ->
+            let argsWithoutWitnesses = List.skip nWitnesses argsWithoutObj
+            Some (Some obj, minfo, argsWithoutWitnesses)
 
         | _ -> None
 
     [<CompiledName("CallWithWitnessesPattern")>]
     let (|CallWithWitnesses|_|)          input =
         match input with
-        | E(CombTerm(StaticMethodCallWOp (minfo, minfoW, nWitnesses), args)) -> Some(None, minfo, minfoW, List.take nWitnesses args, List.skip nWitnesses args)
-        | E(CombTerm(InstanceMethodCallWOp (minfo, minfoW, nWitnesses), args)) ->
+        | E(CombTerm(StaticMethodCallWOp (minfo, minfoW, nWitnesses), args)) ->
             if args.Length >= nWitnesses then
                 let witnessArgs, argsWithoutWitnesses = List.splitAt nWitnesses args
-                match argsWithoutWitnesses with
-                | objArgs :: argsWithoutObjectArg -> Some (Some objArgs, minfo, minfoW, witnessArgs, argsWithoutObjectArg)
-                | _ -> None
+                Some(None, minfo, minfoW, witnessArgs, argsWithoutWitnesses)
             else
                 None
+
+        | E(CombTerm(InstanceMethodCallWOp (minfo, minfoW, nWitnesses), obj::argsWithoutObj)) ->
+            if argsWithoutObj.Length >= nWitnesses then
+                let witnessArgs, argsWithoutWitnesses = List.splitAt nWitnesses argsWithoutObj
+                Some (Some obj, minfo, minfoW, witnessArgs, argsWithoutWitnesses)
+            else
+                None
+
         | _ -> None
 
     let (|LetRaw|_|) input =

@@ -756,7 +756,7 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
     let allArgsR = 
         match objArgs with
         | [ obj ] -> ConvLValueExpr cenv env obj :: (witnessArgsR @ ConvExprs cenv env tupledCurriedArgs)
-        | [] -> witnessArgsR @ ConvExprs cenv env tupledCurriedArgs
+        | [] -> witnessArgsR @ ConvLValueArgs cenv env tupledCurriedArgs
         | _ -> failwith "unreachable"
 
     if isPropGet || isPropSet then
