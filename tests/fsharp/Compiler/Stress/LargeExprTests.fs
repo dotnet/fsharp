@@ -3545,9 +3545,6 @@ let test () : unit =
         if largeList.[i - 1] <> i then
             failwithf "Element was %i. Expecting %i." largeList.[i - 1] i
 
-[<EntryPoint>]
-let main _ =
-    test ()
-    0
+test ()
 """
-        CompilerAssert.CompileExeAndRun source
+        CompilerAssert.RunScript source []
