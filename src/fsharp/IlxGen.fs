@@ -2228,7 +2228,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | Expr.Sequential _
   | Expr.Let _
   | LinearOpExpr _ -> 
-      GenLinearExpr cenv cgbuf eenv SPSuppress expr sequel id |> ignore<FakeUnit>
+      GenLinearExpr cenv cgbuf eenv sp expr sequel (* canProcessSequencePoint *) false id |> ignore<FakeUnit>
 
   | Expr.Op (op, tyargs, args, m) -> 
       match op, args, tyargs with 
@@ -2542,20 +2542,19 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
     GenAllocUnionCaseCore cenv cgbuf eenv (c,tyargs,args.Length,m)
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) =
-    let expr = stripExpr expr
-
-    ProcessSequencePointForExpr cenv cgbuf sp expr
-
-    match expr with 
-    | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) -> 
+and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf: FakeUnit -> FakeUnit) =
+    match stripExpr expr with 
+    | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
         GenExprs cenv cgbuf eenv argsFront
-        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (contf << (fun Fake -> 
+        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (* canProcessSequencePoint *) true (contf << (fun Fake -> 
             GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
             GenSequel cenv eenv.cloc cgbuf sequel
             Fake))
 
     | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
+        if canProcessSequencePoint then
+            ProcessSequencePointForExpr cenv cgbuf sp expr
+
         // Compiler generated sequential executions result in suppressions of sequence points on both
         // left and right of the sequence
         let spAction, spExpr =
@@ -2566,7 +2565,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) =
         match specialSeqFlag with
         | NormalSeq ->
             GenExpr cenv cgbuf eenv spAction e1 discard
-            GenLinearExpr cenv cgbuf eenv spExpr e2 sequel contf
+            GenLinearExpr cenv cgbuf eenv spExpr e2 sequel (* canProcessSequencePoint *) true contf
         | ThenDoSeq ->
             GenExpr cenv cgbuf eenv spExpr e1 Continue
             GenExpr cenv cgbuf eenv spAction e2 discard
@@ -2574,6 +2573,9 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) =
             contf Fake
 
     | Expr.Let (bind, body, _, _) ->
+        if canProcessSequencePoint then
+            ProcessSequencePointForExpr cenv cgbuf sp expr
+
         // This case implemented here to get a guaranteed tailcall
         // Make sure we generate the sequence point outside the scope of the variable
         let startScope, endScope as scopeMarks = StartDelayedLocalScope "let" cgbuf
@@ -2593,7 +2595,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel (contf: FakeUnit -> FakeUnit) =
            | NoSequencePointAtStickyBinding -> SPSuppress
     
         // Generate the body
-        GenLinearExpr cenv cgbuf eenv spBody body (EndLocalScope(sequel, endScope)) contf
+        GenLinearExpr cenv cgbuf eenv spBody body (EndLocalScope(sequel, endScope)) (* canProcessSequencePoint *) true contf
 
     | _ -> 
         GenExpr cenv cgbuf eenv sp expr sequel
