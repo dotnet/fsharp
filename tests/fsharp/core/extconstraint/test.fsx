@@ -326,6 +326,215 @@ module TupleOps =
 !* wrap up
  *--------------------------------------------------------------------------- *)
 
+module SystematicTests = 
+
+    // 1-arg extensions to each primitive type
+    // 2-arg extensions to each primitive type
+    // 2-arg extensions to each primitive type + new sealed type
+    // 2-arg extensions to each primitive type + new unsealed type
+    // 2-arg extensions to new sealed type + each primitive type
+    // 2-arg extensions to new unsealed type + each primitive type
+    // 2-arg extensions to new sealed type + new unsealed type
+    let inline CallStaticMethod1 (x: ^T) = ((^T): (static member StaticMethod1: ^T -> ^T) (x))
+    let inline CallStaticMethod2 (x: ^T, y: ^T) = ((^T): (static member StaticMethod2: ^T * ^T -> ^T) (x, y))
+    let inline CallStaticMethod3 (x: ^T, y: ^U) = ((^T or ^U): (static member StaticMethod3: ^T * ^U -> ^V) (x, y))
+    let inline CallOverloadedStaticMethod4 (x: ^T, y: ^U) = ((^T or ^U): (static member OverloadedStaticMethod4: ^T * ^U -> ^V) (x, y))
+    let inline CallInstanceMethod1 (x: ^T, y: ^T) = ((^T): (member InstanceMethod1: ^T -> ^T) (x, y))
+    let inline CallInstanceProperty1 (x: ^T) = ((^T): (member InstanceProperty1: ^T) (x))
+    let inline CallStaticProperty1 () = ((^T): (static member StaticProperty1: ^T) ())
+
+    module MethodsOnStructType =
+
+        [<Struct>]
+        type R =
+            { F : int }
+        
+            static member op_UnaryNegation (x: R) = { F = x.F + 4 }
+            static member StaticMethod1 (x: R) = { F = x.F + 4 }
+            static member StaticMethod2 (x: R, y: R) = { F = x.F + y.F + 4 }
+            static member op_Addition (x: R, y: R) = { F = x.F + y.F + 4 }
+            static member op_Subtraction (x: R, y: R) = { F = x.F + y.F + 5 }
+            static member op_Division (x: R, y: R) = { F = x.F + y.F + 6 }
+            static member StaticMethod3 (x: R, y: R) = { F = x.F + y.F + 4 }
+            static member OverloadedStaticMethod4 (x: R, y: string) = { F = x.F + y.Length + 4 }
+            static member OverloadedStaticMethod4 (x: R, y: int) = { F = x.F + y + 4 }
+            member x.InstanceMethod1 (y: R) = { F = x.F + y.F + 5 }
+            static member StaticProperty1 = { F = 4 }
+            member x.InstanceProperty1 = { F = x.F + 4 }
+        
+        let r3 = { F = 3 }
+        let r4 = { F = 4 }
+        check "qvwoiwvoi0" (-r3).F 7
+        check "qvwoiwvoi1" (CallStaticMethod1 r3).F 7
+        check "qvwoiwvoi2" (CallStaticMethod2 (r3, r4)).F 11
+        check "qvwoiwvoi2b" ((+) r3 r4).F 11
+        check "qvwoiwvoi2c" ((-) r3 r4).F 12
+        check "qvwoiwvoi2c" ((/) r3 r4).F 13
+        check "qvwoiwvoi3" (CallStaticMethod3 (r3, r4)).F 11
+        check "qvwoiwvoi4" (CallOverloadedStaticMethod4 (r3, 4)).F 11
+        check "qvwoiwvoi5" (CallOverloadedStaticMethod4 (r3, "four")).F 11
+        check "qvwoiwvoi6" (CallInstanceMethod1 (r3, r4)).F 12
+        check "qvwoiwvoi7" (CallInstanceProperty1 (r3)).F 7
+        check "qvwoiwvoi8" (CallStaticProperty1().F : int32) 4
+
+    module ExtensionsOnStructType =
+
+        [<Struct>]
+        type R =
+            { F : int }
+        
+        [<AutoOpen>]
+        module Extensions = 
+            type R with
+                static member op_UnaryNegation (x: R) = { F = x.F + 4 }
+                static member StaticMethod1 (x: R) = { F = x.F + 4 }
+                static member StaticMethod2 (x: R, y: R) = { F = x.F + y.F + 4 }
+                static member op_Addition (x: R, y: R) = { F = x.F + y.F + 4 }
+                static member op_Subtraction (x: R, y: R) = { F = x.F + y.F + 5 }
+                static member op_Division (x: R, y: R) = { F = x.F + y.F + 6 }
+                static member StaticMethod3 (x: R, y: R) = { F = x.F + y.F + 4 }
+                static member OverloadedStaticMethod4 (x: R, y: string) = { F = x.F + y.Length + 4 }
+                static member OverloadedStaticMethod4 (x: R, y: int) = { F = x.F + y + 4 }
+                member x.InstanceMethod1 (y: R) = { F = x.F + y.F + 5 }
+                static member StaticProperty1 = { F = 4 }
+                member x.InstanceProperty1 = { F = x.F + 4 }
+        
+        let r3 = { F = 3 }
+        let r4 = { F = 4 }
+        check "qvwoiwvoi0" (-r3).F 7
+        check "qvwoiwvoi1" (CallStaticMethod1 r3).F 7
+        check "qvwoiwvoi2" (CallStaticMethod2 (r3, r4)).F 11
+        check "qvwoiwvoi2b" ((+) r3 r4).F 11
+        check "qvwoiwvoi2c" ((-) r3 r4).F 12
+        check "qvwoiwvoi2c" ((/) r3 r4).F 13
+        check "qvwoiwvoi3" (CallStaticMethod3 (r3, r4)).F 11
+        check "qvwoiwvoi4" (CallOverloadedStaticMethod4 (r3, 4)).F 11
+        check "qvwoiwvoi5" (CallOverloadedStaticMethod4 (r3, "four")).F 11
+        //check "qvwoiwvoi6" (CallInstanceMethod1 (r3, r4)).F 12  // TODO - FAILING
+        //check "qvwoiwvoi7" (CallInstanceProperty1 (r3)).F 7     // TODO - FAILING
+        check "qvwoiwvoi8" (CallStaticProperty1().F : int32) 4
+
+
+    module MixedOverloadedOperatorMethodsOnStructType =
+
+        [<Struct>]
+        type R =
+            { F : int }
+        
+            static member op_Addition (x: R, y: R) = { F = x.F + y.F + 4 }
+            static member op_Addition (x: R, y: string) = { F = x.F + y.Length + 6 }
+            static member op_Addition (x: R, y: int) = { F = x.F + y + 6 }
+            static member op_Addition (x: string, y: R) = { F = x.Length + y.F + 9 }
+            static member op_Addition (x: int, y: R) = { F = x + y.F + 102 }
+        
+        let r3 = { F = 3 }
+        let r4 = { F = 4 }
+        check "qvwoiwvoi2b" ((+) r3 r4).F 11   
+        check "qvwoiwvoi2b" ((+) r3 "four").F 13  // TODO: this used to check but now fails!!
+        check "qvwoiwvoi2b" ((+) "four" r3).F 16 // TODO: this used to check but now fails!!
+        check "qvwoiwvoi2b" ((+) r3 4).F 13 // TODO: this used to check but now fails!!
+        check "qvwoiwvoi2b" ((+) 4 r3).F 109 // TODO: this used to check but now fails!!
+        // TODO - more operators here
+
+    module MixedOverloadedOperatorExtensionsOnStructType =
+
+        [<Struct>]
+        type R =
+            { F : int }
+        
+        [<AutoOpen>]
+        module Extensions = 
+            type R with
+                static member op_Addition (x: R, y: R) = { F = x.F + y.F + 4 }
+                static member op_Addition (x: R, y: string) = { F = x.F + y.Length + 6 }
+                static member op_Addition (x: R, y: int) = { F = x.F + y + 6 }
+                static member op_Addition (x: string, y: R) = { F = x.Length + y.F + 9 }
+                static member op_Addition (x: int, y: R) = { F = x + y.F + 102 }
+        
+        let r3 = { F = 3 }
+        let r4 = { F = 4 }
+        check "qvwoiwvoi2b" ((+) r3 r4).F 11   
+        check "qvwoiwvoi2b" ((+) r3 "four").F 13  // TODO: this doesn't check
+        check "qvwoiwvoi2b" ((+) "four" r3).F 16 // TODO: this doesn't check
+        check "qvwoiwvoi2b" ((+) r3 4).F 13 // TODO: this doesn't check
+        check "qvwoiwvoi2b" ((+) 4 r3).F 109 // TODO: this doesn't check
+        //check "qvwoiwvoi2c" ((-) r3 r4).F 12
+        //check "qvwoiwvoi2c" ((/) r3 r4).F 13
+        // TODO - more operators here
+
+
+    module ExtensionsToPrimitiveType_Int32 =
+
+        [<AutoOpen>]
+        module Extensions = 
+            type System.Int32 with
+                static member StaticMethod1 (x: int32) = x + 4
+                static member StaticMethod2 (x: int32, y: int32) = x + y + 4
+                static member StaticMethod3 (x: int32, y: int32) = x + y + 4
+                static member OverloadedStaticMethod4 (x: int32, y: string) = x + y.Length + 4
+                static member OverloadedStaticMethod4 (x: int32, y: int) = x + y + 4
+                member x.InstanceMethod1 (y: int32) = x + y + 5
+                static member StaticProperty1 = 4
+                member x.InstanceProperty1 = x + 4
+
+        check "vwoiwvoi1" (CallStaticMethod1 3) 7
+        check "vwoiwvoi2" (CallStaticMethod2 (3, 4)) 11
+        check "vwoiwvoi3" (CallStaticMethod3 (3, 4)) 11
+        check "vwoiwvoi4" (CallOverloadedStaticMethod4 (3, 4)) 11
+        check "vwoiwvoi5" (CallOverloadedStaticMethod4 (3, "four")) 11
+        //check "vwoiwvoi6" (CallInstanceMethod1 (3, 4)) 12  // TODO- BUG - CODEGEN
+        //check "vwoiwvoi7" (CallInstanceProperty1 (3)) 7    // TODO- BUG - CODEGEN
+        check "vwoiwvoi8" (CallStaticProperty1 () : int32) 4
+
+
+module Test1 = 
+
+    open System
+    type Foo = A | B
+
+    module Extensions = 
+        type Foo with
+            static member (+) (foo1: Foo, foo2: Foo) = B
+
+    open Extensions
+
+    let result = A + A
+
+    type System.String with
+        member this.Foo (x: string) = this + x
+
+module Test2 = 
+
+    open System
+    type Foo = A | B
+
+    module Extensions = 
+        type Foo with
+            static member (+) (foo1: Foo, foo2: Foo) = B
+
+        type Foo with
+            static member (+) (foo1: Foo, foo2: string) = B
+
+    open Extensions
+
+    let result = A + A
+    //let result2 = A + ""  // TODO: this is failing, it is a bug!!!
+
+    type System.String with
+        member this.Foo (x: string) = this + x
+
+    type System.String with
+        member this.Foo2 x = this + x
+
+    type Bar = Bar of String
+        with 
+        member this.Foo (x: string) = 
+            match this with
+            | Bar y -> y + x
+
+    let z = "Bar".Foo("foo")
+    let z0 = (Bar "Bar").Foo("foo")
+
 
 #if TESTS_AS_APP
 let RUN() = !failures

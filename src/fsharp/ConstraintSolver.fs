@@ -295,6 +295,21 @@ let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g t
 let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
 let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
+let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
+let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
+
+// For weak resolution, require a relevant primitive on one side
+// For strong resolution
+//    - if there are relevant methods require an exact primitive on the other side.
+//    - if there are no relevant methods just require a non-variable type on the other side.
+let IsBinaryOpPair p permitWeakResolution minfos g argty1 argty2 = 
+    p argty1 && (permitWeakResolution || (match minfos with [] -> not (isTyparTy g argty2) | _ -> p argty2))
+    
+let IsAddSubModTypePair nm permitWeakResolution minfos g argty1 argty2 =
+    IsBinaryOpPair (IsAddSubModType nm g) permitWeakResolution minfos g argty1 argty2  
+
+let IsRelationalTypePair permitWeakResolution minfos g argty1 argty2 =
+    IsBinaryOpPair (IsRelationalType g) permitWeakResolution minfos g argty1 argty2  
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
 let GetMeasureOfType g ty =
@@ -1128,19 +1143,15 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               return TTraitBuiltIn
 
       | _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
-          when // Ignore any explicit +/- overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
-                (   (IsNumericOrIntegralEnumType g argty1 || (nm = "op_Addition" && (isCharTy g argty1 || isStringTy g argty1))) && (permitWeakResolution || not (isTyparTy g argty2))
-                 || (IsNumericOrIntegralEnumType g argty2 || (nm = "op_Addition" && (isCharTy g argty2 || isStringTy g argty2))) && (permitWeakResolution || not (isTyparTy g argty1)))) -> 
+          when  (IsAddSubModTypePair nm permitWeakResolution minfos g argty1 argty2 || IsAddSubModTypePair nm permitWeakResolution minfos g argty2 argty1) -> 
+
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           return TTraitBuiltIn
 
       | _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
-          when // Ignore any explicit overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
-                (   (IsRelationalType g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
-                 || (IsRelationalType g argty2 && (permitWeakResolution || not (isTyparTy g argty1))))) -> 
+          when (IsRelationalTypePair permitWeakResolution minfos g argty1 argty2 || IsRelationalTypePair permitWeakResolution minfos g argty2 argty1) ->
+
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.bool_ty
           return TTraitBuiltIn
