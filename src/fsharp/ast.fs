@@ -1994,7 +1994,7 @@ let ParseAssemblyCodeInstructions s m =
     try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
            (UnicodeLexing.StringAsLexbuf s)
-    with RecoverableParseError ->
+    with _ ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [| |]
 #endif
 
