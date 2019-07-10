@@ -8941,3 +8941,19 @@ let isThreadOrContextStatic g attrs =
 let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
+
+
+let isStaticClass (g:TcGlobals) (x: EntityRef) =
+    not x.IsModuleOrNamespace &&
+    x.TyparsNoRange.IsEmpty &&
+    ((x.IsILTycon && 
+      x.ILTyconRawMetadata.IsSealed &&
+      x.ILTyconRawMetadata.IsAbstract) 
+#if !NO_EXTENSIONTYPING
+     || (x.IsProvided &&
+        match x.TypeReprInfo with 
+        | TProvidedTypeExtensionPoint info -> info.IsSealed && info.IsAbstract 
+        | _ -> false)
+#endif
+     || (not x.IsILTycon && not x.IsProvided && HasFSharpAttribute g g.attrib_AbstractClassAttribute x.Attribs)) &&
+    not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute x.Attribs)
