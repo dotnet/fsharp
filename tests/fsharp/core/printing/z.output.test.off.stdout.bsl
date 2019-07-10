@@ -831,7 +831,7 @@ module Regression1019_long = begin
   val single_infinity : float32
 end
 
-> val it : int ref = {contents = 1;}
+> val it : int ref = { contents = 1 }
 
 > val x : int ref
 val f : (unit -> int)

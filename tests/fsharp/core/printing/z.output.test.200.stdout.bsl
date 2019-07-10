@@ -121,7 +121,7 @@ type T =
   end
 val f_as_method : x:int -> int
 val f_as_thunk : (int -> int)
-val refCell : string ref = {contents = "value";}
+val refCell : string ref = { contents = "value" }
 module D1 = begin
   val words : System.Collections.Generic.IDictionary<string,int>
   val words2000 : System.Collections.Generic.IDictionary<int,string>
@@ -567,36 +567,36 @@ type 'a T1Pre with
     f7: int
     f8: int
     f9: int }
-val r10 : r = {f0 = 0;
-               f1 = 1;
-               f2 = 2;
-               f3 = 3;
-               f4 = 4;
-               f5 = 5;
-               f6 = 6;
-               f7 = 7;
-               f8 = 8;
-               f9 = 9;}
-val r10s : r [] = [|{f0 = 0;
-                     f1 = 1;
-                     f2 = 2;
-                     f3 = 3;
-                     f4 = 4;
-                     f5 = 5;
-                     f6 = 6;
-                     f7 = 7;
-                     f8 = 8;
-                     f9 = 9;}; ...|]
-val r10s' : string * r [] = ("one extra node", [|{f0 = 0;
-                                                  f1 = 1;
-                                                  f2 = 2;
-                                                  f3 = 3;
-                                                  f4 = 4;
-                                                  f5 = 5;
-                                                  f6 = 6;
-                                                  f7 = 7;
-                                                  f8 = 8;
-                                                  f9 = ...;}; ...|])
+val r10 : r = { f0 = 0
+                f1 = 1
+                f2 = 2
+                f3 = 3
+                f4 = 4
+                f5 = 5
+                f6 = 6
+                f7 = 7
+                f8 = 8
+                f9 = 9 }
+val r10s : r [] = [|{ f0 = 0
+                      f1 = 1
+                      f2 = 2
+                      f3 = 3
+                      f4 = 4
+                      f5 = 5
+                      f6 = 6
+                      f7 = 7
+                      f8 = 8
+                      f9 = 9 }; ...|]
+val r10s' : string * r [] = ("one extra node", [|{ f0 = 0
+                                                   f1 = 1
+                                                   f2 = 2
+                                                   f3 = 3
+                                                   f4 = 4
+                                                   f5 = 5
+                                                   f6 = 6
+                                                   f7 = 7
+                                                   f8 = 8
+                                                   f9 = ... }; ...|])
 
 > val x1564_A1 : int = 1
 
@@ -1055,9 +1055,9 @@ module Regression1019_long = begin
   val single_infinity : float32 = infinityf
 end
 
-> val it : int ref = {contents = 1;}
+> val it : int ref = { contents = 1 }
 
-> val x : int ref = {contents = 1;}
+> val x : int ref = { contents = 1 }
 val f : (unit -> int)
 
 > val it : int = 1
@@ -1982,10 +1982,10 @@ val namedEx2 : exn = MyNamedException7 25
 
 > type optionRecord =
   { x: int option }
-val x : optionRecord = {x = None;}
+val x : optionRecord = { x = None }
 
 > type optionRecord =
   { x: obj }
-val x : optionRecord = {x = null;}
+val x : optionRecord = { x = null }
 
 > > > 

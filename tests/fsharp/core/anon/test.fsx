@@ -49,7 +49,7 @@ module CrossAssemblyTest =
         check "vrknvio1" (SampleAPI.SampleFunction {| A=1; B = "abc" |}) 4 // note, this is creating an instance of an anonymous record from another assembly.
         check "vrknvio2" (SampleAPI.SampleFunctionAcceptingList [ {| A=1; B = "abc" |}; {| A=2; B = "def" |} ]) [4; 5] // note, this is creating an instance of an anonymous record from another assembly.
         check "vrknvio3" (let d = SampleAPI.SampleFunctionReturningAnonRecd() in d.A + d.B.Length) 4 
-        check "vrknvio4" (let d = SampleAPIStruct.SampleFunctionReturningAnonRecd() in d.ToString().Replace("\n","").Replace("\r","")) """{A = 1; B = "abc";}"""
+        check "vrknvio4" (let d = SampleAPIStruct.SampleFunctionReturningAnonRecd() in d.ToString().Replace("\n","").Replace("\r","")) """{ A = 1 B = "abc" }"""
     tests()
 
 module CrossAssemblyTestStruct = 
