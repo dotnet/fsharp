@@ -5254,20 +5254,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         CommitStartScope cgbuf startScopeMarkOpt
 
         let ilxMethInfoArgs =
-            (vspec,
-             mspec,
-             access,
-             paramInfos,
-             retInfo,
-
-             topValInfo,
-             ctorThisValOpt,
-             baseValOpt,
-             tps,
-             methodVars,
-             methodArgTys,
-             body',
-             bodyty)
+            (vspec, mspec, access, paramInfos, retInfo, topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body', bodyty)
         // if we have any expression recursion depth, we should delay the generation of a method to prevent stack overflows
         if cenv.exprRecursionDepth > 0 then
             DelayGenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfoArgs
@@ -5716,20 +5703,8 @@ and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs =
 
 and GenMethodForBinding
         cenv (mgbuf: AssemblyBuilder) eenv
-        (v: Val,
-         mspec: ILMethodSpec,
-         access: ILMemberAccess,
-         paramInfos: ArgReprInfo list,
-         retInfo: ArgReprInfo,
-
-         topValInfo: ValReprInfo,
-         ctorThisValOpt: Val option,
-         baseValOpt: Val option,
-         tps: Typars,
-         methodVars: Val list,
-         methodArgTys: TType list,
-         body: Expr,
-         returnTy: TType) =
+        (v: Val, mspec: ILMethodSpec, access: ILMemberAccess, paramInfos: ArgReprInfo list, retInfo: ArgReprInfo,
+         topValInfo: ValReprInfo, ctorThisValOpt: Val option, baseValOpt: Val option, tps: Typars, methodVars: Val list, methodArgTys: TType list, body: Expr, returnTy: TType) =
 
     let g = cenv.g
     let m = v.Range
