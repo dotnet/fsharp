@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 
-#if !NETCOREAPP
+#if NETCOREAPP
 [<TestFixture>]
 module SpanOptimizationTests =
 
@@ -22,24 +22,24 @@ let test () =
         Console.WriteLine(item)
             """
 
-        ILChecker.checkWithDlls 
-            (ILChecker.getPackageDlls "System.Memory" "4.5.2" "netstandard2.0" [ "System.Memory.dll" ]) 
-            source
-            [
-            """.method public static void  test() cil managed
+        CompilerAssert.CompileLibraryAndVerifyIL source
+            (fun verifier ->
+                verifier.VerifyIL
+                            [
+                            """.method public static void  test() cil managed
 {
   
   .maxstack  5
-  .locals init (valuetype [System.Memory]System.Span`1<object> V_0,
+  .locals init (valuetype [System.Private.CoreLib]System.Span`1<class [System.Private.CoreLib]System.Object> V_0,
            int32 V_1,
-           int32 V_2,
-           object& V_3)
-  IL_0000:  call       valuetype [System.Memory]System.Span`1<!0> valuetype [System.Memory]System.Span`1<object>::get_Empty()
+           valuetype [System.Private.CoreLib]System.Int32 V_2,
+           class [System.Private.CoreLib]System.Object& V_3)
+  IL_0000:  call       valuetype [System.Private.CoreLib]System.Span`1<!0> valuetype [System.Private.CoreLib]System.Span`1<class [System.Private.CoreLib]System.Object>::get_Empty()
   IL_0005:  stloc.0
   IL_0006:  ldc.i4.0
   IL_0007:  stloc.2
   IL_0008:  ldloca.s   V_0
-  IL_000a:  call       instance int32 valuetype [System.Memory]System.Span`1<object>::get_Length()
+  IL_000a:  call       instance int32 valuetype [System.Private.CoreLib]System.Span`1<class [System.Private.CoreLib]System.Object>::get_Length()
   IL_000f:  ldc.i4.1
   IL_0010:  sub
   IL_0011:  stloc.1
@@ -49,11 +49,11 @@ let test () =
 
   IL_0016:  ldloca.s   V_0
   IL_0018:  ldloc.2
-  IL_0019:  call       instance !0& valuetype [System.Memory]System.Span`1<object>::get_Item(int32)
+  IL_0019:  call       instance !0& valuetype [System.Private.CoreLib]System.Span`1<class [System.Private.CoreLib]System.Object>::get_Item(int32)
   IL_001e:  stloc.3
   IL_001f:  ldloc.3
-  IL_0020:  ldobj      [mscorlib]System.Object
-  IL_0025:  call       void [mscorlib]System.Console::WriteLine(object)
+  IL_0020:  ldobj      [System.Private.CoreLib]System.Object
+  IL_0025:  call       void [System.Console]System.Console::WriteLine(object)
   IL_002a:  ldloc.2
   IL_002b:  ldc.i4.1
   IL_002c:  add
@@ -66,7 +66,7 @@ let test () =
 
   IL_0034:  ret
 } """
-            ]
+                                ])
 
     [<Test>]
     let ReadOnlySpanForInDo() =
@@ -82,24 +82,24 @@ let test () =
         Console.WriteLine(item)
             """
 
-        ILChecker.checkWithDlls 
-            (ILChecker.getPackageDlls "System.Memory" "4.5.2" "netstandard2.0" [ "System.Memory.dll" ]) 
-            source
-            [
-            """.method public static void  test() cil managed
+        CompilerAssert.CompileLibraryAndVerifyIL source
+            (fun verifier ->
+                verifier.VerifyIL
+                            [
+                            """.method public static void  test() cil managed
   {
     
     .maxstack  5
-    .locals init (valuetype [System.Memory]System.ReadOnlySpan`1<object> V_0,
+    .locals init (valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<class [System.Private.CoreLib]System.Object> V_0,
              int32 V_1,
-             int32 V_2,
-             object& V_3)
-    IL_0000:  call       valuetype [System.Memory]System.ReadOnlySpan`1<!0> valuetype [System.Memory]System.ReadOnlySpan`1<object>::get_Empty()
+             valuetype [System.Private.CoreLib]System.Int32 V_2,
+             class [System.Private.CoreLib]System.Object& V_3)
+    IL_0000:  call       valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<!0> valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<class [System.Private.CoreLib]System.Object>::get_Empty()
     IL_0005:  stloc.0
     IL_0006:  ldc.i4.0
     IL_0007:  stloc.2
     IL_0008:  ldloca.s   V_0
-    IL_000a:  call       instance int32 valuetype [System.Memory]System.ReadOnlySpan`1<object>::get_Length()
+    IL_000a:  call       instance int32 valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<class [System.Private.CoreLib]System.Object>::get_Length()
     IL_000f:  ldc.i4.1
     IL_0010:  sub
     IL_0011:  stloc.1
@@ -109,11 +109,11 @@ let test () =
 
     IL_0016:  ldloca.s   V_0
     IL_0018:  ldloc.2
-    IL_0019:  call       instance !0& modreq([netstandard]System.Runtime.InteropServices.InAttribute) valuetype [System.Memory]System.ReadOnlySpan`1<object>::get_Item(int32)
+    IL_0019:  call       instance !0& modreq([System.Private.CoreLib]System.Runtime.InteropServices.InAttribute) valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<class [System.Private.CoreLib]System.Object>::get_Item(int32)
     IL_001e:  stloc.3
     IL_001f:  ldloc.3
-    IL_0020:  ldobj      [mscorlib]System.Object
-    IL_0025:  call       void [mscorlib]System.Console::WriteLine(object)
+    IL_0020:  ldobj      [System.Private.CoreLib]System.Object
+    IL_0025:  call       void [System.Console]System.Console::WriteLine(object)
     IL_002a:  ldloc.2
     IL_002b:  ldc.i4.1
     IL_002c:  add
@@ -126,7 +126,7 @@ let test () =
 
     IL_0034:  ret
   }"""
-            ]
+                            ])
 
     [<Test>]
     let ExplicitSpanTypeForInDo() =
@@ -150,7 +150,7 @@ open System.Runtime.CompilerServices
 type Span<'T>(arr: 'T []) =
 
     member __.Item
-        with get (i: int) = &arr.[0]
+        with get (i: int) = &arr.[i]
 
     member __.Length
         with get () = 0
@@ -170,36 +170,36 @@ module Test =
             """
 
         // The current behavior doesn't optimize, but it could in the future. Making a test to catch if it ever does.
-        ILChecker.checkWithDlls 
-            (ILChecker.getPackageDlls "System.Memory" "4.5.2" "netstandard2.0" [ "System.Memory.dll" ]) 
-            source
-            [
-            """.method public static void  test() cil managed
+        CompilerAssert.CompileLibraryAndVerifyIL source
+            (fun verifier ->
+                verifier.VerifyIL
+                            [
+                            """.method public static void  test() cil managed
   {
     
     .maxstack  3
-    .locals init (valuetype System.Span`1<object> V_0,
-             class [mscorlib]System.Collections.IEnumerator V_1,
+    .locals init (valuetype System.Span`1<class [System.Private.CoreLib]System.Object> V_0,
+             class [System.Private.CoreLib]System.Collections.IEnumerator V_1,
              class [FSharp.Core]Microsoft.FSharp.Core.Unit V_2,
-             class [mscorlib]System.IDisposable V_3)
+             class [System.Private.CoreLib]System.IDisposable V_3)
     IL_0000:  ldc.i4.0
-    IL_0001:  newarr     [mscorlib]System.Object
-    IL_0006:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
+    IL_0001:  newarr     [System.Private.CoreLib]System.Object
+    IL_0006:  newobj     instance void valuetype System.Span`1<class [System.Private.CoreLib]System.Object>::.ctor(!0[])
     IL_000b:  stloc.0
     IL_000c:  ldloc.0
-    IL_000d:  box        valuetype System.Span`1<object>
-    IL_0012:  unbox.any  [mscorlib]System.Collections.IEnumerable
-    IL_0017:  callvirt   instance class [mscorlib]System.Collections.IEnumerator [mscorlib]System.Collections.IEnumerable::GetEnumerator()
+    IL_000d:  box        valuetype System.Span`1<class [System.Private.CoreLib]System.Object>
+    IL_0012:  unbox.any  [System.Private.CoreLib]System.Collections.IEnumerable
+    IL_0017:  callvirt   instance class [System.Private.CoreLib]System.Collections.IEnumerator [System.Private.CoreLib]System.Collections.IEnumerable::GetEnumerator()
     IL_001c:  stloc.1
     .try
     {
       IL_001d:  ldloc.1
-      IL_001e:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_001e:  callvirt   instance bool [System.Private.CoreLib]System.Collections.IEnumerator::MoveNext()
       IL_0023:  brfalse.s  IL_0032
 
       IL_0025:  ldloc.1
-      IL_0026:  callvirt   instance object [mscorlib]System.Collections.IEnumerator::get_Current()
-      IL_002b:  call       void [mscorlib]System.Console::WriteLine(object)
+      IL_0026:  callvirt   instance object [System.Private.CoreLib]System.Collections.IEnumerator::get_Current()
+      IL_002b:  call       void [System.Console]System.Console::WriteLine(object)
       IL_0030:  br.s       IL_001d
 
       IL_0032:  ldnull
@@ -210,13 +210,13 @@ module Test =
     finally
     {
       IL_0036:  ldloc.1
-      IL_0037:  isinst     [mscorlib]System.IDisposable
+      IL_0037:  isinst     [System.Private.CoreLib]System.IDisposable
       IL_003c:  stloc.3
       IL_003d:  ldloc.3
       IL_003e:  brfalse.s  IL_0049
 
       IL_0040:  ldloc.3
-      IL_0041:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+      IL_0041:  callvirt   instance void [System.Private.CoreLib]System.IDisposable::Dispose()
       IL_0046:  ldnull
       IL_0047:  pop
       IL_0048:  endfinally
@@ -228,5 +228,5 @@ module Test =
     IL_004d:  pop
     IL_004e:  ret
   }"""
-            ]
+                        ])
 #endif
