@@ -214,24 +214,6 @@ type IlxGenOptions =
       alwaysCallVirt: bool 
     }
 
-type IlxMethodInfo =
-    {
-        vspec: Val
-        mspec: ILMethodSpec
-        access: ILMemberAccess
-        paramInfos: ArgReprInfo list
-        retInfo: ArgReprInfo
-
-        topValInfo: ValReprInfo
-        ctorThisValOpt: Val option
-        baseValOpt: Val option
-        tps: Typars
-        methodVars: Val list
-        methodArgTys: TType list
-        body: Expr
-        bodyty: TType
-    }
-
 /// Compilation environment for compiling a fragment of an assembly
 [<NoEquality; NoComparison>]
 type cenv =
@@ -5271,28 +5253,26 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         let methodVars = List.concat vsl
         CommitStartScope cgbuf startScopeMarkOpt
 
-        let ilxMethInfo =
-            {
-                vspec = vspec
-                mspec = mspec
-                access = access
-                paramInfos = paramInfos
-                retInfo = retInfo
+        let ilxMethInfoArgs =
+            (vspec,
+             mspec,
+             access,
+             paramInfos,
+             retInfo,
 
-                topValInfo = topValInfo
-                ctorThisValOpt = ctorThisValOpt
-                baseValOpt = baseValOpt
-                tps = tps
-                methodVars = methodVars
-                methodArgTys = methodArgTys
-                body = body'
-                bodyty = bodyty
-            }
+             topValInfo,
+             ctorThisValOpt,
+             baseValOpt,
+             tps,
+             methodVars,
+             methodArgTys,
+             body',
+             bodyty)
         // if we have any expression recursion depth, we should delay the generation of a method to prevent stack overflows
         if cenv.exprRecursionDepth > 0 then
-            DelayGenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfo
+            DelayGenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfoArgs
         else
-            GenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfo
+            GenMethodForBinding cenv cgbuf.mgbuf eenv ilxMethInfoArgs
 
     | StaticProperty (ilGetterMethSpec, optShadowLocal) ->
 
@@ -5731,27 +5711,25 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
 
-and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfo =
-    cenv.delayedGenMethods.Enqueue (fun cenv -> GenMethodForBinding cenv mgbuf eenv ilxMethInfo)
+and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs =
+    cenv.delayedGenMethods.Enqueue (fun cenv -> GenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs)
 
 and GenMethodForBinding
         cenv (mgbuf: AssemblyBuilder) eenv
-        {
-            vspec = v
-            mspec = mspec
-            access = access
-            paramInfos = paramInfos
-            retInfo = retInfo
+        (v: Val,
+         mspec: ILMethodSpec,
+         access: ILMemberAccess,
+         paramInfos: ArgReprInfo list,
+         retInfo: ArgReprInfo,
 
-            topValInfo = topValInfo
-            ctorThisValOpt = ctorThisValOpt
-            baseValOpt = baseValOpt
-            tps = tps
-            methodVars = methodVars
-            methodArgTys = methodArgTys
-            body = body
-            bodyty = returnTy
-        } =
+         topValInfo: ValReprInfo,
+         ctorThisValOpt: Val option,
+         baseValOpt: Val option,
+         tps: Typars,
+         methodVars: Val list,
+         methodArgTys: TType list,
+         body: Expr,
+         returnTy: TType) =
 
     let g = cenv.g
     let m = v.Range
