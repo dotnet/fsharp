@@ -3520,44 +3520,69 @@ let (|ExprAsPat|_|) (f: SynExpr) =
 
 /// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
 let YieldFree cenv expr =
-    let langVersionSupportsImplicitYield = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
-    let rec YieldFree expr =
-        match expr with
-        | SynExpr.Sequential (_, _, e1, e2, _) ->
-            YieldFree e1 && YieldFree e2
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield then
 
-        | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
-            YieldFree e2 && Option.forall YieldFree e3opt
+        // Implement yield free logic for F# Language including the LanguageFeature.ImplicitYield
+        let rec YieldFree expr =
+            match expr with
+            | SynExpr.Sequential (_, _, e1, e2, _) ->
+                YieldFree e1 && YieldFree e2
 
-        | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
-            YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+            | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
+                YieldFree e2 && Option.forall YieldFree e3opt
 
-        | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
-            clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+            | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
+                YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
 
-        | SynExpr.For (_, _, _, _, _, body, _)
-        | SynExpr.TryFinally (body, _, _, _, _)
-        | SynExpr.LetOrUse (_, _, _, body, _)
-        | SynExpr.While (_, _, body, _)
-        | SynExpr.ForEach (_, _, _, _, _, body, _) ->
-            YieldFree body
+            | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
+                clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
 
-        | SynExpr.LetOrUseBang(_, _, _, _, _, body, _) ->
-            if langVersionSupportsImplicitYield then
+            | SynExpr.For (_, _, _, _, _, body, _)
+            | SynExpr.TryFinally (body, _, _, _, _)
+            | SynExpr.LetOrUse (_, _, _, body, _)
+            | SynExpr.While (_, _, body, _)
+            | SynExpr.ForEach (_, _, _, _, _, body, _) ->
                 YieldFree body
-            else
-                false
 
-        | SynExpr.YieldOrReturn((true, _), _, _) when langVersionSupportsImplicitYield -> false
+            | SynExpr.LetOrUseBang(_, _, _, _, _, body, _) ->
+                YieldFree body
 
-        | SynExpr.YieldOrReturnFrom _
-        | SynExpr.YieldOrReturn _
-        | SynExpr.ImplicitZero _
-        | SynExpr.Do _ when not langVersionSupportsImplicitYield -> false
+            | _ -> true
 
-        | _ -> true
+        YieldFree expr
+    else
+        // Implement yield free logic for F# Language without the LanguageFeature.ImplicitYield
+        let rec YieldFree expr =
+            match expr with
+            | SynExpr.Sequential (_, _, e1, e2, _) ->
+                YieldFree e1 && YieldFree e2
 
-    YieldFree expr
+            | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
+                YieldFree e2 && Option.forall YieldFree e3opt
+
+            | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
+                YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
+                clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | SynExpr.For (_, _, _, _, _, body, _)
+            | SynExpr.TryFinally (body, _, _, _, _)
+            | SynExpr.LetOrUse (_, _, _, body, _)
+            | SynExpr.While (_, _, body, _)
+            | SynExpr.ForEach (_, _, _, _, _, body, _) ->
+                YieldFree body
+
+            | SynExpr.LetOrUseBang _
+            | SynExpr.YieldOrReturnFrom _
+            | SynExpr.YieldOrReturn _
+            | SynExpr.ImplicitZero _
+            | SynExpr.Do _ -> false
+
+            | _ -> true
+
+        YieldFree expr
+
 
 /// Determine if a syntactic expression inside 'seq { ... }' or '[...]' counts as a "simple sequence
 /// of semicolon separated values". For example [1;2;3].
@@ -3567,7 +3592,7 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
 
     let IsSimpleSemicolonSequenceElement expr = 
         match expr with
-        | SynExpr.IfThenElse _ when not (cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield) && acceptDeprecated && YieldFree cenv expr -> true
+        | SynExpr.IfThenElse _ when acceptDeprecated && YieldFree cenv expr -> true
         | SynExpr.IfThenElse _
         | SynExpr.TryWith _ 
         | SynExpr.Match _ 
@@ -5777,6 +5802,12 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
     expr, overallTy, tpenv
 
 and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
+
+    // LanguageFeatures.ImplicitYield do not require this validation
+    let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+    let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
+    let validateExpressionWithIfRequiresParnethesis = implicitYieldEnabled
+
     match synExpr with 
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) -> 
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
@@ -5975,7 +6006,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             match comp with 
             | SynExpr.New _ -> 
                 errorR(Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm(), m))
-            | SimpleSemicolonSequence cenv false _ when not (cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield) ->
+            | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
                 errorR(Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression(), m))
             | _ -> 
                 ()
@@ -5991,7 +6022,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecated elems as body), _) -> 
             match body with
             | SimpleSemicolonSequence cenv false _ -> ()
-            | _ when not (cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield) -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
+            | _ when validateExpressionWithIfRequiresParnethesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
             | _ -> ()
 
             let replacementExpr = 
