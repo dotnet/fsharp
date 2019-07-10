@@ -5701,11 +5701,7 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
 and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs =
     cenv.delayedGenMethods.Enqueue (fun cenv -> GenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs)
 
-and GenMethodForBinding
-        cenv (mgbuf: AssemblyBuilder) eenv
-        (v: Val, mspec: ILMethodSpec, access: ILMemberAccess, paramInfos: ArgReprInfo list, retInfo: ArgReprInfo,
-         topValInfo: ValReprInfo, ctorThisValOpt: Val option, baseValOpt: Val option, tps: Typars, methodVars: Val list, methodArgTys: TType list, body: Expr, returnTy: TType) =
-
+and GenMethodForBinding cenv mgbuf eenv (v, mspec, access, paramInfos, retInfo, topValInfo, ctorThisValOpt, baseValOpt, tps, methodVars, methodArgTys, body, returnTy) =
     let g = cenv.g
     let m = v.Range
     let selfMethodVars, nonSelfMethodVars, compileAsInstance =
