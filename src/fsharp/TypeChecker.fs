@@ -3547,6 +3547,8 @@ let YieldFree cenv expr =
             | SynExpr.LetOrUseBang(_, _, _, _, _, body, _) ->
                 YieldFree body
 
+            | SynExpr.YieldOrReturn((true, _), _, _) -> false
+
             | _ -> true
 
         YieldFree expr
