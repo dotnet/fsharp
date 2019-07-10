@@ -3543,7 +3543,7 @@ let YieldFree cenv expr =
             YieldFree body
 
         | SynExpr.LetOrUseBang(_, _, _, _, _, body, _) ->
-            if cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield then
+            if langVersionSupportsImplicitYield then
                 YieldFree body
             else
                 false
