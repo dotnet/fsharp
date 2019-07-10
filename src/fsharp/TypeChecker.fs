@@ -5806,7 +5806,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     // LanguageFeatures.ImplicitYield do not require this validation
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
     let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
-    let validateExpressionWithIfRequiresParnethesis = implicitYieldEnabled
+    let validateExpressionWithIfRequiresParenethesis = not implicitYieldEnabled
     let acceptDeprecatedIfThenExpression = not implicitYieldEnabled
 
     match synExpr with 
@@ -6022,7 +6022,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems as body), _) -> 
             match body with
             | SimpleSemicolonSequence cenv false _ -> ()
-            | _ when validateExpressionWithIfRequiresParnethesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
+            | _ when validateExpressionWithIfRequiresParenethesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
             | _ -> ()
 
             let replacementExpr = 
