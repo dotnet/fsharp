@@ -410,7 +410,6 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
     if fileExists cfg (testname + "-pre.fs")
         then
-            printfn "Here"
             fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
         else ()
 
@@ -427,7 +426,6 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
         if cfg.fsc_flags.Contains("--warnaserror-") then String.Empty
         else "--warnaserror"
 
-    printfn "And Here"
     fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags warnaserror testname sources
 
     let diff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
