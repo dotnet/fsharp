@@ -1875,7 +1875,7 @@ let internal internalParseAssemblyCodeInstructions s isFeatureSupported m =
         FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
            (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
-    with RecoverableParseError ->
+    with _ ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
