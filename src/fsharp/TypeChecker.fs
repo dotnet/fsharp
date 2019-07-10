@@ -5807,6 +5807,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
     let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
     let validateExpressionWithIfRequiresParnethesis = implicitYieldEnabled
+    let acceptDeprecatedIfThenExpression = not implicitYieldEnabled
 
     match synExpr with 
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) -> 
@@ -6017,9 +6018,8 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         
     | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
-        let acceptDeprecated = not (cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield)
         match comp with 
-        | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecated elems as body), _) -> 
+        | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems as body), _) -> 
             match body with
             | SimpleSemicolonSequence cenv false _ -> ()
             | _ when validateExpressionWithIfRequiresParnethesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
