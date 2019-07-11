@@ -430,10 +430,10 @@ module SystematicTests =
         let r3 = { F = 3 }
         let r4 = { F = 4 }
         check "qvwoiwvoi2b" ((+) r3 r4).F 11   
-        check "qvwoiwvoi2b" ((+) r3 "four").F 13  // TODO: this used to check but now fails!!
-        check "qvwoiwvoi2b" ((+) "four" r3).F 16 // TODO: this used to check but now fails!!
-        check "qvwoiwvoi2b" ((+) r3 4).F 13 // TODO: this used to check but now fails!!
-        check "qvwoiwvoi2b" ((+) 4 r3).F 109 // TODO: this used to check but now fails!!
+        check "qvwoiwvoi2b" ((+) r3 "four").F 13 
+        check "qvwoiwvoi2b" ((+) "four" r3).F 16
+        check "qvwoiwvoi2b" ((+) r3 4).F 13
+        check "qvwoiwvoi2b" ((+) 4 r3).F 109
         // TODO - more operators here
 
     module MixedOverloadedOperatorExtensionsOnStructType =
@@ -454,10 +454,10 @@ module SystematicTests =
         let r3 = { F = 3 }
         let r4 = { F = 4 }
         check "qvwoiwvoi2b" ((+) r3 r4).F 11   
-        check "qvwoiwvoi2b" ((+) r3 "four").F 13  // TODO: this doesn't check
-        check "qvwoiwvoi2b" ((+) "four" r3).F 16 // TODO: this doesn't check
-        check "qvwoiwvoi2b" ((+) r3 4).F 13 // TODO: this doesn't check
-        check "qvwoiwvoi2b" ((+) 4 r3).F 109 // TODO: this doesn't check
+        check "qvwoiwvoi2b" ((+) r3 "four").F 13  
+        check "qvwoiwvoi2b" ((+) "four" r3).F 16 
+        check "qvwoiwvoi2b" ((+) r3 4).F 13 
+        check "qvwoiwvoi2b" ((+) 4 r3).F 109 
         //check "qvwoiwvoi2c" ((-) r3 r4).F 12
         //check "qvwoiwvoi2c" ((/) r3 r4).F 13
         // TODO - more operators here
@@ -514,11 +514,14 @@ module Test2 =
 
         type Foo with
             static member (+) (foo1: Foo, foo2: string) = B
+            static member (+) (foo1: string, foo2: Foo) = B
 
     open Extensions
 
     let result = A + A
-    //let result2 = A + ""  // TODO: this is failing, it is a bug!!!
+    let result2 = A + ""
+    let result3 = "" + A
+    let result4 : string = "" + ""
 
     type System.String with
         member this.Foo (x: string) = this + x
