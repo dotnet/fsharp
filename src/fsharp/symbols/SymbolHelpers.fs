@@ -69,8 +69,8 @@ type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, me
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
         let r = FSharpErrorInfo.CreateFromException(exn, isError, fallbackRange, suggestNames)
-                
-        // Adjust to make sure that errors reported at Eof are shown at the linesCount        
+
+        // Adjust to make sure that errors reported at Eof are shown at the linesCount
         let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
         let endline, echange = min (r.EndLineAlternate, false)   (linesCount, true)
         
