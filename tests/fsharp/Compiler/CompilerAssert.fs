@@ -130,7 +130,7 @@ module CompilerAssert =
             |> Array.iter (fun info ->
                 Assert.AreEqual(FSharpErrorSeverity.Error, info.Severity)
                 Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
-                Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn, info.EndLineAlternate, info.EndColumn), "expectedErrorRange")
+                Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
                 Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
             )
 
