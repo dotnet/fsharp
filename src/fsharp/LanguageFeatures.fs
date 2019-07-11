@@ -19,14 +19,16 @@ open System
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | LanguageVersion46 = 0
-    | LanguageVersion47 = 1
-    | SingleUnderscorePattern = 2
-    | WildCardInForLoop = 3
-    | RelaxWhitespace = 4
-    | NameOf = 5
-    | ImplicitYield = 6
-    | OpenStaticClasses = 7
+    | PreviewVersion = 0
+    | LanguageVersion46 = 1
+    | LanguageVersion47 = 2
+    | SingleUnderscorePattern = 3
+    | WildCardInForLoop = 4
+    | RelaxWhitespace = 5
+    | NameOf = 6
+    | ImplicitYield = 7
+    | OpenStaticClasses = 8
+
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
@@ -34,25 +36,25 @@ type LanguageVersion (specifiedVersion) =
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
     static let languageVersion47 = 4.7m
-
-    static let previewVersion = languageVersion47       // Language version when preview specified
-    static let defaultVersion = languageVersion46       // Language version when default specified
+    static let previewVersion = 9999m                   // Language version when preview specified
+    static let defaultVersion = languageVersion47       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
     static let latestMajorVersion = languageVersion46   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| latestVersion |]
+    static let languageVersions = set [| languageVersion46; languageVersion47 |]
 
     static let features = dict [|
         // Add new LanguageVersions here ...
-        LanguageFeature.LanguageVersion47, 4.7m
-        LanguageFeature.LanguageVersion46, 4.6m
-        LanguageFeature.SingleUnderscorePattern, previewVersion
-        LanguageFeature.WildCardInForLoop, previewVersion
-        LanguageFeature.RelaxWhitespace, previewVersion
-        LanguageFeature.NameOf, previewVersion
-        LanguageFeature.ImplicitYield, previewVersion
-        LanguageFeature.OpenStaticClasses, previewVersion
+        LanguageFeature.LanguageVersion46, languageVersion46
+        LanguageFeature.LanguageVersion47, languageVersion47
+        LanguageFeature.PreviewVersion, previewVersion
+        LanguageFeature.SingleUnderscorePattern, languageVersion47
+        LanguageFeature.WildCardInForLoop, languageVersion47
+        LanguageFeature.RelaxWhitespace, languageVersion47
+        LanguageFeature.NameOf, languageVersion47
+        LanguageFeature.ImplicitYield, languageVersion47
+        LanguageFeature.OpenStaticClasses, languageVersion47
         |]
 
     let specified =
@@ -91,4 +93,3 @@ type LanguageVersion (specifiedVersion) =
             let label = if v = defaultVersion || v = latestVersion then "(Default)" else ""
             yield sprintf "%M %s" v label
             |]
-
