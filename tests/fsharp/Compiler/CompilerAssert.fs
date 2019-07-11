@@ -121,8 +121,12 @@ module CompilerAssert =
             | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
             | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            Assert.AreEqual(1, typeCheckResults.Errors.Length, sprintf "Expected one type check error: %A" typeCheckResults.Errors)
-            typeCheckResults.Errors
+            let errors = 
+                typeCheckResults.Errors
+                |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+
+            Assert.AreEqual(1, errors.Length, sprintf "Expected one type check error: %A" typeCheckResults.Errors)
+            errors
             |> Array.iter (fun info ->
                 Assert.AreEqual(FSharpErrorSeverity.Error, info.Severity)
                 Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
