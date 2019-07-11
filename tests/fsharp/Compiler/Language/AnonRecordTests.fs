@@ -33,7 +33,7 @@ let rAnon = RefClass<struct {| R: int |}>()
             """ 
             FSharpErrorSeverity.Error
             1
-            (3, 12, 3, 41)
+            (3, 13, 3, 42)
             "A generic construct requires that the type 'struct {| R: int |}' have reference semantics, but it does not, i.e. it is a struct"
 
     [<Test>]
@@ -45,5 +45,5 @@ let sAnon = StructClass<{| S: int |}>()
             """
             FSharpErrorSeverity.Error
             1
-            (3, 12, 3, 37)
+            (3, 13, 3, 38)
             "A generic construct requires that the type '{| S: int |}' is a CLI or F# struct type"
