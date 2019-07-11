@@ -140,9 +140,7 @@ module internal ExtensionTyping =
 
     let StripException (e: exn) =
         match e with
-#if !FX_REDUCED_EXCEPTIONS
         |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
-#endif
         |   :? TypeInitializationException as e -> e.InnerException
         |   _ -> e
 
@@ -417,6 +415,7 @@ module internal ExtensionTyping =
         member __.IsEnum = x.IsEnum
         member __.IsClass = x.IsClass
         member __.IsSealed = x.IsSealed
+        member __.IsAbstract = x.IsAbstract
         member __.IsInterface = x.IsInterface
         member __.GetArrayRank() = x.GetArrayRank()
         member __.GenericParameterPosition = x.GenericParameterPosition
