@@ -274,7 +274,7 @@ type MapType() =
         let uo = ue.Change(1, fun current -> Assert.AreEqual(current, Some "Monday"); Some "Tuesday")
         Assert.AreEqual(uo.[1], "Tuesday")
 
-        let resultRm = c.Change 1 (fun current -> Assert.AreEqual(current, Some 1); None)
+        let resultRm = c.Change(1, fun current -> Assert.AreEqual(current, Some 1); None)
         Assert.IsFalse(resultRm.ContainsKey 1)
     
     [<Test>]
