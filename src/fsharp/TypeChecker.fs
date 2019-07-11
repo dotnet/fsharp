@@ -3518,14 +3518,84 @@ let (|ExprAsPat|_|) (f: SynExpr) =
             None
     | _ -> None
 
+/// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
+let YieldFree cenv expr =
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield then
+
+        // Implement yield free logic for F# Language including the LanguageFeature.ImplicitYield
+        let rec YieldFree expr =
+            match expr with
+            | SynExpr.Sequential (_, _, e1, e2, _) ->
+                YieldFree e1 && YieldFree e2
+
+            | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
+                YieldFree e2 && Option.forall YieldFree e3opt
+
+            | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
+                YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
+                clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | SynExpr.For (_, _, _, _, _, body, _)
+            | SynExpr.TryFinally (body, _, _, _, _)
+            | SynExpr.LetOrUse (_, _, _, body, _)
+            | SynExpr.While (_, _, body, _)
+            | SynExpr.ForEach (_, _, _, _, _, body, _) ->
+                YieldFree body
+
+            | SynExpr.LetOrUseBang(_, _, _, _, _, body, _) ->
+                YieldFree body
+
+            | SynExpr.YieldOrReturn((true, _), _, _) -> false
+
+            | _ -> true
+
+        YieldFree expr
+    else
+        // Implement yield free logic for F# Language without the LanguageFeature.ImplicitYield
+        let rec YieldFree expr =
+            match expr with
+            | SynExpr.Sequential (_, _, e1, e2, _) ->
+                YieldFree e1 && YieldFree e2
+
+            | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
+                YieldFree e2 && Option.forall YieldFree e3opt
+
+            | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
+                YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
+                clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | SynExpr.For (_, _, _, _, _, body, _)
+            | SynExpr.TryFinally (body, _, _, _, _)
+            | SynExpr.LetOrUse (_, _, _, body, _)
+            | SynExpr.While (_, _, body, _)
+            | SynExpr.ForEach (_, _, _, _, _, body, _) ->
+                YieldFree body
+
+            | SynExpr.LetOrUseBang _
+            | SynExpr.YieldOrReturnFrom _
+            | SynExpr.YieldOrReturn _
+            | SynExpr.ImplicitZero _
+            | SynExpr.Do _ -> false
+
+            | _ -> true
+
+        YieldFree expr
+
+
 /// Determine if a syntactic expression inside 'seq { ... }' or '[...]' counts as a "simple sequence
 /// of semicolon separated values". For example [1;2;3].
+/// 'acceptDeprecated' is true for the '[ ... ]' case, where we allow the syntax '[ if g then t else e ]' but ask it to be parenthesized
 ///
-let (|SimpleSemicolonSequence|_|) cexpr = 
+let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr = 
 
     let IsSimpleSemicolonSequenceElement expr = 
-        match expr with 
-        | SynExpr.IfThenElse _ 
+        match expr with
+        | SynExpr.IfThenElse _ when acceptDeprecated && YieldFree cenv expr -> true
+        | SynExpr.IfThenElse _
         | SynExpr.TryWith _ 
         | SynExpr.Match _ 
         | SynExpr.For _ 
@@ -5734,6 +5804,13 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
     expr, overallTy, tpenv
 
 and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
+
+    // LanguageFeatures.ImplicitYield do not require this validation
+    let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+    let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
+    let validateExpressionWithIfRequiresParenethesis = not implicitYieldEnabled
+    let acceptDeprecatedIfThenExpression = not implicitYieldEnabled
+
     match synExpr with 
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) -> 
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
@@ -5932,6 +6009,8 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             match comp with 
             | SynExpr.New _ -> 
                 errorR(Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm(), m))
+            | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
+                errorR(Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression(), m))
             | _ -> 
                 ()
         if not !isNotNakedRefCell && not cenv.g.compilingFslib then 
@@ -5941,9 +6020,12 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         
     | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
-
         match comp with 
-        | SynExpr.CompExpr (_, _, SimpleSemicolonSequence elems, _) -> 
+        | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems as body), _) -> 
+            match body with
+            | SimpleSemicolonSequence cenv false _ -> ()
+            | _ when validateExpressionWithIfRequiresParenethesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
+            | _ -> ()
 
             let replacementExpr = 
                 if isArray then 
@@ -7331,31 +7413,6 @@ and TcQuotationExpr cenv overallTy env tpenv (_oper, raw, ast, isFromQueryExpres
 /// Ignores an attribute
 and IgnoreAttribute _ = None
 
-/// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
-and YieldFree expr =
-    match expr with
-    | SynExpr.Sequential (_, _, e1, e2, _) -> YieldFree e1 && YieldFree e2
-    | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) -> YieldFree e2 && Option.forall YieldFree e3opt
-    | SynExpr.TryWith (e1, _, clauses, _, _, _, _) -> 
-        YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
-    | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
-        clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
-    | SynExpr.For (_, _, _, _, _, body, _)
-    | SynExpr.TryFinally (body, _, _, _, _)
-    | SynExpr.LetOrUse (_, _, _, body, _)
-    | SynExpr.LetOrUseBang(_, _, _, _, _, body, _) 
-    | SynExpr.LetOrUse (_, _, _, body, _)
-    | SynExpr.While (_, _, body, _)
-    | SynExpr.ForEach (_, _, _, _, _, body, _) -> 
-        YieldFree body
-
-    // 'yield!' in expressions doesn't trigger the 'yield free' rule
-    //| SynExpr.YieldOrReturnFrom _
-    | SynExpr.YieldOrReturn((true, _), _, _) -> 
-        false
-
-    | _ -> true    
-
 /// Used for all computation expressions except sequence expressions
 and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builderTy tpenv (comp: SynExpr) = 
 
@@ -7814,7 +7871,9 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     // If there are no 'yield' in the computation expression, and the builder supports 'Yield',
     // then allow the type-directed rule interpreting non-unit-typed expressions in statement
     // positions as 'yield'.  'yield!' may be present in the computation expression.
-    let enableImplicitYield = hasMethInfo "Yield" && hasMethInfo "Combine"  && hasMethInfo "Delay" && YieldFree comp
+    let enableImplicitYield =
+        cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+        && (hasMethInfo "Yield" && hasMethInfo "Combine"  && hasMethInfo "Delay" && YieldFree cenv comp)
 
     // q              - a flag indicating if custom operators are allowed. They are not allowed inside try/with, try/finally, if/then/else etc.
     // varSpace       - a lazy data structure indicating the variables bound so far in the overall computation
@@ -8200,8 +8259,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 | _ -> 
                     Some (trans true q varSpace innerComp2 (fun holeFill ->
                         let fillExpr = 
-                            if enableImplicitYield then 
-                                
+                            if enableImplicitYield then
                                 // When implicit yields are enabled, then if the 'innerComp1' checks as type
                                 // 'unit' we interpret the expression as a sequential, and when it doesn't
                                 // have type 'unit' we interpret it as a 'Yield + Combine'.
@@ -8443,7 +8501,9 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
     // If there are no 'yield' in the computation expression then allow the type-directed rule
     // interpreting non-unit-typed expressions in statement positions as 'yield'.  'yield!' may be  
     // present in the computation expression.
-    let enableImplicitYield = YieldFree comp
+    let enableImplicitYield =
+        cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+        && (YieldFree cenv comp)
 
     let mkDelayedExpr (coreExpr: Expr) = 
         let m = coreExpr.Range
@@ -8504,6 +8564,9 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
             let innerExprMark = innerExpr.Range
                 
             Some(mkSeqFinally cenv env innerExprMark genOuterTy innerExpr unwindExpr, tpenv)
+
+        | SynExpr.Paren (_, _, _, m) when not (cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield)->
+            error(Error(FSComp.SR.tcConstructIsAmbiguousInSequenceExpression(), m))
 
         | SynExpr.ImplicitZero m -> 
             Some(mkSeqEmpty cenv env m genOuterTy, tpenv )

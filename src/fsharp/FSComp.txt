@@ -574,6 +574,7 @@ tcUseWhenPatternGuard,"Character range matches have been removed in F#. Consider
 736,tcExprUndelayed,"TcExprUndelayed: delayed"
 737,tcExpressionRequiresSequence,"This expression form may only be used in sequence and computation expressions"
 738,tcInvalidObjectExpressionSyntaxForm,"Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces."
+739,tcInvalidObjectSequenceOrRecordExpression,"Invalid object, sequence or record expression"
 740,tcInvalidSequenceExpressionSyntaxForm,"Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'"
 tcExpressionWithIfRequiresParenthesis,"This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression to indicate it is an individual element of the list or array, to disambiguate this from a list generated using a sequence expression"
 741,tcUnableToParseFormatString,"Unable to parse format string '%s'"

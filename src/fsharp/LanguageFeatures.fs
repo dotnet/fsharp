@@ -25,6 +25,8 @@ type LanguageFeature =
     | WildCardInForLoop = 3
     | RelaxWhitespace = 4
     | NameOf = 5
+    | ImplicitYield = 6
+
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
@@ -49,6 +51,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.WildCardInForLoop, previewVersion
         LanguageFeature.RelaxWhitespace, previewVersion
         LanguageFeature.NameOf, previewVersion
+        LanguageFeature.ImplicitYield, previewVersion
         |]
 
     let specified =
