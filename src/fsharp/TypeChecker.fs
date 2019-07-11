@@ -645,7 +645,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass g tcSink ResultCollectionSettings.AllResults amap scopem true true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap scopem true true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
@@ -6966,7 +6966,7 @@ and TcConstExpr cenv overallTy env m tpenv c =
         let expr = 
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.g cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) -> 
@@ -8837,7 +8837,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
         | LongOrSingleIdent (false, (LongIdentWithDots(longId, _) as lidd), _, _) when longId.Length > 0 ->
             let ad = env.eAccessRights
             let id, rest = List.headAndTail longId
-            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.g cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) -> 
                 () // resolved to a module or namespace, done with checks
             | _ -> 
@@ -12705,19 +12705,19 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 // Bind 'open' declarations
 //------------------------------------------------------------------------- 
 
-let TcOpenLidAndPermitAutoResolve g tcSink env amap (longId : Ident list) =
+let TcOpenLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
     let ad = env.eAccessRights
     match longId with
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIndentAsModuleOrNamespaceOrStaticClass g tcSink ResultCollectionSettings.AllResults amap m true true OpenQualified env.eNameResEnv ad id rest true with 
+        match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap m true true OpenQualified env.eNameResEnv ad id rest true with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
 
 let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) = 
-    match TcOpenLidAndPermitAutoResolve g tcSink env amap longId with
+    match TcOpenLidAndPermitAutoResolve tcSink env amap longId with
     | [] -> env
     | modrefs ->
 
@@ -14244,7 +14244,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.g cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
+            | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
         let mvvs = ForceRaise resolved
         if isNil mvvs then env else
         let modrefs = mvvs |> List.map p23
@@ -17071,7 +17071,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.g cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
+                | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
