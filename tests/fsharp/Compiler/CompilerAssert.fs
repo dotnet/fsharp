@@ -11,6 +11,19 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
 
 open NUnit.Framework
+open System.Reflection.Emit
+
+[<Sealed>]
+type ILVerifier (dllFilePath: string) =
+
+    member this.VerifyIL (qualifiedItemName: string, expectedIL: string) =
+        ILChecker.checkILItem qualifiedItemName dllFilePath [ expectedIL ]
+
+    member this.VerifyIL (expectedIL: string list) =
+        ILChecker.checkIL dllFilePath expectedIL
+
+    member this.VerifyILWithLineNumbers (qualifiedItemName: string, expectedIL: string) =
+        ILChecker.checkILItemWithLineNumbers qualifiedItemName dllFilePath [ expectedIL ]
 
 [<RequireQualifiedAccess>]
 module CompilerAssert =
@@ -25,7 +38,7 @@ module CompilerAssert =
             ProjectId = None
             SourceFiles = [|"test.fs"|]
 #if !NETCOREAPP
-            OtherOptions = [||]
+            OtherOptions = [|"--preferreduilang:en-US";|]
 #else
             OtherOptions = 
                 // Hack: Currently a hack to get the runtime assemblies for netcore in order to compile.
@@ -36,7 +49,7 @@ module CompilerAssert =
                     |> Seq.toArray
                     |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system."))
                     |> Array.map (fun x -> sprintf "-r:%s" x)
-                Array.append [|"--targetprofile:netcore"; "--noframework"|] assemblies
+                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"|] assemblies
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -48,41 +61,125 @@ module CompilerAssert =
             Stamp = None
         }
         
-    let lockObj = obj ()
+    let private gate = obj ()
+
+    let private compile isExe source f =
+        lock gate <| fun () ->
+            let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+            let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
+            let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
+            let fsCoreDllPath = config.FSCOREDLLPATH
+            let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
+            try
+                File.Copy (fsCoreDllPath , tmpFsCoreFilePath, true)
+                File.WriteAllText (inputFilePath, source)
+                File.WriteAllText (runtimeConfigFilePath, """
+{
+  "runtimeOptions": {
+    "tfm": "netcoreapp2.1",
+    "framework": {
+      "name": "Microsoft.NETCore.App",
+      "version": "2.1.0"
+    }
+  }
+}
+                """)
+
+                let args =
+                    defaultProjectOptions.OtherOptions
+                    |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
+                let errors, _ = checker.Compile args |> Async.RunSynchronously
+
+                f (errors, outputFilePath)
+
+            finally
+                try File.Delete inputFilePath with | _ -> ()
+                try File.Delete outputFilePath with | _ -> ()
+                try File.Delete runtimeConfigFilePath with | _ -> ()
+                try File.Delete tmpFsCoreFilePath with | _ -> ()
 
     let Pass (source: string) =
-        lock lockObj <| fun () ->
+        lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
-            Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
+            Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
 
             match fileAnswer with
             | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
             | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            Assert.True(typeCheckResults.Errors.Length = 0, sprintf "Type Check errors: %A" typeCheckResults.Errors)
+            Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
-    let TypeCheckSingleError (source: string) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
-        lock lockObj <| fun () ->
+
+    
+    let TypeCheckWithErrors (source: string) expectedTypeErrors =
+        lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
 
-            Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
+            Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
 
             match fileAnswer with
             | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
             | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            Assert.True(typeCheckResults.Errors.Length = 1, sprintf "Expected one type check error: %A" typeCheckResults.Errors)
-            typeCheckResults.Errors
-            |> Array.iter (fun info ->
-                Assert.AreEqual(FSharpErrorSeverity.Error, info.Severity)
+            let errors = 
+                typeCheckResults.Errors
+                |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+
+            Assert.AreEqual(Array.length expectedTypeErrors, errors.Length, sprintf "Type check errors: %A" typeCheckResults.Errors)
+
+            Array.zip errors expectedTypeErrors
+            |> Array.iter (fun (info, expectedError) ->
+                let (expectedServerity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
+                Assert.AreEqual(expectedServerity, info.Severity)
                 Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
-                Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn, info.EndLineAlternate, info.EndColumn), "expectedErrorRange")
+                Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
                 Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
             )
 
+    let TypeCheckSingleError (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+        TypeCheckWithErrors (source: string) [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
+
+    let CompileExe (source: string) =
+        compile true source (fun (errors, _) -> 
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
+
+    let CompileExeAndRun (source: string) =
+        compile true source (fun (errors, outputExe) ->
+
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+
+            let pInfo = ProcessStartInfo ()
+#if NETCOREAPP
+            pInfo.FileName <- config.DotNetExe
+            pInfo.Arguments <- outputExe
+#else
+            pInfo.FileName <- outputExe
+#endif
+
+            pInfo.RedirectStandardError <- true
+            pInfo.UseShellExecute <- false
+            
+            let p = Process.Start(pInfo)
+
+            p.WaitForExit()
+            let errors = p.StandardError.ReadToEnd ()
+            if not (String.IsNullOrWhiteSpace errors) then
+                Assert.Fail errors
+        )
+
+    let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
+        compile false source (fun (errors, outputFilePath) -> 
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+
+            f (ILVerifier outputFilePath)
+        )
+ 
     let RunScript (source: string) (expectedErrorMessages: string list) =
-        lock lockObj <| fun () ->
+        lock gate <| fun () ->
             // Intialize output and input streams
             use inStream = new StringReader("")
             use outStream = new StringWriter()

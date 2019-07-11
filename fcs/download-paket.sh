@@ -12,10 +12,12 @@ while [[ -h "$source" ]]; do
 done
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
 
-paketurl=https://github.com/fsprojects/Paket/releases/download/5.201.1/paket.exe
+paketurl=https://github.com/fsprojects/Paket/releases/download/5.215.0/paket.exe
 paketdir=$scriptroot/.paket
 paketpath=$paketdir/paket.exe
 if [ ! -e "$paketpath" ]; then
-  mkdir "$paketdir"
+  if [ ! -e "$paketdir" ]; then
+    mkdir "$paketdir"
+  fi
   curl -o "$paketpath" -L $paketurl
 fi

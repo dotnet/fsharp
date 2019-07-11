@@ -1405,12 +1405,24 @@ module InfoMemberPrinting =
             | None -> tagProperty
             | Some vref -> tagProperty >> mkNav vref.DefinitionRange
         let nameL = DemangleOperatorNameAsLayout tagProp pinfo.PropertyName
+        let getterSetter =
+            match pinfo.HasGetter, pinfo.HasSetter with
+            | (true, false) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "get")
+            | (false, true) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "set")
+            | (true, true) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
+            | (false, false) ->
+                emptyL
+
         wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
         layoutTyconRef denv pinfo.ApparentEnclosingTyconRef ^^
         SepL.dot ^^
         nameL ^^
         RightL.colon ^^
-        layoutType denv rty
+        layoutType denv rty ^^
+        getterSetter
 
     let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
         let _, resL = prettyLayoutOfMethInfoFreeStyle amap m denv emptyTyparInst minfo 
