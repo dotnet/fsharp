@@ -29,7 +29,7 @@ let FSI_BASIC = FSI_FILE
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-module CoreTests = 
+module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
@@ -1829,7 +1829,6 @@ module VersionTests =
     [<Test>]
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/version47" FSI_BASIC "preview"
 
-
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module ToolsTests = 
 
@@ -2383,14 +2382,21 @@ module TypecheckTests =
     [<Test>] 
     let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
 
-    [<Test>] 
-    let ``type check neg24`` () = 
-        let cfg = testConfig "typecheck/sigs"
+    [<Test>]
+    let ``type check neg24 version 4.6`` () = 
+        let cfg = testConfig "typecheck/sigs/version46"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
-        singleNegTest cfg "neg24"
+        singleVersionedNegTest cfg "4.6" "neg24"
 
     [<Test>] 
+    let ``type check neg24 version 4.7`` () =
+        let cfg = testConfig "typecheck/sigs/version47"
+        // For some reason this warning is off by default in the test framework but in this case we are testing for it
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
+        singleVersionedNegTest cfg "preview" "neg24"
+
+    [<Test>]
     let ``type check neg25`` () = singleNegTest (testConfig "typecheck/sigs") "neg25"
 
     [<Test>] 
