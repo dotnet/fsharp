@@ -756,29 +756,33 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs: Un
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
             acc.Add (ucref.CaseName, item))
 
-let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m (nenv: NameResolutionEnv)  (tcref:TyconRef) = 
-    let ty = generalizedTyconRef tcref
-    let infoReader = InfoReader(g,amap)
-    let items =
-        [| let methGroups = 
-               AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
-               |> List.groupBy (fun m -> m.LogicalName)
+let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m (nenv: NameResolutionEnv)  (tcref:TyconRef) =
+    // If OpenStaticClasses is not enabled then don't do this
+    if g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
+        let ty = generalizedTyconRef tcref
+        let infoReader = InfoReader(g,amap)
+        let items =
+            [| let methGroups = 
+                   AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
+                   |> List.groupBy (fun m -> m.LogicalName)
 
-           for (methName, methGroup) in methGroups do
-               let methGroup = methGroup |> List.filter (fun m -> not m.IsInstance && not m.IsClassConstructor)
-               if not methGroup.IsEmpty then
-                   yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
+               for (methName, methGroup) in methGroups do
+                   let methGroup = methGroup |> List.filter (fun m -> not m.IsInstance && not m.IsClassConstructor)
+                   if not methGroup.IsEmpty then
+                       yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
            
-           let propInfos = 
-               AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
-               |> List.groupBy (fun m -> m.PropertyName)
+               let propInfos = 
+                   AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
+                   |> List.groupBy (fun m -> m.PropertyName)
                
-           for (propName, propInfos) in propInfos do
-               let propInfos = propInfos |> List.filter (fun m -> m.IsStatic)
-               for propInfo in propInfos do 
-                   yield KeyValuePair(propName , Item.Property(propName,[propInfo])) |]
+               for (propName, propInfos) in propInfos do
+                   let propInfos = propInfos |> List.filter (fun m -> m.IsStatic)
+                   for propInfo in propInfos do 
+                       yield KeyValuePair(propName , Item.Property(propName,[propInfo])) |]
 
-    { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
+        { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
+    else
+        nenv
     
 /// Add any implied contents of a type definition to the environment.
 let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap m  nenv (tcref: TyconRef) =
@@ -1992,13 +1996,16 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 //-------------------------------------------------------------------------
 
 /// Perform name resolution for an identifier which must resolve to be a namespace or module.
-let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: ResultCollectionSettings) amap m allowStaticClasses first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
+let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass (g: TcGlobals) sink (atMostOne: ResultCollectionSettings) amap m allowStaticClasses first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
+
+    // If the selected language version doesn't support open static classes then turn them off.
+    let allowStaticClasses = allowStaticClasses && g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2 :: rest2 ->
-            ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink atMostOne amap m allowStaticClasses false FullyQualified nenv ad id2 rest2 isOpenDecl
+            ResolveLongIndentAsModuleOrNamespaceOrStaticClass g sink atMostOne amap m allowStaticClasses false FullyQualified nenv ad id2 rest2 isOpenDecl
     else
         let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
         let namespaceNotFound = lazy(
@@ -2093,8 +2100,8 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
         else
             raze (namespaceNotFound.Force())
 
-let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id rest isOpenDecl f =
-    match ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink ResultCollectionSettings.AllResults amap m false true fullyQualified nenv ad id [] isOpenDecl with
+let ResolveLongIndentAsModuleOrNamespaceThen g sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id rest isOpenDecl f =
+    match ResolveLongIndentAsModuleOrNamespaceOrStaticClass g sink ResultCollectionSettings.AllResults amap m false true fullyQualified nenv ad id [] isOpenDecl with
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))
@@ -2610,7 +2617,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
               let moduleSearch ad () =
-                   ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
+                   ResolveLongIndentAsModuleOrNamespaceThen ncenv.g sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
                        (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
               // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
@@ -2794,7 +2801,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
         // Long identifiers in patterns
         else
             let moduleSearch ad () =
-                ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false
+                ResolveLongIndentAsModuleOrNamespaceThen ncenv.g sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false
                     (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad)
 
             let tyconSearch ad =
@@ -3006,12 +3013,12 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                         NoResultsOrUsefulErrors
 
             let modulSearch =
-                ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false
+                ResolveLongIndentAsModuleOrNamespaceThen ncenv.g sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk)
                 |?> List.concat
 
             let modulSearchFailed() =
-                ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false
+                ResolveLongIndentAsModuleOrNamespaceThen ncenv.g sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
                 |?> List.concat
 
@@ -3212,7 +3219,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             match lid with
             | [] -> NoResultsOrUsefulErrors
             | id2 :: rest2 ->
-                ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false
+                ResolveLongIndentAsModuleOrNamespaceThen ncenv.g sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false
                     (ResolveFieldInModuleOrNamespace ncenv nenv ad)
 
         let resInfo, item, rest =
