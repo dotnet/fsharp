@@ -12,6 +12,8 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
 
 open NUnit.Framework
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CSharp
 
 [<RequireQualifiedAccess>]
 module CompilerAssert =
@@ -50,6 +52,37 @@ module CompilerAssert =
         }
 
     let lockObj = obj ()
+
+    let PassWithCSharpCompilation (compilation: CSharpCompilation) (source: string) =
+        lock lockObj <| fun () ->
+            let fileName = compilation.AssemblyName + (if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe")
+            let compilationOutputPath = Path.Combine (Path.GetTempPath (), fileName)
+            try
+                let csharpDiagnostics = compilation.GetDiagnostics ()
+
+                if not csharpDiagnostics.IsEmpty then                  
+                    Assert.Fail ("CSharp Source Diagnostics:\n" + (csharpDiagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
+
+                let emitResult = compilation.Emit compilationOutputPath
+                
+                Assert.IsTrue (emitResult.Success, "Unable to emit compilation.")
+
+                let projectOptions =
+                    { defaultProjectOptions with
+                        OtherOptions = 
+                            Array.append defaultProjectOptions.OtherOptions [|"-r:" + compilationOutputPath|]
+                    }
+                let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, projectOptions) |> Async.RunSynchronously
+
+                Assert.True(parseResults.Errors.Length = 0, sprintf "Parse errors: %A" parseResults.Errors)
+
+                match fileAnswer with
+                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+                | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+
+                Assert.True(typeCheckResults.Errors.Length = 0, sprintf "Type Check errors: %A" typeCheckResults.Errors)
+            finally
+                try File.Delete compilationOutputPath with | _ -> ()
 
     let Pass (source: string) =
         lock lockObj <| fun () ->

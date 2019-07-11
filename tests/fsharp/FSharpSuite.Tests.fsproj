@@ -31,9 +31,11 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
+    <Compile Include="Compiler\Utilities.fs" />
     <Compile Include="Compiler\CompilerAssert.fs" />
     <Compile Include="Compiler\ILHelpers.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\DefaultInterfaceMethodInteropTests.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
@@ -59,6 +61,9 @@
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
   </ItemGroup>
 
 </Project>

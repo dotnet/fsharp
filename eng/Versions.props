@@ -100,7 +100,9 @@
     <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
     <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
     <MicrosoftCodeAnalysisWorkspacesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisWorkspacesCommonVersion>
+    <MicrosoftCodeAnalysisCSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
+    <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.17</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <!-- Microsoft Build packages -->
     <MicrosoftBuildOverallPackagesVersion>16.0.461</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
