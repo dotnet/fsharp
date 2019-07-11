@@ -534,3 +534,14 @@ module UnmanagedProcessExecutionOptions =
                             "HeapSetInformation() returned FALSE; LastError = 0x" + 
                             GetLastError().ToString("X").PadLeft(8, '0') + "."))
 
+[<RequireQualifiedAccess>]
+module StackGuard =
+
+    open System.Runtime.CompilerServices
+
+    [<Literal>] 
+    let private MaxUncheckedRecursionDepth = 20
+
+    let EnsureSufficientExecutionStack recursionDepth =
+        if recursionDepth > MaxUncheckedRecursionDepth then
+            RuntimeHelpers.EnsureSufficientExecutionStack ()
