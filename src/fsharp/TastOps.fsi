@@ -2231,6 +2231,8 @@ val (|EnumExpr|_|) : TcGlobals -> Expr -> Expr option
 val (|TypeOfExpr|_|) : TcGlobals -> Expr -> TType option
 
 val (|TypeDefOfExpr|_|) : TcGlobals -> Expr -> TType option
+val (|NameOfExpr|_|) : TcGlobals -> Expr -> TType option
+val (|SeqExpr|_|) : TcGlobals -> Expr -> unit option
 
 val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 

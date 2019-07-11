@@ -2193,12 +2193,11 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
         match cmeth.UnassignedNamedArgs with 
         | CallerNamedArg(id, _) :: _ -> 
             if minfo.IsConstructor then
-                let predictFields() =
-                    minfo.DeclaringTyconRef.AllInstanceFieldsAsList
-                    |> List.map (fun p -> p.Name.Replace("@", ""))
-                    |> System.Collections.Generic.HashSet
+                let suggestFields (addToBuffer: string -> unit) =
+                    for p in minfo.DeclaringTyconRef.AllInstanceFieldsAsList do
+                        addToBuffer(p.Name.Replace("@", ""))
 
-                ErrorWithSuggestions((msgNum, FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)), id.idRange, id.idText, predictFields)
+                ErrorWithSuggestions((msgNum, FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)), id.idRange, id.idText, suggestFields)
             else
                 Error((msgNum, FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)), id.idRange)
         | [] -> Error((msgNum, msgText), m)
@@ -2678,8 +2677,25 @@ let UndoIfFailed f =
         ReportWarnings warns
         true
 
+let UndoIfFailedOrWarnings f =
+    let trace = Trace.New()
+    let res = 
+        try 
+            f trace 
+            |> CheckNoErrorsAndGetWarnings
+        with e -> None
+    match res with 
+    | Some [] -> 
+        true
+    | _ -> 
+        trace.Undo()
+        false
+
 let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
+
+let AddCxTypeEqualsTypeUndoIfFailedOrWarnings denv css m ty1 ty2 =
+    UndoIfFailedOrWarnings (fun trace -> SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
     let csenv = { MakeConstraintSolverEnv ContextInfo.NoContext css m denv with MatchingOnly = true }

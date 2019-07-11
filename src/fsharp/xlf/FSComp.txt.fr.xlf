@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="new">{0} for F# {1}</target>
+        <target state="translated">{0} pour F# {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -164,7 +164,7 @@
       </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
-        <target state="new">Use reference assemblies for .NET framework references when available (Enabled by default).</target>
+        <target state="translated">Utilisez des assemblys de référence pour les références .NET Framework quand ils sont disponibles (activé par défaut).</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -2845,11 +2845,6 @@
       <trans-unit id="tcInvalidObjectExpressionSyntaxForm">
         <source>Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.</source>
         <target state="translated">Expression d'objet non valide. Les objets sans substitutions ou interfaces doivent utiliser la forme d'expression 'new Type(args)' sans accolades.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Expression d'objet, de séquence ou d'enregistrement non valide</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
@@ -5569,7 +5564,7 @@
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
         <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="needs-review-translation">Les builds déterministes ne prennent en charge que les fichiers PDB portables (--debug:portable ou --debug:embedded)</target>
+        <target state="translated">Les builds déterministes prennent seulement en charge les PDB portables (--debug:portable ou --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -7182,19 +7177,29 @@
         <target state="translated">Aucune implémentation pour ces membres (certains résultats sont omis) : {0} Notez que tous les membres d'interface doivent être implémentés et listés sous une déclaration 'interface' appropriée, par ex., 'interface ... with member ... '.</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
-        <target state="new">Maps physical paths to source path names output by the compiler</target>
+        <target state="translated">Mappe les chemins physiques aux noms de chemin source générés par le compilateur</target>
         <note />
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
+        <target state="translated">--pathmap peut seulement être utilisé avec des PBD portables (--debug:portable ou --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
-        <target state="new">Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</target>
+        <target state="translated">Mappage de chemin non valide. Les mappages doivent être séparés par des virgules et au format 'path=sourcePath'</target>
         <note />
       </trans-unit>
     </body>

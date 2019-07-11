@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="new">{0} for F# {1}</target>
+        <target state="translated">F# {1} の {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -164,7 +164,7 @@
       </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
-        <target state="new">Use reference assemblies for .NET framework references when available (Enabled by default).</target>
+        <target state="translated">使用可能な場合は、.NET Framework リファレンスの参照アセンブリを使用します (既定で有効)。</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -2845,11 +2845,6 @@
       <trans-unit id="tcInvalidObjectExpressionSyntaxForm">
         <source>Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.</source>
         <target state="translated">オブジェクト式が無効です。オーバーライドまたはインターフェイスがないオブジェクトには、かっこなしで 'new Type(args)' という形式の式を使用してください。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">オブジェクト式、シーケンス式、またはレコード式が無効です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
@@ -5571,7 +5566,7 @@
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
         <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="needs-review-translation">決定論的ビルドはポータブル PDB のみをサポートします (--debug:portable または --debug:embedded)</target>
+        <target state="translated">決定論的ビルドは、ポータブル PDB のみをサポートします (--debug:portable または --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -7184,19 +7179,29 @@
         <target state="translated">これらのメンバーに実装が指定されていません (一部の結果が省略されました): {0} すべてのインターフェイス メンバーは実装され、適切な 'interface' 宣言でリストされている必要があります。例: 'interface ... with member ...'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
-        <target state="new">Maps physical paths to source path names output by the compiler</target>
+        <target state="translated">物理パスをコンパイラ出力のソース パス名にマップします</target>
         <note />
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
+        <target state="translated">--pathmap は、ポータブル PDB でのみ使用できます (--debug:portable または --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
-        <target state="new">Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</target>
+        <target state="translated">無効なパス マップです。マッピングはコンマ区切りの 'path=sourcePath' 形式である必要があります</target>
         <note />
       </trans-unit>
     </body>

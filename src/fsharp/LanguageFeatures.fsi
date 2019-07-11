@@ -11,7 +11,8 @@ type LanguageFeature =
     | SingleUnderscorePattern = 2
     | WildCardInForLoop = 3
     | RelaxWhitespace = 4
-    | DefaultInterfaceMethodsInterop = 5
+    | NameOf = 5
+    | DefaultInterfaceMethodsInterop = 6
 
 /// LanguageVersion management
 type LanguageVersion =

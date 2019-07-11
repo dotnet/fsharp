@@ -40,8 +40,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
-    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
