@@ -51,6 +51,8 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.WildCardInForLoop, previewVersion
         LanguageFeature.RelaxWhitespace, previewVersion
         LanguageFeature.NameOf, previewVersion
+        LanguageFeature.ImplicitYield, previewVersion
+        LanguageFeature.OpenStaticClasses, previewVersion
         |]
 
     let specified =
