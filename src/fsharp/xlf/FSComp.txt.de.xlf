@@ -2847,6 +2847,11 @@
         <target state="translated">Ungültiger Objektausdruck. Objekte ohne Überschreibungen oder Schnittstellen sollten das Ausdrucksformat "new Type(args)" ohne geschweifte Klammern verwenden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
+        <source>Invalid object, sequence or record expression</source>
+        <target state="translated">Ungültiger Objekt-, Sequenz- oder Datensatzausdruck.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Ungültiger Datensatz-, Sequenz- oder Berechnungsausdruck. Sequenzausdrücke müssen das Format "seq {{ ... }}" besitzen.</target>

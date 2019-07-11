@@ -26,6 +26,8 @@ type LanguageFeature =
     | RelaxWhitespace = 4
     | NameOf = 5
     | DefaultInterfaceMethodsInterop = 6
+    | ImplicitYield = 7
+
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
@@ -51,6 +53,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.RelaxWhitespace, previewVersion
         LanguageFeature.NameOf, previewVersion
         LanguageFeature.DefaultInterfaceMethodsInterop, previewVersion
+        LanguageFeature.ImplicitYield, previewVersion
         // Add new LanguageFeatures here ...
         |]
 

@@ -371,11 +371,11 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
-/// Adjust the TcEnv to account for opening the set of modules and namespaces implied by an `open` declaration
-let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
+/// Adjust the TcEnv to account for opening the set of modules, namespaces or static classes implied by an `open` declaration
+let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
-        { env with eNameResEnv = AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
+        { env with eNameResEnv = AddEntitiesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
     env
@@ -645,11 +645,11 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap scopem true true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
-                OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
+                OpenEntities tcSink g amap scopem false env modrefs openDecl
             | Exception _ -> env
         | _ -> env
 
@@ -3518,14 +3518,84 @@ let (|ExprAsPat|_|) (f: SynExpr) =
             None
     | _ -> None
 
+/// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
+let YieldFree cenv expr =
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield then
+
+        // Implement yield free logic for F# Language including the LanguageFeature.ImplicitYield
+        let rec YieldFree expr =
+            match expr with
+            | SynExpr.Sequential (_, _, e1, e2, _) ->
+                YieldFree e1 && YieldFree e2
+
+            | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
+                YieldFree e2 && Option.forall YieldFree e3opt
+
+            | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
+                YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
+                clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | SynExpr.For (_, _, _, _, _, body, _)
+            | SynExpr.TryFinally (body, _, _, _, _)
+            | SynExpr.LetOrUse (_, _, _, body, _)
+            | SynExpr.While (_, _, body, _)
+            | SynExpr.ForEach (_, _, _, _, _, body, _) ->
+                YieldFree body
+
+            | SynExpr.LetOrUseBang(_, _, _, _, _, body, _) ->
+                YieldFree body
+
+            | SynExpr.YieldOrReturn((true, _), _, _) -> false
+
+            | _ -> true
+
+        YieldFree expr
+    else
+        // Implement yield free logic for F# Language without the LanguageFeature.ImplicitYield
+        let rec YieldFree expr =
+            match expr with
+            | SynExpr.Sequential (_, _, e1, e2, _) ->
+                YieldFree e1 && YieldFree e2
+
+            | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
+                YieldFree e2 && Option.forall YieldFree e3opt
+
+            | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
+                YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
+                clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+
+            | SynExpr.For (_, _, _, _, _, body, _)
+            | SynExpr.TryFinally (body, _, _, _, _)
+            | SynExpr.LetOrUse (_, _, _, body, _)
+            | SynExpr.While (_, _, body, _)
+            | SynExpr.ForEach (_, _, _, _, _, body, _) ->
+                YieldFree body
+
+            | SynExpr.LetOrUseBang _
+            | SynExpr.YieldOrReturnFrom _
+            | SynExpr.YieldOrReturn _
+            | SynExpr.ImplicitZero _
+            | SynExpr.Do _ -> false
+
+            | _ -> true
+
+        YieldFree expr
+
+
 /// Determine if a syntactic expression inside 'seq { ... }' or '[...]' counts as a "simple sequence
 /// of semicolon separated values". For example [1;2;3].
+/// 'acceptDeprecated' is true for the '[ ... ]' case, where we allow the syntax '[ if g then t else e ]' but ask it to be parenthesized
 ///
-let (|SimpleSemicolonSequence|_|) cexpr = 
+let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr = 
 
     let IsSimpleSemicolonSequenceElement expr = 
-        match expr with 
-        | SynExpr.IfThenElse _ 
+        match expr with
+        | SynExpr.IfThenElse _ when acceptDeprecated && YieldFree cenv expr -> true
+        | SynExpr.IfThenElse _
         | SynExpr.TryWith _ 
         | SynExpr.Match _ 
         | SynExpr.For _ 
@@ -5734,6 +5804,13 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
     expr, overallTy, tpenv
 
 and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
+
+    // LanguageFeatures.ImplicitYield do not require this validation
+    let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+    let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
+    let validateExpressionWithIfRequiresParenethesis = not implicitYieldEnabled
+    let acceptDeprecatedIfThenExpression = not implicitYieldEnabled
+
     match synExpr with 
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) -> 
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
@@ -5932,6 +6009,8 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             match comp with 
             | SynExpr.New _ -> 
                 errorR(Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm(), m))
+            | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
+                errorR(Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression(), m))
             | _ -> 
                 ()
         if not !isNotNakedRefCell && not cenv.g.compilingFslib then 
@@ -5941,9 +6020,12 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         
     | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
-
         match comp with 
-        | SynExpr.CompExpr (_, _, SimpleSemicolonSequence elems, _) -> 
+        | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems as body), _) -> 
+            match body with
+            | SimpleSemicolonSequence cenv false _ -> ()
+            | _ when validateExpressionWithIfRequiresParenethesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
+            | _ -> ()
 
             let replacementExpr = 
                 if isArray then 
@@ -6884,7 +6966,7 @@ and TcConstExpr cenv overallTy env m tpenv c =
         let expr = 
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) -> 
@@ -7330,31 +7412,6 @@ and TcQuotationExpr cenv overallTy env tpenv (_oper, raw, ast, isFromQueryExpres
 
 /// Ignores an attribute
 and IgnoreAttribute _ = None
-
-/// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
-and YieldFree expr =
-    match expr with
-    | SynExpr.Sequential (_, _, e1, e2, _) -> YieldFree e1 && YieldFree e2
-    | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) -> YieldFree e2 && Option.forall YieldFree e3opt
-    | SynExpr.TryWith (e1, _, clauses, _, _, _, _) -> 
-        YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
-    | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
-        clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
-    | SynExpr.For (_, _, _, _, _, body, _)
-    | SynExpr.TryFinally (body, _, _, _, _)
-    | SynExpr.LetOrUse (_, _, _, body, _)
-    | SynExpr.LetOrUseBang(_, _, _, _, _, body, _) 
-    | SynExpr.LetOrUse (_, _, _, body, _)
-    | SynExpr.While (_, _, body, _)
-    | SynExpr.ForEach (_, _, _, _, _, body, _) -> 
-        YieldFree body
-
-    // 'yield!' in expressions doesn't trigger the 'yield free' rule
-    //| SynExpr.YieldOrReturnFrom _
-    | SynExpr.YieldOrReturn((true, _), _, _) -> 
-        false
-
-    | _ -> true    
 
 /// Used for all computation expressions except sequence expressions
 and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builderTy tpenv (comp: SynExpr) = 
@@ -7814,7 +7871,9 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     // If there are no 'yield' in the computation expression, and the builder supports 'Yield',
     // then allow the type-directed rule interpreting non-unit-typed expressions in statement
     // positions as 'yield'.  'yield!' may be present in the computation expression.
-    let enableImplicitYield = hasMethInfo "Yield" && hasMethInfo "Combine"  && hasMethInfo "Delay" && YieldFree comp
+    let enableImplicitYield =
+        cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+        && (hasMethInfo "Yield" && hasMethInfo "Combine"  && hasMethInfo "Delay" && YieldFree cenv comp)
 
     // q              - a flag indicating if custom operators are allowed. They are not allowed inside try/with, try/finally, if/then/else etc.
     // varSpace       - a lazy data structure indicating the variables bound so far in the overall computation
@@ -8200,8 +8259,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 | _ -> 
                     Some (trans true q varSpace innerComp2 (fun holeFill ->
                         let fillExpr = 
-                            if enableImplicitYield then 
-                                
+                            if enableImplicitYield then
                                 // When implicit yields are enabled, then if the 'innerComp1' checks as type
                                 // 'unit' we interpret the expression as a sequential, and when it doesn't
                                 // have type 'unit' we interpret it as a 'Yield + Combine'.
@@ -8443,7 +8501,9 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
     // If there are no 'yield' in the computation expression then allow the type-directed rule
     // interpreting non-unit-typed expressions in statement positions as 'yield'.  'yield!' may be  
     // present in the computation expression.
-    let enableImplicitYield = YieldFree comp
+    let enableImplicitYield =
+        cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+        && (YieldFree cenv comp)
 
     let mkDelayedExpr (coreExpr: Expr) = 
         let m = coreExpr.Range
@@ -8504,6 +8564,9 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
             let innerExprMark = innerExpr.Range
                 
             Some(mkSeqFinally cenv env innerExprMark genOuterTy innerExpr unwindExpr, tpenv)
+
+        | SynExpr.Paren (_, _, _, m) when not (cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield)->
+            error(Error(FSComp.SR.tcConstructIsAmbiguousInSequenceExpression(), m))
 
         | SynExpr.ImplicitZero m -> 
             Some(mkSeqEmpty cenv env m genOuterTy, tpenv )
@@ -8774,7 +8837,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
         | LongOrSingleIdent (false, (LongIdentWithDots(longId, _) as lidd), _, _) when longId.Length > 0 ->
             let ad = env.eAccessRights
             let id, rest = List.headAndTail longId
-            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) -> 
                 () // resolved to a module or namespace, done with checks
             | _ -> 
@@ -12642,19 +12705,19 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 // Bind 'open' declarations
 //------------------------------------------------------------------------- 
 
-let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId: Ident list) =
+let TcOpenLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
     let ad = env.eAccessRights
     match longId with
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
+        match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap m true true OpenQualified env.eNameResEnv ad id rest true with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
 
 let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) = 
-    match TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId with
+    match TcOpenLidAndPermitAutoResolve tcSink env amap longId with
     | [] -> env
     | modrefs ->
 
@@ -12706,7 +12769,7 @@ let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) =
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
     let openDecl = OpenDeclaration.Create (longId, modrefs, scopem, false)
-    let env = OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
+    let env = OpenEntities tcSink g amap scopem false env modrefs openDecl
     env    
 
 
@@ -14181,7 +14244,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+            | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
         let mvvs = ForceRaise resolved
         if isNil mvvs then env else
         let modrefs = mvvs |> List.map p23
@@ -17008,7 +17071,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+                | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
@@ -17562,7 +17625,7 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     | ValueNone -> warn()
     | ValueSome _ -> 
         let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
-        OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+        OpenEntities TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible) = 

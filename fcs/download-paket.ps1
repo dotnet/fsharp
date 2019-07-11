@@ -1,4 +1,4 @@
-$paketurl="https://github.com/fsprojects/Paket/releases/download/5.210.1/paket.exe"
+$paketurl="https://github.com/fsprojects/Paket/releases/download/5.215.0/paket.exe"
 $paketdir = Join-Path $PSScriptRoot ".paket"
 $paketpath = Join-Path $paketdir "paket.exe"
 

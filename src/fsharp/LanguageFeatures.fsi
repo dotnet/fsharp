@@ -13,6 +13,8 @@ type LanguageFeature =
     | RelaxWhitespace = 4
     | NameOf = 5
     | DefaultInterfaceMethodsInterop = 6
+    | ImplicitYield = 7
+
 
 /// LanguageVersion management
 type LanguageVersion =
