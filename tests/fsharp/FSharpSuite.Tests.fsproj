@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -32,6 +32,7 @@
     <Compile Include="tests.fs" />
     <Compile Include="Compiler\ILChecker.fs" />
     <Compile Include="Compiler\CompilerAssert.fs" />
+    <Compile Include="Compiler\ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
