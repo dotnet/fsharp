@@ -151,7 +151,8 @@ type AllowMultiIntfInstantiations = Yes | No
 
 /// Traverse the type hierarchy, e.g. f D (f C (f System.Object acc)).
 /// Visit base types and interfaces first.
-let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
+let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor (amap: Import.ImportMap) m ty acc =
+    let g = amap.g
     let rec loop ndeep ty ((visitedTycon, visited: TyconRefMultiMap<_>, acc) as state) =
 
         let seenThisTycon = isAppTy g ty && Set.contains (tcrefOfAppTy g ty).Stamp visitedTycon
@@ -220,37 +221,37 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
     loop 0 ty (Set.empty, TyconRefMultiMap<_>.Empty, acc)  |> p33
 
 /// Fold, do not follow interfaces (unless the type is itself an interface)
-let FoldPrimaryHierarchyOfType f g amap m allowMultiIntfInst ty acc =
-    FoldHierarchyOfTypeAux false allowMultiIntfInst SkipUnrefInterfaces.No f g amap m ty acc
+let FoldPrimaryHierarchyOfType f amap m allowMultiIntfInst ty acc =
+    FoldHierarchyOfTypeAux false allowMultiIntfInst SkipUnrefInterfaces.No f amap m ty acc
 
 /// Fold, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
-let FoldEntireHierarchyOfType f g amap m allowMultiIntfInst ty acc =
-    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes f g amap m ty acc
+let FoldEntireHierarchyOfType f amap m allowMultiIntfInst ty acc =
+    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes f amap m ty acc
 
 /// Iterate, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
-let IterateEntireHierarchyOfType f g amap m allowMultiIntfInst ty =
-    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes (fun ty () -> f ty) g amap m ty ()
+let IterateEntireHierarchyOfType f amap m allowMultiIntfInst ty =
+    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes (fun ty () -> f ty) amap m ty ()
 
 /// Search for one element satisfying a predicate, following interfaces
-let ExistsInEntireHierarchyOfType f g amap m allowMultiIntfInst ty =
-    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes (fun ty acc -> acc || f ty ) g amap m ty false
+let ExistsInEntireHierarchyOfType f amap m allowMultiIntfInst ty =
+    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes (fun ty acc -> acc || f ty ) amap m ty false
 
 /// Search for one element where a function returns a 'Some' result, following interfaces
-let SearchEntireHierarchyOfType f g amap m ty =
+let SearchEntireHierarchyOfType f amap m ty =
     FoldHierarchyOfTypeAux true AllowMultiIntfInstantiations.Yes SkipUnrefInterfaces.Yes
         (fun ty acc ->
             match acc with
             | None -> if f ty then Some ty else None
             | Some _ -> acc)
-        g amap m ty None
+        amap m ty None
 
 /// Get all super types of the type, including the type itself
-let AllSuperTypesOfType g amap m allowMultiIntfInst ty =
-    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.No (ListSet.insert (typeEquiv g)) g amap m ty []
+let AllSuperTypesOfType (amap: Import.ImportMap) m allowMultiIntfInst ty =
+    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.No (ListSet.insert (typeEquiv amap.g)) amap m ty []
 
 /// Get all interfaces of a type, including the type itself if it is an interface
-let AllInterfacesOfType g amap m allowMultiIntfInst ty =
-    AllSuperTypesOfType g amap m allowMultiIntfInst ty |> List.filter (isInterfaceTy g)
+let AllInterfacesOfType (amap: Import.ImportMap) m allowMultiIntfInst ty =
+    AllSuperTypesOfType amap m allowMultiIntfInst ty |> List.filter (isInterfaceTy amap.g)
 
 /// Check if two types have the same nominal head type
 let HaveSameHeadType g ty1 ty2 =
@@ -265,11 +266,11 @@ let HasHeadType g tcref ty2 =
 
 /// Check if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
 let ExistsSameHeadTypeInHierarchy g amap m typeToSearchFrom typeToLookFor =
-    ExistsInEntireHierarchyOfType (HaveSameHeadType g typeToLookFor)  g amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
+    ExistsInEntireHierarchyOfType (HaveSameHeadType g typeToLookFor) amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
 
 /// Check if a type exists somewhere in the hierarchy which has the given head type.
 let ExistsHeadTypeInEntireHierarchy g amap m typeToSearchFrom tcrefToLookFor =
-    ExistsInEntireHierarchyOfType (HasHeadType g tcrefToLookFor) g amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
+    ExistsInEntireHierarchyOfType (HasHeadType g tcrefToLookFor) amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
 
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
@@ -2291,11 +2292,11 @@ let nonStandardEventError nm m =
 
 /// Find the delegate type that an F# event property implements by looking through the type hierarchy of the type of the property
 /// for the first instantiation of IDelegateEvent.
-let FindDelegateTypeOfPropertyEvent g amap nm m ty =
-    match SearchEntireHierarchyOfType (tyConformsToIDelegateEvent g) g amap m ty with
+let FindDelegateTypeOfPropertyEvent (amap:Import.ImportMap) nm m ty =
+    let g = amap.g
+    match SearchEntireHierarchyOfType (tyConformsToIDelegateEvent g) amap m ty with
     | None -> error(nonStandardEventError nm m)
     | Some ty -> destIDelegateEventType g ty
-
 
 //-------------------------------------------------------------------------
 // EventInfo
@@ -2439,8 +2440,8 @@ type EventInfo =
             if Option.isNone edef.EventType then error (nonStandardEventError x.EventName m)
             ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] edef.EventType.Value
 
-        | FSEvent(g, p, _, _) ->
-            FindDelegateTypeOfPropertyEvent g amap x.EventName m (p.GetPropertyType(amap, m))
+        | FSEvent(_, p, _, _) ->
+            FindDelegateTypeOfPropertyEvent amap x.EventName m (p.GetPropertyType(amap, m))
 #if !NO_EXTENSIONTYPING
         | ProvidedEvent (_, ei, _) ->
             Import.ImportProvidedType amap m (ei.PApply((fun ei -> ei.EventHandlerType), m))

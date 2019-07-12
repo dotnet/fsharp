@@ -76,14 +76,14 @@ let rec private evalFSharpAttribArg g e =
 
 type AttribInfo = 
     | FSAttribInfo of TcGlobals * Attrib
-    | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
+    | ILAttribInfo of Import.ImportMap * ILScopeRef * ILAttribute * range
 
     member x.TyconRef = 
          match x with 
          | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _)) -> tcref
-         | ILAttribInfo (g, amap, scoref, a, m) -> 
+         | ILAttribInfo (amap, scoref, a, m) ->
              let ty = ImportILType scoref amap m [] a.Method.DeclaringType
-             tcrefOfAppTy g ty
+             tcrefOfAppTy amap.g ty
 
     member x.ConstructorArguments = 
          match x with 
@@ -92,8 +92,9 @@ type AttribInfo =
              |> List.map (fun (AttribExpr(origExpr, evaluatedExpr)) -> 
                     let ty = tyOfExpr g origExpr
                     let obj = evalFSharpAttribArg g evaluatedExpr
-                    ty, obj) 
-         | ILAttribInfo (g, amap, scoref, cattr, m) -> 
+                    ty, obj)
+         | ILAttribInfo (amap, scoref, cattr, m) -> 
+              let g = amap.g
               let parms, _args = decodeILAttribData g.ilg cattr 
               [ for (argty, argval) in Seq.zip cattr.Method.FormalArgTypes parms ->
                     let ty = ImportILType scoref amap m [] argty
@@ -108,7 +109,8 @@ type AttribInfo =
                     let ty = tyOfExpr g origExpr
                     let obj = evalFSharpAttribArg g evaluatedExpr
                     ty, nm, isField, obj) 
-         | ILAttribInfo (g, amap, scoref, cattr, m) -> 
+         | ILAttribInfo (amap, scoref, cattr, m) -> 
+              let g = amap.g
               let _parms, namedArgs = decodeILAttribData g.ilg cattr 
               [ for (nm, argty, isProp, argval) in namedArgs ->
                     let ty = ImportILType scoref amap m [] argty
@@ -119,8 +121,8 @@ type AttribInfo =
 
 /// Check custom attributes. This is particularly messy because custom attributes come in in three different
 /// formats.
-let AttribInfosOfIL g amap scoref m (attribs: ILAttributes) = 
-    attribs.AsList  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
+let AttribInfosOfIL amap scoref m (attribs: ILAttributes) = 
+    attribs.AsList  |> List.map (fun a -> ILAttribInfo (amap, scoref, a, m))
 
 let AttribInfosOfFS g attribs = 
     attribs |> List.map (fun a -> FSAttribInfo (g, a))
@@ -136,14 +138,14 @@ let GetAttribInfosOfEntity g amap m (tcref:TyconRef) =
         //| None -> None
 #endif
     | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) -> 
-        tdef.CustomAttrs |> AttribInfosOfIL g amap scoref m
+        tdef.CustomAttrs |> AttribInfosOfIL amap scoref m
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
         tcref.Attribs |> List.map (fun a -> FSAttribInfo (g, a))
 
 
 let GetAttribInfosOfMethod amap m minfo = 
     match minfo with 
-    | ILMeth (g, ilminfo, _) -> ilminfo.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap ilminfo.MetadataScope m
+    | ILMeth (_, ilminfo, _) -> ilminfo.RawMetadata.CustomAttrs  |> AttribInfosOfIL amap ilminfo.MetadataScope m
     | FSMeth (g, _, vref, _) -> vref.Attribs |> AttribInfosOfFS g 
     | DefaultStructCtor _ -> []
 #if !NO_EXTENSIONTYPING
@@ -155,7 +157,7 @@ let GetAttribInfosOfMethod amap m minfo =
 
 let GetAttribInfosOfProp amap m pinfo = 
     match pinfo with 
-    | ILProp ilpinfo -> ilpinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL ilpinfo.TcGlobals amap ilpinfo.ILTypeInfo.ILScopeRef m
+    | ILProp ilpinfo -> ilpinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL amap ilpinfo.ILTypeInfo.ILScopeRef m
     | FSProp(g, _, Some vref, _) 
     | FSProp(g, _, _, Some vref) -> vref.Attribs |> AttribInfosOfFS g 
     | FSProp _ -> failwith "GetAttribInfosOfProp: unreachable"
@@ -166,7 +168,7 @@ let GetAttribInfosOfProp amap m pinfo =
 
 let GetAttribInfosOfEvent amap m einfo = 
     match einfo with 
-    | ILEvent ileinfo -> ileinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL einfo.TcGlobals amap ileinfo.ILTypeInfo.ILScopeRef m
+    | ILEvent ileinfo -> ileinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL amap ileinfo.ILTypeInfo.ILScopeRef m
     | FSEvent(_, pi, _vref1, _vref2) -> GetAttribInfosOfProp amap m pi
 #if !NO_EXTENSIONTYPING
     // TODO: provided attributes
@@ -516,7 +518,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
             match casmap.TryGetValue tcs with
             | true, c -> c
             | _ ->
-                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
+                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
                 casmap.[tcs] <- exists
                 exists
         | ValueNone -> false  

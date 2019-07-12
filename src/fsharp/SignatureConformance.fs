@@ -185,7 +185,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let aintfsUser = implTycon.TypeContents.tcaug_interfaces |> List.filter (fun (_, compgen, _) -> not compgen) |> List.map p13 
                 let flatten tys = 
                    tys 
-                   |> List.collect (AllSuperTypesOfType g amap m AllowMultiIntfInstantiations.Yes) 
+                   |> List.collect (AllSuperTypesOfType amap m AllowMultiIntfInstantiations.Yes) 
                    |> ListSet.setify (typeEquiv g) 
                    |> List.filter (isInterfaceTy g)
                 let aintfs     = flatten aintfs 

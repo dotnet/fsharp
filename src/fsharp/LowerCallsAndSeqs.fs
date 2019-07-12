@@ -117,7 +117,9 @@ let isVarFreeInExpr v e = Zset.contains v (freeInExpr CollectTyparsAndLocals e).
 /// The analysis is done in two phases. The first phase determines the state variables and state labels (as Abstract IL code labels).
 /// We then allocate an integer pc for each state label and proceed with the second phase, which builds two related state machine
 /// expressions: one for 'MoveNext' and one for 'Dispose'.
-let LowerSeqExpr g amap overallExpr =
+let LowerSeqExpr (amap:Import.ImportMap) overallExpr =
+    let g = amap.g
+
     /// Detect a 'yield x' within a 'seq { ... }'
     let (|SeqYield|_|) expr =
         match expr with
@@ -537,7 +539,7 @@ let LowerSeqExpr g amap overallExpr =
                 None
             else
                 let tyConfirmsToSeq g ty = isAppTy g ty && tyconRefEq g (tcrefOfAppTy g ty) g.tcref_System_Collections_Generic_IEnumerable
-                match SearchEntireHierarchyOfType (tyConfirmsToSeq g) g amap m (tyOfExpr g arbitrarySeqExpr) with
+                match SearchEntireHierarchyOfType (tyConfirmsToSeq g) amap m (tyOfExpr g arbitrarySeqExpr) with
                 | None ->
                     // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)
                     None

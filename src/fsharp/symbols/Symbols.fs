@@ -552,7 +552,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.AllInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
         ErrorLogger.protectAssemblyExploration [] (fun () -> 
-            [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef entity) do 
+            [ for ty in AllInterfacesOfType cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef entity) do 
                  yield FSharpType(cenv, ty) ])
         |> makeReadOnlyCollection
     
@@ -1363,11 +1363,11 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                               //match d with 
                               //| E e -> 
                               //    match e with 
-                              //    | EventInfo.ILEvent (_, e) -> AccessibilityLogic.IsILEventInfoAccessible g cenv.amap range0 ad e
+                              //    | EventInfo.ILEvent (_, e) -> AccessibilityLogic.IsILEventInfoAccessible cenv.amap range0 ad e
                               //    | EventInfo.FSEvent (_, _, vref, _) ->  AccessibilityLogic.IsValAccessible ad vref
                               //    | _ -> true
                               //| M m -> AccessibilityLogic.IsMethInfoAccessible cenv.amap range0 ad m
-                              //| P p -> AccessibilityLogic.IsPropInfoAccessible g cenv.amap range0 ad p
+                              //| P p -> AccessibilityLogic.IsPropInfoAccessible cenv.amap range0 ad p
                               //| V v -> AccessibilityLogic.IsValAccessible ad v
                           )
 
@@ -2156,7 +2156,7 @@ and FSharpType(cenv, ty:TType) =
 
     member x.AllInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes ty do 
+        [ for ty in AllInterfacesOfType  cenv.amap range0 AllowMultiIntfInstantiations.Yes ty do 
              yield FSharpType(cenv, ty) ]
         |> makeReadOnlyCollection
 
@@ -2282,7 +2282,8 @@ and FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
             match attrib with
             | AttribInfo.FSAttribInfo(g, attrib) ->
                 NicePrint.stringOfFSAttrib (denv.Contents g) attrib
-            | AttribInfo.ILAttribInfo (g, _, _scoref, cattr, _) -> 
+            | AttribInfo.ILAttribInfo (amap, _scoref, cattr, _) ->
+                let g = amap.g
                 let parms, _args = decodeILAttribData g.ilg cattr 
                 NicePrint.stringOfILAttrib (denv.Contents g) (cattr.Method.DeclaringType, parms)
 
@@ -2405,7 +2406,7 @@ and FSharpAssemblySignature (cenv, topAttribs: TypeChecker.TopAttribs option, op
                     match ilModule.Manifest with 
                     | None -> ()
                     | Some manifest -> 
-                        for a in AttribInfosOfIL cenv.g cenv.amap cenv.thisCcu.ILScopeRef range0 manifest.CustomAttrs do
+                        for a in AttribInfosOfIL cenv.amap cenv.thisCcu.ILScopeRef range0 manifest.CustomAttrs do
                             yield FSharpAttribute(cenv, a)
                 | None -> 
                     // If no module is available, then look in the CCU contents. 

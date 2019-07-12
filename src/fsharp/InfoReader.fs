@@ -123,11 +123,11 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.PropertyGet ->
             let pinfo = FSProp(g, ty, Some vref, None) 
-            if checkFilter optFilter vref.PropertyName && IsPropInfoAccessible g amap m ad pinfo then
+            if checkFilter optFilter vref.PropertyName && IsPropInfoAccessible amap m ad pinfo then
                 add pinfo
         | MemberKind.PropertySet ->
             let pinfo = FSProp(g, ty, None, Some vref)
-            if checkFilter optFilter vref.PropertyName  && IsPropInfoAccessible g amap m ad pinfo then 
+            if checkFilter optFilter vref.PropertyName  && IsPropInfoAccessible amap m ad pinfo then 
                 add pinfo
         | _ -> 
             ()
@@ -174,7 +174,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
                     SelectImmediateMemberVals g None (fun membInfo vref -> propCollector.Collect(membInfo, vref); None) tcref |> ignore
                     propCollector.Close()
 
-    let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
+    let pinfos = pinfos |> List.filter (IsPropInfoAccessible amap m ad)
     pinfos
 
 /// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
@@ -230,8 +230,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                 fdefs |> List.map (fun pd -> ILFieldInfo(tinfo, pd)) 
             | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                 []
-        let infos = infos |> List.filter (IsILFieldInfoAccessible g amap m  ad)
-        infos           
+        let infos = infos |> List.filter (IsILFieldInfoAccessible amap m  ad)
+        infos
 
     /// Get the declared events of a type, not including inherited events, and not including F#-declared CLIEvents
     let ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty =
@@ -254,7 +254,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                 let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
                 [ for edef in edefs   do
                     let ileinfo = ILEventInfo(tinfo, edef)
-                    if IsILEventInfoAccessible g amap m ad ileinfo then 
+                    if IsILEventInfoAccessible amap m ad ileinfo then 
                         yield ILEvent ileinfo ]
             | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                 []
@@ -284,26 +284,26 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
 
     /// The primitive reader for the method info sets up a hierarchy
     let GetIntrinsicMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
-        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty :: acc) g amap m allowMultiIntfInst ty []
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty :: acc) amap m allowMultiIntfInst ty []
 
     /// The primitive reader for the property info sets up a hierarchy
     let GetIntrinsicPropertySetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
-        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicPropInfosOfType (optFilter, ad) g amap m ty :: acc) g amap m allowMultiIntfInst ty []
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicPropInfosOfType (optFilter, ad) g amap m ty :: acc) amap m allowMultiIntfInst ty []
 
     let GetIntrinsicILFieldInfosUncached ((optFilter, ad), m, ty) =
-        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty @ acc) amap m AllowMultiIntfInstantiations.Yes ty []
 
     let GetIntrinsicEventInfosUncached ((optFilter, ad), m, ty) =
-        FoldPrimaryHierarchyOfType (fun ty acc -> ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
+        FoldPrimaryHierarchyOfType (fun ty acc -> ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty @ acc) amap m AllowMultiIntfInstantiations.Yes ty []
 
     let GetIntrinsicRecdOrClassFieldInfosUncached ((optFilter, ad), m, ty) =
-        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
-    
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty @ acc) amap m AllowMultiIntfInstantiations.Yes ty []
+
     let GetEntireTypeHierachyUncached (allowMultiIntfInst, m, ty) =
-        FoldEntireHierarchyOfType (fun ty acc -> ty :: acc) g amap m allowMultiIntfInst ty  [] 
+        FoldEntireHierarchyOfType (fun ty acc -> ty :: acc) amap m allowMultiIntfInst ty  [] 
 
     let GetPrimaryTypeHierachyUncached (allowMultiIntfInst, m, ty) =
-        FoldPrimaryHierarchyOfType (fun ty acc -> ty :: acc) g amap m allowMultiIntfInst ty [] 
+        FoldPrimaryHierarchyOfType (fun ty acc -> ty :: acc) amap m allowMultiIntfInst ty [] 
 
     /// The primitive reader for the named items up a hierarchy
     let GetIntrinsicNamedItemsUncached ((nm, ad), m, ty) =
@@ -327,7 +327,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                 | [single] -> Some(RecdFieldItem(single))
                 | _ -> failwith "Unexpected multiple fields with the same name" // Because an explicit name (i.e., nm) was supplied, there will be only one element at most.
              | _ -> acc)
-          g amap m 
+          amap m 
           AllowMultiIntfInstantiations.Yes
           ty
           None

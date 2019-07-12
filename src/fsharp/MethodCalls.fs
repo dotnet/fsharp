@@ -1286,7 +1286,7 @@ let RecdFieldInstanceChecks g amap ad m (rfinfo: RecdFieldInfo) =
 
 let ILFieldInstanceChecks  g amap ad m (finfo : ILFieldInfo) =
     if finfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
-    CheckILFieldInfoAccessible g amap m ad finfo
+    CheckILFieldInfoAccessible amap m ad finfo
     CheckILFieldAttributes g finfo m
 
 let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =

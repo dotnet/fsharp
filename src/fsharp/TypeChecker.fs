@@ -1552,7 +1552,6 @@ let MakeAndPublishBaseVal cenv env baseIdOpt ty =
 let InstanceMembersNeedSafeInitCheck cenv m thisTy = 
     ExistsInEntireHierarchyOfType 
         (fun ty -> not (isStructTy cenv.g ty) && (match tryDestAppTy cenv.g ty with ValueSome tcref when tcref.HasSelfReferentialConstructor -> true | _ -> false))
-        cenv.g 
         cenv.amap
         m 
         AllowMultiIntfInstantiations.Yes
@@ -4490,7 +4489,7 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
               if CompileAsEvent cenv.g attrs then 
                     let valSynInfo = EventDeclarationNormalization.ConvertSynInfo id.idRange valSynInfo
                     let memberFlags = EventDeclarationNormalization.ConvertMemberFlags memberFlags
-                    let delTy = FindDelegateTypeOfPropertyEvent cenv.g cenv.amap id.idText id.idRange declaredTy 
+                    let delTy = FindDelegateTypeOfPropertyEvent cenv.amap id.idText id.idRange declaredTy 
                     let ty = 
                        if memberFlags.IsInstance then 
                          thisTy --> (delTy --> cenv.g.unit_ty)
@@ -5449,7 +5448,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 
         | Item.ILField finfo ->
             // LITERAL .NET FIELDS 
-            CheckILFieldInfoAccessible cenv.g cenv.amap m env.eAccessRights finfo
+            CheckILFieldInfoAccessible cenv.amap m env.eAccessRights finfo
             if not finfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(finfo.FieldName), m))
             CheckILFieldAttributes cenv.g finfo m
             match finfo.LiteralValue with 
@@ -6241,7 +6240,6 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
                         | [] -> None
                         | _ -> item
                  | _ -> acc)
-              cenv.g 
               cenv.amap 
               mWholeExpr 
               AllowMultiIntfInstantiations.Yes
@@ -9267,7 +9265,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 
     | Item.ILField finfo -> 
 
-        CheckILFieldInfoAccessible g cenv.amap mItem ad finfo
+        CheckILFieldInfoAccessible cenv.amap mItem ad finfo
         if not finfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(finfo.FieldName), mItem))
         CheckILFieldAttributes g finfo mItem
         let fref = finfo.ILFieldRef
@@ -11059,7 +11057,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
                             errorR(Error(FSComp.SR.tcPropertyCannotBeSet0(), m))
                           id.idText, true, pinfo.GetPropertyType(cenv.amap, m)
                       | Item.ILField finfo -> 
-                          CheckILFieldInfoAccessible cenv.g cenv.amap m ad finfo
+                          CheckILFieldInfoAccessible cenv.amap m ad finfo
                           CheckILFieldAttributes cenv.g finfo m
                           id.idText, false, finfo.FieldType(cenv.amap, m)
                       | Item.RecdField rfinfo when not rfinfo.IsStatic -> 
@@ -15954,7 +15952,7 @@ module EstablishTypeDefinitionCores =
             // validate ConditionalAttribute, should it be applied (it's only valid on a type if the type is an attribute type)
             match attrs |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_ConditionalAttribute) with
             | Some _ ->
-                if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy g.tcref_System_Attribute [])) g cenv.amap m AllowMultiIntfInstantiations.Yes thisTy) then
+                if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy g.tcref_System_Attribute [])) cenv.amap m AllowMultiIntfInstantiations.Yes thisTy) then
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(), m))
             | _ -> ()         
                    

@@ -2183,7 +2183,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   ProcessSequencePointForExpr cenv cgbuf sp expr
 
   // A sequence expression will always match Expr.App.
-  match (if compileSequenceExpressions then LowerCallsAndSeqs.LowerSeqExpr g cenv.amap expr else None) with
+  match (if compileSequenceExpressions then LowerCallsAndSeqs.LowerSeqExpr cenv.amap expr else None) with
   | Some info ->
       GenSequenceExpr cenv cgbuf eenv info sequel
   | None ->
@@ -5619,7 +5619,7 @@ and GenPropertyForMethodDef compileAsInstance tref mdef (v: Val) (memberInfo: Va
 /// Generate an ILEventDef for a [<CLIEvent>] member
 and GenEventForProperty cenv eenvForMeth (mspec: ILMethodSpec) (v: Val) ilAttrsThatGoOnPrimaryItem m returnTy =
     let evname = v.PropertyName
-    let delegateTy = Infos.FindDelegateTypeOfPropertyEvent cenv.g cenv.amap evname m returnTy
+    let delegateTy = Infos.FindDelegateTypeOfPropertyEvent cenv.amap evname m returnTy
     let ilDelegateTy = GenType cenv.amap m eenvForMeth.tyenv delegateTy
     let ilThisTy = mspec.DeclaringType
     let addMethRef = mkILMethRef (ilThisTy.TypeRef, mspec.CallingConv, "add_" + evname, 0, [ilDelegateTy], ILType.Void)

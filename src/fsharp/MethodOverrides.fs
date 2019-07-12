@@ -440,14 +440,14 @@ module DispatchSlotChecking =
                     let baseTyOpt = if isObjExpr then Some reqdTy else GetSuperTypeOfType g amap m reqdTy 
                     match baseTyOpt with 
                     | None -> ()
-                    | Some baseTy -> yield! AllInterfacesOfType g amap m AllowMultiIntfInstantiations.Yes baseTy  ]
+                    | Some baseTy -> yield! AllInterfacesOfType amap m AllowMultiIntfInstantiations.Yes baseTy  ]
                     
         // For each implemented type, get a list containing the transitive closure of
         // interface types implied by the type. This includes the implemented type itself if the implemented type
         // is an interface type.
         let intfSets = 
             allReqdTys |> List.mapi (fun i (reqdTy, m) -> 
-                let interfaces = AllInterfacesOfType g amap m AllowMultiIntfInstantiations.Yes reqdTy 
+                let interfaces = AllInterfacesOfType amap m AllowMultiIntfInstantiations.Yes reqdTy 
                 let impliedTys = (if isInterfaceTy g reqdTy then interfaces else reqdTy :: interfaces)
                 (i, reqdTy, impliedTys, m))
 

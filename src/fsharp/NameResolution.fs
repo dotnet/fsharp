@@ -3480,13 +3480,13 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         |> List.filter (fun x ->
             not x.IsSpecialName &&
             x.IsStatic = statics &&
-            IsILFieldInfoAccessible g amap m ad x)
+            IsILFieldInfoAccessible amap m ad x)
 
     let pinfosIncludingUnseen =
         AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad PreferOverrides m ty
         |> List.filter (fun x ->
             x.IsStatic = statics &&
-            IsPropInfoAccessible g amap m ad x)
+            IsPropInfoAccessible amap m ad x)
 
     // Exclude get_ and set_ methods accessed by properties
     let pinfoMethNames =
@@ -3677,7 +3677,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
 
       (ty
          |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
-         |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
+         |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible amap m ad pinfo)
          |> List.collect (fun pinfo -> (FullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
       (if statics then []
@@ -3699,7 +3699,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
          |> List.filter (fun x ->
              not x.IsSpecialName &&
              x.IsStatic = statics &&
-             IsILFieldInfoAccessible g amap m ad x)
+             IsILFieldInfoAccessible amap m ad x)
          |> List.collect (fun x -> x.FieldType(amap, m) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest))
 
 let InfosForTyconConstructors (ncenv: NameResolver) m ad (tcref: TyconRef) =
@@ -4176,7 +4176,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                 |> List.filter (fun x ->
                     not x.IsSpecialName &&
                     x.IsStatic = statics &&
-                    IsILFieldInfoAccessible g amap m ad x)
+                    IsILFieldInfoAccessible amap m ad x)
                 |> List.map Item.ILField
         | Item.Types _ ->
             if statics then
@@ -4193,7 +4193,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                 AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad PreferOverrides m ty
                 |> List.filter (fun x ->
                     x.IsStatic = statics &&
-                    IsPropInfoAccessible g amap m ad x)
+                    IsPropInfoAccessible amap m ad x)
 
             // Exclude get_ and set_ methods accessed by properties
             let pinfoMethNames =
@@ -4360,7 +4360,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
           let pinfos =
               ty
               |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
-              |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
+              |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible amap m ad pinfo)
 
           for pinfo in pinfos do
               yield! (fullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
@@ -4382,7 +4382,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
 
           // e.g. <val-id>.<il-field-id>.<more>
           for finfo in ncenv.InfoReader.GetILFieldInfosOfType(Some id, ad, m, ty) do
-              if not finfo.IsSpecialName && finfo.IsStatic = statics && IsILFieldInfoAccessible g amap m ad finfo then
+              if not finfo.IsSpecialName && finfo.IsStatic = statics && IsILFieldInfoAccessible amap m ad finfo then
                   yield! finfo.FieldType(amap, m) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
     }
 

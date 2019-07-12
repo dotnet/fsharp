@@ -1114,7 +1114,7 @@ module internal SymbolHelpers =
 
         // F# and .NET properties
         | Item.Property(_, pinfo :: _) -> 
-            let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
+            let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle amap m denv pinfo
             FSharpStructuredToolTipElement.Single (layout, xml)
 
         // Custom operations in queries

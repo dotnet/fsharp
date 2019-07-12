@@ -962,9 +962,9 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
 
         let interfaces = 
             [ if isInterfaceTy g ty then 
-                  yield! AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes ty
+                  yield! AllSuperTypesOfType cenv.amap m AllowMultiIntfInstantiations.Yes ty
               for (ty, _) in iimpls do
-                  yield! AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
+                  yield! AllSuperTypesOfType cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
             |> List.filter (isInterfaceTy g)
 
         CheckMultipleInterfaceInstantiations cenv interfaces m
@@ -2182,7 +2182,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
 
     let interfaces = 
-        AllSuperTypesOfType g cenv.amap tycon.Range AllowMultiIntfInstantiations.Yes ty
+        AllSuperTypesOfType cenv.amap tycon.Range AllowMultiIntfInstantiations.Yes ty
             |> List.filter (isInterfaceTy g)
             
     if tycon.IsFSharpInterfaceTycon then 
@@ -2196,7 +2196,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             let immediateInterfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m ty
             let interfaces = 
               [ for ty in immediateInterfaces do
-                    yield! AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
+                    yield! AllSuperTypesOfType cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
             CheckMultipleInterfaceInstantiations cenv interfaces m
         
         // Check struct fields. We check these late because we have to have first checked that the structs are

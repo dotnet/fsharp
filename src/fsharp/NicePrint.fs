@@ -1396,7 +1396,8 @@ module InfoMemberPrinting =
             prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
     #endif
 
-    let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
+    let prettyLayoutOfPropInfoFreeStyle (amap:Import.ImportMap) m denv (pinfo: PropInfo) =
+        let g = amap.g
         let rty = pinfo.GetPropertyType(amap, m) 
         let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else rty 
         let rty, _ = PrettyTypes.PrettifyType g rty
@@ -2021,7 +2022,7 @@ let formatMethInfoToBufferFreeStyle amap m denv buf d = InfoMemberPrinting.forma
 let prettyLayoutOfMethInfoFreeStyle amap m denv typarInst minfo = InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle amap m denv typarInst minfo
 
 /// Convert a PropInfo to a string
-let prettyLayoutOfPropInfoFreeStyle g amap m denv d = InfoMemberPrinting.prettyLayoutOfPropInfoFreeStyle g amap m denv d
+let prettyLayoutOfPropInfoFreeStyle amap m denv d = InfoMemberPrinting.prettyLayoutOfPropInfoFreeStyle amap m denv d
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo amap m denv d = bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle amap m denv buf d)
