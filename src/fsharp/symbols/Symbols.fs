@@ -560,13 +560,13 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         if isUnresolved() then false else
         let ty = generalizedTyconRef entity
         ErrorLogger.protectAssemblyExploration false <| fun () -> 
-        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
+        Infos.ExistsHeadTypeInEntireHierarchy cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
     member x.IsDisposableType =
         if isUnresolved() then false else
         let ty = generalizedTyconRef entity
         ErrorLogger.protectAssemblyExploration false <| fun () -> 
-        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
+        Infos.ExistsHeadTypeInEntireHierarchy cenv.amap range0 ty cenv.g.tcref_System_IDisposable
 
     member x.BaseType = 
         checkIsResolved()        

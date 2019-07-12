@@ -135,7 +135,6 @@ type SemanticClassificationType =
 type internal TypeCheckInfo
           (// Information corresponding to miscellaneous command-line options (--define, etc).
            _sTcConfig: TcConfig,
-           g: TcGlobals,
            // The signature of the assembly being checked, up to and including the current file
            ccuSigForFile: ModuleOrNamespaceType,
            thisCcu: CcuThunk,
@@ -163,15 +162,16 @@ type internal TypeCheckInfo
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
     let getToolTipTextCache = AgedLookup<CompilationThreadToken, int*int*string, FSharpToolTipText<Layout>>(getToolTipTextSize,areSimilar=(fun (x,y) -> x = y))
-    
+
     let amap = tcImports.GetImportMap()
+    let g = amap.g
     let infoReader = new InfoReader(g,amap)
     let ncenv = new NameResolver(g,amap,infoReader,NameResolution.FakeInstantiationGenerator)
     let cenv = SymbolEnv(g, thisCcu, Some ccuSigForFile, tcImports, amap, infoReader)
-    
+
     /// Find the most precise naming environment for the given line and column
     let GetBestEnvForPos cursorPos  =
-        
+
         let mutable bestSoFar = None
 
         // Find the most deeply nested enclosing scope that contains given position
@@ -1299,7 +1299,7 @@ type internal TypeCheckInfo
                 sResolutions.CapturedNameResolutions :> seq<_>
 
         let isDisposableTy (ty: TType) =
-            protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
+            protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy amap range0 ty g.tcref_System_IDisposable)
 
         let isStructTyconRef (tyconRef: TyconRef) = 
             let ty = generalizedTyconRef tyconRef
@@ -1742,7 +1742,7 @@ module internal ParseAndCheckFile =
         let res = 
             match resOpt with
             | Some ((tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState) ->
-                TypeCheckInfo(tcConfig, tcGlobals, 
+                TypeCheckInfo(tcConfig,
                               List.head ccuSigsForFiles, 
                               tcState.Ccu,
                               tcImports,
@@ -2000,7 +2000,7 @@ type FSharpCheckFileResults
     static member Make
         (mainInputFileName: string, 
          projectFileName, 
-         tcConfig, tcGlobals, 
+         tcConfig,
          isIncompleteTypeCheckEnvironment: bool, 
          builder: IncrementalBuilder, 
          dependencyFiles, 
@@ -2017,11 +2017,11 @@ type FSharpCheckFileResults
          openDeclarations) = 
 
         let tcFileInfo = 
-            TypeCheckInfo(tcConfig, tcGlobals, ccuSigForFile, thisCcu, tcImports, tcAccessRights, 
+            TypeCheckInfo(tcConfig, ccuSigForFile, thisCcu, tcImports, tcAccessRights, 
                           projectFileName, mainInputFileName, sResolutions, sSymbolUses, 
                           sFallback, loadClosure, reactorOps,
                           None, implFileOpt, openDeclarations) 
-                
+
         let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
         FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
 

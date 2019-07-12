@@ -677,7 +677,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         (filename, 
                          options.ProjectFileName, 
                          tcProj.TcConfig, 
-                         tcProj.TcGlobals, 
                          options.IsIncompleteTypeCheckEnvironment, 
                          builder, 
                          Array.ofList tcProj.TcDependencyFiles, 

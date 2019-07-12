@@ -281,7 +281,6 @@ type public FSharpCheckFileResults =
         mainInputFileName: string * 
         projectFileName: string *
         tcConfig: TcConfig *
-        tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
         builder: IncrementalBuilder * 
         dependencyFiles: string[] * 

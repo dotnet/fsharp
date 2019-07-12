@@ -987,7 +987,7 @@ module internal SymbolHelpers =
             | Item.Types(_, ((TType_app(tcref, _)) :: _))
             | Item.UnqualifiedType(tcref :: _) ->
                 let ty = generalizedTyconRef tcref
-                Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
+                Infos.ExistsHeadTypeInEntireHierarchy amap range0 ty g.tcref_System_Attribute
             | _ -> false
         with _ -> false
 

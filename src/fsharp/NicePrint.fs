@@ -43,9 +43,9 @@ module internal PrintUtilities =
         | [x] -> x
         | x :: xs -> List.fold (^^) x xs 
 
-    let suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty = 
-        isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr || ExistsHeadTypeInEntireHierarchy g amap m ty g.tcref_System_Attribute 
-
+    let suppressInheritanceAndInterfacesForTyInSimplifiedDisplays (amap: Import.ImportMap) m ty =
+        let g = amap.g
+        isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy amap m ty g.exn_tcr || ExistsHeadTypeInEntireHierarchy amap m ty g.tcref_System_Attribute 
 
     let applyMaxMembers maxMembers (alldecls: _ list) = 
         match maxMembers with 
@@ -1574,7 +1574,7 @@ module private TastDefinitionPrinting =
             |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
 
         let iimplsLs = 
-            if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
+            if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays amap m ty then 
                 []
             else 
                 GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
@@ -1635,7 +1635,7 @@ module private TastDefinitionPrinting =
               []
 
         let inherits = 
-            if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
+            if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays amap m ty then 
                 []
             else
                 match GetSuperTypeOfType g amap m ty with 

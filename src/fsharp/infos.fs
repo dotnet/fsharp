@@ -269,8 +269,8 @@ let ExistsSameHeadTypeInHierarchy g amap m typeToSearchFrom typeToLookFor =
     ExistsInEntireHierarchyOfType (HaveSameHeadType g typeToLookFor) amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
 
 /// Check if a type exists somewhere in the hierarchy which has the given head type.
-let ExistsHeadTypeInEntireHierarchy g amap m typeToSearchFrom tcrefToLookFor =
-    ExistsInEntireHierarchyOfType (HasHeadType g tcrefToLookFor) amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
+let ExistsHeadTypeInEntireHierarchy (amap: Import.ImportMap) m typeToSearchFrom tcrefToLookFor =
+    ExistsInEntireHierarchyOfType (HasHeadType amap.g tcrefToLookFor) amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
 
 
 /// Read an Abstract IL type from metadata and convert to an F# type.

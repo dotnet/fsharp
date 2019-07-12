@@ -235,7 +235,7 @@ module DispatchSlotChecking =
     let OverrideImplementsDispatchSlot g amap m dispatchSlot availPriorOverride =
         IsExactMatch g amap m dispatchSlot availPriorOverride &&
         // The override has to actually be in some subtype of the dispatch slot
-        ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyconRef availPriorOverride.BoundingTyconRef) dispatchSlot.DeclaringTyconRef
+        ExistsHeadTypeInEntireHierarchy amap m (generalizedTyconRef availPriorOverride.BoundingTyconRef) dispatchSlot.DeclaringTyconRef
 
     /// Check if a dispatch slot is already implemented
     let DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed (dispatchSlot: MethInfo) =
@@ -706,7 +706,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
         else
             warning(Error(FSComp.SR.typrelTypeImplementsIComparableDefaultObjectEqualsProvided(tycon.DisplayName), tycon.Range))
 
-    AugmentWithHashCompare.CheckAugmentationAttribs isImplementation g amap tycon
+    AugmentWithHashCompare.CheckAugmentationAttribs isImplementation amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
     if isImplementation 
 #if !NO_EXTENSIONTYPING

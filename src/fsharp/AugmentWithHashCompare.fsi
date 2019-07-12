@@ -7,7 +7,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
 
-val CheckAugmentationAttribs : bool -> TcGlobals -> Import.ImportMap -> Tycon -> unit
+val CheckAugmentationAttribs : bool -> Import.ImportMap -> Tycon -> unit
 val TyconIsCandidateForAugmentationWithCompare  : TcGlobals -> Tycon -> bool
 val TyconIsCandidateForAugmentationWithEquals   : TcGlobals -> Tycon -> bool
 val TyconIsCandidateForAugmentationWithHash     : TcGlobals -> Tycon -> bool

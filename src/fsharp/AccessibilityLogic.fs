@@ -63,7 +63,7 @@ let IsAccessible ad taccess =
         List.exists (canAccessFrom taccess) cpaths
 
 /// Indicates if an IL member is accessible (ignoring its enclosing type)
-let private IsILMemberAccessible (amap: Import.ImportMap) m (tcrefOfViewedItem: TyconRef) ad access =
+let private IsILMemberAccessible amap m (tcrefOfViewedItem: TyconRef) ad access =
     match ad with 
     | AccessibleFromEverywhere -> 
             access = ILMemberAccess.Public
@@ -81,7 +81,7 @@ let private IsILMemberAccessible (amap: Import.ImportMap) m (tcrefOfViewedItem: 
                 match tcrefViewedFromOption with 
                 | None -> false
                 | Some tcrefViewedFrom ->
-                    ExistsHeadTypeInEntireHierarchy amap.g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem)     
+                    ExistsHeadTypeInEntireHierarchy amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem)     
 
             let accessibleByInternalsVisibleTo = 
                 (access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyOrAssembly) && 
@@ -93,7 +93,7 @@ let private IsILMemberAccessible (amap: Import.ImportMap) m (tcrefOfViewedItem: 
                 match tcrefViewedFromOption with 
                 | None -> false
                 | Some tcrefViewedFrom ->
-                    ExistsHeadTypeInEntireHierarchy amap.g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem    
+                    ExistsHeadTypeInEntireHierarchy amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem    
 
             (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo || accessibleByFamilyAndAssembly
 

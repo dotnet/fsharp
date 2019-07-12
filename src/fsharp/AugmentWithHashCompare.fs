@@ -704,7 +704,8 @@ let getAugmentationAttribs g (tycon: Tycon) =
     TryFindFSharpBoolAttribute g g.attrib_CustomComparisonAttribute tycon.Attribs, 
     TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs 
 
-let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) = 
+let CheckAugmentationAttribs isImplementation (amap: Import.ImportMap) (tycon: Tycon) = 
+    let g = amap.g
     let m = tycon.Range
     let attribs = getAugmentationAttribs g tycon
     match attribs with 
@@ -784,7 +785,7 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
     
     let hasNominalInterface tcref =
         let ty = generalizedTyconRef (mkLocalTyconRef tycon)
-        ExistsHeadTypeInEntireHierarchy g amap tycon.Range ty tcref
+        ExistsHeadTypeInEntireHierarchy amap tycon.Range ty tcref
 
     let hasExplicitICompare = 
         hasNominalInterface g.tcref_System_IStructuralComparable || 
