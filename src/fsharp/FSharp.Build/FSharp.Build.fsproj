@@ -4,9 +4,9 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
+    <TargetFramework Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFramework>
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+    <TargetFramework Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFramework>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>

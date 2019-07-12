@@ -3,6 +3,8 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
+open System.IO
+open System.CodeDom.Compiler
 open System.Diagnostics
 open FSharp.Compiler
 open FSharp.Compiler.Ast
@@ -10,12 +12,8 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.AbstractIL.Internal.Library 
         
-#if !FX_NO_INDENTED_TEXT_WRITER
 [<AutoOpen>]
 module internal CodeGenerationUtils =
-    open System.IO
-    open System.CodeDom.Compiler
-
 
     type ColumnIndentedTextWriter() =
         let stringWriter = new StringWriter()
@@ -918,4 +916,3 @@ module InterfaceStubGenerator =
             None
         | ParsedInput.ImplFile input -> 
             walkImplFileInput input
-#endif

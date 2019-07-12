@@ -6,7 +6,6 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
         
-#if !FX_NO_INDENTED_TEXT_WRITER
 /// Capture information about an interface in ASTs
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type InterfaceData =
@@ -38,4 +37,3 @@ module InterfaceStubGenerator =
 
     /// Find corresponding interface declaration at a given position
     val tryFindInterfaceDeclaration: pos -> parsedInput: ParsedInput -> InterfaceData option
-#endif

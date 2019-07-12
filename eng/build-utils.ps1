@@ -244,7 +244,7 @@ function Make-BootstrapBuild() {
 
     # prepare compiler
     $projectPath = "$RepoRoot\proto.proj"
-    Run-MSBuild $projectPath "/restore /t:Publish /p:TargetFramework=$bootstrapTfm;ProtoTargetFramework=$bootstrapTfm" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
+    Run-MSBuild $projectPath "/restore /t:Publish /p:ProtoTargetFramework=$bootstrapTfm" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsc" -Force -Recurse
     Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsi" -Force -Recurse
 
