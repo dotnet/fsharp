@@ -154,6 +154,8 @@ jobs:
           clean: true
         - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
           displayName: Build / Test
+          env:
+            DOTNET_INSTALL_DIR: $(Build.SourcesDirectory)\.dotnet
         - task: PublishTestResults@2
           displayName: Publish Test Results
           inputs:
