@@ -97,9 +97,9 @@ type CompilerAssert private () =
 
             finally
                 try File.Delete inputFilePath with | _ -> ()
-                //try File.Delete outputFilePath with | _ -> ()
-                //try File.Delete runtimeConfigFilePath with | _ -> ()
-                //try File.Delete tmpFsCoreFilePath with | _ -> ()
+                try File.Delete outputFilePath with | _ -> ()
+                try File.Delete runtimeConfigFilePath with | _ -> ()
+                try File.Delete tmpFsCoreFilePath with | _ -> ()
 
     static let run outputExe =
         let pInfo = ProcessStartInfo ()
