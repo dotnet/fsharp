@@ -3,4 +3,5 @@ preview
 default
 latest
 latestmajor
-4.6 (Default)
+4.6
+4.7 (Default)
