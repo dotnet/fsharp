@@ -66,8 +66,8 @@ module SurfaceArea =
     let private getActual () =
 
         // get current FSharp.Core
-        let asm = typeof<int list>.Assembly
-        let fsCoreFullName = asm.FullName
+        let asm = 
+            typeof<int list>.Assembly
 
         // public types only
         let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
