@@ -652,7 +652,7 @@ type env =
       m: Range.range
     }
 
-    override __.ToString() = "<en>"
+    override __.ToString() = "<env>"
 
 let suffixE env s = {env with prefix = env.prefix + s}
 
