@@ -127,7 +127,8 @@ let AttribInfosOfIL amap scoref m (attribs: ILAttributes) =
 let AttribInfosOfFS g attribs = 
     attribs |> List.map (fun a -> FSAttribInfo (g, a))
 
-let GetAttribInfosOfEntity g amap m (tcref:TyconRef) = 
+let GetAttribInfosOfEntity (amap: Import.ImportMap) m (tcref:TyconRef) =
+    let g = amap.g
     match metadataOfTycon tcref.Deref with 
 #if !NO_EXTENSIONTYPING
     // TODO: provided attributes
@@ -507,7 +508,9 @@ let CheckRecdFieldInfoAttributes g (x:RecdFieldInfo) m =
 
     
 // Identify any security attributes
-let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
+let IsSecurityAttribute (amap: Import.ImportMap) (casmap : Dictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
+    let g = amap.g
+
     // There's no CAS on Silverlight, so we have to be careful here
     match g.attrib_SecurityAttribute with
     | None -> false

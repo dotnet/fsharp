@@ -193,21 +193,21 @@ let CheckTyconReprAccessible amap m ad tcref =
      res)
             
 /// Indicates if a type is accessible (both definition and instantiation)
-let rec IsTypeAccessible g amap m ad ty = 
-    match tryAppTy g ty with
+let rec IsTypeAccessible (amap:Import.ImportMap) m ad ty = 
+    match tryAppTy amap.g ty with
     | ValueNone -> true
     | ValueSome(tcref, tinst) ->
-        IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
+        IsEntityAccessible amap m ad tcref && IsTypeInstAccessible amap m ad tinst
 
-and IsTypeInstAccessible g amap m ad tinst = 
+and IsTypeInstAccessible amap m ad tinst = 
     match tinst with 
     | [] -> true 
-    | _ -> List.forall (IsTypeAccessible g amap m ad) tinst
+    | _ -> List.forall (IsTypeAccessible amap m ad) tinst
 
 /// Indicate if a provided member is accessible
 let IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access = 
     let g = amap.g
-    let isTyAccessible = IsTypeAccessible g amap m ad ty
+    let isTyAccessible = IsTypeAccessible amap m ad ty
     if not isTyAccessible then false
     else
         not (isAppTy g ty) ||
@@ -312,7 +312,7 @@ let CheckILFieldInfoAccessible amap m ad finfo =
 let IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
     | ILMeth (_, x, _) -> IsILMethInfoAccessible amap m accessDomainTy ad x 
     | FSMeth (_, _, vref, _) -> IsValAccessible ad vref
-    | DefaultStructCtor(g, ty) -> IsTypeAccessible g amap m ad ty
+    | DefaultStructCtor(_, ty) -> IsTypeAccessible amap m ad ty
 #if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap, tpmb, _, m) as etmi -> 
         let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        

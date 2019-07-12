@@ -691,7 +691,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member __.Attributes = 
         if isUnresolved() then makeReadOnlyCollection[] else
-        GetAttribInfosOfEntity cenv.g cenv.amap range0 entity
+        GetAttribInfosOfEntity cenv.amap range0 entity
         |> List.map (fun a -> FSharpAttribute(cenv, a))
         |> makeReadOnlyCollection
 

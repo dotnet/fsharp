@@ -245,8 +245,8 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
     else
         Some (tps, ctorThisValOpt, baseValOpt, vsl, body, retTy)
 
-let destTopLambda g amap topValInfo (e, ty) = 
-    match tryDestTopLambda g amap topValInfo (e, ty) with 
+let destTopLambda (amap: Import.ImportMap) topValInfo (e, ty) = 
+    match tryDestTopLambda amap.g amap topValInfo (e, ty) with 
     | None -> error(Error(FSComp.SR.typrelInvalidValue(), e.Range))
     | Some res -> res
     
@@ -259,8 +259,9 @@ let IteratedAdjustArityOfLambdaBody g arities vsl body  =
 /// iterated lambdas, producing one method.  
 /// The required iterated function arity (List.length topValInfo) must be identical 
 /// to the iterated function arity of the input lambda (List.length vsl) 
-let IteratedAdjustArityOfLambda g amap topValInfo e =
-    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda g amap topValInfo (e, tyOfExpr g e)
+let IteratedAdjustArityOfLambda (amap:Import.ImportMap) topValInfo e =
+    let g = amap.g
+    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda amap topValInfo (e, tyOfExpr g e)
     let arities = topValInfo.AritiesOfArgs
     if arities.Length <> vsl.Length then 
         errorR(InternalError(sprintf "IteratedAdjustArityOfLambda, List.length arities = %d, List.length vsl = %d" arities.Length vsl.Length, body.Range))

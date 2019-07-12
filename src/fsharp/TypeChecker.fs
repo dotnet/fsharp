@@ -6689,7 +6689,7 @@ and ComputeObjectExprOverrides cenv (env: TcEnv) tpenv impls =
                     let partialValInfo = TranslateTopValSynInfo id.idRange (TcAttributes cenv env) valSynData
                     let tps, _ = tryDestForallTy cenv.g ty
                     let valInfo = TranslatePartialArity tps partialValInfo
-                    DispatchSlotChecking.GetObjectExprOverrideInfo cenv.g cenv.amap (implty, id, memberFlags, ty, valInfo, bindingAttribs, bindingBody))
+                    DispatchSlotChecking.GetObjectExprOverrideInfo cenv.amap (implty, id, memberFlags, ty, valInfo, bindingAttribs, bindingBody))
 
             (m, implty, reqdSlots, dispatchSlotsKeyed, availPriorOverrides, overrides), tpenv)
 
@@ -10961,7 +10961,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
 
     let ad = env.eAccessRights
 
-    if not (IsTypeAccessible cenv.g cenv.amap mAttr ad ty) then errorR(Error(FSComp.SR.tcTypeIsInaccessible(), mAttr))
+    if not (IsTypeAccessible cenv.amap mAttr ad ty) then errorR(Error(FSComp.SR.tcTypeIsInaccessible(), mAttr))
 
     let tcref = tcrefOfAppTy cenv.g ty
 

@@ -32,7 +32,7 @@ let DecideLambda exprF cenv topValInfo expr ety z   =
     match expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, ety) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.amap topValInfo (expr, ety) 
         let snoc = fun x y -> y :: x
         let args = List.concat vsl
         let args = Option.fold snoc args baseValOpt

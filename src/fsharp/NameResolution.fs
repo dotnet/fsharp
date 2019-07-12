@@ -1202,7 +1202,7 @@ let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, che
                     mty.TypesByAccessNames.Values
                     |> List.choose (fun entity ->
                         let ty = tcref.NestedTyconRef entity |> MakeNestedType ncenv tinst m
-                        if IsTypeAccessible g ncenv.amap m ad ty then Some ty else None)
+                        if IsTypeAccessible ncenv.amap m ad ty then Some ty else None)
         | _ -> [])
 
 //-------------------------------------------------------------------------

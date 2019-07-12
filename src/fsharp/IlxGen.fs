@@ -5243,13 +5243,13 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
     | _ when vspec.IsClassConstructor && isNil vspec.TopValDeclaringEntity.TyparsNoRange ->
-        let tps, _, _, _, cctorBody, _ = IteratedAdjustArityOfLambda g cenv.amap vspec.ValReprInfo.Value rhsExpr
+        let tps, _, _, _, cctorBody, _ = IteratedAdjustArityOfLambda cenv.amap vspec.ValReprInfo.Value rhsExpr
         let eenv = EnvForTypars tps eenv
         CommitStartScope cgbuf startScopeMarkOpt
         GenExpr cenv cgbuf eenv SPSuppress cctorBody discard
     
     | Method (topValInfo, _, mspec, _, paramInfos, methodArgTys, retInfo) ->
-        let tps, ctorThisValOpt, baseValOpt, vsl, body', bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo rhsExpr
+        let tps, ctorThisValOpt, baseValOpt, vsl, body', bodyty = IteratedAdjustArityOfLambda cenv.amap topValInfo rhsExpr
         let methodVars = List.concat vsl
         CommitStartScope cgbuf startScopeMarkOpt
 
@@ -5784,7 +5784,7 @@ and GenMethodForBinding cenv mgbuf eenv (v, mspec, access, paramInfos, retInfo, 
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
     let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, attrs = ComputeMethodImplAttribs cenv v attrs
     
-    let securityAttributes, attrs = attrs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap cenv.casApplied a m)
+    let securityAttributes, attrs = attrs |> List.partition (fun a -> IsSecurityAttribute cenv.amap cenv.casApplied a m)
 
     let permissionSets = CreatePermissionSets cenv eenv securityAttributes
 
@@ -6869,7 +6869,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
         // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
         let debugDisplayAttrs, normalAttrs = tycon.Attribs |> List.partition (IsMatchingFSharpAttribute g g.attrib_DebuggerDisplayAttribute)
-        let securityAttrs, normalAttrs = normalAttrs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap cenv.casApplied a m)
+        let securityAttrs, normalAttrs = normalAttrs |> List.partition (fun a -> IsSecurityAttribute cenv.amap cenv.casApplied a m)
         let generateDebugDisplayAttribute = not g.compilingFslib && tycon.IsUnionTycon && isNil debugDisplayAttrs
         let generateDebugProxies = (not (tyconRefEq g tcref g.unit_tcr_canon) &&
                                     not (HasFSharpAttribute g g.attrib_DebuggerTypeProxyAttribute tycon.Attribs))
@@ -7579,7 +7579,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
     let ilNetModuleAttrs = GenAttrs cenv eenv moduleAttribs
 
     let casApplied = new Dictionary<Stamp, bool>()
-    let securityAttrs, topAssemblyAttrs = assemAttribs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap casApplied a rangeStartup)
+    let securityAttrs, topAssemblyAttrs = assemAttribs |> List.partition (fun a -> IsSecurityAttribute cenv.amap casApplied a rangeStartup)
     // remove any security attributes from the top-level assembly attribute list
     let permissionSets = CreatePermissionSets cenv eenv securityAttrs
 

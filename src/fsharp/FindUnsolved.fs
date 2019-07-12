@@ -147,7 +147,7 @@ and accLambdas cenv env topValInfo e ety =
     | Expr.TyChoose (_tps, e1, _m)  -> accLambdas cenv env topValInfo e1 ety      
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda cenv.g cenv.amap topValInfo (e, ety) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda cenv.amap topValInfo (e, ety) 
         accTy cenv env bodyty
         vsl |> List.iterSquared (accVal cenv env)
         baseValOpt |> Option.iter (accVal cenv env)

@@ -1248,7 +1248,7 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         let v = bind.Var
         assert v.IsCompiledAsTopLevel
         let topValInfo = InferArityOfExprBinding cenv.g AllowTypeDirectedDetupling.Yes v bind.Expr
-        let tps, _ctorThisValOpt, _baseValOpt, vsl, body, _bodyty = IteratedAdjustArityOfLambda cenv.g cenv.amap topValInfo bind.Expr
+        let tps, _ctorThisValOpt, _baseValOpt, vsl, body, _bodyty = IteratedAdjustArityOfLambda cenv.amap topValInfo bind.Expr
         let v = FSharpMemberOrFunctionOrValue(cenv, mkLocalValRef v)
         let gps = v.GenericParameters
         let vslR = List.map (List.map (FSharpExprConvert.ConvVal cenv)) vsl 

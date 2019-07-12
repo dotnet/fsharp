@@ -124,12 +124,13 @@ module DispatchSlotChecking =
         Override(implKind, overrideBy.MemberApparentEntity, mkSynId overrideBy.Range nm, (memberMethodTypars, memberToParentInst), argTys, retTy, isFakeEventProperty, overrideBy.IsCompilerGenerated)
 
     /// Get the override information for an object expression method being used to implement dispatch slots
-    let GetObjectExprOverrideInfo g amap (implty, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
+    let GetObjectExprOverrideInfo (amap: Import.ImportMap) (implty, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) =
+        let g = amap.g
         // Dissect the type
         let tps, argInfos, retTy, _ = GetMemberTypeInMemberForm g memberFlags arityInfo ty id.idRange
         let argTys = argInfos |> List.mapSquared fst
         // Dissect the implementation
-        let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destTopLambda g amap arityInfo (rhsExpr, ty)
+        let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destTopLambda amap arityInfo (rhsExpr, ty)
         assert ctorThisValOpt.IsNone
 
         // Drop 'this'

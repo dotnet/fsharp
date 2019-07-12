@@ -2774,15 +2774,15 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                             | CompiledTypeRepr.ILAsmNamed(iltr, _, _) -> iltr.Scope.AssemblyRef.Name = "FSharp.Core"
                             | _ -> false
                     | _ -> false
-                | _ -> false                                          
-        
+                | _ -> false
+
         if isValFromLazyExtensions then None else
 
         let isSecureMethod =
           match finfo.Info with
           | ValValue(vref, _) ->
-                vref.Attribs |> List.exists (fun a -> (IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute cenv.g a))
-          | _ -> false                              
+                vref.Attribs |> List.exists (fun a -> (IsSecurityAttribute cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute cenv.g a))
+          | _ -> false
 
         if isSecureMethod then None else
 
@@ -2891,7 +2891,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
     match e with 
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = IteratedAdjustArityOfLambda cenv.g cenv.amap topValInfo e
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = IteratedAdjustArityOfLambda cenv.amap topValInfo e
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, topValInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
