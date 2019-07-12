@@ -48,7 +48,7 @@ type RequiredSlot = RequiredSlot of MethInfo * (* isOptional: *) bool
 type SlotImplSet = SlotImplSet of RequiredSlot list * NameMultiMap<RequiredSlot> * OverrideInfo list * PropInfo list
 
 exception TypeIsImplicitlyAbstract of range
-exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * Import.ImportMap * range
+exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * Import.ImportMap * range
 
 module DispatchSlotChecking =
 
@@ -389,12 +389,12 @@ module DispatchSlotChecking =
                 // This is all error reporting
                 match relevantVirts |> List.filter (fun dispatchSlot -> IsPartialMatch g dispatchSlot (CompiledSigOfMeth g amap m dispatchSlot) overrideBy) with 
                 | [dispatchSlot] -> 
-                    errorR(OverrideDoesntOverride(denv, overrideBy, Some dispatchSlot, g, amap, m))
+                    errorR(OverrideDoesntOverride(denv, overrideBy, Some dispatchSlot, amap, m))
                 | _ -> 
                     match relevantVirts |> List.filter (fun dispatchSlot -> IsNameMatch dispatchSlot overrideBy) with 
-                    | [] -> errorR(OverrideDoesntOverride(denv, overrideBy, None, g, amap, m))
+                    | [] -> errorR(OverrideDoesntOverride(denv, overrideBy, None, amap, m))
                     | [dispatchSlot] -> 
-                        errorR(OverrideDoesntOverride(denv, overrideBy, Some dispatchSlot, g, amap, m))
+                        errorR(OverrideDoesntOverride(denv, overrideBy, Some dispatchSlot, amap, m))
                     | possibleDispatchSlots -> 
                        let details =
                             possibleDispatchSlots

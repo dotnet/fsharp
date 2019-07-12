@@ -1709,8 +1709,8 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                     optEnvFirstLoop, isIncrementalFragment,
                     tcConfig.emitTailcalls, hidden, implFile)
 
-            let implFile = AutoBox.TransformImplFile tcGlobals importMap implFile 
-                            
+            let implFile = AutoBox.TransformImplFile importMap implFile
+
             // Only do this on the first pass!
             let optSettings = { optSettings with abstractBigTargets = false; reportingPhase = false }
 #if DEBUG

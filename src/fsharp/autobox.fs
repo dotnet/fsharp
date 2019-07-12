@@ -109,11 +109,11 @@ let DecideBinding cenv z (TBind(v, expr, _m) as bind) =
 let DecideBindings cenv z binds = (z, binds) ||> List.fold (DecideBinding cenv)
 
 /// Find all the mutable locals to promote to reference cells in an implementation file
-let DecideImplFile g amap implFile =
-          
+let DecideImplFile (amap: Import.ImportMap) implFile =
+    let g = amap.g
     let cenv = { g = g; amap = amap }
 
-    let folder =    
+    let folder =
       {ExprFolder0 with
          nonRecBindingsIntercept  = DecideBinding cenv 
          recBindingsIntercept     = DecideBindings cenv
@@ -164,11 +164,12 @@ let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) =
        None
 
 /// Rewrite mutable locals to reference cells across an entire implementation file
-let TransformImplFile g amap implFile = 
-    let fvs = DecideImplFile g amap implFile
-    if Zset.isEmpty fvs then 
+let TransformImplFile (amap: Import.ImportMap) implFile =
+    let fvs = DecideImplFile amap implFile
+    if Zset.isEmpty fvs then
         implFile
     else
+        let g = amap.g
         for fv in fvs do
             warning (Error(FSComp.SR.abImplicitHeapAllocation(fv.DisplayName), fv.Range))
 

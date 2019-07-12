@@ -183,7 +183,7 @@ let CheckTyconAccessible amap m ad tcref =
 let IsTyconReprAccessible amap m ad tcref =
     IsEntityAccessible amap m ad tcref &&
     IsAccessible ad tcref.TypeReprAccessibility
-            
+
 /// Check that a type definition and its representation contents are accessible
 let CheckTyconReprAccessible amap m ad tcref =
     CheckTyconAccessible amap m ad tcref &&
@@ -193,7 +193,7 @@ let CheckTyconReprAccessible amap m ad tcref =
      res)
             
 /// Indicates if a type is accessible (both definition and instantiation)
-let rec IsTypeAccessible (amap:Import.ImportMap) m ad ty = 
+let rec IsTypeAccessible (amap: Import.ImportMap) m ad ty = 
     match tryAppTy amap.g ty with
     | ValueNone -> true
     | ValueSome(tcref, tinst) ->

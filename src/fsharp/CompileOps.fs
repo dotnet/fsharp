@@ -122,7 +122,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       
       | TypeTestUnnecessary m
       | RuntimeCoercionSourceSealed(_, _, m)
-      | OverrideDoesntOverride(_, _, _, _, _, m)
+      | OverrideDoesntOverride(_, _, _, _, m)
       | UnionPatternsBindDifferentNames m 
       | UnionCaseWrongArguments (_, _, _, m) 
       | TypeIsImplicitlyAbstract m 
@@ -1239,7 +1239,8 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | QuotationTranslator.IgnoringPartOfQuotedTermWarning (msg, _) -> 
           Printf.bprintf os "%s" msg
 
-      | OverrideDoesntOverride(denv, impl, minfoVirtOpt, g, amap, m) ->
+      | OverrideDoesntOverride(denv, impl, minfoVirtOpt, amap, m) ->
+          let g = amap.g
           let sig1 = DispatchSlotChecking.FormatOverride denv impl
           match minfoVirtOpt with 
           | None -> 
