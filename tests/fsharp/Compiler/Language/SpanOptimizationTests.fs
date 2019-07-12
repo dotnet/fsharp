@@ -22,7 +22,7 @@ let test () =
         Console.WriteLine(item)
             """
 
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileAndVerifyIL source
             (fun verifier ->
                 verifier.VerifyIL
                             [
@@ -30,16 +30,16 @@ let test () =
 {
   
   .maxstack  5
-  .locals init (valuetype [System.Private.CoreLib]System.Span`1<class [System.Private.CoreLib]System.Object> V_0,
+  .locals init (valuetype [System.Private.CoreLib]System.Span`1<object> V_0,
            int32 V_1,
-           valuetype [System.Private.CoreLib]System.Int32 V_2,
-           class [System.Private.CoreLib]System.Object& V_3)
-  IL_0000:  call       valuetype [System.Private.CoreLib]System.Span`1<!0> valuetype [System.Private.CoreLib]System.Span`1<class [System.Private.CoreLib]System.Object>::get_Empty()
+           int32 V_2,
+           object& V_3)
+  IL_0000:  call       valuetype [System.Private.CoreLib]System.Span`1<!0> valuetype [System.Private.CoreLib]System.Span`1<object>::get_Empty()
   IL_0005:  stloc.0
   IL_0006:  ldc.i4.0
   IL_0007:  stloc.2
   IL_0008:  ldloca.s   V_0
-  IL_000a:  call       instance int32 valuetype [System.Private.CoreLib]System.Span`1<class [System.Private.CoreLib]System.Object>::get_Length()
+  IL_000a:  call       instance int32 valuetype [System.Private.CoreLib]System.Span`1<object>::get_Length()
   IL_000f:  ldc.i4.1
   IL_0010:  sub
   IL_0011:  stloc.1
@@ -49,7 +49,7 @@ let test () =
 
   IL_0016:  ldloca.s   V_0
   IL_0018:  ldloc.2
-  IL_0019:  call       instance !0& valuetype [System.Private.CoreLib]System.Span`1<class [System.Private.CoreLib]System.Object>::get_Item(int32)
+  IL_0019:  call       instance !0& valuetype [System.Private.CoreLib]System.Span`1<object>::get_Item(int32)
   IL_001e:  stloc.3
   IL_001f:  ldloc.3
   IL_0020:  ldobj      [System.Private.CoreLib]System.Object
@@ -82,7 +82,7 @@ let test () =
         Console.WriteLine(item)
             """
 
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileAndVerifyIL source
             (fun verifier ->
                 verifier.VerifyIL
                             [
@@ -90,16 +90,16 @@ let test () =
   {
     
     .maxstack  5
-    .locals init (valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<class [System.Private.CoreLib]System.Object> V_0,
+    .locals init (valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<object> V_0,
              int32 V_1,
-             valuetype [System.Private.CoreLib]System.Int32 V_2,
-             class [System.Private.CoreLib]System.Object& V_3)
-    IL_0000:  call       valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<!0> valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<class [System.Private.CoreLib]System.Object>::get_Empty()
+             int32 V_2,
+             object& V_3)
+    IL_0000:  call       valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<!0> valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<object>::get_Empty()
     IL_0005:  stloc.0
     IL_0006:  ldc.i4.0
     IL_0007:  stloc.2
     IL_0008:  ldloca.s   V_0
-    IL_000a:  call       instance int32 valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<class [System.Private.CoreLib]System.Object>::get_Length()
+    IL_000a:  call       instance int32 valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<object>::get_Length()
     IL_000f:  ldc.i4.1
     IL_0010:  sub
     IL_0011:  stloc.1
@@ -109,7 +109,7 @@ let test () =
 
     IL_0016:  ldloca.s   V_0
     IL_0018:  ldloc.2
-    IL_0019:  call       instance !0& modreq([System.Private.CoreLib]System.Runtime.InteropServices.InAttribute) valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<class [System.Private.CoreLib]System.Object>::get_Item(int32)
+    IL_0019:  call       instance !0& modreq([System.Private.CoreLib]System.Runtime.InteropServices.InAttribute) valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<object>::get_Item(int32)
     IL_001e:  stloc.3
     IL_001f:  ldloc.3
     IL_0020:  ldobj      [System.Private.CoreLib]System.Object
@@ -170,7 +170,7 @@ module Test =
             """
 
         // The current behavior doesn't optimize, but it could in the future. Making a test to catch if it ever does.
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileAndVerifyIL source
             (fun verifier ->
                 verifier.VerifyIL
                             [
@@ -178,16 +178,16 @@ module Test =
   {
     
     .maxstack  3
-    .locals init (valuetype System.Span`1<class [System.Private.CoreLib]System.Object> V_0,
+    .locals init (valuetype System.Span`1<object> V_0,
              class [System.Private.CoreLib]System.Collections.IEnumerator V_1,
              class [FSharp.Core]Microsoft.FSharp.Core.Unit V_2,
              class [System.Private.CoreLib]System.IDisposable V_3)
     IL_0000:  ldc.i4.0
     IL_0001:  newarr     [System.Private.CoreLib]System.Object
-    IL_0006:  newobj     instance void valuetype System.Span`1<class [System.Private.CoreLib]System.Object>::.ctor(!0[])
+    IL_0006:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
     IL_000b:  stloc.0
     IL_000c:  ldloc.0
-    IL_000d:  box        valuetype System.Span`1<class [System.Private.CoreLib]System.Object>
+    IL_000d:  box        valuetype System.Span`1<object>
     IL_0012:  unbox.any  [System.Private.CoreLib]System.Collections.IEnumerable
     IL_0017:  callvirt   instance class [System.Private.CoreLib]System.Collections.IEnumerator [System.Private.CoreLib]System.Collections.IEnumerable::GetEnumerator()
     IL_001c:  stloc.1

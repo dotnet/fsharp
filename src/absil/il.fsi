@@ -11,6 +11,7 @@ type PrimaryAssembly =
     | Mscorlib
     | System_Runtime
     | NetStandard
+    | System_Private_CoreLib
 
     member Name: string
 

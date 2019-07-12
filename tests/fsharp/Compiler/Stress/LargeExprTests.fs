@@ -3547,4 +3547,4 @@ let test () : unit =
 
 test ()
 """
-        CompilerAssert.RunScript source []
+        CompilerAssert.CompileExeAndRun source

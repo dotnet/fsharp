@@ -904,6 +904,8 @@ let SetTargetProfile tcConfigB v =
         | "netcore"  -> PrimaryAssembly.System_Runtime
         // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
         | "netstandard"  -> PrimaryAssembly.NetStandard
+        // Indicates we assume "System.Private.CoreLib.dll", this happens when we don't use the reference assemblies for netcore.
+        | "netcore_private"  -> PrimaryAssembly.System_Private_CoreLib
         | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
 
 let advancedFlagsBoth tcConfigB =

@@ -12,44 +12,15 @@ module DefaultInterfaceMethodInteropTests =
     let SimpleCSharpDefaultInterfaceMethodTypeChecks() =
         let csharpSource =
             """
-using System
+using System;
 
 namespace CSharpTest
 {
     public interface ITest
     {
-        void NonDefaultMethod();
-        int NonDefaultProperty { get; set; }
-
-        void DefaultMethod()
+        void NonDefaultMethod()
         {
-            Console.WriteLine("DefaultMethod");
-        }
-
-        int DefaultGetProperty
-        {
-            get
-            {
-                return 0;
-            }
-        }
-
-        int DefaultSetProperty
-        {
-            set
-            {
-            }
-        }
-
-        int DefaultGetSetProperty
-        {
-            get
-            {
-                return 0;
-            }
-            set
-            {
-            }
+            Console.WriteLine(nameof(NonDefaultMethod));
         }
     }
 }
@@ -63,14 +34,8 @@ open CSharpTest
 
 type Test () =
 
-    interface ITest with
-
-        member __.NonDefaultMethod() = ()
-
-        member __.NonDefaultProperty
-            with get () = 0
-            and set _ = ()
+    interface ITest
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.Preview, TargetFramework.NetCoreApp30)
-        CompilerAssert.PassWithCSharpCompilation c fsharpSource
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.Compile (fsharpSource, (* TODO: change this to default *) "preview", c)

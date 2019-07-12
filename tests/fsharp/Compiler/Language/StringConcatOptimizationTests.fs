@@ -833,7 +833,7 @@ let test9 () =
                 test9Source
             ]
         let source = String.Join("", sources)
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileAndVerifyIL source
             (fun verifier ->
                 verifier.VerifyIL
                     [
