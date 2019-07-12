@@ -6,14 +6,16 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | LanguageVersion46 = 0
-    | LanguageVersion47 = 1
-    | SingleUnderscorePattern = 2
-    | WildCardInForLoop = 3
-    | RelaxWhitespace = 4
-    | NameOf = 5
-    | ImplicitYield = 6
-    | OpenStaticClasses = 7
+    | PreviewVersion = 0
+    | LanguageVersion46 = 1
+    | LanguageVersion47 = 2
+    | SingleUnderscorePattern = 3
+    | WildCardInForLoop = 4
+    | RelaxWhitespace = 5
+    | NameOf = 6
+    | ImplicitYield = 7
+    | OpenStaticClasses = 8
+
 
 /// LanguageVersion management
 type LanguageVersion =
