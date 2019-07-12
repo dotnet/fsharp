@@ -756,29 +756,33 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs: Un
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
             acc.Add (ucref.CaseName, item))
 
-let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m (nenv: NameResolutionEnv)  (tcref:TyconRef) = 
-    let ty = generalizedTyconRef tcref
-    let infoReader = InfoReader(g,amap)
-    let items =
-        [| let methGroups = 
-               AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
-               |> List.groupBy (fun m -> m.LogicalName)
+let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m (nenv: NameResolutionEnv)  (tcref:TyconRef) =
+    // If OpenStaticClasses is not enabled then don't do this
+    if amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
+        let ty = generalizedTyconRef tcref
+        let infoReader = InfoReader(g,amap)
+        let items =
+            [| let methGroups = 
+                   AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
+                   |> List.groupBy (fun m -> m.LogicalName)
 
-           for (methName, methGroup) in methGroups do
-               let methGroup = methGroup |> List.filter (fun m -> not m.IsInstance && not m.IsClassConstructor)
-               if not methGroup.IsEmpty then
-                   yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
+               for (methName, methGroup) in methGroups do
+                   let methGroup = methGroup |> List.filter (fun m -> not m.IsInstance && not m.IsClassConstructor)
+                   if not methGroup.IsEmpty then
+                       yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
            
-           let propInfos = 
-               AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
-               |> List.groupBy (fun m -> m.PropertyName)
+               let propInfos = 
+                   AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
+                   |> List.groupBy (fun m -> m.PropertyName)
                
-           for (propName, propInfos) in propInfos do
-               let propInfos = propInfos |> List.filter (fun m -> m.IsStatic)
-               for propInfo in propInfos do 
-                   yield KeyValuePair(propName , Item.Property(propName,[propInfo])) |]
+               for (propName, propInfos) in propInfos do
+                   let propInfos = propInfos |> List.filter (fun m -> m.IsStatic)
+                   for propInfo in propInfos do 
+                       yield KeyValuePair(propName , Item.Property(propName,[propInfo])) |]
 
-    { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
+        { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
+    else
+        nenv
     
 /// Add any implied contents of a type definition to the environment.
 let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap m  nenv (tcref: TyconRef) =
@@ -1992,7 +1996,10 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 //-------------------------------------------------------------------------
 
 /// Perform name resolution for an identifier which must resolve to be a namespace or module.
-let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: ResultCollectionSettings) amap m allowStaticClasses first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
+let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: ResultCollectionSettings) (amap: Import.ImportMap) m allowStaticClasses first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
+
+    // If the selected language version doesn't support open static classes then turn them off.
+    let allowStaticClasses = allowStaticClasses && amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->

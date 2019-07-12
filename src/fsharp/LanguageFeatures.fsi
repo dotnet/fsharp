@@ -13,7 +13,7 @@ type LanguageFeature =
     | RelaxWhitespace = 4
     | NameOf = 5
     | ImplicitYield = 6
-
+    | OpenStaticClasses = 7
 
 /// LanguageVersion management
 type LanguageVersion =

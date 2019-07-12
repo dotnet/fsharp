@@ -26,7 +26,7 @@ type LanguageFeature =
     | RelaxWhitespace = 4
     | NameOf = 5
     | ImplicitYield = 6
-
+    | OpenStaticClasses = 7
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
@@ -52,6 +52,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.RelaxWhitespace, previewVersion
         LanguageFeature.NameOf, previewVersion
         LanguageFeature.ImplicitYield, previewVersion
+        LanguageFeature.OpenStaticClasses, previewVersion
         |]
 
     let specified =
