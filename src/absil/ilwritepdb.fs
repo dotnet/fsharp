@@ -403,12 +403,17 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                         if i < 1 || offsetDelta > 0 then
                             builder.WriteCompressedInteger offsetDelta
 
-                                                                                                        // Hidden-sequence-point-record
-                            if startLine = 0xfeefee || endLine = 0xfeefee || (startColumn = 0 && endColumn = 0)
+                            // Check for hidden-sequence-point-record
+                            if startLine = 0xfeefee || 
+                               endLine = 0xfeefee || 
+                               (startColumn = 0 && endColumn = 0) || 
+                               ((endLine - startLine) = 0 && (endColumn - startColumn)  = 0)
                             then
+                                // Hidden-sequence-point-record
                                 builder.WriteCompressedInteger 0
                                 builder.WriteCompressedInteger 0
-                            else                                                                        // Non-hidden-sequence-point-record
+                            else
+                                // Non-hidden-sequence-point-record
                                 let deltaLines = endLine - startLine                                    // lines
                                 builder.WriteCompressedInteger deltaLines
 
