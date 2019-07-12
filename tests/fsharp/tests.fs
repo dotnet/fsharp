@@ -1302,6 +1302,21 @@ module CoreTests =
     [<Test>]
     let ``longnames-FSI_BASIC`` () = singleTestBuildAndRun "core/longnames" FSI_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``longnames-version46`` () =
+        let cfg = testConfig "core/longnames/version46"
+        // For some reason this warning is off by default in the test framework but in this case we are testing for it
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
+        singleVersionedNegTest cfg "4.6" "test"
+#endif
+
+    [<Test>]
+    let ``longnames-version47-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/longnames/version47" FSC_BASIC "preview"
+
+    [<Test>]
+    let ``longnames-version47-FSI_BASIC`` () = singleTestBuildAndRunVersion "core/longnames/version47" FSI_BASIC "preview"
+
     [<Test>]
     let ``math-numbersVS2008-FSC_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_BASIC
 
@@ -1809,25 +1824,25 @@ module VersionTests =
     let ``member-selfidentifier-version4.6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
-    let ``member-selfidentifier-version4.7``() = singleTestBuildAndRunVersion "core/members/self-identifier/version47" FSC_BUILDONLY "preview"
+    let ``member-selfidentifier-version4.7``() = singleTestBuildAndRun "core/members/self-identifier/version47" FSC_BUILDONLY
 
     [<Test>]
     let ``indent-version4.6``() = singleTestBuildAndRunVersion "core/indent/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
-    let ``indent-version4.7``() = singleTestBuildAndRunVersion "core/indent/version47" FSC_BUILDONLY "preview"
+    let ``indent-version4.7``() = singleTestBuildAndRun "core/indent/version47" FSC_BUILDONLY
 
     [<Test>]
     let ``nameof-version4.6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
-    let ``nameof-version4.7``() = singleTestBuildAndRunVersion "core/nameof/version47" FSC_BUILDONLY "preview"
+    let ``nameof-version4.7``() = singleTestBuildAndRun "core/nameof/version47" FSC_BUILDONLY
 
     [<Test>]
-    let ``nameof-execute``() = singleTestBuildAndRunVersion "core/nameof/version47" FSC_BASIC "preview"
+    let ``nameof-execute``() = singleTestBuildAndRun "core/nameof/version47" FSC_BASIC
 
     [<Test>]
-    let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/version47" FSI_BASIC "preview"
+    let ``nameof-fsi``() = singleTestBuildAndRun "core/nameof/version47" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module ToolsTests = 
