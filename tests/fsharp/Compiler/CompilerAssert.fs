@@ -79,10 +79,10 @@ type CompilerAssert private () =
                 File.WriteAllText (runtimeConfigFilePath, """
 {
   "runtimeOptions": {
-    "tfm": "netcoreapp2.1",
+    "tfm": "netcoreapp3.0",
     "framework": {
       "name": "Microsoft.NETCore.App",
-      "version": "2.1.0"
+      "version": "3.0.0"
     }
   }
 }
