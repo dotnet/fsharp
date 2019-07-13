@@ -289,16 +289,17 @@ try {
     if ($ci) {
         Prepare-TempDir
 
+        Write-Host "-- Available DotNet SDKs -- before install"
+        Exec-Console "dotnet" "--list-sdks"
+
         # enable us to build netcoreapp2.1 binaries
         $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
 
         InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
         InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
 
-        $dotnetExe = Join-Path $global:_DotNetInstallDir "dotnet.exe"
-        $args = "--list-sdks"
-        Write-Host "-- Available DotNet SDKs --"
-        Exec-Console $dotnetExe $args
+        Write-Host "-- Available DotNet SDKs -- after install"
+        Exec-Console "dotnet" "--list-sdks"
     }
 
     if ($bootstrap) {
