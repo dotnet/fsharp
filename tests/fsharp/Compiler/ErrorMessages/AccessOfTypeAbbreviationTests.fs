@@ -19,7 +19,7 @@ module Library =
 exit 0
             """
             FSharpErrorSeverity.Warning
-            1
+            44
             (2, 8, 2, 15)
             "The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
 
@@ -45,7 +45,7 @@ module Library =
 exit 0
             """
             FSharpErrorSeverity.Warning
-            1
+            44
             (2, 8, 2, 15)
             "The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
 
@@ -60,7 +60,7 @@ module Library =
 exit 0
             """
             FSharpErrorSeverity.Warning
-            1
+            44
             (2, 8, 2, 15)
             "The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
 
