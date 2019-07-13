@@ -19,7 +19,7 @@ module Library =
             FSharpErrorSeverity.Warning
             44
             (4, 8, 4, 16)
-            "The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
+            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
 
     [<Test>]
     let ``Test2``() =
@@ -41,7 +41,7 @@ module Library =
             FSharpErrorSeverity.Warning
             44
             (4, 8, 4, 16)
-            "The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
+            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
 
     [<Test>]
     let ``Test4``() =
@@ -53,8 +53,8 @@ module Library =
             """
             FSharpErrorSeverity.Warning
             44
-            (4, 8, 4, 16)
-            "The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
+            (4, 17, 4, 25)
+            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
 
     [<Test>]
     let ``Test5``() =
