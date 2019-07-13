@@ -511,7 +511,11 @@ function MSBuild-Core() {
     }
   }
 
-  Write-Host "BuildTool: $buildTool"
+  if ($buildTool) {
+    Write-Host "BuildTool: $buildTool"
+  } else {
+    Write-Host "BuildTool: (not set)"
+  }
   $buildTool = InitializeBuildTool
 
   $cmdArgs = "$($buildTool.Command) /m /nologo /clp:Summary /v:$verbosity /nr:$nodeReuse /p:ContinuousIntegrationBuild=$ci"
