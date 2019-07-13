@@ -287,7 +287,7 @@ function InitializeXCopyMSBuild([string]$packageVersion, [bool]$install) {
 
 function EnablePreviewSdks() {
   if (Test-Path variable:global:_MSBuildExe) {
-    return $global:_MSBuildExe
+    return
   }
   $vsInfo = LocateVisualStudio
   if ($vsInfo -eq $null) {
