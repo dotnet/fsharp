@@ -514,7 +514,9 @@ function MSBuild-Core() {
   $buildTool = InitializeBuildTool
 
   $buildToolCommand = $buildTool.Command
-  Write-Host "BuildTool: $buildToolCommand"
+  $buildToolPath = $buildTool.Path
+  Write-Host "BuildToolCommand: $buildToolCommand"
+  Write-Host "BuildToolPath: $buildToolPath"
 
   $cmdArgs = "$($buildTool.Command) /m /nologo /clp:Summary /v:$verbosity /nr:$nodeReuse /p:ContinuousIntegrationBuild=$ci"
 
