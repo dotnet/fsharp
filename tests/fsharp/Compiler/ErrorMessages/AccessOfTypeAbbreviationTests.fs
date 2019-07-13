@@ -9,7 +9,7 @@ open FSharp.Compiler.SourceCodeServices
 module ``Access Of Type Abbreviation`` =
 
     [<Test>]
-    let ``Test``() =
+    let ``Test1``() =
         CompilerAssert.TypeCheckSingleError
             """
 module Library =
@@ -19,7 +19,7 @@ module Library =
             FSharpErrorSeverity.Warning
             44
             (4, 8, 4, 16)
-            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
+            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in.\r\nAs of F# 4.1, the accessibility of type abbreviations is checked at compile-time. Consider changing the accessibility of the type abbreviation. Ignoring this warning might lead to runtime errors."
 
     [<Test>]
     let ``Test2``() =
@@ -41,7 +41,7 @@ module Library =
             FSharpErrorSeverity.Warning
             44
             (4, 8, 4, 16)
-            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
+            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in.\r\nAs of F# 4.1, the accessibility of type abbreviations is checked at compile-time. Consider changing the accessibility of the type abbreviation. Ignoring this warning might lead to runtime errors."
 
     [<Test>]
     let ``Test4``() =
@@ -54,7 +54,7 @@ module Library =
             FSharpErrorSeverity.Warning
             44
             (4, 17, 4, 25)
-            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in"
+            "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in.\r\nAs of F# 4.1, the accessibility of type abbreviations is checked at compile-time. Consider changing the accessibility of the type abbreviation. Ignoring this warning might lead to runtime errors."
 
     [<Test>]
     let ``Test5``() =
