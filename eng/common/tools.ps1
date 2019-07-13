@@ -286,6 +286,9 @@ function InitializeXCopyMSBuild([string]$packageVersion, [bool]$install) {
 }
 
 function EnablePreviewSdks() {
+  if (Test-Path variable:global:_MSBuildExe) {
+    return $global:_MSBuildExe
+  }
   $vsInfo = LocateVisualStudio
   if ($vsInfo -eq $null) {
     # Preview SDKs are allowed when no Visual Studio instance is installed
