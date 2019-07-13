@@ -291,6 +291,9 @@ try {
 
         # enable us to build netcoreapp2.1 binaries
         $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
+        $env:DOTNET_INSTALL_DIR = $global:_DotNetInstallDir
+        Write-Host "CI - DOTNET_INSTALL_DIR: $env:DOTNET_INSTALL_DIR"
+        Write-Host "CI - _DotNetInstallDir: $global:_DotNetInstallDir"
         InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
         InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
     }
