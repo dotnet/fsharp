@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -39,7 +39,7 @@
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
-    <Compile Include="Libraries\ControlTests.fs" />
+    <Compile Include="Libraries\Async\AsyncTests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />

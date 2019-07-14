@@ -5,11 +5,11 @@ open NUnit.Framework
 open FSharp.Compiler.UnitTests
 
 [<TestFixture>]
-module ControlTests =
+module AsyncTests =
     // Regression for FSHARP1.0:5969
     // Async.StartChild: error when wait async is executed more than once
     [<Test>]
-    let ExecuteAsyncMultipleTimes() =
+    let ``Execute Async multiple times``() =
         CompilerAssert.CompileExeAndRun
             """
 module M
@@ -17,7 +17,7 @@ module M
 let a = async {
                 let! a = Async.StartChild(
                             async {
-                                do! Async.Sleep(500)
+                                do! Async.Sleep(1)
                                 return 27
                             })
                 let! result  = Async.Parallel [ a; a; a; a ]
@@ -31,7 +31,7 @@ exit 0
     // Regression for FSHARP1.0:5970
     // Async.StartChild: race in implementation of ResultCell in FSharp.Core
     [<Test>]
-    let JoiningStartChild() =
+    let ``Joining StartChild``() =
         CompilerAssert.CompileExeAndRun
             """
 module M
@@ -57,15 +57,10 @@ let r =
 exit 0
 
             """
+
     // Regression test for FSHARP1.0:6086
-    // This is a bit of duplication because the same/similar test
-    // can also be found under the FSHARP suite. Yet, I like to have
-    // it here...
-    
-    // The interesting thing about this test is that is used to throw
-    // an exception when executed on 64bit (FSharp.Core 2.0)
     [<Test>]
-    let MailboxAsyncNoStackOverflow() =
+    let ``Mailbox Async dot not StackOverflow``() =
         CompilerAssert.CompileExeAndRun
             """
 open Microsoft.FSharp.Control
@@ -118,30 +113,27 @@ let meetingPlace chams n = MailboxProcessor.Start(fun (processor : MailboxProces
 open System
 open System.Diagnostics
 
-[<EntryPoint>]
-let main(args : string[]) =     
-    printfn "CommandLine : %s" (String.concat ", " args)
-    let meetings = if args.Length > 0 then Int32.Parse(args.[0]) else 100000
-    
-    let colors = [Blue; Red; Yellow; Blue]    
-    let mp = meetingPlace (colors.Length) meetings
-    let watch = Stopwatch.StartNew()
-    let meets = 
-        colors 
-            |> List.map (chameleon mp) 
-            |> Async.Parallel 
-            |> Async.RunSynchronously 
-    watch.Stop()
-    for meet in meets do
-        printfn "%d" meet
-    printfn "Total: %d in %O"  (Seq.sum meets) (watch.Elapsed)
-    0
+let meetings = 100000
+
+let colors = [Blue; Red; Yellow; Blue]    
+let mp = meetingPlace (colors.Length) meetings
+let watch = Stopwatch.StartNew()
+let meets = 
+    colors 
+        |> List.map (chameleon mp) 
+        |> Async.Parallel 
+        |> Async.RunSynchronously 
+watch.Stop()
+for meet in meets do
+    printfn "%d" meet
+printfn "Total: %d in %O"  (Seq.sum meets) (watch.Elapsed)
+
+exit 0
             """
 
     // Regression for FSHARP1.0:5971
-    // Async.StartChild: ObjectDisposedException
     [<Test>]
-    let StartChildNoObjectDisposedException() =
+    let ``StartChild do not throw ObjectDisposedException``() =
         CompilerAssert.CompileExeAndRun
             """
 module M
@@ -154,7 +146,7 @@ exit 0
 
 
     [<Test>]
-    let StartChildTestTrampolineHijackLimit() =
+    let ``StartChild test Trampoline HijackLimit``() =
         CompilerAssert.CompileExeAndRun
             """
 module M
@@ -163,7 +155,7 @@ let r =
     async {
         let! a = Async.StartChild(
                     async { 
-                        do! Async.Sleep(500)
+                        do! Async.Sleep(1)
                         return 5 
                     }
                   )
