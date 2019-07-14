@@ -68,8 +68,11 @@ type CompilerAssert private () =
 
     static let compile extraArgs isExe source f =
         lock gate <| fun () ->
-            let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-            let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
+            let tmp1 = Path.GetTempFileName()
+            let tmp2 = Path.GetTempFileName()
+
+            let inputFilePath = Path.ChangeExtension(tmp1, ".fs")
+            let outputFilePath = Path.ChangeExtension (tmp2, if isExe then ".exe" else ".dll")
             let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
             let fsCoreDllPath = config.FSCOREDLLPATH
             let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
@@ -96,6 +99,9 @@ type CompilerAssert private () =
                 f (errors, outputFilePath)
 
             finally
+                try File.Delete tmp1 with | _ -> ()
+                try File.Delete tmp2 with | _ -> ()
+
                 try File.Delete inputFilePath with | _ -> ()
                 try File.Delete outputFilePath with | _ -> ()
                 try File.Delete runtimeConfigFilePath with | _ -> ()
@@ -122,8 +128,9 @@ type CompilerAssert private () =
 
     static member Compile (source: string, fsharpLanguageVersion: string, compilation: CSharpCompilation) =
         lock gate <| fun () ->
+            let tmp1 = Path.GetTempPath ()
             let fileName = compilation.AssemblyName + (if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe")
-            let compilationOutputPath = Path.Combine (Path.GetTempPath (), fileName)
+            let compilationOutputPath = Path.Combine (tmp1, fileName)
             try
                 let csharpDiagnostics = compilation.GetDiagnostics ()
 
@@ -139,6 +146,8 @@ type CompilerAssert private () =
                         Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
                 )
             finally
+                try File.Delete tmp1 with | _ -> ()
+
                 try File.Delete compilationOutputPath with | _ -> ()
 
     static member Pass (source: string) =
