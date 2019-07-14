@@ -168,6 +168,9 @@ module CompilerAssert =
             let errors = p.StandardError.ReadToEnd ()
             if not (String.IsNullOrWhiteSpace errors) then
                 Assert.Fail errors
+
+            if p.ExitCode <> 0 then
+                Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
         )
 
     let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
