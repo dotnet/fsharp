@@ -532,11 +532,6 @@ function MSBuild-Core() {
 
   $buildTool = InitializeBuildTool
 
-  $buildToolCommand = $buildTool.Command
-  $buildToolPath = $buildTool.Path
-  Write-Host "BuildToolCommand: $buildToolCommand"
-  Write-Host "BuildToolPath: $buildToolPath"
-
   $cmdArgs = "$($buildTool.Command) /m /nologo /clp:Summary /v:$verbosity /nr:$nodeReuse /p:ContinuousIntegrationBuild=$ci"
 
   if ($warnAsError) {
