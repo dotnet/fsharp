@@ -20,10 +20,6 @@ open FSharp.Compiler.Service.Tests.Common
 
 open NUnit.Framework
 
-#if FX_RESHAPED_REFLECTION
-open ReflectionAdapters
-#endif
-
 exception 
    VerificationException of (*assembly:*)string * (*errorCode:*)int * (*output:*)string
    with override e.Message = sprintf "Verification of '%s' failed with code %d, message <<<%s>>>" e.Data0 e.Data1 e.Data2

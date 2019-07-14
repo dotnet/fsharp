@@ -27,6 +27,7 @@
     <Compile Include="..\FSharp.Compiler.UnitTests\NunitHelpers.fs">
       <Link>NunitHelpers.fs</Link>
     </Compile>
+    <Compile Include="HandleExpects.fs" />
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
