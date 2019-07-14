@@ -5,6 +5,8 @@ namespace FSharp.Compiler.UnitTests
 open System
 open NUnit.Framework
 
+#if NETCOREAPP
+
 [<TestFixture>]
 module DefaultInterfaceMethodInteropTests =
 
@@ -39,3 +41,5 @@ type Test () =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.Compile (fsharpSource, (* TODO: change this to default *) "preview", c)
+
+#endif
