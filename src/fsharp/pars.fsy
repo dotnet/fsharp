@@ -2486,10 +2486,10 @@ cPrototype:
         let argsm = rhs parseState 6 
         let mBindLhs = lhs parseState
         let mWhole = lhs parseState
-        let mRhs = lhs parseState 
+        let mRhs = lhs parseState
         let rhsExpr = SynExpr.App (ExprAtomicFlag.NonAtomic,
                                   false, 
-                                  SynExpr.Ident (ident("failwith",rhs parseState 6)),
+                                  SynExpr.Ident (ident("failwith", argsm), argsm),
                                   SynExpr.Const (SynConst.String("extern was not given a DllImport attribute",rhs parseState 8),rhs parseState 8),
                                   mRhs)
         (fun attrs vis -> 
@@ -3654,7 +3654,8 @@ atomicExpr:
         $3 arg1 (lhs parseState) (rhs parseState 2),hpa1 }
 
   | BASE DOT atomicExprQualification 
-      { let arg1 = SynExpr.Ident (ident("base",rhs parseState 1))
+      { let idRange = rhs parseState 1
+        let arg1 = SynExpr.Ident (ident("base", idRange), idRange)
         $3 arg1 (lhs parseState) (rhs parseState 2),false }
 
   | QMARK nameop 
@@ -3665,10 +3666,11 @@ atomicExpr:
         mkSynInfix (rhs parseState 2) arg1 "?" $3, hpa1 }
 
   | GLOBAL
-      { SynExpr.Ident (ident(MangledGlobalName,rhs parseState 1)), false }
+      { let m = rhs parseState 1
+        SynExpr.Ident (ident(MangledGlobalName, m), m), false }
 
   | nameop
-      { SynExpr.Ident ($1),false }
+      { SynExpr.Ident ($1, rhs parseState 1), false }
 
   | LBRACK listExprElements RBRACK 
       { $2 (lhs parseState) false,false }

@@ -536,7 +536,7 @@ module UntypedParseImpl =
                     traverseSynExpr synExpr
                 else
                     Some range 
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident ident), rhs, _) 
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident (ident, _)), rhs, _) 
                 when ident.idText = "op_ArrayLookup" 
                      && not(AstTraversal.rangeContainsPosLeftEdgeInclusive rhs.Range pos) ->
                 match defaultTraverse expr with
@@ -691,7 +691,7 @@ module UntypedParseImpl =
                                     // the cursor is left of the dot
                                     None
                             | r -> r
-                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident ident), lhs, _m) 
+                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident (ident, _)), lhs, _m) 
                             when ident.idText = "op_ArrayLookup" 
                                  && not(AstTraversal.rangeContainsPosLeftEdgeInclusive lhs.Range pos) ->
                             match defaultTraverse expr with
@@ -860,7 +860,7 @@ module UntypedParseImpl =
             | Sequentials es -> List.tryPick (walkExprWithKind parentKind) es
             | SynExpr.IfThenElse (e1, e2, e3, _, _, _, _) -> 
                 List.tryPick (walkExprWithKind parentKind) [e1; e2] |> Option.orElse (match e3 with None -> None | Some e -> walkExprWithKind parentKind e)
-            | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
+            | SynExpr.Ident (ident, _) -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdentSet (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.DotGet (e, _, _, _) -> walkExprWithKind parentKind e
             | SynExpr.DotSet (e, _, _, _) -> walkExprWithKind parentKind e
@@ -1085,7 +1085,7 @@ module UntypedParseImpl =
 
         let (|Operator|_|) name e = 
             match e with
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, lhs, _), rhs, _) 
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident (ident, _), lhs, _), rhs, _) 
                 when ident.idText = name -> Some (lhs, rhs)
             | _ -> None
 
@@ -1097,7 +1097,7 @@ module UntypedParseImpl =
 
         let (|Setter|_|) e =
             match e with
-            | Operator "op_Equality" (SynExpr.Ident id, _) -> Some id
+            | Operator "op_Equality" (SynExpr.Ident (id, _), _) -> Some id
             | _ -> None
 
         let findSetters argList =
@@ -1133,10 +1133,10 @@ module UntypedParseImpl =
             | (SynExpr.New (_, SynType.App(SynType.LongIdent typeName, _, _, _, mGreaterThan, _, _), arg, _)) -> 
                 // new A<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
-            | (SynExpr.App (_, false, SynExpr.Ident id, arg, _)) -> 
+            | (SynExpr.App (_, false, SynExpr.Ident (id, _), arg, _)) -> 
                 // A()
                 Some (id.idRange.End, findSetters arg)
-            | (SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _)) -> 
+            | (SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.Ident (id, _), _, _, _, mGreaterThan, _, _), arg, _)) -> 
                 // A<_>()
                 Some (endOfClosingTokenOrIdent mGreaterThan id, findSetters arg)
             | (SynExpr.App (_, false, SynExpr.LongIdent (_, lid, _, _), arg, _)) -> 
@@ -1195,7 +1195,7 @@ module UntypedParseImpl =
                                 | _ -> 
                                     defaultTraverse expr
                             // new (... A$)
-                            | SynExpr.Ident id when id.idRange.End = pos ->
+                            | SynExpr.Ident (id, _) when id.idRange.End = pos ->
                                 match path with
                                 | PartOfParameterList None args -> 
                                     Some (CompletionContext.ParameterList args)

@@ -685,7 +685,7 @@ and
 
     /// F# syntax: ident
     /// Optimized representation, = SynExpr.LongIdent (false, [id], id.idRange)
-    | Ident of Ident
+    | Ident of Ident * range: range
 
     /// F# syntax: ident.ident...ident
     /// LongIdent(isOptional, longIdent, altNameRefCell, m)
@@ -866,8 +866,8 @@ and
         | SynExpr.LetOrUseBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
-        | SynExpr.Fixed (range=m) -> m
-        | SynExpr.Ident id -> id.idRange
+        | SynExpr.Fixed (range=m)
+        | SynExpr.Ident (range=m) -> m
 
     /// range ignoring any (parse error) extra trailing dots
     member e.RangeSansAnyExtraDot =
@@ -931,8 +931,8 @@ and
         | SynExpr.DotGet (expr, _, lidwd, m) -> if lidwd.ThereIsAnExtraDotAtTheEnd then unionRanges expr.Range lidwd.RangeSansAnyExtraDot else m
         | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeSansAnyExtraDot
         | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
-        | SynExpr.Fixed (_, m) -> m
-        | SynExpr.Ident id -> id.idRange
+        | SynExpr.Fixed (_, m)
+        | SynExpr.Ident (range=m) -> m
 
     /// Attempt to get the range of the first token or initial portion only - this is extremely ad-hoc, just a cheap way to improve a certain 'query custom operation' error range
     member e.RangeOfFirstPortion =
@@ -1002,8 +1002,8 @@ and
             let start = r.Start
             let e = (pat.Range: range).Start
             mkRange r.FileName start e
-        | SynExpr.Ident id -> id.idRange
-        | SynExpr.Fixed (_, m) -> m
+        | SynExpr.Fixed (_, m)
+        | SynExpr.Ident (range=m) -> m
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1784,14 +1784,14 @@ type SynArgNameGenerator() =
 
 let mkSynId m s = Ident(s, m)
 let pathToSynLid m p = List.map (mkSynId m) p
-let mkSynIdGet m n = SynExpr.Ident (mkSynId m n)
+let mkSynIdGet m n = SynExpr.Ident (mkSynId m n, m)
 let mkSynLidGet m path n =
     let lid = pathToSynLid m path @ [mkSynId m n]
     let dots = List.replicate (lid.Length - 1) m
     SynExpr.LongIdent (false, LongIdentWithDots(lid, dots), None, m)
 let mkSynIdGetWithAlt m id altInfo =
     match altInfo with
-    | None -> SynExpr.Ident id
+    | None -> SynExpr.Ident (id, m)
     | _ -> SynExpr.LongIdent (false, LongIdentWithDots([id], []), altInfo, m)
 
 let mkSynSimplePatVar isOpt id = SynSimplePat.Id (id, None, false, false, isOpt, id.idRange)
@@ -1801,13 +1801,13 @@ let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false,
 let (|LongOrSingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeSansAnyExtraDot)
-    | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
+    | SynExpr.Ident (id, _) -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
     | _ -> None
 
 let (|SingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (false, LongIdentWithDots([id], _), None, _) -> Some id
-    | SynExpr.Ident id -> Some id
+    | SynExpr.Ident (id, _) -> Some id
     | _ -> None
 
 /// This affects placement of sequence points
@@ -2085,7 +2085,7 @@ let rec mkSynDot dotm m l r =
     match l with
     | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
         SynExpr.LongIdent (isOpt, LongIdentWithDots(lid@[r], dots@[dotm]), None, m) // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes) - an ImmutableArray would be better here
-    | SynExpr.Ident id ->
+    | SynExpr.Ident (id, _) ->
         SynExpr.LongIdent (false, LongIdentWithDots([id;r], [dotm]), None, m)
     | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
         SynExpr.DotGet (e, dm, LongIdentWithDots(lid@[r], dots@[dotm]), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes) - an ImmutableArray would be better here
@@ -2096,7 +2096,7 @@ let rec mkSynDotMissing dotm m l =
     match l with
     | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
         SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots@[dotm]), None, m) // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes) - an ImmutableArray would be better here
-    | SynExpr.Ident id ->
+    | SynExpr.Ident (id, _) ->
         SynExpr.LongIdent (false, LongIdentWithDots([id], [dotm]), None, m)
     | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
         SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots@[dotm]), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes) - an ImmutableArray would be better here

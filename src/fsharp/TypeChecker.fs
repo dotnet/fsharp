@@ -2649,7 +2649,7 @@ module EventDeclarationNormalization =
                    match rhsExpr with 
                    // Detect 'fun () -> e' which results from the compilation of a property getter
                    | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), trueRhsExpr, m) ->
-                       let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m))) m
+                       let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m), m)) m
                        
                        // reconstitute rhsExpr
                        let bindingRhs = NormalizedBindingRhs([], None, rhsExpr)
@@ -5343,7 +5343,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 match x with
                 | SynPat.FromParseError(p, _) -> convSynPatToSynExpr p
                 | SynPat.Const (c, m) -> SynExpr.Const (c, m)
-                | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident id
+                | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident (id, m)
                 | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
                 | SynPat.LongIdent (LongIdentWithDots(longId, dotms) as lidwd, _, _tyargs, args, None, m) -> 
                     let args = match args with SynConstructorArgs.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
@@ -7742,8 +7742,8 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     let mkExprForVarSpace m (patvs: Val list) = 
         match patvs with 
         | [] -> SynExpr.Const (SynConst.Unit, m)
-        | [v] -> SynExpr.Ident v.Id
-        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident v.Id)), [], m)  
+        | [v] -> SynExpr.Ident (v.Id, m)
+        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident (v.Id, m))), [], m)  
 
     let mkSimplePatForVarSpace m (patvs: Val list) = 
         let spats = 
@@ -8267,7 +8267,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Using" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Using"), bindRange))
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Bind" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
             let consumeExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, transNoQueryOps innerComp, innerComp.Range, SequencePointAtTarget)], spBind, bindRange)
-            let consumeExpr = mkSynCall "Using" bindRange [SynExpr.Ident(id); consumeExpr ]
+            let consumeExpr = mkSynCall "Using" bindRange [SynExpr.Ident(id, id.idRange); consumeExpr ]
             let consumeExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, consumeExpr, id.idRange, SequencePointAtTarget)], spBind, bindRange)
             let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
             Some(translatedCtxt (mkSynCall "Bind" bindRange [rhsExpr; consumeExpr]))
@@ -16561,7 +16561,7 @@ module TcDeclarations =
                             | MemberKind.PropertyGet 
                             | MemberKind.PropertyGetSet -> 
                                 let getter = 
-                                    let rhsExpr = SynExpr.Ident fldId
+                                    let rhsExpr = SynExpr.Ident (fldId, fldId.idRange)
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, NoSequencePointAtInvisibleBinding, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags MemberKind.Member))
@@ -16575,7 +16575,7 @@ module TcDeclarations =
                                 let setter = 
                                     let vId = ident("v", mMemberPortion)
                                     let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, Some noInferredTypars, SynConstructorArgs.Pats [mkSynPatVar None vId], None, mMemberPortion)
-                                    let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
+                                    let rhsExpr = mkSynAssign (SynExpr.Ident (fldId, fldId.idRange)) (SynExpr.Ident (vId, vId.idRange))
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, NoSequencePointAtInvisibleBinding, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags MemberKind.PropertySet))
                                     SynMemberDefn.Member (binding, mMemberPortion) 

@@ -651,7 +651,7 @@ module ParsedInput =
                 fields |> List.iter (fun ((ident, _), e, _) ->
                             addLongIdentWithDots ident
                             e |> Option.iter walkExpr)
-            | SynExpr.Ident ident -> addIdent ident
+            | SynExpr.Ident (ident, _) -> addIdent ident
             | SynExpr.ObjExpr (ty, argOpt, bindings, ifaces, _, _) ->
                 argOpt |> Option.iter (fun (e, ident) ->
                     walkExpr e

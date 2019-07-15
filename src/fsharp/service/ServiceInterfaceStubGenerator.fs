@@ -840,7 +840,7 @@ module InterfaceStubGenerator =
                     | None ->
                         List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.Ident (_ident) ->
+                | SynExpr.Ident (_ident, _range) ->
                     None
 
                 | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> 
