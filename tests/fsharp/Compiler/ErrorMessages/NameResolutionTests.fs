@@ -24,7 +24,7 @@ let r:F = { Size=3; Height=4; Wall=1 }
             FSharpErrorSeverity.Error
             1129
             (9, 31, 9, 35)
-            "The record label 'Wall' is not defined."
+            "The record type 'F' does not contain a label 'Wall'."
 
     [<Test>]
     let `` RecordFieldProposal `` () =
