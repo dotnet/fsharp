@@ -374,7 +374,8 @@ module public FSharp.Compiler.PrettyNaming
     let IsPrefixOperator s =
         if String.IsNullOrEmpty s then false else
         let s = DecompileOpName s
-        match s with 
+        match s with
+        | "" -> false
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
         | _ ->
             (s.[0] = '!' && s <> "!=")
