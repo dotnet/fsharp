@@ -1,0 +1,56 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+namespace FSharp.Compiler.UnitTests
+
+open NUnit.Framework
+open FSharp.Compiler.SourceCodeServices
+
+[<TestFixture>]
+module ``NameResolutionTests`` = 
+    
+    [<Test>]
+    let `` FieldNotInRecord `` () =
+        CompilerAssert.TypeCheckSingleError
+            """
+type A = { Hello:string; World:string }
+type B = { Size:int; Height:int }
+type C = { Wheels:int }
+type D = { Size:int; Height:int; Walls:int }
+type E = { Unknown:string }
+type F = { Wallis:int; Size:int; Height:int; }
+
+let r:F = { Size=3; Height=4; Wall=1 }
+            """
+            FSharpErrorSeverity.Error
+            1129
+            (9, 31, 9, 35)
+            "The record label 'Wall' is not defined."
+
+    [<Test>]
+    let `` RecordFieldProposal `` () =
+        CompilerAssert.TypeCheckSingleError
+            """
+type A = { Hello:string; World:string }
+type B = { Size:int; Height:int }
+type C = { Wheels:int }
+type D = { Size:int; Height:int; Walls:int }
+type E = { Unknown:string }
+type F = { Wallis:int; Size:int; Height:int; }
+            
+let r = { Size=3; Height=4; Wall=1 }
+            """
+            FSharpErrorSeverity.Error
+            39
+            (9, 29, 9, 33)
+            "The record label 'Wall' is not defined."
+
+    [<Test>]
+    let `` GlobalQualifierAfterDot `` () =
+        CompilerAssert.TypeCheckSingleError
+            """
+let x = global.System.String.Empty.global.System.String.Empty
+            """
+            FSharpErrorSeverity.Error
+            1126
+            (1, 36, 1, 42)
+            "'global' may only be used as the first name in a qualified path"
