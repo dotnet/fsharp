@@ -698,4 +698,3 @@ module public FSharp.Compiler.PrettyNaming
         mangleProvidedTypeName (nm, nonDefaultArgs)
 
     let outArgCompilerGeneratedName = "outArg"
- 
