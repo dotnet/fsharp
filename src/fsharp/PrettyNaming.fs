@@ -375,7 +375,6 @@ module public FSharp.Compiler.PrettyNaming
         if String.IsNullOrEmpty s then false else
         let s = DecompileOpName s
         match s with
-        | "" -> false
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
         | _ ->
             (s.[0] = '!' && s <> "!=")
