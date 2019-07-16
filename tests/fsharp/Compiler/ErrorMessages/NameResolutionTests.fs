@@ -43,14 +43,3 @@ let r = { Size=3; Height=4; Wall=1 }
             39
             (9, 29, 9, 33)
             "The record label 'Wall' is not defined."
-
-    [<Test>]
-    let `` GlobalQualifierAfterDot `` () =
-        CompilerAssert.TypeCheckSingleError
-            """
-let x = global.System.String.Empty.global.System.String.Empty
-            """
-            FSharpErrorSeverity.Error
-            1126
-            (1, 36, 1, 42)
-            "'global' may only be used as the first name in a qualified path"
