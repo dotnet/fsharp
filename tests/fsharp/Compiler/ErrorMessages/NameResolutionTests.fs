@@ -6,10 +6,10 @@ open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
-module ``NameResolutionTests`` = 
+module NameResolutionTests = 
     
     [<Test>]
-    let `` FieldNotInRecord `` () =
+    let FieldNotInRecord () =
         CompilerAssert.TypeCheckSingleError
             """
 type A = { Hello:string; World:string }
@@ -27,7 +27,7 @@ let r:F = { Size=3; Height=4; Wall=1 }
             "The record type 'F' does not contain a label 'Wall'."
 
     [<Test>]
-    let `` RecordFieldProposal `` () =
+    let RecordFieldProposal () =
         CompilerAssert.TypeCheckSingleError
             """
 type A = { Hello:string; World:string }
