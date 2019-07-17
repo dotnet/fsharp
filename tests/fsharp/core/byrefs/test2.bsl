@@ -1,9 +1,9 @@
 
-test2.fsx(181,9,181,22): typecheck warning FS0193: This expression is a function value, i.e. is missing arguments. Its type is byref<int> -> unit.
+test2.fsx(181,9,181,22): typecheck warning FS3304: This expression is a function value, i.e. is missing arguments. Its type is byref<int> -> unit.
 
-test2.fsx(199,9,199,20): typecheck warning FS0193: This expression is a function value, i.e. is missing arguments. Its type is int -> byref<int> -> unit.
+test2.fsx(199,9,199,20): typecheck warning FS3304: This expression is a function value, i.e. is missing arguments. Its type is int -> byref<int> -> unit.
 
-test2.fsx(214,9,214,24): typecheck warning FS0193: This expression is a function value, i.e. is missing arguments. Its type is inref<int> * int -> unit.
+test2.fsx(214,9,214,24): typecheck warning FS3304: This expression is a function value, i.e. is missing arguments. Its type is inref<int> * int -> unit.
 
 test2.fsx(29,18,29,19): typecheck error FS3209: The address of the variable 'y' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
