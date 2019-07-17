@@ -37,12 +37,15 @@
     <Compile Include="Compiler\ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
     <Compile Include="Compiler\ErrorMessages\MissingElseBranch.fs" />
     <Compile Include="Compiler\ErrorMessages\UpcastDowncastTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\NameResolutionTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\AssignmentErrorTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
+    <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
