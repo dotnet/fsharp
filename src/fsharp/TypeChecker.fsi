@@ -75,7 +75,6 @@ exception UnitTypeExpected of DisplayEnv * TType * range
 exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
 exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
-exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ast.Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range

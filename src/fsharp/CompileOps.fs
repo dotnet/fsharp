@@ -127,7 +127,6 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | UnionCaseWrongArguments (_, _, _, m) 
       | TypeIsImplicitlyAbstract m 
       | RequiredButNotSpecified (_, _, _, _, m) 
-      | FunctionValueUnexpected (_, _, m)
       | UnitTypeExpected (_, _, m)
       | UnitTypeExpectedWithEquality (_, _, m)
       | UnitTypeExpectedWithPossiblePropertySetter (_, _, _, _, m)
@@ -1298,11 +1297,6 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | DeprecatedThreadStaticBindingWarning(_) -> 
           os.Append(DeprecatedThreadStaticBindingWarningE().Format) |> ignore
-
-      | FunctionValueUnexpected (denv, ty, _) ->
-          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-          let errorText = FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)
-          os.Append errorText |> ignore
 
       | UnitTypeExpected (denv, ty, _) ->
           let ty, _cxs = PrettyTypes.PrettifyType denv.g ty

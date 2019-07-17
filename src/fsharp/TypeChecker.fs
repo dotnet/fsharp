@@ -67,7 +67,6 @@ exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
 exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
 exception FieldGivenTwice of DisplayEnv * Tast.RecdFieldRef * range
 exception MissingFields of string list * range
-exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnitTypeExpected of DisplayEnv * TType * range
 exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
@@ -823,7 +822,7 @@ let UnifyUnitType cenv (env: TcEnv) m ty expr =
         let domainTy = NewInferenceType ()
         let resultTy = NewInferenceType ()
         if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
-            warning (FunctionValueUnexpected(denv, ty, m))
+            warning (Error (FSComp.SR.functionValueUnexpected(NicePrint.prettyStringOfTy denv ty), m))
         else
             let reportImplicitlyDiscardError() =
                 if typeEquiv cenv.g cenv.g.bool_ty ty then 
