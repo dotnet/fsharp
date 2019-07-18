@@ -169,7 +169,7 @@ function InstallDotNetSdk([string] $dotnetRoot, [string] $version, [string] $arc
   InstallDotNet $dotnetRoot $version $architecture
 }
 
-function InstallDotNet([string] $dotnetRoot, [string] $version, [string] $architecture = "", [string] $runtime = "", [bool] $skipNonVersionedFiles = $false) {
+function InstallDotNet([string] $dotnetRoot, [string] $version, [string] $architecture = "", [string] $runtime = "", [bool] $skipNonVersionedFiles = $false) {  $installScript = GetDotNetInstallScript $dotnetRoot
   $installScript = GetDotNetInstallScript $dotnetRoot
   $installParameters = @{
     Version = $version
@@ -283,25 +283,6 @@ function InitializeXCopyMSBuild([string]$packageVersion, [bool]$install) {
   }
 
   return Join-Path $packageDir "tools"
-}
-
-function EnablePreviewSdks() {
-  if (Test-Path variable:global:_MSBuildExe) {
-    return
-  }
-  $vsInfo = LocateVisualStudio
-  if ($vsInfo -eq $null) {
-    # Preview SDKs are allowed when no Visual Studio instance is installed
-    return
-  }
-
-  $vsId = $vsInfo.instanceId
-  $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
-
-  $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
-  Create-Directory $instanceDir
-  $sdkFile = Join-Path $instanceDir "sdk.txt"
-  'UsePreviews=True' | Set-Content $sdkFile
 }
 
 #
