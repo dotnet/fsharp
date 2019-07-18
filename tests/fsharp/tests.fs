@@ -1333,7 +1333,7 @@ module CoreTests =
     [<Test>]
     let ``pinvoke-FSC_BASIC`` () = singleTestBuildAndRun "core/pinvoke" FSC_BASIC
 
-    [<Test>]
+    [<Test;Ignore("https://github.com/dotnet/fsharp/issues/7254")>]
     let ``pinvoke-FSI_BASIC`` () =
         // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
         // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0

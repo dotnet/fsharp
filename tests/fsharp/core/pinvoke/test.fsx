@@ -5,9 +5,9 @@ module Core_csext
 #endif
 
 #nowarn "9"
+#nowarn "51"
 open System
 open System.Runtime.InteropServices
-open System.Drawing
 
 let failures = ref []
 
