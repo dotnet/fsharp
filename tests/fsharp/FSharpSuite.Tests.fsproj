@@ -33,6 +33,7 @@
     <Compile Include="tests.fs" />
     <Compile Include="Compiler\ILChecker.fs" />
     <Compile Include="Compiler\CompilerAssert.fs" />
+    <Compile Include="Compiler\ErrorMessages\ConstructorTests.fs" />
     <Compile Include="Compiler\ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
     <Compile Include="Compiler\ErrorMessages\MissingElseBranch.fs" />
