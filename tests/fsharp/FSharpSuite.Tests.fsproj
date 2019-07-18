@@ -27,6 +27,7 @@
     <Compile Include="..\FSharp.Compiler.UnitTests\NunitHelpers.fs">
       <Link>NunitHelpers.fs</Link>
     </Compile>
+    <Compile Include="HandleExpects.fs" />
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
@@ -47,6 +48,7 @@
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
+    <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
