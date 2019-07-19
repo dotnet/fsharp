@@ -211,7 +211,7 @@ let pdbChecksumDebugInfo timestamp (checksumPdbChunk: BinaryChunk) (algorithmNam
 let pdbGetPdbDebugDeterministicInfo (deterministicPdbChunk: BinaryChunk) =
     { iddCharacteristics = 0                                                    // Reserved
       iddMajorVersion = 0                                                       // VersionMajor should be 0
-      iddMinorVersion = 0                                                       // VersionMinor should be 0x0100
+      iddMinorVersion = 0                                                       // VersionMinor should be 00
       iddType = 16                                                              // IMAGE_DEBUG_TYPE_DETERMINISTIC
       iddTimestamp = 0
       iddData = Array.empty                                                     // No DATA
