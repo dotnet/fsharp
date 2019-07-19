@@ -9,7 +9,7 @@ open FSharp.Compiler.SourceCodeServices
 module ``Type Mismatch`` =
 
     [<Test>]
-    let ``Return Instead Of Return!``() =
+    let ``return Instead Of return!``() =
         CompilerAssert.TypeCheckSingleError
             """
 let rec foo() = async { return foo() }
@@ -20,7 +20,7 @@ let rec foo() = async { return foo() }
             "Type mismatch. Expecting a\n    ''a'    \nbut given a\n    'Async<'a>'    \nThe types ''a' and 'Async<'a>' cannot be unified. Consider using 'return!' instead of 'return'."
 
     [<Test>]
-    let ``Yield Instead Of Yield!``() =
+    let ``yield Instead Of yield!``() =
         CompilerAssert.TypeCheckSingleError
             """
 type Foo() =
