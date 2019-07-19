@@ -16,6 +16,16 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open System.Reflection.Emit
 
+type TestError =
+    {
+        Number: int
+        StartLine: int
+        StartColumn: int
+        EndLine: int
+        EndColumn: int
+        Message: string
+    }
+
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
@@ -117,6 +127,7 @@ type CompilerAssert private () =
 #endif
 
         pInfo.RedirectStandardError <- true
+        pInfo.RedirectStandardOutput <- true
         pInfo.UseShellExecute <- false
         
         let p = Process.Start(pInfo)
@@ -126,29 +137,33 @@ type CompilerAssert private () =
         if not (String.IsNullOrWhiteSpace errors) then
             Assert.Fail errors
 
+        p.StandardOutput.ReadToEnd ()
+
+    static let compileWithOptions (source: string) (fsharpLanguageVersion: string) (compilation: CSharpCompilation) extraArgs isExe f =
+        let tmp1 = Path.GetTempPath ()
+        let fileName = compilation.AssemblyName + (if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe")
+        let compilationOutputPath = Path.Combine (tmp1, fileName)
+        try
+            let csharpDiagnostics = compilation.GetDiagnostics ()
+
+            if not csharpDiagnostics.IsEmpty then                  
+                Assert.Fail ("CSharp Source Diagnostics:\n" + (csharpDiagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
+
+            let emitResult = compilation.Emit compilationOutputPath
+                    
+            Assert.IsTrue (emitResult.Success, "Unable to emit compilation.")
+
+            compile (Array.append [|"--langversion:" + fsharpLanguageVersion; "-r:" + compilationOutputPath|] extraArgs) isExe source f
+        finally
+            try File.Delete tmp1 with | _ -> ()
+
+            try File.Delete compilationOutputPath with | _ -> ()
+
     static member Compile (source: string, fsharpLanguageVersion: string, compilation: CSharpCompilation) =
-        lock gate <| fun () ->
-            let tmp1 = Path.GetTempPath ()
-            let fileName = compilation.AssemblyName + (if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe")
-            let compilationOutputPath = Path.Combine (tmp1, fileName)
-            try
-                let csharpDiagnostics = compilation.GetDiagnostics ()
-
-                if not csharpDiagnostics.IsEmpty then                  
-                    Assert.Fail ("CSharp Source Diagnostics:\n" + (csharpDiagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
-
-                let emitResult = compilation.Emit compilationOutputPath
-                
-                Assert.IsTrue (emitResult.Success, "Unable to emit compilation.")
-
-                compile [|"--langversion:" + fsharpLanguageVersion; "-r:" + compilationOutputPath|] false source (fun (errors, _) -> 
-                    if errors.Length > 0 then
-                        Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
-                )
-            finally
-                try File.Delete tmp1 with | _ -> ()
-
-                try File.Delete compilationOutputPath with | _ -> ()
+        compileWithOptions source fsharpLanguageVersion compilation [||] false (fun (errors, _) -> 
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+        )
 
     static member Pass (source: string) =
         lock gate <| fun () ->
@@ -182,6 +197,35 @@ type CompilerAssert private () =
                 Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
             )
 
+    static member HasTypeCheckErrors (source: string, fsharpLanguageVersion: string, compilation, expectedErrors: TestError list) =
+        compileWithOptions source fsharpLanguageVersion compilation [||] false (fun (errors, _) -> 
+            let errors =
+                errors 
+                |> Array.map (fun err ->
+                    let terr =
+                        { 
+                            Number = err.ErrorNumber
+                            StartLine = err.StartLineAlternate
+                            StartColumn = err.StartColumn
+                            EndLine = err.EndLineAlternate
+                            EndColumn = err.EndColumn
+                            Message = err.Message
+                        }
+                    Assert.AreEqual(FSharpErrorSeverity.Error, err.Severity, sprintf "Expected error severity as Error. Actual error: %A" terr)
+                    terr
+                )
+
+            Assert.Greater (errors.Length, 0, "Was expecting errors on type checking but there were none.")
+            Assert.AreEqual (expectedErrors.Length, errors.Length, sprintf "The number of expected errors does not equal the number of actual errors. Actual errors: %A" errors)
+            
+            (expectedErrors, errors)
+            ||> Seq.iter2 (fun expectedError actualError ->
+                Assert.AreEqual(expectedError.Number, actualError.Number, sprintf "Expected error number does not equal the actual error number. Expected error: %A - Actual error: %A" expectedError actualError)
+                Assert.AreEqual(expectedError.Message, actualError.Message, sprintf "Expected error message does not equal the actual error message. Expected error: %A - Actual error: %A" expectedError actualError)
+                Assert.True ((expectedError = actualError), sprintf "Expected error ranges do not equal the actual error ranges. Expected error: %A - Actual error: %A" expectedError actualError)
+            )
+        )
+
     static member CompileExe (source: string) =
         compile [||] true source (fun (errors, _) -> 
             if errors.Length > 0 then
@@ -192,7 +236,15 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            run outputExe
+            run outputExe |> ignore
+        )
+
+    static member CompileExeAndRun (source: string, fsharpLanguageVersion, compilation, expectedOutput: string) =
+        compileWithOptions source fsharpLanguageVersion compilation [||] true (fun (errors, outputExe) ->
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+
+            Assert.AreEqual (expectedOutput, run outputExe)
         )
 
     static member CompileAndVerifyIL (source: string) (f: ILVerifier -> unit) =

@@ -80,7 +80,24 @@ module DispatchSlotChecking =
 
     /// Get the override info for an existing (inherited) method being used to implement a dispatch slot.
     let GetInheritedMemberOverrideInfo g amap m parentType (minfo: MethInfo) = 
-        let nm = minfo.LogicalName
+        let nm = 
+            match minfo with
+            | ILMeth (_, info, _) ->
+                let tcref = info.DeclaringTyconRef
+                if isInterfaceTyconRef tcref then
+                    let ilMethInfoOpt =
+                        let methodImpls = tcref.ILTyconRawMetadata.MethodImpls.AsList
+                        methodImpls
+                        |> List.tryFind (fun x -> x.OverrideBy.MethodRef.Name = minfo.LogicalName)
+                    match ilMethInfoOpt with
+                    | Some ilMethInfo ->
+                        ilMethInfo.Overrides.MethodRef.Name
+                    | _ ->
+                        minfo.LogicalName
+                else
+                    minfo.LogicalName
+            | _ ->
+                minfo.LogicalName
         let (CompiledSig (argTys, retTy, fmtps, ttpinst)) = CompiledSigOfMeth g amap m minfo
 
         let isFakeEventProperty = minfo.IsFSharpEventPropertyMethod
@@ -512,7 +529,8 @@ module DispatchSlotChecking =
                           let isOptional = 
                               ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
                           for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
-                              yield RequiredSlot(reqdSlot, isOptional)
+                            if not reqdSlot.IsFinal then
+                              yield RequiredSlot(reqdSlot, isOptional || (not reqdSlot.IsAbstract && g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop))
                   else
                       
                       // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
@@ -550,7 +568,7 @@ module DispatchSlotChecking =
                       // slot in a subclass. 
                       for minfos in infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, reqdTyRange, reqdTy) do
                         for minfo in minfos do
-                          if not minfo.IsAbstract && (not isInterface || isInterfaceTy g minfo.ApparentEnclosingType) then 
+                          if not minfo.IsAbstract && (not isInterface || (minfo.IsFinal && isInterfaceTy g minfo.ApparentEnclosingType)) then
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange parentType minfo   ]
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
