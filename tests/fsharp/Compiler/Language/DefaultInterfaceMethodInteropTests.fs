@@ -201,6 +201,6 @@ let main _ =
             """
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, fsharpLangVersion, c, "OverrideDefaultMethod-NonDefaultMethod")
+        CompilerAssert.CompileExeAndRun (fsharpSource, fsharpLangVersion, c, "FromITest2-Method1-FromITest2-Method2")
 
 #endif
