@@ -529,8 +529,63 @@ module DispatchSlotChecking =
                           let isOptional = 
                               ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
                           for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
-                            if not reqdSlot.IsFinal then
-                              yield RequiredSlot(reqdSlot, isOptional)
+                            if true then
+                                if isOptional || not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
+                                    yield RequiredSlot(reqdSlot, true)
+                                else
+                                    let overrides =
+                                        // TODO: We need to clean this up!
+                                        // TODO: This is to check the most specific override implementation and choose the correct override.
+                                        reqdTyInfos 
+                                        |> List.choose (fun (_, jty, m, impliedTys) -> 
+                                            if isInterfaceTy g jty then
+                                                impliedTys
+                                                |> List.choose (fun jty ->
+                                                    if TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce jty then
+                                                        infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, jty) 
+                                                        |> List.reduce (@)
+                                                        |> List.tryPick (fun minfo2 ->
+                                                            if (typeEquiv g minfo2.ApparentEnclosingType jty) then
+                                                                let overrideInfo = GetInheritedMemberOverrideInfo g amap m CanImplementAnyInterfaceSlot minfo2
+                                                                if overrideInfo.LogicalName = reqdSlot.LogicalName then
+                                                                    Some (minfo2, overrideInfo, jty)
+                                                                else
+                                                                    None
+                                                            else
+                                                                None
+                                                        )
+                                                    else
+                                                        None
+                                                ) |> Some
+                                            else
+                                                None
+                                        )
+
+                                    let overrides =
+                                        match overrides with
+                                        | [] -> []
+                                        | _ -> overrides |> List.reduce (@)
+
+                                    match overrides with
+                                    | [] -> yield RequiredSlot(reqdSlot, true)
+                                    | [ (minfo2, _overrideBy, _) ] -> 
+                                        yield RequiredSlot(reqdSlot, not minfo2.IsAbstract)
+                                    | _ ->
+                                        let sortedOverrides =
+                                            overrides
+                                            |> List.sortWith (fun (_, _, ty1) (_, _, ty2) ->
+                                                if TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2 then 1
+                                                else -1
+                                            )
+
+                                        for (_, _, ty1) in sortedOverrides do
+                                            for (_, _, ty2) in sortedOverrides do
+                                                if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) then
+                                                    // TODO: Move this to SR
+                                                    errorR(Error((5000, sprintf "Unable to find most specific method on %A" reqdSlot.LogicalName), reqdTyRange))
+                                        
+                                        let minfo2, _overrideBy, _ = List.head sortedOverrides
+                                        yield RequiredSlot(reqdSlot, not minfo2.IsAbstract)
                   else
                       
                       // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
@@ -545,13 +600,11 @@ module DispatchSlotChecking =
             // have been implemented. 
             let availPriorOverrides : OverrideInfo list = 
                 let isInterface = isInterfaceTy g reqdTy
-                if isInterface && not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
+                if isInterface then
                     []
                 else
                     let reqdTy = 
                         if isObjExpr then
-                            reqdTy
-                        elif isInterface then
                             reqdTy
                         else 
                             match GetSuperTypeOfType g amap reqdTyRange reqdTy with
@@ -570,65 +623,8 @@ module DispatchSlotChecking =
                       // slot in a subclass. 
                       for minfos in infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, reqdTyRange, reqdTy) do
                         for minfo in minfos do
-                          if not minfo.IsAbstract && not isInterface then
-                              yield GetInheritedMemberOverrideInfo g amap reqdTyRange parentType minfo
-                          elif not minfo.IsFinal && isInterface then
-                                let overrides =
-                                    // TODO: We need to clean this up!
-                                    // TODO: This is to check the most specific override implementation and choose the correct override.
-                                    reqdTyInfos 
-                                    |> List.choose (fun (_, jty, m, impliedTys) -> 
-                                        if isInterfaceTy g jty then
-                                            impliedTys
-                                            |> List.choose (fun jty ->
-                                                if TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce jty then
-                                                    infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, jty) 
-                                                    |> List.reduce (@)
-                                                    |> List.tryPick (fun minfo2 ->
-                                                        if (typeEquiv g minfo2.ApparentEnclosingType jty) then
-                                                            let overrideInfo = GetInheritedMemberOverrideInfo g amap m parentType minfo2
-                                                            if overrideInfo.LogicalName = minfo.LogicalName then
-                                                                Some (minfo2, overrideInfo, jty)
-                                                            else
-                                                                None
-                                                        else
-                                                            None
-                                                    )
-                                                else
-                                                    None
-                                            ) |> Some
-                                        else
-                                            None
-                                    )
-
-                                let overrides =
-                                    match overrides with
-                                    | [] -> []
-                                    | _ -> overrides |> List.reduce (@)
-
-                                match overrides with
-                                | [] -> ()
-                                | [ (minfo2, overrideBy, _) ] -> 
-                                    if not minfo2.IsAbstract then
-                                        yield overrideBy
-                                | _ ->
-                                    let sortedOverrides =
-                                        overrides
-                                        |> List.sortWith (fun (_, _, ty1) (_, _, ty2) ->
-                                            if TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2 then 1
-                                            else -1
-                                        )
-
-                                    for (_, _, ty1) in sortedOverrides do
-                                        for (_, _, ty2) in sortedOverrides do
-                                            if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) then
-                                                // TODO: Move this to SR
-                                                errorR(Error((5000, sprintf "Unable to find most specific method on %A" minfo.LogicalName), reqdTyRange))
-                                    
-                                    let minfo2, overrideBy, _ = List.head sortedOverrides
-                                    if not minfo2.IsAbstract then
-                                        yield overrideBy
-                    ]
+                          if not minfo.IsAbstract then
+                              yield GetInheritedMemberOverrideInfo g amap reqdTyRange parentType minfo ]
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x: PropInfo) = 
