@@ -217,3 +217,22 @@ module CompilerAssert =
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
                 )
         
+    let ParseWithErrors (source: string) expectedParseErrors = 
+        let parseResults = checker.ParseFile("test.fs", SourceText.ofString source, FSharpParsingOptions.Default) |> Async.RunSynchronously
+
+        Assert.True(parseResults.ParseHadErrors)
+
+        let errors = 
+            parseResults.Errors
+            |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+
+        Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Type check errors: %A" parseResults.Errors)
+
+        Array.zip errors expectedParseErrors
+        |> Array.iter (fun (info, expectedError) ->
+            let (expectedServerity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
+            Assert.AreEqual(expectedServerity, info.Severity)
+            Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
+            Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
+            Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
+        )
