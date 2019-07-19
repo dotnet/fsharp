@@ -36,6 +36,7 @@
     <Compile Include="Compiler\ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
     <Compile Include="Compiler\ErrorMessages\MissingElseBranch.fs" />
+    <Compile Include="Compiler\ErrorMessages\UnitGenericAbstactType.fs" />
     <Compile Include="Compiler\ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\UpcastDowncastTests.fs" />
     <Compile Include="Compiler\ErrorMessages\AssignmentErrorTests.fs" />
