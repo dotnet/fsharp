@@ -501,7 +501,7 @@ module DispatchSlotChecking =
 
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members
-        [ for (i, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
+        [ for (_, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
 
             // Build a set of the implied interface types, for quicker lookup, by nominal type
             let isImpliedInterfaceTable = 
@@ -530,7 +530,7 @@ module DispatchSlotChecking =
                               ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
                           for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
                             if not reqdSlot.IsFinal then
-                              yield RequiredSlot(reqdSlot, isOptional || (not reqdSlot.IsAbstract && g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop))
+                              yield RequiredSlot(reqdSlot, isOptional)
                   else
                       
                       // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
@@ -570,49 +570,64 @@ module DispatchSlotChecking =
                       // slot in a subclass. 
                       for minfos in infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, reqdTyRange, reqdTy) do
                         for minfo in minfos do
-                          if not minfo.IsAbstract && (not isInterface || (typeEquiv g minfo.ApparentEnclosingType reqdTy)) then
+                          if not minfo.IsAbstract && not isInterface then
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange parentType minfo
-                          elif isInterface && minfo.IsAbstract && (typeEquiv g minfo.ApparentEnclosingType reqdTy) then
+                          elif not minfo.IsFinal && isInterface then
                                 let overrides =
                                     // TODO: We need to clean this up!
                                     // TODO: This is to check the most specific override implementation and choose the correct override.
                                     reqdTyInfos 
-                                    |> List.choose (fun (j, jty, m, _) -> 
-                                        if i <> j && isInterfaceTy g jty && TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce jty then
-                                            infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, jty) 
-                                            |> List.reduce (@)
-                                            |> List.tryPick (fun minfo2 ->
-                                                if (typeEquiv g minfo2.ApparentEnclosingType jty) then
-                                                    let overrideInfo = GetInheritedMemberOverrideInfo g amap m parentType minfo2
-                                                    if overrideInfo.LogicalName = minfo.LogicalName then
-                                                        Some (overrideInfo, jty)
-                                                    else
-                                                        None
+                                    |> List.choose (fun (_, jty, m, impliedTys) -> 
+                                        if isInterfaceTy g jty then
+                                            impliedTys
+                                            |> List.choose (fun jty ->
+                                                if TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce jty then
+                                                    infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, jty) 
+                                                    |> List.reduce (@)
+                                                    |> List.tryPick (fun minfo2 ->
+                                                        if (typeEquiv g minfo2.ApparentEnclosingType jty) then
+                                                            let overrideInfo = GetInheritedMemberOverrideInfo g amap m parentType minfo2
+                                                            if overrideInfo.LogicalName = minfo.LogicalName then
+                                                                Some (minfo2, overrideInfo, jty)
+                                                            else
+                                                                None
+                                                        else
+                                                            None
+                                                    )
                                                 else
                                                     None
-                                            )
+                                            ) |> Some
                                         else
                                             None
                                     )
+
+                                let overrides =
+                                    match overrides with
+                                    | [] -> []
+                                    | _ -> overrides |> List.reduce (@)
+
                                 match overrides with
                                 | [] -> ()
-                                | [ (overrideBy, _) ] -> yield overrideBy
+                                | [ (minfo2, overrideBy, _) ] -> 
+                                    if not minfo2.IsAbstract then
+                                        yield overrideBy
                                 | _ ->
                                     let sortedOverrides =
                                         overrides
-                                        |> List.sortWith (fun (_, ty1) (_, ty2) ->
+                                        |> List.sortWith (fun (_, _, ty1) (_, _, ty2) ->
                                             if TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2 then 1
-                                            else 0
+                                            else -1
                                         )
 
-                                    for (_, ty1) in sortedOverrides do
-                                        for (_, ty2) in sortedOverrides do
+                                    for (_, _, ty1) in sortedOverrides do
+                                        for (_, _, ty2) in sortedOverrides do
                                             if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) then
                                                 // TODO: Move this to SR
                                                 errorR(Error((5000, sprintf "Unable to find most specific method on %A" minfo.LogicalName), reqdTyRange))
                                     
-                                    let overrideBy, _ = List.head sortedOverrides
-                                    yield overrideBy
+                                    let minfo2, overrideBy, _ = List.head sortedOverrides
+                                    if not minfo2.IsAbstract then
+                                        yield overrideBy
                     ]
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
