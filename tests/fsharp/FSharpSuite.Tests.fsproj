@@ -32,7 +32,16 @@
     <Compile Include="tests.fs" />
     <Compile Include="Compiler\ILChecker.fs" />
     <Compile Include="Compiler\CompilerAssert.fs" />
+    <Compile Include="Compiler\ErrorMessages\ConstructorTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\MissingElseBranch.fs" />
+    <Compile Include="Compiler\ErrorMessages\UnitGenericAbstactType.fs" />
+    <Compile Include="Compiler\ErrorMessages\NameResolutionTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\TypeMismatchTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\UpcastDowncastTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\AssignmentErrorTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
@@ -40,6 +49,7 @@
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Libraries\Async\AsyncTests.fs" />
+    <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
