@@ -7,7 +7,7 @@ open System.Reflection
 open System.Reflection.PortableExecutable
 open System.Text.RegularExpressions
 
-module AssemblyVersionCheck =
+module AssemblyCheck =
 
     let private versionZero = Version(0, 0, 0, 0)
     let private versionOne = Version(1, 0, 0, 0)
@@ -55,11 +55,10 @@ module AssemblyVersionCheck =
             |> Seq.concat
             |> List.ofSeq
             |> List.filter (fun p -> (Set.contains (Path.GetFileName(p)) excludedAssemblies) |> not)
-            |> List.filter (fun p -> not (p.Contains(@"\Proto\") || p.Contains(@"\Bootstrap\")  || p.Contains(@".resources.")))
 
         let fsharpExecutingWithEmbeddedPdbs =
             fsharpAssemblies
-            |> List.filter (fun p -> not (p.Contains(@"\Proto\") || p.Contains(@"\Bootstrap\")  || p.Contains(@".resources.")))
+            |> List.filter (fun p -> not (p.Contains(@"\Proto\") || p.Contains(@"\Bootstrap\") || p.Contains(@".resources.") || p.Contains(@"\FSharpSdk\")))
 
         // verify that all assemblies have a version number other than 0.0.0.0 or 1.0.0.0
         let failedVersionCheck =
@@ -105,7 +104,7 @@ module AssemblyVersionCheck =
 [<EntryPoint>]
 let main (argv:string array) =
     if argv.Length <> 1 then
-        printfn "Usage: dotnet AssemblyVersionCheck.dll -- path/to/binaries"
+        printfn "Usage: dotnet AssemblyCheck.dll -- path/to/binaries"
         1
     else
-        AssemblyVersionCheck.verifyAssemblies argv.[0]
+        AssemblyCheck.verifyAssemblies argv.[0]
