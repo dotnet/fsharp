@@ -84,8 +84,8 @@ type idd =
       iddChunk: BinaryChunk }
 
 type HashAlgorithm =
-    | Sha1
-    | Sha256
+| Sha1
+| Sha256
 
 val generatePortablePdb : embedAllSource: bool -> embedSourceList: string list -> sourceLink: string -> checksumAlgorithm: HashAlgorithm -> showTimes: bool -> info: PdbData -> pathMap:PathMap -> (int64 * BlobContentId * MemoryStream * string * byte[])
 val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> (int64 * BlobContentId * MemoryStream)

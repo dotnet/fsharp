@@ -128,22 +128,27 @@ type idd =
 
 /// The specified Hash algorithm to use on portable pdb files.
 type HashAlgorithm =
-    | Sha1
-    | Sha256
+| Sha1
+| Sha256
 
 // Document checksum algorithms
 let guidSha1 = Guid("ff1816ec-aa5e-4d10-87f7-6f4963833460")
 let guidSha2 = Guid("8829d00f-11b8-4213-878b-770e8597ac16")
 
+// If the FIPS algorithm policy is enabled on the computer (e.g., for US government employees and contractors)
+// then obtaining the MD5 implementation in BCL will throw. 
+// In this case, catch the failure, and not set a checksum. 
 let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
-    use file = FileSystem.FileStreamReadShim url
-    let guid, alg =
-        match checksumAlgorithm with
-        | HashAlgorithm.Sha1 -> guidSha1, System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
-        | HashAlgorithm.Sha256 -> guidSha2, System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
+    try
+        use file = FileSystem.FileStreamReadShim url
+        let guid, alg =
+            match checksumAlgorithm with
+            | HashAlgorithm.Sha1 -> guidSha1, System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
+            | HashAlgorithm.Sha256 -> guidSha2, System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
 
-    let checkSum = alg.ComputeHash file
-    guid, checkSum
+        let checkSum = alg.ComputeHash file
+        Some (guid, checkSum)
+    with _ -> None
 
 //---------------------------------------------------------------------
 // Portable PDB Writer
@@ -330,19 +335,27 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
         metadata.SetCapacity(TableIndex.Document, docLength)
         for doc in docs do
             let handle =
-                let hashAlg, checkSum = checkSum doc.File checksumAlgorithm
-                let dbgInfo =
-                    (serializeDocumentName doc.File,
-                     metadata.GetOrAddGuid hashAlg,
-                     metadata.GetOrAddBlob(checkSum.ToImmutableArray()),
-                     metadata.GetOrAddGuid corSymLanguageTypeId) |> metadata.AddDocument
-                match includeSource doc.File with
-                | None -> ()
-                | Some blob ->
-                    metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit dbgInfo,
-                                                       metadata.GetOrAddGuid embeddedSourceId,
-                                                       metadata.GetOrAddBlob blob) |> ignore
-                dbgInfo
+                match checkSum doc.File checksumAlgorithm with
+                | Some (hashAlg, checkSum) ->
+                    let dbgInfo = 
+                        (serializeDocumentName doc.File,
+                         metadata.GetOrAddGuid hashAlg,
+                         metadata.GetOrAddBlob(checkSum.ToImmutableArray()),
+                         metadata.GetOrAddGuid corSymLanguageTypeId) |> metadata.AddDocument
+                    match includeSource doc.File with
+                    | None -> ()
+                    | Some blob ->
+                        metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit dbgInfo,
+                                                           metadata.GetOrAddGuid embeddedSourceId,
+                                                           metadata.GetOrAddBlob blob) |> ignore
+                    dbgInfo
+                | None ->
+                    let dbgInfo = 
+                        (serializeDocumentName doc.File,
+                         metadata.GetOrAddGuid(System.Guid.Empty),
+                         metadata.GetOrAddBlob(ImmutableArray<byte>.Empty),
+                         metadata.GetOrAddGuid corSymLanguageTypeId) |> metadata.AddDocument
+                    dbgInfo
             index.Add(doc.File, handle)
 
         if not (String.IsNullOrEmpty sourceLink) then
@@ -525,7 +538,6 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
         match checksumAlgorithm with
         | HashAlgorithm.Sha1 -> "SHA1", System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
         | HashAlgorithm.Sha256 -> "SHA256", System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
-
     let idProvider: System.Func<IEnumerable<Blob>, BlobContentId> =
         let convert (content: IEnumerable<Blob>) =
             let contentBytes = content |> Seq.collect (fun c -> c.GetBytes()) |> Array.ofSeq
