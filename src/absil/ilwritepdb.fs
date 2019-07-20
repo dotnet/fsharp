@@ -128,16 +128,13 @@ type idd =
 
 /// The specified Hash algorithm to use on portable pdb files.
 type HashAlgorithm =
-| Sha1
-| Sha256
+    | Sha1
+    | Sha256
 
 // Document checksum algorithms
 let guidSha1 = Guid("ff1816ec-aa5e-4d10-87f7-6f4963833460")
 let guidSha2 = Guid("8829d00f-11b8-4213-878b-770e8597ac16")
 
-// If the FIPS algorithm policy is enabled on the computer (e.g., for US government employees and contractors)
-// then obtaining the MD5 implementation in BCL will throw. 
-// In this case, catch the failure, and not set a checksum. 
 let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
     try
         use file = FileSystem.FileStreamReadShim url
