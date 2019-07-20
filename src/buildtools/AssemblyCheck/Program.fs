@@ -87,7 +87,7 @@ module AssemblyVersionCheck =
         else
             printfn "All shipping assemblies had an appropriate commit hash."
 
-        // verify that all assemblies have a commit hash
+        // verify that all assemblies have an embedded pdb
         let failedVerifyEmbeddedPdb =
             fsharpExecutingWithEmbeddedPdbs
             |> List.filter (fun a -> not (verifyEmbeddedPdb a))
