@@ -44,7 +44,7 @@ type OverrideInfo =
 // If the bool is true then the slot is optional, i.e. is an interface slot
 // which does not _have_ to be implemented, because an inherited implementation 
 // is available.
-type RequiredSlot = RequiredSlot of MethInfo * (* isOptional: *) bool 
+type RequiredSlot = RequiredSlot of MethInfo * (* isOptional: *) bool
 
 type SlotImplSet = SlotImplSet of RequiredSlot list * NameMultiMap<RequiredSlot> * OverrideInfo list * PropInfo list
 
@@ -80,24 +80,7 @@ module DispatchSlotChecking =
 
     /// Get the override info for an existing (inherited) method being used to implement a dispatch slot.
     let GetInheritedMemberOverrideInfo g amap m parentType (minfo: MethInfo) = 
-        let nm = 
-            match minfo with
-            | ILMeth (_, info, _) ->
-                let tcref = info.DeclaringTyconRef
-                if isInterfaceTyconRef tcref then
-                    let ilMethInfoOpt =
-                        let methodImpls = tcref.ILTyconRawMetadata.MethodImpls.AsList
-                        methodImpls
-                        |> List.tryFind (fun x -> x.OverrideBy.MethodRef.Name = minfo.LogicalName)
-                    match ilMethInfoOpt with
-                    | Some ilMethInfo ->
-                        ilMethInfo.Overrides.MethodRef.Name
-                    | _ ->
-                        minfo.LogicalName
-                else
-                    minfo.LogicalName
-            | _ ->
-                minfo.LogicalName
+        let nm = minfo.LogicalName
         let (CompiledSig (argTys, retTy, fmtps, ttpinst)) = CompiledSigOfMeth g amap m minfo
 
         let isFakeEventProperty = minfo.IsFSharpEventPropertyMethod
@@ -438,7 +421,90 @@ module DispatchSlotChecking =
                     | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
                     | _ -> ()
 
+    let ILMethodRefOverrideCheck (overrideBy1: AbstractIL.IL.ILMethodRef) (overrideBy2: AbstractIL.IL.ILMethodRef) (overrides1: AbstractIL.IL.ILMethodRef) (overrides2: AbstractIL.IL.ILMethodRef) =
+        overrideBy1 = overrideBy2 && overrides1 = overrides2
 
+    let ILMethodOverrides g amap m (overrideBy: MethInfo) (overrides: MethInfo) =
+        match overrideBy, overrides with
+        | ILMeth (_, info1, _), ILMeth (_, info2, _) -> 
+            if TypeFeasiblySubsumesType 0 g amap m overrides.ApparentEnclosingType CanCoerce overrideBy.ApparentEnclosingType then
+                let ilMeth1 = info1.ILMethodRef
+                let ilMeth2 = info2.ILMethodRef
+                info1.DeclaringTyconRef.ILTyconRawMetadata.MethodImpls.AsList
+                |> List.exists (fun ilMethImpl -> 
+                    let overrideByRef = ilMethImpl.OverrideBy.MethodRef
+                    let overridesRef = ilMethImpl.Overrides.MethodRef
+                    overrideByRef.Name = ilMeth1.Name && overrideByRef.ArgCount = ilMeth1.ArgCount && overrideByRef.GenericArity = ilMeth1.GenericArity &&
+                    overridesRef.Name = ilMeth2.Name && overridesRef.ArgCount = ilMeth2.ArgCount && overridesRef.GenericArity = ilMeth2.GenericArity
+                )
+            else
+                false
+        | _ ->
+            false
+
+    let GetDispatchSlots g amap reqdTyRange infoReader availImpliedInterfaces reqdTyInfos reqdTy impliedTys =
+        let dispatchSlots = 
+             [ if isInterfaceTy g reqdTy then 
+                   for impliedTy in impliedTys  do
+                       // Check if the interface has an inherited implementation
+                       // If so, you do not have to implement all the methods - each
+                       // specific method is "optionally" implemented.
+                       let isOptional = 
+                           ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
+                       for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
+                         if not reqdSlot.IsFinal then
+                             if isOptional || not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
+                                 yield RequiredSlot(reqdSlot, isOptional)
+                             else
+                                 let sortedSlots =
+                                     reqdTyInfos 
+                                     |> List.choose (fun (_, jty, m, impliedTys) -> 
+                                         if isInterfaceTy g jty then
+                                             impliedTys
+                                             |> List.choose (fun jty ->
+                                                 if TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce jty then
+                                                     GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap m jty
+                                                     |> List.tryPick (fun minfo2 -> 
+                                                         if ILMethodOverrides g amap m minfo2 reqdSlot then
+                                                             Some (jty, RequiredSlot(reqdSlot, not minfo2.IsAbstract))
+                                                         else
+                                                             None
+                                                     )
+                                                 else
+                                                     None
+                                             )
+                                             |> Some
+                                         else
+                                             None
+                                     )
+                                     |> List.reduce (@) // ok to use reduce here without checking as we will always have 1 item
+                                     |> List.sortWith (fun (ty1, _) (ty2, _) ->
+                                         if TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2 then 1
+                                         else -1
+                                     )
+
+                                 match sortedSlots with
+                                 | [] ->
+                                     yield RequiredSlot(reqdSlot, not reqdSlot.IsAbstract)
+                                 | (_, bestSlot) :: _ ->                                      
+                                     yield bestSlot
+                                
+
+                                 //    for (_, _, ty1) in sortedOverrides do
+                                 //        for (_, _, ty2) in sortedOverrides do
+                                 //            if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) then
+                                 //                // TODO: Move this to SR
+                                 //                errorR(Error((5000, sprintf "Unable to find most specific method on %A" reqdSlot.LogicalName), reqdTyRange))
+
+               else
+                   
+                   // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
+                   // So here we get and yield all of those.
+                   for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange do
+                      if minfo.IsDispatchSlot then
+                          yield RequiredSlot(minfo, (*isOptional=*) not minfo.IsAbstract) ]
+
+        dispatchSlots
 
     /// Get the slots of a type that can or must be implemented. This depends
     /// partly on the full set of interface types that are being implemented
@@ -520,79 +586,7 @@ module DispatchSlotChecking =
             //    not minfo.IsAbstract && minfo.IsVirtual 
 
             // Compute the abstract slots that require implementations
-            let dispatchSlots = 
-                [ if isInterfaceTy g reqdTy then 
-                      for impliedTy in impliedTys  do
-                          // Check if the interface has an inherited implementation
-                          // If so, you do not have to implement all the methods - each
-                          // specific method is "optionally" implemented.
-                          let isOptional = 
-                              ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
-                          for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
-                            if true then
-                                if isOptional || not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
-                                    yield RequiredSlot(reqdSlot, true)
-                                else
-                                    let overrides =
-                                        // TODO: We need to clean this up!
-                                        // TODO: This is to check the most specific override implementation and choose the correct override.
-                                        reqdTyInfos 
-                                        |> List.choose (fun (_, jty, m, impliedTys) -> 
-                                            if isInterfaceTy g jty then
-                                                impliedTys
-                                                |> List.choose (fun jty ->
-                                                    if TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce jty then
-                                                        infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, jty) 
-                                                        |> List.reduce (@)
-                                                        |> List.tryPick (fun minfo2 ->
-                                                            if (typeEquiv g minfo2.ApparentEnclosingType jty) then
-                                                                let overrideInfo = GetInheritedMemberOverrideInfo g amap m CanImplementAnyInterfaceSlot minfo2
-                                                                if overrideInfo.LogicalName = reqdSlot.LogicalName then
-                                                                    Some (minfo2, overrideInfo, jty)
-                                                                else
-                                                                    None
-                                                            else
-                                                                None
-                                                        )
-                                                    else
-                                                        None
-                                                ) |> Some
-                                            else
-                                                None
-                                        )
-
-                                    let overrides =
-                                        match overrides with
-                                        | [] -> []
-                                        | _ -> overrides |> List.reduce (@)
-
-                                    match overrides with
-                                    | [] -> yield RequiredSlot(reqdSlot, true)
-                                    | [ (minfo2, _overrideBy, _) ] -> 
-                                        yield RequiredSlot(reqdSlot, not minfo2.IsAbstract)
-                                    | _ ->
-                                        let sortedOverrides =
-                                            overrides
-                                            |> List.sortWith (fun (_, _, ty1) (_, _, ty2) ->
-                                                if TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2 then 1
-                                                else -1
-                                            )
-
-                                        for (_, _, ty1) in sortedOverrides do
-                                            for (_, _, ty2) in sortedOverrides do
-                                                if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) then
-                                                    // TODO: Move this to SR
-                                                    errorR(Error((5000, sprintf "Unable to find most specific method on %A" reqdSlot.LogicalName), reqdTyRange))
-                                        
-                                        let minfo2, _overrideBy, _ = List.head sortedOverrides
-                                        yield RequiredSlot(reqdSlot, not minfo2.IsAbstract)
-                  else
-                      
-                      // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
-                      // So here we get and yield all of those.
-                      for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange do
-                         if minfo.IsDispatchSlot then
-                             yield RequiredSlot(minfo, (*isOptional=*) not minfo.IsAbstract) ]
+            let dispatchSlots = GetDispatchSlots g amap reqdTyRange infoReader availImpliedInterfaces reqdTyInfos reqdTy impliedTys
                 
             // Compute the methods that are available to implement abstract slots from the base class
             //

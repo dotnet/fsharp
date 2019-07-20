@@ -1238,6 +1238,11 @@ type MethInfo =
     member x.IsStruct =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
+    member x.IsILMethod =
+        match x with
+        | ILMeth _ -> true
+        | _ -> false
+
     /// Build IL method infos.
     static member CreateILMeth (amap: Import.ImportMap, m, ty: TType, md: ILMethodDef) =
         let tinfo = ILTypeInfo.FromType amap.g ty
