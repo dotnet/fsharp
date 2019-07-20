@@ -38,13 +38,11 @@
     </metadata>
     <files>
         <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.dll"     target="lib\netstandard1.6" />
-        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.pdb"     target="lib\netstandard1.6" />
         <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.sigdata" target="lib\netstandard1.6" />
         <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.optdata" target="lib\netstandard1.6" />
         <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.xml"     target="lib\netstandard1.6" />
 
         <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.dll"     target="lib\net45" />
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.pdb"     target="lib\net45" />
         <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.sigdata" target="lib\net45" />
         <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.optdata" target="lib\net45" />
         <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.xml"     target="lib\net45" />

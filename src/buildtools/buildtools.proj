@@ -8,6 +8,7 @@
   <ItemGroup>
     <Projects Include="fslex\fslex.fsproj" />
     <Projects Include="fsyacc\fsyacc.fsproj" />
+    <Projects Include="AssemblyCheck\AssemblyCheck.fsproj" />
   </ItemGroup>
 
   <Target Name="Build">

@@ -1,9 +1,10 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Reflection.PortableExecutable
 open System.Text.RegularExpressions
 
 module AssemblyVersionCheck =
@@ -13,10 +14,37 @@ module AssemblyVersionCheck =
     let private commitHashPattern = new Regex(@"Commit Hash: (<developer build>)|([0-9a-fA-F]{40})", RegexOptions.Compiled)
     let private devVersionPattern = new Regex(@"-(ci|dev)", RegexOptions.Compiled)
 
-    let verifyAssemblyVersions (binariesPath:string) =
+    let verifyEmbeddedPdb (filename:string)  =
+        use fileStream = File.OpenRead(filename)
+        let reader = new PEReader(fileStream)
+        let mutable hasEmbeddedPdb = false
+
+        try
+            for entry in reader.ReadDebugDirectory() do
+                match entry.Type with
+                | DebugDirectoryEntryType.CodeView ->
+                    let _ = reader.ReadCodeViewDebugDirectoryData(entry)
+                    ()
+
+                | DebugDirectoryEntryType.EmbeddedPortablePdb ->
+                    let _ = reader.ReadEmbeddedPortablePdbDebugDirectoryData(entry)
+                    hasEmbeddedPdb <- true
+                    ()
+
+                | DebugDirectoryEntryType.PdbChecksum ->
+                    let _ = reader.ReadPdbChecksumDebugDirectoryData(entry)
+                    ()
+
+                | _ -> ()
+        with | e -> printfn "Error validating assembly %s\nMessage: %s" filename (e.ToString())
+        hasEmbeddedPdb
+
+    let verifyAssemblies (binariesPath:string) =
+
         let excludedAssemblies =
             [ "FSharp.Data.TypeProviders.dll" ]
             |> Set.ofList
+
         let fsharpAssemblies =
             [ "FSharp*.dll"
               "fsc.exe"
@@ -27,6 +55,11 @@ module AssemblyVersionCheck =
             |> Seq.concat
             |> List.ofSeq
             |> List.filter (fun p -> (Set.contains (Path.GetFileName(p)) excludedAssemblies) |> not)
+            |> List.filter (fun p -> not (p.Contains(@"\Proto\") || p.Contains(@"\Bootstrap\")  || p.Contains(@".resources.")))
+
+        let fsharpExecutingWithEmbeddedPdbs =
+            fsharpAssemblies
+            |> List.filter (fun p -> not (p.Contains(@"\Proto\") || p.Contains(@"\Bootstrap\")  || p.Contains(@".resources.")))
 
         // verify that all assemblies have a version number other than 0.0.0.0 or 1.0.0.0
         let failedVersionCheck =
@@ -34,6 +67,7 @@ module AssemblyVersionCheck =
             |> List.filter (fun a ->
                 let assemblyVersion = AssemblyName.GetAssemblyName(a).Version
                 assemblyVersion = versionZero || assemblyVersion = versionOne)
+
         if failedVersionCheck.Length > 0 then
             printfn "The following assemblies had a version of %A or %A" versionZero versionOne
             printfn "%s\r\n" <| String.Join("\r\n", failedVersionCheck)
@@ -46,24 +80,32 @@ module AssemblyVersionCheck =
             |> List.filter (fun a ->
                 let fileProductVersion = FileVersionInfo.GetVersionInfo(a).ProductVersion
                 not (commitHashPattern.IsMatch(fileProductVersion) || devVersionPattern.IsMatch(fileProductVersion)))
+
         if failedCommitHash.Length > 0 then
             printfn "The following assemblies don't have a commit hash set"
             printfn "%s\r\n" <| String.Join("\r\n", failedCommitHash)
         else
             printfn "All shipping assemblies had an appropriate commit hash."
 
-        // return code is the number of failures
-        failedVersionCheck.Length + failedCommitHash.Length
+        // verify that all assemblies have a commit hash
+        let failedVerifyEmbeddedPdb =
+            fsharpExecutingWithEmbeddedPdbs
+            |> List.filter (fun a -> not (verifyEmbeddedPdb a))
 
+        if failedVerifyEmbeddedPdb.Length > 0 then
+            printfn "The following assemblies don't have an embedded pdb"
+            printfn "%s\r\n" <| String.Join("\r\n", failedVerifyEmbeddedPdb)
+        else
+            printfn "All shipping assemblies had an embedded PDB."
+
+        // return code is the number of failures
+        failedVersionCheck.Length + failedCommitHash.Length + failedVerifyEmbeddedPdb.Length 
+
+
+[<EntryPoint>]
 let main (argv:string array) =
     if argv.Length <> 1 then
-        printfn "Usage: fsi.exe AssemblyVersionCheck.fsx -- path/to/binaries"
+        printfn "Usage: dotnet AssemblyVersionCheck.dll -- path/to/binaries"
         1
     else
-        AssemblyVersionCheck.verifyAssemblyVersions argv.[0]
-
-Environment.GetCommandLineArgs()
-|> Seq.skipWhile ((<>) "--")
-|> Seq.skip 1
-|> Array.ofSeq
-|> main
+        AssemblyVersionCheck.verifyAssemblies argv.[0]

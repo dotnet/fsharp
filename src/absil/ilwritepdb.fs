@@ -186,7 +186,7 @@ let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLeng
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0                                                    // Reserved
-      iddMajorVersion = 0                                                       // VersionMajor should be 0
+      iddMajorVersion = 0x0100                                                  // VersionMajor should be 0
       iddMinorVersion = 0x0100                                                  // VersionMinor should be 0x0100
       iddType = 17                                                              // IMAGE_DEBUG_TYPE_EMBEDDEDPDB
       iddTimestamp = 0
