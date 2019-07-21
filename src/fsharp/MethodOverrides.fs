@@ -466,7 +466,7 @@ module DispatchSlotChecking =
                                                  if TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce jty then
                                                      GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap m jty
                                                      |> List.tryPick (fun minfo2 -> 
-                                                         if ILMethodOverrides g amap m minfo2 reqdSlot then
+                                                         if not minfo2.IsNewSlot && ILMethodOverrides g amap m minfo2 reqdSlot then
                                                              Some (jty, RequiredSlot(reqdSlot, not minfo2.IsAbstract))
                                                          else
                                                              None
