@@ -76,6 +76,7 @@ module AssemblyCheck =
         // verify that all assemblies have a commit hash
         let failedCommitHash =
             fsharpAssemblies
+            |> List.filter (fun p -> not (p.Contains(@"\FSharpSdk\")))
             |> List.filter (fun a ->
                 let fileProductVersion = FileVersionInfo.GetVersionInfo(a).ProductVersion
                 not (commitHashPattern.IsMatch(fileProductVersion) || devVersionPattern.IsMatch(fileProductVersion)))
