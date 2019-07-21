@@ -442,7 +442,7 @@ module DispatchSlotChecking =
         | _ ->
             false
 
-    let GetDispatchSlots g amap reqdTyRange infoReader availImpliedInterfaces reqdTyInfos reqdTy impliedTys =
+    let GetDispatchSlots g amap reqdTyRange infoReader denv availImpliedInterfaces reqdTyInfos reqdTy impliedTys =
         let dispatchSlots = 
              [ if isInterfaceTy g reqdTy then 
                    for impliedTy in impliedTys  do
@@ -459,14 +459,14 @@ module DispatchSlotChecking =
                              else
                                  let sortedSlots =
                                      reqdTyInfos 
-                                     |> List.choose (fun (_, jty, m, impliedTys) -> 
+                                     |> List.choose (fun (_, jty, _, impliedTys) -> 
                                          if isInterfaceTy g jty then
                                              impliedTys
                                              |> List.choose (fun jty ->
-                                                 if TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce jty then
-                                                     GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap m jty
+                                                 if TypeFeasiblySubsumesType 0 g amap reqdTyRange reqdTy CanCoerce jty then
+                                                     GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange jty
                                                      |> List.tryPick (fun minfo2 -> 
-                                                         if not minfo2.IsNewSlot && ILMethodOverrides g amap m minfo2 reqdSlot then
+                                                         if not minfo2.IsNewSlot && ILMethodOverrides g amap reqdTyRange minfo2 reqdSlot then
                                                              Some (jty, RequiredSlot(reqdSlot, not minfo2.IsAbstract))
                                                          else
                                                              None
@@ -484,18 +484,24 @@ module DispatchSlotChecking =
                                          else -1
                                      )
 
-                                 match sortedSlots with
-                                 | [] ->
-                                     yield RequiredSlot(reqdSlot, not reqdSlot.IsAbstract)
-                                 | (_, bestSlot) :: _ ->                                      
-                                     yield bestSlot
-                                
+                                 let mutable hasMostSpecificOverride = true
+                                 for (ty1, _) in sortedSlots do
+                                    for (ty2, _) in sortedSlots do
+                                        if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) && hasMostSpecificOverride then
+                                            hasMostSpecificOverride <- false
+                                            // TODO: Move this to SR
+                                            errorR(Error((5000, sprintf "Unable to find most specific override for %A" (NicePrint.stringOfMethInfo amap reqdTyRange denv reqdSlot)), reqdTyRange))
 
-                                 //    for (_, _, ty1) in sortedOverrides do
-                                 //        for (_, _, ty2) in sortedOverrides do
-                                 //            if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) then
-                                 //                // TODO: Move this to SR
-                                 //                errorR(Error((5000, sprintf "Unable to find most specific method on %A" reqdSlot.LogicalName), reqdTyRange))
+                                 if hasMostSpecificOverride then                                 
+                                     match sortedSlots with
+                                     | [] ->
+                                         yield RequiredSlot(reqdSlot, not reqdSlot.IsAbstract)
+                                     | (_, bestSlot) :: _ ->                                      
+                                         yield bestSlot
+                                 else
+                                     // We make this optional because we already error'ed due to no most specific override.
+                                     // Do not show other errors 
+                                     yield RequiredSlot(reqdSlot, true)
 
                else
                    
@@ -587,7 +593,7 @@ module DispatchSlotChecking =
             //    not minfo.IsAbstract && minfo.IsVirtual 
 
             // Compute the abstract slots that require implementations
-            let dispatchSlots = GetDispatchSlots g amap reqdTyRange infoReader availImpliedInterfaces reqdTyInfos reqdTy impliedTys
+            let dispatchSlots = GetDispatchSlots g amap reqdTyRange infoReader denv availImpliedInterfaces reqdTyInfos reqdTy impliedTys
                 
             // Compute the methods that are available to implement abstract slots from the base class
             //
