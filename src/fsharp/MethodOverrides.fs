@@ -452,7 +452,8 @@ module DispatchSlotChecking =
                        let isOptional = 
                            ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
                        for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
-                         if not reqdSlot.IsFinal then
+                         // filter out overrides
+                         if reqdSlot.IsNewSlot then
                              if isOptional || not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
                                  yield RequiredSlot(reqdSlot, isOptional)
                              else
