@@ -58,7 +58,7 @@ module AssemblyCheck =
 
         let fsharpExecutingWithEmbeddedPdbs =
             fsharpAssemblies
-            |> List.filter (fun p -> not (p.Contains(@"\Proto\") || p.Contains(@"\Bootstrap\") || p.Contains(@".resources.") || p.Contains(@"\FSharpSdk\" || p.Contains(@"\tmp\" || p.Contains(@"\obj\")))
+            |> List.filter (fun p -> not (p.Contains(@"\Proto\") || p.Contains(@"\Bootstrap\") || p.Contains(@".resources.") || p.Contains(@"\FSharpSdk\") || p.Contains(@"\tmp\" || p.Contains(@"\obj\")))
 
         // verify that all assemblies have a version number other than 0.0.0.0 or 1.0.0.0
         let failedVersionCheck =
