@@ -500,7 +500,7 @@ module DispatchSlotChecking =
                                          yield bestSlot
                                  else
                                      // We make this optional because we already error'ed due to no most specific override.
-                                     // Do not show other errors 
+                                     // Try not to show more errors.
                                      yield RequiredSlot(reqdSlot, true)
 
                else
