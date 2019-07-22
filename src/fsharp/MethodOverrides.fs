@@ -447,7 +447,7 @@ module DispatchSlotChecking =
                          // Interface methods that are overriden in another interface will always be final, even when the method is re-abstracted.
                          // We do not want to look at the methods that override.
                          if not reqdSlot.IsFinal then
-                             if isOptional || not reqdSlot.IsILMethod || not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
+                             if isOptional || not reqdSlot.IsILMethod then //|| not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
                                  yield RequiredSlot(reqdSlot, isOptional)
                              else
                                  let sortedSlots =
