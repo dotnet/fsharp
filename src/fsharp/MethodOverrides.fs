@@ -453,7 +453,7 @@ module DispatchSlotChecking =
                            ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
                        for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
                          // filter out overrides
-                         if reqdSlot.IsNewSlot then
+                         if not reqdSlot.IsFinal then
                              if isOptional || not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
                                  yield RequiredSlot(reqdSlot, isOptional)
                              else
@@ -466,7 +466,7 @@ module DispatchSlotChecking =
                                                  if TypeFeasiblySubsumesType 0 g amap reqdTyRange reqdTy CanCoerce jty then
                                                      GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange jty
                                                      |> List.tryPick (fun minfo2 -> 
-                                                         if not minfo2.IsNewSlot && ILMethodOverrides g amap reqdTyRange minfo2 reqdSlot then
+                                                         if minfo2.IsFinal && ILMethodOverrides g amap reqdTyRange minfo2 reqdSlot then
                                                              Some (jty, RequiredSlot(reqdSlot, not minfo2.IsAbstract))
                                                          else
                                                              None
