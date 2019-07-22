@@ -461,16 +461,19 @@ module DispatchSlotChecking =
                                          else -1
                                      )
 
-                                 let mutable hasMostSpecificOverride = true
-                                 for (ty1, _) in sortedSlots do
-                                    for (ty2, _) in sortedSlots do
-                                        if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && 
-                                           not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) && hasMostSpecificOverride then
-                                            hasMostSpecificOverride <- false
-                                            // TODO: Move this to SR
-                                            errorR(Error((5000, sprintf "Unable to find most specific override for %A" (NicePrint.stringOfMethInfo amap reqdTyRange denv reqdSlot)), reqdTyRange))
+                                 // TODO: Add check for most specific implementation when an explicit implementation is given.
+                                 let mutable hasMostSpecificImplementation = true
+                                 for (ty1, RequiredSlot (_, isOptional1)) in sortedSlots do
+                                    if hasMostSpecificImplementation && isOptional1 then
+                                        for (ty2, RequiredSlot (_, isOptional2)) in sortedSlots do
+                                            if isOptional2 &&
+                                               not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && 
+                                               not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) then
+                                                hasMostSpecificImplementation <- false
+                                                // TODO: Move this to SR
+                                                errorR(Error((5000, sprintf "Interface member %A does not have a most specific implementation." (NicePrint.stringOfMethInfo amap reqdTyRange denv reqdSlot)), reqdTyRange))
 
-                                 if hasMostSpecificOverride then                                 
+                                 if hasMostSpecificImplementation then                                 
                                      match sortedSlots with
                                      | [] ->
                                          yield RequiredSlot(reqdSlot, not reqdSlot.IsAbstract)
