@@ -453,7 +453,7 @@ module DispatchSlotChecking =
                                  let sortedSlots =
                                      reqdTyInfos
                                      |> List.map (fun (_, _, _, impliedTys) ->
-                                         GetInterfaceOverrideByRequiredSlotsFromTypes g amap reqdTyRange infoReader reqdTy impliedTys reqdSlot
+                                         GetInterfaceOverrideByRequiredSlotsFromTypes g amap reqdTyRange infoReader impliedTy impliedTys reqdSlot
                                      )
                                      |> List.reduce (@) // ok to use reduce here without checking as we will always have 1 item
                                      |> List.sortWith (fun (ty1, _) (ty2, _) ->
