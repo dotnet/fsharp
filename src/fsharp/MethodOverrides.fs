@@ -460,29 +460,34 @@ module DispatchSlotChecking =
                                          if TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2 then 1
                                          else -1
                                      )
+                                
+                                 match sortedSlots with
+                                 | [] ->
+                                    yield RequiredSlot(reqdSlot, not reqdSlot.IsAbstract)
+                                 | (ty1, (RequiredSlot (_, isOptional1) as bestSlot)) :: sortedSlotsTail ->
 
-                                 // TODO: Add check for most specific implementation when an explicit implementation is given.
-                                 let mutable hasMostSpecificImplementation = true
-                                 for (ty1, RequiredSlot (_, isOptional1)) in sortedSlots do
-                                    if hasMostSpecificImplementation && isOptional1 then
-                                        for (ty2, RequiredSlot (_, isOptional2)) in sortedSlots do
-                                            if isOptional2 &&
-                                               not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && 
-                                               not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) then
-                                                hasMostSpecificImplementation <- false
-                                                // TODO: Move this to SR
-                                                errorR(Error((5000, sprintf "Interface member %A does not have a most specific implementation." (NicePrint.stringOfMethInfo amap reqdTyRange denv reqdSlot)), reqdTyRange))
+                                    // TODO: Add check for most specific implementation when an explicit implementation is given.
+                                    let mutable hasMostSpecificImplementation = true
+                                    let mutable isOptional1 = isOptional1
+                                    for (ty2, RequiredSlot (_, isOptional2)) in sortedSlotsTail do
 
-                                 if hasMostSpecificImplementation then                                 
-                                     match sortedSlots with
-                                     | [] ->
-                                         yield RequiredSlot(reqdSlot, not reqdSlot.IsAbstract)
-                                     | (_, bestSlot) :: _ ->                                      
-                                         yield bestSlot
-                                 else
-                                     // We make this optional because we already error'ed due to no most specific override.
-                                     // Try not to show more errors.
-                                     yield RequiredSlot(reqdSlot, true)
+                                        let isNotPartOfHierarchy =
+                                            not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && 
+                                            not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1)
+
+                                        if isOptional1 && isOptional2 && hasMostSpecificImplementation && isNotPartOfHierarchy then
+                                            hasMostSpecificImplementation <- false
+
+                                        if isNotPartOfHierarchy then
+                                            isOptional1 <- if isOptional1 then true else isOptional2 
+
+                                    if hasMostSpecificImplementation then
+                                        yield bestSlot
+                                    else
+                                        // TODO: Move this to SR
+                                        errorR(Error((5000, sprintf "Interface member %A does not have a most specific implementation." (NicePrint.stringOfMethInfo amap reqdTyRange denv reqdSlot)), reqdTyRange))
+                                        // We have already error'ed, so make this optional to not show many more errors.
+                                        yield RequiredSlot(reqdSlot, true)
 
                else
                    
