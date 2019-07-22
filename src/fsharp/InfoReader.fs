@@ -705,7 +705,7 @@ let TryFindPropInfo infoReader m ad nm ty =
 /// Try to find the method that overrides the given method from the given type.
 /// The given type must be an IL type.
 /// The given method must be an IL method.
-let TryFindILIntrinisicOverrideByMethInfo (infoReader: InfoReader) m ad ty (overrides: MethInfo) =
+let TryFindILIntrinisicOverriderMethInfo (infoReader: InfoReader) m ad ty (overrides: MethInfo) =
     let g = infoReader.g
 
     match tryAppTy g ty, overrides with

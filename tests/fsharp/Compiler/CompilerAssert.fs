@@ -197,7 +197,8 @@ type CompilerAssert private () =
                 Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
             )
 
-    static member HasTypeCheckErrors (source: string, fsharpLanguageVersion: string, compilation, expectedErrors: TestError list) =
+    static member HasTypeCheckErrors (source: string, compilation, expectedErrors: TestError list, ?fsharpLanguageVersion) =
+        let fsharpLanguageVersion = defaultArg fsharpLanguageVersion "default"
         compileWithOptions source fsharpLanguageVersion compilation [||] false (fun (errors, _) -> 
             let errors =
                 errors 
@@ -239,7 +240,8 @@ type CompilerAssert private () =
             run outputExe |> ignore
         )
 
-    static member CompileExeAndRun (source: string, fsharpLanguageVersion, compilation, expectedOutput: string) =
+    static member CompileExeAndRun (source: string, compilation, expectedOutput: string, ?fsharpLanguageVersion) =
+        let fsharpLanguageVersion = defaultArg fsharpLanguageVersion "default"
         compileWithOptions source fsharpLanguageVersion compilation [||] true (fun (errors, outputExe) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)

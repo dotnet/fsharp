@@ -55,7 +55,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.RelaxWhitespace, languageVersion47
         LanguageFeature.NameOf, languageVersion47
         LanguageFeature.ImplicitYield, languageVersion47
-        LanguageFeature.DefaultInterfaceMethodsInterop, previewVersion
+        LanguageFeature.DefaultInterfaceMethodsInterop, languageVersion47
         LanguageFeature.OpenStaticClasses, languageVersion47
         |]
 

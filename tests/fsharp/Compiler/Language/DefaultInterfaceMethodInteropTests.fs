@@ -9,8 +9,6 @@ open NUnit.Framework
 [<TestFixture>]
 module DefaultInterfaceMethodInteropTests =
 
-    let private fsharpLangVersion = (* TODO: change this to default *) "preview"
-
     [<Test>]
     let ``C# DIM Consumption - Errors with un-implemented non-DIM`` () =
         let csharpSource =
@@ -43,7 +41,7 @@ type Test () =
             """
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, fsharpLangVersion, c, [
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
                 Number = 366
                 StartLine = 8
@@ -96,7 +94,7 @@ let main _ =
             """
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, fsharpLangVersion, c, "DefaultMethod-NonDefaultMethod")
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-NonDefaultMethod")
 
     [<Test>]
     let ``C# DIM Consumption with override - Runs`` () =
@@ -143,7 +141,7 @@ let main _ =
             """
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, fsharpLangVersion, c, "OverrideDefaultMethod-NonDefaultMethod")
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "OverrideDefaultMethod-NonDefaultMethod")
 
     [<Test>]
     let ``C# Complex DIM Consumption with override - Runs`` () =
@@ -201,6 +199,6 @@ let main _ =
             """
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, fsharpLangVersion, c, "FromITest2-Method1-FromITest2-Method2")
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FromITest2-Method1-FromITest2-Method2")
 
 #endif
