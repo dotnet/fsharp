@@ -421,26 +421,18 @@ module DispatchSlotChecking =
                     | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
                     | _ -> ()
 
-    let ILMethodRefOverrideCheck (overrideBy1: AbstractIL.IL.ILMethodRef) (overrideBy2: AbstractIL.IL.ILMethodRef) (overrides1: AbstractIL.IL.ILMethodRef) (overrides2: AbstractIL.IL.ILMethodRef) =
-        overrideBy1 = overrideBy2 && overrides1 = overrides2
-
-    let ILMethodOverrides g amap m (overrideBy: MethInfo) (overrides: MethInfo) =
-        match overrideBy, overrides with
-        | ILMeth (_, info1, _), ILMeth (_, info2, _) -> 
-            if TypeFeasiblySubsumesType 0 g amap m overrides.ApparentEnclosingType CanCoerce overrideBy.ApparentEnclosingType then
-                let ilMeth1 = info1.ILMethodRef
-                let ilMeth2 = info2.ILMethodRef
-                info1.DeclaringTyconRef.ILTyconRawMetadata.MethodImpls.AsList
-                |> List.exists (fun ilMethImpl -> 
-                    let overrideByRef = ilMethImpl.OverrideBy.MethodRef
-                    let overridesRef = ilMethImpl.Overrides.MethodRef
-                    overrideByRef.Name = ilMeth1.Name && overrideByRef.ArgCount = ilMeth1.ArgCount && overrideByRef.GenericArity = ilMeth1.GenericArity &&
-                    overridesRef.Name = ilMeth2.Name && overridesRef.ArgCount = ilMeth2.ArgCount && overridesRef.GenericArity = ilMeth2.GenericArity
-                )
-            else
-                false
-        | _ ->
-            false
+    let GetInterfaceOverrideByRequiredSlotsFromTypes g amap m infoReader reqdTy impliedTys reqdSlot =
+        if isInterfaceTy g reqdTy then
+            impliedTys
+            |> List.choose (fun ty ->
+                if isInterfaceTy g ty && TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce ty then
+                    match TryFindILIntrinisicOverrideByMethInfo infoReader m AccessibleFromSomewhere ty reqdSlot with
+                    | Some minfo -> Some (ty, RequiredSlot (reqdSlot, not minfo.IsAbstract))
+                    | _ -> None
+                else
+                    None)
+        else
+            []
 
     let GetDispatchSlots g amap reqdTyRange infoReader denv availImpliedInterfaces reqdTyInfos reqdTy impliedTys =
         let dispatchSlots = 
@@ -452,31 +444,16 @@ module DispatchSlotChecking =
                        let isOptional = 
                            ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
                        for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
-                         // filter out overrides
+                         // Interface methods that are overriden in another interface will always be final, even when the method is re-abstracted.
+                         // We do not want to look at the methods that override.
                          if not reqdSlot.IsFinal then
-                             if isOptional || not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
+                             if isOptional || not reqdSlot.IsILMethod || not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop) then
                                  yield RequiredSlot(reqdSlot, isOptional)
                              else
                                  let sortedSlots =
-                                     reqdTyInfos 
-                                     |> List.choose (fun (_, jty, _, impliedTys) -> 
-                                         if isInterfaceTy g jty then
-                                             impliedTys
-                                             |> List.choose (fun jty ->
-                                                 if TypeFeasiblySubsumesType 0 g amap reqdTyRange reqdTy CanCoerce jty then
-                                                     GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange jty
-                                                     |> List.tryPick (fun minfo2 -> 
-                                                         if minfo2.IsFinal && ILMethodOverrides g amap reqdTyRange minfo2 reqdSlot then
-                                                             Some (jty, RequiredSlot(reqdSlot, not minfo2.IsAbstract))
-                                                         else
-                                                             None
-                                                     )
-                                                 else
-                                                     None
-                                             )
-                                             |> Some
-                                         else
-                                             None
+                                     reqdTyInfos
+                                     |> List.map (fun (_, _, _, impliedTys) ->
+                                         GetInterfaceOverrideByRequiredSlotsFromTypes g amap reqdTyRange infoReader reqdTy impliedTys reqdSlot
                                      )
                                      |> List.reduce (@) // ok to use reduce here without checking as we will always have 1 item
                                      |> List.sortWith (fun (ty1, _) (ty2, _) ->
@@ -487,7 +464,8 @@ module DispatchSlotChecking =
                                  let mutable hasMostSpecificOverride = true
                                  for (ty1, _) in sortedSlots do
                                     for (ty2, _) in sortedSlots do
-                                        if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) && hasMostSpecificOverride then
+                                        if not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty1 CanCoerce ty2) && 
+                                           not (TypeFeasiblySubsumesType 0 g amap reqdTyRange ty2 CanCoerce ty1) && hasMostSpecificOverride then
                                             hasMostSpecificOverride <- false
                                             // TODO: Move this to SR
                                             errorR(Error((5000, sprintf "Unable to find most specific override for %A" (NicePrint.stringOfMethInfo amap reqdTyRange denv reqdSlot)), reqdTyRange))

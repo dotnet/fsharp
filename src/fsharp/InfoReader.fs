@@ -700,7 +700,34 @@ let TryFindIntrinsicMethInfo infoReader m ad nm ty =
 /// Try to find a particular named property on a type. Only used to ensure that local 'let' definitions and property names
 /// are distinct, a somewhat adhoc check in tc.fs.
 let TryFindPropInfo infoReader m ad nm ty = 
-    GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
+    GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
+    
+/// Try to find the method that overrides the given method from the given type.
+/// The given type must be an IL type.
+/// The given method must be an IL method.
+let TryFindILIntrinisicOverrideByMethInfo (infoReader: InfoReader) m ad ty (overrides: MethInfo) =
+    let g = infoReader.g
+
+    match tryAppTy g ty, overrides with
+    | ValueSome (tcref, _), ILMeth (_, ilMethInfo, _) when tcref.IsILTycon ->
+        let ilMeth = ilMethInfo.ILMethodRef
+
+        tcref.ILTyconRawMetadata.MethodImpls.AsList
+        |> List.tryFind (fun ilMethImpl -> 
+            let overridesRef = ilMethImpl.Overrides.MethodRef
+            overridesRef.Name = ilMeth.Name && overridesRef.ArgCount = ilMeth.ArgCount && 
+            overridesRef.GenericArity = ilMeth.GenericArity
+        )
+        |> Option.bind (fun ilMethImpl ->
+            TryFindIntrinsicMethInfo infoReader m ad ilMethImpl.OverrideBy.Name ty
+            |> List.tryFind (fun methInfo ->
+                let overrideByRef = ilMethImpl.OverrideBy.MethodRef
+                overrideByRef.ArgCount = (match methInfo.NumArgs with [] -> 0 | count :: _ -> count) && 
+                overrideByRef.GenericArity = methInfo.GenericArity 
+            )
+        )
+    | _ ->
+        None
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file
