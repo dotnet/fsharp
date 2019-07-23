@@ -10,7 +10,7 @@ open NUnit.Framework
 module DefaultInterfaceMethodInteropTests =
 
     [<Test>]
-    let ``C# DIM Consumption - Errors with un-implemented non-DIM`` () =
+    let ``C# consumption - Errors with un-implemented non-DIM`` () =
         let csharpSource =
             """
 using System;
@@ -53,7 +53,7 @@ type Test () =
         ])
 
     [<Test>]
-    let ``C# DIM Consumption - Runs`` () =
+    let ``C# simple consumption - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -97,7 +97,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-NonDefaultMethod")
 
     [<Test>]
-    let ``C# DIM Consumption with override - Runs`` () =
+    let ``C# simple consumption with override - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -144,7 +144,61 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "OverrideDefaultMethod-NonDefaultMethod")
 
     [<Test>]
-    let ``C# Complex DIM Consumption with override - Runs`` () =
+    let ``C# consumption from hierarchical interfaces - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest2
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest1
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FromITest2-Method1-FromITest2-Method2")
+
+    [<Test>]
+    let ``C# consumption from two separate hierarchical interfaces - Errors with lack of explicit shared interface type`` () =
         let csharpSource =
             """
 using System;
@@ -174,31 +228,124 @@ namespace CSharpTest
         }
     }
 
-    public class CSharpTestClass : ITest2
+    public interface ITest3 : ITest1
     {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest3-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
     }
 }
             """
 
         let fsharpSource =
             """
+namespace FSharpTest
+
 open System
 open CSharpTest
 
 type Test () =
 
     interface ITest2
-
-[<EntryPoint>]
-let main _ =
-    let test = Test () :> ITest1
-    test.Method1 ()
-    Console.Write("-")
-    test.Method2 ()
-    0
+    interface ITest3
             """
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FromITest2-Method1-FromITest2-Method2")
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 363
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 20
+                Message = "The interface 'ITest1' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
+            }
+        ])
+
+    [<Test>]
+    let ``C# consumption from two separate hierarchical interfaces - Errors with no most specific implementation`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest3-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest1
+    interface ITest2
+    interface ITest3
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3304
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 20
+                Message = "Interface member 'Method1 : unit -> unit' does not have a most specific implementation."
+            }
+            {
+                Number = 3304
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 20
+                Message = "Interface member 'Method2 : unit -> unit' does not have a most specific implementation."
+            }
+        ])
 
 #endif
