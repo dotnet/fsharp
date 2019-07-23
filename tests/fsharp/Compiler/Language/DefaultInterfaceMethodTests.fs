@@ -266,6 +266,38 @@ type Test () =
                 EndColumn = 20
                 Message = "The interface 'ITest1' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
             }
+            {
+                Number = 3304
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 20
+                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 3304
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 20
+                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 3304
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 20
+                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 3304
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 20
+                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
+            }
         ])
 
     [<Test>]
@@ -336,7 +368,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 9
                 EndColumn = 20
-                Message = "Interface member 'Method1 : unit -> unit' does not have a most specific implementation."
+                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
                 Number = 3304
@@ -344,7 +376,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 9
                 EndColumn = 20
-                Message = "Interface member 'Method2 : unit -> unit' does not have a most specific implementation."
+                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
         ])
 
@@ -418,7 +450,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 9
                 EndColumn = 27
-                Message = "Interface member 'Method1 : unit -> unit' does not have a most specific implementation."
+                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
                 Number = 3304
@@ -426,7 +458,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 9
                 EndColumn = 27
-                Message = "Interface member 'Method2 : unit -> unit' does not have a most specific implementation."
+                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
         ])
 
@@ -500,7 +532,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 13
                 EndColumn = 27
-                Message = "Interface member 'Method1 : unit -> unit' does not have a most specific implementation."
+                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
                 Number = 3304
@@ -508,7 +540,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 13
                 EndColumn = 27
-                Message = "Interface member 'Method2 : unit -> unit' does not have a most specific implementation."
+                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
         ])
 
@@ -577,7 +609,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 13
                 EndColumn = 27
-                Message = "Interface member 'Method1 : unit -> unit' does not have a most specific implementation."
+                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
                 Number = 3304
@@ -585,7 +617,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 13
                 EndColumn = 27
-                Message = "Interface member 'Method2 : unit -> unit' does not have a most specific implementation."
+                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
         ])
 

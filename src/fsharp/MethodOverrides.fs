@@ -297,7 +297,7 @@ module DispatchSlotChecking =
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then 
                     if isPossiblyNoMostSpecificImplementation then
-                        errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(FormatMethInfoSig g amap m denv dispatchSlot), m))
+                        errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
                     else
 
                     // error reporting path
@@ -587,7 +587,7 @@ module DispatchSlotChecking =
         // duplicates.
         for (_i, reqdTy, m, impliedTys) in reqdTyInfos do
             if isInterfaceTy g reqdTy && isNil impliedTys then 
-                error(Error(FSComp.SR.typrelDuplicateInterface(), m))
+                errorR(Error(FSComp.SR.typrelDuplicateInterface(), m))
 
         // Check that no interface type is implied twice
         //
@@ -598,7 +598,7 @@ module DispatchSlotChecking =
                     let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
                     overlap |> List.iter (fun overlappingTy -> 
                         if not (isNil (GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
-                            error(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)), reqdTyRange)))
+                            errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)), reqdTyRange)))
 
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members
