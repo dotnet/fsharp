@@ -508,8 +508,8 @@ module DispatchSlotChecking =
                                  not (TypeFeasiblySubsumesType 0 g amap m ty2 CanCoerce ty1)
 
                              if isNotPartOfHierarchy then
-                                 if  HasRequiredSlotFlag RequiredSlotFlags.Optional flags1 && 
-                                     HasRequiredSlotFlag RequiredSlotFlags.Optional flags2 && 
+                                 if  (HasRequiredSlotFlag RequiredSlotFlags.Optional flags1 || 
+                                      HasRequiredSlotFlag RequiredSlotFlags.Optional flags2) && 
                                      hasMostSpecificImplementation then
                                          hasMostSpecificImplementation <- false
 
