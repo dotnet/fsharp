@@ -463,9 +463,7 @@ module DispatchSlotChecking =
         let g = infoReader.g
         let amap = infoReader.amap
 
-        let isDimLanguageSupported = g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodsInterop
-        let isDimRuntimeSupported = true // TODO: Add check for netcore API.
-        let isDimEnabled = isDimLanguageSupported && isDimRuntimeSupported
+        let dimFeatureError = TryGetRuntimeOrLanguageSupportsFeatureError infoReader m LanguageFeature.DefaultInterfaceMethodsInterop
 
         [ if isInterfaceTy g reqdTy then
             // Check if the interface has an inherited implementation
@@ -473,10 +471,11 @@ module DispatchSlotChecking =
             // specific method is "optionally" implemented.
             let isOptional = ListSet.contains (typeEquiv g) reqdTy availImpliedInterfaces
             for minfo in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap m reqdTy do
-              // Interface methods that are overriden in another interface will always be final, even when the method is re-abstracted.
-              // We do not want to look at the methods that override.
+              if minfo.IsDefaultInterfaceMethod then
+                  dimFeatureError |> Option.iter error
+                  
               if not minfo.IsFinal then
-                  if isOptional || not minfo.IsILMethod || not isDimEnabled then
+                  if isOptional || not minfo.IsILMethod then
                       yield RequiredSlot(minfo, if isOptional then RequiredSlotFlags.Optional else RequiredSlotFlags.None)
                   else
                       let sortedPossibleOverriderSlots =
@@ -494,8 +493,9 @@ module DispatchSlotChecking =
                       match sortedPossibleOverriderSlots with
                       | [] ->
                          yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo)
-                      | (ty1, (RequiredSlot (_, flags1) as bestSlot)) :: sortedPossibleOverriderSlotsTail ->
 
+                      // This is to handle default interface methods.
+                      | (ty1, (RequiredSlot (_, flags1) as bestSlot)) :: sortedPossibleOverriderSlotsTail ->
                          // Determine if we possibly do not have a most specific implementation.
                          // This can happen when the head slot from 'sortedSlots' is not part of the hierarchy from the rest of the slots.
                          // TODO: Clean this up. Prefer to use recursion.

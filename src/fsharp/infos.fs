@@ -1243,6 +1243,14 @@ type MethInfo =
         | ILMeth _ -> true
         | _ -> false
 
+    /// Indicates if this is a default interface method.
+    member x.IsDefaultInterfaceMethod =
+        isInterfaceTy x.TcGlobals x.ApparentEnclosingType &&
+        // We only support DIMs from interfaces defined outside of F#.
+        (match x with
+         | ILMeth (_, ilMethInfo, _) -> ilMethInfo.IsFinal || not ilMethInfo.IsAbstract
+         | _ -> false)
+
     /// Build IL method infos.
     static member CreateILMeth (amap: Import.ImportMap, m, ty: TType, md: ILMethodDef) =
         let tinfo = ILTypeInfo.FromType amap.g ty

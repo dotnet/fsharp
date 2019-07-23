@@ -35,3 +35,12 @@ type LanguageVersion =
 
     /// Get the list of valid options
     member ValidOptions: string array
+
+    /// Get a string name for the given feature. Returns an empty string if feature is invalid.
+    member GetFeatureString: LanguageFeature -> string
+
+    /// Get a version string associated with the given feature. Returns an empty string if feature is invalid.
+    member GetFeatureVersionString: LanguageFeature -> string
+
+    /// Current version string.
+    member CurrentVersionString: string

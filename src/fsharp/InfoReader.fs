@@ -4,6 +4,7 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal FSharp.Compiler.InfoReader
 
+open System
 open System.Collections.Generic
 
 open FSharp.Compiler.AbstractIL.IL 
@@ -18,6 +19,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Features
 
 /// Use the given function to select some of the member values from the members of an F# type
 let private SelectImmediateMemberVals g optFilter f (tcref: TyconRef) = 
@@ -810,4 +812,37 @@ let PropTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let argsTy = ArgsTypOfEventInfo infoReader m ad einfo 
     mkIEventType g delTy argsTy
 
+let private RuntimeSupportsFeature (infoReader: InfoReader) m featureId =
+    let g = infoReader.g
 
+    let runtimeFeature =
+        match featureId with
+        | LanguageFeature.DefaultInterfaceMethodsInterop -> "DefaultImplementationsOfInterfaces"
+        | _ -> String.Empty
+
+    if String.IsNullOrWhiteSpace runtimeFeature then
+        true
+    else
+        match g.System_Runtime_CompilerServices_RuntimeFeature_ty with
+        | Some runtimeFeatureTy ->
+            infoReader.GetILFieldInfosOfType (Some runtimeFeature, AccessorDomain.AccessibleFromEverywhere, m, runtimeFeatureTy)
+            |> List.exists (fun ilFieldInfo -> ilFieldInfo.FieldName = runtimeFeature)
+        | _ ->
+            false
+
+/// Try to get an error if the given language feature is not supported at then runtime or language level.
+let TryGetRuntimeOrLanguageSupportsFeatureError (infoReader: InfoReader) m featureId =
+    let g = infoReader.g
+
+    if not (g.langVersion.SupportsFeature featureId) then
+        let featureStr = g.langVersion.GetFeatureString LanguageFeature.DefaultInterfaceMethodsInterop
+        let currentVersionStr = g.langVersion.CurrentVersionString
+        let suggestedVersionStr = g.langVersion.GetFeatureVersionString LanguageFeature.DefaultInterfaceMethodsInterop
+        Some(Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+
+    elif not (RuntimeSupportsFeature infoReader m featureId) then
+        let featureStr = g.langVersion.GetFeatureString LanguageFeature.DefaultInterfaceMethodsInterop
+        Some(Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+
+    else
+        None

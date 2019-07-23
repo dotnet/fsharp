@@ -166,6 +166,8 @@ let tname_RuntimeFieldHandle = "System.RuntimeFieldHandle"
 [<Literal>]
 let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
 [<Literal>]
+let tname_RuntimeFeature = "System.Runtime.CompilerServices.RuntimeFeature"
+[<Literal>]
 let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 [<Literal>]
 let tname_AsyncCallback = "System.AsyncCallback"
@@ -1097,6 +1099,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.tcref_System_Collections_Generic_IEnumerator = v_IEnumerator_tcr
     
   member __.tcref_System_Attribute = v_System_Attribute_tcr
+
+  member val System_Runtime_CompilerServices_RuntimeFeature_ty = tryFindSysTyconRef sysCompilerServices "RuntimeFeature" |> Option.map mkNonGenericTy // Review: Does this need to be an option type?
 
   member val iltyp_TypedReference      = tryFindSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
   member val iltyp_StreamingContext    = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy

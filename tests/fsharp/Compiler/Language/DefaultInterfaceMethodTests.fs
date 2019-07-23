@@ -10,6 +10,49 @@ open NUnit.Framework
 module DefaultInterfaceMethodTests =
 
     [<Test>]
+    let ``C# simple consumption - Errors with lang version not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+type Test () =
+
+    interface ITest
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3302
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface methods' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+    [<Test>]
     let ``C# simple consumption - Errors with un-implemented non-DIM`` () =
         let csharpSource =
             """
@@ -1059,5 +1102,96 @@ let main _ =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpICombinedTest-Method1-CSharpICombinedTest-Method2")
+
+#else
+
+[<TestFixture>]
+module DefaultInterfaceMethodTests =
+
+    [<Test>]
+    let ``C# simple consumption - Errors with lang version not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+type Test () =
+
+    interface ITest
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3302
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface methods' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+    [<Test>]
+    let ``C# simple consumption - Errors with target runtime not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+type Test () =
+
+    interface ITest
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3303
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface methods' is not supported by target runtime."
+            }
+        ])
 
 #endif

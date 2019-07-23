@@ -95,3 +95,27 @@ type LanguageVersion (specifiedVersion) =
             let label = if v = defaultVersion then " (Default)" else ""
             yield sprintf "%M%s" v label
             |]
+
+    /// Get a string name for the given feature. Returns an empty string if feature is invalid.
+    member __.GetFeatureString featureId =
+        match featureId with
+        | LanguageFeature.PreviewVersion -> "preview"
+        | LanguageFeature.LanguageVersion46 -> "4.6"
+        | LanguageFeature.LanguageVersion47 -> "4.7"
+        | LanguageFeature.SingleUnderscorePattern -> "single underscore pattern"
+        | LanguageFeature.WildCardInForLoop -> "wild card in for loop"
+        | LanguageFeature.RelaxWhitespace -> "whitespace relexation"
+        | LanguageFeature.NameOf -> "nameof"
+        | LanguageFeature.DefaultInterfaceMethodsInterop -> "default interface methods"
+        | LanguageFeature.ImplicitYield -> "implicit yield"
+        | LanguageFeature.OpenStaticClasses -> "open static classes"
+        | _ -> String.Empty
+
+    /// Get a version string associated with the given feature. Returns an empty string if feature is invalid.
+    member __.GetFeatureVersionString featureId =
+        match features.TryGetValue featureId with
+        | true, v -> string v
+        | _ -> String.Empty
+
+    /// Current version string.
+    member val CurrentVersionString = string specified
