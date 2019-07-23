@@ -655,6 +655,82 @@ Note that all interface members must be implemented and listed under an appropri
         ])
 
     [<Test>]
+    let ``C# consumption from two separate hierarchical interfaces then combined in one F# interface and then implemented - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest3-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type ICombinedTest =
+    inherit ITest1
+    inherit ITest2
+    inherit ITest3
+
+type Test () =
+
+    interface ICombinedTest with
+
+        member __.Method1 () = Console.Write("FSharpICombinedTest-Method1")
+
+        member __.Method2 () = Console.Write("FSharpICombinedTest-Method2")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest3
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
+
+    [<Test>]
     let ``C# consumption from two separate hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented - Runs`` () =
         let csharpSource =
             """
@@ -717,5 +793,85 @@ let main _ =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
+
+    [<Test>]
+    let ``C# consumption from two separate hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest3-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedTest-" + nameof(Method2));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ICombinedTest
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest1
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpICombinedTest-Method1-CSharpICombinedTest-Method2")
 
 #endif
