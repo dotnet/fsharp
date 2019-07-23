@@ -97,6 +97,118 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-NonDefaultMethod")
 
     [<Test>]
+    let ``C# simple consumption with one DIM for F# object expression - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+[<EntryPoint>]
+let main _ =
+    let test = { new ITest }
+    test.DefaultMethod ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod")
+
+    [<Test>]
+    let ``C# simple consumption with one DIM and one non-DIM for F# object expression - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+[<EntryPoint>]
+let main _ =
+    let test = { new ITest with member __.NonDefaultMethod () = Console.Write("ObjExpr") }
+    test.DefaultMethod ()
+    Console.Write("-")
+    test.NonDefaultMethod();
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-ObjExpr")
+
+    [<Test>]
+    let ``C# simple consumption with one DIM and one non-DIM for F# object expression - Errors with lack of implementation`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+let test = { new ITest }
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 366
+                StartLine = 7
+                StartColumn = 11
+                EndLine = 7
+                EndColumn = 24
+                Message = "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ])
+
+    [<Test>]
     let ``C# simple consumption with override - Runs`` () =
         let csharpSource =
             """
@@ -142,6 +254,48 @@ let main _ =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "OverrideDefaultMethod-NonDefaultMethod")
+
+    [<Test>]
+    let ``C# simple consumption with override for object expression - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+[<EntryPoint>]
+let main _ =
+    let test =
+        { new ITest with
+            member __.DefaultMethod () =
+                Console.Write("ObjExprOverrideDefaultMethod")
+            member __.NonDefaultMethod () =
+                Console.Write("ObjExprNonDefaultMethod") }
+    test.DefaultMethod ()
+    Console.Write("-")
+    test.NonDefaultMethod ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "ObjExprOverrideDefaultMethod-ObjExprNonDefaultMethod")
 
     [<Test>]
     let ``C# consumption from hierarchical interfaces - Runs`` () =
