@@ -587,7 +587,7 @@ module DispatchSlotChecking =
         // duplicates.
         for (_i, reqdTy, m, impliedTys) in reqdTyInfos do
             if isInterfaceTy g reqdTy && isNil impliedTys then 
-                errorR(Error(FSComp.SR.typrelDuplicateInterface(), m))
+                error(Error(FSComp.SR.typrelDuplicateInterface(), m))
 
         // Check that no interface type is implied twice
         //
