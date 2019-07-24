@@ -830,19 +830,33 @@ let private RuntimeSupportsFeature (infoReader: InfoReader) m featureId =
         | _ ->
             false
 
-/// Try to get an error if the given language feature is not supported at then runtime or language level.
-let TryGetRuntimeOrLanguageSupportsFeatureError (infoReader: InfoReader) m featureId =
+type FeatureSupport =
+    {
+        RuntimeError: exn option
+        VersionError: exn option
+    }
+
+    member this.HasErrors =
+        this.RuntimeError.IsSome || this.VersionError.IsSome
+
+/// Get feature support for the given feature.
+let GetFeatureSupport (infoReader: InfoReader) m featureId =
     let g = infoReader.g
 
-    if not (g.langVersion.SupportsFeature featureId) then
-        let featureStr = g.langVersion.GetFeatureString LanguageFeature.DefaultInterfaceMethodsInterop
-        let currentVersionStr = g.langVersion.CurrentVersionString
-        let suggestedVersionStr = g.langVersion.GetFeatureVersionString LanguageFeature.DefaultInterfaceMethodsInterop
-        Some(Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+    let runtimeError =
+        if not (RuntimeSupportsFeature infoReader m featureId) then
+            let featureStr = g.langVersion.GetFeatureString featureId
+            Some(Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+        else
+            None
 
-    elif not (RuntimeSupportsFeature infoReader m featureId) then
-        let featureStr = g.langVersion.GetFeatureString LanguageFeature.DefaultInterfaceMethodsInterop
-        Some(Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+    let versionError =
+        if not (g.langVersion.SupportsFeature featureId) then
+            let featureStr = g.langVersion.GetFeatureString featureId
+            let currentVersionStr = g.langVersion.CurrentVersionString
+            let suggestedVersionStr = g.langVersion.GetFeatureVersionString featureId
+            Some(Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+        else
+            None
 
-    else
-        None
+    { RuntimeError = runtimeError; VersionError = versionError }

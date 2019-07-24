@@ -43,11 +43,15 @@ type OverrideInfo =
 
 [<System.Flags>]
 type RequiredSlotFlags =
-    | None = 0x00
+    | None                                      = 0x0000
     /// A slot which does not _have_ to be implemented, because an inherited implementation is available.
-    | Optional = 0x01
+    | Optional                                  = 0x0001
+    /// A slot that is a default interface implementation.
+    | DefaultInterfaceImplementation            = 0x0010
+    /// A slot that is a default interface implementation but overrides.
+    | DefaultInterfaceImplementationOverrider   = 0x0110
     /// A slot that has ambiguity due to multiple inheritance, happens with default interface methods.
-    | PossiblyNoMostSpecificImplementation = 0x11
+    | PossiblyNoMostSpecificImplementation      = 0x1111
 
 let inline HasRequiredSlotFlag targetFlag (flags: RequiredSlotFlags) =
     (flags &&& targetFlag) = targetFlag
@@ -254,13 +258,15 @@ module DispatchSlotChecking =
 
 
     /// Check all dispatch slots are implemented by some override.
-    let CheckDispatchSlotsAreImplemented (denv, g, amap, m,
+    let CheckDispatchSlotsAreImplemented (denv, infoReader: InfoReader, m,
                                           nenv, sink: TcResultsSink,
                                           isOverallTyAbstract,
                                           reqdTy,
                                           dispatchSlots: RequiredSlot list,
                                           availPriorOverrides: OverrideInfo list,
                                           overrides: OverrideInfo list) = 
+        let g = infoReader.g
+        let amap = infoReader.amap
 
         let isReqdTyInterface = isInterfaceTy g reqdTy 
         let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract)
@@ -278,8 +284,31 @@ module DispatchSlotChecking =
         // we accumulate those to compose a more complete error message, see noimpl() bellow.
         let missingOverloadImplementation = ResizeArray()
 
+        // DIM Interop Error Rules:
+        //     We do not want to always error if the compiler sees a DIM on an interface when DIMs are not supported.
+        //     This is because it is valid to provide an explicit implementation of a method in a class that would override the DIM.
+        //
+        //     However, before F# 4.7, older compilers would assume the DIM overrider methods needed an implementation which would cause a compiler error when trying to implement the interface.
+        //     There is no way to resolve that error in older compilers using code; therefore, we will throw a dim interop error in that case.
+        let dimInteropSupport = GetFeatureSupport infoReader m LanguageFeature.DefaultInterfaceMethodsInterop
+
         for RequiredSlot(dispatchSlot, dispatchFlags) in dispatchSlots do
-            let isOptional = HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags
+            let isDefaultInterfaceImpl = HasRequiredSlotFlag RequiredSlotFlags.DefaultInterfaceImplementation dispatchFlags
+
+            if dimInteropSupport.HasErrors then
+                if HasRequiredSlotFlag RequiredSlotFlags.DefaultInterfaceImplementationOverrider dispatchFlags then
+                    dimInteropSupport.VersionError |> Option.iter errorR
+                    dimInteropSupport.RuntimeError |> Option.iter errorR
+                elif isDefaultInterfaceImpl &&
+                     // Check that no available prior override implements this dispatch slot
+                     not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) then
+                    dimInteropSupport.VersionError |> Option.iter errorR
+                    dimInteropSupport.RuntimeError |> Option.iter errorR
+
+            let isOptional = 
+                not (dimInteropSupport.HasErrors && isDefaultInterfaceImpl) &&
+                HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags
+
             let isPossiblyNoMostSpecificImplementation = HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags
 
             let maybeResolvedSlot =
@@ -295,8 +324,9 @@ module DispatchSlotChecking =
                 if (not isOptional || isPossiblyNoMostSpecificImplementation) &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
-                then 
-                    if isPossiblyNoMostSpecificImplementation then
+                then
+                    // Do not show the specific implementation error if the language version does not support DIMs.
+                    if isPossiblyNoMostSpecificImplementation && dimInteropSupport.VersionError.IsNone then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
                     else
 
@@ -438,7 +468,12 @@ module DispatchSlotChecking =
 
     /// Get default slot flags for the given method.
     let inline GetDefaultDispatchSlotFlags (minfo: MethInfo) =
-        if minfo.IsAbstract then RequiredSlotFlags.None else RequiredSlotFlags.Optional
+        let flags = if minfo.IsAbstract then RequiredSlotFlags.None else RequiredSlotFlags.Optional
+        if minfo.IsDefaultInterfaceMethod then 
+            flags ||| RequiredSlotFlags.DefaultInterfaceImplementation ||| 
+            (if minfo.IsFinal then RequiredSlotFlags.DefaultInterfaceImplementationOverrider else RequiredSlotFlags.None)
+        else 
+            flags
 
     /// Get a collection of interface slots that are considered possible overrider (aka. override by) slots for the given method from the given type and implied types.
     let GetPossibleInterfaceOverriderDispatchSlots (infoReader: InfoReader) m minfo reqdTy impliedTys =
@@ -463,17 +498,12 @@ module DispatchSlotChecking =
         let g = infoReader.g
         let amap = infoReader.amap
 
-        let dimFeatureError = TryGetRuntimeOrLanguageSupportsFeatureError infoReader m LanguageFeature.DefaultInterfaceMethodsInterop
-
         [ if isInterfaceTy g reqdTy then
             // Check if the interface has an inherited implementation
             // If so, you do not have to implement all the methods - each
             // specific method is "optionally" implemented.
             let isOptional = ListSet.contains (typeEquiv g) reqdTy availImpliedInterfaces
             for minfo in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap m reqdTy do
-              if minfo.IsDefaultInterfaceMethod then
-                  dimFeatureError |> Option.iter error
-                  
               if not minfo.IsFinal then
                   if isOptional || not minfo.IsILMethod then
                       yield RequiredSlot(minfo, if isOptional then RequiredSlotFlags.Optional else RequiredSlotFlags.None)
@@ -726,7 +756,7 @@ module DispatchSlotChecking =
                 
                 if isImplementation && not (isInterfaceTy g overallTy) then 
                     let overrides = allImmediateMembersThatMightImplementDispatchSlots |> List.map snd 
-                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, g, amap, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, overrides)
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
                     if not allCorrect && not tcaug.tcaug_abstract && not (isInterfaceTy g reqdTy) then 

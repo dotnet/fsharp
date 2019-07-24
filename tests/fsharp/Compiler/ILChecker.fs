@@ -22,6 +22,11 @@ module ILChecker =
         p.WaitForExit()
         p.StandardError.ReadToEnd(), p.ExitCode
 
+    let reassembleIL ilFilePath dllFilePath =
+        let ilasmPath = config.ILASM
+        let errors, _ = exec ilasmPath ([ sprintf "%s /output=%s" ilFilePath dllFilePath ])
+        errors
+
     /// Filters i.e ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']
     let private filterSpecialComment (text: string) =
         let pattern = @"(\[\'(.*?)\'\])"

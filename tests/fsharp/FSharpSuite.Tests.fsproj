@@ -31,8 +31,8 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
-    <Compile Include="Compiler\Utilities.fs" />
     <Compile Include="Compiler\ILChecker.fs" />
+    <Compile Include="Compiler\Utilities.fs" />
     <Compile Include="Compiler\CompilerAssert.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
     <Compile Include="Compiler\Language\DefaultInterfaceMethodTests.fs" />
@@ -58,6 +58,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+    <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
     <PackageReference Include="StrawberryPerl64" Version="$(StrawberryPerl64Version)" PrivateAssets="all" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />

@@ -139,19 +139,18 @@ type CompilerAssert private () =
 
         p.StandardOutput.ReadToEnd ()
 
-    static let compileWithOptions (source: string) (fsharpLanguageVersion: string) (compilation: CSharpCompilation) extraArgs isExe f =
+    static let compileWithOptions (source: string) (fsharpLanguageVersion: string) (compilation: TestCompilation) extraArgs isExe f =
         let tmp1 = Path.GetTempPath ()
-        let fileName = compilation.AssemblyName + (if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe")
+        let fileName = 
+            match compilation with
+            | TestCompilation.CSharp compilation ->
+                compilation.AssemblyName + (if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe")
+            | _ -> "test_il.dll"
+
         let compilationOutputPath = Path.Combine (tmp1, fileName)
         try
-            let csharpDiagnostics = compilation.GetDiagnostics ()
-
-            if not csharpDiagnostics.IsEmpty then                  
-                Assert.Fail ("CSharp Source Diagnostics:\n" + (csharpDiagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
-
-            let emitResult = compilation.Emit compilationOutputPath
-                    
-            Assert.IsTrue (emitResult.Success, "Unable to emit compilation.")
+            compilation.AssertNoErrorsOrWarnings ()
+            compilation.EmitAsFile compilationOutputPath
 
             compile (Array.append [|"--langversion:" + fsharpLanguageVersion; "-r:" + compilationOutputPath|] extraArgs) isExe source f
         finally
@@ -159,7 +158,7 @@ type CompilerAssert private () =
 
             try File.Delete compilationOutputPath with | _ -> ()
 
-    static member Compile (source: string, fsharpLanguageVersion: string, compilation: CSharpCompilation) =
+    static member Compile (source: string, fsharpLanguageVersion: string, compilation: TestCompilation) =
         compileWithOptions source fsharpLanguageVersion compilation [||] false (fun (errors, _) -> 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
@@ -212,18 +211,18 @@ type CompilerAssert private () =
                             EndColumn = err.EndColumn
                             Message = err.Message
                         }
-                    Assert.AreEqual(FSharpErrorSeverity.Error, err.Severity, sprintf "Expected error severity as Error. Actual error: %A" terr)
+                    Assert.AreEqual(FSharpErrorSeverity.Error, err.Severity, sprintf "Expected error severity as Error.\nActual error: %A" terr)
                     terr
                 )
 
             Assert.Greater (errors.Length, 0, "Was expecting errors on type checking but there were none.")
-            Assert.AreEqual (expectedErrors.Length, errors.Length, sprintf "The number of expected errors does not equal the number of actual errors. Actual errors: %A" errors)
+            Assert.AreEqual (expectedErrors.Length, errors.Length, sprintf "The number of expected errors does not equal the number of actual errors.\nActual errors: %A" errors)
             
             (expectedErrors, errors)
             ||> Seq.iter2 (fun expectedError actualError ->
-                Assert.AreEqual(expectedError.Number, actualError.Number, sprintf "Expected error number does not equal the actual error number. Expected error: %A - Actual error: %A" expectedError actualError)
-                Assert.AreEqual(expectedError.Message, actualError.Message, sprintf "Expected error message does not equal the actual error message. Expected error: %A - Actual error: %A" expectedError actualError)
-                Assert.True ((expectedError = actualError), sprintf "Expected error ranges do not equal the actual error ranges. Expected error: %A - Actual error: %A" expectedError actualError)
+                Assert.AreEqual(expectedError.Number, actualError.Number, sprintf "Expected error number does not equal the actual error number.\nExpected error: %A\nActual error: %A" expectedError actualError)
+                Assert.AreEqual(expectedError.Message, actualError.Message, sprintf "Expected error message does not equal the actual error message.\nExpected error: %A\nActual error: %A" expectedError actualError)
+                Assert.True ((expectedError = actualError), sprintf "Expected error ranges do not equal the actual error ranges.\nExpected error: %A\nActual error: %A" expectedError actualError)
             )
         )
 

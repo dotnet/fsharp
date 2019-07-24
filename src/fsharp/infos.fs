@@ -1238,12 +1238,15 @@ type MethInfo =
     member x.IsStruct =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
+    /// Indicates if this is an IL method.
     member x.IsILMethod =
         match x with
         | ILMeth _ -> true
         | _ -> false
 
     /// Indicates if this is a default interface method.
+    /// The method could be a non-abstract implementation or an overrider. 
+    /// The overrider could also re-abstract the method; it's still considered a default interface method.
     member x.IsDefaultInterfaceMethod =
         isInterfaceTy x.TcGlobals x.ApparentEnclosingType &&
         // We only support DIMs from interfaces defined outside of F#.

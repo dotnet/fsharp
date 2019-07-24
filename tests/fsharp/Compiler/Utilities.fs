@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
+open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -63,6 +64,35 @@ module private TargetFrameworkUtil =
 
 type RoslynLanguageVersion = LanguageVersion
 
+[<RequireQualifiedAccess>]
+type TestCompilation =
+    | CSharp of CSharpCompilation
+    | IL of result: Lazy<string * byte []>
+
+    member this.AssertNoErrorsOrWarnings () =
+        match this with
+        | TestCompilation.CSharp c ->
+            let diagnostics = c.GetDiagnostics ()
+
+            if not diagnostics.IsEmpty then                  
+                NUnit.Framework.Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
+
+        | TestCompilation.IL result ->
+            let errors, _ = result.Value
+            if errors.Length > 0 then
+                NUnit.Framework.Assert.Fail ("IL source errors: " + errors)
+
+    member this.EmitAsFile (outputPath: string) =
+        match this with
+        | TestCompilation.CSharp c ->
+            let emitResult = c.Emit outputPath
+            if not emitResult.Success then
+                failwithf "Unable to emit C# compilation.\n%A" emitResult.Diagnostics
+
+        | TestCompilation.IL result ->
+            let (_, data) = result.Value
+            File.WriteAllBytes (outputPath, data)
+
 [<AbstractClass; Sealed>]
 type CompilationUtil private () =
     
@@ -75,3 +105,23 @@ type CompilationUtil private () =
             [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
             references.As<MetadataReference>().AddRange additionalReferences,
             CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
+        |> TestCompilation.CSharp
+
+    static member CreateILCompilation (source: string) =
+        let compute =
+            lazy
+                let ilFilePath = Path.GetTempFileName ()
+                let tmp = Path.GetTempFileName()
+                let dllFilePath = Path.ChangeExtension (tmp, ".dll")
+                try
+                    File.WriteAllText (ilFilePath, source)
+                    let errors = ILChecker.reassembleIL ilFilePath dllFilePath
+                    try
+                        (errors, File.ReadAllBytes dllFilePath)
+                    with
+                    | _ -> (errors, [||])
+                finally
+                    try File.Delete ilFilePath with | _ -> ()
+                    try File.Delete tmp with | _ -> ()
+                    try File.Delete dllFilePath with | _ -> ()
+        TestCompilation.IL compute

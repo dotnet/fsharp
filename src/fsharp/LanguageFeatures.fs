@@ -106,7 +106,7 @@ type LanguageVersion (specifiedVersion) =
         | LanguageFeature.WildCardInForLoop -> "wild card in for loop"
         | LanguageFeature.RelaxWhitespace -> "whitespace relexation"
         | LanguageFeature.NameOf -> "nameof"
-        | LanguageFeature.DefaultInterfaceMethodsInterop -> "default interface methods"
+        | LanguageFeature.DefaultInterfaceMethodsInterop -> "default interface methods interop"
         | LanguageFeature.ImplicitYield -> "implicit yield"
         | LanguageFeature.OpenStaticClasses -> "open static classes"
         | _ -> String.Empty
@@ -114,6 +114,7 @@ type LanguageVersion (specifiedVersion) =
     /// Get a version string associated with the given feature. Returns an empty string if feature is invalid.
     member __.GetFeatureVersionString featureId =
         match features.TryGetValue featureId with
+        | true, v when v = previewVersion -> "'preview'"
         | true, v -> string v
         | _ -> String.Empty
 
