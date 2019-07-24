@@ -7233,8 +7233,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCompilerTool">
-        <source>Reference an assembly or diretory containing a design time tool (Short form: -t)</source>
-        <target state="new">Reference an assembly or diretory containing a design time tool (Short form: -t)</target>
+        <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
+        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
