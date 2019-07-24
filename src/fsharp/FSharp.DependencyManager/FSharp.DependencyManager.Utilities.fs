@@ -48,40 +48,42 @@ module Utilities =
         with _ -> None
 
     // Latest documentation about nuget tfms is here:  https://docs.microsoft.com/en-us/nuget/schema/target-frameworks
+    // Todo:  now that .net472 is the minimum supported version we should consider revisiting this table
     let netCoreAppTFM = [|
-        2.2m,   ".NETCoreApp,Version=v2.2";
-        2.2m,   ".NETStandard,Version=v2.2";
-        2.1m,   ".NETCoreApp,Version=v2.1";
-        2.0m,   ".NETStandard,Version=v2.0";
-        2.0m,   ".NETCoreApp,Version=v2.0";
-        1.0m,   ".NETStandard,Version=v1.6";
-        1.0m,   ".NETStandard,Version=v1.5";
-        1.0m,   ".NETStandard,Version=v1.4";
-        1.0m,   ".NETStandard,Version=v1.3";
-        1.0m,   ".NETStandard,Version=v1.2";
-        1.0m,   ".NETStandard,Version=v1.1";
-        1.0m,   ".NETStandard,Version=v1.0";
+        3.0m,   ".NETCoreApp,Version=v3.0", "netcoreapp3.0";
+        2.2m,   ".NETCoreApp,Version=v2.2", "netcoreapp2.2";
+        2.2m,   ".NETStandard,Version=v2.1", "netstandard2.1";
+        2.1m,   ".NETCoreApp,Version=v2.1", "netstandard2.1";
+        2.0m,   ".NETStandard,Version=v2.0", "netstandard2.0";
+        2.0m,   ".NETCoreApp,Version=v2.0", "netstandard2.0";
+        1.0m,   ".NETStandard,Version=v1.6", "netstandard1.6";
+        1.0m,   ".NETStandard,Version=v1.5", "netstandard1.5";
+        1.0m,   ".NETStandard,Version=v1.4", "netstandard1.4";
+        1.0m,   ".NETStandard,Version=v1.3", "netstandard1.3";
+        1.0m,   ".NETStandard,Version=v1.2", "netstandard1.2";
+        1.0m,   ".NETStandard,Version=v1.1", "netstandard1.1";
+        1.0m,   ".NETStandard,Version=v1.0", "netstandard1.0";
     |]
 
     let netDesktopTFM = [|
-        0.472m, ".NETFramework,Version=v4.7.2";
-        0.471m, ".NETFramework,Version=v4.7.1";
-        0.47m,  ".NETFramework,Version=v4.7";
-        0.47m,  ".NETStandard,Version=v2.0";
-        0.462m, ".NETFramework,Version=v4.6.2";
-        0.462m, ".NETStandard,Version=v1.6";
-        0.461m, ".NETFramework,Version=v4.6.1";
-        0.461m, ".NETStandard,Version=v1.5";
-        0.46m,  ".NETFramework,Version=v4.6";
-        0.46m,  ".NETStandard,Version=v1.4";
-        0.452m, ".NETFramework,Version=v4.5.2";
-        0.452m, ".NETStandard,Version=v1.3";
-        0.451m, ".NETFramework,Version=v4.51";
-        0.451m, ".NETStandard,Version=v1.2";
-        0.45m,  ".NETFramework,Version=v4.5";
-        0.45m,  ".NETStandard,Version=v1.1";
-        0.45m,  ".NETStandard,Version=v1.0";
-        0.40m,  ".NETFramework,Version=v4";
+        0.472m, ".NETFramework,Version=v4.7.2", "net472";
+        0.471m, ".NETFramework,Version=v4.7.1", "net471";
+        0.47m,  ".NETFramework,Version=v4.7", "net47";
+        0.47m,  ".NETStandard,Version=v2.0", "netstandard2.0";
+        0.462m, ".NETFramework,Version=v4.6.2", "net462";
+        0.462m, ".NETStandard,Version=v1.6", "netstandard1.6";
+        0.461m, ".NETFramework,Version=v4.6.1", "net461";
+        0.461m, ".NETStandard,Version=v1.5", "netstandard1.5";
+        0.46m,  ".NETFramework,Version=v4.6", "net46";
+        0.46m,  ".NETStandard,Version=v1.4", "netstandard1.4";
+        0.452m, ".NETFramework,Version=v4.5.2", "net452";
+        0.452m, ".NETStandard,Version=v1.3", "netstandard1.3";
+        0.451m, ".NETFramework,Version=v4.51", "net451";
+        0.451m, ".NETStandard,Version=v1.2", "netstandard1.2";
+        0.45m,  ".NETFramework,Version=v4.5", "net45";
+        0.45m,  ".NETStandard,Version=v1.1", "netstandard1.1";
+        0.45m,  ".NETStandard,Version=v1.0", "netstandard1.0";
+        0.40m,  ".NETFramework,Version=v4", "net4";
     |]
 
     let desktopProductVersionMonikers = [|
@@ -99,7 +101,8 @@ module Utilities =
     |]
 
     let defaultMscorlibVersion = 4, 6, 1055, 0                      // Probably needs configuring
-    let defaultFrameworkName = ".NETFramework,Version=v4.6.1"
+    let defaultFrameworkName = ".NETFramework,Version=v4.7.2"
+    let defaultTargetFramework = "net472"
     let netCoreAppPrefix = ".NETCoreApp,Version=v"
     let netStandardPrefix = ".NETStandard,Version=v"
 
@@ -115,10 +118,10 @@ module Utilities =
     let executionTFMs =
         seq {
             let netStandardsFromVersion version =
-                netCoreAppTFM |> Seq.filter(fun (ver,_) -> version >= ver) |> Seq.map(fun (_,moniker) -> moniker) |> Seq.toArray
+                netCoreAppTFM |> Seq.filter(fun (ver,_,_) -> version >= ver) |> Seq.map(fun (_,moniker, targetFramework) -> moniker, targetFramework) |> Seq.toArray
 
             let netDesktopsFromVersion version =
-                netDesktopTFM |> Seq.filter(fun (ver,_) -> version >= ver) |> Seq.map(fun (_,moniker) -> moniker) |> Seq.toArray
+                netDesktopTFM |> Seq.filter(fun (ver,_,_) -> version >= ver) |> Seq.map(fun (_,moniker, targetFramework) -> moniker, targetFramework) |> Seq.toArray
 
             match context with
             | Some ctxt ->
@@ -128,6 +131,7 @@ module Utilities =
                 elif target.StartsWith(netStandardPrefix) then
                     yield! (netStandardsFromVersion (Decimal.Parse(target.Substring(netStandardPrefix.Length))))
             | None ->
+                // Todo: needs looking at
                 let fileMajorPart, fileMinorPart, fileBuildPart, filePrivatePart =
                     try
                         let attrOpt = typeof<int>.GetTypeInfo().Assembly.GetCustomAttributes(typeof<AssemblyFileVersionAttribute>) |> Seq.tryHead
@@ -155,12 +159,12 @@ module Utilities =
                         yield! (netDesktopsFromVersion version)
         } |> Seq.distinct |> Seq.toArray
 
-    let frameworkIdentifier, frameworkVersion =
-        let frameworkName =
+    let frameworkIdentifier, frameworkVersion, targetFramework =
+        let frameworkName, targetFramework =
             match executionTFMs |> Array.tryHead with
-            | Some tfm -> new FrameworkName(tfm)
-            | None -> new FrameworkName(defaultFrameworkName)
-        frameworkName.Identifier, frameworkName.Version
+            | Some (tfm, targetFramework) -> new FrameworkName(tfm), targetFramework
+            | None -> new FrameworkName(defaultFrameworkName), defaultTargetFramework
+        frameworkName.Identifier, frameworkName.Version, targetFramework
 
     /// Return a string array delimited by commas
     /// Note that a quoted string is not going to be mangled into pieces. 
@@ -320,8 +324,7 @@ namespace lib"
     let generateProjectBody = @"
 <Project Sdk='Microsoft.NET.Sdk'>
   <PropertyGroup>
-    <TargetFrameworkIdentifier>$(TARGETFRAMEWORKIDENTIFIER)</TargetFrameworkIdentifier>
-    <TargetFrameworkVersion>v$(TARGETFRAMEWORKVERSION)</TargetFrameworkVersion>
+    <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>

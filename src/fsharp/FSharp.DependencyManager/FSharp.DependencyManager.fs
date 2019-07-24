@@ -134,8 +134,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
             let fsProjectPath = Path.Combine(scriptsPath, "Project.fsproj")
 
             let generateProjBody =
-                generateProjectBody.Replace("$(TARGETFRAMEWORKIDENTIFIER)", frameworkIdentifier)
-                                   .Replace("$(TARGETFRAMEWORKVERSION)", frameworkVersion.ToString())
+                generateProjectBody.Replace("$(TARGETFRAMEWORK)", targetFramework)
                                    .Replace("$(PACKAGEREFERENCES)", packageReferences)
 
             writeFile (Path.Combine(scriptsPath, "Library.fs")) generateLibrarySource
