@@ -43,15 +43,13 @@ type OverrideInfo =
 
 [<System.Flags>]
 type RequiredSlotFlags =
-    | None                                      = 0x0000
+    | None                                      = 0x000
     /// A slot which does not _have_ to be implemented, because an inherited implementation is available.
-    | Optional                                  = 0x0001
+    | Optional                                  = 0x001
     /// A slot that is a default interface implementation.
-    | DefaultInterfaceImplementation            = 0x0010
-    /// A slot that is a default interface implementation but overrides.
-    | DefaultInterfaceImplementationOverrider   = 0x0110
+    | DefaultInterfaceImplementation            = 0x010
     /// A slot that has ambiguity due to multiple inheritance, happens with default interface methods.
-    | PossiblyNoMostSpecificImplementation      = 0x1111
+    | PossiblyNoMostSpecificImplementation      = 0x110
 
 let inline HasRequiredSlotFlag targetFlag (flags: RequiredSlotFlags) =
     (flags &&& targetFlag) = targetFlag
@@ -284,32 +282,12 @@ module DispatchSlotChecking =
         // we accumulate those to compose a more complete error message, see noimpl() bellow.
         let missingOverloadImplementation = ResizeArray()
 
-        // DIM Interop Error Rules:
-        //     We do not want to always error if the compiler sees a DIM on an interface when DIMs are not supported.
-        //     This is because it is valid to provide an explicit implementation of a method in a class that would override the DIM.
-        //
-        //     However, before F# 4.7, older compilers would assume the DIM overrider methods needed an implementation which would cause a compiler error when trying to implement the interface.
-        //     There is no way to resolve that error in older compilers using code; therefore, we will throw a dim interop error in that case.
         let dimInteropSupport = GetFeatureSupport infoReader m LanguageFeature.DefaultInterfaceMethodsInterop
 
         for RequiredSlot(dispatchSlot, dispatchFlags) in dispatchSlots do
-            let isDefaultInterfaceImpl = HasRequiredSlotFlag RequiredSlotFlags.DefaultInterfaceImplementation dispatchFlags
-
-            if dimInteropSupport.HasErrors then
-                if HasRequiredSlotFlag RequiredSlotFlags.DefaultInterfaceImplementationOverrider dispatchFlags then
-                    dimInteropSupport.VersionError |> Option.iter errorR
-                    dimInteropSupport.RuntimeError |> Option.iter errorR
-                elif isDefaultInterfaceImpl &&
-                     // Check that no available prior override implements this dispatch slot
-                     not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) then
-                    dimInteropSupport.VersionError |> Option.iter errorR
-                    dimInteropSupport.RuntimeError |> Option.iter errorR
-
-            let isOptional = 
-                not (dimInteropSupport.HasErrors && isDefaultInterfaceImpl) &&
-                HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags
-
-            let isPossiblyNoMostSpecificImplementation = HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags
+            if dimInteropSupport.HasErrors && HasRequiredSlotFlag RequiredSlotFlags.DefaultInterfaceImplementation dispatchFlags then
+                dimInteropSupport.VersionError |> Option.iter errorR
+                dimInteropSupport.RuntimeError |> Option.iter errorR
 
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
@@ -321,12 +299,11 @@ module DispatchSlotChecking =
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range, nenv, item,item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, denv,AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
-                if (not isOptional || isPossiblyNoMostSpecificImplementation) &&
+                if not (HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags) &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then
-                    // Do not show the specific implementation error if the language version does not support DIMs.
-                    if isPossiblyNoMostSpecificImplementation && dimInteropSupport.VersionError.IsNone then
+                    if HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
                     else
 
@@ -470,8 +447,7 @@ module DispatchSlotChecking =
     let inline GetDefaultDispatchSlotFlags (minfo: MethInfo) =
         let flags = if minfo.IsAbstract then RequiredSlotFlags.None else RequiredSlotFlags.Optional
         if minfo.IsDefaultInterfaceMethod then 
-            flags ||| RequiredSlotFlags.DefaultInterfaceImplementation ||| 
-            (if minfo.IsFinal then RequiredSlotFlags.DefaultInterfaceImplementationOverrider else RequiredSlotFlags.None)
+            flags ||| RequiredSlotFlags.DefaultInterfaceImplementation
         else 
             flags
 
@@ -527,15 +503,14 @@ module DispatchSlotChecking =
                       // This is to handle default interface methods.
                       | (ty1, (RequiredSlot (_, flags1) as bestSlot)) :: sortedPossibleOverriderSlotsTail ->
                          // Determine if we possibly do not have a most specific implementation.
-                         // This can happen when the head slot from 'sortedSlots' is not part of the hierarchy from the rest of the slots.
                          // TODO: Clean this up. Prefer to use recursion.
                          let mutable hasMostSpecificImplementation = true
                          let mutable flags1 = flags1
                          for (ty2, RequiredSlot (_, flags2)) in sortedPossibleOverriderSlotsTail do
 
                              let isNotPartOfHierarchy =
-                                 not (TypeFeasiblySubsumesType 0 g amap m ty1 CanCoerce ty2) && 
-                                 not (TypeFeasiblySubsumesType 0 g amap m ty2 CanCoerce ty1)
+                                not (TypeFeasiblySubsumesType 0 g amap m ty1 CanCoerce ty2) && 
+                                not (TypeFeasiblySubsumesType 0 g amap m ty2 CanCoerce ty1)
 
                              if isNotPartOfHierarchy then
                                  if  (HasRequiredSlotFlag RequiredSlotFlags.Optional flags1 || 

@@ -56,10 +56,7 @@ type Test () =
                 StartColumn = 14;
                 EndLine = 8;
                 EndColumn = 19;
-                Message = "No implementation was given for those members: 
-	'ITest.DefaultMethod() : unit'
-	'ITest.NonDefaultMethod() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+                Message = "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -105,14 +102,6 @@ type Test () =
                 EndLine = 8
                 EndColumn = 19
                 Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
-            }
-            {
-                Number = 366;
-                StartLine = 8;
-                StartColumn = 14;
-                EndLine = 8;
-                EndColumn = 19;
-                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -163,17 +152,6 @@ type Test () =
                 EndLine = 8
                 EndColumn = 19
                 Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
-            }
-            {
-                Number = 366;
-                StartLine = 8;
-                StartColumn = 14;
-                EndLine = 8;
-                EndColumn = 19;
-                Message = "No implementation was given for those members: 
-	'ITest.Method1() : unit'
-	'ITest.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -520,7 +498,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FromITest2-Method1-FromITest2-Method2")
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces - Errors with lack of explicit shared interface type`` () =
+    let ``C# consumption from diamond hierarchical interfaces - Errors with lack of explicit shared interface type`` () =
         let csharpSource =
             """
 using System;
@@ -623,7 +601,7 @@ type Test () =
         ])
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces - Errors with no most specific implementation`` () =
+    let ``C# consumption from diamond hierarchical interfaces - Errors with no most specific implementation`` () =
         let csharpSource =
             """
 using System;
@@ -703,7 +681,7 @@ type Test () =
         ])
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces but combined in one C# interface - Errors with no most specific implementation`` () =
+    let ``C# consumption from diamond hierarchical interfaces but combined in one C# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
 using System;
@@ -785,7 +763,7 @@ type Test () =
         ])
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces but combined in one F# interface - Errors with no most specific implementation`` () =
+    let ``C# consumption from diamond hierarchical interfaces but combined in one F# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
 using System;
@@ -868,7 +846,7 @@ type Test () =
 
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces but re-abstracted in one and then combined in one F# interface - Errors with no most specific implementation`` () =
+    let ``C# consumption from diamond hierarchical interfaces but re-abstracted in one and then combined in one F# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
 using System;
@@ -944,7 +922,7 @@ type Test () =
         ])
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces but all re-abstracted and then combined in one F# interface - Errors with need to implement members`` () =
+    let ``C# consumption from diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface - Errors with need to implement members`` () =
         let csharpSource =
             """
 using System;
@@ -1009,7 +987,7 @@ Note that all interface members must be implemented and listed under an appropri
         ])
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces then combined in one F# interface and then implemented - Runs`` () =
+    let ``C# consumption from diamond hierarchical interfaces then combined in one F# interface and then implemented - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -1085,7 +1063,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented - Runs`` () =
+    let ``C# consumption from diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -1149,7 +1127,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
 
     [<Test>]
-    let ``C# consumption from two separate hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
+    let ``C# consumption from diamond hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -1288,10 +1266,7 @@ type Test () =
                 StartColumn = 14;
                 EndLine = 8;
                 EndColumn = 19;
-                Message = "No implementation was given for those members: 
-	'ITest.DefaultMethod() : unit'
-	'ITest.NonDefaultMethod() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+                Message = "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -1345,14 +1320,6 @@ type Test () =
                 EndLine = 8
                 EndColumn = 19
                 Message = "Feature 'default interface methods interop' is not supported by target runtime."
-            }
-            {
-                Number = 366;
-                StartLine = 8;
-                StartColumn = 14;
-                EndLine = 8;
-                EndColumn = 19;
-                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -1420,17 +1387,6 @@ type Test () =
                 EndColumn = 19
                 Message = "Feature 'default interface methods interop' is not supported by target runtime."
             }
-            {
-                Number = 366;
-                StartLine = 8;
-                StartColumn = 14;
-                EndLine = 8;
-                EndColumn = 19;
-                Message = "No implementation was given for those members: 
-	'ITest.Method1() : unit'
-	'ITest.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
         ], fsharpLanguageVersion = "4.6")
 
     [<Test>]
@@ -1471,14 +1427,6 @@ type Test () =
                 EndLine = 8
                 EndColumn = 19
                 Message = "Feature 'default interface methods interop' is not supported by target runtime."
-            }
-            {
-                Number = 366;
-                StartLine = 8;
-                StartColumn = 14;
-                EndLine = 8;
-                EndColumn = 19;
-                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ])
 

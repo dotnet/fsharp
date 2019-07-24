@@ -830,6 +830,7 @@ let private RuntimeSupportsFeature (infoReader: InfoReader) m featureId =
         | _ ->
             false
 
+[<Struct>]
 type FeatureSupport =
     {
         RuntimeError: exn option
