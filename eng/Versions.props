@@ -167,7 +167,7 @@
     <MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
     <MicrosoftMSXMLVersion>8.0.0-alpha</MicrosoftMSXMLVersion>
     <MicrosoftNetCompilersVersion>2.7.0</MicrosoftNetCompilersVersion>
-    <MicrosoftNETCoreILDAsmVersion>2.0.3</MicrosoftNETCoreILDAsmVersion>
+    <MicrosoftNETCoreILDAsmVersion>2.0.8</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>2.0.8</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>15.8.0</MicrosoftNETTestSdkVersion>
     <MicrosoftVisualFSharpTypeProvidersRedistVersion>1.0.0</MicrosoftVisualFSharpTypeProvidersRedistVersion>
