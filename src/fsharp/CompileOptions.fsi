@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CompileOptions
 
+open System
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompileOps
