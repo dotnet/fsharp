@@ -40,13 +40,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
-    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
-    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
@@ -255,14 +248,14 @@
     <Compile Include="..\..\absil\ilread.fs">
       <Link>AbsIL\ilread.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilwrite.fsi">
-      <Link>AbsIL\ilwrite.fsi</Link>
-    </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fsi">
       <Link>AbsIL\ilwritepdb.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fs">
       <Link>AbsIL\ilwritepdb.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwrite.fsi">
+      <Link>AbsIL\ilwrite.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fs">
       <Link>AbsIL\ilwrite.fs</Link>
