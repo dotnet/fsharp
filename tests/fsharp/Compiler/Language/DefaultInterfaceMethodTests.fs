@@ -10,6 +10,79 @@ open NUnit.Framework
 module DefaultInterfaceMethodTests =
 
     [<Test>]
+    let ``C# consumption - F# 4_6 with explicit implementation - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write("ITest1." + nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("ITest2" + nameof(Method2));
+        }
+
+        void Method3();
+    }
+
+    public interface ITest3 : ITest2
+    {
+        void ITest2.Method3()
+        {
+            Console.Write("ITest3" + nameof(Method3));
+        }
+
+        void Method4();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest3 with
+
+        member __.Method1 () = Console.Write("FSharp-Method1")
+
+        member __.Method2 () = Console.Write("FSharp-Method2")
+
+        member __.Method3 () = Console.Write("FSharp-Method3")
+
+        member __.Method4 () = Console.Write("FSharp-Method4")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest3
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    Console.Write("-")
+    test.Method3 ()
+    Console.Write("-")
+    test.Method4 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharp-Method1-FSharp-Method2-FSharp-Method3-FSharp-Method4", fsharpLanguageVersion = "4.6")
+
+    [<Test>]
     let ``C# simple consumption - Errors with lang version not supported`` () =
         let csharpSource =
             """
@@ -48,7 +121,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 8
                 EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
                 Number = 366;
@@ -56,7 +129,10 @@ type Test () =
                 StartColumn = 14;
                 EndLine = 8;
                 EndColumn = 19;
-                Message = "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+                Message = "No implementation was given for those members: 
+	'ITest.DefaultMethod() : unit'
+	'ITest.NonDefaultMethod() : unit'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -101,7 +177,15 @@ type Test () =
                 StartColumn = 14
                 EndLine = 8
                 EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 366
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -143,7 +227,7 @@ type Test () =
                 StartColumn = 14
                 EndLine = 8
                 EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
                 Number = 3302
@@ -151,7 +235,18 @@ type Test () =
                 StartColumn = 14
                 EndLine = 8
                 EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 366
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "No implementation was given for those members: 
+	'ITest.Method1() : unit'
+	'ITest.Method2() : unit'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -583,6 +678,17 @@ type Test () =
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
             {
+                Number = 366
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 20
+                Message = "No implementation was given for those members: 
+	'ITest1.Method1() : unit'
+	'ITest1.Method2() : unit'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+            {
                 Number = 3304
                 StartLine = 9
                 StartColumn = 14
@@ -597,6 +703,17 @@ type Test () =
                 EndLine = 9
                 EndColumn = 20
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 20
+                Message = "No implementation was given for those members: 
+	'ITest1.Method1() : unit'
+	'ITest1.Method2() : unit'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ])
 
@@ -677,6 +794,17 @@ type Test () =
                 EndLine = 9
                 EndColumn = 20
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 20
+                Message = "No implementation was given for those members: 
+	'ITest1.Method1() : unit'
+	'ITest1.Method2() : unit'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ])
 
@@ -760,6 +888,17 @@ type Test () =
                 EndColumn = 27
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
+            {
+                Number = 366
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 27
+                Message = "No implementation was given for those members: 
+	'ITest1.Method1() : unit'
+	'ITest1.Method2() : unit'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
         ])
 
     [<Test>]
@@ -842,6 +981,17 @@ type Test () =
                 EndColumn = 27
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
+            {
+                Number = 366
+                StartLine = 13
+                StartColumn = 14
+                EndLine = 13
+                EndColumn = 27
+                Message = "No implementation was given for those members: 
+	'ITest1.Method1() : unit'
+	'ITest1.Method2() : unit'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
         ])
 
 
@@ -919,6 +1069,17 @@ type Test () =
                 EndColumn = 27
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
+            {
+                Number = 366
+                StartLine = 13
+                StartColumn = 14
+                EndLine = 13
+                EndColumn = 27
+                Message = "No implementation was given for those members: 
+	'ITest1.Method1() : unit'
+	'ITest1.Method2() : unit'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
         ])
 
     [<Test>]
@@ -973,6 +1134,22 @@ type Test () =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3304
+                StartLine = 13
+                StartColumn = 14
+                EndLine = 13
+                EndColumn = 27
+                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 3304
+                StartLine = 13
+                StartColumn = 14
+                EndLine = 13
+                EndColumn = 27
+                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
+            }
             {
                 Number = 366
                 StartLine = 13
@@ -1212,21 +1389,20 @@ let main _ =
 module DefaultInterfaceMethodTests =
 
     [<Test>]
-    let ``C# simple consumption - Errors with lang version and target runtime not supported`` () =
-        let csharpSource =
+    let ``IL consumption - F# 4_6 - Errors with lang version and target runtime not supported`` () =
+        let ilSource =
             """
-using System;
-
-namespace CSharpTest
+.assembly ILTest.dll
 {
-    public interface ITest
-    {
-        void DefaultMethod()
-        {
-            Console.Write(nameof(DefaultMethod));
-        }
+}
+.module ILTest.dll
 
-        void NonDefaultMethod();
+.class interface public abstract auto ansi ILTest.ITest
+{
+    .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
+    {
+        .maxstack  8
+        IL_0000:  ret
     }
 }
             """
@@ -1235,30 +1411,30 @@ namespace CSharpTest
             """
 namespace FSharpTest
 
-open CSharpTest
+open ILTest
 
 type Test () =
 
     interface ITest
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Number = 3302
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
-            }
             {
                 Number = 3303
                 StartLine = 8
                 StartColumn = 14
                 EndLine = 8
                 EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not supported by target runtime."
+                Message = "Feature 'default interface method consumption' is not supported by target runtime."
+            }
+            {
+                Number = 3302
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
                 Number = 366;
@@ -1266,26 +1442,25 @@ type Test () =
                 StartColumn = 14;
                 EndLine = 8;
                 EndColumn = 19;
-                Message = "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ], fsharpLanguageVersion = "4.6")
 
     [<Test>]
-    let ``C# simple consumption - Errors with lang version and target runtime not supported - 2`` () =
-        let csharpSource =
+    let ``IL consumption - Errors with target runtime not supported`` () =
+        let ilSource =
             """
-using System;
-
-namespace CSharpTest
+.assembly ILTest.dll
 {
-    public interface ITest
-    {
-        void DefaultMethod()
-        {
-            Console.Write(nameof(DefaultMethod));
-        }
+}
+.module ILTest.dll
 
-        void NonDefaultMethod();
+.class interface public abstract auto ansi ILTest.ITest
+{
+    .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
+    {
+        .maxstack  8
+        IL_0000:  ret
     }
 }
             """
@@ -1294,140 +1469,67 @@ namespace CSharpTest
             """
 namespace FSharpTest
 
-open CSharpTest
+open ILTest
+
+type Test () =
+
+    interface ITest
+            """
+
+        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3303
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface method consumption' is not supported by target runtime."
+            }
+        ])
+
+    [<Test>]
+    let ``IL consumption - F# 4_6 - Errors with target runtime not supported when implemented`` () =
+        let ilSource =
+            """
+.assembly ILTest.dll
+{
+}
+.module ILTest.dll
+
+.class interface public abstract auto ansi ILTest.ITest
+{
+    .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
+    {
+        .maxstack  8
+        IL_0000:  ret
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open ILTest
 
 type Test () =
 
     interface ITest with
 
-        member __.NonDefaultMethod () = ()
+        member __.DefaultMethod () = ()
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Number = 3302
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
-            }
             {
                 Number = 3303
                 StartLine = 8
                 StartColumn = 14
                 EndLine = 8
                 EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not supported by target runtime."
+                Message = "Feature 'default interface method consumption' is not supported by target runtime."
             }
         ], fsharpLanguageVersion = "4.6")
-
-    [<Test>]
-    let ``C# simple consumption - Errors with lang version and target runtime not supported - 3`` () =
-        let csharpSource =
-            """
-namespace CSharpTest
-{
-    public interface ITest
-    {
-        void Method1()
-        {
-        }
-
-        void Method2()
-        {
-        }
-    }
-}
-            """
-
-        let fsharpSource =
-            """
-namespace FSharpTest
-
-open CSharpTest
-
-type Test () =
-
-    interface ITest
-            """
-
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Number = 3302
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
-            }
-            {
-                Number = 3303
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not supported by target runtime."
-            }
-            {
-                Number = 3302
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not available in F# 4.6. Please use language version 4.7 or greater."
-            }
-            {
-                Number = 3303
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not supported by target runtime."
-            }
-        ], fsharpLanguageVersion = "4.6")
-
-    [<Test>]
-    let ``C# simple consumption - Errors with target runtime not supported`` () =
-        let csharpSource =
-            """
-using System;
-
-namespace CSharpTest
-{
-    public interface ITest
-    {
-        void DefaultMethod()
-        {
-            Console.Write(nameof(DefaultMethod));
-        }
-    }
-}
-            """
-
-        let fsharpSource =
-            """
-namespace FSharpTest
-
-open CSharpTest
-
-type Test () =
-
-    interface ITest
-            """
-
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Number = 3303
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface methods interop' is not supported by target runtime."
-            }
-        ])
 
 #endif

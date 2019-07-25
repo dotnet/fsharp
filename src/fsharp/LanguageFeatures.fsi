@@ -13,7 +13,7 @@ type LanguageFeature =
     | WildCardInForLoop = 4
     | RelaxWhitespace = 5
     | NameOf = 6
-    | DefaultInterfaceMethodsInterop = 7
+    | DefaultInterfaceMethodConsumption = 7
     | ImplicitYield = 8
     | OpenStaticClasses = 9
 

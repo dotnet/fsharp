@@ -24,7 +24,7 @@ module ILChecker =
 
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
-        let errors, _ = exec ilasmPath ([ sprintf "%s /output=%s" ilFilePath dllFilePath ])
+        let errors, _ = exec ilasmPath ([ sprintf "%s /output=%s /dll" ilFilePath dllFilePath ])
         errors
 
     /// Filters i.e ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']

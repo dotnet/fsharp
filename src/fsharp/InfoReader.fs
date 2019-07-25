@@ -817,7 +817,7 @@ let private RuntimeSupportsFeature (infoReader: InfoReader) m featureId =
 
     let runtimeFeature =
         match featureId with
-        | LanguageFeature.DefaultInterfaceMethodsInterop -> "DefaultImplementationsOfInterfaces"
+        | LanguageFeature.DefaultInterfaceMethodConsumption -> "DefaultImplementationsOfInterfaces"
         | _ -> String.Empty
 
     if String.IsNullOrWhiteSpace runtimeFeature then
@@ -831,17 +831,31 @@ let private RuntimeSupportsFeature (infoReader: InfoReader) m featureId =
             false
 
 [<Struct>]
-type FeatureSupport =
-    {
-        RuntimeError: exn option
-        VersionError: exn option
-    }
+type LanguageFeatureSupport (runtimeError: exn option, langError: exn option) =
 
-    member this.HasErrors =
-        this.RuntimeError.IsSome || this.VersionError.IsSome
+    member this.IsSupported =
+        runtimeError.IsNone && langError.IsNone
 
-/// Get feature support for the given feature.
-let GetFeatureSupport (infoReader: InfoReader) m featureId =
+    member this.IsRuntimeSupported =
+        runtimeError.IsNone
+
+    member this.IsLanguageSupported =
+        langError.IsNone
+
+    member this.TryRaiseRuntimeError () =
+        runtimeError |> Option.iter error
+
+    member this.TryRaiseLanguageError () =
+        langError |> Option.iter error
+
+    member this.TryRaiseRuntimeErrorRecover () =
+        runtimeError |> Option.iter errorR
+
+    member this.TryRaiseLanguageErrorRecover () =
+        langError |> Option.iter errorR
+
+/// Get language feature support for the given feature.
+let GetLanguageFeatureSupport (infoReader: InfoReader) m featureId =
     let g = infoReader.g
 
     let runtimeError =
@@ -851,7 +865,8 @@ let GetFeatureSupport (infoReader: InfoReader) m featureId =
         else
             None
 
-    let versionError =
+    let languageError =
+        // TODO: In the futre, we might want to lift this out somewhere so we can use it in the parser.
         if not (g.langVersion.SupportsFeature featureId) then
             let featureStr = g.langVersion.GetFeatureString featureId
             let currentVersionStr = g.langVersion.CurrentVersionString
@@ -860,4 +875,4 @@ let GetFeatureSupport (infoReader: InfoReader) m featureId =
         else
             None
 
-    { RuntimeError = runtimeError; VersionError = versionError }
+    LanguageFeatureSupport (runtimeError, languageError)

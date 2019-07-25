@@ -26,7 +26,7 @@ type LanguageFeature =
     | WildCardInForLoop = 4
     | RelaxWhitespace = 5
     | NameOf = 6
-    | DefaultInterfaceMethodsInterop = 7
+    | DefaultInterfaceMethodConsumption = 7
     | ImplicitYield = 8
     | OpenStaticClasses = 9
 
@@ -55,7 +55,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.RelaxWhitespace, languageVersion47
         LanguageFeature.NameOf, languageVersion47
         LanguageFeature.ImplicitYield, languageVersion47
-        LanguageFeature.DefaultInterfaceMethodsInterop, languageVersion47
+        LanguageFeature.DefaultInterfaceMethodConsumption, languageVersion47
         LanguageFeature.OpenStaticClasses, languageVersion47
         |]
 
@@ -106,7 +106,7 @@ type LanguageVersion (specifiedVersion) =
         | LanguageFeature.WildCardInForLoop -> "wild card in for loop"
         | LanguageFeature.RelaxWhitespace -> "whitespace relexation"
         | LanguageFeature.NameOf -> "nameof"
-        | LanguageFeature.DefaultInterfaceMethodsInterop -> "default interface methods interop"
+        | LanguageFeature.DefaultInterfaceMethodConsumption -> "default interface method consumption"
         | LanguageFeature.ImplicitYield -> "implicit yield"
         | LanguageFeature.OpenStaticClasses -> "open static classes"
         | _ -> String.Empty

@@ -67,7 +67,7 @@ type RoslynLanguageVersion = LanguageVersion
 [<RequireQualifiedAccess>]
 type TestCompilation =
     | CSharp of CSharpCompilation
-    | IL of result: Lazy<string * byte []>
+    | IL of result: Lazy<string * byte []> * assemblyName: string
 
     member this.AssertNoErrorsOrWarnings () =
         match this with
@@ -77,7 +77,7 @@ type TestCompilation =
             if not diagnostics.IsEmpty then                  
                 NUnit.Framework.Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
 
-        | TestCompilation.IL result ->
+        | TestCompilation.IL (result, _) ->
             let errors, _ = result.Value
             if errors.Length > 0 then
                 NUnit.Framework.Assert.Fail ("IL source errors: " + errors)
@@ -89,7 +89,7 @@ type TestCompilation =
             if not emitResult.Success then
                 failwithf "Unable to emit C# compilation.\n%A" emitResult.Diagnostics
 
-        | TestCompilation.IL result ->
+        | TestCompilation.IL (result, _) ->
             let (_, data) = result.Value
             File.WriteAllBytes (outputPath, data)
 
@@ -107,7 +107,7 @@ type CompilationUtil private () =
             CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
         |> TestCompilation.CSharp
 
-    static member CreateILCompilation (source: string) =
+    static member CreateILCompilation (source: string, assemblyName) =
         let compute =
             lazy
                 let ilFilePath = Path.GetTempFileName ()
@@ -124,4 +124,4 @@ type CompilationUtil private () =
                     try File.Delete ilFilePath with | _ -> ()
                     try File.Delete tmp with | _ -> ()
                     try File.Delete dllFilePath with | _ -> ()
-        TestCompilation.IL compute
+        TestCompilation.IL (compute, assemblyName)

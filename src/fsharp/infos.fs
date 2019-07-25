@@ -1146,7 +1146,6 @@ type MethInfo =
 #endif
 
     member x.IsNewSlot =
-        isInterfaceTy x.TcGlobals x.ApparentEnclosingType  ||
         (x.IsVirtual &&
           (match x with
            | ILMeth(_, x, _) -> x.IsNewSlot
@@ -1244,14 +1243,18 @@ type MethInfo =
         | ILMeth _ -> true
         | _ -> false
 
+    /// Indicates if this is an interface method.
+    member x.IsInterfaceMethod =
+        x.IsVirtual && isInterfaceTy x.TcGlobals x.ApparentEnclosingType
+
     /// Indicates if this is a default interface method.
     /// The method could be a non-abstract implementation or an overrider. 
     /// The overrider could also re-abstract the method; it's still considered a default interface method.
     member x.IsDefaultInterfaceMethod =
-        isInterfaceTy x.TcGlobals x.ApparentEnclosingType &&
+        x.IsInterfaceMethod &&
         // We only support DIMs from interfaces defined outside of F#.
         (match x with
-         | ILMeth (_, ilMethInfo, _) -> ilMethInfo.IsFinal || not ilMethInfo.IsAbstract
+         | ILMeth (_, ilMethInfo, _) -> (ilMethInfo.IsNewSlot && not ilMethInfo.IsAbstract) || not ilMethInfo.IsNewSlot
          | _ -> false)
 
     /// Build IL method infos.

@@ -145,7 +145,7 @@ type CompilerAssert private () =
             match compilation with
             | TestCompilation.CSharp compilation ->
                 compilation.AssemblyName + (if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe")
-            | _ -> "test_il.dll"
+            | TestCompilation.IL (_, assemblyName) -> assemblyName + ".dll"
 
         let compilationOutputPath = Path.Combine (tmp1, fileName)
         try

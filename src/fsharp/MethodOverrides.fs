@@ -46,7 +46,7 @@ type RequiredSlotFlags =
     | None                                      = 0x000
     /// A slot which does not _have_ to be implemented, because an inherited implementation is available.
     | Optional                                  = 0x001
-    /// A slot that is a default interface implementation.
+    /// A slot which is a default interface implementation.
     | DefaultInterfaceImplementation            = 0x010
     /// A slot that has ambiguity due to multiple inheritance, happens with default interface methods.
     | PossiblyNoMostSpecificImplementation      = 0x110
@@ -282,12 +282,25 @@ module DispatchSlotChecking =
         // we accumulate those to compose a more complete error message, see noimpl() bellow.
         let missingOverloadImplementation = ResizeArray()
 
-        let dimInteropSupport = GetFeatureSupport infoReader m LanguageFeature.DefaultInterfaceMethodsInterop
+        let dimConsumSupport = GetLanguageFeatureSupport infoReader m LanguageFeature.DefaultInterfaceMethodConsumption
 
         for RequiredSlot(dispatchSlot, dispatchFlags) in dispatchSlots do
-            if dimInteropSupport.HasErrors && HasRequiredSlotFlag RequiredSlotFlags.DefaultInterfaceImplementation dispatchFlags then
-                dimInteropSupport.VersionError |> Option.iter errorR
-                dimInteropSupport.RuntimeError |> Option.iter errorR
+            let isDefaultInterfaceImplementation =
+                HasRequiredSlotFlag RequiredSlotFlags.DefaultInterfaceImplementation dispatchFlags
+
+            // Always try to raise a target runtime error if we have a DIM.
+            if isDefaultInterfaceImplementation then
+                dimConsumSupport.TryRaiseRuntimeErrorRecover ()
+
+            let isOptional =
+                if HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags then
+                    // A DIM is considered *not* 'optional' if it is not language supported.
+                    if not dimConsumSupport.IsLanguageSupported && isDefaultInterfaceImplementation then
+                        false
+                    else
+                        true
+                else
+                    false
 
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
@@ -299,13 +312,16 @@ module DispatchSlotChecking =
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range, nenv, item,item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, denv,AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
-                if not (HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags) &&
+                if not isOptional &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then
-                    if HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags then
+                    // Always try to raise a language version error if we have a DIM that is not explicitly implemented.
+                    if isDefaultInterfaceImplementation then
+                        dimConsumSupport.TryRaiseLanguageErrorRecover ()
+
+                    if dimConsumSupport.IsLanguageSupported && HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
-                    else
 
                     // error reporting path
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
@@ -445,85 +461,94 @@ module DispatchSlotChecking =
 
     /// Get default slot flags for the given method.
     let inline GetDefaultDispatchSlotFlags (minfo: MethInfo) =
-        let flags = if minfo.IsAbstract then RequiredSlotFlags.None else RequiredSlotFlags.Optional
-        if minfo.IsDefaultInterfaceMethod then 
-            flags ||| RequiredSlotFlags.DefaultInterfaceImplementation
-        else 
-            flags
+        (if minfo.IsAbstract then RequiredSlotFlags.None else RequiredSlotFlags.Optional) |||
+        (if minfo.IsDefaultInterfaceMethod then RequiredSlotFlags.DefaultInterfaceImplementation else RequiredSlotFlags.None)
 
-    /// Get a collection of interface slots that are considered possible overrider (aka. override by) slots for the given method from the given type and implied types.
-    let GetPossibleInterfaceOverriderDispatchSlots (infoReader: InfoReader) m minfo reqdTy impliedTys =
+    /// Get a collection of interface methods that are overrider (aka. override by) slots for the given method from the given types.
+    let GetInterfaceOverriderMethods (infoReader: InfoReader) m (minfo: MethInfo) tys =
         let g = infoReader.g
         let amap = infoReader.amap
+        let mty = minfo.ApparentEnclosingType
 
-        if isInterfaceTy g reqdTy then
-            impliedTys
+        if minfo.IsInterfaceMethod then
+            tys
             |> List.choose (fun ty ->
-                if isInterfaceTy g ty && not (typeEquiv g reqdTy ty) && TypeFeasiblySubsumesType 0 g amap m reqdTy CanCoerce ty then
+                if isInterfaceTy g ty && not (typeEquiv g mty ty) && TypeFeasiblySubsumesType 0 g amap m mty CanCoerce ty then
                     // We are only looking for IL overriders because F# does not support creating your own default interface methods.
                     match TryFindILIntrinisicOverriderMethInfo infoReader m AccessibleFromSomewhere ty minfo with
-                    | Some minfo2 -> Some (ty, RequiredSlot (minfo, GetDefaultDispatchSlotFlags minfo2))
+                    | Some minfo2 when not minfo2.IsNewSlot -> Some minfo2
                     | _ -> None
                 else
                     None)
         else
             []
 
-    /// Get a collection of slots for the given interface type.
-    let GetInterfaceDispatchSlots (infoReader: InfoReader) m availImpliedInterfaces reqdTyInfos reqdTy =
+    /// Get a collection of interface methods that are the top most overrider methods in the hierarchy for the given method from the required type infos.
+    let GetTopMostHierarchicalInterfaceOverriderMethods (infoReader: InfoReader) m reqdTyInfos (minfo: MethInfo) =
         let g = infoReader.g
         let amap = infoReader.amap
 
-        [ if isInterfaceTy g reqdTy then
-            // Check if the interface has an inherited implementation
-            // If so, you do not have to implement all the methods - each
-            // specific method is "optionally" implemented.
-            let isOptional = ListSet.contains (typeEquiv g) reqdTy availImpliedInterfaces
-            for minfo in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap m reqdTy do
-              if not minfo.IsFinal then
-                  if isOptional || not minfo.IsILMethod then
-                      yield RequiredSlot(minfo, if isOptional then RequiredSlotFlags.Optional else RequiredSlotFlags.None)
-                  else
-                      let sortedPossibleOverriderSlots =
-                          reqdTyInfos
-                          |> List.map (fun (_, _, _, impliedTys) ->
-                              GetPossibleInterfaceOverriderDispatchSlots infoReader m minfo reqdTy impliedTys
-                          )
-                          |> List.reduce (@) // ok to use reduce here without checking as we will always have 1 item
-                          // Sort the hierarchy to determine the best possible slot.
-                          |> List.sortWith (fun (ty1, _) (ty2, _) ->
-                              if TypeFeasiblySubsumesType 0 g amap m ty1 CanCoerce ty2 then 1
-                              else -1
-                          )
+        if not minfo.IsInterfaceMethod then
+            failwith "method is not on an interface"
+
+        if not minfo.IsNewSlot then
+            failwith "method is not a new slot"
+        
+        let sortedOverriderMethods =
+            reqdTyInfos
+            |> List.map (fun (_, _, _, impliedTys) ->
+                GetInterfaceOverriderMethods infoReader m minfo impliedTys
+            )
+            |> List.reduce (@) // ok to use reduce here without checking as we will always have 1 item
+            // Sort the hierarchy to determine the best possible method.
+            |> List.sortWith (fun minfo1 minfo2 ->
+                if TypeFeasiblySubsumesType 0 g amap m minfo1.ApparentEnclosingType CanCoerce minfo2.ApparentEnclosingType then 1
+                else -1
+            )
                  
-                      match sortedPossibleOverriderSlots with
-                      | [] ->
-                         yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo)
+        match sortedOverriderMethods with
+        | [] ->
+            []
 
-                      // This is to handle default interface methods.
-                      | (ty1, (RequiredSlot (_, flags1) as bestSlot)) :: sortedPossibleOverriderSlotsTail ->
-                         // Determine if we possibly do not have a most specific implementation.
-                         // TODO: Clean this up. Prefer to use recursion.
-                         let mutable hasMostSpecificImplementation = true
-                         let mutable flags1 = flags1
-                         for (ty2, RequiredSlot (_, flags2)) in sortedPossibleOverriderSlotsTail do
+        | [ minfo ] ->
+            [ minfo ]
 
-                             let isNotPartOfHierarchy =
-                                not (TypeFeasiblySubsumesType 0 g amap m ty1 CanCoerce ty2) && 
-                                not (TypeFeasiblySubsumesType 0 g amap m ty2 CanCoerce ty1)
+        | minfo1 :: sortedPossibleOverriderMethodsTail ->
+            ([ minfo1 ], sortedPossibleOverriderMethodsTail)
+            ||> List.fold (fun minfos minfo2 ->
+                let isDiamondHierarchy =
+                    not (TypeFeasiblySubsumesType 0 g amap m minfo1.ApparentEnclosingType CanCoerce minfo2.ApparentEnclosingType) && 
+                    not (TypeFeasiblySubsumesType 0 g amap m minfo2.ApparentEnclosingType CanCoerce minfo1.ApparentEnclosingType)
 
-                             if isNotPartOfHierarchy then
-                                 if  (HasRequiredSlotFlag RequiredSlotFlags.Optional flags1 || 
-                                      HasRequiredSlotFlag RequiredSlotFlags.Optional flags2) && 
-                                     hasMostSpecificImplementation then
-                                         hasMostSpecificImplementation <- false
+                if isDiamondHierarchy then
+                    minfo2 :: minfos
+                else
+                    minfos
+            )
 
-                                 flags1 <- if HasRequiredSlotFlag RequiredSlotFlags.Optional flags1 then flags1 else flags2 
+    /// Get a collection of slots for the given interface type.
+    let GetInterfaceDispatchSlots (infoReader: InfoReader) m availImpliedInterfaces reqdTyInfos tys =
+        let g = infoReader.g
+        let amap = infoReader.amap
 
-                         if hasMostSpecificImplementation then
-                             yield bestSlot
-                         else
-                             yield RequiredSlot(minfo, RequiredSlotFlags.PossiblyNoMostSpecificImplementation) ]
+        [ for ty in tys do
+            if isInterfaceTy g ty then
+                // Check if the interface has an inherited implementation
+                // If so, you do not have to implement all the methods - each
+                // specific method is "optionally" implemented.
+                let isOptional = ListSet.contains (typeEquiv g) ty availImpliedInterfaces
+                for minfo in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap m ty do
+                  if minfo.IsNewSlot then
+                      if isOptional || not minfo.IsILMethod then
+                          yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo ||| (if isOptional then RequiredSlotFlags.Optional else RequiredSlotFlags.None))
+                      else
+                          let dispatchFlags =
+                              match GetTopMostHierarchicalInterfaceOverriderMethods infoReader m reqdTyInfos minfo with
+                              | [] -> GetDefaultDispatchSlotFlags minfo
+                              | [ minfo2 ] -> GetDefaultDispatchSlotFlags minfo2
+                              | _ -> RequiredSlotFlags.PossiblyNoMostSpecificImplementation
+
+                          yield RequiredSlot (minfo, dispatchFlags) ]
 
     /// Get a collection of slots for the given class type.
     let GetClassDispatchSlots (infoReader: InfoReader) m reqdTy =
@@ -541,8 +566,7 @@ module DispatchSlotChecking =
         let g = infoReader.g
 
         [ if isInterfaceTy g reqdTy then 
-            for impliedTy in impliedTys  do
-                yield! GetInterfaceDispatchSlots infoReader m availImpliedInterfaces reqdTyInfos impliedTy
+            yield! GetInterfaceDispatchSlots infoReader m availImpliedInterfaces reqdTyInfos impliedTys
           else                  
             yield! GetClassDispatchSlots infoReader m reqdTy ]
 
