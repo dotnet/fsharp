@@ -75,7 +75,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.Key = key
 
-    member __.ResolveDependencies(_scriptDir:string, _mainScriptName:string, _scriptName:string, packageManagerTextLines:string seq) : bool * string list * string list =
+    member __.ResolveDependencies(_scriptDir:string, _mainScriptName:string, _scriptName:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list =
 
         let packageReferences, binLogging =
             let validatePackageName package packageName =
@@ -134,7 +134,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
             let fsProjectPath = Path.Combine(scriptsPath, "Project.fsproj")
 
             let generateProjBody =
-                generateProjectBody.Replace("$(TARGETFRAMEWORK)", targetFramework)
+                generateProjectBody.Replace("$(TARGETFRAMEWORK)", tfm)
                                    .Replace("$(PACKAGEREFERENCES)", packageReferences)
 
             writeFile (Path.Combine(scriptsPath, "Library.fs")) generateLibrarySource

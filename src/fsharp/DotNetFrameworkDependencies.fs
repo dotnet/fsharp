@@ -78,7 +78,9 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                             | false, false -> String.Compare(suffix1, suffix2, StringComparison.InvariantCultureIgnoreCase)
             with _ -> 0
 
-    let executionTfm =
+    // Tries to figure out the tfm for the compiler instance.
+    // On coreclr it uses the deps.json file
+    let netcoreTfm =
         let file =
             try
                 let depsJsonPath = Path.ChangeExtension(Assembly.GetEntryAssembly().Location, "deps.json")
@@ -104,9 +106,53 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | _, -1 -> None
         | pos, length -> Some ("netcoreapp" + file.Substring(pos, length))
 
+    // Tries to figure out the tfm for the compiler instance on the Windows desktop.
+    // On full clr it uses the mscorlib version number
+    let getWindowsDesktopTfm () =
+        let defaultMscorlibVersion = 4,8,3815,0
+        let desktopProductVersionMonikers = [|
+            // major, minor, build, revision, moniker
+               4,     8,      3815,     0,    "net48"
+               4,     7,      3190,     0,    "net472"
+               4,     7,      2600,     0,    "net471"
+               4,     7,      2053,     0,    "net47"
+               4,     6,      1590,     0,    "net462"
+               4,     6,      1055,     0,    "net461"
+               4,     6,        81,     0,    "net46"
+               4,     0,     30319, 34209,    "net452"
+               4,     0,     30319, 18408,    "net451"
+               4,     0,     30319, 17929,    "net45"
+               4,     0,     30319,     1,    "net4"
+            |]
+
+        let majorPart, minorPart, buildPart, privatePart=
+            try
+                let attrOpt = typeof<Object>.Assembly.GetCustomAttributes(typeof<AssemblyFileVersionAttribute>) |> Seq.tryHead
+                match attrOpt with
+                | Some attr ->
+                    let fv = (downcast attr : AssemblyFileVersionAttribute).Version.Split([|'.'|]) |> Array.map(fun e ->  Int32.Parse(e))
+                    fv.[0], fv.[1], fv.[2], fv.[3]
+                | _ -> defaultMscorlibVersion
+            with _ -> defaultMscorlibVersion
+
+        // Get the ProductVersion of this framework compare with table yield compatible monikers
+        let _, _, _, _, moniker =
+            desktopProductVersionMonikers
+            |> Array.find (fun (major, minor, build, revision, _) ->
+                (majorPart >= major) &&
+                (minorPart >= minor) &&
+                (buildPart >= build) &&
+                (privatePart >= revision))
+        moniker
+
+    /// Gets the tfm E.g netcore3.0, net472
+    let executionTfm =
+        match netcoreTfm with
+        | Some tfm -> tfm
+        | _ -> getWindowsDesktopTfm ()
 
     let getFrameworkRefsPackDirectoryPath =
-        match executionTfm with
+        match netcoreTfm with
         | Some _ ->
             let appRefDir = Path.Combine(getFSharpCompilerLocation, "../../../packs/Microsoft.NETCore.App.Ref")
             if Directory.Exists(appRefDir) then
@@ -123,7 +169,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | _ -> false
 
     let getFrameworkRefsPackDirectory =
-        match executionTfm, getFrameworkRefsPackDirectoryPath with
+        match netcoreTfm, getFrameworkRefsPackDirectoryPath with
         | Some tfm, Some appRefDir ->
             try
                 let refDirs = Directory.GetDirectories(appRefDir)
@@ -131,8 +177,6 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                 Some(Path.Combine(versionPath, "ref", tfm))
             with | _ -> None
         | _ -> None
-
-
 
     let getDependenciesOf assemblyReferences =
         let assemblies = new Dictionary<string, string>()

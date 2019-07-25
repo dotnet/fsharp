@@ -516,16 +516,15 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
+    <!-- includes the core of the F# Compiler fsc.exe implementation -->
+    <Compile Include="..\DotNetFrameworkDependencies.fs">
+      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
     <Compile Include="..\DependencyManager.Integration.fsi">
       <Link>Driver\DependencyManager.Integration.fsi</Link>
     </Compile>
     <Compile Include="..\DependencyManager.Integration.fs">
       <Link>Driver\DependencyManager.Integration.fs</Link>
-    </Compile>
-
-    <!-- includes the core of the F# Compiler fsc.exe implementation -->
-    <Compile Include="..\DotNetFrameworkDependencies.fs">
-      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
     </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>

@@ -9,7 +9,7 @@ open System
 type IDependencyManagerProvider =
     abstract Name : string
     abstract Key: string
-    abstract ResolveDependencies : scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq -> bool * string list * string list
+    abstract ResolveDependencies : scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
 
 [<RequireQualifiedAccess>]
 type ReferenceType =

@@ -8,6 +8,7 @@ open System.Reflection
 open System.IO
 open FSharp.Compiler.ErrorLogger
 open Internal.Utilities.FSharpEnvironment
+open FSharp.Compiler.DotNetFrameworkDependencies
 
 // Contract strings
 let dependencyManagerPattern = "*DependencyManager*.dll"
@@ -61,7 +62,7 @@ module ReflectionHelper =
 type internal IDependencyManagerProvider =
     abstract Name : string
     abstract Key: string
-    abstract ResolveDependencies : scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq -> bool * string list * string list
+    abstract ResolveDependencies : scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
 
 [<RequireQualifiedAccess>]
 type ReferenceType =
@@ -78,7 +79,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         match ReflectionHelper.getAttributeNamed theType dependencyManagerAttributeName,
                 ReflectionHelper.getInstanceProperty<string> theType namePropertyName,
                 ReflectionHelper.getInstanceProperty<string> theType keyPropertyName,
-                ReflectionHelper.getInstanceMethod<bool * string list * string list> theType [|typeof<string>;typeof<string>;typeof<string>;typeof<string seq>;|] resolveDependenciesMethodName
+                ReflectionHelper.getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
                 with
         | None, _, _, _ -> None
         | _, None, _, _ -> None
@@ -90,8 +91,8 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     interface IDependencyManagerProvider with
         member __.Name     = instance |> nameProperty
         member __.Key      = instance |> keyProperty
-        member __.ResolveDependencies(scriptDir, mainScriptName, scriptName, packageManagerTextLines) =
-            let arguments = [| box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines |]
+        member __.ResolveDependencies(scriptDir, mainScriptName, scriptName, packageManagerTextLines, tfm) =
+            let arguments = [| box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines; box tfm |]
             resolveDeps.Invoke(instance, arguments) :?> _
 
 // Resolution Path = Location of FSharp.Compiler.Private.dll
@@ -174,9 +175,7 @@ let tryFindDependencyManagerByKey (compilerTools: string list) (outputDir:string
 
 let resolve (packageManager:IDependencyManagerProvider) implicitIncludeDir mainScriptName fileName m packageManagerTextLines =
     try
-        let result, loadScripts, additionalIncludeFolders =
-            packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, packageManagerTextLines)
-        Some(result, loadScripts, additionalIncludeFolders)
+        Some(packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, packageManagerTextLines, executionTfm))
     with e ->
         let e = ReflectionHelper.stripTieWrapper e
         errorR(Error(FSComp.SR.packageManagerError(e.Message), m))
