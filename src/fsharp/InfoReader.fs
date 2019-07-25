@@ -718,14 +718,16 @@ let TryFindILIntrinisicOverriderMethInfo (infoReader: InfoReader) m ad ty (overr
         |> List.tryFind (fun ilMethImpl -> 
             let overridesRef = ilMethImpl.Overrides.MethodRef
             overridesRef.Name = ilMeth.Name && overridesRef.ArgCount = ilMeth.ArgCount && 
-            overridesRef.GenericArity = ilMeth.GenericArity
+            overridesRef.GenericArity = ilMeth.GenericArity &&
+            overridesRef.DeclaringTypeRef.BasicQualifiedName = ilMethInfo.DeclaringTyconRef.CompiledRepresentationForNamedType.BasicQualifiedName
         )
         |> Option.bind (fun ilMethImpl ->
             TryFindIntrinsicMethInfo infoReader m ad ilMethImpl.OverrideBy.Name ty
             |> List.tryFind (fun methInfo ->
                 let overrideByRef = ilMethImpl.OverrideBy.MethodRef
                 overrideByRef.ArgCount = (match methInfo.NumArgs with [] -> 0 | count :: _ -> count) && 
-                overrideByRef.GenericArity = methInfo.GenericArity 
+                overrideByRef.GenericArity = methInfo.GenericArity &&
+                overrideByRef.DeclaringTypeRef.BasicQualifiedName = methInfo.DeclaringTyconRef.CompiledRepresentationForNamedType.BasicQualifiedName
             )
         )
     | _ ->

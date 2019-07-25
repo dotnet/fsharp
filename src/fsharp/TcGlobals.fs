@@ -166,8 +166,6 @@ let tname_RuntimeFieldHandle = "System.RuntimeFieldHandle"
 [<Literal>]
 let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
 [<Literal>]
-let tname_RuntimeFeature = "System.Runtime.CompilerServices.RuntimeFeature"
-[<Literal>]
 let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 [<Literal>]
 let tname_AsyncCallback = "System.AsyncCallback"
