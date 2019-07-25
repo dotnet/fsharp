@@ -1835,7 +1835,7 @@ type internal FsiInteractionProcessor
 
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
-        istate |> InteractiveCatch errorLogger (fun istate -> 
+        istate |> InteractiveCatch errorLogger (fun istate ->
             match action with 
             | IDefns ([  ],_) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
@@ -1855,12 +1855,18 @@ type internal FsiInteractionProcessor
 
             | IHash (ParsedHashDirective(("reference" | "r"), [path], m), _) -> 
                 match DependencyManagerIntegration.tryFindDependencyManagerInPath tcConfigB.compilerToolPaths tcConfigB.outputDir m (path:string) with
-                | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager -> 
-                    fsiDynamicCompiler.EvalDependencyManagerTextFragment(packageManager, m, path)
-                    istate,Completed None
+                | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager ->
+                   if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                       fsiDynamicCompiler.EvalDependencyManagerTextFragment(packageManager, m, path)
+                       istate,Completed None
+                   else
+                       errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                       istate, Completed None
+
                 | DependencyManagerIntegration.ReferenceType.UnknownType -> 
                     // error already reported
                     istate,Completed None
+
                 | DependencyManagerIntegration.ReferenceType.Library path ->
                     let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                     resolutions |> List.iter (fun ar -> 

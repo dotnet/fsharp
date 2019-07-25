@@ -22,6 +22,11 @@
         <target state="translated">--langversion 的值“{0}”无法识别，使用 --langversion:? 获取完整列表。</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">成员定义中有意外的符号 "."。预期 "with"、"+" 或其他标记。</target>

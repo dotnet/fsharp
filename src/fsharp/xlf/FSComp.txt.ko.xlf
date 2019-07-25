@@ -22,6 +22,11 @@
         <target state="translated">전체 목록에 대한 --langversion use --langversion:?의 인식할 수 없는 값 '{0}'입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">멤버 정의의 예기치 않은 기호 '.'입니다. 'with', '=' 또는 기타 토큰이 필요합니다.</target>

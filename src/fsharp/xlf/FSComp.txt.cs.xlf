@@ -22,6 +22,11 @@
         <target state="translated">Nerozpoznaná hodnota {0} pro parametr --langversion; seznam možností zobrazíte zadáním --langversion:?</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Neočekávaný symbol . v definici členu. Očekávalo se with, = nebo jiný token.</target>

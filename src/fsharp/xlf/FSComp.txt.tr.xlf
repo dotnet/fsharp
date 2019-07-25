@@ -22,6 +22,11 @@
         <target state="translated">--langversion için '{0}' değeri tanınmıyor. Tam liste için --langversion:? kullanın</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Üye tanımında '.' sembolü beklenmiyordu. 'with', '=' veya başka bir belirteç bekleniyordu.</target>

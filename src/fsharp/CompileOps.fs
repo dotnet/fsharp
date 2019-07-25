@@ -3167,8 +3167,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             else 
                 resultingResolutions, unresolvedReferences |> List.map (fun (name, _, r) -> (name, r)) |> List.map UnresolvedAssemblyReference    
 
-
     member tcConfig.PrimaryAssemblyDllReference() = primaryAssemblyReference
+
     member tcConfig.CoreLibraryDllReference() = fslibReference
 
 
@@ -4841,7 +4841,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
     let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> AddCcuToTcEnv(g, amap, m, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)) 
     tcEnv, (dllinfos, asms)
 
-let ProcessMetaCommandsFromInput 
+let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
       packageRequireF: 'state -> DependencyManagerIntegration.IDependencyManagerProvider * range * string -> 'state,
@@ -4874,21 +4874,30 @@ let ProcessMetaCommandsFromInput
                List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
             | ParsedHashDirective(("reference" | "r"),args,m) -> 
-               if not canHaveScriptMetaCommands then 
+               if not canHaveScriptMetaCommands then
                    errorR(HashReferenceNotAllowedInNonScript m)
-               match args with 
-               | [path] -> 
-                   matchedm<-m
+
+               match args with
+               | [path] ->
+                   matchedm <- m
                    match DependencyManagerIntegration.tryFindDependencyManagerInPath tcConfig.compilerToolPaths tcConfig.outputDir m (path:string) with
-                   | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager -> 
-                       packageRequireF state (packageManager,m,path)
+                   | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager ->
+                       if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                           packageRequireF state (packageManager,m,path)
+                       else
+                           errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                           state
+
+                   // #r "Assembly"
                    | DependencyManagerIntegration.ReferenceType.Library path ->
                        dllRequireF state (m,path)
+
                    | DependencyManagerIntegration.ReferenceType.UnknownType ->
                        state // error already reported
-               | _ -> 
+               | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
                    state
+
             | ParsedHashDirective("load", args, m) -> 
                if not canHaveScriptMetaCommands then 
                    errorR(HashDirectiveNotAllowedInNonScript m)

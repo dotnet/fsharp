@@ -1478,3 +1478,4 @@ optsLangVersion,"Display the allowed values for language version, specify langua
 optsSupportedLangVersions,"Supported language versions:"
 nativeResourceFormatError,"Stream does not begin with a null resource and is not in '.RES' format."
 nativeResourceHeaderMalformed,"Resource header beginning at offset %s is malformed."
+3302,packageManagementRequiresVFive,"The package management feature requires language version 5.0 use /langversion:preview"

@@ -13,6 +13,7 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
+    | PackageManagement = 9
     | LanguageVersion46 = 0x10046
     | LanguageVersion47 = 0x10047
     | LanguageVersion50 = 0x10050
