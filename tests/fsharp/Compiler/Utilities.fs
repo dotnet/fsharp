@@ -64,50 +64,57 @@ module private TargetFrameworkUtil =
 
 type RoslynLanguageVersion = LanguageVersion
 
+[<Flags>]
+type CSharpCompilationFlags =
+    | None = 0x0
+    | InternalsVisibleTo = 0x1
+
 [<RequireQualifiedAccess>]
 type TestCompilation =
-    | CSharp of CSharpCompilation
-    | IL of result: Lazy<string * byte []> * assemblyName: string
+    | CSharp of CSharpCompilation * CSharpCompilationFlags
+    | IL of ilSource: string * result: Lazy<string * byte []>
 
     member this.AssertNoErrorsOrWarnings () =
         match this with
-        | TestCompilation.CSharp c ->
+        | TestCompilation.CSharp (c, _) ->
             let diagnostics = c.GetDiagnostics ()
 
             if not diagnostics.IsEmpty then                  
                 NUnit.Framework.Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
 
-        | TestCompilation.IL (result, _) ->
+        | TestCompilation.IL (_, result) ->
             let errors, _ = result.Value
             if errors.Length > 0 then
                 NUnit.Framework.Assert.Fail ("IL source errors: " + errors)
 
     member this.EmitAsFile (outputPath: string) =
         match this with
-        | TestCompilation.CSharp c ->
+        | TestCompilation.CSharp (c, _) ->
             let emitResult = c.Emit outputPath
             if not emitResult.Success then
                 failwithf "Unable to emit C# compilation.\n%A" emitResult.Diagnostics
 
-        | TestCompilation.IL (result, _) ->
+        | TestCompilation.IL (_, result) ->
             let (_, data) = result.Value
             File.WriteAllBytes (outputPath, data)
 
 [<AbstractClass; Sealed>]
 type CompilationUtil private () =
     
-    static member CreateCSharpCompilation (source: string, lv: RoslynLanguageVersion, ?tf, ?additionalReferences) =
+    static member CreateCSharpCompilation (source: string, lv: RoslynLanguageVersion, ?tf, ?additionalReferences, ?flags) =
         let tf = defaultArg tf TargetFramework.NetStandard20
         let additionalReferences = defaultArg additionalReferences ImmutableArray.Empty
+        let flags = defaultArg flags CSharpCompilationFlags.None
         let references = TargetFrameworkUtil.getReferences tf
-        CSharpCompilation.Create(
-            Guid.NewGuid().ToString (),
-            [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
-            references.As<MetadataReference>().AddRange additionalReferences,
-            CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
-        |> TestCompilation.CSharp
+        let c =
+            CSharpCompilation.Create(
+                Guid.NewGuid().ToString (),
+                [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
+                references.As<MetadataReference>().AddRange additionalReferences,
+                CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
+        TestCompilation.CSharp (c, flags)
 
-    static member CreateILCompilation (source: string, assemblyName) =
+    static member CreateILCompilation (source: string) =
         let compute =
             lazy
                 let ilFilePath = Path.GetTempFileName ()
@@ -124,4 +131,4 @@ type CompilationUtil private () =
                     try File.Delete ilFilePath with | _ -> ()
                     try File.Delete tmp with | _ -> ()
                     try File.Delete dllFilePath with | _ -> ()
-        TestCompilation.IL (compute, assemblyName)
+        TestCompilation.IL (source, compute)

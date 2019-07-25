@@ -76,13 +76,11 @@ type CompilerAssert private () =
 
     static let gate = obj ()
 
-    static let compile extraArgs isExe source f =
+    static let compile extraArgs isExe source outputFilePath f =
         lock gate <| fun () ->
             let tmp1 = Path.GetTempFileName()
-            let tmp2 = Path.GetTempFileName()
 
             let inputFilePath = Path.ChangeExtension(tmp1, ".fs")
-            let outputFilePath = Path.ChangeExtension (tmp2, if isExe then ".exe" else ".dll")
             let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
             let fsCoreDllPath = config.FSCOREDLLPATH
             let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
@@ -110,10 +108,8 @@ type CompilerAssert private () =
 
             finally
                 try File.Delete tmp1 with | _ -> ()
-                try File.Delete tmp2 with | _ -> ()
 
                 try File.Delete inputFilePath with | _ -> ()
-                try File.Delete outputFilePath with | _ -> ()
                 try File.Delete runtimeConfigFilePath with | _ -> ()
                 try File.Delete tmpFsCoreFilePath with | _ -> ()
 
@@ -139,27 +135,66 @@ type CompilerAssert private () =
 
         p.StandardOutput.ReadToEnd ()
 
-    static let compileWithOptions (source: string) (fsharpLanguageVersion: string) (compilation: TestCompilation) extraArgs isExe f =
-        let tmp1 = Path.GetTempPath ()
-        let fileName = 
-            match compilation with
-            | TestCompilation.CSharp compilation ->
-                compilation.AssemblyName + (if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe")
-            | TestCompilation.IL (_, assemblyName) -> assemblyName + ".dll"
+    static let compileWithOptions (source: string) (fsharpLanguageVersion: string) (compilationOpt: TestCompilation option) extraArgs isExe f =
+        let tmp1 = Path.GetTempFileName ()
+        let tmp2 = Path.GetTempFileName ()
 
-        let compilationOutputPath = Path.Combine (tmp1, fileName)
+        let ext = 
+            match compilationOpt with
+            | Some compilation ->
+                match compilation with
+                | TestCompilation.CSharp (compilation, _) ->
+                    if compilation.Options.OutputKind = OutputKind.DynamicallyLinkedLibrary then ".dll" else ".exe"
+                | TestCompilation.IL _ -> 
+                    ".dll"
+            | _ ->
+                ".dll"
+
+        let compilationOutputPath = Path.ChangeExtension(tmp1, ext)
+        let outputFilePath = Path.ChangeExtension(tmp2, if isExe then ".exe" else ".dll") 
+
         try
-            compilation.AssertNoErrorsOrWarnings ()
-            compilation.EmitAsFile compilationOutputPath
+            match compilationOpt with
+            | Some compilation ->
+                let compilation =
+                    match compilation with
+                    | TestCompilation.CSharp (c, flags) ->
+                        let c = c.WithAssemblyName(Path.GetFileNameWithoutExtension compilationOutputPath)
+                        if (flags &&& CSharpCompilationFlags.InternalsVisibleTo) = CSharpCompilationFlags.InternalsVisibleTo then
+                            let ivtSource =
+                                sprintf "
+using System.Runtime.CompilerServices;
+                            
+[assembly: InternalsVisibleTo(@\"%s\")]" (Path.GetFileNameWithoutExtension outputFilePath)
+                            TestCompilation.CSharp (c.AddSyntaxTrees (CSharpSyntaxTree.ParseText(ivtSource, CSharpParseOptions c.LanguageVersion)), CSharpCompilationFlags.None)
+                        else
+                            TestCompilation.CSharp (c, CSharpCompilationFlags.None)
+                    | TestCompilation.IL (ilSource, _) ->
+                        let dllName = Path.GetFileName compilationOutputPath
+                        let assemblyNameILSource =
+                            sprintf "
+.assembly %s
+{
+}
+.module %s
+                            " dllName dllName
+                        CompilationUtil.CreateILCompilation (assemblyNameILSource + ilSource)
 
-            compile (Array.append [|"--langversion:" + fsharpLanguageVersion; "-r:" + compilationOutputPath|] extraArgs) isExe source f
+                compilation.AssertNoErrorsOrWarnings ()
+                compilation.EmitAsFile compilationOutputPath
+            | _ ->
+                ()
+
+            compile (Array.append [| yield "--langversion:" + fsharpLanguageVersion; if compilationOpt.IsSome then yield "-r:" + compilationOutputPath |] extraArgs) isExe source outputFilePath f
         finally
             try File.Delete tmp1 with | _ -> ()
+            try File.Delete tmp2 with | _ -> ()
 
             try File.Delete compilationOutputPath with | _ -> ()
+            try File.Delete outputFilePath with | _ -> ()
 
     static member Compile (source: string, fsharpLanguageVersion: string, compilation: TestCompilation) =
-        compileWithOptions source fsharpLanguageVersion compilation [||] false (fun (errors, _) -> 
+        compileWithOptions source fsharpLanguageVersion (Some compilation) [||] false (fun (errors, _) -> 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
         )
@@ -198,7 +233,7 @@ type CompilerAssert private () =
 
     static member HasTypeCheckErrors (source: string, compilation, expectedErrors: TestError list, ?fsharpLanguageVersion) =
         let fsharpLanguageVersion = defaultArg fsharpLanguageVersion "default"
-        compileWithOptions source fsharpLanguageVersion compilation [||] false (fun (errors, _) -> 
+        compileWithOptions source fsharpLanguageVersion (Some compilation) [||] false (fun (errors, _) -> 
             let errors =
                 errors 
                 |> Array.map (fun err ->
@@ -227,12 +262,12 @@ type CompilerAssert private () =
         )
 
     static member CompileExe (source: string) =
-        compile [||] true source (fun (errors, _) -> 
+        compileWithOptions source "default" None [||] true (fun (errors, _) -> 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
     static member CompileExeAndRun (source: string) =
-        compile [||] true source (fun (errors, outputExe) ->
+        compileWithOptions source "default" None [||] true (fun (errors, outputExe) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
@@ -241,7 +276,7 @@ type CompilerAssert private () =
 
     static member CompileExeAndRun (source: string, compilation, expectedOutput: string, ?fsharpLanguageVersion) =
         let fsharpLanguageVersion = defaultArg fsharpLanguageVersion "default"
-        compileWithOptions source fsharpLanguageVersion compilation [||] true (fun (errors, outputExe) ->
+        compileWithOptions source fsharpLanguageVersion (Some compilation) [||] true (fun (errors, outputExe) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
@@ -249,7 +284,7 @@ type CompilerAssert private () =
         )
 
     static member CompileAndVerifyIL (source: string) (f: ILVerifier -> unit) =
-        compile [||] false source (fun (errors, outputFilePath) -> 
+        compileWithOptions source "default" None [||] false (fun (errors, outputFilePath) -> 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 

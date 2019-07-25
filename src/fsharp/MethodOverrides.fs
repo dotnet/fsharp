@@ -465,7 +465,7 @@ module DispatchSlotChecking =
         (if minfo.IsDefaultInterfaceMethod then RequiredSlotFlags.DefaultInterfaceImplementation else RequiredSlotFlags.None)
 
     /// Get a collection of interface methods that are overrider (aka. override by) slots for the given method from the given types.
-    let GetInterfaceOverriderMethods (infoReader: InfoReader) m (minfo: MethInfo) tys =
+    let GetInterfaceOverriderMethods (infoReader: InfoReader) ad m (minfo: MethInfo) tys =
         let g = infoReader.g
         let amap = infoReader.amap
         let mty = minfo.ApparentEnclosingType
@@ -475,7 +475,7 @@ module DispatchSlotChecking =
             |> List.choose (fun ty ->
                 if isInterfaceTy g ty && not (typeEquiv g mty ty) && TypeFeasiblySubsumesType 0 g amap m mty CanCoerce ty then
                     // We are only looking for IL overriders because F# does not support creating your own default interface methods.
-                    match TryFindILIntrinisicOverriderMethInfo infoReader m AccessibleFromSomewhere ty minfo with
+                    match TryFindILIntrinisicOverriderMethInfo infoReader m ad ty minfo with
                     | Some minfo2 when not minfo2.IsNewSlot -> Some minfo2
                     | _ -> None
                 else
@@ -484,7 +484,7 @@ module DispatchSlotChecking =
             []
 
     /// Get a collection of interface methods that are the top most overrider methods in the hierarchy for the given method from the required type infos.
-    let GetTopMostHierarchicalInterfaceOverriderMethods (infoReader: InfoReader) m reqdTyInfos (minfo: MethInfo) =
+    let GetTopMostHierarchicalInterfaceOverriderMethods (infoReader: InfoReader) ad m reqdTyInfos (minfo: MethInfo) =
         let g = infoReader.g
         let amap = infoReader.amap
 
@@ -497,7 +497,7 @@ module DispatchSlotChecking =
         let sortedOverriderMethods =
             reqdTyInfos
             |> List.map (fun (_, _, _, impliedTys) ->
-                GetInterfaceOverriderMethods infoReader m minfo impliedTys
+                GetInterfaceOverriderMethods infoReader ad m minfo impliedTys
             )
             |> List.reduce (@) // ok to use reduce here without checking as we will always have 1 item
             // Sort the hierarchy to determine the best possible method.
@@ -527,7 +527,7 @@ module DispatchSlotChecking =
             )
 
     /// Get a collection of slots for the given interface type.
-    let GetInterfaceDispatchSlots (infoReader: InfoReader) m availImpliedInterfaces reqdTyInfos tys =
+    let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces reqdTyInfos tys =
         let g = infoReader.g
         let amap = infoReader.amap
 
@@ -537,13 +537,13 @@ module DispatchSlotChecking =
                 // If so, you do not have to implement all the methods - each
                 // specific method is "optionally" implemented.
                 let isOptional = ListSet.contains (typeEquiv g) ty availImpliedInterfaces
-                for minfo in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap m ty do
+                for minfo in GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty do
                   if minfo.IsNewSlot then
                       if isOptional || not minfo.IsILMethod then
                           yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo ||| (if isOptional then RequiredSlotFlags.Optional else RequiredSlotFlags.None))
                       else
                           let dispatchFlags =
-                              match GetTopMostHierarchicalInterfaceOverriderMethods infoReader m reqdTyInfos minfo with
+                              match GetTopMostHierarchicalInterfaceOverriderMethods infoReader ad m reqdTyInfos minfo with
                               | [] -> GetDefaultDispatchSlotFlags minfo
                               | [ minfo2 ] -> GetDefaultDispatchSlotFlags minfo2
                               | _ -> RequiredSlotFlags.PossiblyNoMostSpecificImplementation
@@ -551,24 +551,24 @@ module DispatchSlotChecking =
                           yield RequiredSlot (minfo, dispatchFlags) ]
 
     /// Get a collection of slots for the given class type.
-    let GetClassDispatchSlots (infoReader: InfoReader) m reqdTy =
+    let GetClassDispatchSlots (infoReader: InfoReader) ad m reqdTy =
         let g = infoReader.g
 
         [ if not (isInterfaceTy g reqdTy) then
             // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
             // So here we get and yield all of those.
-            for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m do
+            for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m do
                 if minfo.IsDispatchSlot then
                     yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo) ]
 
     /// Get a collection of slots for the given type and implied types.
-    let GetDispatchSlots (infoReader: InfoReader) m availImpliedInterfaces reqdTyInfos reqdTy impliedTys =
+    let GetDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces reqdTyInfos reqdTy impliedTys =
         let g = infoReader.g
 
         [ if isInterfaceTy g reqdTy then 
-            yield! GetInterfaceDispatchSlots infoReader m availImpliedInterfaces reqdTyInfos impliedTys
+            yield! GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces reqdTyInfos impliedTys
           else                  
-            yield! GetClassDispatchSlots infoReader m reqdTy ]
+            yield! GetClassDispatchSlots infoReader ad m reqdTy ]
 
     /// Get the slots of a type that can or must be implemented. This depends
     /// partly on the full set of interface types that are being implemented
@@ -577,7 +577,7 @@ module DispatchSlotChecking =
     /// allReqdTys = {C;I2;I3}
     ///
     /// allReqdTys can include one class/record/union type. 
-    let GetSlotImplSets (infoReader: InfoReader) denv isObjExpr allReqdTys = 
+    let GetSlotImplSets (infoReader: InfoReader) denv ad isObjExpr allReqdTys = 
 
         let g = infoReader.g
         let amap = infoReader.amap
@@ -626,7 +626,7 @@ module DispatchSlotChecking =
                 if i > j then  
                     let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
                     overlap |> List.iter (fun overlappingTy -> 
-                        if not (isNil (GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
+                        if not (isNil (GetImmediateIntrinsicMethInfosOfType (None, ad) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
                             errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)), reqdTyRange)))
 
         // Get the SlotImplSet for each implemented type
@@ -650,7 +650,7 @@ module DispatchSlotChecking =
             //    not minfo.IsAbstract && minfo.IsVirtual 
 
             // Compute the abstract slots that require implementations
-            let dispatchSlots = GetDispatchSlots infoReader reqdTyRange availImpliedInterfaces reqdTyInfos reqdTy impliedTys
+            let dispatchSlots = GetDispatchSlots infoReader ad reqdTyRange availImpliedInterfaces reqdTyInfos reqdTy impliedTys
                 
             // Compute the methods that are available to implement abstract slots from the base class
             //
@@ -673,7 +673,7 @@ module DispatchSlotChecking =
                       // and not always correctly relate them to the slots they implement. For example,
                       // we may get an override from a base class and believe it implements a fresh, new abstract
                       // slot in a subclass. 
-                      for minfos in infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, reqdTyRange, reqdTy) do
+                      for minfos in infoReader.GetRawIntrinsicMethodSetsOfType(None, ad, AllowMultiIntfInstantiations.Yes, reqdTyRange, reqdTy) do
                         for minfo in minfos do
                           if not minfo.IsAbstract then
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo ]
@@ -684,7 +684,7 @@ module DispatchSlotChecking =
                 isImpliedInterfaceType x.ApparentEnclosingType
                 
             let reqdProperties = 
-                GetIntrinsicPropInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
+                GetIntrinsicPropInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
                 |> List.filter isRelevantRequiredProperty
                 
             let dispatchSlotsKeyed = dispatchSlots |> NameMultiMap.initBy (fun (RequiredSlot(v, _)) -> v.LogicalName) 
@@ -710,7 +710,7 @@ module DispatchSlotChecking =
         let allImmediateMembers = tycon.MembersOfFSharpTyconSorted @ tycon.AllGeneratedValues
 
         // Get all the members we have to implement, organized by each type we explicitly implement
-        let slotImplSets = GetSlotImplSets infoReader denv false allReqdTys
+        let slotImplSets = GetSlotImplSets infoReader denv AccessibleFromSomewhere false allReqdTys
 
         let allImpls = List.zip allReqdTys slotImplSets
 

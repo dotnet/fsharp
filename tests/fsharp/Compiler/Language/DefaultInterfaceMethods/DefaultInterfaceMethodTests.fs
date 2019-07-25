@@ -10,6 +10,51 @@ open NUnit.Framework
 module DefaultInterfaceMethodConsumptionTests_LanguageVersion_4_6 =
 
     [<Test>]
+    let ``IL - Errors with lang version not supported`` () =
+        let ilSource =
+            """
+.class interface public abstract auto ansi ILTest.ITest
+{
+    .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
+    {
+        .maxstack  8
+        IL_0000:  ret
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open ILTest
+
+type Test () =
+
+    interface ITest
+            """
+
+        let c = CompilationUtil.CreateILCompilation ilSource
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3302
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }        
+            {
+                Number = 366
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+    [<Test>]
     let ``C# with explicit implementation - Runs`` () =
         let csharpSource =
             """
@@ -250,6 +295,108 @@ Note that all interface members must be implemented and listed under an appropri
             }
         ], fsharpLanguageVersion = "4.6")
 
+    [<Test>]
+    let ``C# simple with internal DIM - Errors with lang version not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        internal void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.NonDefaultMethod () = Console.Write("NonDefaultMethod")
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3302
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 19
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 366
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 19
+                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+    [<Test>]
+    let ``C# simple with internal DIM - Errors with not accessible`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        internal void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.DefaultMethod () = Console.Write("DefaultMethod")
+
+        member __.NonDefaultMethod () = Console.Write("NonDefaultMethod")
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 855
+                StartLine = 11
+                StartColumn = 18
+                EndLine = 11
+                EndColumn = 31
+                Message = "No abstract or interface member was found that corresponds to this override"
+            }
+        ], fsharpLanguageVersion = "4.6")
+
 #else
 
 [<TestFixture>]
@@ -259,11 +406,6 @@ module DefaultInterfaceMethodConsumptionTests_LanguageVersion_4_6 =
     let ``IL - Errors with lang version and target runtime not supported`` () =
         let ilSource =
             """
-.assembly ILTest.dll
-{
-}
-.module ILTest.dll
-
 .class interface public abstract auto ansi ILTest.ITest
 {
     .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
@@ -285,7 +427,7 @@ type Test () =
     interface ITest
             """
 
-        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
+        let c = CompilationUtil.CreateILCompilation ilSource
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
                 Number = 3303
@@ -317,11 +459,6 @@ type Test () =
     let ``IL - Errors with target runtime not supported when implemented`` () =
         let ilSource =
             """
-.assembly ILTest.dll
-{
-}
-.module ILTest.dll
-
 .class interface public abstract auto ansi ILTest.ITest
 {
     .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
@@ -345,7 +482,7 @@ type Test () =
         member __.DefaultMethod () = ()
             """
 
-        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
+        let c = CompilationUtil.CreateILCompilation ilSource
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
                 Number = 3303
@@ -450,6 +587,197 @@ let main _ =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-NonDefaultMethod")
+
+    [<Test>]
+    let ``C# simple with internal DIM - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        internal void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.NonDefaultMethod () =
+            Console.Write("NonDefaultMethod")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest
+    test.NonDefaultMethod ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "NonDefaultMethod")
+
+    [<Test>]
+    let ``C# simple with internal DIM - Errors with missing method`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        internal void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.NonDefaultMethod () =
+            Console.Write("NonDefaultMethod")
+
+let f () =
+    let test = Test () :> ITest
+    test.DefaultMethod ()
+    test.NonDefaultMethod ()
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 39
+                StartLine = 16
+                StartColumn = 9
+                EndLine = 16
+                EndColumn = 22
+                Message = "The field, constructor or member 'DefaultMethod' is not defined. Maybe you want one of the following:
+   NonDefaultMethod"
+            }
+        ])
+
+    [<Test>]
+    let ``C# simple with internal DIM - Errors with not accessible`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        internal void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.DefaultMethod () =
+            Console.Write("DefaultMethod")
+
+        member __.NonDefaultMethod () =
+            Console.Write("NonDefaultMethod")
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 855;
+                StartLine = 11;
+                StartColumn = 18;
+                EndLine = 11;
+                EndColumn = 31;
+                Message = "No abstract or interface member was found that corresponds to this override"
+            }
+        ])
+
+    [<Test>]
+    let ``C# simple with internal DIM but with IVT - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        internal void DefaultMethod()
+        {
+            Console.Write(nameof(DefaultMethod));
+        }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.DefaultMethod () =
+            Console.Write("IVT-")
+
+        member __.NonDefaultMethod () =
+            Console.Write("NonDefaultMethod")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest
+    test.DefaultMethod ()
+    test.NonDefaultMethod ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30, flags = CSharpCompilationFlags.InternalsVisibleTo)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IVT-NonDefaultMethod")
 
     [<Test>]
     let ``C# simple with one DIM for F# object expression - Runs`` () =
@@ -1497,6 +1825,86 @@ let main _ =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpICombinedTest-Method1-CSharpICombinedTest-Method2")
 
+    [<Test>]
+    let ``C# simple with property - Runs`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        string A { get { return "A"; } }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.NonDefaultMethod () =
+            Console.Write("NonDefaultMethod")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest
+    Console.Write(test.A)
+    Console.Write("-")
+    test.NonDefaultMethod ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "A-NonDefaultMethod")
+
+    [<Test>]
+    let ``C# simple with property and override - Runs`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        string A { get { return "A"; } }
+
+        void NonDefaultMethod();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.A with get () = "OverrideA"
+
+        member __.NonDefaultMethod () =
+            Console.Write("NonDefaultMethod")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest
+    Console.Write(test.A)
+    Console.Write("-")
+    test.NonDefaultMethod ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "OverrideA-NonDefaultMethod")
+
 #else
 
 [<TestFixture>]
@@ -1506,11 +1914,6 @@ module DefaultInterfaceMethodConsumptionTests =
     let ``IL - Errors with target runtime not supported`` () =
         let ilSource =
             """
-.assembly ILTest.dll
-{
-}
-.module ILTest.dll
-
 .class interface public abstract auto ansi ILTest.ITest
 {
     .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
@@ -1532,7 +1935,7 @@ type Test () =
     interface ITest
             """
 
-        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
+        let c = CompilationUtil.CreateILCompilation ilSource
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
                 Number = 3303
