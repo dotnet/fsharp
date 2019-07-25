@@ -77,17 +77,16 @@ type CompilerAssert private () =
     static let gate = obj ()
 
     static let compile extraArgs isExe source outputFilePath f =
-        lock gate <| fun () ->
-            let tmp1 = Path.GetTempFileName()
+        let tmp1 = Path.GetTempFileName()
 
-            let inputFilePath = Path.ChangeExtension(tmp1, ".fs")
-            let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
-            let fsCoreDllPath = config.FSCOREDLLPATH
-            let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
-            try
-                File.Copy (fsCoreDllPath , tmpFsCoreFilePath, true)
-                File.WriteAllText (inputFilePath, source)
-                File.WriteAllText (runtimeConfigFilePath, """
+        let inputFilePath = Path.ChangeExtension(tmp1, ".fs")
+        let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
+        let fsCoreDllPath = config.FSCOREDLLPATH
+        let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
+        try
+            File.Copy (fsCoreDllPath , tmpFsCoreFilePath, true)
+            File.WriteAllText (inputFilePath, source)
+            File.WriteAllText (runtimeConfigFilePath, """
 {
   "runtimeOptions": {
     "tfm": "netcoreapp3.0",
@@ -99,19 +98,19 @@ type CompilerAssert private () =
 }
                 """)
 
-                let args =
-                    defaultProjectOptions.OtherOptions
-                    |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
-                let errors, _ = checker.Compile (Array.append args extraArgs) |> Async.RunSynchronously
+            let args =
+                defaultProjectOptions.OtherOptions
+                |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
+            let errors, _ = checker.Compile (Array.append args extraArgs) |> Async.RunSynchronously
 
-                f (errors, outputFilePath)
+            f (errors, outputFilePath)
 
-            finally
-                try File.Delete tmp1 with | _ -> ()
+        finally
+            try File.Delete tmp1 with | _ -> ()
 
-                try File.Delete inputFilePath with | _ -> ()
-                try File.Delete runtimeConfigFilePath with | _ -> ()
-                try File.Delete tmpFsCoreFilePath with | _ -> ()
+            try File.Delete inputFilePath with | _ -> ()
+            try File.Delete runtimeConfigFilePath with | _ -> ()
+            try File.Delete tmpFsCoreFilePath with | _ -> ()
 
     static let run outputExe =
         let pInfo = ProcessStartInfo ()
@@ -136,8 +135,7 @@ type CompilerAssert private () =
         p.StandardOutput.ReadToEnd ()
 
     static let compileWithOptions (source: string) (fsharpLanguageVersion: string) (compilationOpt: TestCompilation option) extraArgs isExe f =
-        let tmp1 = Path.GetTempFileName ()
-        let tmp2 = Path.GetTempFileName ()
+        let tmpFSharpCompilationOutputFilePath = Path.GetTempFileName ()
 
         let ext = 
             match compilationOpt with
@@ -150,8 +148,11 @@ type CompilerAssert private () =
             | _ ->
                 ".dll"
 
-        let compilationOutputPath = Path.ChangeExtension(tmp1, ext)
-        let outputFilePath = Path.ChangeExtension(tmp2, if isExe then ".exe" else ".dll") 
+        let outputDir = Directory.CreateDirectory (Path.Combine (Path.GetDirectoryName tmpFSharpCompilationOutputFilePath, Path.GetFileNameWithoutExtension tmpFSharpCompilationOutputFilePath)) 
+        let outputFilePath = Path.ChangeExtension(Path.Combine (outputDir.FullName, Path.GetFileName tmpFSharpCompilationOutputFilePath), if isExe then ".exe" else ".dll") 
+        let compilationOutputPath = 
+            let fileName = Path.ChangeExtension((Path.GetFileNameWithoutExtension outputFilePath) + "_compilation_reference", ext)
+            Path.Combine (outputDir.FullName, fileName)
 
         try
             match compilationOpt with
@@ -187,11 +188,11 @@ using System.Runtime.CompilerServices;
 
             compile (Array.append [| yield "--langversion:" + fsharpLanguageVersion; if compilationOpt.IsSome then yield "-r:" + compilationOutputPath |] extraArgs) isExe source outputFilePath f
         finally
-            try File.Delete tmp1 with | _ -> ()
-            try File.Delete tmp2 with | _ -> ()
+            try File.Delete tmpFSharpCompilationOutputFilePath with | _ -> ()
 
             try File.Delete compilationOutputPath with | _ -> ()
             try File.Delete outputFilePath with | _ -> ()
+            try outputDir.Delete true with | _ -> ()
 
     static member Compile (source: string, fsharpLanguageVersion: string, compilation: TestCompilation) =
         compileWithOptions source fsharpLanguageVersion (Some compilation) [||] false (fun (errors, _) -> 
