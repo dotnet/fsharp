@@ -850,7 +850,12 @@ type internal TypeCheckInfo
             | Some(CompletionContext.OpenDeclaration) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
-                    items |> List.filter (fun x -> match x.Item with Item.ModuleOrNamespaces _ -> true | _ -> false), denv, m)
+                    items 
+                    |> List.filter (fun x ->
+                        match x.Item with
+                        | Item.ModuleOrNamespaces _ -> true
+                        | Item.Types (_, tcrefs) when tcrefs |> List.exists (fun ty -> isAppTy g ty && isStaticClass g (tcrefOfAppTy g ty)) -> true
+                        | _ -> false), denv, m)
             
             // Completion at '(x: ...)"
             | Some (CompletionContext.PatternType) ->
@@ -1277,9 +1282,8 @@ type internal TypeCheckInfo
                valRefEq g g.reraise_vref vref ||
                valRefEq g g.typeof_vref vref ||
                valRefEq g g.typedefof_vref vref ||
-               valRefEq g g.sizeof_vref vref 
-               // TODO uncomment this after `nameof` operator is implemented
-               // || valRefEq g g.nameof_vref vref
+               valRefEq g g.sizeof_vref vref ||
+               valRefEq g g.nameof_vref vref
             then Some()
             else None
         

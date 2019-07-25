@@ -1446,7 +1446,10 @@ and
       IsSealed: bool 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-      IsInterface: bool 
+      IsAbstract:  bool 
+
+      /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+      IsInterface:  bool 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
       IsStructOrEnum: bool 
@@ -2009,6 +2012,7 @@ and Construct =
               IsStructOrEnum = st.PUntaint((fun st -> st.IsValueType || st.IsEnum), m)
               IsInterface = st.PUntaint((fun st -> st.IsInterface), m)
               IsSealed = st.PUntaint((fun st -> st.IsSealed), m)
+              IsAbstract = st.PUntaint((fun st -> st.IsAbstract), m)
               IsClass = st.PUntaint((fun st -> st.IsClass), m)
               IsErased = isErased
               IsSuppressRelocate = isSuppressRelocate }
