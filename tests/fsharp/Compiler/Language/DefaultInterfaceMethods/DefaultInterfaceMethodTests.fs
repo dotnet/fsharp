@@ -1746,6 +1746,79 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
 
     [<Test>]
+    let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented one method - Errors with no most specific implementation`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        abstract void ITest1.Method1();
+
+        abstract void ITest1.Method2();
+    }
+
+    public interface ITest3 : ITest1
+    {
+        abstract void ITest1.Method1();
+
+        abstract void ITest1.Method2();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open CSharpTest
+
+type ICombinedTest =
+    inherit ITest1
+    inherit ITest2
+    inherit ITest3
+
+type Test () =
+
+    interface ICombinedTest with
+
+        member __.Method2 () = Console.Write("FSharpICombinedTest-Method2")
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3304;
+                StartLine = 14;
+                StartColumn = 14;
+                EndLine = 14;
+                EndColumn = 27;
+                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366;
+                StartLine = 14;
+                StartColumn = 14;
+                EndLine = 14;
+                EndColumn = 27;
+                Message = "No implementation was given for 'ITest1.Method1() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ])
+
+    [<Test>]
     let ``C# diamond hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
         let csharpSource =
             """
