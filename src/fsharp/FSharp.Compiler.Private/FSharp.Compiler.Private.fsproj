@@ -185,7 +185,10 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
-    </Compile>    
+    </Compile>
+    <Compile Include="..\FeatureLanguageSupport.fs">
+      <Link>ErrorLogging\FeatureLanguageSupport.fs</Link>
+    </Compile>
     <FsLex Include="..\..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
@@ -412,6 +415,9 @@
     </Compile>
     <Compile Include="..\InfoReader.fs">
       <Link>Logic\InfoReader.fs</Link>
+    </Compile>
+    <Compile Include="..\FeatureSupport.fs">
+      <Link>Logic\FeatureSupport.fs</Link>
     </Compile>
     <Compile Include="..\NicePrint.fs">
       <Link>Logic\NicePrint.fs</Link>

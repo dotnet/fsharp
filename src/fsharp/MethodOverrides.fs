@@ -18,6 +18,7 @@ open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.Features
+open FSharp.Compiler.FeatureSupport
 
 //-------------------------------------------------------------------------
 // Completeness of classes
@@ -282,7 +283,7 @@ module DispatchSlotChecking =
         // we accumulate those to compose a more complete error message, see noimpl() bellow.
         let missingOverloadImplementation = ResizeArray()
 
-        let dimConsumSupport = GetLanguageFeatureSupport infoReader m LanguageFeature.DefaultInterfaceMethodConsumption
+        let dimConsumSupport = FeatureSupport.From (infoReader, m, LanguageFeature.DefaultInterfaceMethodConsumption)
 
         for RequiredSlot(dispatchSlot, dispatchFlags) in dispatchSlots do
             let isDefaultInterfaceImplementation =
@@ -290,7 +291,7 @@ module DispatchSlotChecking =
 
             // Always try to raise a target runtime error if we have a DIM.
             if isDefaultInterfaceImplementation then
-                dimConsumSupport.TryRaiseRuntimeErrorRecover ()
+                dimConsumSupport.TryRaiseRuntimeErrorRecover m |> ignore
 
             let isOptional =
                 if HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags then
@@ -318,7 +319,7 @@ module DispatchSlotChecking =
                 then
                     // Always try to raise a language version error if we have a DIM that is not explicitly implemented.
                     if isDefaultInterfaceImplementation then
-                        dimConsumSupport.TryRaiseLanguageErrorRecover ()
+                        dimConsumSupport.TryRaiseLanguageErrorRecover m |> ignore
 
                     if dimConsumSupport.IsLanguageSupported && HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))

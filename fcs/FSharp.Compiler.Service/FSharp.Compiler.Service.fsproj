@@ -189,6 +189,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ErrorResolutionHints.fs">
       <Link>ErrorLogging/ErrorResolutionHints.fs</Link>
     </Compile>
+        <Compile Include="$(FSharpSourcesRoot)/fsharp/FeatureLanguageSupport.fs">
+      <Link>ErrorLogging/FeatureLanguageSupport.fs</Link>
+    </Compile>
     <FsLex Include="$(FSharpSourcesRoot)\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL/illex.fsl</Link>
@@ -394,6 +397,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/infos.fs">
       <Link>Logic/infos.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FeatureSupport.fs">
+      <Link>Logic/FeatureSupport.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/AccessibilityLogic.fs">
       <Link>Logic/AccessibilityLogic.fs</Link>

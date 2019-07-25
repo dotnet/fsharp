@@ -400,7 +400,7 @@ type Test () =
 #else
 
 [<TestFixture>]
-module DefaultInterfaceMethodConsumptionTests_LanguageVersion_4_6 =
+module DefaultInterfaceMethodConsumptionTests_LanguageVersion_4_6_net472 =
 
     [<Test>]
     let ``IL - Errors with lang version and target runtime not supported`` () =
@@ -1981,7 +1981,7 @@ let main _ =
 #else
 
 [<TestFixture>]
-module DefaultInterfaceMethodConsumptionTests =
+module DefaultInterfaceMethodConsumptionTests_net472 =
 
     [<Test>]
     let ``IL - Errors with target runtime not supported`` () =
