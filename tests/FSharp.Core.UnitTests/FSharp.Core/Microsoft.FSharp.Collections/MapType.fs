@@ -276,6 +276,9 @@ type MapType() =
 
         let resultRm = c.Change(1, fun current -> Assert.AreEqual(current, Some 1); None)
         Assert.IsFalse(resultRm.ContainsKey 1)
+        Assert.AreEqual(resultRm.[2], 4)
+        Assert.AreEqual(resultRm.[3], 9)
+        Assert.AreEqual(resultRm.[4], 25)
     
     [<Test>]
     member this.ContainsKey() =

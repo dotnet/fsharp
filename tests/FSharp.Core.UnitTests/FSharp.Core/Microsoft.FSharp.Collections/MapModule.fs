@@ -85,6 +85,10 @@ type MapModule() =
         // Remove element
         let resultRm = Map.change 1 (fun current -> Assert.AreEqual(current, Some 1); None) c
         Assert.IsFalse(resultRm.ContainsKey 1)
+        Assert.AreEqual(resultRm.[2], 4)
+        Assert.AreEqual(resultRm.[3], 9)
+        Assert.AreEqual(resultRm.[4], 25)
+
 
         ()
 
