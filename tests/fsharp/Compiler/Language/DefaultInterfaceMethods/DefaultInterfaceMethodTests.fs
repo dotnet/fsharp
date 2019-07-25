@@ -7,10 +7,10 @@ open NUnit.Framework
 #if NETCOREAPP
 
 [<TestFixture>]
-module DefaultInterfaceMethodTests =
+module DefaultInterfaceMethodConsumptionTests_LanguageVersion_4_6 =
 
     [<Test>]
-    let ``C# consumption - F# 4_6 with explicit implementation - Runs`` () =
+    let ``C# with explicit implementation - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -83,7 +83,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharp-Method1-FSharp-Method2-FSharp-Method3-FSharp-Method4", fsharpLanguageVersion = "4.6")
 
     [<Test>]
-    let ``C# simple consumption - Errors with lang version not supported`` () =
+    let ``C# simple - Errors with lang version not supported`` () =
         let csharpSource =
             """
 using System;
@@ -137,7 +137,7 @@ Note that all interface members must be implemented and listed under an appropri
         ], fsharpLanguageVersion = "4.6")
 
     [<Test>]
-    let ``C# simple consumption - Errors with lang version not supported - 2`` () =
+    let ``C# simple - Errors with lang version not supported - 2`` () =
         let csharpSource =
             """
 using System;
@@ -190,7 +190,7 @@ type Test () =
         ], fsharpLanguageVersion = "4.6")
 
     [<Test>]
-    let ``C# simple consumption - Errors with lang version not supported - 3`` () =
+    let ``C# simple - Errors with lang version not supported - 3`` () =
         let csharpSource =
             """
 namespace CSharpTest
@@ -250,8 +250,122 @@ Note that all interface members must be implemented and listed under an appropri
             }
         ], fsharpLanguageVersion = "4.6")
 
+#else
+
+[<TestFixture>]
+module DefaultInterfaceMethodConsumptionTests_LanguageVersion_4_6 =
+
     [<Test>]
-    let ``C# simple consumption - Errors with un-implemented non-DIM`` () =
+    let ``IL - Errors with lang version and target runtime not supported`` () =
+        let ilSource =
+            """
+.assembly ILTest.dll
+{
+}
+.module ILTest.dll
+
+.class interface public abstract auto ansi ILTest.ITest
+{
+    .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
+    {
+        .maxstack  8
+        IL_0000:  ret
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open ILTest
+
+type Test () =
+
+    interface ITest
+            """
+
+        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3303
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface method consumption' is not supported by target runtime."
+            }
+            {
+                Number = 3302
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 366;
+                StartLine = 8;
+                StartColumn = 14;
+                EndLine = 8;
+                EndColumn = 19;
+                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+    [<Test>]
+    let ``IL - Errors with target runtime not supported when implemented`` () =
+        let ilSource =
+            """
+.assembly ILTest.dll
+{
+}
+.module ILTest.dll
+
+.class interface public abstract auto ansi ILTest.ITest
+{
+    .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
+    {
+        .maxstack  8
+        IL_0000:  ret
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open ILTest
+
+type Test () =
+
+    interface ITest with
+
+        member __.DefaultMethod () = ()
+            """
+
+        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3303
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 19
+                Message = "Feature 'default interface method consumption' is not supported by target runtime."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+#endif
+
+#if NETCOREAPP
+
+[<TestFixture>]
+module DefaultInterfaceMethodConsumptionTests =
+
+    [<Test>]
+    let ``C# simple - Errors with un-implemented non-DIM`` () =
         let csharpSource =
             """
 using System;
@@ -294,7 +408,7 @@ type Test () =
         ])
 
     [<Test>]
-    let ``C# simple consumption - Runs`` () =
+    let ``C# simple - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -338,7 +452,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-NonDefaultMethod")
 
     [<Test>]
-    let ``C# simple consumption with one DIM for F# object expression - Runs`` () =
+    let ``C# simple with one DIM for F# object expression - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -371,7 +485,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod")
 
     [<Test>]
-    let ``C# simple consumption with one DIM and one non-DIM for F# object expression - Runs`` () =
+    let ``C# simple with one DIM and one non-DIM for F# object expression - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -408,7 +522,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-ObjExpr")
 
     [<Test>]
-    let ``C# simple consumption with one DIM and one non-DIM for F# object expression - Errors with lack of implementation`` () =
+    let ``C# simple with one DIM and one non-DIM for F# object expression - Errors with lack of implementation`` () =
         let csharpSource =
             """
 using System;
@@ -450,7 +564,7 @@ let test = { new ITest }
         ])
 
     [<Test>]
-    let ``C# simple consumption with override - Runs`` () =
+    let ``C# simple with override - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -497,7 +611,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "OverrideDefaultMethod-NonDefaultMethod")
 
     [<Test>]
-    let ``C# simple consumption with override for object expression - Runs`` () =
+    let ``C# simple with override for object expression - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -539,7 +653,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "ObjExprOverrideDefaultMethod-ObjExprNonDefaultMethod")
 
     [<Test>]
-    let ``C# consumption from hierarchical interfaces - Runs`` () =
+    let ``C# from hierarchical interfaces - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -593,7 +707,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FromITest2-Method1-FromITest2-Method2")
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces - Errors with lack of explicit shared interface type`` () =
+    let ``C# diamond hierarchical interfaces - Errors with lack of explicit shared interface type`` () =
         let csharpSource =
             """
 using System;
@@ -718,7 +832,7 @@ Note that all interface members must be implemented and listed under an appropri
         ])
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces - Errors with no most specific implementation`` () =
+    let ``C# diamond hierarchical interfaces - Errors with no most specific implementation`` () =
         let csharpSource =
             """
 using System;
@@ -809,7 +923,7 @@ Note that all interface members must be implemented and listed under an appropri
         ])
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces but combined in one C# interface - Errors with no most specific implementation`` () =
+    let ``C# diamond hierarchical interfaces but combined in one C# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
 using System;
@@ -902,7 +1016,7 @@ Note that all interface members must be implemented and listed under an appropri
         ])
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces but combined in one F# interface - Errors with no most specific implementation`` () =
+    let ``C# diamond hierarchical interfaces but combined in one F# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
 using System;
@@ -996,7 +1110,7 @@ Note that all interface members must be implemented and listed under an appropri
 
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces but re-abstracted in one and then combined in one F# interface - Errors with no most specific implementation`` () =
+    let ``C# diamond hierarchical interfaces but re-abstracted in one and then combined in one F# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
 using System;
@@ -1083,7 +1197,7 @@ Note that all interface members must be implemented and listed under an appropri
         ])
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface - Errors with need to implement members`` () =
+    let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface - Errors with need to implement members`` () =
         let csharpSource =
             """
 using System;
@@ -1164,7 +1278,7 @@ Note that all interface members must be implemented and listed under an appropri
         ])
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces then combined in one F# interface and then implemented - Runs`` () =
+    let ``C# diamond hierarchical interfaces then combined in one F# interface and then implemented - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -1240,7 +1354,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented - Runs`` () =
+    let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -1304,7 +1418,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
 
     [<Test>]
-    let ``C# consumption from diamond hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
+    let ``C# diamond hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -1386,68 +1500,10 @@ let main _ =
 #else
 
 [<TestFixture>]
-module DefaultInterfaceMethodTests =
+module DefaultInterfaceMethodConsumptionTests =
 
     [<Test>]
-    let ``IL consumption - F# 4_6 - Errors with lang version and target runtime not supported`` () =
-        let ilSource =
-            """
-.assembly ILTest.dll
-{
-}
-.module ILTest.dll
-
-.class interface public abstract auto ansi ILTest.ITest
-{
-    .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
-    {
-        .maxstack  8
-        IL_0000:  ret
-    }
-}
-            """
-
-        let fsharpSource =
-            """
-namespace FSharpTest
-
-open ILTest
-
-type Test () =
-
-    interface ITest
-            """
-
-        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Number = 3303
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface method consumption' is not supported by target runtime."
-            }
-            {
-                Number = 3302
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
-            }
-            {
-                Number = 366;
-                StartLine = 8;
-                StartColumn = 14;
-                EndLine = 8;
-                EndColumn = 19;
-                Message = "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ], fsharpLanguageVersion = "4.6")
-
-    [<Test>]
-    let ``IL consumption - Errors with target runtime not supported`` () =
+    let ``IL - Errors with target runtime not supported`` () =
         let ilSource =
             """
 .assembly ILTest.dll
@@ -1487,49 +1543,5 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not supported by target runtime."
             }
         ])
-
-    [<Test>]
-    let ``IL consumption - F# 4_6 - Errors with target runtime not supported when implemented`` () =
-        let ilSource =
-            """
-.assembly ILTest.dll
-{
-}
-.module ILTest.dll
-
-.class interface public abstract auto ansi ILTest.ITest
-{
-    .method public hidebysig newslot virtual instance void  DefaultMethod() cil managed
-    {
-        .maxstack  8
-        IL_0000:  ret
-    }
-}
-            """
-
-        let fsharpSource =
-            """
-namespace FSharpTest
-
-open ILTest
-
-type Test () =
-
-    interface ITest with
-
-        member __.DefaultMethod () = ()
-            """
-
-        let c = CompilationUtil.CreateILCompilation (ilSource, "ILTest")
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Number = 3303
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "Feature 'default interface method consumption' is not supported by target runtime."
-            }
-        ], fsharpLanguageVersion = "4.6")
 
 #endif
