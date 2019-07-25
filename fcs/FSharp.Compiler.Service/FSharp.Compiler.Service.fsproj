@@ -398,9 +398,6 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/infos.fs">
       <Link>Logic/infos.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/FeatureSupport.fs">
-      <Link>Logic/FeatureSupport.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/AccessibilityLogic.fs">
       <Link>Logic/AccessibilityLogic.fs</Link>
     </Compile>
@@ -409,6 +406,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InfoReader.fs">
       <Link>Logic/InfoReader.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FeatureSupport.fs">
+      <Link>Logic/FeatureSupport.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/NicePrint.fs">
       <Link>Logic/NicePrint.fs</Link>
