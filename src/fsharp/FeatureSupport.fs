@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.FeatureSupport
+module internal FSharp.Compiler.FeatureSupport
 
 open System
 open FSharp.Compiler.ErrorLogger

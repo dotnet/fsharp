@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.FeatureLanguageSupport
+module internal FSharp.Compiler.FeatureLanguageSupport
 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 open FSharp.Compiler.Features
 
 [<Sealed>]
-type internal LanguageFeatureSupport private (langError: (range -> exn) option) =
+type LanguageFeatureSupport private (langError: (range -> exn) option) =
 
     member __.IsSupported =
         langError.IsNone
