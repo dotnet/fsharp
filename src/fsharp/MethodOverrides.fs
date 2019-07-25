@@ -465,7 +465,7 @@ module DispatchSlotChecking =
         (if minfo.IsDefaultInterfaceMethod then RequiredSlotFlags.DefaultInterfaceImplementation else RequiredSlotFlags.None)
 
     /// Get a collection of interface methods that are overrider (aka. override by) slots for the given method from the given types.
-    let GetInterfaceOverriderMethods (infoReader: InfoReader) ad m (minfo: MethInfo) tys =
+    let GetInterfaceOverriderMethods (infoReader: InfoReader) m (minfo: MethInfo) tys =
         let g = infoReader.g
         let amap = infoReader.amap
         let mty = minfo.ApparentEnclosingType
@@ -475,7 +475,7 @@ module DispatchSlotChecking =
             |> List.choose (fun ty ->
                 if isInterfaceTy g ty && not (typeEquiv g mty ty) && TypeFeasiblySubsumesType 0 g amap m mty CanCoerce ty then
                     // We are only looking for IL overriders because F# does not support creating your own default interface methods.
-                    match TryFindILIntrinisicOverriderMethInfo infoReader m ad ty minfo with
+                    match TryFindILIntrinisicOverriderMethInfo infoReader m AccessibleFromSomewhere ty minfo with
                     | Some minfo2 when not minfo2.IsNewSlot -> Some minfo2
                     | _ -> None
                 else
@@ -484,7 +484,7 @@ module DispatchSlotChecking =
             []
 
     /// Get a collection of interface methods that are the top most overrider methods in the hierarchy for the given method from the required type infos.
-    let GetTopMostHierarchicalInterfaceOverriderMethods (infoReader: InfoReader) ad m reqdTyInfos (minfo: MethInfo) =
+    let GetTopMostHierarchicalInterfaceOverriderMethods (infoReader: InfoReader) m reqdTyInfos (minfo: MethInfo) =
         let g = infoReader.g
         let amap = infoReader.amap
 
@@ -497,7 +497,7 @@ module DispatchSlotChecking =
         let sortedOverriderMethods =
             reqdTyInfos
             |> List.map (fun (_, _, _, impliedTys) ->
-                GetInterfaceOverriderMethods infoReader ad m minfo impliedTys
+                GetInterfaceOverriderMethods infoReader m minfo impliedTys
             )
             |> List.reduce (@) // ok to use reduce here without checking as we will always have 1 item
             // Sort the hierarchy to determine the best possible method.
@@ -543,7 +543,7 @@ module DispatchSlotChecking =
                           yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo ||| (if isOptional then RequiredSlotFlags.Optional else RequiredSlotFlags.None))
                       else
                           let dispatchFlags =
-                              match GetTopMostHierarchicalInterfaceOverriderMethods infoReader ad m reqdTyInfos minfo with
+                              match GetTopMostHierarchicalInterfaceOverriderMethods infoReader m reqdTyInfos minfo with
                               | [] -> GetDefaultDispatchSlotFlags minfo
                               | [ minfo2 ] -> GetDefaultDispatchSlotFlags minfo2
                               | _ -> RequiredSlotFlags.PossiblyNoMostSpecificImplementation
