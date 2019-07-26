@@ -485,6 +485,8 @@ module DispatchSlotChecking =
                         else -1
                     )
 
+                // Performance Review: 
+                //     This has some time complexity. For every method we must iterate over a set of interfaces and find the immediate overrider if it has one.
                 let rec getILOverriderMethods (minfo: MethInfo) =
                     // This is to find overrider methods that are at the top most hierarchy out of the interfaces.
                     // The interfaces are sorted in order to make this work.
