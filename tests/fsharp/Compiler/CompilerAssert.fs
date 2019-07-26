@@ -32,6 +32,76 @@ module CompilerAssert =
     let checker = FSharpChecker.Create()
     let private config = TestFramework.initializeSuite ()
 
+
+// Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
+#if !NETCOREAPP
+#else
+    let projectFile = """
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
+
+  <Target Name="WriteFrameworkReferences" AfterTargets="AfterBuild">
+    <WriteLinesToFile File="FrameworkReferences.txt" Lines="@(ReferencePath)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+
+</Project>"""
+
+    let programFs = """
+open System
+
+[<EntryPoint>]
+let main argv = 0"""
+
+    let getNetCoreAppReferences =
+        let mutable output = ""
+        let mutable errors = ""
+        let mutable cleanUp = true
+        let projectDirectory = Path.Combine(Path.GetTempPath(), "netcoreapp2.1", Path.GetRandomFileName())
+        try
+            try
+                Directory.CreateDirectory(projectDirectory) |> ignore
+                let projectFileName = Path.Combine(projectDirectory, "ProjectFile.fsproj")
+                let programFsFileName = Path.Combine(projectDirectory, "Program.fs")
+                let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
+
+                File.WriteAllText(projectFileName, projectFile)
+                File.WriteAllText(programFsFileName, programFs)
+
+                let pInfo = ProcessStartInfo ()
+
+                pInfo.FileName <- config.DotNetExe
+                pInfo.Arguments <- "build"
+                pInfo.WorkingDirectory <- projectDirectory
+                pInfo.RedirectStandardOutput <- true
+                pInfo.RedirectStandardError <- true
+                pInfo.UseShellExecute <- false
+
+                let p = Process.Start(pInfo)
+                p.WaitForExit()
+
+                output <- p.StandardOutput.ReadToEnd ()
+                errors <- p.StandardError.ReadToEnd ()
+                if not (String.IsNullOrWhiteSpace errors) then Assert.Fail errors
+
+                if p.ExitCode <> 0 then Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+
+                File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
+            with | e ->
+                cleanUp <- false
+                printfn "%s" output
+                printfn "%s" errors
+                raise (new Exception (sprintf "An error occured getting netcoreapp references: %A" e))
+        finally
+            if cleanUp then
+                try Directory.Delete(projectDirectory) with | _ -> ()
+#endif
+
     let private defaultProjectOptions =
         {
             ProjectFileName = "Z:\\test.fsproj"
@@ -41,14 +111,7 @@ module CompilerAssert =
             OtherOptions = [|"--preferreduilang:en-US";|]
 #else
             OtherOptions = 
-                // Hack: Currently a hack to get the runtime assemblies for netcore in order to compile.
-                let assemblies =
-                    typeof<obj>.Assembly.Location
-                    |> Path.GetDirectoryName
-                    |> Directory.EnumerateFiles
-                    |> Seq.toArray
-                    |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system.") || x.ToLowerInvariant().EndsWith("netstandard.dll"))
-                    |> Array.map (fun x -> sprintf "-r:%s" x)
+                let assemblies = getNetCoreAppReferences |> Array.map (fun x -> sprintf "-r:%s" x)
                 Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"|] assemblies
 #endif
             ReferencedProjects = [||]
@@ -60,6 +123,7 @@ module CompilerAssert =
             ExtraProjectInfo = None
             Stamp = None
         }
+
     let private gate = obj ()
 
     let private compile isExe source f =
@@ -109,11 +173,15 @@ module CompilerAssert =
 
             Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
-
-    
-    let TypeCheckWithErrors (source: string) expectedTypeErrors =
+    let TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
         lock gate <| fun () ->
-            let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
+            let parseResults, fileAnswer = 
+                checker.ParseAndCheckFileInProject(
+                    "test.fs",
+                    0,
+                    SourceText.ofString source,
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions}) 
+                |> Async.RunSynchronously
 
             Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
 
@@ -136,11 +204,17 @@ module CompilerAssert =
                 Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
             )
 
+    let TypeCheckWithErrors (source: string) expectedTypeErrors =
+        TypeCheckWithErrorsAndOptions [||] source expectedTypeErrors
+
+    let TypeCheckSingleErrorWithOptions options (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+        TypeCheckWithErrorsAndOptions options source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
+
     let TypeCheckSingleError (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
-        TypeCheckWithErrors (source: string) [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
+        TypeCheckWithErrors source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
     let CompileExe (source: string) =
-        compile true source (fun (errors, _) -> 
+        compile true source (fun (errors, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
@@ -215,3 +289,4 @@ module CompilerAssert =
                 ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
                 )
+        
