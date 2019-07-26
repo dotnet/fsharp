@@ -1957,6 +1957,79 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
 
     [<Test>]
+    let ``C# diamond hierarchical interfaces then using explicit interfaces and then implemented - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest3-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest2
+    interface ITest1 with
+
+        member __.Method1 () = Console.Write("FSharpExplicitTest-Method1")
+
+        member __.Method2 () = Console.Write("FSharpExplicitTest-Method2")
+    interface ITest3
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest2
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpExplicitTest-Method1-FSharpExplicitTest-Method2")
+
+    [<Test>]
     let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented one method - Errors with no most specific implementation`` () =
         let csharpSource =
             """
