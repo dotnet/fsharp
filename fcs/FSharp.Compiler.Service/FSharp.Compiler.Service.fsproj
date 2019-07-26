@@ -407,9 +407,6 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InfoReader.fs">
       <Link>Logic/InfoReader.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/FeatureSupport.fs">
-      <Link>Logic/FeatureSupport.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/NicePrint.fs">
       <Link>Logic/NicePrint.fs</Link>
     </Compile>

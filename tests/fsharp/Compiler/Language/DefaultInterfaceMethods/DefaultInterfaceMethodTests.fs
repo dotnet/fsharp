@@ -438,7 +438,73 @@ let f () =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            
+            {
+                Number = 3302
+                StartLine = 14
+                StartColumn = 6
+                EndLine = 14
+                EndColumn = 7
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 3302
+                StartLine = 14
+                StartColumn = 8
+                EndLine = 14
+                EndColumn = 9
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+    [<Test>]
+    let ``C# simple with static method - Errors with lang version not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(I1 x, I1 y)
+        {
+            Console.Write("I1.+");
+            return 1;
+        }
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface I2
+
+let f () =
+    let x = Test () :> I1
+    let y = Test () :> I2
+    I1.StaticMethod (x, y)
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3302
+                StartLine = 14
+                StartColumn = 4
+                EndLine = 14
+                EndColumn = 26
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
         ], fsharpLanguageVersion = "4.6")
 
 #else
@@ -535,6 +601,65 @@ type Test () =
                 EndLine = 8
                 EndColumn = 19
                 Message = "Feature 'default interface method consumption' is not supported by target runtime."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+    [<Test>]
+    let ``C# simple with static method - Errors with lang version and target runtime not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(I1 x, I1 y)
+        {
+            Console.Write("I1.+");
+            return 1;
+        }
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface I2
+
+let f () =
+    let x = Test () :> I1
+    let y = Test () :> I2
+    I1.StaticMethod (x, y)
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3303
+                StartLine = 14
+                StartColumn = 4
+                EndLine = 14
+                EndColumn = 26
+                Message = "Feature 'default interface method consumption' is not supported by target runtime."
+            }
+            {
+                Number = 3302
+                StartLine = 14
+                StartColumn = 4
+                EndLine = 14
+                EndColumn = 26
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
         ], fsharpLanguageVersion = "4.6")
 
@@ -2104,6 +2229,319 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2")
 
     [<Test>]
+    let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs - 2`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest1 : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest1-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedTest1-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest2 : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest2-" + nameof(Method1));
+        }
+    }
+
+    public interface ICombinedSideTest : ICombinedTest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedSideTest-" + nameof(Method2));
+        }
+    }
+
+    public interface IFinalCombinedTest : ICombinedTest2, ICombinedSideTest
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpIFinalCombinedTest-" + nameof(Method1));
+        }
+
+        abstract void ITest1.Method2();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ICombinedSideTest with
+
+        member __.Method2 () = ()
+
+    interface IFinalCombinedTest
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest1
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpIFinalCombinedTest-Method1-")
+
+    [<Test>]
+    let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs - 3`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest1 : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest1-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedTest1-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest2 : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest2-" + nameof(Method1));
+        }
+    }
+
+    public interface ICombinedSideTest : ICombinedTest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedSideTest-" + nameof(Method2));
+        }
+    }
+
+    public interface IFinalCombinedTest : ICombinedTest2, ICombinedSideTest
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpIFinalCombinedTest-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpIFinalCombinedTest-" + nameof(Method2));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ICombinedSideTest
+    interface IFinalCombinedTest
+    interface ITest1
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest1
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2")
+
+    [<Test>]
+    let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Errors with no impl`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest1 : ITest3, ITest2
+    {
+        abstract void ITest1.Method1();
+
+        abstract void ITest1.Method2();
+    }
+
+    public interface ICombinedTest2 : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest2-" + nameof(Method1));
+        }
+    }
+
+    public interface ICombinedSideTest : ICombinedTest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedSideTest-" + nameof(Method2));
+        }
+    }
+
+    public interface IFinalCombinedTest : ICombinedTest2, ICombinedSideTest
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpIFinalCombinedTest-" + nameof(Method1));
+        }
+
+        abstract void ITest1.Method2();
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface IFinalCombinedTest
+    interface ICombinedSideTest
+
+type Test2 () =
+    inherit Test ()
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 366;
+                StartLine = 10;
+                StartColumn = 14;
+                EndLine = 10;
+                EndColumn = 31;
+                Message = "No implementation was given for 'ITest1.Method2() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ])
+
+    [<Test>]
     let ``C# simple with property - Runs`` () =
         let csharpSource =
             """
@@ -2221,6 +2659,57 @@ type Test () =
                 StartColumn = 14
                 EndLine = 8
                 EndColumn = 19
+                Message = "Feature 'default interface method consumption' is not supported by target runtime."
+            }
+        ])
+
+    [<Test>]
+    let ``C# simple with static method - Errors with target runtime not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(I1 x, I1 y)
+        {
+            Console.Write("I1.+");
+            return 1;
+        }
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface I2
+
+let f () =
+    let x = Test () :> I1
+    let y = Test () :> I2
+    I1.StaticMethod (x, y)
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3303
+                StartLine = 14
+                StartColumn = 4
+                EndLine = 14
+                EndColumn = 26
                 Message = "Feature 'default interface method consumption' is not supported by target runtime."
             }
         ])

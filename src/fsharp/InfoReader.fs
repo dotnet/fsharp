@@ -20,6 +20,7 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Features
+open FSharp.Compiler.FeatureLanguageSupport
 
 /// Use the given function to select some of the member values from the members of an F# type
 let private SelectImmediateMemberVals g optFilter f (tcref: TyconRef) = 
@@ -206,9 +207,36 @@ type HierarchyItem =
     | EventItem of EventInfo list
     | ILFieldItem of ILFieldInfo list
 
+[<Sealed>]
+type internal FeatureSupport (runtimeError: (range -> exn) option, langSupport: LanguageFeatureSupport) =
+
+    member __.IsSupported =
+        runtimeError.IsNone && langSupport.IsSupported
+
+    member __.IsRuntimeSupported =
+        runtimeError.IsNone
+
+    member __.IsLanguageSupported =
+        langSupport.IsSupported
+
+    member __.TryRaiseRuntimeError m =
+        runtimeError |> Option.iter (fun f -> error (f m))
+
+    /// Returns true if there was an error which means not supported.
+    member __.TryRaiseRuntimeErrorRecover m =
+        runtimeError |> Option.iter (fun f -> errorR (f m))
+        runtimeError.IsSome
+
+    member __.TryRaiseLanguageError m =
+        langSupport.TryRaiseLanguageError m
+
+    /// Returns true if there was an error.
+    member __.TryRaiseLanguageErrorRecover m =
+        langSupport.TryRaiseLanguageErrorRecover m
+
 /// An InfoReader is an object to help us read and cache infos. 
 /// We create one of these for each file we typecheck. 
-type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
+type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     /// Get the declared IL fields of a type, not including inherited fields
     let GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty =
@@ -363,6 +391,35 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                                      | TType_app(tcref, []) -> hash tcref.LogicalName
                                      | _ -> 0) })
 
+    static let RuntimeSupportsFeature (infoReader: InfoReader) (g: TcGlobals) featureId =       
+        let runtimeFeature =
+            match featureId with
+            | LanguageFeature.DefaultInterfaceMethodConsumption -> "DefaultImplementationsOfInterfaces"
+            | _ -> String.Empty
+        
+        if String.IsNullOrWhiteSpace runtimeFeature then
+            true
+        else
+            match g.System_Runtime_CompilerServices_RuntimeFeature_ty with
+            | Some runtimeFeatureTy ->
+                infoReader.GetILFieldInfosOfType (Some runtimeFeature, AccessorDomain.AccessibleFromEverywhere, range0, runtimeFeatureTy)
+                |> List.exists (fun (ilFieldInfo: ILFieldInfo) -> ilFieldInfo.FieldName = runtimeFeature)
+            | _ ->
+                false
+
+    static let CreateFeatureSupport infoReader g featureId =
+        let runtimeError =
+            if not (RuntimeSupportsFeature infoReader g featureId) then
+                let featureStr = g.langVersion.GetFeatureString featureId
+                Some(fun m -> Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+            else
+                None
+        
+        let langSupport = LanguageFeatureSupport.From (g.langVersion, featureId)    
+        FeatureSupport (runtimeError, langSupport)
+
+    let defaultInterfaceMethodConsumptionSupport =
+        lazy CreateFeatureSupport this g LanguageFeature.DefaultInterfaceMethodConsumption
     
     let hashFlags0 = 
         { new System.Collections.Generic.IEqualityComparer<_> with 
@@ -392,6 +449,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                                             
     member x.g = g
     member x.amap = amap
+
+    member x.DefaultInterfaceMethodConsumptionSupport = defaultInterfaceMethodConsumptionSupport.Value
     
     /// Read the raw method sets of a type, including inherited ones. Cache the result for monomorphic types
     member x.GetRawIntrinsicMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =

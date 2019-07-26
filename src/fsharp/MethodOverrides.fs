@@ -17,8 +17,6 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
-open FSharp.Compiler.Features
-open FSharp.Compiler.FeatureSupport
 
 //-------------------------------------------------------------------------
 // Completeness of classes
@@ -286,7 +284,7 @@ module DispatchSlotChecking =
         // we accumulate those to compose a more complete error message, see noimpl() bellow.
         let missingOverloadImplementation = ResizeArray()
 
-        let dimConsumSupport = FeatureSupport.From (infoReader, m, LanguageFeature.DefaultInterfaceMethodConsumption)
+        let dimConsumSupport = infoReader.DefaultInterfaceMethodConsumptionSupport
 
         for RequiredSlot(dispatchSlot, dispatchFlags) in dispatchSlots do
             let hasDefaultInterfaceImplementation =

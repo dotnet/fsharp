@@ -416,9 +416,6 @@
     <Compile Include="..\InfoReader.fs">
       <Link>Logic\InfoReader.fs</Link>
     </Compile>
-    <Compile Include="..\FeatureSupport.fs">
-      <Link>Logic\FeatureSupport.fs</Link>
-    </Compile>
     <Compile Include="..\NicePrint.fs">
       <Link>Logic\NicePrint.fs</Link>
     </Compile>
