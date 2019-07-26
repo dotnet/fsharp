@@ -397,6 +397,50 @@ type Test () =
             }
         ], fsharpLanguageVersion = "4.6")
 
+    [<Test>]
+    let ``C# simple with static operator method - Errors with lang version not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int operator +(I1 x, I1 y)
+        {
+            Console.Write("I1.+");
+            return 1;
+        }
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface I2
+
+let f () =
+    let x = Test () :> I1
+    let y = Test () :> I2
+    x + y
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            
+        ], fsharpLanguageVersion = "4.6")
+
 #else
 
 [<TestFixture>]
@@ -543,6 +587,48 @@ type Test () =
                 Message = "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ])
+
+    [<Test>]
+    let ``C# simple with static operator method - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int operator +(I1 x, I1 y)
+        {
+            Console.Write("I1.+");
+            return 1;
+        }
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface I2
+
+[<EntryPoint>]
+let main _ =
+    let x = Test () :> I1
+    let y = Test () :> I2
+    Console.Write(string (x + y))
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "I1.+1")
 
     [<Test>]
     let ``C# simple - Runs`` () =
@@ -1897,6 +1983,125 @@ let main _ =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpICombinedTest-Method1-CSharpICombinedTest-Method2")
+
+    [<Test>]
+    let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest3-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest1 : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest1-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedTest1-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest2 : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedTest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedSideTest : ICombinedTest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedSideTest-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedSideTest-" + nameof(Method2));
+        }
+    }
+
+    public interface IFinalCombinedTest : ICombinedTest1, ICombinedSideTest
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpIFinalCombinedTest-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpIFinalCombinedTest-" + nameof(Method2));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface IFinalCombinedTest
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest1
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2")
 
     [<Test>]
     let ``C# simple with property - Runs`` () =
