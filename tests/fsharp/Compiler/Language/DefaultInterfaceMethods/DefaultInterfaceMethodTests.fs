@@ -2513,6 +2513,213 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2")
 
     [<Test>]
+    let ``C# multi-diamond complex hierarchical interfaces with hiding methods then explicitly implemented - Runs`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface IBase
+    {
+        void Method()
+        {
+        }
+    }
+
+    public interface IA1 : IBase
+    {
+        void IBase.Method()
+        {
+        }
+
+        new void Method();
+    }
+
+    public interface IB1 : IBase
+    {
+        void IBase.Method()
+        {
+        }
+
+        new void Method();
+    }
+
+    public interface IC1 : IBase
+    {
+        void IBase.Method()
+        {
+        }
+
+        new void Method();
+    }
+
+    public interface ID1 : IBase
+    {
+        void IBase.Method()
+        {
+        }
+    }
+
+    public interface IDiamond1 : IA1, IB1
+    {
+    }
+
+    public interface IDiamond2 : IC1, ID1
+    {
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface IBase with
+
+         member __.Method () = Console.Write("IBase")
+
+    interface IA1 with
+
+        member __.Method () = Console.Write("IA1")
+
+    interface IB1 with
+
+        member __.Method () = Console.Write("IB1")
+
+    interface IC1 with
+
+        member __.Method () = Console.Write("IC1")
+
+    interface IDiamond1
+    interface IDiamond2
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ID1
+    test.Method ()
+    Console.Write("-") // IBase
+
+    //let test = Test () :> IDiamond1
+    //test.Method ()
+    //Console.Write("-") // IA1
+
+    let test = Test () :> IB1
+    test.Method ()
+    Console.Write("-") // IB1
+
+    let test = Test () :> IA1
+    test.Method ()
+    Console.Write("-") // IA1
+
+    let test = Test () :> IDiamond2
+    test.Method ()
+    Console.Write("-") // IC1
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IBase-IB1-IA1-IC1-")
+
+    [<Test>]
+    let ``C# diamond complex hierarchical interfaces then explicitly implemented - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1()
+        {
+            Console.Write(nameof(Method1));
+        }
+
+        void Method2();
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("FromITest2-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest2-" + nameof(Method2));
+        }
+    }
+
+    public interface ITest3 : ITest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("FromITest3-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest1 : ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest1-" + nameof(Method1));
+        }
+
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedTest1-" + nameof(Method2));
+        }
+    }
+
+    public interface ICombinedTest2 : ITest3, ITest2
+    {
+        void ITest1.Method1()
+        {
+            Console.Write("CSharpICombinedTest2-" + nameof(Method1));
+        }
+    }
+
+    public interface ICombinedSideTest : ICombinedTest1
+    {
+        void ITest1.Method2()
+        {
+            Console.Write("CSharpICombinedSideTest-" + nameof(Method2));
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest2
+    interface ICombinedSideTest
+    interface ITest1 with
+
+        member __.Method1 () = ()
+
+        member __.Method2 () = ()
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest1
+    test.Method1 ()
+    Console.Write("-")
+    test.Method2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "-")
+
+    [<Test>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Errors with no impl`` () =
         let csharpSource =
             """
