@@ -13,13 +13,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CFE3259A
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Build", "src\fsharp\FSharp.Build\FSharp.Build.fsproj", "{702A7979-BCF9-4C41-853E-3ADFC9897890}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Fsc", "src\fsharp\Fsc\Fsc.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Fsc", "src\fsharp\fsc\fsc.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Interactive.Settings", "src\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj", "{649FA588-F02E-457C-9FCF-87E46407481E}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsi", "src\fsharp\fsi\fsi.fsproj", "{D0E98C0D-490B-4C61-9329-0862F6E87645}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsiAnyCPU", "src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj", "{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsiAnyCpu", "src\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj", "{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{649FA588-F02E-457C-9FCF-87E46407481E} = {649FA588-F02E-457C-9FCF-87E46407481E}
 	EndProjectSection
@@ -27,8 +27,6 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharpSuite.Tests", "tests\fsharp\FSharpSuite.Tests.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.UnitTests", "tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
-EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Tests.FSharpSuite", "tests\fsharp\FSharp.Tests.FSharpSuite.fsproj", "{4E7B9500-6DEF-4C33-BF18-246F7E2C0BC6}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core.UnitTests", "tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj", "{88E2D422-6852-46E3-A740-83E391DC7973}"
 EndProject
@@ -47,6 +45,7 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer", "src\fsharp\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj", "{99B3F4A5-80B4-41D9-A073-117DB6D7DBBA}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer.UnitTests", "tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj", "{C97819B0-B428-4B96-9CD7-497D2D1C738C}"
+EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager", "src\fsharp\FSharp.DependencyManager\FSharp.DependencyManager.fsproj", "{8B7BF62E-7D8C-4928-BE40-4E392A9EE851}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Private.Scripting", "src\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj", "{6771860A-614D-4FDD-A655-4C70EBCC91B0}"

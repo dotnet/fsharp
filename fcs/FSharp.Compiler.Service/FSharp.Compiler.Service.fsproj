@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-﻿<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
@@ -519,9 +518,6 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/CompileOps.fsi">
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\DependencyManager.Integration.fsi">
-      <Link>Driver\DependencyManager.Integration.fsi</Link>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager.Integration.fsi">
       <Link>Driver/DependencyManager.Integration.fsi</Link>
     </Compile>

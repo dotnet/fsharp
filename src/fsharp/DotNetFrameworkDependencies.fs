@@ -83,11 +83,15 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     let netcoreTfm =
         let file =
             try
-                let depsJsonPath = Path.ChangeExtension(Assembly.GetEntryAssembly().Location, "deps.json")
-                if File.Exists(depsJsonPath) then
-                    File.ReadAllText(depsJsonPath)
-                else
-                    ""
+                let asm = Assembly.GetEntryAssembly()
+                match asm with
+                | null -> ""
+                | asm ->
+                    let depsJsonPath = Path.ChangeExtension(asm.Location, "deps.json")
+                    if File.Exists(depsJsonPath) then
+                        File.ReadAllText(depsJsonPath)
+                    else
+                        ""
             with _ -> ""
 
         let tfmPrefix=".NETCoreApp,Version=v"
