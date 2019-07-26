@@ -1282,9 +1282,8 @@ type internal TypeCheckInfo
                valRefEq g g.reraise_vref vref ||
                valRefEq g g.typeof_vref vref ||
                valRefEq g g.typedefof_vref vref ||
-               valRefEq g g.sizeof_vref vref 
-               // TODO uncomment this after `nameof` operator is implemented
-               // || valRefEq g g.nameof_vref vref
+               valRefEq g g.sizeof_vref vref ||
+               valRefEq g g.nameof_vref vref
             then Some()
             else None
         
