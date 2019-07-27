@@ -123,4 +123,5 @@ type X() =
             [|
                 FSharpErrorSeverity.Error, 531, (4, 5, 4, 12), "Accessibility modifiers should come immediately prior to the identifier naming a construct"
                 FSharpErrorSeverity.Error, 512, (4, 13, 4, 18), "Accessibility modifiers are not permitted on 'do' bindings, but 'Private' was given."
+                FSharpErrorSeverity.Error, 222, (2, 1, 3, 1), "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration."
             |]
