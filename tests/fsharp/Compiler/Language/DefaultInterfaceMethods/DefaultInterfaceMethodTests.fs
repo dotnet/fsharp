@@ -2622,84 +2622,104 @@ let main _ =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "IBase-IB1-IA1-IC1-")
 
-//    [<Test>]
-//    let ``C# multi-diamond complex hierarchical interfaces with hiding methods then explicitly implemented - Runs - 2`` () =
-//        let csharpSource =
-//            """
-//using System;
+    [<Test>]
+    let ``C# multi-diamond complex hierarchical interfaces with hiding methods then explicitly implemented - Runs - 2`` () =
+        let csharpSource =
+            """
+using System;
 
-//namespace CSharpTest
-//{
-//    public interface IBase
-//    {
-//        void Method()
-//        {
-//        }
-//    }
+namespace CSharpTest
+{
+    public interface IBase
+    {
+        void Method()
+        {
+        }
+    }
 
-//    public interface IA1 : IBase
-//    {
-//        abstract void IBase.Method();
-//    }
+    public interface IA1 : IBase
+    {
+        abstract void IBase.Method();
+    }
 
-//    public interface IB1 : IBase
-//    {
-//    }
+    public interface IB1 : IBase
+    {
+    }
 
-//    public interface IC1 : IBase
-//    {
-//        void CMethod()
-//        {
-//            Console.Write("ABC");
-//        }
-//    }
+    public interface IC1 : IBase
+    {
+        void CMethod()
+        {
+            Console.Write("ABC");
+        }
+    }
 
-//    public interface ID1 : IBase
-//    {
-//    }
+    public interface IC2 : IC1
+    {
+        abstract void IC1.CMethod();
+    }
 
-//    public interface IDiamond1 : IA1, IB1
-//    {
-//    }
+    public interface IC3 : IC2
+    {
+        void IC1.CMethod()
+        {
+            Console.Write("XYZ");
+        }
+    }
 
-//    public interface IDiamond2 : IC1, ID1
-//    {
-//    }
+    public interface ID1 : IBase
+    {
+    }
 
-//    public interface IDiamond3 : IC1, IA1
-//    {
-//    }
+    public interface IDiamond1 : IA1, IB1
+    {
+    }
 
-//    public interface IMultiDiamond1 : IDiamond1, IDiamond3
-//    {
-//    }
-//}
-//            """
+    public interface IDiamond2 : IC2, ID1
+    {
+    }
 
-//        let fsharpSource =
-//            """
-//open System
-//open CSharpTest
+    public interface IDiamond3 : IC3, IA1
+    {
+    }
 
-//type Test () =
+    public interface IMultiDiamond1 : IDiamond1, IDiamond3
+    {
+    }
 
-//    interface IBase with
+    class CSharpClass : IBase, IDiamond2, IMultiDiamond1
+    {
+        void IBase.Method()
+        {
+        }
+    }
+}
+            """
 
-//        member __.Method () = Console.Write "123"
+        let fsharpSource =
+            """
+open System
+open CSharpTest
 
-//    interface IDiamond2
-//    interface IMultiDiamond1
+type Test () =
 
-//[<EntryPoint>]
-//let main _ =
-//    let test = Test () :> IMultiDiamond1
-//    test.Method ()
-//    test.CMethod ()
-//    0
-//            """
+    interface IBase with
 
-//        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-//        CompilerAssert.CompileExeAndRun (fsharpSource, c, "123ABC")
+        member __.Method () = Console.Write "123"
+
+    interface IDiamond2
+    interface IMultiDiamond1
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> IMultiDiamond1
+    test.Method ()
+    test.CMethod ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "123XYZ")
 
     [<Test>]
     let ``C# diamond complex hierarchical interfaces then explicitly implemented - Runs`` () =
