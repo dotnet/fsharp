@@ -521,20 +521,6 @@ module DispatchSlotChecking =
             else
                 []
 
-    /// Get a collection of slots for the given implied interface types.
-    let GetInterfacesDispatchSlots (infoReader: InfoReader) denv ad m availImpliedInterfaces topInterfaceTys overlappedTys impliedTys =
-        let g = infoReader.g
-
-        [ for impliedTy in impliedTys do
-            let dispatchSlots = GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy
-            
-            // Check that no interface type is implied twice
-            if (overlappedTys |> List.exists (typeEquiv g impliedTy)) &&
-               dispatchSlots |> List.exists (fun (RequiredSlot(_, flags)) -> not (HasRequiredSlotFlag RequiredSlotFlags.Optional flags)) then
-                errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv impliedTy), m))
-            
-            yield! dispatchSlots ]
-
     /// Get a collection of slots for the given class type.
     let GetClassDispatchSlots (infoReader: InfoReader) ad m reqdTy =
         [ if not (isInterfaceTy infoReader.g reqdTy) then
@@ -546,8 +532,18 @@ module DispatchSlotChecking =
 
     /// Get a collection of slots for the given type and implied types.
     let GetDispatchSlots (infoReader: InfoReader) denv ad m availImpliedInterfaces topInterfaceTys overlappedTys reqdTy impliedTys =
-        if isInterfaceTy infoReader.g reqdTy then 
-            GetInterfacesDispatchSlots infoReader denv ad m availImpliedInterfaces topInterfaceTys overlappedTys impliedTys
+        let g = infoReader.g
+
+        if isInterfaceTy g reqdTy then 
+            [ for impliedTy in impliedTys do
+                let dispatchSlots = GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy
+                
+                // Check that no interface type is implied twice
+                if (overlappedTys |> List.exists (typeEquiv g impliedTy)) &&
+                   dispatchSlots |> List.exists (fun (RequiredSlot(_, flags)) -> not (HasRequiredSlotFlag RequiredSlotFlags.Optional flags)) then
+                    errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv impliedTy), m))
+                
+                yield! dispatchSlots ]
         else                  
             GetClassDispatchSlots infoReader ad m reqdTy
 
