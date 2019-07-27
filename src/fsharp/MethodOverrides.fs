@@ -294,16 +294,6 @@ module DispatchSlotChecking =
             if hasDefaultInterfaceImplementation then
                 dimConsumSupport.TryRaiseRuntimeErrorRecover m |> ignore
 
-            let isOptional =
-                if HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags then
-                    // A DIM is considered *not* 'optional' if it is not language supported.
-                    if not dimConsumSupport.IsLanguageSupported && hasDefaultInterfaceImplementation then
-                        false
-                    else
-                        true
-                else
-                    false
-
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
                 |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)
@@ -314,7 +304,7 @@ module DispatchSlotChecking =
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range, nenv, item,item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, denv,AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
-                if not isOptional &&
+                if not (HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags) &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then
@@ -489,6 +479,15 @@ module DispatchSlotChecking =
                         |> filterTopMethods [] ]
                 |> filterTopMethods []
 
+            let dimConsumSupport = infoReader.DefaultInterfaceMethodConsumptionSupport
+
+            let checkDispatchFlags dispatchFlags =
+                // A DIM is considered *not* 'optional' if it is not language supported.
+                if HasRequiredSlotFlag RequiredSlotFlags.HasDefaultInterfaceImplementation dispatchFlags && not dimConsumSupport.IsLanguageSupported then
+                    dispatchFlags &&& ~~~(RequiredSlotFlags.Optional)
+                else
+                    dispatchFlags
+
             // Check if the interface has an inherited implementation
             // If so, you do not have to implement all the methods - each
             // specific method is "optionally" implemented.
@@ -517,7 +516,7 @@ module DispatchSlotChecking =
                               // we found multiple overrider methods, means we might have ambiguity
                               | _ -> RequiredSlotFlags.PossiblyNoMostSpecificImplementation
 
-                          yield RequiredSlot (minfo, dispatchFlags) ]
+                          yield RequiredSlot (minfo, checkDispatchFlags dispatchFlags) ]
             else
                 []
 
@@ -539,7 +538,7 @@ module DispatchSlotChecking =
                 let dispatchSlots = GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy
                 
                 // Check that no interface type is implied twice
-                if (overlappedTys |> List.exists (typeEquiv g impliedTy)) &&
+                if overlappedTys |> List.exists (typeEquiv g impliedTy) &&
                    dispatchSlots |> List.exists (fun (RequiredSlot(_, flags)) -> not (HasRequiredSlotFlag RequiredSlotFlags.Optional flags)) then
                     errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv impliedTy), m))
                 
