@@ -2707,6 +2707,7 @@ type Test () =
 
         member __.Method () = Console.Write "123"
 
+    interface IC2
     interface IDiamond2
     interface IMultiDiamond1
 

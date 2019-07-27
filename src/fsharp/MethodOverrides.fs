@@ -530,19 +530,12 @@ module DispatchSlotChecking =
                     yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo) ]
 
     /// Get a collection of slots for the given type and implied types.
-    let GetDispatchSlots (infoReader: InfoReader) denv ad m availImpliedInterfaces topInterfaceTys overlappedTys reqdTy impliedTys =
+    let GetDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces topInterfaceTys reqdTy impliedTys =
         let g = infoReader.g
 
         if isInterfaceTy g reqdTy then 
             [ for impliedTy in impliedTys do
-                let dispatchSlots = GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy
-                
-                // Check that no interface type is implied twice
-                if overlappedTys |> List.exists (typeEquiv g impliedTy) &&
-                   dispatchSlots |> List.exists (fun (RequiredSlot(_, flags)) -> not (HasRequiredSlotFlag RequiredSlotFlags.Optional flags)) then
-                    errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv impliedTy), m))
-                
-                yield! dispatchSlots ]
+                yield! GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy ]
         else                  
             GetClassDispatchSlots infoReader ad m reqdTy
 
@@ -624,13 +617,16 @@ module DispatchSlotChecking =
             if isInterfaceTy g reqdTy && isNil impliedTys then 
                 errorR(Error(FSComp.SR.typrelDuplicateInterface(), reqdTyRange))
 
-            let overlappedTys =
-                [ for (j, _, _, impliedTys2) in reqdTyInfos do
-                    if i > j then  
-                        yield! ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2 ]
+            // Check that no interface type is implied twice
+            for (j, _, _, impliedTys2) in reqdTyInfos do
+                if i > j then  
+                    let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
+                    overlap |> List.iter (fun overlappingTy -> 
+                        if not (isNil (GetImmediateIntrinsicMethInfosOfType (None, ad) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsNewSlot))) then
+                            errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)), reqdTyRange)))
 
             // Compute the abstract slots that require implementations
-            let dispatchSlots = GetDispatchSlots infoReader denv ad reqdTyRange availImpliedInterfaces topInterfaceTys overlappedTys reqdTy impliedTys
+            let dispatchSlots = GetDispatchSlots infoReader ad reqdTyRange availImpliedInterfaces topInterfaceTys reqdTy impliedTys
                 
             // Compute the methods that are available to implement abstract slots from the base class
             //
