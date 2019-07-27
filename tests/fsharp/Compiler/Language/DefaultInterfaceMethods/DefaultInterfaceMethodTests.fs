@@ -2622,6 +2622,85 @@ let main _ =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "IBase-IB1-IA1-IC1-")
 
+//    [<Test>]
+//    let ``C# multi-diamond complex hierarchical interfaces with hiding methods then explicitly implemented - Runs - 2`` () =
+//        let csharpSource =
+//            """
+//using System;
+
+//namespace CSharpTest
+//{
+//    public interface IBase
+//    {
+//        void Method()
+//        {
+//        }
+//    }
+
+//    public interface IA1 : IBase
+//    {
+//        abstract void IBase.Method();
+//    }
+
+//    public interface IB1 : IBase
+//    {
+//    }
+
+//    public interface IC1 : IBase
+//    {
+//        void CMethod()
+//        {
+//            Console.Write("ABC");
+//        }
+//    }
+
+//    public interface ID1 : IBase
+//    {
+//    }
+
+//    public interface IDiamond1 : IA1, IB1
+//    {
+//    }
+
+//    public interface IDiamond2 : IC1, ID1
+//    {
+//    }
+
+//    public interface IDiamond3 : IC1, IA1
+//    {
+//    }
+
+//    public interface IMultiDiamond1 : IDiamond1, IDiamond3
+//    {
+//    }
+//}
+//            """
+
+//        let fsharpSource =
+//            """
+//open System
+//open CSharpTest
+
+//type Test () =
+
+//    interface IBase with
+
+//        member __.Method () = Console.Write "123"
+
+//    interface IDiamond2
+//    interface IMultiDiamond1
+
+//[<EntryPoint>]
+//let main _ =
+//    let test = Test () :> IMultiDiamond1
+//    test.Method ()
+//    test.CMethod ()
+//    0
+//            """
+
+//        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+//        CompilerAssert.CompileExeAndRun (fsharpSource, c, "123ABC")
+
     [<Test>]
     let ``C# diamond complex hierarchical interfaces then explicitly implemented - Runs`` () =
         let csharpSource =

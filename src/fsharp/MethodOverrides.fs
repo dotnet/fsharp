@@ -471,19 +471,23 @@ module DispatchSlotChecking =
         let g = infoReader.g
         let amap = infoReader.amap
 
+        let rec filterTopMethods acc (xs: MethInfo list) =
+            match xs with
+            | [] -> acc
+            | h :: t ->
+                (t |> List.filter (fun x -> 
+                    not (TypeFeasiblySubsumesType 0 g amap m x.ApparentEnclosingType CanCoerce h.ApparentEnclosingType)
+                ))
+                |> filterTopMethods (h :: acc)
+
         [ for impliedTy in impliedTys do
             if isInterfaceTy g impliedTy then
                 // This is to find overrider methods that are at the top most hierarchy out of the interfaces.
                 let rec getTopMostOverriderILMethods (minfo: MethInfo) =
                     [ for ty in topInterfaceTys do
                         yield!
-                            match TryFindIntrinisicOverriderILMethInfoByBaseMethod infoReader AccessibleFromSomewhere m ty minfo with
-                            | [] -> []
-                            | h :: t ->
-                                // TODO: Is this right?
-                                h :: (t |> List.filter (fun x -> 
-                                    not (TypeFeasiblySubsumesType 0 g amap m x.ApparentEnclosingType CanCoerce h.ApparentEnclosingType)
-                                ))                        
+                           TryFindIntrinisicOverriderILMethInfoByBaseMethod infoReader AccessibleFromSomewhere m ty minfo
+                           |> filterTopMethods []
                     ]
                 // Check if the interface has an inherited implementation
                 // If so, you do not have to implement all the methods - each
@@ -592,24 +596,18 @@ module DispatchSlotChecking =
                             errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)), reqdTyRange)))
 
         let topInterfaceTys =
-            [
-                for (ty, _) in allReqdTys do
-                    if isInterfaceTy g ty then
-                        let isTop =
-                            allReqdTys 
-                            |> List.forall (fun (xty, m) -> 
-                                if isInterfaceTy g xty then
-                                    if typeEquiv g ty xty then
-                                        true
-                                    else
-                                        if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce xty then
-                                            false
-                                        else
-                                            true
-                                else
-                                    true)
-                        if isTop then
-                            yield ty
+            [ for (ty, _) in allReqdTys do
+                if isInterfaceTy g ty then
+                    let isTop =
+                        allReqdTys 
+                        |> List.forall (fun (xty, m) -> 
+                            if isInterfaceTy g xty then
+                                if typeEquiv g ty xty then true
+                                else not (TypeFeasiblySubsumesType 0 g amap m ty CanCoerce xty)
+                            else
+                                true)
+                    if isTop then
+                        yield ty
             ]
 
         // Get the SlotImplSet for each implemented type
