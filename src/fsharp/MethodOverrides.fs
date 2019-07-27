@@ -462,29 +462,29 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         if isInterfaceTy g interfaceTy then
-            let rec filterTopMethods acc (xs: MethInfo list) =
+            let rec filterForTopMethods acc (xs: MethInfo list) =
                 match xs with
                 | [] -> acc
                 | h :: t ->
-                    (t |> List.filter (fun x -> 
-                        not (TypeFeasiblySubsumesType 0 g amap m x.ApparentEnclosingType CanCoerce h.ApparentEnclosingType)
-                    ))
-                    |> filterTopMethods (h :: acc)
+                    t 
+                    |> List.filter (fun x -> 
+                        not (TypeFeasiblySubsumesType 0 g amap m x.ApparentEnclosingType CanCoerce h.ApparentEnclosingType))
+                    |> filterForTopMethods (h :: acc)
 
             // This is to find overrider methods that are at the top most hierarchy out of the interfaces.
             let rec getTopMostOverriderILMethods (minfo: MethInfo) =
                 [ for ty in topInterfaceTys do
                     yield! 
                         TryFindIntrinisicOverriderILMethInfoByBaseMethod infoReader AccessibleFromSomewhere m ty minfo
-                        |> filterTopMethods [] ]
-                |> filterTopMethods []
+                        |> filterForTopMethods [] ]
+                |> filterForTopMethods []
 
             let dimConsumSupport = infoReader.DefaultInterfaceMethodConsumptionSupport
 
             let checkDispatchFlags dispatchFlags =
                 // A DIM is considered *not* 'optional' if it is not language supported.
                 if HasRequiredSlotFlag RequiredSlotFlags.HasDefaultInterfaceImplementation dispatchFlags && not dimConsumSupport.IsLanguageSupported then
-                    dispatchFlags &&& ~~~(RequiredSlotFlags.Optional)
+                    dispatchFlags &&& ~~~RequiredSlotFlags.Optional
                 else
                     dispatchFlags
 
