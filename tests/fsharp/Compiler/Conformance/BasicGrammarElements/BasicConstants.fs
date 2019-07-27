@@ -6,7 +6,7 @@ open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
-module ``Basic Grammar Element Constaints`` =
+module ``Basic Grammar Element Constants`` =
 
     [<Test>]
     let `` Basic constaints compile `` () =
