@@ -492,8 +492,16 @@ module DispatchSlotChecking =
                     // The interfaces are sorted in order to make this work.
                     ([], sortedInterfaceTys)
                     ||> List.fold (fun minfos ty ->
+                        let minfo2Opt =
+                            TryFindILIntrinisicOverriderMethInfo infoReader (minfo.LogicalName, AccessibleFromSomewhere) m ty
+                            |> List.tryFind (fun minfo2 -> 
+                                typeEquiv g ty minfo2.ApparentEnclosingType && 
+                                minfo.NumArgs = minfo2.NumArgs && 
+                                minfo.GenericArity = minfo2.GenericArity
+                            )
+                                    
                         // We are only looking for IL overriders because F# does not support creating your own default interface methods.
-                        match minfos, TryFindILImmediateIntrinisicOverriderMethInfo infoReader m AccessibleFromSomewhere ty minfo with
+                        match minfos, minfo2Opt with
                         | [], Some minfo2 -> [ minfo2 ]
                         | h :: t, Some minfo2 when TypeFeasiblySubsumesType 0 g amap m h.ApparentEnclosingType CanCoerce minfo2.ApparentEnclosingType ->
                             minfo2 :: t

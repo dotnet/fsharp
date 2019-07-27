@@ -362,6 +362,41 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
           ty
           None
 
+    let GetIntrinsicILOverriderMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
+
+        let checkMethod (minfo: MethInfo) (ilMethRef: ILMethodRef) =
+            ilMethRef.ArgCount = (match minfo.NumArgs with [] -> 0 | count :: _ -> count) && 
+            ilMethRef.GenericArity = minfo.GenericArity
+
+        FoldPrimaryHierarchyOfType (fun ty (acc: MethInfo list list) ->
+            match tryAppTy g ty with
+            | ValueSome (tcref, _) when tcref.IsILTycon ->
+                (acc, tcref.ILTyconRawMetadata.MethodImpls.AsList)
+                ||> List.fold (fun acc ilMethImpl ->
+                    match optFilter with
+                    | Some name when name = ilMethImpl.Overrides.MethodRef.Name ->
+                        let methods = 
+                            GetImmediateIntrinsicMethInfosOfType (Some ilMethImpl.OverrideBy.Name, ad) g amap m ty 
+
+                        let minfos =
+                            ([], methods)
+                            ||> List.fold (fun acc minfo ->
+                                if checkMethod minfo ilMethImpl.OverrideBy.MethodRef then
+                                    minfo :: acc
+                                else
+                                    acc
+                            )
+
+                        if List.isEmpty minfos then
+                            acc
+                        else
+                            minfos :: acc
+                    | _ ->
+                        acc
+                )
+            | _ -> acc
+        ) g amap m allowMultiIntfInst ty []
+
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
 
@@ -443,6 +478,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
+    let ilOverriderMethodInfoCache = MakeInfoCache GetIntrinsicILOverriderMethodSetsUncached hashFlags0
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierachyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierachyUncached HashIdentity.Structural
@@ -493,6 +529,10 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Try and find an item with the given name in a type.
     member x.TryFindNamedItemOfType (nm, ad, m, ty) =
         namedItemsCache.Apply(((nm, ad), m, ty))
+
+    /// Read the raw method sets of a type that is an overrider, including inherited ones. Cache the result for monomorphic types
+    member x.GetILIntrinsicOverriderMethodMapOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
+        ilOverriderMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
 
     /// Get the super-types of a type, including interface types.
     member x.GetEntireTypeHierachy (allowMultiIntfInst, m, ty) =
@@ -763,34 +803,16 @@ let TryFindIntrinsicMethInfo infoReader m ad nm ty =
 let TryFindPropInfo infoReader m ad nm ty = 
     GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
     
-/// Try to find the method that overrides the given method from the given type.
+/// Get a collection of overrider methods.
 /// The given type must be an IL type.
-/// The given method must be an IL method.
-let TryFindILImmediateIntrinisicOverriderMethInfo (infoReader: InfoReader) m ad ty (overrides: MethInfo) =
-    let g = infoReader.g
+let GetILIntrinisicOverriderMethInfo (infoReader: InfoReader) (nm, ad) m ty =
+    infoReader.GetILIntrinsicOverriderMethodMapOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
+    |> List.concat
 
-    match tryAppTy g ty, overrides with
-    | ValueSome (tcref, _), ILMeth (_, ilMethInfo, _) when tcref.IsILTycon ->
-        let ilMeth = ilMethInfo.ILMethodRef
-
-        tcref.ILTyconRawMetadata.MethodImpls.AsList
-        |> List.tryFind (fun ilMethImpl -> 
-            let overridesRef = ilMethImpl.Overrides.MethodRef
-            overridesRef.Name = ilMeth.Name && overridesRef.ArgCount = ilMeth.ArgCount && 
-            overridesRef.GenericArity = ilMeth.GenericArity &&
-            overridesRef.DeclaringTypeRef.BasicQualifiedName = ilMethInfo.DeclaringTyconRef.CompiledRepresentationForNamedType.BasicQualifiedName
-        )
-        |> Option.bind (fun ilMethImpl ->
-            TryFindIntrinsicMethInfo infoReader m ad ilMethImpl.OverrideBy.Name ty
-            |> List.tryFind (fun methInfo ->
-                let overrideByRef = ilMethImpl.OverrideBy.MethodRef
-                overrideByRef.ArgCount = (match methInfo.NumArgs with [] -> 0 | count :: _ -> count) && 
-                overrideByRef.GenericArity = methInfo.GenericArity &&
-                overrideByRef.DeclaringTypeRef.BasicQualifiedName = methInfo.DeclaringTyconRef.CompiledRepresentationForNamedType.BasicQualifiedName
-            )
-        )
-    | _ ->
-        None
+/// Try to find a particular named overrider method on a type.
+/// The given type must be an IL type.
+let TryFindILIntrinisicOverriderMethInfo infoReader (nm, ad) m ty =
+    GetILIntrinisicOverriderMethInfo infoReader (Some nm, ad) m ty
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file
