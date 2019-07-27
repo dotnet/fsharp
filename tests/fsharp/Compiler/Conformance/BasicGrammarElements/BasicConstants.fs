@@ -9,7 +9,7 @@ open FSharp.Compiler.SourceCodeServices
 module ``Basic Grammar Element Constants`` =
 
     [<Test>]
-    let `` Basic constaints compile `` () =
+    let `` Basic constants compile `` () =
         CompilerAssert.Pass 
             """
 let sbyteConst = 1y
