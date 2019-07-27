@@ -467,49 +467,24 @@ module DispatchSlotChecking =
         (if minfo.IsDefaultInterfaceMethod then RequiredSlotFlags.HasDefaultInterfaceImplementation else RequiredSlotFlags.None)
 
     /// Get a collection of slots for the given implied interface types.
-    let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces interfaceTys impliedTys =
+    let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces topInterfaceTys impliedTys =
         let g = infoReader.g
         let amap = infoReader.amap
 
         [ for impliedTy in impliedTys do
             if isInterfaceTy g impliedTy then
-                let sortedInterfaceTys =
-                    interfaceTys
-                    |> List.filter (fun ty -> 
-                        isInterfaceTy g ty && 
-                        not (typeEquiv g impliedTy ty) && 
-                        TypeFeasiblySubsumesType 0 g amap m impliedTy CanCoerce ty
-                    )
-                    |> List.sortWith (fun ty1 ty2 ->
-                        if TypeFeasiblySubsumesType 0 g amap m ty1 CanCoerce ty2 then 1
-                        else -1
-                    )
-
-                // Performance Review: 
-                //     This has some time complexity. For every method we must iterate over a set of interfaces and find the immediate overrider if it has one.
-                let rec getILOverriderMethods (minfo: MethInfo) =
-                    // This is to find overrider methods that are at the top most hierarchy out of the interfaces.
-                    // The interfaces are sorted in order to make this work.
-                    ([], sortedInterfaceTys)
-                    ||> List.fold (fun minfos ty ->
-                        let minfo2Opt =
-                            TryFindILIntrinisicOverriderMethInfo infoReader (minfo.LogicalName, AccessibleFromSomewhere) m ty
-                            |> List.tryFind (fun minfo2 -> 
-                                typeEquiv g ty minfo2.ApparentEnclosingType && 
-                                minfo.NumArgs = minfo2.NumArgs && 
-                                minfo.GenericArity = minfo2.GenericArity
-                            )
-                                    
-                        // We are only looking for IL overriders because F# does not support creating your own default interface methods.
-                        match minfos, minfo2Opt with
-                        | [], Some minfo2 -> [ minfo2 ]
-                        | h :: t, Some minfo2 when TypeFeasiblySubsumesType 0 g amap m h.ApparentEnclosingType CanCoerce minfo2.ApparentEnclosingType ->
-                            minfo2 :: t
-                        | h :: _, Some minfo2 when not (TypeFeasiblySubsumesType 0 g amap m minfo2.ApparentEnclosingType CanCoerce h.ApparentEnclosingType) ->
-                            minfo2 :: minfos
-                        | _ -> minfos
-                    )
-
+                // This is to find overrider methods that are at the top most hierarchy out of the interfaces.
+                let rec getTopMostOverriderILMethods (minfo: MethInfo) =
+                    [ for ty in topInterfaceTys do
+                        yield!
+                            match TryFindIntrinisicOverriderILMethInfoByBaseMethod infoReader AccessibleFromSomewhere m ty minfo with
+                            | [] -> []
+                            | h :: t ->
+                                // TODO: Is this right?
+                                h :: (t |> List.filter (fun x -> 
+                                    not (TypeFeasiblySubsumesType 0 g amap m x.ApparentEnclosingType CanCoerce h.ApparentEnclosingType)
+                                ))                        
+                    ]
                 // Check if the interface has an inherited implementation
                 // If so, you do not have to implement all the methods - each
                 // specific method is "optionally" implemented.
@@ -529,7 +504,7 @@ module DispatchSlotChecking =
                       // IL methods might have default implementations.
                       else
                           let dispatchFlags =
-                              match getILOverriderMethods minfo with
+                              match getTopMostOverriderILMethods minfo with
                               // no overrides, then get default flags
                               | [] -> GetDefaultDispatchSlotFlags minfo
 
@@ -551,9 +526,9 @@ module DispatchSlotChecking =
                     yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo) ]
 
     /// Get a collection of slots for the given type and implied types.
-    let GetDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces interfaceTys reqdTy impliedTys =
+    let GetDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces topInterfaceTys reqdTy impliedTys =
         if isInterfaceTy infoReader.g reqdTy then 
-            GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces interfaceTys impliedTys
+            GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTys
         else                  
             GetClassDispatchSlots infoReader ad m reqdTy
 
@@ -616,12 +591,26 @@ module DispatchSlotChecking =
                         if not (isNil (GetImmediateIntrinsicMethInfosOfType (None, ad) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
                             errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)), reqdTyRange)))
 
-        let interfaceTys =
-            reqdTyInfos
-            |> List.map (fun (_, _, _, impliedTys) ->
-                impliedTys |> List.filter (isInterfaceTy g)
-            )
-            |> List.concat
+        let topInterfaceTys =
+            [
+                for (ty, _) in allReqdTys do
+                    if isInterfaceTy g ty then
+                        let isTop =
+                            allReqdTys 
+                            |> List.forall (fun (xty, m) -> 
+                                if isInterfaceTy g xty then
+                                    if typeEquiv g ty xty then
+                                        true
+                                    else
+                                        if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce xty then
+                                            false
+                                        else
+                                            true
+                                else
+                                    true)
+                        if isTop then
+                            yield ty
+            ]
 
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members
@@ -644,7 +633,7 @@ module DispatchSlotChecking =
             //    not minfo.IsAbstract && minfo.IsVirtual 
 
             // Compute the abstract slots that require implementations
-            let dispatchSlots = GetDispatchSlots infoReader ad reqdTyRange availImpliedInterfaces interfaceTys reqdTy impliedTys
+            let dispatchSlots = GetDispatchSlots infoReader ad reqdTyRange availImpliedInterfaces topInterfaceTys reqdTy impliedTys
                 
             // Compute the methods that are available to implement abstract slots from the base class
             //

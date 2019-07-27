@@ -362,7 +362,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
           ty
           None
 
-    let GetIntrinsicILOverriderMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
+    let GetIntrinsicOverriderILMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
 
         let checkMethod (minfo: MethInfo) (ilMethRef: ILMethodRef) =
             ilMethRef.ArgCount = (match minfo.NumArgs with [] -> 0 | count :: _ -> count) && 
@@ -478,7 +478,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
-    let ilOverriderMethodInfoCache = MakeInfoCache GetIntrinsicILOverriderMethodSetsUncached hashFlags0
+    let ilOverriderMethodInfoCache = MakeInfoCache GetIntrinsicOverriderILMethodSetsUncached hashFlags0
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierachyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierachyUncached HashIdentity.Structural
@@ -805,14 +805,20 @@ let TryFindPropInfo infoReader m ad nm ty =
     
 /// Get a collection of overrider methods.
 /// The given type must be an IL type.
-let GetILIntrinisicOverriderMethInfo (infoReader: InfoReader) (nm, ad) m ty =
+let GetIntrinisicOverriderILMethInfo (infoReader: InfoReader) (nm, ad) m ty =
     infoReader.GetILIntrinsicOverriderMethodMapOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
     |> List.concat
 
 /// Try to find a particular named overrider method on a type.
 /// The given type must be an IL type.
-let TryFindILIntrinisicOverriderMethInfo infoReader (nm, ad) m ty =
-    GetILIntrinisicOverriderMethInfo infoReader (Some nm, ad) m ty
+let TryFindIntrinisicOverriderILMethInfoByBaseMethod infoReader ad m ty (baseMethod: MethInfo) =
+    if baseMethod.IsNewSlot then
+        GetIntrinisicOverriderILMethInfo infoReader (Some baseMethod.LogicalName, ad) m ty
+        |> List.filter (fun minfo ->
+            minfo.NumArgs = baseMethod.NumArgs && minfo.GenericArity = baseMethod.GenericArity
+        )
+    else
+        []
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file
