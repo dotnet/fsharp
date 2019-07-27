@@ -8,7 +8,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <IncludeVsLanguageServer>true</IncludeVsLanguageServer>
+    <!-- this should be false for branch `release/dev16.2`, true otherwise -->
+    <IncludeVsLanguageServer>false</IncludeVsLanguageServer>
   </PropertyGroup>
 
 </Project>
