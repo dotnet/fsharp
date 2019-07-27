@@ -2623,7 +2623,7 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "IBase-IB1-IA1-IC1-")
 
     [<Test>]
-    let ``C# multi-diamond complex hierarchical interfaces with hiding methods then explicitly implemented - Runs - 2`` () =
+    let ``C# multi-diamond complex hierarchical interfaces then explicitly implemented - Runs`` () =
         let csharpSource =
             """
 using System;
