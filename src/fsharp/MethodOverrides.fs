@@ -532,9 +532,9 @@ module DispatchSlotChecking =
 
         if isInterfaceTy g reqdTy then 
             [ for impliedTy in impliedTys do
-                yield GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy ]
+                yield (impliedTy, GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy) ]
         else                  
-            [ GetClassDispatchSlots infoReader ad m reqdTy ]
+            [ (reqdTy, GetClassDispatchSlots infoReader ad m reqdTy) ]
 
     /// Get the slots of a type that can or must be implemented. This depends
     /// partly on the full set of interface types that are being implemented
@@ -639,13 +639,11 @@ module DispatchSlotChecking =
 
             /// Check that no interface type is implied twice
             for (j, _, _, impliedTys2) in reqdTyInfos do
-                if i > j then  
-                    (dispatchSlotSet, impliedTys)
-                    ||> List.iter2 (fun dispatchSlots impliedTy ->
-                        if impliedTys2 |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange impliedTy) then
+                if i > j then
+                    for (ty, dispatchSlots) in dispatchSlotSet do
+                        if impliedTys2 |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty) then
                             if dispatchSlots |> List.exists (fun (RequiredSlot(minfo, _)) -> minfo.IsNewSlot) then
-                                errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv impliedTy), reqdTyRange))
-                    )
+                                errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv ty), reqdTyRange))
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x: PropInfo) = 
@@ -656,7 +654,7 @@ module DispatchSlotChecking =
                 GetIntrinsicPropInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
                 |> List.filter isRelevantRequiredProperty
                 
-            let dispatchSlots = dispatchSlotSet |> List.concat
+            let dispatchSlots = dispatchSlotSet |> List.map snd |> List.concat
             let dispatchSlotsKeyed = dispatchSlots |> NameMultiMap.initBy (fun (RequiredSlot(v, _)) -> v.LogicalName) 
             yield SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, reqdProperties) ]
 
