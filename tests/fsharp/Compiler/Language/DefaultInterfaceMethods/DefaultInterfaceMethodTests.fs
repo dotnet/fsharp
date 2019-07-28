@@ -3405,6 +3405,88 @@ let main _ =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "MMM")
 
+    [<Test>]
+    let ``C# simple diamond inheritance using object expression - Errors with no specific implementation`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M();
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+
+    public interface IC : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open CSharpTest
+
+let test =
+    { new IB
+      interface IC }
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 363
+                StartLine = 8
+                StartColumn = 6
+                EndLine = 8
+                EndColumn = 20
+                Message = "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
+            }
+            {
+                Number = 3304
+                StartLine = 7
+                StartColumn = 4
+                EndLine = 8
+                EndColumn = 20
+                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366
+                StartLine = 7
+                StartColumn = 4
+                EndLine = 8
+                EndColumn = 20
+                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+            {
+                Number = 3304
+                StartLine = 8
+                StartColumn = 6
+                EndLine = 8
+                EndColumn = 20
+                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366
+                StartLine = 8
+                StartColumn = 6
+                EndLine = 8
+                EndColumn = 20
+                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ])
+
 #else
 
 [<TestFixture>]

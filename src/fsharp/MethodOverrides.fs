@@ -256,7 +256,6 @@ module DispatchSlotChecking =
             |> NameMultiMap.find  dispatchSlot.LogicalName  
             |> List.exists (OverrideImplementsDispatchSlot g amap m dispatchSlot)
 
-
     /// Check all dispatch slots are implemented by some override.
     let CheckDispatchSlotsAreImplemented (denv, infoReader: InfoReader, m,
                                           nenv, sink: TcResultsSink,
@@ -452,7 +451,7 @@ module DispatchSlotChecking =
                     | _ -> ()
 
     /// Get default slot flags for the given method.
-    let inline GetDefaultDispatchSlotFlags (minfo: MethInfo) =
+    let GetDefaultDispatchSlotFlags (minfo: MethInfo) =
         (if minfo.IsAbstract then RequiredSlotFlags.None else RequiredSlotFlags.IsOptional) |||
         (if minfo.IsDefaultInterfaceMethod then RequiredSlotFlags.HasDefaultInterfaceImplementation else RequiredSlotFlags.None)
 
@@ -528,14 +527,14 @@ module DispatchSlotChecking =
                     yield RequiredSlot(minfo, GetDefaultDispatchSlotFlags minfo) ]
 
     /// Get a collection of slots for the given type and implied types.
-    let GetDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces topInterfaceTys reqdTy impliedTys =
+    let GetDispatchSlotSet (infoReader: InfoReader) ad m availImpliedInterfaces topInterfaceTys reqdTy impliedTys =
         let g = infoReader.g
 
         if isInterfaceTy g reqdTy then 
             [ for impliedTy in impliedTys do
-                yield! GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy ]
+                yield GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces topInterfaceTys impliedTy ]
         else                  
-            GetClassDispatchSlots infoReader ad m reqdTy
+            [ GetClassDispatchSlots infoReader ad m reqdTy ]
 
     /// Get the slots of a type that can or must be implemented. This depends
     /// partly on the full set of interface types that are being implemented
@@ -591,6 +590,11 @@ module DispatchSlotChecking =
         // This contains the list of required members and the list of available members
         [ for (i, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
 
+            // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
+            // duplicates.
+            if isInterfaceTy g reqdTy && isNil impliedTys then 
+                errorR(Error(FSComp.SR.typrelDuplicateInterface(), reqdTyRange))
+
             // Build a set of the implied interface types, for quicker lookup, by nominal type
             let isImpliedInterfaceTable = 
                 impliedTys 
@@ -604,21 +608,8 @@ module DispatchSlotChecking =
                 isImpliedInterfaceTable.ContainsKey (tcrefOfAppTy g ty) &&
                 impliedTys |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
 
-            // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
-            // duplicates.
-            if isInterfaceTy g reqdTy && isNil impliedTys then 
-                errorR(Error(FSComp.SR.typrelDuplicateInterface(), reqdTyRange))
-
-            // Check that no interface type is implied twice
-            for (j, _, _, impliedTys2) in reqdTyInfos do
-                if i > j then  
-                    let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
-                    overlap |> List.iter (fun overlappingTy -> 
-                        if not (isNil (GetImmediateIntrinsicMethInfosOfType (None, ad) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsNewSlot))) then
-                            errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)), reqdTyRange)))
-
             // Compute the abstract slots that require implementations
-            let dispatchSlots = GetDispatchSlots infoReader ad reqdTyRange availImpliedInterfaces topInterfaceTys reqdTy impliedTys
+            let dispatchSlotSet = GetDispatchSlotSet infoReader ad reqdTyRange availImpliedInterfaces topInterfaceTys reqdTy impliedTys
                 
             // Compute the methods that are available to implement abstract slots from the base class
             //
@@ -645,6 +636,16 @@ module DispatchSlotChecking =
                         for minfo in minfos do
                           if not minfo.IsAbstract then
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo ]
+
+            /// Check that no interface type is implied twice
+            for (j, _, _, impliedTys2) in reqdTyInfos do
+                if i > j then  
+                    (dispatchSlotSet, impliedTys)
+                    ||> List.iter2 (fun dispatchSlots impliedTy ->
+                        if impliedTys2 |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange impliedTy) then
+                            if dispatchSlots |> List.exists (fun (RequiredSlot(minfo, _)) -> minfo.IsNewSlot) then
+                                errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv impliedTy), reqdTyRange))
+                    )
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x: PropInfo) = 
@@ -655,6 +656,7 @@ module DispatchSlotChecking =
                 GetIntrinsicPropInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
                 |> List.filter isRelevantRequiredProperty
                 
+            let dispatchSlots = dispatchSlotSet |> List.concat
             let dispatchSlotsKeyed = dispatchSlots |> NameMultiMap.initBy (fun (RequiredSlot(v, _)) -> v.LogicalName) 
             yield SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, reqdProperties) ]
 
@@ -706,13 +708,11 @@ module DispatchSlotChecking =
                          typeEquiv g ty reqdTy
                      else
                          not (isInterfaceTy g reqdTy) )
-        
 
         // We check all the abstracts related to the class hierarchy and then check each interface implementation
         for ((reqdTy, m), slotImplSet) in allImpls do
             let (SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, _)) = slotImplSet
             try 
-
                 // Now extract the information about each overriding method relevant to this SlotImplSet
                 let allImmediateMembersThatMightImplementDispatchSlots = 
                     allImmediateMembersThatMightImplementDispatchSlots
