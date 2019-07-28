@@ -45,7 +45,7 @@ type RequiredSlotFlags =
     | None                                      = 0x000
 
     /// A slot which does not have to be implemented, because an inherited implementation is available.
-    | IsOptional                                  = 0x001
+    | IsOptional                                = 0x001
 
     /// A slot which has a default interface implementation.
     | HasDefaultInterfaceImplementation         = 0x010
@@ -312,7 +312,7 @@ module DispatchSlotChecking =
                     if hasDefaultInterfaceImplementation then
                         dimConsumSupport.TryRaiseLanguageErrorRecover m |> ignore
 
-                    if dimConsumSupport.IsLanguageSupported && HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags then
+                    if HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
 
                     // error reporting path
@@ -463,7 +463,7 @@ module DispatchSlotChecking =
 
         if isInterfaceTy g interfaceTy then
             // This is to find overrider methods that are at the topmost hierarchy out of the interfaces.
-            let rec getTopOverriderILMethods (minfo: MethInfo) =
+            let rec getTopOverriderMethods (minfo: MethInfo) =
                 topInterfaceTys
                 |> List.map (fun (ty, _) ->
                     TryFindIntrinsicTopInterfaceOverriderMethInfosOfTypeByBaseMethod infoReader AccessibleFromSomewhere m minfo ty)
@@ -473,11 +473,18 @@ module DispatchSlotChecking =
             let dimConsumSupport = infoReader.DefaultInterfaceMethodConsumptionSupport
 
             let checkDispatchFlags dispatchFlags =
-                // A DIM is considered *not* 'optional' if it is not language supported.
-                if HasRequiredSlotFlag RequiredSlotFlags.HasDefaultInterfaceImplementation dispatchFlags && not dimConsumSupport.IsLanguageSupported then
-                    dispatchFlags &&& ~~~RequiredSlotFlags.IsOptional
+                let dispatchFlags2 =
+                    // A DIM is considered *not* 'optional' if it is not language supported.
+                    if HasRequiredSlotFlag RequiredSlotFlags.HasDefaultInterfaceImplementation dispatchFlags && not dimConsumSupport.IsLanguageSupported then
+                        dispatchFlags &&& ~~~RequiredSlotFlags.IsOptional
+                    else
+                        dispatchFlags
+                
+                // If DIMs are not language supported, then do not consider a slot to have a specific implementation.
+                if HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags && not dimConsumSupport.IsLanguageSupported then
+                    (dispatchFlags2 &&& ~~~RequiredSlotFlags.PossiblyNoMostSpecificImplementation) ||| RequiredSlotFlags.HasDefaultInterfaceImplementation
                 else
-                    dispatchFlags
+                    dispatchFlags2
 
             // Check if the interface has an inherited implementation
             // If so, you do not have to implement all the methods - each
@@ -497,7 +504,7 @@ module DispatchSlotChecking =
                       // IL methods might have default implementations.
                       else
                           let dispatchFlags =
-                              match getTopOverriderILMethods minfo with
+                              match getTopOverriderMethods minfo with
                               // no overrides, then get default flags
                               | [] -> GetDefaultDispatchSlotFlags minfo
 
@@ -617,7 +624,7 @@ module DispatchSlotChecking =
             //
             // This is used in CheckDispatchSlotsAreImplemented when we think a dispatch slot may not
             // have been implemented. 
-            let availPriorOverrides : OverrideInfo list = 
+            let availPriorOverrides = 
                 if isInterfaceTy g reqdTy then
                     []
                 else

@@ -507,6 +507,150 @@ let f () =
             }
         ], fsharpLanguageVersion = "4.6")
 
+
+    [<Test>]
+    let ``C# simple diamond inheritance - Errors with lang version not supported and should not see the error for specific implementation`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M();
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+
+    public interface IC : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+type Test () =
+
+    interface IB
+    interface IC
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 363
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 16
+                Message = "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
+            }
+            {
+                Number = 3302
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 16
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 366
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 16
+                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+            {
+                Number = 3302
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 16
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 366
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 16
+                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
+    [<Test>]
+    let ``C# simple diamond inheritance - Errors with lang version not supported and should not see the error for specific implementation - 2`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M();
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+
+    public interface IC : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+type Test () =
+
+    interface IB
+    interface IC
+    interface IA
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3302
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 16
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 366
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 16
+                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ], fsharpLanguageVersion = "4.6")
+
 #else
 
 [<TestFixture>]
@@ -3061,6 +3205,205 @@ let main _ =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "IA.MA-IB1.IB.MB-IB1.IB.MB")
+
+    [<Test>]
+    let ``C# simple diamond inheritance - Errors with no specific implementation`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M();
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+
+    public interface IC : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open CSharpTest
+
+type Test () =
+
+    interface IB
+    interface IC
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 363
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 16
+                Message = "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
+            }
+            {
+                Number = 3304
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 16
+                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366
+                StartLine = 9
+                StartColumn = 14
+                EndLine = 9
+                EndColumn = 16
+                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+            {
+                Number = 3304
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 16
+                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366
+                StartLine = 8
+                StartColumn = 14
+                EndLine = 8
+                EndColumn = 16
+                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ])
+
+    [<Test>]
+    let ``C# simple diamond inheritance - Errors with no specific implementation - 2`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M();
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+
+    public interface IC : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+type Test () =
+
+    interface IB
+    interface IC
+    interface IA
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3304
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 16
+                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 16
+                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ])
+
+    [<Test>]
+    let ``C# simple diamond inheritance - Runs`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M();
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+
+    public interface IC : IA
+    {
+        void IA.M()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open CSharpTest
+
+open System
+
+type Test () =
+
+    interface IB
+    interface IC
+    interface IA with
+
+        member __.M () = Console.Write("M")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test ()
+    let testIA = test :> IA
+    let testIB = test :> IB
+    let testIC = test :> IC
+    testIA.M ()
+    testIB.M ()
+    testIC.M ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "MMM")
 
 #else
 

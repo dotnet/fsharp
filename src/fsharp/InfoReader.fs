@@ -814,9 +814,7 @@ let TryFindIntrinsicTopInterfaceOverriderMethInfosOfTypeByBaseMethod (infoReader
     if baseMethod.IsNewSlot && isInterfaceTy infoReader.g baseMethod.ApparentEnclosingType then
         GetIntrinisicTopInterfaceOverriderMethInfoSetsOfType infoReader (Some baseMethod.LogicalName, ad) m ty
         |> List.concat
-        |> List.filter (fun minfo ->
-            minfo.NumArgs = baseMethod.NumArgs && minfo.GenericArity = baseMethod.GenericArity
-        )
+        |> List.filter (fun minfo -> minfo.NumArgs = baseMethod.NumArgs && minfo.GenericArity = baseMethod.GenericArity)
     else
         []
 
