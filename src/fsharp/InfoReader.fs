@@ -20,7 +20,8 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Features
-open FSharp.Compiler.FeatureLanguageSupport
+open FSharp.Compiler.FeatureSupport
+open FSharp.Compiler.TypeRelations
 
 /// Use the given function to select some of the member values from the members of an F# type
 let private SelectImmediateMemberVals g optFilter f (tcref: TyconRef) = 
@@ -185,6 +186,22 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
 let rec GetImmediateIntrinsicPropInfosOfType (optFilter, ad) g amap m ty =
     GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m ty ty
 
+/// Get the items that are considered the topmost of hierarchy out of the given items by type.
+/// REVIEW: Note complexity O(N^2)
+let GetTopHierarchyItemsByType g amap f xs =
+    [ for x in xs do
+        match f x with
+        | None -> ()
+        | Some (xTy, m) ->
+            if xs 
+               |> List.forall (fun y ->
+                    match f y with
+                    | None -> true
+                    | Some (yTy, _) ->
+                        if typeEquiv g xTy yTy then true
+                        else not (TypeFeasiblySubsumesType 0 g amap m xTy CanCoerce yTy)) then
+                yield x ]
+
 // Checks whether the given type has an indexer property.
 let IsIndexerType g amap ty = 
     isArray1DTy g ty ||
@@ -206,33 +223,6 @@ type HierarchyItem =
     | RecdFieldItem of RecdFieldInfo
     | EventItem of EventInfo list
     | ILFieldItem of ILFieldInfo list
-
-[<Sealed>]
-type internal FeatureSupport (runtimeError: (range -> exn) option, langSupport: LanguageFeatureSupport) =
-
-    member __.IsSupported =
-        runtimeError.IsNone && langSupport.IsSupported
-
-    member __.IsRuntimeSupported =
-        runtimeError.IsNone
-
-    member __.IsLanguageSupported =
-        langSupport.IsSupported
-
-    member __.TryRaiseRuntimeError m =
-        runtimeError |> Option.iter (fun f -> error (f m))
-
-    /// Returns true if there was an error which means not supported.
-    member __.TryRaiseRuntimeErrorRecover m =
-        runtimeError |> Option.iter (fun f -> errorR (f m))
-        runtimeError.IsSome
-
-    member __.TryRaiseLanguageError m =
-        langSupport.TryRaiseLanguageError m
-
-    /// Returns true if there was an error.
-    member __.TryRaiseLanguageErrorRecover m =
-        langSupport.TryRaiseLanguageErrorRecover m
 
 /// An InfoReader is an object to help us read and cache infos. 
 /// We create one of these for each file we typecheck. 
@@ -362,24 +352,36 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
           ty
           None
 
-    let GetIntrinsicOverriderILMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
+    let GetIntrinsicTopInterfaceOverriderMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
 
         let checkMethod (minfo: MethInfo) (ilMethRef: ILMethodRef) =
+            minfo.IsFinal &&
+            minfo.IsVirtual &&
+            minfo.IsInterfaceMethod &&
             ilMethRef.ArgCount = (match minfo.NumArgs with [] -> 0 | count :: _ -> count) && 
             ilMethRef.GenericArity = minfo.GenericArity
 
         FoldPrimaryHierarchyOfType (fun ty (acc: MethInfo list list) ->
+            // Currently, F# supports DIMs from IL types, not F# defined types.
             match tryAppTy g ty with
             | ValueSome (tcref, _) when tcref.IsILTycon ->
+                // MethodImpls contains a list of methods that override.
+                // OverrideBy (overrider) is the method that does the overriding.
+                // Overrides is the method being overriden.
+                // Find the Overrides method first with optFilter, then search for the OverrideBy method.
+                //     If the OverrideBy method is found, add it to the method set for that type in the hierarchy.
                 (acc, tcref.ILTyconRawMetadata.MethodImpls.AsList)
                 ||> List.fold (fun acc ilMethImpl ->
-                    match optFilter with
-                    | Some name when name = ilMethImpl.Overrides.MethodRef.Name ->
-                        let methods = 
-                            GetImmediateIntrinsicMethInfosOfType (Some ilMethImpl.OverrideBy.Name, ad) g amap m ty 
+                    let optFilter2 =                     
+                        match optFilter with
+                        | Some name when name = ilMethImpl.Overrides.MethodRef.Name ->
+                            Some ilMethImpl.OverrideBy.Name
+                        | _ ->
+                            None
 
+                    if (optFilter.IsSome && optFilter2.IsSome) || optFilter.IsNone then
                         let minfos =
-                            ([], methods)
+                            ([], GetImmediateIntrinsicMethInfosOfType (optFilter2, ad) g amap m ty)
                             ||> List.fold (fun acc minfo ->
                                 if checkMethod minfo ilMethImpl.OverrideBy.MethodRef then
                                     minfo :: acc
@@ -387,15 +389,16 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                                     acc
                             )
 
-                        if List.isEmpty minfos then
-                            acc
-                        else
-                            minfos :: acc
-                    | _ ->
+                        if List.isEmpty minfos then acc
+                        else minfos :: acc
+                    else
                         acc
                 )
             | _ -> acc
         ) g amap m allowMultiIntfInst ty []
+        |> List.concat
+        |> List.groupBy (fun minfo -> (minfo.LogicalName, minfo.NumArgs, minfo.GenericArity))
+        |> List.map (fun (_, minfos) -> GetTopHierarchyItemsByType g amap (fun (minfo: MethInfo) -> Some (minfo.ApparentEnclosingType, m)) minfos)
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
@@ -449,9 +452,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                 Some(fun m -> Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
             else
                 None
-        
-        let langSupport = LanguageFeatureSupport.From (g.langVersion, featureId)    
-        FeatureSupport (runtimeError, langSupport)
+          
+        FeatureSupport.Create (LanguageFeatureSupport.Create (g.langVersion, featureId), runtimeError)
 
     let defaultInterfaceMethodConsumptionSupport =
         lazy CreateFeatureSupport this g LanguageFeature.DefaultInterfaceMethodConsumption
@@ -478,7 +480,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
-    let ilOverriderMethodInfoCache = MakeInfoCache GetIntrinsicOverriderILMethodSetsUncached hashFlags0
+    let topInterfaceOverriderMethodInfoCache = MakeInfoCache GetIntrinsicTopInterfaceOverriderMethodSetsUncached hashFlags0
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierachyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierachyUncached HashIdentity.Structural
@@ -530,9 +532,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member x.TryFindNamedItemOfType (nm, ad, m, ty) =
         namedItemsCache.Apply(((nm, ad), m, ty))
 
-    /// Read the raw method sets of a type that is an overrider, including inherited ones. Cache the result for monomorphic types
-    member x.GetILIntrinsicOverriderMethodMapOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
-        ilOverriderMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
+    /// Read the raw interface method sets of a type that is a topmost overrider. Cache the result for monomorphic types
+    member x.GetIntrinsicTopInterfaceOverriderMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
+        topInterfaceOverriderMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
 
     /// Get the super-types of a type, including interface types.
     member x.GetEntireTypeHierachy (allowMultiIntfInst, m, ty) =
@@ -803,17 +805,15 @@ let TryFindIntrinsicMethInfo infoReader m ad nm ty =
 let TryFindPropInfo infoReader m ad nm ty = 
     GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
     
-/// Get a collection of overrider methods.
-/// The given type must be an IL type.
-let GetIntrinisicOverriderILMethInfo (infoReader: InfoReader) (nm, ad) m ty =
-    infoReader.GetILIntrinsicOverriderMethodMapOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
-    |> List.concat
+/// Get a collection of topmost interface overrider methods.
+let GetIntrinisicTopInterfaceOverriderMethInfoSetsOfType (infoReader: InfoReader) (nm, ad) m ty =
+    infoReader.GetIntrinsicTopInterfaceOverriderMethodSetsOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
 
-/// Try to find a particular named overrider method on a type.
-/// The given type must be an IL type.
-let TryFindIntrinisicOverriderILMethInfoByBaseMethod infoReader ad m ty (baseMethod: MethInfo) =
-    if baseMethod.IsNewSlot then
-        GetIntrinisicOverriderILMethInfo infoReader (Some baseMethod.LogicalName, ad) m ty
+/// Try to find a particular named topmost interface overrider method on a type.
+let TryFindIntrinsicTopInterfaceOverriderMethInfosOfTypeByBaseMethod (infoReader: InfoReader) ad m (baseMethod: MethInfo) ty =
+    if baseMethod.IsNewSlot && isInterfaceTy infoReader.g baseMethod.ApparentEnclosingType then
+        GetIntrinisicTopInterfaceOverriderMethInfoSetsOfType infoReader (Some baseMethod.LogicalName, ad) m ty
+        |> List.concat
         |> List.filter (fun minfo ->
             minfo.NumArgs = baseMethod.NumArgs && minfo.GenericArity = baseMethod.GenericArity
         )

@@ -3001,6 +3001,67 @@ let main _ =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "OverrideA-NonDefaultMethod")
 
+    [<Test>]
+    let ``C# with mutliple separate interfaces - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void MA()
+        {
+            Console.Write("IA.MA");
+        }
+    }
+
+    public interface IB
+    {
+        void MB()
+        {
+            Console.Write("IB.MB");
+        }
+    }
+
+    public interface IB1 : IB
+    {
+        void IB.MB()
+        {
+            Console.Write("IB1.IB.MB");
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface IA
+    interface IB1
+
+[<EntryPoint>]
+let main _ =
+    let test = Test ()
+    let testIA = test :> IA
+    let testIB = test :> IB
+    let testIB1 = test :> IB1
+    testIA.MA ()
+    Console.Write("-")
+    testIB.MB ()
+    Console.Write("-")
+    testIB1.MB ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IA.MA-IB1.IB.MB-IB1.IB.MB")
+
 #else
 
 [<TestFixture>]

@@ -45,7 +45,7 @@ type RequiredSlotFlags =
     | None                                      = 0x000
 
     /// A slot which does not have to be implemented, because an inherited implementation is available.
-    | Optional                                  = 0x001
+    | IsOptional                                  = 0x001
 
     /// A slot which has a default interface implementation.
     | HasDefaultInterfaceImplementation         = 0x010
@@ -304,7 +304,7 @@ module DispatchSlotChecking =
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range, nenv, item,item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, denv,AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
-                if not (HasRequiredSlotFlag RequiredSlotFlags.Optional dispatchFlags) &&
+                if not (HasRequiredSlotFlag RequiredSlotFlags.IsOptional dispatchFlags) &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then
@@ -453,7 +453,7 @@ module DispatchSlotChecking =
 
     /// Get default slot flags for the given method.
     let inline GetDefaultDispatchSlotFlags (minfo: MethInfo) =
-        (if minfo.IsAbstract then RequiredSlotFlags.None else RequiredSlotFlags.Optional) |||
+        (if minfo.IsAbstract then RequiredSlotFlags.None else RequiredSlotFlags.IsOptional) |||
         (if minfo.IsDefaultInterfaceMethod then RequiredSlotFlags.HasDefaultInterfaceImplementation else RequiredSlotFlags.None)
 
     /// Get a collection of slots for the given interface type.
@@ -462,29 +462,20 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         if isInterfaceTy g interfaceTy then
-            let rec filterForTopMethods acc (xs: MethInfo list) =
-                match xs with
-                | [] -> acc
-                | h :: t ->
-                    t 
-                    |> List.filter (fun x -> 
-                        not (TypeFeasiblySubsumesType 0 g amap m x.ApparentEnclosingType CanCoerce h.ApparentEnclosingType))
-                    |> filterForTopMethods (h :: acc)
-
-            // This is to find overrider methods that are at the top most hierarchy out of the interfaces.
-            let rec getTopMostOverriderILMethods (minfo: MethInfo) =
-                [ for ty in topInterfaceTys do
-                    yield! 
-                        TryFindIntrinisicOverriderILMethInfoByBaseMethod infoReader AccessibleFromSomewhere m ty minfo
-                        |> filterForTopMethods [] ]
-                |> filterForTopMethods []
+            // This is to find overrider methods that are at the topmost hierarchy out of the interfaces.
+            let rec getTopOverriderILMethods (minfo: MethInfo) =
+                topInterfaceTys
+                |> List.map (fun (ty, _) ->
+                    TryFindIntrinsicTopInterfaceOverriderMethInfosOfTypeByBaseMethod infoReader AccessibleFromSomewhere m minfo ty)
+                |> List.concat
+                |> GetTopHierarchyItemsByType g amap (fun minfo -> Some (minfo.ApparentEnclosingType, m))
 
             let dimConsumSupport = infoReader.DefaultInterfaceMethodConsumptionSupport
 
             let checkDispatchFlags dispatchFlags =
                 // A DIM is considered *not* 'optional' if it is not language supported.
                 if HasRequiredSlotFlag RequiredSlotFlags.HasDefaultInterfaceImplementation dispatchFlags && not dimConsumSupport.IsLanguageSupported then
-                    dispatchFlags &&& ~~~RequiredSlotFlags.Optional
+                    dispatchFlags &&& ~~~RequiredSlotFlags.IsOptional
                 else
                     dispatchFlags
 
@@ -497,7 +488,7 @@ module DispatchSlotChecking =
                       // If the interface itself is considered optional, then we are finished and do not need anymore context.
                       //     Even if the method is actually not abstract.
                       if isInterfaceOptional then
-                          yield RequiredSlot (minfo, RequiredSlotFlags.Optional)
+                          yield RequiredSlot (minfo, RequiredSlotFlags.IsOptional)
 
                       // F# defined interface methods have no notion of optional/abstract or DIMs.
                       elif not minfo.IsILMethod then
@@ -506,7 +497,7 @@ module DispatchSlotChecking =
                       // IL methods might have default implementations.
                       else
                           let dispatchFlags =
-                              match getTopMostOverriderILMethods minfo with
+                              match getTopOverriderILMethods minfo with
                               // no overrides, then get default flags
                               | [] -> GetDefaultDispatchSlotFlags minfo
 
@@ -571,7 +562,7 @@ module DispatchSlotChecking =
         // For each implemented type, reduce its list of implied interfaces by subtracting out those implied 
         // by another implemented interface type.
         //
-        // REVIEW: Note complexity O(ity*jty)
+        // REVIEW: Note complexity O(N^2)
         let reqdTyInfos = 
             intfSets |> List.map (fun (i, reqdTy, impliedTys, m) -> 
                 let reduced = 
@@ -581,19 +572,13 @@ module DispatchSlotChecking =
                          else acc ) 
                 (i, reqdTy, m, reduced))
 
-        let topInterfaceTys =
-            [ for (ty, _) in allReqdTys do
+        let topInterfaceTys = 
+            allReqdTys
+            |> GetTopHierarchyItemsByType g amap (fun ((ty, _) as x) -> 
                 if isInterfaceTy g ty then
-                    let isTop =
-                        allReqdTys 
-                        |> List.forall (fun (xty, m) -> 
-                            if isInterfaceTy g xty then
-                                if typeEquiv g ty xty then true
-                                else not (TypeFeasiblySubsumesType 0 g amap m ty CanCoerce xty)
-                            else
-                                true)
-                    if isTop then
-                        yield ty ]
+                    Some x
+                else
+                    None)
 
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members

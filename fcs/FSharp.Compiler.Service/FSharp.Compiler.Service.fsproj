@@ -189,8 +189,8 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ErrorResolutionHints.fs">
       <Link>ErrorLogging/ErrorResolutionHints.fs</Link>
     </Compile>
-        <Compile Include="$(FSharpSourcesRoot)/fsharp/FeatureLanguageSupport.fs">
-      <Link>ErrorLogging/FeatureLanguageSupport.fs</Link>
+        <Compile Include="$(FSharpSourcesRoot)/fsharp/FeatureSupport.fs">
+      <Link>ErrorLogging/FeatureSupport.fs</Link>
     </Compile>
     <FsLex Include="$(FSharpSourcesRoot)\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -404,6 +404,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/AttributeChecking.fs">
       <Link>Logic/AttributeChecking.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypeRelations.fs">
+      <Link>Logic/TypeRelations.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InfoReader.fs">
       <Link>Logic/InfoReader.fs</Link>
     </Compile>
@@ -421,9 +424,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/NameResolution.fs">
       <Link>Logic/NameResolution.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypeRelations.fs">
-      <Link>Logic/TypeRelations.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/SignatureConformance.fs">
       <Link>Logic/SignatureConformance.fs</Link>
