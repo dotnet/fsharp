@@ -1084,6 +1084,63 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "ProtectedProtected-ProtectedOverrideProtectedOverride")
 
     [<Test>]
+    let ``C# simple with protected DIM using object expression - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        protected void M1()
+        {
+            Console.Write(nameof(M1));
+        }
+
+        public void M2()
+        {
+            this.M1();
+            this.M1();
+        }
+    }
+
+    public interface ITest2 : ITest
+    {
+        void ITest.M1()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+[<EntryPoint>]
+let main _ =
+    let test =
+        { new ITest with
+            member __.M1() =
+                Console.Write("ObjExprProtected") }
+    test.M2 ()
+
+    Console.Write("-")
+
+    let test2 =
+        { new ITest2 with
+            member __.M1() = 
+                Console.Write("ObjExprProtected2") }
+    test2.M2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "ObjExprProtectedObjExprProtected-ObjExprProtected2ObjExprProtected2")
+
+    [<Test>]
     let ``C# simple with protected DIM - Errors due to protected level`` () =
         let csharpSource =
             """
