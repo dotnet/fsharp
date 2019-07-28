@@ -651,6 +651,78 @@ type Test () =
             }
         ], fsharpLanguageVersion = "4.6")
 
+    [<Test>]
+    let ``C# simple with protected DIM - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        protected void M1()
+        {
+            Console.Write(nameof(M1));
+        }
+
+        public void M2()
+        {
+            this.M1();
+            this.M1();
+        }
+    }
+
+    public interface ITest2 : ITest
+    {
+        void ITest.M1()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        // protected member
+        member __.M1() = 
+            Console.Write("Protected")
+
+        member __.M2() =
+            Console.Write("Explicit")
+
+type Test2 () =
+    inherit Test ()
+
+    interface ITest2 with
+
+        // protected member
+        member __.M1() =
+            Console.Write("ProtectedOverride")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest
+    test.M2 ()
+
+    Console.Write("-")
+
+    let test2 = Test2 () :> ITest
+    test2.M2 ()
+    0
+            """
+
+        // Explicitly implementing a protected DIM is allowed in F# 4.6.
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "Explicit-Explicit", fsharpLanguageVersion = "4.6")
+
 #else
 
 [<TestFixture>]
@@ -942,6 +1014,264 @@ let main _ =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-NonDefaultMethod")
+
+    [<Test>]
+    let ``C# simple with protected DIM - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        protected void M1()
+        {
+            Console.Write(nameof(M1));
+        }
+
+        public void M2()
+        {
+            this.M1();
+            this.M1();
+        }
+    }
+
+    public interface ITest2 : ITest
+    {
+        void ITest.M1()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        // protected member
+        member __.M1() = 
+            Console.Write("Protected")
+
+type Test2 () =
+    inherit Test ()
+
+    interface ITest2 with
+
+        // protected member
+        member __.M1() =
+            Console.Write("ProtectedOverride")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> ITest
+    test.M2 ()
+
+    Console.Write("-")
+
+    let test2 = Test2 () :> ITest
+    test2.M2 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "ProtectedProtected-ProtectedOverrideProtectedOverride")
+
+    [<Test>]
+    let ``C# simple with protected DIM - Errors due to protected level`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        protected void M1()
+        {
+            Console.Write(nameof(M1));
+        }
+
+        public void M2()
+        {
+            this.M1();
+            this.M1();
+        }
+    }
+
+    public interface ITest2 : ITest
+    {
+        void ITest.M1()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest with
+
+        // protected member
+        member __.M1() = 
+            Console.Write("Protected")
+
+type Test2 () =
+    inherit Test ()
+
+    interface ITest2 with
+
+        // protected member
+        member __.M1() =
+            Console.Write("ProtectedOverride")
+
+let f () =
+    let test = Test () :> ITest
+    test.M1 ()
+
+    Console.Write("-")
+
+    let test2 = Test2 () :> ITest
+    test2.M1 ()
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 491;
+                StartLine = 26;
+                StartColumn = 4;
+                EndLine = 26;
+                EndColumn = 14;
+                Message = "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions."
+            }
+            {
+                Number = 491;
+                StartLine = 31;
+                StartColumn = 4;
+                EndLine = 31;
+                EndColumn = 15;
+                Message = "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions."
+            }
+        ])
+
+    [<Test>]
+    let ``C# simple with protected DIM - Errors due to protected level - 2`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        protected void M1()
+        {
+            Console.Write(nameof(M1));
+        }
+
+        public void M2()
+        {
+            this.M1();
+            this.M1();
+        }
+    }
+
+    public interface ITest2 : ITest
+    {
+        void ITest.M1()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+type Test () =
+
+    member this.M() =
+        (this :> ITest).M1()
+
+    interface ITest with
+
+        member this.M2() =
+            (this :> ITest).M1()
+
+        // protected member
+        member __.M1() = 
+            Console.Write("Protected")
+
+type Test2 () =
+    inherit Test ()
+
+    member this.M() =
+        (this :> ITest2).M1()
+
+    interface ITest2 with
+
+        member this.M2() =
+            (this :> ITest).M1()
+
+        // protected member
+        member __.M1() =
+            Console.Write("ProtectedOverride")
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 629
+                StartLine = 10
+                StartColumn = 8
+                EndLine = 10
+                EndColumn = 26
+                Message = "Method 'M1' is not accessible from this code location"
+            }
+            {
+                Number = 629
+                StartLine = 15
+                StartColumn = 12
+                EndLine = 15
+                EndColumn = 30
+                Message = "Method 'M1' is not accessible from this code location"
+            }
+            {         
+                Number = 629
+                StartLine = 25
+                StartColumn = 8
+                EndLine = 25
+                EndColumn = 27
+                Message = "Method 'M1' is not accessible from this code location"
+            }
+            {
+                Number = 629
+                StartLine = 30
+                StartColumn = 12
+                EndLine = 30
+                EndColumn = 30
+                Message = "Method 'M1' is not accessible from this code location"
+            }
+        ])
 
     [<Test>]
     let ``C# simple with internal DIM - Runs`` () =
