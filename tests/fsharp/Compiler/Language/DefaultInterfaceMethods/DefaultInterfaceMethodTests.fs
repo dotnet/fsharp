@@ -3798,7 +3798,6 @@ let main _ =
             """
 using System;
 
-
 namespace CSharpTest
 {
     public interface IA
@@ -3876,6 +3875,87 @@ let main _ =
 
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "M123456floatfs_single")
+
+    [<Test>]
+    let ``C# simple diamond inheritance with overloading - Errors with missing overload method`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M(int x, float y)
+        {
+        }
+
+        void M();
+
+        void M(int x);
+
+        void M(float x);
+
+        void M(int x, int y)
+        {
+        }
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+        }
+
+        void IA.M(int x)
+        {
+            Console.Write(x);
+        }
+    }
+
+    public interface IC : IA
+    {
+        void IA.M()
+        {
+        }
+
+        void IA.M(int x, float y)
+        {
+            Console.Write(x);
+            Console.Write("float");
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+open System
+
+type Test () =
+
+    interface IB
+    interface IC
+    interface IA with
+
+        member __.M () = Console.Write("M")
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 366
+                StartLine = 12
+                StartColumn = 14
+                EndLine = 12
+                EndColumn = 16
+                Message = "No implementation was given for 'IA.M(x: float32) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ])
 
     [<Test>]
     let ``C# simple diamond inheritance using object expression - Errors with no specific implementation`` () =

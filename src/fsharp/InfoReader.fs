@@ -806,17 +806,9 @@ let TryFindPropInfo infoReader m ad nm ty =
     GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
     
 /// Get a collection of topmost interface overrider methods.
+/// When providing a method name, it is the name of method that is being overriden.
 let GetIntrinisicTopInterfaceOverriderMethInfoSetsOfType (infoReader: InfoReader) (nm, ad) m ty =
     infoReader.GetIntrinsicTopInterfaceOverriderMethodSetsOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
-
-/// Try to find a particular named topmost interface overrider method on a type.
-let TryFindIntrinsicTopInterfaceOverriderMethInfosOfTypeByBaseMethod (infoReader: InfoReader) ad m (baseMethod: MethInfo) ty =
-    if baseMethod.IsNewSlot && isInterfaceTy infoReader.g baseMethod.ApparentEnclosingType then
-        GetIntrinisicTopInterfaceOverriderMethInfoSetsOfType infoReader (Some baseMethod.LogicalName, ad) m ty
-        |> List.concat
-        |> List.filter (fun minfo -> minfo.NumArgs = baseMethod.NumArgs && minfo.GenericArity = baseMethod.GenericArity)
-    else
-        []
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file

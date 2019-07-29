@@ -179,15 +179,19 @@ module DispatchSlotChecking =
     /// Check if the kinds of type parameters match between a dispatch slot and an override.
     let IsTyparKindMatch (CompiledSig(_, _, fvmtps, _)) (Override(_, _, _, (mtps, _), _, _, _, _)) = 
         List.lengthsEqAndForall2 (fun (tp1: Typar) (tp2: Typar) -> tp1.Kind = tp2.Kind) mtps fvmtps
-        
-    /// Check if an override is a partial match for the requirements for a dispatch slot 
-    let IsPartialMatch g (dispatchSlot: MethInfo) compiledSig (Override(_, _, _, (mtps, _), argTys, _retTy, _, _) as overrideBy) = 
-        IsNameMatch dispatchSlot overrideBy &&
+
+    /// Check if an override is a partial match for the requirements for a dispatch slot except for the name.
+    let IsSigPartialMatch g (dispatchSlot: MethInfo) compiledSig (Override(_, _, _, (mtps, _), argTys, _retTy, _, _) as overrideBy) =
         let (CompiledSig (vargtys, _, fvmtps, _)) = compiledSig
         mtps.Length = fvmtps.Length &&
         IsTyparKindMatch compiledSig overrideBy && 
         argTys.Length = vargtys.Length &&
         IsImplMatch g dispatchSlot overrideBy  
+        
+    /// Check if an override is a partial match for the requirements for a dispatch slot.
+    let IsPartialMatch g dispatchSlot compiledSig overrideBy = 
+        IsNameMatch dispatchSlot overrideBy &&
+        IsSigPartialMatch g dispatchSlot compiledSig overrideBy
           
     /// Compute the reverse of a type parameter renaming.
     let ReverseTyparRenaming g tinst = 
@@ -196,11 +200,11 @@ module DispatchSlotChecking =
     /// Compose two instantiations of type parameters.
     let ComposeTyparInsts inst1 inst2 = 
         inst1 |> List.map (map2Of2 (instType inst2)) 
-     
-    /// Check if an override exactly matches the requirements for a dispatch slot 
-    let IsExactMatch g amap m dispatchSlot (Override(_, _, _, (mtps, mtpinst), argTys, retTy, _, _) as overrideBy) =
+
+    /// Check if an override exactly matches the requirements for a dispatch slot except for the name.
+    let IsSigExactMatch g amap m dispatchSlot (Override(_, _, _, (mtps, mtpinst), argTys, retTy, _, _) as overrideBy) =
         let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
-        IsPartialMatch g dispatchSlot compiledSig overrideBy &&
+        IsSigPartialMatch g dispatchSlot compiledSig overrideBy &&
         let (CompiledSig (vargtys, vrty, fvmtps, ttpinst)) = compiledSig
 
         // Compare the types. CompiledSigOfMeth, GetObjectExprOverrideInfo and GetTypeMemberOverrideInfo have already 
@@ -239,18 +243,23 @@ module DispatchSlotChecking =
             if mtpinst |> List.exists (snd >> isTyparTy g >> not) then ttpinst 
             else ComposeTyparInsts ttpinst (ReverseTyparRenaming g mtpinst)
 
-        // Compare under the composed substitutions 
+        // Compare under the composed substitutions.
         let aenv = TypeEquivEnv.FromTyparInst ttpinst 
         
         typarsAEquiv g aenv fvmtps mtps
+     
+    /// Check if an override exactly matches the requirements for a dispatch slot.
+    let IsExactMatch g amap m dispatchSlot overrideBy =
+        IsNameMatch dispatchSlot overrideBy &&
+        IsSigExactMatch g amap m dispatchSlot overrideBy
 
-    /// Check if an override implements a dispatch slot 
+    /// Check if an override implements a dispatch slot.
     let OverrideImplementsDispatchSlot g amap m dispatchSlot availPriorOverride =
         IsExactMatch g amap m dispatchSlot availPriorOverride &&
-        // The override has to actually be in some subtype of the dispatch slot
+        // The override has to actually be in some subtype of the dispatch slot.
         ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyconRef availPriorOverride.BoundingTyconRef) dispatchSlot.DeclaringTyconRef
 
-    /// Check if a dispatch slot is already implemented
+    /// Check if a dispatch slot is already implemented.
     let DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed (dispatchSlot: MethInfo) =
         availPriorOverridesKeyed 
             |> NameMultiMap.find  dispatchSlot.LogicalName  
@@ -465,7 +474,12 @@ module DispatchSlotChecking =
             let rec getTopOverriderMethods (minfo: MethInfo) =
                 topInterfaceTys
                 |> List.map (fun (ty, _) ->
-                    TryFindIntrinsicTopInterfaceOverriderMethInfosOfTypeByBaseMethod infoReader AccessibleFromSomewhere m minfo ty)
+                    GetIntrinisicTopInterfaceOverriderMethInfoSetsOfType infoReader (Some minfo.LogicalName, AccessibleFromSomewhere) m ty
+                    |> List.concat
+                    |> List.filter (fun minfo2 -> 
+                        let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo2
+                        IsSigExactMatch g amap m minfo overrideBy
+                    ))
                 |> List.concat
                 |> GetTopHierarchyItemsByType g amap (fun minfo -> Some (minfo.ApparentEnclosingType, m))
 
