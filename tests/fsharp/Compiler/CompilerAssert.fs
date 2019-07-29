@@ -290,8 +290,10 @@ let main argv = 0"""
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
                 )
 
-    let ParseWithErrors (source: string) expectedParseErrors = 
-        let parseResults = checker.ParseFile("test.fs", SourceText.ofString source, FSharpParsingOptions.Default) |> Async.RunSynchronously
+    let ParseWithErrors (source: string) expectedParseErrors =
+        let sourceFileName = "test.fs"
+        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| sourceFileName |] }
+        let parseResults = checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunSynchronously
 
         Assert.True(parseResults.ParseHadErrors)
 
