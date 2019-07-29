@@ -3793,6 +3793,91 @@ let main _ =
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "MMM")
 
     [<Test>]
+    let ``C# simple diamond inheritance with overloading - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M(int x, float y)
+        {
+        }
+
+        void M();
+
+        void M(int x);
+
+        void M(float x);
+
+        void M(int x, int y)
+        {
+        }
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+        }
+
+        void IA.M(int x)
+        {
+            Console.Write(x);
+        }
+    }
+
+    public interface IC : IA
+    {
+        void IA.M()
+        {
+        }
+
+        void IA.M(int x, float y)
+        {
+            Console.Write(x);
+            Console.Write("float");
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open CSharpTest
+
+open System
+
+type Test () =
+
+    interface IB
+    interface IC
+    interface IA with
+
+        member __.M () = Console.Write("M")
+
+        member __.M (_x: single) = Console.Write("fs_single")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test ()
+    let testIA = test :> IA
+    let testIB = test :> IB
+    let testIC = test :> IC
+    testIA.M ()
+    testIC.M 123
+    testIB.M (456, 1.f)
+    testIC.M 1.f
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "M123456floatfs_single")
+
+    [<Test>]
     let ``C# simple diamond inheritance using object expression - Errors with no specific implementation`` () =
         let csharpSource =
             """
