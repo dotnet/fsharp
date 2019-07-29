@@ -19,7 +19,7 @@ let x = { Person.Names = "Isaac" }
             FSharpErrorSeverity.Error
             39
             (4, 18, 4, 23)
-            "The field, constructor or member 'Names' is not defined."
+            "The field, constructor or member 'Names' is not defined. Maybe you want one of the following:\r\n   Name"
 
 
     [<Test>]
@@ -32,7 +32,7 @@ let f =
             FSharpErrorSeverity.Error
             39
             (3, 11, 3, 14)
-            "The value, constructor, namespace or type 'blt' is not defined."
+            "The value, constructor, namespace or type 'blt' is not defined. Maybe you want one of the following:\r\n   blit"
 
 
     [<Test>]
@@ -45,7 +45,7 @@ let f =
             FSharpErrorSeverity.Error
             39
             (3, 5, 3, 9)
-            "The value, namespace, type or module 'Asnc' is not defined."
+            "The value, namespace, type or module 'Asnc' is not defined. Maybe you want one of the following:\r\n   Async\r\n   async\r\n   asin\r\n   snd"
 
 
     [<Test>]
@@ -60,7 +60,7 @@ type MyClass<'Bar>() =
             FSharpErrorSeverity.Error
             39
             (2, 3, 2, 15)
-            "The type 'AbstractClas' is not defined."
+            "The type 'AbstractClas' is not defined. Maybe you want one of the following:\r\n   AbstractClass\r\n   AbstractClassAttribute"
 
 
     [<Test>]
@@ -75,7 +75,7 @@ let x = N.``longe name``
             FSharpErrorSeverity.Error
             39
             (5, 11, 5, 25)
-            "The value, constructor, namespace or type 'longe name' is not defined."
+            "The value, constructor, namespace or type 'longe name' is not defined. Maybe you want one of the following:\r\n   longer name"
 
 
     [<Test>]
@@ -94,7 +94,7 @@ let x = N.MyUnion.``My Case2``
             FSharpErrorSeverity.Error
             39
             (9, 19, 9,31)
-            "The field, constructor or member 'My Case2' is not defined."
+            "The field, constructor or member 'My Case2' is not defined. Maybe you want one of the following:\r\n   My Case1\r\n   Case2"
 
 
     [<Test>]
@@ -102,7 +102,7 @@ let x = N.MyUnion.``My Case2``
         CompilerAssert.TypeCheckSingleError
             """
 type MyClass() =
-    member val MyProperty = "" with get, set 
+    member val MyProperty = "" with get, set
     member val MyProperty2 = "" with get, set
     member val ABigProperty = "" with get, set
 
@@ -111,7 +111,7 @@ let c = MyClass(Property = "")
             FSharpErrorSeverity.Error
             495
             (7, 17, 7, 25)
-            "The object constructor 'MyClass' has no argument or settable return property 'Property'. The required signature is new : unit -> MyClass."
+            "The object constructor 'MyClass' has no argument or settable return property 'Property'. The required signature is new : unit -> MyClass. Maybe you want one of the following:\r\n   MyProperty\r\n   MyProperty2\r\n   ABigProperty"
 
 
     [<Test>]
@@ -123,15 +123,15 @@ type T = System.Collections.Generic.Dictionary<int11,int>
             FSharpErrorSeverity.Error
             39
             (2, 48, 2, 53)
-            "The type 'int11' is not defined."
+            "The type 'int11' is not defined. Maybe you want one of the following:\r\n   int16\r\n   int16`1\r\n   int8\r\n   uint16\r\n   int"
 
 
     [<Test>]
     let ``Suggest Methods`` () =
         CompilerAssert.TypeCheckSingleError
             """
-module Test2 = 
-    type D() = 
+module Test2 =
+    type D() =
 
        static let x = 1
 
@@ -142,7 +142,7 @@ module Test2 =
             FSharpErrorSeverity.Error
             39
             (9, 7, 9, 14)
-            "The field, constructor or member 'Method2' is not defined."
+            "The field, constructor or member 'Method2' is not defined. Maybe you want one of the following:\r\n   Method1"
 
 
     [<Test>]
@@ -158,7 +158,7 @@ open Collectons
             FSharpErrorSeverity.Error
             39
             (6, 6, 6, 16)
-            "The namespace or module 'Collectons' is not defined."
+            "The namespace or module 'Collectons' is not defined. Maybe you want one of the following:\r\n   Collections"
 
 
     [<Test>]
@@ -170,7 +170,7 @@ open System.Collectons
             FSharpErrorSeverity.Error
             39
             (2, 13, 2, 23)
-            "The namespace 'Collectons' is not defined."
+            "The namespace 'Collectons' is not defined. Maybe you want one of the following:\r\n   Collections"
 
 
     [<Test>]
@@ -186,7 +186,7 @@ let x = r.ello
             FSharpErrorSeverity.Error
             39
             (6, 11, 6, 15)
-            "The field, constructor or member 'ello' is not defined."
+            "The field, constructor or member 'ello' is not defined. Maybe you want one of the following:\r\n   Hello"
 
 
     [<Test>]
@@ -204,7 +204,7 @@ let r = { Field1 = "hallo"; Field2 = 1 }
             FSharpErrorSeverity.Error
             39
             (8, 11, 8, 17)
-            "The record label 'Field1' is not defined."
+            "The record label 'Field1' is not defined. Maybe you want one of the following:\r\n   MyRecord.Field1"
 
 
     [<Test>]
@@ -251,7 +251,7 @@ let x : System.Collections.Generic.Lst = ResizeArray()
             FSharpErrorSeverity.Error
             39
             (2, 36, 2, 39)
-            "The type 'Lst' is not defined in 'System.Collections.Generic'."
+            "The type 'Lst' is not defined in 'System.Collections.Generic'. Maybe you want one of the following:\r\n   List"
 
 
     [<Test>]
@@ -263,14 +263,14 @@ let x = System.DateTie.MaxValue
             FSharpErrorSeverity.Error
             39
             (2, 16, 2, 23)
-            "The value, constructor, namespace or type 'DateTie' is not defined."
+            "The value, constructor, namespace or type 'DateTie' is not defined. Maybe you want one of the following:\r\n   DateTime"
 
 
     [<Test>]
     let ``Suggest Union Cases`` () =
         CompilerAssert.TypeCheckSingleError
             """
-type MyUnion = 
+type MyUnion =
 | ASimpleCase
 | AnotherCase of int
 
@@ -279,7 +279,7 @@ let u = MyUnion.AntherCase
             FSharpErrorSeverity.Error
             39
             (6, 17, 6, 27)
-            "The field, constructor or member 'AntherCase' is not defined."
+            "The field, constructor or member 'AntherCase' is not defined. Maybe you want one of the following:\r\n   AnotherCase"
 
 
     [<Test>]
@@ -296,7 +296,7 @@ let x : MyUnion = MyCase1
             FSharpErrorSeverity.Error
             39
             (7, 19, 7, 26)
-            "The value or constructor 'MyCase1' is not defined."
+            "The value or constructor 'MyCase1' is not defined. Maybe you want one of the following:\r\n   MyUnion.MyCase1"
 
 
     [<Test>]
@@ -318,4 +318,4 @@ let x =
             FSharpErrorSeverity.Error
             39
             (11, 15, 11, 19)
-            "The field, constructor or member 'Cas1' is not defined."
+            "The field, constructor or member 'Cas1' is not defined. Maybe you want one of the following:\r\n   Case1\r\n   Case2"
