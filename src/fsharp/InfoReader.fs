@@ -352,7 +352,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
           ty
           None
 
-    let GetIntrinsicTopInterfaceOverriderMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
+    let GetIntrinsicTopInterfaceOverrideMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
 
         let checkMethod (minfo: MethInfo) (ilMethRef: ILMethodRef) =
             minfo.IsFinal &&
@@ -366,7 +366,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             match tryAppTy g ty with
             | ValueSome (tcref, _) when tcref.IsILTycon ->
                 // MethodImpls contains a list of methods that override.
-                // OverrideBy (overrider) is the method that does the overriding.
+                // OverrideBy is the method that does the overriding.
                 // Overrides is the method being overriden.
                 // Find the Overrides method first with optFilter, then search for the OverrideBy method.
                 //     If the OverrideBy method is found, add it to the method set for that type in the hierarchy.
@@ -480,7 +480,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
-    let topInterfaceOverriderMethodInfoCache = MakeInfoCache GetIntrinsicTopInterfaceOverriderMethodSetsUncached hashFlags0
+    let topInterfaceOverrideMethodInfoCache = MakeInfoCache GetIntrinsicTopInterfaceOverrideMethodSetsUncached hashFlags0
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierachyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierachyUncached HashIdentity.Structural
@@ -532,9 +532,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member x.TryFindNamedItemOfType (nm, ad, m, ty) =
         namedItemsCache.Apply(((nm, ad), m, ty))
 
-    /// Read the raw interface method sets of a type that is a topmost overrider. Cache the result for monomorphic types
-    member x.GetIntrinsicTopInterfaceOverriderMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
-        topInterfaceOverriderMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
+    /// Read the raw interface method sets of a type that is a topmost overrides. Cache the result for monomorphic types
+    member x.GetIntrinsicTopInterfaceOverrideMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
+        topInterfaceOverrideMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
 
     /// Get the super-types of a type, including interface types.
     member x.GetEntireTypeHierachy (allowMultiIntfInst, m, ty) =
@@ -805,10 +805,10 @@ let TryFindIntrinsicMethInfo infoReader m ad nm ty =
 let TryFindPropInfo infoReader m ad nm ty = 
     GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
     
-/// Get a collection of topmost interface overrider methods.
+/// Get a collection of topmost interface override methods.
 /// When providing a method name, it is the name of method that is being overriden.
-let GetIntrinisicTopInterfaceOverriderMethInfoSetsOfType (infoReader: InfoReader) (nm, ad) m ty =
-    infoReader.GetIntrinsicTopInterfaceOverriderMethodSetsOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
+let GetIntrinisicTopInterfaceOverrideMethInfoSetsOfType (infoReader: InfoReader) (nm, ad) m ty =
+    infoReader.GetIntrinsicTopInterfaceOverrideMethodSetsOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file

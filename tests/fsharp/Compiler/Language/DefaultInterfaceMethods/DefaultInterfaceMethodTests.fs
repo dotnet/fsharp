@@ -4495,6 +4495,107 @@ let test =
             }
         ])
 
+    [<Test>]
+    let ``C# diamond inheritance with no most specific problem - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M() 
+        {
+        }
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+            Console.Write("IB.IA.M");
+        }
+    }
+
+    public interface IC : IA
+    {
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open CSharpTest
+
+open System
+
+type Test () = 
+
+    interface IA
+    interface IC
+    interface IB
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> IC
+    test.M();
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IB.IA.M")
+
+    [<Test>]
+    let ``C# diamond inheritance with no most specific problem - Runs - 2`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA
+    {
+        void M() 
+        {
+        }
+    }
+
+    public interface IB : IA
+    {
+        void IA.M()
+        {
+            Console.Write("IB.IA.M");
+        }
+    }
+
+    public interface IC : IA
+    {
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open CSharpTest
+
+open System
+
+type Test () = 
+
+    interface IC
+    interface IB
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> IC
+    test.M();
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IB.IA.M")
+
 #else
 
 [<TestFixture>]

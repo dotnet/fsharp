@@ -48,6 +48,7 @@ type RequiredSlotFlags =
     | IsOptional                                = 0x001
 
     /// A slot which has a default interface implementation.
+    /// A combination of this flag and the lack of IsOptional means the slot may have been reabstracted.
     | HasDefaultInterfaceImplementation         = 0x010
 
     /// A slot that *might* have ambiguity due to multiple inheritance; happens with default interface implementations.
@@ -470,11 +471,11 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         if isInterfaceTy g interfaceTy then
-            // This is to find overrider methods that are at the topmost hierarchy out of the interfaces.
-            let rec getTopOverriderMethods (minfo: MethInfo) =
+            // This is to find override methods that are at the topmost hierarchy out of the interfaces.
+            let rec getTopOverrideMethods (minfo: MethInfo) =
                 topInterfaceTys
                 |> List.map (fun (ty, _) ->
-                    GetIntrinisicTopInterfaceOverriderMethInfoSetsOfType infoReader (Some minfo.LogicalName, AccessibleFromSomewhere) m ty
+                    GetIntrinisicTopInterfaceOverrideMethInfoSetsOfType infoReader (Some minfo.LogicalName, AccessibleFromSomewhere) m ty
                     |> List.concat
                     |> List.filter (fun minfo2 -> 
                         let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo2
@@ -517,14 +518,14 @@ module DispatchSlotChecking =
                       // IL methods might have default implementations.
                       else
                           let dispatchFlags =
-                              match getTopOverriderMethods minfo with
-                              // no overrides, then get default flags
+                              match getTopOverrideMethods minfo with
+                              // No override, then get default flags.
                               | [] -> GetDefaultDispatchSlotFlags minfo
 
-                              // one overrider, get its default flags
+                              // One override, get its default flags.
                               | [ minfo2 ] -> GetDefaultDispatchSlotFlags minfo2
 
-                              // we found multiple overrider methods, means we might have ambiguity
+                              // We found multiple override methods, means we might have ambiguity.
                               | _ -> RequiredSlotFlags.PossiblyNoMostSpecificImplementation
 
                           yield RequiredSlot (minfo, checkDispatchFlags dispatchFlags) ]
