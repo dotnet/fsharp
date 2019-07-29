@@ -723,6 +723,186 @@ let main _ =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.CompileExeAndRun (fsharpSource, c, "Explicit-Explicit", fsharpLanguageVersion = "4.6")
 
+    [<Test>]
+    let ``C# with overloading and generics - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA<T>
+    {
+        void M<U>(U x, T y)
+        {
+            Console.Write("M<U>(U, T)");
+        }
+
+        void M<U>(T x, U y);
+
+        void M(T x);
+
+        void M<U>(U x);
+
+        void M(T x, string text);
+    }
+
+    public interface IB<T> : IA<T>
+    {
+        void IA<T>.M(T x)
+        {
+            Console.Write("InIB");
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open CSharpTest
+
+open System
+
+type Test () =
+
+    interface IA<int> with
+
+        member __.M(_x: int) = Console.Write("InTest")
+
+        member __.M<'Item> (x: int, y: 'Item) = 
+            Console.Write(string x)
+            Console.Write(y.ToString ())
+
+        member __.M<'TTT> (x: 'TTT) =
+            Console.Write(x.ToString ())
+
+        member __.M (x: int, text: string) =
+            Console.Write("ABC")
+            Console.Write(string x)
+            Console.Write(text)
+
+        member __.M<'U> (_x: 'U, _y: int) = ()
+
+type Test2 () =
+    inherit Test ()
+
+    interface IB<int> with
+
+        member __.M(_x: int) = Console.Write("InTest2")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> IA<int>
+    let test2 = Test2 () :> IA<int>
+
+    test.M 1
+    test2.M 1
+
+    test.M<int16> (123, 456s)
+    test2.M<int16> (789, 111s)
+
+    test.M<string> "STRING"
+    test2.M<string> "-STRING"
+
+    test.M (222, "FSharp")
+    test2.M (333, "CSharp")
+
+    test.M<obj> (obj (), 1)
+    test2.M<obj> (obj (), 1)
+
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "InTestInTest2123456789111STRING-STRINGABC222FSharpABC333CSharp", fsharpLanguageVersion = "4.6")
+
+
+    [<Test>]
+    let ``C# with overloading and generics - Errors with lang version`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA<T>
+    {
+        void M<U>(U x, T y)
+        {
+            Console.Write("M<U>(U, T)");
+        }
+
+        void M<U>(T x, U y);
+
+        void M(T x);
+
+        void M<U>(U x);
+
+        void M(T x, string text);
+    }
+
+    public interface IB<T> : IA<T>
+    {
+        void IA<T>.M(T x)
+        {
+            Console.Write("InIB");
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+open System
+
+type Test () =
+
+    interface IA<int> with
+
+        member __.M(_x: int) = Console.Write("InTest")
+
+        member __.M<'Item> (x: int, y: 'Item) = 
+            Console.Write(string x)
+            Console.Write(y.ToString ())
+
+        member __.M<'TTT> (x: 'TTT) =
+            Console.Write(x.ToString ())
+
+        member __.M (x: int, text: string) =
+            Console.Write("ABC")
+            Console.Write(string x)
+            Console.Write(text)
+
+type Test2 () =
+    inherit Test ()
+
+    interface IB<int>
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3302
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 21
+                Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
+            }
+            {
+                Number = 358
+                StartLine = 10
+                StartColumn = 14
+                EndLine = 10
+                EndColumn = 21
+                Message = "The override for 'M<'U> : 'U * int -> unit' was ambiguous"
+            }
+        ], fsharpLanguageVersion = "4.6")
+
 #else
 
 [<TestFixture>]
@@ -3954,6 +4134,282 @@ type Test () =
                 EndLine = 12
                 EndColumn = 16
                 Message = "No implementation was given for 'IA.M(x: float32) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+            }
+        ])
+
+    [<Test>]
+    let ``C# with overloading and generics - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA<T>
+    {
+        void M<U>(U x, T y)
+        {
+            Console.Write("M<U>(U, T)");
+        }
+
+        void M<U>(T x, U y);
+
+        void M(T x);
+
+        void M<U>(U x);
+
+        void M(T x, string text);
+    }
+
+    public interface IB<T> : IA<T>
+    {
+        void IA<T>.M(T x)
+        {
+            Console.Write("InIB");
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open CSharpTest
+
+open System
+
+type Test () =
+
+    interface IA<int> with
+
+        member __.M(_x: int) = Console.Write("InTest")
+
+        member __.M<'Item> (x: int, y: 'Item) = 
+            Console.Write(string x)
+            Console.Write(y.ToString ())
+
+        member __.M<'TTT> (x: 'TTT) =
+            Console.Write(x.ToString ())
+
+        member __.M (x: int, text: string) =
+            Console.Write("ABC")
+            Console.Write(string x)
+            Console.Write(text)
+
+type Test2 () =
+    inherit Test ()
+
+    interface IB<int>
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> IA<int>
+    let test2 = Test2 () :> IB<int>
+
+    test.M 1
+    test2.M 1
+
+    test.M<int16> (123, 456s)
+    test2.M<int16> (789, 111s)
+
+    test.M<string> "STRING"
+    test2.M<string> "-STRING"
+
+    test.M (222, "FSharp")
+    test2.M (333, "CSharp")
+
+    test.M<obj> (obj (), 1)
+    test2.M<obj> (obj (), 1)
+
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "InTestInTest123456789111STRING-STRINGABC222FSharpABC333CSharpM<U>(U, T)M<U>(U, T)")
+
+    [<Test>]
+    let ``C# diamond inheritance with overloading and generics and properties - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA<T>
+    {
+        T Prop1 { get { return default(T); } }
+
+        T Prop2 { set; }
+
+        T Prop3 { get { return default(T); } set { } }
+
+        void M(T x);
+
+        void M(int x)
+        {
+        }
+    }
+
+    public interface IB<T> : IA<T>
+    {
+        void IA<T>.M(T x)
+        {
+            Console.Write("InIB");
+        }
+
+        T IA<T>.Prop2
+        {
+            set
+            {
+                Console.Write("IB<T>.Prop2Set");
+            }
+        }
+    }
+
+    public interface IC : IA<string>
+    {
+        void IA<string>.M(string x)
+        {
+            Console.Write("InIC");
+        }
+
+        string IA<string>.Prop2
+        {
+            set
+            {
+                Console.Write("IC.Prop2Set");
+            }
+        }
+
+        void M_C()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open CSharpTest
+
+open System
+
+type Test () = 
+
+    interface IB<string>
+    interface IC
+    interface IA<string> with
+
+        member __.M(_x: string) = Console.Write("Test.String")
+
+        member __.Prop2 with set _ = Console.Write("Test.Prop2")
+
+[<EntryPoint>]
+let main _ =
+    let test = Test () :> IC
+    test.M("")
+    Console.Write("-")
+    test.Prop2 <- ""
+    0
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.CompileExeAndRun (fsharpSource, c, "Test.String-Test.Prop2")
+
+    [<Test>]
+    let ``C# diamond inheritance with overloading and generics and properties - Errors with no specific implementation`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface IA<T>
+    {
+        T Prop1 { get { return default(T); } }
+
+        T Prop2 { set; }
+
+        T Prop3 { get { return default(T); } set { } }
+
+        void M(T x);
+
+        void M(int x)
+        {
+        }
+    }
+
+    public interface IB<T> : IA<T>
+    {
+        void IA<T>.M(T x)
+        {
+            Console.Write("InIB");
+        }
+
+        T IA<T>.Prop2
+        {
+            set
+            {
+                Console.Write("IB<T>.Prop2Set");
+            }
+        }
+    }
+
+    public interface IC : IA<string>
+    {
+        void IA<string>.M(string x)
+        {
+            Console.Write("InIC");
+        }
+
+        string IA<string>.Prop2
+        {
+            set
+            {
+                Console.Write("IC.Prop2Set");
+            }
+        }
+
+        void M_C()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open CSharpTest
+
+open System
+
+type Test () = 
+
+    interface IB<string>
+    interface IC
+    interface IA<string> with
+
+        member __.M(_x: string) = Console.Write("Test.String")
+            """
+
+        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
+            {
+                Number = 3304
+                StartLine = 12
+                StartColumn = 14
+                EndLine = 12
+                EndColumn = 24
+                Message = "Interface member 'IA.set_Prop2(value: string) : unit' does not have a most specific implementation."
+            }
+            {
+                Number = 366
+                StartLine = 12
+                StartColumn = 14
+                EndLine = 12
+                EndColumn = 24
+                Message = "No implementation was given for 'IA.set_Prop2(value: string) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ])
 
