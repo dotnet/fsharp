@@ -110,7 +110,7 @@ let main argv = 0"""
 #if !NETCOREAPP
             OtherOptions = [|"--preferreduilang:en-US";|]
 #else
-            OtherOptions = 
+            OtherOptions =
                 let assemblies = getNetCoreAppReferences |> Array.map (fun x -> sprintf "-r:%s" x)
                 Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"|] assemblies
 #endif
@@ -175,12 +175,12 @@ let main argv = 0"""
 
     let TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
         lock gate <| fun () ->
-            let parseResults, fileAnswer = 
+            let parseResults, fileAnswer =
                 checker.ParseAndCheckFileInProject(
                     "test.fs",
                     0,
                     SourceText.ofString source,
-                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions}) 
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
                 |> Async.RunSynchronously
 
             Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
@@ -189,7 +189,7 @@ let main argv = 0"""
             | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
             | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            let errors = 
+            let errors =
                 typeCheckResults.Errors
                 |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
 
@@ -234,7 +234,7 @@ let main argv = 0"""
 
             pInfo.RedirectStandardError <- true
             pInfo.UseShellExecute <- false
-            
+
             let p = Process.Start(pInfo)
 
             p.WaitForExit()
@@ -247,13 +247,13 @@ let main argv = 0"""
         )
 
     let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
-        compile false source (fun (errors, outputFilePath) -> 
+        compile false source (fun (errors, outputFilePath) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
             f (ILVerifier outputFilePath)
         )
- 
+
     let RunScript (source: string) (expectedErrorMessages: string list) =
         lock gate <| fun () ->
             // Intialize output and input streams
@@ -271,7 +271,7 @@ let main argv = 0"""
 
             let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
             use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
-            
+
             let ch, errors = fsiSession.EvalInteractionNonThrowing source
 
             let errorMessages = ResizeArray()
@@ -297,7 +297,7 @@ let main argv = 0"""
 
         Assert.True(parseResults.ParseHadErrors)
 
-        let errors = 
+        let errors =
             parseResults.Errors
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
 
@@ -311,3 +311,10 @@ let main argv = 0"""
             Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
         )
+
+    [<Test>]
+    let ``hello world``() =
+        CompileExeAndRun
+            """
+(printfn "Hello, world."; exit 0)
+            """
