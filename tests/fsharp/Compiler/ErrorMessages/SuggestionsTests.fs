@@ -170,7 +170,7 @@ open System.Collectons
             FSharpErrorSeverity.Error
             39
             (2, 13, 2, 23)
-            "The namespace 'Collectons' is not defined. Maybe you want one of the following:\r\n   Collections"
+            "The namespace 'Collectons' is not defined."
 
 
     [<Test>]
@@ -251,8 +251,7 @@ let x : System.Collections.Generic.Lst = ResizeArray()
             FSharpErrorSeverity.Error
             39
             (2, 36, 2, 39)
-            "The type 'Lst' is not defined in 'System.Collections.Generic'. Maybe you want one of the following:\r\n   List"
-
+            "The type 'Lst' is not defined in 'System.Collections.Generic'. Maybe you want one of the following:\r\n   List\r\n   IList\r\n   List`1"
 
     [<Test>]
     let ``Suggest Types in Namespace`` () =
@@ -263,7 +262,7 @@ let x = System.DateTie.MaxValue
             FSharpErrorSeverity.Error
             39
             (2, 16, 2, 23)
-            "The value, constructor, namespace or type 'DateTie' is not defined. Maybe you want one of the following:\r\n   DateTime"
+            "The value, constructor, namespace or type 'DateTie' is not defined. Maybe you want one of the following:\r\n   DateTime\r\n   DateTimeKind\r\n   DateTimeOffset\r\n   Data"
 
 
     [<Test>]
