@@ -17,6 +17,7 @@ open Internal.Utilities.Text
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Extensions.ILX
@@ -2101,6 +2102,7 @@ type TcConfigBuilder =
       mutable maxErrors: int
       mutable abortOnError: bool (* intended for fsi scripts that should exit on first error *)
       mutable baseAddress: int32 option
+      mutable checksumAlgorithm: HashAlgorithm
 #if DEBUG
       mutable showOptimizationData: bool
 #endif
@@ -2234,6 +2236,7 @@ type TcConfigBuilder =
           maxErrors = 100
           abortOnError = false
           baseAddress = None
+          checksumAlgorithm = HashAlgorithm.Sha256
 
           delaysign = false
           publicsign = false
@@ -2744,6 +2747,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.flatErrors = data.flatErrors
     member x.maxErrors = data.maxErrors
     member x.baseAddress = data.baseAddress
+    member x.checksumAlgorithm = data.checksumAlgorithm
  #if DEBUG
     member x.showOptimizationData = data.showOptimizationData
 #endif
