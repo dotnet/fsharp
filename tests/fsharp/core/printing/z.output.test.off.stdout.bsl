@@ -289,7 +289,7 @@ end
   | B
 
 > type internal T2 =
-  {x: int;}
+  { x: int }
 
 > type internal T3
 
@@ -303,28 +303,28 @@ end
            | B
 
 > type T2 =
-  internal {x: int;}
+  internal { x: int }
 
 > type private T1 =
   | A
   | B
 
 > type private T2 =
-  {x: int;}
+  { x: int }
 
 > type T1 =
   private | A
           | B
 
 > type T2 =
-  private {x: int;}
+  private { x: int }
 
 > type internal T1 =
   private | A
           | B
 
 > type internal T2 =
-  private {x: int;}
+  private { x: int }
 
 > type private T3
 
@@ -388,16 +388,16 @@ type 'a T1Pre with
   member E : IEvent<obj>
 
 > type r =
-  {f0: int;
-   f1: int;
-   f2: int;
-   f3: int;
-   f4: int;
-   f5: int;
-   f6: int;
-   f7: int;
-   f8: int;
-   f9: int;}
+  { f0: int
+    f1: int
+    f2: int
+    f3: int
+    f4: int
+    f5: int
+    f6: int
+    f7: int
+    f8: int
+    f9: int }
 val r10 : r
 val r10s : r []
 val r10s' : string * r []
@@ -451,7 +451,7 @@ val x1564_A3 : int
     | A
     | B
   type T2 =
-    {x: int;}
+    { x: int }
   type T3
   type T4 =
     class
@@ -461,22 +461,22 @@ val x1564_A3 : int
     | A
     | B
   type T6 =
-    {x: int;}
+    { x: int }
   type private T7 =
     | A
     | B
   type private T8 =
-    {x: int;}
+    { x: int }
   type T9 =
     private | A
             | B
   type T10 =
-    private {x: int;}
+    private { x: int }
   type T11 =
     private | A
             | B
   type T12 =
-    private {x: int;}
+    private { x: int }
   type private T13
   type private T14 =
     class
@@ -499,7 +499,7 @@ module internal PrivateM = begin
     | A
     | B
   type T2 =
-    {x: int;}
+    { x: int }
   type T3
   type T4 =
     class
@@ -509,22 +509,22 @@ module internal PrivateM = begin
     | A
     | B
   type T6 =
-    {x: int;}
+    { x: int }
   type private T7 =
     | A
     | B
   type private T8 =
-    {x: int;}
+    { x: int }
   type T9 =
     private | A
             | B
   type T10 =
-    private {x: int;}
+    private { x: int }
   type T11 =
     private | A
             | B
   type T12 =
-    private {x: int;}
+    private { x: int }
   type private T13
   type private T14 =
     class
@@ -831,7 +831,7 @@ module Regression1019_long = begin
   val single_infinity : float32
 end
 
-> val it : int ref = {contents = 1;}
+> val it : int ref = { contents = 1 }
 
 > val x : int ref
 val f : (unit -> int)
@@ -1755,11 +1755,11 @@ val namedEx1 : exn
 val namedEx2 : exn
 
 > type optionRecord =
-  {x: int option;}
+  { x: int option }
 val x : optionRecord
 
 > type optionRecord =
-  {x: obj;}
+  { x: obj }
 val x : optionRecord
 
 > > > 

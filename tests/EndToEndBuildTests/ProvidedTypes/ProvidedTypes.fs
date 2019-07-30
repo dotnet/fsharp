@@ -12495,7 +12495,7 @@ namespace ProviderImplementation.ProvidedTypes
                   let pdbOpt =
                     match portablePDB with
                     | true  -> 
-                        let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
+                        let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData
                         if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                         else Some (pdbStream)
                     | _ -> None
