@@ -96,46 +96,57 @@ module TestConsumeCSharpOptionalParameter =
     check "csoptional23982f33" (SomeClass.MethodTakingOptionals(y = "aaaaaa")) 14
     check "csoptional23982f34" (SomeClass.MethodTakingOptionals(d = 8.0)) 14
 
-    check "csoptional23982f41" (SomeClass.MethodTakingNullableOptionalsWithDefaults()) 11
-    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14
-    check "csoptional23982f43" (SomeClass.MethodTakingNullableOptionalsWithDefaults(y = "aaaaaa")) 14
-    check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = 8.0)) 14
-
-    check "csoptional23982f51" (SomeClass.MethodTakingNullableOptionals()) -3
-    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = 6)) 4
-    check "csoptional23982f53" (SomeClass.MethodTakingNullableOptionals(y = "aaaaaa")) 4
-    check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6
-
-    // Even when a C# argument has a default value but is not actually nullable, ?x still takes an option-value
     check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?x = Some 6)) 14
     check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?y = Some "aaaaaa")) 14
     check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?d = Some 8.0)) 14
     
-    // Even when a C# argument has a default value but is not actually nullable, ?x still takes an option-value
     check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?x = None)) 11
     check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?y = None)) 11
     check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?d = None)) 11
 
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "csoptional23982f35" (let f = SomeClass.MethodTakingOptionals in ((f : unit -> int) ())) 11
+
+    check "csoptional23982f41" (SomeClass.MethodTakingNullableOptionalsWithDefaults()) 11
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14 // can provide non-nullable 
+    check "csoptional23982f43" (SomeClass.MethodTakingNullableOptionalsWithDefaults(y = "aaaaaa")) 14
+    // See https://github.com/fsharp/fslang-suggestions/issues/774#issuecomment-516423841
+    // check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = Nullable 6)) 14 // can provide nullable for legacy
+    // check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = Nullable 8.0)) 14 // can provide nullable for legacy
+    
     check "csoptional23982f431" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14
     check "csoptional23982f442" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = 8.0)) 14
+
+    // When a C# argument has a default value and is nullable (without a default), using ?x to provide an argument takes type option
+    check "csoptional23982f435" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?x = Some 6)) 14
+    check "csoptional23982f446" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?d = Some 8.0)) 14
+
+    check "csoptional23982f43E" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?x = None)) -92
+    check "csoptional23982f44R" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?d = None)) 6
+
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "csoptional23982f45" (let f = SomeClass.MethodTakingNullableOptionalsWithDefaults in ((f : unit -> int) ())) 11
+
+    check "csoptional23982f51" (SomeClass.MethodTakingNullableOptionals()) -3
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = 6)) 4 // can provide nullable for legacy
+    check "csoptional23982f53" (SomeClass.MethodTakingNullableOptionals(y = "aaaaaa")) 4
+    check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6 
+    // See https://github.com/fsharp/fslang-suggestions/issues/774#issuecomment-516423841
+    //check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = Nullable 6)) 4 // can provide nullable for legacy
+    //check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = Nullable 8.0)) 6 // can provide nullable for legacy
+
     check "csoptional23982f523" (SomeClass.MethodTakingNullableOptionals(x = 6)) 4
     check "csoptional23982f544" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6
     
     // When a C# argument has a default value and is nullable (without a default), using ?x to provide an argument takes type option
-    check "csoptional23982f435" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?x = Some 6)) 14
-    check "csoptional23982f446" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?d = Some 8.0)) 14
     check "csoptional23982f527" (SomeClass.MethodTakingNullableOptionals(?x = Some 6)) 4
     check "csoptional23982f548" (SomeClass.MethodTakingNullableOptionals(?d = Some 8.0)) 6
 
-    check "csoptional23982f43Q" (SomeClass.MethodTakingNullableOptionalsWithDefaults()) 11
-    check "csoptional23982f52W" (SomeClass.MethodTakingNullableOptionals()) -3
-
-    // When a C# argument has a default value and is nullable (with a default), using ?x to provide an argument takes type option, and using None
-    // provides Nullable(), i.e. the argument is not provided.
-    check "csoptional23982f43E" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?x = None)) -92
-    check "csoptional23982f44R" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?d = None)) 6
     check "csoptional23982f52T" (SomeClass.MethodTakingNullableOptionals(?x = None)) -3
     check "csoptional23982f54Y" (SomeClass.MethodTakingNullableOptionals(?d = None)) -3
+
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "csoptional23982f55" (let f = SomeClass.MethodTakingNullableOptionals in ((f : unit -> int) ())) -3
 
 module NestedStructPatternMatchingAcrossAssemblyBoundaries = 
     open Lib.NestedStructUnionsTests
