@@ -111,8 +111,8 @@ module TestConsumeCSharpOptionalParameter =
     check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14 // can provide non-nullable 
     check "csoptional23982f43" (SomeClass.MethodTakingNullableOptionalsWithDefaults(y = "aaaaaa")) 14
     // See https://github.com/fsharp/fslang-suggestions/issues/774#issuecomment-516423841
-    // check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = Nullable 6)) 14 // can provide nullable for legacy
-    // check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = Nullable 8.0)) 14 // can provide nullable for legacy
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = Nullable 6)) 14 // can provide nullable for legacy
+    check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = Nullable 8.0)) 14 // can provide nullable for legacy
     
     check "csoptional23982f431" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14
     check "csoptional23982f442" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = 8.0)) 14
@@ -132,8 +132,8 @@ module TestConsumeCSharpOptionalParameter =
     check "csoptional23982f53" (SomeClass.MethodTakingNullableOptionals(y = "aaaaaa")) 4
     check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6 
     // See https://github.com/fsharp/fslang-suggestions/issues/774#issuecomment-516423841
-    //check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = Nullable 6)) 4 // can provide nullable for legacy
-    //check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = Nullable 8.0)) 6 // can provide nullable for legacy
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = Nullable 6)) 4 // can provide nullable for legacy
+    check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = Nullable 8.0)) 6 // can provide nullable for legacy
 
     check "csoptional23982f523" (SomeClass.MethodTakingNullableOptionals(x = 6)) 4
     check "csoptional23982f544" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6

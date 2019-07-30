@@ -147,7 +147,7 @@ let AdjustCalledArgTypeForLinqExpressionsAndAutoQuote (infoReader: InfoReader) c
     else calledArgTy
 
 /// Adjust the called argument type to take into account whether the caller's argument is CSharpMethod(?arg=Some(3)) or CSharpMethod(arg=1) 
-let AdjustCalledArgTypeForOptionals g (calledArg: CalledArg) calledArgTy (callerArg: CallerArg<_>) =
+let AdjustCalledArgTypeForOptionals g enforceNullableOptionalsKnownTypes (calledArg: CalledArg) calledArgTy (callerArg: CallerArg<_>) =
 
     if callerArg.IsExplicitOptional then 
         match calledArg.OptArgInfo with 
@@ -175,8 +175,21 @@ let AdjustCalledArgTypeForOptionals g (calledArg: CalledArg) calledArgTy (caller
         // CSharpMethod(x = arg), optional C#-style argument, may have type Nullable<ty>. 
         // The arg should have type ty. However for backwards compat, we also allow arg to have type Nullable<ty>
         | CallerSide _ ->
-            if isNullableTy g calledArgTy (* && not (isNullableTy g callerArg.CallerArgumentType) *) then
-                destNullableTy g calledArgTy
+            if isNullableTy g calledArgTy then 
+                // If inference has worked out it's a nullable then use this
+                if isNullableTy g callerArg.CallerArgumentType then
+                    calledArgTy
+                // If inference has worked out it's a struct (e.g. an int) then use this
+                elif isStructTy g callerArg.CallerArgumentType then
+                    destNullableTy g calledArgTy
+                // If neither and we are at the end of overload resolution then use the Nullable
+                elif enforceNullableOptionalsKnownTypes then 
+                    calledArgTy
+                // If at the beginning of inference then use a type variable
+                else 
+                    let compgenId = mkSynId range0 unassignedTyparName
+                    let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+                    NewInferenceType()
             else
                 calledArgTy
 
@@ -206,7 +219,7 @@ let AdjustCalledArgTypeForOptionals g (calledArg: CalledArg) calledArgTy (caller
 // The function AdjustCalledArgType detects this and refuses to apply the default byref-to-ref transformation. 
 //
 // The function AdjustCalledArgType also adjusts for optional arguments. 
-let AdjustCalledArgType (infoReader: InfoReader) isConstraint (calledArg: CalledArg) (callerArg: CallerArg<_>)  =
+let AdjustCalledArgType (infoReader: InfoReader) isConstraint enforceNullableOptionalsKnownTypes (calledArg: CalledArg) (callerArg: CallerArg<_>)  =
     let g = infoReader.g
     let m = callerArg.Range
     // #424218 - when overload resolution is part of constraint solving - do not perform type-directed conversions
@@ -236,7 +249,7 @@ let AdjustCalledArgType (infoReader: InfoReader) isConstraint (calledArg: Called
 
         else 
             let calledArgTy2 = AdjustCalledArgTypeForLinqExpressionsAndAutoQuote infoReader callerArgTy calledArg m
-            let calledArgTy3 = AdjustCalledArgTypeForOptionals g calledArg calledArgTy2 callerArg
+            let calledArgTy3 = AdjustCalledArgTypeForOptionals g enforceNullableOptionalsKnownTypes calledArg calledArgTy2 callerArg
             calledArgTy3        
 
 //-------------------------------------------------------------------------
@@ -578,7 +591,7 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) (arg: AssignedC
     let countOfCallerLambdaArg = InferLambdaArgsForLambdaPropagation argExpr
 
     // Adjust for Expression<_>, Func<_, _>, ...
-    let adjustedCalledArgTy = AdjustCalledArgType infoReader false arg.CalledArg arg.CallerArg
+    let adjustedCalledArgTy = AdjustCalledArgType infoReader false false arg.CalledArg arg.CallerArg
     if countOfCallerLambdaArg > 0 then 
         // Decompose the explicit function type of the target
         let calledLambdaArgTys, _calledLambdaRetTy = Tastops.stripFunTy g adjustedCalledArgTy
