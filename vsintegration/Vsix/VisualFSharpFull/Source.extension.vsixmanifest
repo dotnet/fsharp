@@ -28,7 +28,10 @@
       <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
       <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
+      <!-- this Ngen action should be disabled in branch `release/dev16.2`, enabled otherwise -->
+      <!--
       <Action Type="Ngen" Path="Agent\FSharp.Compiler.LanguageServer.exe" />
+      -->
     </Actions>
   </Installer>
   <Dependencies>

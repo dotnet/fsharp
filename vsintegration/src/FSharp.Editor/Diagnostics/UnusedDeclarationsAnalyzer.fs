@@ -3,6 +3,7 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
@@ -10,27 +11,16 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
+open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
-type internal UnusedDeclarationsAnalyzer() =
-    inherit DocumentDiagnosticAnalyzer()
+[<Export(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>)>]
+type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
     
     static let userOpName = "UnusedDeclarationsAnalyzer"
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
-    let [<Literal>] DescriptorId = "FS1182"
-    
-    let Descriptor = 
-        DiagnosticDescriptor(
-            id = DescriptorId,
-            title = SR.TheValueIsUnused(),
-            messageFormat = SR.TheValueIsUnused(),
-            category = DiagnosticCategory.Style,
-            defaultSeverity = DiagnosticSeverity.Hidden,
-            isEnabledByDefault = true,
-            customTags = FSharpDiagnosticCustomTags.Unnecessary)
     
     let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
         match symbol with
@@ -95,33 +85,25 @@ type internal UnusedDeclarationsAnalyzer() =
         //#endif
         unusedRanges
 
-    override __.Priority = 80 // Default = 50
+    interface IFSharpUnusedDeclarationsDiagnosticAnalyzer with
 
-    override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
-    
-    override __.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
+        member __.AnalyzeSemanticsAsync(descriptor, document, cancellationToken) =
+            asyncMaybe {
+                do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
 
-    override __.AnalyzeSemanticsAsync(document, cancellationToken) =
-        asyncMaybe {
-            do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
-
-            do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
-            do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
-            match! getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken) with
-            | (_parsingOptions, projectOptions) ->
-                let! sourceText = document.GetTextAsync()
-                let checker = getChecker document
-                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
-                let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-                let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile (isScriptFile document.FilePath)
-                return
-                    unusedRanges
-                    |> Seq.map (fun m -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
-                    |> Seq.toImmutableArray
-        }
-        |> Async.map (Option.defaultValue ImmutableArray.Empty)
-        |> RoslynHelpers.StartAsyncAsTask cancellationToken
-
-    interface IBuiltInAnalyzer with
-        member __.OpenFileOnly _ = true
-        member __.GetAnalyzerCategory() = DiagnosticAnalyzerCategory.SemanticDocumentAnalysis
+                do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
+                do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
+                match! getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken) with
+                | (_parsingOptions, projectOptions) ->
+                    let! sourceText = document.GetTextAsync()
+                    let checker = getChecker document
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
+                    let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+                    let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile (isScriptFile document.FilePath)
+                    return
+                        unusedRanges
+                        |> Seq.map (fun m -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                        |> Seq.toImmutableArray
+            }
+            |> Async.map (Option.defaultValue ImmutableArray.Empty)
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
