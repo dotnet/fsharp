@@ -80,6 +80,8 @@ type public Fsc () as this =
     let mutable win32res : string = null
     let mutable win32manifest : string = null
     let mutable vslcid : string = null
+    let mutable checksumAlgorithm: string = null
+    let mutable codePage : string = null
 #else
     let mutable baseAddress : string? = null
     let mutable codePage : string? = null
@@ -107,6 +109,8 @@ type public Fsc () as this =
     let mutable win32res : string? = null
     let mutable win32manifest : string? = null
     let mutable vslcid : string? = null
+    let mutable checksumAlgorithm: string? = null
+    let mutable codePage : string? = null
 #endif
 
     let mutable toolPath : string =
@@ -171,7 +175,7 @@ type public Fsc () as this =
             builder.AppendSwitch("--tailcalls-")
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
-        // Platform
+// Platform
         builder.AppendSwitchIfNotNull("--platform:",
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
             let ToUpperInvariant (s:string) =
@@ -185,6 +189,15 @@ type public Fsc () as this =
                 | "ANYCPU",  _, _  -> "anycpu"
                 | "X86",  _, _  -> "x86"
                 | "X64",  _, _  -> "x64"
+                | _ -> null)
+        // checksumAlgorithm
+        builder.AppendSwitchIfNotNull("--checksumalgorithm:",
+            match checksumAlgorithm with
+            | null -> null
+            | NonNull checksumAlgorithm ->
+                match checksumAlgorithm.ToUpperInvariant() with
+                | "SHA1" -> "Sha1"
+                | "SHA256" -> "Sha256"
                 | _ -> null)
 
         // Resources
@@ -309,6 +322,11 @@ type public Fsc () as this =
     member fsc.BaseAddress
         with get() = baseAddress 
         and set(s) = baseAddress <- s
+
+    // --checksumalgorithm
+    member fsc.ChecksumAlgorithm
+        with get() = checksumAlgorithm 
+        and set(s) = checksumAlgorithm <- s
 
     // --codepage <int>: Specify the codepage to use when opening source files
     member fsc.CodePage

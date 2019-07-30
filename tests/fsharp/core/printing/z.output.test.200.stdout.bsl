@@ -121,7 +121,7 @@ type T =
   end
 val f_as_method : x:int -> int
 val f_as_thunk : (int -> int)
-val refCell : string ref = {contents = "value";}
+val refCell : string ref = { contents = "value" }
 module D1 = begin
   val words : System.Collections.Generic.IDictionary<string,int>
   val words2000 : System.Collections.Generic.IDictionary<int,string>
@@ -458,7 +458,7 @@ end
   | B
 
 > type internal T2 =
-  {x: int;}
+  { x: int }
 
 > type internal T3
 
@@ -472,28 +472,28 @@ end
            | B
 
 > type T2 =
-  internal {x: int;}
+  internal { x: int }
 
 > type private T1 =
   | A
   | B
 
 > type private T2 =
-  {x: int;}
+  { x: int }
 
 > type T1 =
   private | A
           | B
 
 > type T2 =
-  private {x: int;}
+  private { x: int }
 
 > type internal T1 =
   private | A
           | B
 
 > type internal T2 =
-  private {x: int;}
+  private { x: int }
 
 > type private T3
 
@@ -557,46 +557,46 @@ type 'a T1Pre with
   member E : IEvent<obj>
 
 > type r =
-  {f0: int;
-   f1: int;
-   f2: int;
-   f3: int;
-   f4: int;
-   f5: int;
-   f6: int;
-   f7: int;
-   f8: int;
-   f9: int;}
-val r10 : r = {f0 = 0;
-               f1 = 1;
-               f2 = 2;
-               f3 = 3;
-               f4 = 4;
-               f5 = 5;
-               f6 = 6;
-               f7 = 7;
-               f8 = 8;
-               f9 = 9;}
-val r10s : r [] = [|{f0 = 0;
-                     f1 = 1;
-                     f2 = 2;
-                     f3 = 3;
-                     f4 = 4;
-                     f5 = 5;
-                     f6 = 6;
-                     f7 = 7;
-                     f8 = 8;
-                     f9 = 9;}; ...|]
-val r10s' : string * r [] = ("one extra node", [|{f0 = 0;
-                                                  f1 = 1;
-                                                  f2 = 2;
-                                                  f3 = 3;
-                                                  f4 = 4;
-                                                  f5 = 5;
-                                                  f6 = 6;
-                                                  f7 = 7;
-                                                  f8 = 8;
-                                                  f9 = ...;}; ...|])
+  { f0: int
+    f1: int
+    f2: int
+    f3: int
+    f4: int
+    f5: int
+    f6: int
+    f7: int
+    f8: int
+    f9: int }
+val r10 : r = { f0 = 0
+                f1 = 1
+                f2 = 2
+                f3 = 3
+                f4 = 4
+                f5 = 5
+                f6 = 6
+                f7 = 7
+                f8 = 8
+                f9 = 9 }
+val r10s : r [] = [|{ f0 = 0
+                      f1 = 1
+                      f2 = 2
+                      f3 = 3
+                      f4 = 4
+                      f5 = 5
+                      f6 = 6
+                      f7 = 7
+                      f8 = 8
+                      f9 = 9 }; ...|]
+val r10s' : string * r [] = ("one extra node", [|{ f0 = 0
+                                                   f1 = 1
+                                                   f2 = 2
+                                                   f3 = 3
+                                                   f4 = 4
+                                                   f5 = 5
+                                                   f6 = 6
+                                                   f7 = 7
+                                                   f8 = 8
+                                                   f9 = ... }; ...|])
 
 > val x1564_A1 : int = 1
 
@@ -647,7 +647,7 @@ val x1564_A3 : int = 3
     | A
     | B
   type T2 =
-    {x: int;}
+    { x: int }
   type T3
   type T4 =
     class
@@ -657,22 +657,22 @@ val x1564_A3 : int = 3
     | A
     | B
   type T6 =
-    {x: int;}
+    { x: int }
   type private T7 =
     | A
     | B
   type private T8 =
-    {x: int;}
+    { x: int }
   type T9 =
     private | A
             | B
   type T10 =
-    private {x: int;}
+    private { x: int }
   type T11 =
     private | A
             | B
   type T12 =
-    private {x: int;}
+    private { x: int }
   type private T13
   type private T14 =
     class
@@ -695,7 +695,7 @@ module internal PrivateM = begin
     | A
     | B
   type T2 =
-    {x: int;}
+    { x: int }
   type T3
   type T4 =
     class
@@ -705,22 +705,22 @@ module internal PrivateM = begin
     | A
     | B
   type T6 =
-    {x: int;}
+    { x: int }
   type private T7 =
     | A
     | B
   type private T8 =
-    {x: int;}
+    { x: int }
   type T9 =
     private | A
             | B
   type T10 =
-    private {x: int;}
+    private { x: int }
   type T11 =
     private | A
             | B
   type T12 =
-    private {x: int;}
+    private { x: int }
   type private T13
   type private T14 =
     class
@@ -1055,9 +1055,9 @@ module Regression1019_long = begin
   val single_infinity : float32 = infinityf
 end
 
-> val it : int ref = {contents = 1;}
+> val it : int ref = { contents = 1 }
 
-> val x : int ref = {contents = 1;}
+> val x : int ref = { contents = 1 }
 val f : (unit -> int)
 
 > val it : int = 1
@@ -1981,11 +1981,11 @@ val namedEx1 : exn = MyNamedException1 (5,"")
 val namedEx2 : exn = MyNamedException7 25
 
 > type optionRecord =
-  {x: int option;}
-val x : optionRecord = {x = None;}
+  { x: int option }
+val x : optionRecord = { x = None }
 
 > type optionRecord =
-  {x: obj;}
-val x : optionRecord = {x = null;}
+  { x: obj }
+val x : optionRecord = { x = null }
 
 > > > 

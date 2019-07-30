@@ -10,6 +10,7 @@ open Internal.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.TypeChecker
@@ -351,6 +352,7 @@ type TcConfigBuilder =
       mutable maxErrors: int
       mutable abortOnError: bool
       mutable baseAddress: int32 option
+      mutable checksumAlgorithm: HashAlgorithm
  #if DEBUG
       mutable showOptimizationData: bool
 #endif
@@ -514,6 +516,7 @@ type TcConfig =
 
     member maxErrors: int
     member baseAddress: int32 option
+    member checksumAlgorithm: HashAlgorithm
 #if DEBUG
     member showOptimizationData: bool
 #endif
