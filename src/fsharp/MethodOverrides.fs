@@ -42,7 +42,7 @@ type OverrideInfo =
 
 [<System.Flags>]
 type RequiredSlotFlags =
-    | None                                      = 0x000
+    | None                                      = 0x0000
 
     /// A slot which does not have to be implemented, because an inherited implementation is available.
     | IsOptional                                = 0x001
