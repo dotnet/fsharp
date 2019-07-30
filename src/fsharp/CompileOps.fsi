@@ -552,6 +552,7 @@ type TcConfig =
     member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     member useSdkRefs: bool
+    member langVersion: LanguageVersion
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 
