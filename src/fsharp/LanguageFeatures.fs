@@ -118,5 +118,8 @@ type LanguageVersion (specifiedVersion) =
         | true, v -> string v
         | _ -> String.Empty
 
-    /// Current version string.
+    /// Current version string.  @@@@@@@@@@@@
     member val CurrentVersionString = string specified
+
+    /// Get the specified LanguageVersion
+    member __.SpecifiedVerson = specified

@@ -1,8 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.UnitTests.DimTests
 
 open NUnit.Framework
+open FSharp.Compiler.TestCompiler
+open FSharp.Compiler.SourceCodeServices
 
 #if NETCOREAPP
 
@@ -37,6 +39,7 @@ type Test () =
         let c = CompilationUtil.CreateILCompilation ilSource
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 8
                 StartColumn = 14
@@ -45,6 +48,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }        
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 8
                 StartColumn = 14
@@ -161,6 +165,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 8
                 StartColumn = 14
@@ -169,6 +174,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366;
                 StartLine = 8;
                 StartColumn = 14;
@@ -217,6 +223,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 8
                 StartColumn = 14
@@ -225,6 +232,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 8
                 StartColumn = 14
@@ -267,6 +275,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 8
                 StartColumn = 14
@@ -275,6 +284,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 8
                 StartColumn = 14
@@ -283,6 +293,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 8
                 StartColumn = 14
@@ -332,6 +343,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 9
                 StartColumn = 14
@@ -340,6 +352,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 9
                 StartColumn = 14
@@ -388,6 +401,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 855
                 StartLine = 11
                 StartColumn = 18
@@ -439,6 +453,7 @@ let f () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 14
                 StartColumn = 6
@@ -447,6 +462,7 @@ let f () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 14
                 StartColumn = 8
@@ -498,6 +514,7 @@ let f () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 14
                 StartColumn = 4
@@ -550,6 +567,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 363
                 StartLine = 8
                 StartColumn = 14
@@ -558,6 +576,7 @@ type Test () =
                 Message = "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 9
                 StartColumn = 14
@@ -566,6 +585,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 9
                 StartColumn = 14
@@ -574,6 +594,7 @@ type Test () =
                 Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 8
                 StartColumn = 14
@@ -582,6 +603,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 8
                 StartColumn = 14
@@ -634,6 +656,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 10
                 StartColumn = 14
@@ -642,6 +665,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 10
                 StartColumn = 14
@@ -886,6 +910,7 @@ type Test2 () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 10
                 StartColumn = 14
@@ -894,6 +919,7 @@ type Test2 () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 358
                 StartLine = 10
                 StartColumn = 14
@@ -936,6 +962,7 @@ type Test () =
         let c = CompilationUtil.CreateILCompilation ilSource
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3303
                 StartLine = 8
                 StartColumn = 14
@@ -944,6 +971,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not supported by target runtime."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 8
                 StartColumn = 14
@@ -952,6 +980,7 @@ type Test () =
                 Message = "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 4.7 or greater."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366;
                 StartLine = 8;
                 StartColumn = 14;
@@ -991,6 +1020,7 @@ type Test () =
         let c = CompilationUtil.CreateILCompilation ilSource
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3303
                 StartLine = 8
                 StartColumn = 14
@@ -1042,6 +1072,7 @@ let f () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3303
                 StartLine = 14
                 StartColumn = 4
@@ -1050,6 +1081,7 @@ let f () =
                 Message = "Feature 'default interface method consumption' is not supported by target runtime."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3302
                 StartLine = 14
                 StartColumn = 4
@@ -1100,6 +1132,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 8
                 StartColumn = 14
@@ -1389,6 +1422,7 @@ let f () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 491;
                 StartLine = 26;
                 StartColumn = 4;
@@ -1397,6 +1431,7 @@ let f () =
                 Message = "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 491;
                 StartLine = 31;
                 StartColumn = 4;
@@ -1477,6 +1512,7 @@ type Test2 () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 629
                 StartLine = 10
                 StartColumn = 8
@@ -1485,6 +1521,7 @@ type Test2 () =
                 Message = "Method 'M1' is not accessible from this code location"
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 629
                 StartLine = 15
                 StartColumn = 12
@@ -1492,7 +1529,8 @@ type Test2 () =
                 EndColumn = 30
                 Message = "Method 'M1' is not accessible from this code location"
             }
-            {         
+            {
+                Severity = FSharpErrorSeverity.Error
                 Number = 629
                 StartLine = 25
                 StartColumn = 8
@@ -1501,6 +1539,7 @@ type Test2 () =
                 Message = "Method 'M1' is not accessible from this code location"
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 629
                 StartLine = 30
                 StartColumn = 12
@@ -1595,6 +1634,7 @@ let f () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 39
                 StartLine = 16
                 StartColumn = 9
@@ -1646,6 +1686,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 855;
                 StartLine = 11;
                 StartColumn = 18;
@@ -1804,6 +1845,7 @@ let test = { new ITest }
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 7
                 StartColumn = 11
@@ -2018,6 +2060,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 363
                 StartLine = 9
                 StartColumn = 14
@@ -2026,6 +2069,7 @@ type Test () =
                 Message = "The interface 'ITest1' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 10
                 StartColumn = 14
@@ -2034,6 +2078,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 10
                 StartColumn = 14
@@ -2042,6 +2087,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 10
                 StartColumn = 14
@@ -2053,6 +2099,7 @@ type Test () =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 9
                 StartColumn = 14
@@ -2061,6 +2108,7 @@ Note that all interface members must be implemented and listed under an appropri
                 Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 9
                 StartColumn = 14
@@ -2069,6 +2117,7 @@ Note that all interface members must be implemented and listed under an appropri
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 9
                 StartColumn = 14
@@ -2144,6 +2193,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 9
                 StartColumn = 14
@@ -2152,6 +2202,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 9
                 StartColumn = 14
@@ -2160,6 +2211,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 9
                 StartColumn = 14
@@ -2237,6 +2289,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 9
                 StartColumn = 14
@@ -2245,6 +2298,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 9
                 StartColumn = 14
@@ -2253,6 +2307,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 9
                 StartColumn = 14
@@ -2330,6 +2385,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 13
                 StartColumn = 14
@@ -2338,6 +2394,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 13
                 StartColumn = 14
@@ -2346,6 +2403,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 13
                 StartColumn = 14
@@ -2418,6 +2476,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 13
                 StartColumn = 14
@@ -2426,6 +2485,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 13
                 StartColumn = 14
@@ -2434,6 +2494,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 13
                 StartColumn = 14
@@ -2499,6 +2560,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 13
                 StartColumn = 14
@@ -2507,6 +2569,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 13
                 StartColumn = 14
@@ -2515,6 +2578,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 13
                 StartColumn = 14
@@ -2796,6 +2860,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304;
                 StartLine = 14;
                 StartColumn = 14;
@@ -2804,6 +2869,7 @@ type Test () =
                 Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366;
                 StartLine = 14;
                 StartColumn = 14;
@@ -3623,11 +3689,12 @@ type Test2 () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366;
                 StartLine = 10;
                 StartColumn = 14;
                 EndLine = 10;
-                EndColumn = 31;
+                EndColumn = 30;
                 Message = "No implementation was given for 'ITest1.Method2() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
         ])
@@ -3815,6 +3882,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 363
                 StartLine = 8
                 StartColumn = 14
@@ -3823,6 +3891,7 @@ type Test () =
                 Message = "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 9
                 StartColumn = 14
@@ -3831,6 +3900,7 @@ type Test () =
                 Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 9
                 StartColumn = 14
@@ -3839,6 +3909,7 @@ type Test () =
                 Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 8
                 StartColumn = 14
@@ -3847,6 +3918,7 @@ type Test () =
                 Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 8
                 StartColumn = 14
@@ -3899,6 +3971,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 10
                 StartColumn = 14
@@ -3907,6 +3980,7 @@ type Test () =
                 Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 10
                 StartColumn = 14
@@ -4128,6 +4202,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 12
                 StartColumn = 14
@@ -4396,6 +4471,7 @@ type Test () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 12
                 StartColumn = 14
@@ -4404,6 +4480,7 @@ type Test () =
                 Message = "Interface member 'IA.set_Prop2(value: string) : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 12
                 StartColumn = 14
@@ -4454,6 +4531,7 @@ let test =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 363
                 StartLine = 8
                 StartColumn = 6
@@ -4462,6 +4540,7 @@ let test =
                 Message = "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 7
                 StartColumn = 4
@@ -4470,6 +4549,7 @@ let test =
                 Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 7
                 StartColumn = 4
@@ -4478,6 +4558,7 @@ let test =
                 Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3304
                 StartLine = 8
                 StartColumn = 6
@@ -4486,6 +4567,7 @@ let test =
                 Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
             }
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 366
                 StartLine = 8
                 StartColumn = 6
@@ -4629,6 +4711,7 @@ type Test () =
         let c = CompilationUtil.CreateILCompilation ilSource
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3303
                 StartLine = 8
                 StartColumn = 14
@@ -4680,6 +4763,7 @@ let f () =
         let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
         CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
             {
+                Severity = FSharpErrorSeverity.Error
                 Number = 3303
                 StartLine = 14
                 StartColumn = 4

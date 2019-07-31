@@ -1302,21 +1302,6 @@ module CoreTests =
     [<Test>]
     let ``longnames-FSI_BASIC`` () = singleTestBuildAndRun "core/longnames" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    [<Test>]
-    let ``longnames-version46`` () =
-        let cfg = testConfig "core/longnames/version46"
-        // For some reason this warning is off by default in the test framework but in this case we are testing for it
-        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
-        singleVersionedNegTest cfg "4.6" "test"
-#endif
-
-    [<Test>]
-    let ``longnames-version47-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/longnames/version47" FSC_BASIC "preview"
-
-    [<Test>]
-    let ``longnames-version47-FSI_BASIC`` () = singleTestBuildAndRunVersion "core/longnames/version47" FSI_BASIC "preview"
-
     [<Test>]
     let ``math-numbersVS2008-FSC_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_BASIC
 
@@ -1333,30 +1318,11 @@ module CoreTests =
     [<Test>]
     let ``pinvoke-FSC_BASIC`` () = singleTestBuildAndRun "core/pinvoke" FSC_BASIC
 
-    [<Test;Ignore("https://github.com/dotnet/fsharp/issues/7254")>]
-    let ``pinvoke-FSI_BASIC`` () =
-        // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-        // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
-        let definePInvokeMethod =
-            typeof<System.Reflection.Emit.TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
-                typeof<string>
-                typeof<string>
-                typeof<string>
-                typeof<System.Reflection.MethodAttributes>
-                typeof<System.Reflection.CallingConventions>
-                typeof<Type>
-                typeof<Type[]>
-                typeof<Type[]>
-                typeof<Type[]>
-                typeof<Type[][]>
-                typeof<Type[][]>
-                typeof<System.Runtime.InteropServices.CallingConvention>
-                typeof<System.Runtime.InteropServices.CharSet> |])
-
-        let enablePInvokeOnCoreClr = definePInvokeMethod <> null
-
-        if enablePInvokeOnCoreClr then
-            singleTestBuildAndRun "core/pinvoke" FSI_BASIC
+#if NETCOREAPP3_0
+    // Test is only expected to pass on NETCOREAPP3.0 and up
+    [<Test>]
+    let ``pinvoke-FSI_BASIC`` () = singleTestBuildAndRun "core/pinvoke" FSI_BASIC
+#endif
 
     [<Test>]
     let ``fsi_load-FSC_BASIC`` () = singleTestBuildAndRun "core/fsi-load" FSC_BASIC

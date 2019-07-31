@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.TestCompiler
 
 open System
 open System.IO
@@ -112,7 +112,7 @@ type CompilationUtil private () =
                 [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
                 references.As<MetadataReference>().AddRange additionalReferences,
                 CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
-        TestCompilation.CSharp (c, flags)
+        Some (TestCompilation.CSharp (c, flags))
 
     static member CreateILCompilation (source: string) =
         let compute =
@@ -131,4 +131,4 @@ type CompilationUtil private () =
                     try File.Delete ilFilePath with | _ -> ()
                     try File.Delete tmp with | _ -> ()
                     try File.Delete dllFilePath with | _ -> ()
-        TestCompilation.IL (source, compute)
+        Some (TestCompilation.IL (source, compute))

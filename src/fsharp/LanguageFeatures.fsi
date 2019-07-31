@@ -44,3 +44,6 @@ type LanguageVersion =
 
     /// Current version string.
     member CurrentVersionString: string
+
+    /// Get the specified LanguageVersion   @@@@@@@@
+    member SpecifiedVerson: decimal

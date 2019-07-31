@@ -37,6 +37,16 @@
         <target state="new">Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsChecksumAlgorithm">
+        <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
+        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnknownChecksumAlgorithm">
+        <source>Algorithm '{0}' is not supported</source>
+        <target state="new">Algorithm '{0}' is not supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
         <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
