@@ -1146,7 +1146,7 @@ let CompilePatternBasic
                             let accessf' _j tpinst _ =
                                 // TODO: In the future we will want active patterns to be able to return struct-unions
                                 //       In that eventuality, we need to check we are taking the address correctly
-                                mkOptionGetValueUnprovenViaAddr g inpExprOpt.Value (List.head (instTypes tpinst resTys)) exprm
+                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
                             mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path, int64 j))
                     else
                         // Successful active patterns  don't refute other patterns
