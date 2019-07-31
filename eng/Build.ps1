@@ -224,13 +224,14 @@ function UpdatePath() {
     TestAndAddToPath "$ArtifactsDir\bin\fsiAnyCpu\$configuration\net472"
 }
 
-function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\publish\fsi.exe"
+function VerifyAssemblyVersionsAndSymbols() {
+    $assemblyVerCheckPath = Join-Path $ArtifactsDir "Bootstrap\AssemblyCheck\AssemblyCheck.dll"
 
     # Only verify versions on CI or official build
     if ($ci -or $official) {
-        $asmVerCheckPath = "$RepoRoot\scripts"
-        Exec-Console $fsiPath """$asmVerCheckPath\AssemblyVersionCheck.fsx"" -- ""$ArtifactsDir"""
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+        Exec-Console $dotnetExe """$assemblyVerCheckPath"" ""$ArtifactsDir"""
     }
 }
 
@@ -307,7 +308,7 @@ try {
     }
 
     if ($build) {
-        VerifyAssemblyVersions
+        VerifyAssemblyVersionsAndSymbols
     }
 
     $desktopTargetFramework = "net472"
