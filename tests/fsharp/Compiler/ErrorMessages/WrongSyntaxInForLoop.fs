@@ -10,14 +10,12 @@ module ``Wrong syntax in for loop`` =
 
     [<Test>]
     let ``Equals instead of in``() =
-        CompilerAssert.TypeCheckSingleError
+        CompilerAssert.ParseWithErrors
             """
+module X
 for i = 0 .. 100 do
     ()
 
 exit 0
             """
-            FSharpErrorSeverity.Warning
-            3215
-            (6, 5, 6, 11)
-            "Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?"
+            [|FSharpErrorSeverity.Error, 3215, (3, 7, 3, 8), "Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?" |]
