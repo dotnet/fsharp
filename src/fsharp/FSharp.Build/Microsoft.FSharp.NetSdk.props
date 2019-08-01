@@ -12,7 +12,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-   <PropertyGroup>
+  <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
@@ -74,9 +74,19 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup>
     <DefaultValueTuplePackageVersion>4.4.0</DefaultValueTuplePackageVersion>
-    <DefaultFSharpCorePackageVersion>{{FSharpCoreShippedPackageVersion}}</DefaultFSharpCorePackageVersion>
-    <DefaultFSharpCorePreviewPackageVersion>{{FSharpCorePreviewPackageVersion}}</DefaultFSharpCorePreviewPackageVersion>
     <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersion)</ValueTupleImplicitPackageVersion>
+
+    <!--
+        When the DotNETSdk is a preview release:
+            we automatically configures the compiler to use the preview release of FSharp.Core from a myget feed (updated daily) 
+            a developer can use a PackageReference update to pin to an early release.
+
+        When the DotNETSdk is an RTM release:
+            we automatically configures the compiler to use the RTM nuget Package version associated with this product build.
+   -->
+    <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)' != 'true'">{{FSCorePackageVersion}}</DefaultFSharpCorePackageVersion>
+    <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)' == 'true'">{{FSharpCorePreviewPackageVersion}}</DefaultFSharpCorePackageVersion>
+    <RestoreSources Condition="'$(_NETCoreSdkIsPreview)' == 'true'">$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
     <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
