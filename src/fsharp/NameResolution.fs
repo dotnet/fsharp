@@ -36,6 +36,7 @@ type NameResolver(g: TcGlobals,
                   amap: Import.ImportMap,
                   infoReader: InfoReader,
                   instantiationGenerator: (range -> Typars -> TypeInst)) =
+
     /// Used to transform typars into new inference typars
     // instantiationGenerator is a function to help us create the
     // type parameters by copying them from type parameter specifications read
@@ -50,6 +51,7 @@ type NameResolver(g: TcGlobals,
     member nr.g = g
     member nr.amap = amap
     member nr.InfoReader = infoReader
+    member nr.languageSupportsNameOf = g.langVersion.SupportsFeature LanguageFeature.NameOf
 
 //-------------------------------------------------------------------------
 // Helpers for unionconstrs and recdfields
@@ -2543,7 +2545,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match fresh with
                     | Item.Value value ->
                         let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref value
-                        if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then
+                        if isNameOfOperator && not (ncenv.languageSupportsNameOf) then
                             // Do not resolve `nameof` if the feature is unsupported, even if it is FSharp.Core
                             None
                          else
