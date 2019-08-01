@@ -2496,6 +2496,15 @@ let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameR
 /// that may represent further actions, e.g. further lookups.
 let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified m ad nenv (typeNameResInfo: TypeNameResolutionInfo) (id: Ident) (rest: Ident list) isOpenDecl =
     let resInfo = ResolutionInfo.Empty
+    let canSuggestThisItem (item:Item) =
+        // All items can be suggested except nameof when it comes from FSharp.Core.dll and the nameof feature is not enabled
+        match item with
+        | Item.Value v ->
+            let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref v
+            if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then false
+            else true
+        | _ -> true
+
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
@@ -2570,7 +2579,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                             | _ ->
                                 let suggestNamesAndTypes (addToBuffer: string -> unit) =
                                     for e in nenv.eUnqualifiedItems do
-                                        addToBuffer e.Value.DisplayName
+                                        if canSuggestThisItem e.Value then
+                                            addToBuffer e.Value.DisplayName
 
                                     for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
                                         if IsEntityAccessible ncenv.amap m ad e.Value then
@@ -2666,7 +2676,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                                   addToBuffer e.Value.DisplayName
 
                           for e in nenv.eUnqualifiedItems do
-                              addToBuffer e.Value.DisplayName
+                              if canSuggestThisItem e.Value then
+                                  addToBuffer e.Value.DisplayName
 
                       match innerSearch with
                       | Exception (UndefinedName(0, _, id1, suggestionsF)) when Range.equals id.idRange id1.idRange ->
