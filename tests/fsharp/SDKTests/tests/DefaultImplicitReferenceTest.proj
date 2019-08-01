@@ -7,7 +7,7 @@
 
   <PropertyGroup>
     <ExpectsFSharpCore>true</ExpectsFSharpCore>
-    <ExpectedFSharpCorePackageVersion>$(DefaultFSharpCorePackageVersion)</ExpectedFSharpCorePackageVersion>
+    <ExpectedFSharpCorePackageVersion>$(FSCorePackageVersion)</ExpectedFSharpCorePackageVersion>
 
     <ExpectsValueTuple>true</ExpectsValueTuple>
     <ExpectedValueTuplePackageVersion>$(DefaultValueTuplePackageVersion)</ExpectedValueTuplePackageVersion>
