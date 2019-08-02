@@ -47,12 +47,12 @@
 //<Expects id="FS0039" status="error" span="(322,17)">The value or constructor 'nameof' is not defined.</Expects>
 //<Expects id="FS0039" status="error" span="(336,22)">The value or constructor 'nameof' is not defined.</Expects>
 //<Expects id="FS0039" status="error" span="(337,22)">The value or constructor 'nameof' is not defined.</Expects>
+//<Expects id="FS0039" status="error" span="(342,13)">The value or constructor 'name' is not defined. Maybe you want one of the following:</Expects>
 
 
 #if TESTS_AS_APP
 module TestSuite_FSharpCore_nameof_46
 #endif
-
 
 #nowarn "44"
 
@@ -336,6 +336,10 @@ type Person =
         | x when x = nameof __.Name -> { __ with Name = string value }
         | x when x = nameof __.Age -> { __ with Age = value :?> int }
         | _ -> __
+
+module Foo =
+    let nameof = ()
+    let x = name ()
 
 do test "local variable name lookup"                    (BasicNameOfTests.``local variable name lookup`` ())
 do test "local int function name"                       (BasicNameOfTests.``local int function name`` ())
