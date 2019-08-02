@@ -28,7 +28,7 @@ type ILVerifier (dllFilePath: string) =
 [<RequireQualifiedAccess>]
 module CompilerAssert =
 
-    let checker = FSharpChecker.Create()
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true)
 
     let private config = TestFramework.initializeSuite ()
 
