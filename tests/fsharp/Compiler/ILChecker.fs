@@ -54,6 +54,7 @@ module ILChecker =
                 |> filterSpecialComment
                     
             expectedIL
+            |> List.map (fun (ilCode: string) -> ilCode.Trim() )
             |> List.iter (fun (ilCode: string) ->
                 let expectedLines = ilCode.Split('\n')
                 let startIndex = textNoComments.IndexOf(expectedLines.[0])
