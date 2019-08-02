@@ -14,6 +14,7 @@
     <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
+    <UseFSharpMygetFeed>false</UseFSharpMygetFeed>
   </PropertyGroup>
 
   <!-- nuget -->
@@ -33,6 +34,7 @@
 
     <!-- ensure all NuGet packages come from the `$(NuGetPackageRoot)` variable -->
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+
   </PropertyGroup>
 
   <!-- mono -->

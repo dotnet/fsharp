@@ -89,6 +89,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
+  <!-- When the developer is using a preview NETCoreSdk then resolve the highest preview package from the F# myget feed -->
+  <PropertyGroup Condition="'$(_NETCoreSdkIsPreview)' == 'true' && '$(UseFSharpMygetFeed)' != 'false'">
+    <RestoreSources>$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
                         and ('$(TargetFrameworkIdentifier)' == '.NETFramework'
                              and ('$(_TargetFrameworkVersionWithoutV)' == ''
