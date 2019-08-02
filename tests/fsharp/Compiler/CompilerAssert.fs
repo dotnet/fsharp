@@ -3,9 +3,10 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Text
-open System.Diagnostics
+
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
@@ -29,8 +30,7 @@ type ILVerifier (dllFilePath: string) =
 module CompilerAssert =
 
     let checker = FSharpChecker.Create(suggestNamesForErrors=true)
-
-    let private config = TestFramework.initializeSuite ()
++    let private config = TestFramework.initializeSuite ()
 
 
 // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler

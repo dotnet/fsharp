@@ -22,6 +22,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Features
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
@@ -3221,6 +3222,11 @@ let isSizeOfValRef g vref =
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "sizeof") 
 
+let isNameOfValRef g vref =
+    valRefEq g vref g.nameof_vref
+    // There is an internal version of nameof defined in prim-types.fs that needs to be detected
+    || (g.compilingFslib && vref.LogicalName = "nameof")
+
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
     // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
@@ -3244,6 +3250,16 @@ let (|SizeOfExpr|_|) g expr =
 let (|TypeDefOfExpr|_|) g expr = 
     match expr with 
     | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isTypeDefOfValRef g vref -> Some ty
+    | _ -> None
+
+let (|NameOfExpr|_|) g expr = 
+    match expr with 
+    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isNameOfValRef g vref  -> Some ty
+    | _ -> None
+
+let (|SeqExpr|_|) g expr = 
+    match expr with 
+    | Expr.App(Expr.Val(vref,_,_),_,_,_,_) when valRefEq g vref g.seq_vref -> Some()
     | _ -> None
 
 //--------------------------------------------------------------------------
@@ -8569,6 +8585,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | UncheckedDefaultOfExpr g _ 
         | SizeOfExpr g _ 
         | TypeOfExpr g _ -> true
+        | NameOfExpr g _ when g.langVersion.SupportsFeature LanguageFeature.NameOf -> true
         // All others are not simple constant expressions
         | _ -> false
 
@@ -8939,3 +8956,19 @@ let isThreadOrContextStatic g attrs =
 let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
+
+
+let isStaticClass (g:TcGlobals) (x: EntityRef) =
+    not x.IsModuleOrNamespace &&
+    x.TyparsNoRange.IsEmpty &&
+    ((x.IsILTycon && 
+      x.ILTyconRawMetadata.IsSealed &&
+      x.ILTyconRawMetadata.IsAbstract) 
+#if !NO_EXTENSIONTYPING
+     || (x.IsProvided &&
+        match x.TypeReprInfo with 
+        | TProvidedTypeExtensionPoint info -> info.IsSealed && info.IsAbstract 
+        | _ -> false)
+#endif
+     || (not x.IsILTycon && not x.IsProvided && HasFSharpAttribute g g.attrib_AbstractClassAttribute x.Attribs)) &&
+    not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute x.Attribs)
