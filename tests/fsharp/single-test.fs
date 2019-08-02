@@ -278,7 +278,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     let cfg = { cfg with Directory = directory }
-                    let result = execBothToOutNoCheck cfg directory buildOutputFile cfg.DotNetExe  (sprintf "run -f %s" targetFramework)
+                    let result = execBothToOutNoCheck cfg directory buildOutputFile cfg.DotNetExe  (sprintf "run -restore -f %s" targetFramework)
                     if not (buildOnly) then
                         result |> checkResult 
                         testOkFile.CheckExists()
