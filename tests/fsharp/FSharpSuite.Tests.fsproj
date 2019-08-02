@@ -46,6 +46,7 @@
     <Compile Include="Compiler\ErrorMessages\TypeMismatchTests.fs" />
     <Compile Include="Compiler\ErrorMessages\UpcastDowncastTests.fs" />
     <Compile Include="Compiler\ErrorMessages\AssignmentErrorTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\WrongSyntaxInForLoop.fs" />
     <Compile Include="Compiler\ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\DontSuggestTests.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
