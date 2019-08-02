@@ -52,8 +52,8 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
-  <!-- When the developer specifies UseFSharpPreview=true then resolve the highest preview package from the F# myget feed -->
-  <PropertyGroup Condition="'$(UseFSharpPreview)' == 'true'">
+  <!-- When the developer is using a preview NETCoreSdk then resolve the highest preview package from the F# myget feed -->
+  <PropertyGroup Condition="'$(_NETCoreSdkIsPreview)' == 'true'">
     <RestoreSources>$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
   </PropertyGroup>
 
