@@ -248,6 +248,8 @@ let main argv = 0"""
 
     let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
         compile false source (fun (errors, outputFilePath) ->
+            let errors =
+                errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
