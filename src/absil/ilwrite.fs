@@ -605,6 +605,7 @@ type cenv =
 
     member cenv.GetCode() = cenv.codeChunks.Close()
 
+    override x.ToString() = "<cenv>"
 
 let FindOrAddSharedRow (cenv: cenv) tbl x = cenv.GetTable(tbl).FindOrAddSharedEntry x
 
