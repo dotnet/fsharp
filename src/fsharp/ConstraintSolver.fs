@@ -64,10 +64,10 @@ let compgenId = mkSynId range0 unassignedTyparName
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
     NewTypar(kind, rigid, Typar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
     
-let anon_id m = mkSynId m unassignedTyparName
+let AnonTyparId m = mkSynId m unassignedTyparName
 
 let NewAnonTypar (kind, m, rigid, var, dyn) = 
-    NewTypar (kind, rigid, Typar(anon_id m, var, true), false, dyn, [], false, false)
+    NewTypar (kind, rigid, Typar(AnonTyparId m, var, true), false, dyn, [], false, false)
     
 let NewNamedInferenceMeasureVar (_m, rigid, var, id) = 
     NewTypar(TyparKind.Measure, rigid, Typar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
@@ -104,6 +104,7 @@ let FreshenAndFixupTypars m rigid fctps tinst tpsorig =
     tps, renaming, tinst
 
 let FreshenTypeInst m tpsorig = FreshenAndFixupTypars m TyparRigidity.Flexible [] [] tpsorig 
+
 let FreshMethInst m fctps tinst tpsorig = FreshenAndFixupTypars m TyparRigidity.Flexible fctps tinst tpsorig 
 
 let FreshenTypars m tpsorig = 
@@ -126,62 +127,95 @@ let FreshenMethInfo m (minfo: MethInfo) =
 [<RequireQualifiedAccess>] 
 /// Information about the context of a type equation.
 type ContextInfo =
+
     /// No context was given.
     | NoContext
+
     /// The type equation comes from an IF expression.
     | IfExpression of range
+
     /// The type equation comes from an omitted else branch.
     | OmittedElseBranch of range
+
     /// The type equation comes from a type check of the result of an else branch.
     | ElseBranchResult of range
+
     /// The type equation comes from the verification of record fields.
     | RecordFields
+
     /// The type equation comes from the verification of a tuple in record fields.
     | TupleInRecordFields
+
     /// The type equation comes from a list or array constructor
     | CollectionElement of bool * range
+
     /// The type equation comes from a return in a computation expression.
+
     | ReturnInComputationExpression
+
     /// The type equation comes from a yield in a computation expression.
     | YieldInComputationExpression
+
     /// The type equation comes from a runtime type test.
     | RuntimeTypeTest of bool
+
     /// The type equation comes from an downcast where a upcast could be used.
     | DowncastUsedInsteadOfUpcast of bool
+
     /// The type equation comes from a return type of a pattern match clause (not the first clause).
     | FollowingPatternMatchClause of range
+
     /// The type equation comes from a pattern match guard.
     | PatternMatchGuard of range
+
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
 
-exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range  * range
-exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
-exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
-exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * TType * TType * range  * range 
-exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
-exception ConstraintSolverError                         of string * range * range
-exception ConstraintSolverRelatedInformation            of string option * range * exn 
+exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range  * range
 
-exception ErrorFromApplyingDefault              of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Tast.Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * range
+exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
+
+exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
+
+exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * TType * TType * range  * range 
+
+exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
+
+exception ConstraintSolverError of string * range * range
+
+exception ConstraintSolverRelatedInformation of string option * range * exn 
+
+exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Tast.Typar * TType * exn * range
+
+exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * range
+
 exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * ContextInfo * range
-exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
-exception PossibleOverload                      of displayEnv: DisplayEnv * string * exn * range
-exception UnresolvedOverloading                 of displayEnv: DisplayEnv * exn list * string * range
-exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
+
+exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * range
+
+exception PossibleOverload of displayEnv: DisplayEnv * string * exn * range
+
+exception UnresolvedOverloading of displayEnv: DisplayEnv * exn list * string * range
+
+exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
 let GetPossibleOverloads  amap m denv (calledMethGroup: (CalledMeth<_> * exn) list) = 
-    calledMethGroup |> List.map (fun (cmeth, e) -> PossibleOverload(denv, NicePrint.stringOfMethInfo amap m denv cmeth.Method, e, m))
+    calledMethGroup |> List.map (fun (cmeth, e) ->
+        PossibleOverload(denv, NicePrint.stringOfMethInfo amap m denv cmeth.Method, e, m))
 
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 
 type ConstraintSolverState = 
     { 
       g: TcGlobals
+
       amap: Import.ImportMap 
+
       InfoReader: InfoReader
+
+      /// The function used to freshen values we encounter during trait constraint solving
       TcVal: TcValF
+
       /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
       /// That is, there will be one entry in this table for each free type variable in 
       /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved 
@@ -196,20 +230,29 @@ type ConstraintSolverState =
           InfoReader = infoReader
           TcVal = tcVal } 
 
-
 type ConstraintSolverEnv = 
     { 
       SolverState: ConstraintSolverState
+
       eContextInfo: ContextInfo
+
       MatchingOnly: bool
+
       m: range
+
       EquivEnv: TypeEquivEnv
+
       DisplayEnv: DisplayEnv
     }
+
     member csenv.InfoReader = csenv.SolverState.InfoReader
+
     member csenv.g = csenv.SolverState.g
+
     member csenv.amap = csenv.SolverState.amap
     
+    override csenv.ToString() = "<ConstraintSolverEnv> @ " + csenv.m.ToString()
+
 let MakeConstraintSolverEnv contextInfo css m denv = 
     { SolverState = css
       m = m
@@ -218,11 +261,6 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       MatchingOnly = false
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv }
-
-
-//-------------------------------------------------------------------------
-// Occurs check
-//------------------------------------------------------------------------- 
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as 
@@ -287,9 +325,13 @@ let isDecimalTy g ty =
     typeEquivAux EraseMeasures g g.decimal_ty ty 
 
 let IsNonDecimalNumericOrIntegralEnumType g ty = isIntegerOrIntegerEnumTy g ty || isFpTy g ty
+
 let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
+
 let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
+
 let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
+
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
@@ -386,8 +428,11 @@ let ShowAccessDomain ad =
 // Solve
 
 exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TType * TType * range
+
 exception LocallyAbortOperationThatFailsToResolveOverload
+
 exception LocallyAbortOperationThatLosesAbbrevs 
+
 let localAbortD = ErrorD LocallyAbortOperationThatLosesAbbrevs
 
 /// Return true if we would rather unify this variable v1 := v2 than vice versa
@@ -652,7 +697,6 @@ let NormalizeExponentsInTypeScheme uvars ty =
         SubstMeasure v (Measure.RationalPower (Measure.Var v', DivRational OneRational expGcd))
         v')
     
-  
 // We normalize unit-of-measure-polymorphic type schemes. There  
 // are three reasons for doing this:
 //   (1) to present concise and consistent type schemes to the programmer
@@ -732,8 +776,6 @@ let rec SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optio
       // Record a entry in the undo trace if one is provided 
       trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
       
-      (* dprintf "setting typar %d to type %s at %a\n" r.Stamp ((DebugPrint.showType ty)) outputRange m; *)
-
       // Only solve constraints if this is not an error var 
       if r.IsFromError then () else
       // Check to see if this type variable is relevant to any trait constraints. 
@@ -745,15 +787,17 @@ let rec SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optio
 
     | _ -> failwith "SolveTyparEqualsType"
   }
-    
 
 /// Apply the constraints on 'typar' to the type 'ty'
 and solveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty (r: Typar) = trackErrors {
     let g = csenv.g
+
     // Propagate compat flex requirements from 'tp' to 'ty'
     do! SolveTypIsCompatFlex csenv trace r.IsCompatFlex ty
+
     // Propagate dynamic requirements from 'tp' to 'ty'
     do! SolveTypDynamicReq csenv trace r.DynamicReq ty
+
     // Propagate static requirements from 'tp' to 'ty' 
     do! SolveTypStaticReq csenv trace r.StaticReq ty
     
@@ -899,6 +943,7 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     let amap = csenv.amap
     let aenv = csenv.EquivEnv
     let denv = csenv.DisplayEnv
+
     match sty1, sty2 with 
     | TType_var tp1, _ ->
         match aenv.EquivTypars.TryFind tp1 with
@@ -914,15 +959,19 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
+
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2)      -> 
         SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2) (* nb. can unify since no variance *)
+
     | TType_fun (d1, r1), TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
+
     | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2
 
     // Enforce the identities float=float<1>, float32=float32<1> and decimal=decimal<1> 
     | (_, TType_app (tc2, [ms])) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
         -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
+
     | (TType_app (tc2, [ms]), _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
         -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
 
@@ -973,6 +1022,7 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                 let ty2arg = destArrayTy g ty2
                 SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1arg ty2arg
             | _ -> error(InternalError("destArrayTy", m))
+
         | _ ->
             // D<inst> :> Head<_> --> C<inst'> :> Head<_> for the 
             // first interface or super-class C supported by D which 
@@ -991,7 +1041,6 @@ and SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m2 trace cxsln ty1 ty2 =
 // Solve and record non-equality constraints
 //------------------------------------------------------------------------- 
 
-      
 and SolveTyparSubtypeOfType (csenv: ConstraintSolverEnv) ndeep m2 trace tp ty1 = 
     let g = csenv.g
     if isObjTy g ty1 then CompleteD
@@ -1052,7 +1101,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
         | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
     // Trait calls are only supported on pseudo type (variables) 
     for e in tys do
-      do! SolveTypStaticReq csenv trace HeadTypeStaticReq e
+        do! SolveTypStaticReq csenv trace HeadTypeStaticReq e
     
     let argtys = if memFlags.IsInstance then List.tail argtys else argtys
 
@@ -1108,14 +1157,18 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 (mkAppTy tcref [TType_measure ms2])
             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
             return TTraitBuiltIn
+
           | _ ->
+
             match GetMeasureOfType g argty2 with
             | Some (tcref, ms2) -> 
               let ms1 = freshMeasure ()
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure ms1]) 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
               return TTraitBuiltIn
+
             | _ -> 
+
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
               return TTraitBuiltIn

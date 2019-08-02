@@ -108,7 +108,7 @@ let main argv = 0"""
             ProjectId = None
             SourceFiles = [|"test.fs"|]
 #if !NETCOREAPP
-            OtherOptions = [|"--preferreduilang:en-US";|]
+            OtherOptions = [|"--preferreduilang:en-US"|]
 #else
             OtherOptions =
                 let assemblies = getNetCoreAppReferences |> Array.map (fun x -> sprintf "-r:%s" x)
@@ -301,7 +301,7 @@ let main argv = 0"""
             parseResults.Errors
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
 
-        Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Type check errors: %A" parseResults.Errors)
+        Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Parse errors: %A" parseResults.Errors)
 
         Array.zip errors expectedParseErrors
         |> Array.iter (fun (info, expectedError) ->
@@ -311,3 +311,10 @@ let main argv = 0"""
             Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
         )
+
+    [<Test>]
+    let ``hello world``() =
+        CompileExeAndRun
+            """
+(printfn "Hello, world."; exit 0)
+            """
