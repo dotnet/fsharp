@@ -86,7 +86,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
    -->
     <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)' != 'true'">{{FSCorePackageVersion}}</DefaultFSharpCorePackageVersion>
     <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)' == 'true'">{{FSharpCorePreviewPackageVersion}}</DefaultFSharpCorePackageVersion>
-    <RestoreSources Condition="'$(_NETCoreSdkIsPreview)' == 'true'">$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
     <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 

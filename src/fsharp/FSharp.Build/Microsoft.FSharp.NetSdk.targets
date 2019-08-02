@@ -52,10 +52,16 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
+  <!-- When the developer specifies UseFSharpPreview=true then resolve the highest preview package from the F# myget feed -->
+  <PropertyGroup Condition="'$(UseFSharpPreview)' == 'true'">
+    <RestoreSources>$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
+  </PropertyGroup>
+
   <!-- For the preview SDK turn on preview language features unless overridden elsewhere -->
   <PropertyGroup Condition="'$(_NETCoreSdkIsPreview)' == 'true'">
     <LangVersion Condition="'$(LangVersion)' == ''">preview</LangVersion>
   </PropertyGroup>
+
 
   <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
     <PropertyGroup>
