@@ -50,10 +50,10 @@
 //<Expects id="FS0039" status="error" span="(342,13)">The value or constructor 'name' is not defined. Maybe you want one of the following:</Expects>
 
 
-
 #if TESTS_AS_APP
 module TestSuite_FSharpCore_nameof_46
 #endif
+
 #nowarn "44"
 
 open System
