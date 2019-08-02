@@ -107,7 +107,8 @@ let changeX() =
 
     [<Test>]
     let ``Warn If Discarded In List``() =
-        CompilerAssert.TypeCheckSingleError
+        CompilerAssert.TypeCheckWithErrorsAndOptions
+            [| "--langversion:4.6" |]
             """
 let div _ _ = 1
 let subView _ _ = [1; 2]
@@ -119,14 +120,17 @@ let view model dispatch =
        div [] []
    ]
             """
-            FSharpErrorSeverity.Warning
-            3221
-            (9, 8, 9, 17)
-            "This expression returns a value of type 'int' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'."
+            [|
+                FSharpErrorSeverity.Warning,
+                3221,
+                (9, 8, 9, 17),
+                "This expression returns a value of type 'int' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'."
+            |]
 
     [<Test>]
     let ``Warn If Discarded In List 2``() =
-        CompilerAssert.TypeCheckSingleError
+        CompilerAssert.TypeCheckWithErrorsAndOptions
+            [| "--langversion:4.6" |]
             """
 // stupid things to make the sample compile
 let div _ _ = 1
@@ -143,14 +147,17 @@ let view model dispatch =
         ]
    ]
             """
-            FSharpErrorSeverity.Warning
-            3222
-            (13, 19, 13, 41)
-            "This expression returns a value of type 'int list' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'."
+            [|
+                FSharpErrorSeverity.Warning,
+                3222,
+                (13, 19, 13, 41),
+                "This expression returns a value of type 'int list' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'."
+            |]
 
     [<Test>]
     let ``Warn If Discarded In List 3``() =
-        CompilerAssert.TypeCheckSingleError
+        CompilerAssert.TypeCheckWithErrorsAndOptions
+            [| "--langversion:4.6" |]
             """
 // stupid things to make the sample compile
 let div _ _ = 1
@@ -167,10 +174,12 @@ let view model dispatch =
         ]
    ]
             """
-            FSharpErrorSeverity.Warning
-            20
-            (13, 19, 13, 41)
-            "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'."
+            [|
+                FSharpErrorSeverity.Warning,
+                20,
+                (13, 19, 13, 41),
+                "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'."
+            |]
 
     [<Test>]
     let ``Warn Only On Last Expression``() =

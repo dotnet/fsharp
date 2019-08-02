@@ -3,9 +3,10 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Text
-open System.Diagnostics
+
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell

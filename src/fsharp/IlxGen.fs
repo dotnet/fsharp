@@ -7444,13 +7444,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                                 mkLdarg 2us
                                 mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [serializationInfoType; streamingContextType])) ],
                            None))
-            
-//#if BE_SECURITY_TRANSPARENT
+
             [ilCtorDefForSerialziation]
-//#else
 (*
             let getObjectDataMethodForSerialization =
-        
                 let ilMethodDef =
                     mkILNonGenericVirtualMethod
                         ("GetObjectData", ILMemberAccess.Public,
@@ -7478,7 +7475,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
           | _ -> []
 
         let ilTypeName = tref.Name
-    
+
         let interfaces = exnc.ImmediateInterfaceTypesOfFSharpTycon |> List.map (GenType cenv.amap m eenv.tyenv)
         let tdef =
           mkILGenericClass
