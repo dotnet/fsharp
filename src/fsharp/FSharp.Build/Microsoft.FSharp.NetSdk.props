@@ -90,7 +90,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <!-- When the developer is using a preview NETCoreSdk then resolve the highest preview package from the F# myget feed -->
-  <PropertyGroup Condition="'$(_NETCoreSdkIsPreview)' == 'true' && '$(UseFSharpMygetFeed)' != 'false'">
+  <PropertyGroup Condition="'$(_NETCoreSdkIsPreview)' == 'true' and '$(UseFSharpMygetFeed)' != 'false'">
     <RestoreSources>$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
   </PropertyGroup>
 
