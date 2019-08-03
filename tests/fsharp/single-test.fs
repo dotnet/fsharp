@@ -3,6 +3,7 @@
 open System
 open System.IO
 open System.Diagnostics
+open System.Threading
 open NUnit.Framework
 open TestFramework
 
@@ -227,7 +228,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
             let mutable result = ""
             lock lockObj <| (fun () ->
                 let rec loop () =
-                    let dir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+                    let dir = Path.Combine(Path.GetTempPath(), "FSharp.Cambridge", Path.GetRandomFileName() + "."+ Thread.CurrentThread.ManagedThreadId.ToString())
                     if Directory.Exists(dir) then
                         loop ()
                     else
