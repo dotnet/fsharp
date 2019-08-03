@@ -30,7 +30,7 @@ type ILVerifier (dllFilePath: string) =
 module CompilerAssert =
 
     let checker = FSharpChecker.Create(suggestNamesForErrors=true)
-+    let private config = TestFramework.initializeSuite ()
+    let private config = TestFramework.initializeSuite ()
 
 
 // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
