@@ -53,8 +53,9 @@ x.ToString()
   .method public specialname static valuetype [mscorlib]System.TimeSpan
           get_x() cil managed
   {
+
     .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::x@4
+    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$asmName>'.$Mutation02::x@3
     IL_0005:  ret
   }
             """
@@ -67,15 +68,15 @@ x.ToString()
   }
             """
             """
-        void  .cctor() cil managed
+void  .cctor() cil managed
   {
 
     .maxstack  8
     IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan [mscorlib]System.TimeSpan::MinValue
-    IL_0005:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::x@3
+    IL_0005:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$asmName>'.$Mutation02::x@3
     IL_000a:  call       valuetype [mscorlib]System.TimeSpan Mutation02::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::copyOfStruct@4
+    IL_000f:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$asmName>'.$Mutation02::copyOfStruct@4
+    IL_0014:  ldsflda    valuetype [mscorlib]System.TimeSpan '<StartupCode$asmName>'.$Mutation02::copyOfStruct@4
     IL_0019:  constrained. [mscorlib]System.TimeSpan
     IL_001f:  callvirt   instance string [mscorlib]System.Object::ToString()
     IL_0024:  pop
@@ -99,7 +100,7 @@ x.Day
   {
 
     .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.DateTime '<StartupCode$Mutation03>'.$Mutation03::'x@4-2'
+    IL_0000:  ldsfld     valuetype [mscorlib]System.DateTime '<StartupCode$asmName>'.$Mutation03::x@3
     IL_0005:  ret
   }
             """
@@ -117,10 +118,10 @@ x.Day
 
     .maxstack  8
     IL_0000:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
-    IL_0005:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$Mutation03>'.$Mutation03::x@3
+    IL_0005:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$asmName>'.$Mutation03::x@3
     IL_000a:  call       valuetype [mscorlib]System.DateTime Mutation03::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$Mutation03>'.$Mutation03::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.DateTime '<StartupCode$Mutation03>'.$Mutation03::copyOfStruct@4
+    IL_000f:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$asmName>'.$Mutation03::copyOfStruct@4
+    IL_0014:  ldsflda    valuetype [mscorlib]System.DateTime '<StartupCode$asmName>'.$Mutation03::copyOfStruct@4
     IL_0019:  call       instance int32 [mscorlib]System.DateTime::get_Day()
     IL_001e:  pop
     IL_001f:  ret
@@ -141,11 +142,11 @@ x.ToString()
   .method public specialname static valuetype [mscorlib]System.Decimal
           get_x() cil managed
   {
-    // Code size       6 (0x6)
+
     .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.Decimal '<StartupCode$Mutation04>'.$Mutation04::'x@4-4'
+    IL_0000:  ldsfld     valuetype [mscorlib]System.Decimal '<StartupCode$asmName>'.$Mutation04::x@3
     IL_0005:  ret
-  } // end of method Mutation04::get_x
+  }
             """
             """
   .property valuetype [mscorlib]System.Decimal
@@ -153,8 +154,7 @@ x.ToString()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
     .get valuetype [mscorlib]System.Decimal Mutation04::get_x()
-  } // end of property Mutation04::x
-} // end of class Mutation04
+  }
             """
             """
 void  .cctor() cil managed
@@ -162,10 +162,10 @@ void  .cctor() cil managed
 
     .maxstack  8
     IL_0000:  ldsfld     valuetype [mscorlib]System.Decimal [mscorlib]System.Decimal::MaxValue
-    IL_0005:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$Mutation04>'.$Mutation04::x@3
+    IL_0005:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$asmName>'.$Mutation04::x@3
     IL_000a:  call       valuetype [mscorlib]System.Decimal Mutation04::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$Mutation04>'.$Mutation04::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.Decimal '<StartupCode$Mutation04>'.$Mutation04::copyOfStruct@4
+    IL_000f:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$asmName>'.$Mutation04::copyOfStruct@4
+    IL_0014:  ldsflda    valuetype [mscorlib]System.Decimal '<StartupCode$asmName>'.$Mutation04::copyOfStruct@4
     IL_0019:  constrained. [mscorlib]System.Decimal
     IL_001f:  callvirt   instance string [mscorlib]System.Object::ToString()
     IL_0024:  pop
@@ -205,7 +205,6 @@ type StaticC() =
     {
 
       .maxstack  8
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -310,8 +309,8 @@ type StaticC() =
 
       .maxstack  8
       IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$Mutation05>'.$Mutation05::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$Mutation05>'.$Mutation05::init@
+      IL_0001:  stsfld     int32 '<StartupCode$asmName>'.$Mutation05::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$asmName>'.$Mutation05::init@
       IL_000b:  pop
       IL_000c:  ret
     }

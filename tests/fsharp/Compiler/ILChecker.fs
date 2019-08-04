@@ -38,21 +38,24 @@ module ILChecker =
 
             exec ildasmPath (ildasmArgs @ [ sprintf "%s /out=%s" dllFilePath ilFilePath ]) |> ignore
 
-            let text = File.ReadAllText(ilFilePath)
+            let text =
+                let raw = File.ReadAllText(ilFilePath)
+                let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
+                raw.Replace(sprintf "$%s>" asmName, "$asmName>")
             let blockComments = @"/\*(.*?)\*/"
             let lineComments = @"//(.*?)\r?\n"
             let strings = @"""((\\[^\n]|[^""\n])*)"""
             let verbatimStrings = @"@(""[^""]*"")+"
             let textNoComments =
-                System.Text.RegularExpressions.Regex.Replace(text, 
-                    blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings, 
-                    (fun me -> 
+                System.Text.RegularExpressions.Regex.Replace(text,
+                    blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings,
+                    (fun me ->
                         if (me.Value.StartsWith("/*") || me.Value.StartsWith("//")) then
                             if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
                         else
                             me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
                 |> filterSpecialComment
-                    
+
             expectedIL
             |> List.map (fun (ilCode: string) -> ilCode.Trim() )
             |> List.iter (fun (ilCode: string) ->
@@ -84,7 +87,7 @@ module ILChecker =
             try File.Delete(ilFilePath) with | _ -> ()
 
             match errorMsgOpt with
-            | Some(errorMsg) -> 
+            | Some(errorMsg) ->
                 Assert.Fail(errorMsg)
             | _ -> ()
 

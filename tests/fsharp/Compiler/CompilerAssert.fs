@@ -251,7 +251,7 @@ let main argv = 0"""
             let errors =
                 errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
             if errors.Length > 0 then
-                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+                Assert.Fail (sprintf "Compile had errors: %A" errors)
 
             f (ILVerifier outputFilePath)
         )
