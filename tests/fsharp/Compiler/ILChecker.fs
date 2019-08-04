@@ -41,7 +41,8 @@ module ILChecker =
             let text =
                 let raw = File.ReadAllText(ilFilePath)
                 let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
-                raw.Replace(sprintf "$%s>" asmName, "$asmName>")
+                raw.Replace("$" + asmName + ">" , "$asmName>")
+                   .Replace("[System.Runtime]", "[mscorlib]")
             let blockComments = @"/\*(.*?)\*/"
             let lineComments = @"//(.*?)\r?\n"
             let strings = @"""((\\[^\n]|[^""\n])*)"""
