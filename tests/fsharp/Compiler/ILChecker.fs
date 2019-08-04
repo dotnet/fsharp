@@ -38,11 +38,16 @@ module ILChecker =
 
             exec ildasmPath (ildasmArgs @ [ sprintf "%s /out=%s" dllFilePath ilFilePath ]) |> ignore
 
+            let unifyRuntimeAssemblyName ilCode =
+                System.Text.RegularExpressions.Regex.Replace(ilCode,
+                    "\[System.Runtime\]|\[mscorlib\]","[runtime]",
+                    System.Text.RegularExpressions.RegexOptions.Singleline)
+
             let text =
                 let raw = File.ReadAllText(ilFilePath)
                 let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
-                raw.Replace("$" + asmName + ">" , "$asmName>")
-                   .Replace("[System.Runtime]", "[mscorlib]")
+                raw.Replace("$" + asmName + ">" , "$assembly>")
+                |> unifyRuntimeAssemblyName
             let blockComments = @"/\*(.*?)\*/"
             let lineComments = @"//(.*?)\r?\n"
             let strings = @"""((\\[^\n]|[^""\n])*)"""
@@ -58,7 +63,7 @@ module ILChecker =
                 |> filterSpecialComment
 
             expectedIL
-            |> List.map (fun (ilCode: string) -> ilCode.Trim() )
+            |> List.map (fun (ilCode: string) -> ilCode.Trim() |> unifyRuntimeAssemblyName )
             |> List.iter (fun (ilCode: string) ->
                 let expectedLines = ilCode.Split('\n')
                 let startIndex = textNoComments.IndexOf(expectedLines.[0])

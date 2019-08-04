@@ -55,7 +55,7 @@ x.ToString()
   {
 
     .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$asmName>'.$Mutation02::x@3
+    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$assembly>'.$Mutation02::x@3
     IL_0005:  ret
   }
             """
@@ -73,10 +73,10 @@ void  .cctor() cil managed
 
     .maxstack  8
     IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan [mscorlib]System.TimeSpan::MinValue
-    IL_0005:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$asmName>'.$Mutation02::x@3
+    IL_0005:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$assembly>'.$Mutation02::x@3
     IL_000a:  call       valuetype [mscorlib]System.TimeSpan Mutation02::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$asmName>'.$Mutation02::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.TimeSpan '<StartupCode$asmName>'.$Mutation02::copyOfStruct@4
+    IL_000f:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$assembly>'.$Mutation02::copyOfStruct@4
+    IL_0014:  ldsflda    valuetype [mscorlib]System.TimeSpan '<StartupCode$assembly>'.$Mutation02::copyOfStruct@4
     IL_0019:  constrained. [mscorlib]System.TimeSpan
     IL_001f:  callvirt   instance string [mscorlib]System.Object::ToString()
     IL_0024:  pop
@@ -100,7 +100,7 @@ x.Day
   {
 
     .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.DateTime '<StartupCode$asmName>'.$Mutation03::x@3
+    IL_0000:  ldsfld     valuetype [mscorlib]System.DateTime '<StartupCode$assembly>'.$Mutation03::x@3
     IL_0005:  ret
   }
             """
@@ -118,10 +118,10 @@ x.Day
 
     .maxstack  8
     IL_0000:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
-    IL_0005:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$asmName>'.$Mutation03::x@3
+    IL_0005:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$assembly>'.$Mutation03::x@3
     IL_000a:  call       valuetype [mscorlib]System.DateTime Mutation03::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$asmName>'.$Mutation03::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.DateTime '<StartupCode$asmName>'.$Mutation03::copyOfStruct@4
+    IL_000f:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$assembly>'.$Mutation03::copyOfStruct@4
+    IL_0014:  ldsflda    valuetype [mscorlib]System.DateTime '<StartupCode$assembly>'.$Mutation03::copyOfStruct@4
     IL_0019:  call       instance int32 [mscorlib]System.DateTime::get_Day()
     IL_001e:  pop
     IL_001f:  ret
@@ -144,7 +144,7 @@ x.ToString()
   {
 
     .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.Decimal '<StartupCode$asmName>'.$Mutation04::x@3
+    IL_0000:  ldsfld     valuetype [mscorlib]System.Decimal '<StartupCode$assembly>'.$Mutation04::x@3
     IL_0005:  ret
   }
             """
@@ -162,10 +162,10 @@ void  .cctor() cil managed
 
     .maxstack  8
     IL_0000:  ldsfld     valuetype [mscorlib]System.Decimal [mscorlib]System.Decimal::MaxValue
-    IL_0005:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$asmName>'.$Mutation04::x@3
+    IL_0005:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$assembly>'.$Mutation04::x@3
     IL_000a:  call       valuetype [mscorlib]System.Decimal Mutation04::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$asmName>'.$Mutation04::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.Decimal '<StartupCode$asmName>'.$Mutation04::copyOfStruct@4
+    IL_000f:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$assembly>'.$Mutation04::copyOfStruct@4
+    IL_0014:  ldsflda    valuetype [mscorlib]System.Decimal '<StartupCode$assembly>'.$Mutation04::copyOfStruct@4
     IL_0019:  constrained. [mscorlib]System.Decimal
     IL_001f:  callvirt   instance string [mscorlib]System.Object::ToString()
     IL_0024:  pop
@@ -309,8 +309,8 @@ type StaticC() =
 
       .maxstack  8
       IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$asmName>'.$Mutation05::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$asmName>'.$Mutation05::init@
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Mutation05::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Mutation05::init@
       IL_000b:  pop
       IL_000c:  ret
     }
