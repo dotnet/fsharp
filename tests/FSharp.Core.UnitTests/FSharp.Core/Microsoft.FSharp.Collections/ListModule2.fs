@@ -106,9 +106,16 @@ type ListModule02() =
         
         // exception message checking
         let expectedMessage =
+#if NETCOREAPP3_0
+            // bizarrely netcoreapp3.0 has a different format for ArgumentExceptions
+            "The lists had different lengths.\n" +
+            sprintf " list1.Length = %i, list2.Length = %i, list3.Length = %i" shortList.Length shortList.Length longerList.Length + " (Parameter 'list1, list2, list3')"
+#else
+            // bizarrely netcoreapp3.0 has a different format for ArgumentExceptions
             "The lists had different lengths.\n" +
             sprintf " list1.Length = %i, list2.Length = %i, list3.Length = %i" shortList.Length shortList.Length longerList.Length +
             Environment.NewLine + "Parameter name: list1, list2, list3"
+#endif
         let ex = Assert.Throws(typeof<ArgumentException>,
                                (fun () -> List.map3 funcInt shortList shortList longerList |> ignore))
         Assert.AreEqual(expectedMessage, ex.Message)

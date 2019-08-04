@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Text
 open System.Diagnostics
+open System.Threading
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
@@ -41,7 +42,8 @@ module CompilerAssert =
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <UseFSharpPreview>true</UseFSharpPreview>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
@@ -62,7 +64,7 @@ let main argv = 0"""
         let mutable output = ""
         let mutable errors = ""
         let mutable cleanUp = true
-        let projectDirectory = Path.Combine(Path.GetTempPath(), "netcoreapp2.1", Path.GetRandomFileName())
+        let projectDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName() + "." + System.Threading.Thread.CurrentThread.ManagedThreadId.ToString())
         try
             try
                 Directory.CreateDirectory(projectDirectory) |> ignore
@@ -139,10 +141,10 @@ let main argv = 0"""
                 File.WriteAllText (runtimeConfigFilePath, """
 {
   "runtimeOptions": {
-    "tfm": "netcoreapp2.1",
+    "tfm": "netcoreapp3.0",
     "framework": {
       "name": "Microsoft.NETCore.App",
-      "version": "2.1.0"
+      "version": "3.0.0-preview6-27804-01"
     }
   }
 }
