@@ -6,11 +6,14 @@ open System
 open System.IO
 open System.Text
 open System.Diagnostics
+open System.Reflection
 open System.Threading
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
-
+#if FX_NO_APP_DOMAINS
+open System.Runtime.Loader
+#endif
 open NUnit.Framework
 open System.Reflection.Emit
 
@@ -32,7 +35,6 @@ module CompilerAssert =
     let checker = FSharpChecker.Create(suggestNamesForErrors=true)
 
     let private config = TestFramework.initializeSuite ()
-
 
 // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
 #if !NETCOREAPP
@@ -102,6 +104,38 @@ let main argv = 0"""
         finally
             if cleanUp then
                 try Directory.Delete(projectDirectory) with | _ -> ()
+#endif
+
+#if FX_NO_APP_DOMAINS
+    let executeBuiltApp assembly =
+        let ctxt = AssemblyLoadContext("ContextName", true)
+        let asm = ctxt.LoadFromAssemblyPath(assembly)
+        let entryPoint = asm.EntryPoint
+        let result =  downcast (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) : Int32
+        ctxt.Unload()
+        result
+#else
+    type Worker () =
+        inherit MarshalByRefObject()
+
+        member __.ExecuteTestCase assemblyPath =
+            let asm = Assembly.LoadFrom(assemblyPath)
+            let entryPoint = asm.EntryPoint
+            let result = downcast (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) : Int32
+            result
+
+    let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
+
+    let adSetup =
+        let setup = new System.AppDomainSetup ()
+        setup.PrivateBinPath <- pathToThisDll
+        setup
+
+    let executeBuiltApp assembly =
+        let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
+        let worker = (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
+        let result = worker.ExecuteTestCase assembly
+        result
 #endif
 
     let private defaultProjectOptions =
