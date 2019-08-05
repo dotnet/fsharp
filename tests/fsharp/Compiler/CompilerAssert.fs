@@ -106,6 +106,19 @@ let main argv = 0"""
                 try Directory.Delete(projectDirectory) with | _ -> ()
 #endif
 
+    let sw = Stopwatch()
+    let logTimes testname (f: unit->int) =
+        sw.Start() |> ignore
+        let result = f ()
+        sw.Stop() |> ignore
+#if !NETCOREAPP
+        File.AppendAllText(@"c:\temp\timing.net472.txt", sprintf "%s %s\n" testname (sw.Elapsed.ToString()))
+#else
+        File.AppendAllText(@"c:\temp\timing.netcoreapp.txt", sprintf "%s %s\n" testname (sw.Elapsed.ToString()))
+#endif
+        result
+
+
 #if FX_NO_APP_DOMAINS
     let executeBuiltApp assembly =
         let ctxt = AssemblyLoadContext("ContextName", true)
@@ -137,6 +150,31 @@ let main argv = 0"""
         let result = worker.ExecuteTestCase assembly
         result
 #endif
+
+    let executeBuiltAppOutOfProcess outputExe =
+
+        let pInfo = ProcessStartInfo ()
+#if NETCOREAPP
+        pInfo.FileName <- config.DotNetExe
+        pInfo.Arguments <- outputExe
+#else
+        pInfo.FileName <- outputExe
+#endif
+
+        pInfo.RedirectStandardError <- true
+        pInfo.UseShellExecute <- false
+
+        let p = Process.Start(pInfo)
+
+        p.WaitForExit()
+        let errors = p.StandardError.ReadToEnd ()
+        if not (String.IsNullOrWhiteSpace errors) then
+            Assert.Fail errors
+
+        if p.ExitCode <> 0 then
+            Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+
+        p.ExitCode
 
     let private defaultProjectOptions =
         {
@@ -260,26 +298,9 @@ let main argv = 0"""
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            let pInfo = ProcessStartInfo ()
-#if NETCOREAPP
-            pInfo.FileName <- config.DotNetExe
-            pInfo.Arguments <- outputExe
-#else
-            pInfo.FileName <- outputExe
-#endif
+            logTimes (sprintf "run process: %s" source) (fun () -> executeBuiltAppOutOfProcess outputExe) |>ignore
+            logTimes (sprintf "run isolated: %s" source) (fun () -> executeBuiltApp outputExe) |>ignore
 
-            pInfo.RedirectStandardError <- true
-            pInfo.UseShellExecute <- false
-
-            let p = Process.Start(pInfo)
-
-            p.WaitForExit()
-            let errors = p.StandardError.ReadToEnd ()
-            if not (String.IsNullOrWhiteSpace errors) then
-                Assert.Fail errors
-
-            if p.ExitCode <> 0 then
-                Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
         )
 
     let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
@@ -324,7 +345,7 @@ let main argv = 0"""
                 (expectedErrorMessages, errorMessages)
                 ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
-                )
+            )
 
     let ParseWithErrors (source: string) expectedParseErrors =
         let sourceFileName = "test.fs"
