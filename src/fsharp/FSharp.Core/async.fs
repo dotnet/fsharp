@@ -984,7 +984,19 @@ namespace Microsoft.FSharp.Control
                     else
                         ctxt.cont completedTask.Result) |> unfake
 
-            task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
+            let cancelContinuation (cancelledTask: Task) : unit =
+                ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
+                    if useCcontForTaskCancellation then
+                        ctxt.OnCancellation ()
+                    else
+                        let edi = ExceptionDispatchInfo.Capture(TaskCanceledException cancelledTask)
+                        ctxt.CallExceptionContinuation edi
+                ) |> unfake
+
+            task
+                .ContinueWith(Action<Task<'T>>(continuation), ctxt.token)
+                .ContinueWith(Action<Task>(cancelContinuation), TaskContinuationOptions.OnlyOnCanceled)
+            |> ignore |> fake
 
         [<DebuggerHidden>]
         let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) useCcontForTaskCancellation =
@@ -1003,7 +1015,19 @@ namespace Microsoft.FSharp.Control
                     else
                         ctxt.cont ()) |> unfake
 
-            task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
+            let cancelContinuation (cancelledTask: Task) : unit =
+                ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
+                    if useCcontForTaskCancellation then
+                        ctxt.OnCancellation ()
+                    else
+                        let edi = ExceptionDispatchInfo.Capture(new TaskCanceledException(cancelledTask))
+                        ctxt.CallExceptionContinuation edi
+                ) |> unfake
+
+            task
+                .ContinueWith(Action<Task>(continuation), ctxt.token)
+                .ContinueWith(Action<Task>(cancelContinuation), TaskContinuationOptions.OnlyOnCanceled)
+            |> ignore |> fake
 
         [<Sealed; AutoSerializable(false)>]
         type AsyncIAsyncResult<'T>(callback: System.AsyncCallback, state:obj) =

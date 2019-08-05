@@ -143,7 +143,7 @@ type AsyncType() =
         Assert.AreEqual(s, t.Result)
 
     [<Test>]
-    member this.StartAsTaskCancellation () =
+    member this.StartAsTaskCancelAsync () =
         let cts = new CancellationTokenSource()
         let tcs = TaskCompletionSource<unit>()
         let a = async {
@@ -155,12 +155,32 @@ type AsyncType() =
         use t : Task<unit> =
 #endif
             Async.StartAsTask(a, cancellationToken = cts.Token)
+        
+        try
+            this.WaitASec t
+        with :? AggregateException as a ->
+            match a.InnerException with
+            | :? TaskCanceledException as t -> ()
+            | _ -> reraise()
+        Assert.IsTrue (t.IsCompleted, "Task is not completed")
+
+    [<Test>]
+    member this.StartAsTaskCancelTask () =
+        let tcs = TaskCompletionSource<unit>()
+        let a = async {
+            do! tcs.Task |> Async.AwaitTask }
+#if !NET46
+        let t : Task<unit> =
+#else
+        use t : Task<unit> =
+#endif
+            Async.StartAsTask(a)
 
         // Should not finish
         try
             let result = t.Wait(300)
             Assert.IsFalse (result)
-        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+        with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         tcs.SetCanceled()
         
