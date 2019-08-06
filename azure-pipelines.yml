@@ -227,7 +227,7 @@ jobs:
           condition: always()
           inputs:
             PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
-            ArtifactName: 'Linux $(_configuration) $(_testKind) test logs'
+            ArtifactName: 'MacOS $(_configuration) $(_testKind) test logs'
             publishLocation: Container
           continueOnError: true
 
