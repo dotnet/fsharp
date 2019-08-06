@@ -106,27 +106,15 @@ let main argv = 0"""
                 try Directory.Delete(projectDirectory) with | _ -> ()
 #endif
 
-    let sw = Stopwatch()
-    let logTimes testname (f: unit->int) =
-        sw.Start() |> ignore
-        let result = f ()
-        sw.Stop() |> ignore
-#if !NETCOREAPP
-        File.AppendAllText(@"c:\temp\timing.net472.txt", sprintf "%s %s\n" testname (sw.Elapsed.ToString()))
-#else
-        File.AppendAllText(@"c:\temp\timing.netcoreapp.txt", sprintf "%s %s\n" testname (sw.Elapsed.ToString()))
-#endif
-        result
-
-
 #if FX_NO_APP_DOMAINS
     let executeBuiltApp assembly =
         let ctxt = AssemblyLoadContext("ContextName", true)
-        let asm = ctxt.LoadFromAssemblyPath(assembly)
-        let entryPoint = asm.EntryPoint
-        let result =  downcast (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) : Int32
-        ctxt.Unload()
-        result
+        try
+            let asm = ctxt.LoadFromAssemblyPath(assembly)
+            let entryPoint = asm.EntryPoint
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+        finally
+            ctxt.Unload()
 #else
     type Worker () =
         inherit MarshalByRefObject()
@@ -134,8 +122,7 @@ let main argv = 0"""
         member __.ExecuteTestCase assemblyPath =
             let asm = Assembly.LoadFrom(assemblyPath)
             let entryPoint = asm.EntryPoint
-            let result = downcast (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) : Int32
-            result
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
 
     let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
 
@@ -147,34 +134,8 @@ let main argv = 0"""
     let executeBuiltApp assembly =
         let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
         let worker = (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
-        let result = worker.ExecuteTestCase assembly
-        result
+        worker.ExecuteTestCase assembly |>ignore
 #endif
-
-    let executeBuiltAppOutOfProcess outputExe =
-
-        let pInfo = ProcessStartInfo ()
-#if NETCOREAPP
-        pInfo.FileName <- config.DotNetExe
-        pInfo.Arguments <- outputExe
-#else
-        pInfo.FileName <- outputExe
-#endif
-
-        pInfo.RedirectStandardError <- true
-        pInfo.UseShellExecute <- false
-
-        let p = Process.Start(pInfo)
-
-        p.WaitForExit()
-        let errors = p.StandardError.ReadToEnd ()
-        if not (String.IsNullOrWhiteSpace errors) then
-            Assert.Fail errors
-
-        if p.ExitCode <> 0 then
-            Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
-
-        p.ExitCode
 
     let private defaultProjectOptions =
         {
@@ -204,23 +165,9 @@ let main argv = 0"""
         lock gate <| fun () ->
             let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
             let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
-            let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
             let fsCoreDllPath = config.FSCOREDLLPATH
-            let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
             try
-                File.Copy (fsCoreDllPath , tmpFsCoreFilePath, true)
                 File.WriteAllText (inputFilePath, source)
-                File.WriteAllText (runtimeConfigFilePath, """
-{
-  "runtimeOptions": {
-    "tfm": "netcoreapp3.0",
-    "framework": {
-      "name": "Microsoft.NETCore.App",
-      "version": "3.0.0-preview6-27804-01"
-    }
-  }
-}
-                """)
 
                 let args =
                     defaultProjectOptions.OtherOptions
@@ -232,8 +179,6 @@ let main argv = 0"""
             finally
                 try File.Delete inputFilePath with | _ -> ()
                 try File.Delete outputFilePath with | _ -> ()
-                try File.Delete runtimeConfigFilePath with | _ -> ()
-                try File.Delete tmpFsCoreFilePath with | _ -> ()
 
     let Pass (source: string) =
         lock gate <| fun () ->
@@ -298,9 +243,7 @@ let main argv = 0"""
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            logTimes (sprintf "run process: %s" source) (fun () -> executeBuiltAppOutOfProcess outputExe) |>ignore
-            logTimes (sprintf "run isolated: %s" source) (fun () -> executeBuiltApp outputExe) |>ignore
-
+            executeBuiltApp outputExe
         )
 
     let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
@@ -373,5 +316,5 @@ let main argv = 0"""
     let ``hello world``() =
         CompileExeAndRun
             """
-(printfn "Hello, world."; exit 0)
+(printfn "Hello, world.")
             """

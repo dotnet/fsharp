@@ -174,7 +174,7 @@ function BuildSolution() {
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp2.1" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp3.0" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -309,10 +309,10 @@ try {
         Prepare-TempDir
         EnablePreviewSdks
 
-        # enable us to build netcoreapp2.1 binaries
-        $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
-        InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
-        InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
+        # enable us to build netcoreapp3.0 binaries
+        #$global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
+        #InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
+        #InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
     }
 
     if ($bootstrap) {
@@ -332,7 +332,7 @@ try {
     }
 
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "netcoreapp2.1"
+    $coreclrTargetFramework = "netcoreapp3.0"
 
     if ($testDesktop -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework

@@ -15,7 +15,5 @@ module ``Wrong syntax in for loop`` =
 module X
 for i = 0 .. 100 do
     ()
-
-exit 0
             """
             [|FSharpErrorSeverity.Error, 3215, (3, 7, 3, 8), "Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?" |]
