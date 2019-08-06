@@ -167,7 +167,6 @@ let main argv = 0"""
             let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
             try
                 File.WriteAllText (inputFilePath, source)
-
                 let args =
                     defaultProjectOptions.OtherOptions
                     |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]

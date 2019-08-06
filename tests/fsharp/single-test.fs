@@ -3,6 +3,7 @@
 open System
 open System.IO
 open System.Diagnostics
+open System.Threading
 open NUnit.Framework
 open TestFramework
 
@@ -93,7 +94,7 @@ let generateOverrides =
 // Arguments:
 //    pc = ProjectConfiguration
 //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
-//    targetFramework optimize = "net472" OR NETCOREAPP2.1 etc ...
+//    targetFramework optimize = "net472" OR NETCOREAPP3.0 etc ...
 //    optimize = true or false
 //    configuration = "Release" or "Debug"
 //
@@ -219,7 +220,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
     // Arguments:
     //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
     //    compilerType = "coreclr" or "net40"
-    //    targetFramework optimize = "net472" OR NETCOREAPP2.1 etc ...
+    //    targetFramework optimize = "net472" OR NETCOREAPP3.0 etc ...
     //    optimize = true or false
     let executeSingleTestBuildAndRun outputType compilerType targetFramework optimize =
         let mutable result = false
@@ -227,7 +228,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
             let mutable result = ""
             lock lockObj <| (fun () ->
                 let rec loop () =
-                    let dir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+                    let dir = Path.Combine(Path.GetTempPath(), "FSharp.Cambridge", Path.GetRandomFileName() + "."+ Thread.CurrentThread.ManagedThreadId.ToString())
                     if Directory.Exists(dir) then
                         loop ()
                     else
