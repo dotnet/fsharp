@@ -165,7 +165,6 @@ let main argv = 0"""
         lock gate <| fun () ->
             let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
             let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
-            let fsCoreDllPath = config.FSCOREDLLPATH
             try
                 File.WriteAllText (inputFilePath, source)
 
