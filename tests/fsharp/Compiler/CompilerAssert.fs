@@ -126,7 +126,7 @@ let main argv = 0"""
 
     let private gate = obj ()
 
-    let private compile isExe source f =
+    let private compile isExe options source f =
         lock gate <| fun () ->
             let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
             let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
@@ -149,7 +149,8 @@ let main argv = 0"""
                 """)
 
                 let args =
-                    defaultProjectOptions.OtherOptions
+                    options
+                    |> Array.append defaultProjectOptions.OtherOptions
                     |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
                 let errors, _ = checker.Compile args |> Async.RunSynchronously
 
@@ -214,12 +215,12 @@ let main argv = 0"""
         TypeCheckWithErrors source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
     let CompileExe (source: string) =
-        compile true source (fun (errors, _) ->
+        compile true [||] source (fun (errors, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
     let CompileExeAndRun (source: string) =
-        compile true source (fun (errors, outputExe) ->
+        compile true [||] source (fun (errors, outputExe) ->
 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
@@ -246,8 +247,8 @@ let main argv = 0"""
                 Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
         )
 
-    let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
-        compile false source (fun (errors, outputFilePath) ->
+    let CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
+        compile false options source (fun (errors, outputFilePath) ->
             let errors =
                 errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
             if errors.Length > 0 then
@@ -255,6 +256,9 @@ let main argv = 0"""
 
             f (ILVerifier outputFilePath)
         )
+
+    let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
+        CompileLibraryAndVerifyILWithOptions [||] source f
 
     let RunScript (source: string) (expectedErrorMessages: string list) =
         lock gate <| fun () ->

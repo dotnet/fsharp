@@ -11,7 +11,7 @@ module ``Mutation`` =
 
     [<Test>]
     let ``Mutation 01``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"--optimize-"|]
             """
 module Mutation01
 type Test = struct
@@ -31,18 +31,21 @@ type Test = struct
             setV<a>(!!a _arg1) cil managed
     {
 
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.0
-      IL_0002:  stfld      int32 Mutation01/Test::v
-      IL_0007:  ret
+    .maxstack  4
+    .locals init (!!a V_0)
+    IL_0000:  ldarg.1
+    IL_0001:  stloc.0
+    IL_0002:  ldarg.0
+    IL_0003:  ldc.i4.0
+    IL_0004:  stfld      int32 Mutation01/Test::v
+    IL_0009:  ret
     }
             """
             ])
 
     [<Test>]
     let ``Mutation 02``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"--optimize-"|]
             """
 module Mutation02
 let x = System.TimeSpan.MinValue
@@ -71,23 +74,24 @@ x.ToString()
 void  .cctor() cil managed
   {
 
-    .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan [mscorlib]System.TimeSpan::MinValue
-    IL_0005:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$assembly>'.$Mutation02::x@3
-    IL_000a:  call       valuetype [mscorlib]System.TimeSpan Mutation02::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$assembly>'.$Mutation02::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.TimeSpan '<StartupCode$assembly>'.$Mutation02::copyOfStruct@4
-    IL_0019:  constrained. [mscorlib]System.TimeSpan
-    IL_001f:  callvirt   instance string [mscorlib]System.Object::ToString()
-    IL_0024:  pop
-    IL_0025:  ret
+    .maxstack  3
+    .locals init (valuetype [runtime]System.TimeSpan V_0)
+    IL_0000:  ldsfld     valuetype [runtime]System.TimeSpan [runtime]System.TimeSpan::MinValue
+    IL_0005:  stsfld     valuetype [runtime]System.TimeSpan '<StartupCode$assembly>'.$Mutation02::x@3
+    IL_000a:  call       valuetype [runtime]System.TimeSpan Mutation02::get_x()
+    IL_000f:  stloc.0
+    IL_0010:  ldloca.s   V_0
+    IL_0012:  constrained. [runtime]System.TimeSpan
+    IL_0018:  callvirt   instance string [runtime]System.Object::ToString()
+    IL_001d:  pop
+    IL_001e:  ret
   }
             """
             ])
 
     [<Test>]
     let ``Mutation 03``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"--optimize-"|]
             """
 module Mutation03
 let x = System.DateTime.Now
@@ -116,22 +120,23 @@ x.Day
         void  .cctor() cil managed
   {
 
-    .maxstack  8
-    IL_0000:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
-    IL_0005:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$assembly>'.$Mutation03::x@3
-    IL_000a:  call       valuetype [mscorlib]System.DateTime Mutation03::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.DateTime '<StartupCode$assembly>'.$Mutation03::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.DateTime '<StartupCode$assembly>'.$Mutation03::copyOfStruct@4
-    IL_0019:  call       instance int32 [mscorlib]System.DateTime::get_Day()
-    IL_001e:  pop
-    IL_001f:  ret
+    .maxstack  3
+    .locals init (valuetype [runtime]System.DateTime V_0)
+    IL_0000:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
+    IL_0005:  stsfld     valuetype [runtime]System.DateTime '<StartupCode$assembly>'.$Mutation03::x@3
+    IL_000a:  call       valuetype [runtime]System.DateTime Mutation03::get_x()
+    IL_000f:  stloc.0
+    IL_0010:  ldloca.s   V_0
+    IL_0012:  call       instance int32 [runtime]System.DateTime::get_Day()
+    IL_0017:  pop
+    IL_0018:  ret
   }
             """
             ])
 
     [<Test>]
     let ``Mutation 04``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"--optimize-"|]
             """
 module Mutation04
 let x = System.Decimal.MaxValue
@@ -160,23 +165,24 @@ x.ToString()
 void  .cctor() cil managed
   {
 
-    .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.Decimal [mscorlib]System.Decimal::MaxValue
-    IL_0005:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$assembly>'.$Mutation04::x@3
-    IL_000a:  call       valuetype [mscorlib]System.Decimal Mutation04::get_x()
-    IL_000f:  stsfld     valuetype [mscorlib]System.Decimal '<StartupCode$assembly>'.$Mutation04::copyOfStruct@4
-    IL_0014:  ldsflda    valuetype [mscorlib]System.Decimal '<StartupCode$assembly>'.$Mutation04::copyOfStruct@4
-    IL_0019:  constrained. [mscorlib]System.Decimal
-    IL_001f:  callvirt   instance string [mscorlib]System.Object::ToString()
-    IL_0024:  pop
-    IL_0025:  ret
+    .maxstack  3
+    .locals init (valuetype [runtime]System.Decimal V_0)
+    IL_0000:  ldsfld     valuetype [runtime]System.Decimal [runtime]System.Decimal::MaxValue
+    IL_0005:  stsfld     valuetype [runtime]System.Decimal '<StartupCode$assembly>'.$Mutation04::x@3
+    IL_000a:  call       valuetype [runtime]System.Decimal Mutation04::get_x()
+    IL_000f:  stloc.0
+    IL_0010:  ldloca.s   V_0
+    IL_0012:  constrained. [runtime]System.Decimal
+    IL_0018:  callvirt   instance string [runtime]System.Object::ToString()
+    IL_001d:  pop
+    IL_001e:  ret
   }
             """
             ])
 
     [<Test>]
     let ``Mutation 05``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"--optimize-"|]
             """
 module Mutation05
 type C() =
@@ -270,37 +276,45 @@ type StaticC() =
             get_X() cil managed
     {
 
-      .maxstack  8
-      IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 Mutation05/StaticC::init@10
-      IL_0007:  ldc.i4.1
-      IL_0008:  bge.s      IL_0011
+    .maxstack  8
+    IL_0000:  volatile.
+    IL_0002:  ldsfld     int32 Mutation05/StaticC::init@10
+    IL_0007:  ldc.i4.1
+    IL_0008:  bge.s      IL_000c
 
-      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
-      IL_000f:  br.s       IL_0011
+    IL_000a:  br.s       IL_000e
 
-      IL_0011:  volatile.
-      IL_0013:  ldsfld     int32 Mutation05/StaticC::x
-      IL_0018:  ret
+    IL_000c:  br.s       IL_0015
+
+    IL_000e:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+    IL_0013:  br.s       IL_0015
+
+    IL_0015:  volatile.
+    IL_0017:  ldsfld     int32 Mutation05/StaticC::x
+    IL_001c:  ret
     }
 
     .method public specialname static void
             set_X(int32 v) cil managed
     {
 
-      .maxstack  8
-      IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 Mutation05/StaticC::init@10
-      IL_0007:  ldc.i4.1
-      IL_0008:  bge.s      IL_0011
+    .maxstack  8
+    IL_0000:  volatile.
+    IL_0002:  ldsfld     int32 Mutation05/StaticC::init@10
+    IL_0007:  ldc.i4.1
+    IL_0008:  bge.s      IL_000c
 
-      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
-      IL_000f:  br.s       IL_0011
+    IL_000a:  br.s       IL_000e
 
-      IL_0011:  ldarg.0
-      IL_0012:  volatile.
-      IL_0014:  stsfld     int32 Mutation05/StaticC::x
-      IL_0019:  ret
+    IL_000c:  br.s       IL_0015
+
+    IL_000e:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+    IL_0013:  br.s       IL_0015
+
+    IL_0015:  ldarg.0
+    IL_0016:  volatile.
+    IL_0018:  stsfld     int32 Mutation05/StaticC::x
+    IL_001d:  ret
     }
 
     .method private specialname rtspecialname static
