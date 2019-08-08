@@ -309,7 +309,7 @@ try {
         Prepare-TempDir
         EnablePreviewSdks
 
-        # enable us to build netcoreapp3.0 binaries
+        # enable us to build netcoreapp2.1 product binaries
         $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
         InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
         InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"

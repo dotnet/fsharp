@@ -7,7 +7,6 @@ open System.IO
 open System.Text
 open System.Diagnostics
 open System.Reflection
-open System.Threading
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
@@ -66,7 +65,7 @@ let main argv = 0"""
         let mutable output = ""
         let mutable errors = ""
         let mutable cleanUp = true
-        let projectDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName() + "." + System.Threading.Thread.CurrentThread.ManagedThreadId.ToString())
+        let projectDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
         try
             try
                 Directory.CreateDirectory(projectDirectory) |> ignore
