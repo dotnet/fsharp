@@ -197,13 +197,6 @@ jobs:
             searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
           continueOnError: true
           condition: always()
-        - task: PublishBuildArtifacts@1
-          displayName: Publish Test Logs
-          inputs:
-            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
-            ArtifactName: 'Linux $(_configuration) $(_testKind) test logs'
-            publishLocation: Container
-          continueOnError: true
 
       # MacOS
       - job: MacOS
@@ -225,11 +218,6 @@ jobs:
             searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
           continueOnError: true
           condition: always()
-          inputs:
-            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
-            ArtifactName: 'MacOS $(_configuration) $(_testKind) test logs'
-            publishLocation: Container
-          continueOnError: true
 
       # Source Build Linux
       - job: SourceBuild_Linux
