@@ -6,10 +6,13 @@ open System
 open System.IO
 open System.Text
 open System.Diagnostics
+open System.Reflection
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
-
+#if FX_NO_APP_DOMAINS
+open System.Runtime.Loader
+#endif
 open NUnit.Framework
 open System.Reflection.Emit
 
@@ -32,7 +35,6 @@ module CompilerAssert =
 
     let private config = TestFramework.initializeSuite ()
 
-
 // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
 #if !NETCOREAPP
 #else
@@ -41,7 +43,8 @@ module CompilerAssert =
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <UseFSharpPreview>true</UseFSharpPreview>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
@@ -62,7 +65,7 @@ let main argv = 0"""
         let mutable output = ""
         let mutable errors = ""
         let mutable cleanUp = true
-        let projectDirectory = Path.Combine(Path.GetTempPath(), "netcoreapp2.1", Path.GetRandomFileName())
+        let projectDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
         try
             try
                 Directory.CreateDirectory(projectDirectory) |> ignore
@@ -102,6 +105,37 @@ let main argv = 0"""
                 try Directory.Delete(projectDirectory) with | _ -> ()
 #endif
 
+#if FX_NO_APP_DOMAINS
+    let executeBuiltApp assembly =
+        let ctxt = AssemblyLoadContext("ContextName", true)
+        try
+            let asm = ctxt.LoadFromAssemblyPath(assembly)
+            let entryPoint = asm.EntryPoint
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+        finally
+            ctxt.Unload()
+#else
+    type Worker () =
+        inherit MarshalByRefObject()
+
+        member __.ExecuteTestCase assemblyPath =
+            let asm = Assembly.LoadFrom(assemblyPath)
+            let entryPoint = asm.EntryPoint
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+
+    let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
+
+    let adSetup =
+        let setup = new System.AppDomainSetup ()
+        setup.PrivateBinPath <- pathToThisDll
+        setup
+
+    let executeBuiltApp assembly =
+        let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
+        let worker = (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
+        worker.ExecuteTestCase assembly |>ignore
+#endif
+
     let private defaultProjectOptions =
         {
             ProjectFileName = "Z:\\test.fsproj"
@@ -130,24 +164,8 @@ let main argv = 0"""
         lock gate <| fun () ->
             let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
             let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
-            let runtimeConfigFilePath = Path.ChangeExtension (outputFilePath, ".runtimeconfig.json")
-            let fsCoreDllPath = config.FSCOREDLLPATH
-            let tmpFsCoreFilePath = Path.Combine (Path.GetDirectoryName(outputFilePath), Path.GetFileName(fsCoreDllPath))
             try
-                File.Copy (fsCoreDllPath , tmpFsCoreFilePath, true)
                 File.WriteAllText (inputFilePath, source)
-                File.WriteAllText (runtimeConfigFilePath, """
-{
-  "runtimeOptions": {
-    "tfm": "netcoreapp3.0",
-    "framework": {
-      "name": "Microsoft.NETCore.App",
-      "version": "3.0.0-preview6-27804-01"
-    }
-  }
-}
-                """)
-
                 let args =
                     defaultProjectOptions.OtherOptions
                     |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
@@ -158,8 +176,6 @@ let main argv = 0"""
             finally
                 try File.Delete inputFilePath with | _ -> ()
                 try File.Delete outputFilePath with | _ -> ()
-                try File.Delete runtimeConfigFilePath with | _ -> ()
-                try File.Delete tmpFsCoreFilePath with | _ -> ()
 
     let Pass (source: string) =
         lock gate <| fun () ->
@@ -224,26 +240,7 @@ let main argv = 0"""
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            let pInfo = ProcessStartInfo ()
-#if NETCOREAPP
-            pInfo.FileName <- config.DotNetExe
-            pInfo.Arguments <- outputExe
-#else
-            pInfo.FileName <- outputExe
-#endif
-
-            pInfo.RedirectStandardError <- true
-            pInfo.UseShellExecute <- false
-
-            let p = Process.Start(pInfo)
-
-            p.WaitForExit()
-            let errors = p.StandardError.ReadToEnd ()
-            if not (String.IsNullOrWhiteSpace errors) then
-                Assert.Fail errors
-
-            if p.ExitCode <> 0 then
-                Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+            executeBuiltApp outputExe
         )
 
     let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
@@ -288,7 +285,7 @@ let main argv = 0"""
                 (expectedErrorMessages, errorMessages)
                 ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
-                )
+            )
 
     let ParseWithErrors (source: string) expectedParseErrors =
         let sourceFileName = "test.fs"
@@ -316,5 +313,5 @@ let main argv = 0"""
     let ``hello world``() =
         CompileExeAndRun
             """
-(printfn "Hello, world."; exit 0)
+(printfn "Hello, world.")
             """

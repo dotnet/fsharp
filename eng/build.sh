@@ -269,7 +269,7 @@ InstallDotNetSdk $_InitializeDotNetCli 2.1.503
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  coreclrtestframework=netcoreapp2.1
+  coreclrtestframework=netcoreapp3.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.LanguageServer.UnitTests/FSharp.Compiler.LanguageServer.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
