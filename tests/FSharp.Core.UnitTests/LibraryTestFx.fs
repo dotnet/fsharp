@@ -61,59 +61,47 @@ let sleep(n : int32) =
     System.Threading.Thread.Sleep(n)
 #endif
 
-#if VERIFY_SURFACEAREA
 module SurfaceArea =
     open System.Reflection
     open System
     open System.Text.RegularExpressions
-    
+
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
-    
-        // get current FSharp.Core
-        let asm = 
-#if FX_RESHAPED_REFLECTION
-            typeof<int list>.GetTypeInfo().Assembly
-#else
-            typeof<int list>.Assembly
-#endif
-        
-        // public types only
-        let types =
-#if FX_RESHAPED_REFLECTION
-            asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
-#else
-            asm.GetExportedTypes()
-#endif
 
+        // get current FSharp.Core
+        let asm = typeof<int list>.GetTypeInfo().Assembly
+        let fsCoreFullName = asm.FullName
+
+        // public types only
+        let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
+
+        let typenames = new System.Collections.Generic.List<string>()
         // extract canonical string form for every public member of every type
         let getTypeMemberStrings (t : Type) =
             // for System.Runtime-based profiles, need to do lots of manual work
-#if FX_RESHAPED_REFLECTION
             let getMembers (t : Type) =
                 let ti = t.GetTypeInfo()
-                let cast (info : #MemberInfo) = (t, info :> MemberInfo)
+                let cast (info: #MemberInfo) = (t, info :> MemberInfo)
+                let isDeclaredInFSharpCore (m:MemberInfo) = m.DeclaringType.Assembly.FullName = fsCoreFullName
                 seq {
-                    yield! t.GetRuntimeEvents()     |> Seq.filter (fun m -> m.AddMethod.IsPublic) |> Seq.map cast
-                    yield! t.GetRuntimeProperties() |> Seq.filter (fun m -> m.GetMethod.IsPublic) |> Seq.map cast
-                    yield! t.GetRuntimeMethods()    |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
-                    yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
+                    yield! t.GetRuntimeEvents()     |> Seq.filter (fun m -> m.AddMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeProperties() |> Seq.filter (fun m -> m.GetMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeMethods()    |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
                     yield! ti.DeclaredConstructors  |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
                 } |> Array.ofSeq
 
+
             getMembers t
             |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
-#else
-            t.GetMembers()
-            |> Array.map (fun v -> sprintf "%s: %s" (v.ReflectedType.ToString()) (v.ToString()))
-#endif
-            
+
         let actual =
             types |> Array.collect getTypeMemberStrings
 
         asm,actual
-    
+
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
         let normalize (s:string) =
@@ -121,7 +109,7 @@ module SurfaceArea =
 
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-        
+
         let expected =
             // Split the "expected" string into individual lines, then normalize it.
             (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
@@ -173,4 +161,3 @@ module SurfaceArea =
             sb.ToString ()
 
         Assert.Fail msg
-#endif

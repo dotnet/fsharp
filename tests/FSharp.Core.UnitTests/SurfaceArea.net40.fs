@@ -5,10 +5,9 @@ namespace FSharp.Core.UnitTests.SurfaceArea
 open NUnit.Framework
 open FSharp.Core.UnitTests.LibraryTestFx
 
-[<TestFixture>]
 type SurfaceAreaTest() =
     [<Test>]
-    member this.VerifyArea() =
+    member this.VerifyArea(): unit =
         let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
@@ -3659,11 +3658,11 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type GetType()
-Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
-"
+Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
 #if CROSS_PLATFORM_COMPILER
-        ()
         // disabled because of slight order and GetMember discrepencies
+        ()
 #else
         SurfaceArea.verify expected "net40" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
+        ()
 #endif
