@@ -16,7 +16,7 @@ module ``Mutation`` =
 module Mutation01
 type Test = struct
               val mutable v: int
-              member t.setV _ = t.v <- 0
+              member t.setV v = t.v <- 0
             end
             """
             (fun verifier -> verifier.VerifyIL [
@@ -28,17 +28,14 @@ type Test = struct
             """
             """
     .method public hidebysig instance void
-            setV<a>(!!a _arg1) cil managed
+            setV<a>(!!a v) cil managed
     {
 
-    .maxstack  4
-    .locals init (!!a V_0)
-    IL_0000:  ldarg.1
-    IL_0001:  stloc.0
-    IL_0002:  ldarg.0
-    IL_0003:  ldc.i4.0
-    IL_0004:  stfld      int32 Mutation01/Test::v
-    IL_0009:  ret
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.0
+    IL_0002:  stfld      int32 Mutation01/Test::v
+    IL_0007:  ret
     }
             """
             ])
