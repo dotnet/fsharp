@@ -6,7 +6,7 @@
     <PackageId>FSharp.Core</PackageId>
     <NuspecFile>FSharp.Core.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
-    <PackageDescription>FSharp.Core redistributables from Visual F# Tools version $(FSPackageMajorVersion) For F# $(FSCoreMajorVersion)</PackageDescription>
+    <PackageDescription>FSharp.Core redistributables from Visual F# Tools version $(FSPackageMajorVersion) For F# $(FSCoreMajorVersion).  Contains code from the F# Software Foundation.</PackageDescription>
   </PropertyGroup>
 
   <ItemGroup>
