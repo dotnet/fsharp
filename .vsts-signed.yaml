@@ -148,7 +148,5 @@ stages:
 
 - template: eng/common/templates/post-build/post-build.yml
   parameters:
-    # NuGet validation currently fails due to the `<author>` field of the package being set to `Microsoft and F# Software Foundation` instead of just `Microsoft`
-    enableNugetValidation: false
     # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
     enableSymbolValidation: false
