@@ -984,13 +984,9 @@ namespace Microsoft.FSharp.Control
                     else
                         ctxt.cont completedTask.Result) |> unfake
 
-            let cancelContinuation (cancelledTask: Task) : unit =
+            let cancelContinuation (_: Task) : unit =
                 ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
-                    if useCcontForTaskCancellation then
-                        ctxt.OnCancellation ()
-                    else
-                        let edi = ExceptionDispatchInfo.Capture(TaskCanceledException cancelledTask)
-                        ctxt.CallExceptionContinuation edi
+                    ctxt.OnCancellation ()
                 ) |> unfake
 
             task
@@ -1015,13 +1011,9 @@ namespace Microsoft.FSharp.Control
                     else
                         ctxt.cont ()) |> unfake
 
-            let cancelContinuation (cancelledTask: Task) : unit =
+            let cancelContinuation (_: Task) : unit =
                 ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
-                    if useCcontForTaskCancellation then
-                        ctxt.OnCancellation ()
-                    else
-                        let edi = ExceptionDispatchInfo.Capture(new TaskCanceledException(cancelledTask))
-                        ctxt.CallExceptionContinuation edi
+                    ctxt.OnCancellation ()
                 ) |> unfake
 
             task
