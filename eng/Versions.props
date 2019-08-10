@@ -116,6 +116,8 @@
     <MicrosoftVisualStudioComponentModelHostVersion>16.1.89</MicrosoftVisualStudioComponentModelHostVersion>
     <MicrosoftVisualStudioDesignerInterfacesVersion>1.1.4322</MicrosoftVisualStudioDesignerInterfacesVersion>
     <MicrosoftVisualStudioEditorVersion>16.1.89</MicrosoftVisualStudioEditorVersion>
+    <MicrosoftVisualStudioEditorImplementationVersion>16.1.89</MicrosoftVisualStudioEditorImplementationVersion>
+    <MicrosoftVisualStudioGraphModelVersion>16.0.28226-alpha</MicrosoftVisualStudioGraphModelVersion>
     <MicrosoftVisualStudioImageCatalogVersion>16.1.28916.169</MicrosoftVisualStudioImageCatalogVersion>
     <MicrosoftVisualStudioImagingVersion>16.1.28917.181</MicrosoftVisualStudioImagingVersion>
     <MicrosoftVisualStudioLanguageServerClientVersion>16.1.3121</MicrosoftVisualStudioLanguageServerClientVersion>
@@ -125,6 +127,7 @@
     <MicrosoftVisualStudioManagedInterfacesVersion>8.0.50728</MicrosoftVisualStudioManagedInterfacesVersion>
     <MicrosoftVisualStudioOLEInteropVersion>7.10.6071</MicrosoftVisualStudioOLEInteropVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>16.1.28917.181</MicrosoftVisualStudioPackageLanguageService150Version>
+    <MicrosoftVisualStudioPlatformVSEditorVersion>16.1.89</MicrosoftVisualStudioPlatformVSEditorVersion>
     <MicrosoftVisualStudioProjectAggregatorVersion>8.0.50728</MicrosoftVisualStudioProjectAggregatorVersion>
     <MicrosoftVisualStudioProjectSystemVersion>16.0.201-pre-g7d366164d0</MicrosoftVisualStudioProjectSystemVersion>
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
@@ -141,7 +144,9 @@
     <MicrosoftVisualStudioShellInterop100Version>10.0.30320</MicrosoftVisualStudioShellInterop100Version>
     <MicrosoftVisualStudioShellInterop110Version>11.0.61031</MicrosoftVisualStudioShellInterop110Version>
     <MicrosoftVisualStudioShellInterop120Version>12.0.30111</MicrosoftVisualStudioShellInterop120Version>
+    <MicrosoftVisualStudioShellInterop160DesignTimeVersion>16.0.0</MicrosoftVisualStudioShellInterop160DesignTimeVersion>
     <MicrosoftVisualStudioTextDataVersion>16.1.89</MicrosoftVisualStudioTextDataVersion>
+    <MicrosoftVisualStudioTextInternalVersion>16.1.89</MicrosoftVisualStudioTextInternalVersion>
     <MicrosoftVisualStudioTextManagerInteropVersion>7.10.6071</MicrosoftVisualStudioTextManagerInteropVersion>
     <MicrosoftVisualStudioTextManagerInterop80Version>8.0.50728</MicrosoftVisualStudioTextManagerInterop80Version>
     <MicrosoftVisualStudioTextManagerInterop100Version>10.0.30320</MicrosoftVisualStudioTextManagerInterop100Version>
