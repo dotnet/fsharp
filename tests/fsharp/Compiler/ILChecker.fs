@@ -40,7 +40,7 @@ module ILChecker =
 
             let unifyRuntimeAssemblyName ilCode =
                 System.Text.RegularExpressions.Regex.Replace(ilCode,
-                    "\[System.Runtime\]|\[mscorlib\]","[runtime]",
+                    "\[System.Runtime\]|\[System.Runtime.Extensions\]|\[mscorlib\]","[runtime]",
                     System.Text.RegularExpressions.RegexOptions.Singleline)
 
             let text =
