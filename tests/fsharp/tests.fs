@@ -1821,13 +1821,13 @@ module VersionTests =
     let ``nameof-version4.6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
-    let ``nameof-version4.7``() = singleTestBuildAndRun "core/nameof/version47" FSC_BUILDONLY
+    let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_BUILDONLY "preview"
 
     [<Test>]
-    let ``nameof-execute``() = singleTestBuildAndRun "core/nameof/version47" FSC_BASIC
+    let ``nameof-execute``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_BASIC "preview"
 
     [<Test>]
-    let ``nameof-fsi``() = singleTestBuildAndRun "core/nameof/version47" FSI_BASIC
+    let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI_BASIC "preview"
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module ToolsTests = 
