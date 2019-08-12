@@ -163,7 +163,7 @@ namespace Microsoft.FSharp.Collections
         let choose chooser list = Microsoft.FSharp.Primitives.Basics.List.choose chooser list
 
         [<CompiledName("SplitAt")>]
-        let splitAt index (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.splitAt index list
+        let splitAt count (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.splitAt count list
 
         [<CompiledName("Take")>]
         let take count (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.take count list

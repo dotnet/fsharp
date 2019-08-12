@@ -693,15 +693,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Sort")>]
         val sort: list:'T list -> 'T list when 'T : comparison
 
-        /// <summary>Splits a list into two lists, at the given index.</summary>
-        /// <param name="index">The index at which the list is split.</param>
+        /// <summary>Splits a list into two lists, at the first N elements of the list.</summary>
+        /// <param name="count">The number of items to take or skip.</param>
         /// <param name="list">The input list.</param>
         /// <returns>The two split lists.</returns>
         ///
-        /// <exception cref="System.InvalidOperationException">Thrown when split index exceeds the number of elements
+        /// <exception cref="System.InvalidOperationException">Thrown when split count exceeds the number of elements
         /// in the list.</exception>
         [<CompiledName("SplitAt")>]
-        val splitAt: index:int -> list:'T list -> ('T list * 'T list)
+        val splitAt: count:int -> list:'T list -> ('T list * 'T list)
 
         /// <summary>Sorts the given list in descending order using keys given by the given projection. Keys are compared using Operators.compare.</summary>
         ///
@@ -755,7 +755,6 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result list.</returns>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when the input list is empty.</exception>
         /// <exception cref="System.InvalidOperationException">Thrown when count exceeds the number of elements
         /// in the list.</exception>
         [<CompiledName("Take")>]
