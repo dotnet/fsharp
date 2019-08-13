@@ -55,6 +55,7 @@ stages:
           variables:
           - group: DotNet-Blob-Feed
           - group: DotNet-Symbol-Server-Pats
+          - group: DotNet-DevDiv-Insertion-Workflow-Variables
           - name: _SignType
             value: Real
           - name: _DotNetPublishToBlobFeed
@@ -121,6 +122,13 @@ stages:
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
               ArtifactName: 'NativeSymbols'
+            condition: succeeded()
+          - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
+            displayName: Upload VSTS Drop
+            inputs:
+              DropName: $(VisualStudioDropName)
+              DropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+              AccessToken: $(dn-bot-devdiv-drop-rw-code-rw)
             condition: succeeded()
 
   #-------------------------------------------------------------------------------------------------------------------#
