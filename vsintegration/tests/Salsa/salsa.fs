@@ -614,6 +614,7 @@ module internal Salsa =
                  otherProjMisc:string,
                  targetFrameworkVersion:string) =
 
+            let references = List.append references [ "netstandard", false; "System", false; "System.Numerics", false ]
             // Determine which FSharp.targets file to use. If we use the installed
             // targets file then we check the registry for F#'s install path. Otherwise
             // we look in the same directory as the Unit Tests assembly.
@@ -657,16 +658,16 @@ module internal Salsa =
 
             Append "    <ItemGroup>"
             
-            for (reference,specificVersion) in references do
-                Append (sprintf "        <Reference Include=\"%s\">" reference)                
+            for (reference, specificVersion) in references do
+                Append (sprintf "        <Reference Include=\"%s\">" reference)
                 if specificVersion then
-                    Append (sprintf "            <SpecificVersion>true</SpecificVersion>")                
-                Append (sprintf "        </Reference>")                
+                    Append (sprintf "            <SpecificVersion>true</SpecificVersion>")
+                Append (sprintf "        </Reference>")
 
             for projectReference in projectReferences do
-                Append (sprintf "        <ProjectReference Include=\"%s\">" projectReference)                
+                Append (sprintf "        <ProjectReference Include=\"%s\">" projectReference)
                 Append "            <Name>SomeReferencedProject</Name>"     
-                Append "            <Project>{45636601-CA91-4382-B8BB-3DBD03BF3F56}</Project>"                
+                Append "            <Project>{45636601-CA91-4382-B8BB-3DBD03BF3F56}</Project>"
                 Append "        </ProjectReference>"
 
             for (file,buildAction,link) in files do

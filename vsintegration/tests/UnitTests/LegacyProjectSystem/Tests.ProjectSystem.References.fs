@@ -90,7 +90,7 @@ type References() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
             Assert.IsTrue(File.Exists exe, "failed to build exe")
-            this.MakeProjectAndDoWithProjectFile(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"], 
+            this.MakeProjectAndDoWithProjectFile(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"; "netstandard"], 
                                                     "<ItemGroup><Reference Include=\"Test\"><HintPath>.\\Test.dll</HintPath></Reference></ItemGroup>", "v4.0", (fun project file ->
                 let assemRef = TheTests.FindNodeWithCaption(project, "Test") :?> AssemblyReferenceNode
                 Assert.IsFalse(assemRef.CanShowDefaultIcon(), "reference should be banged out, does not resolve")
@@ -107,7 +107,7 @@ type References() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
             Assert.IsTrue(File.Exists exe, "failed to build exe")
-            this.MakeProjectAndDoWithProjectFile(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"], 
+            this.MakeProjectAndDoWithProjectFile(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"; "netstandard"], 
                                                     sprintf "<ItemGroup><Reference Include=\"Test\"><HintPath>%s</HintPath></Reference></ItemGroup>" exe, "v4.0", (fun project file ->
                 let assemRef = TheTests.FindNodeWithCaption(project, "Test") :?> AssemblyReferenceNode
                 Assert.IsTrue(assemRef.CanShowDefaultIcon(), "reference should not be banged out, does resolve")
@@ -124,7 +124,7 @@ type References() =
 
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.Works``() =
-        this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"], "", "v4.0", (fun project ->
+        this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"; "netstandard"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "mscorlib", true
                                     "System", true
                                     "System.Core", true
@@ -188,7 +188,7 @@ type References() =
 
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WeirdCases``() =
-        this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib, Version=4.0.0.0"; "System, Version=4.0.0.0"; "System.Core, Version=4.0.0.0"; "System.Net, Version=4.0.0.0"], "", "v4.0", (fun project ->
+        this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib, Version=4.0.0.0"; "System, Version=4.0.0.0"; "System.Core, Version=4.0.0.0"; "System.Net, Version=4.0.0.0"; "netstandard"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "mscorlib", true
                                     "System", true
                                     "System.Core, Version=4.0.0.0", false // msbuild does funny things for System.Core (TODO bug number)

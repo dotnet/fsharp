@@ -14,7 +14,7 @@ open UnitTests.TestLib.ProjectSystem
 
 [<AutoOpen>]
 module StandardSettings = 
-    let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics" ]
+    let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics"; "netstandard" ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
     type Expectation = 
         | QuickInfoExpected of string * string
@@ -36,7 +36,7 @@ type UsingMSBuild() as this  =
             | code -> this.CreateSingleFileProject(code, fileKind = fileKind, references = refs)
         file
 
-    let DoWithAutoCompleteUsingExtraRefs refs coffeeBreak fileKind reason (code : list<string>) marker f  =        
+    let DoWithAutoCompleteUsingExtraRefs refs coffeeBreak fileKind reason (code : list<string>) marker f =
         // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint valdiation etc. 
         // This might be before the before the background builder is ready to process the foreground typecheck.
         // In this case the background builder calls us back when its ready, and we then request a foreground typecheck 
@@ -4120,6 +4120,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``WithNonExistentDll``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
+        System.Diagnostics.Debugger.Break()
         let project = CreateProject(solution,"testproject")
         // in the project system, 'AddAssemblyReference' would throw, so just poke this into the .fsproj file
         PlaceIntoProjectFileBeforeImport
@@ -4403,7 +4404,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"System.Windows.")
         let completions = AutoCompleteAtCursor(file)
         printfn "Completions=%A" completions
-        Assert.AreEqual(1, completions.Length)
+        Assert.AreEqual(3, completions.Length)          // System.Windows.Forms, System.Windows.Input, System.Windows.Markdown
         
     /// Tests whether we're correctly showing both type and module when they have the same name
     [<Test>]
