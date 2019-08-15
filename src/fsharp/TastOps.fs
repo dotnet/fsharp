@@ -6008,7 +6008,11 @@ let MustTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) =
 
 let CanTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) mut = 
     isInByrefTy g vref.Type &&
-    CanTakeAddressOf g vref.Range (destByrefTy g vref.Type) mut
+    let destTy = destByrefTy g vref.Type
+    CanTakeAddressOf g vref.Range destTy mut &&
+    // If we have a .NET defined struct, we return false.
+    // We do not want to use the same immutability assumption on .NET structs for inref.
+    (isFSharpStructTy g destTy || isEnumTy g destTy)
 
 let MustTakeAddressOfRecdField (rfref: RecdField) = 
     // Static mutable fields must be private, hence we don't have to take their address

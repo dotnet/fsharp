@@ -925,6 +925,12 @@ let ComputeConstrainedCallInfo g amap m (objArgs, minfo: MethInfo) =
     | _ -> 
         None
 
+let CanMethodNeverMutate g m (minfo: MethInfo) =
+    // Respect IsReadOnly attribute on IL methods for now.
+    minfo.IsILMethod && 
+    minfo.IsStruct &&
+    MethInfoHasAttribute g m g.attrib_IsReadOnlyAttribute minfo
+
 /// Adjust the 'this' pointer before making a call 
 /// Take the address of a struct, and coerce to an interface/base/constraint type if necessary 
 let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
@@ -938,6 +944,12 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
             let hasCallInfo = ccallInfo.IsSome
             let mustTakeAddress = hasCallInfo || minfo.ObjArgNeedsAddress(amap, m)
             let objArgTy = tyOfExpr g objArgExpr
+            
+            let isMutable =
+                if isMutable <> NeverMutates && CanMethodNeverMutate g m minfo then
+                    NeverMutates
+                else
+                    isMutable
 
             let wrap, objArgExprAddr, isReadOnly, _isWriteOnly =
                 mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
