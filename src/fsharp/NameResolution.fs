@@ -782,7 +782,16 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
                    for propInfo in propInfos do 
                        yield KeyValuePair(propName , Item.Property(propName,[propInfo])) |]
 
-        { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
+        { nenv with 
+            eUnqualifiedItems = 
+                (nenv.eUnqualifiedItems, items) 
+                ||> Array.fold (fun x (KeyValue(k, v)) -> 
+                    match x.TryGetValue k, v with
+                    | (true, Item.MethodGroup (_, meths, None)), Item.MethodGroup (_, mostRecentMeths, None) ->
+                        x.Add(k, Item.MethodGroup (k, mostRecentMeths @ meths, None))
+                    | _ ->
+                        x.Add(k, v))
+        }
     else
         nenv
     
