@@ -1679,6 +1679,11 @@ let isILReferenceTy g ty =
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> not td.IsStructOrEnum
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isArrayTy g ty
 
+let isILStructTy g ty =
+    match tryDestAppTy g ty with
+    | ValueSome tcref -> tcref.Deref.IsILStructOrEnumTycon
+    | _ -> false
+
 let isILInterfaceTycon (tycon: Tycon) = 
     match metadataOfTycon tycon with 
 #if !NO_EXTENSIONTYPING
@@ -6012,7 +6017,7 @@ let CanTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) mut =
     CanTakeAddressOf g vref.Range destTy mut &&
     // If we have a .NET defined struct, we return false.
     // We do not want to use the same immutability assumption on .NET structs for inref.
-    (isFSharpStructTy g destTy || isEnumTy g destTy)
+    (not (isILStructTy g destTy) || isEnumTy g destTy)
 
 let MustTakeAddressOfRecdField (rfref: RecdField) = 
     // Static mutable fields must be private, hence we don't have to take their address
