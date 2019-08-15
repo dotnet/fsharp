@@ -787,8 +787,17 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
                 (nenv.eUnqualifiedItems, items) 
                 ||> Array.fold (fun x (KeyValue(k, v)) -> 
                     match x.TryGetValue k, v with
-                    | (true, Item.MethodGroup (_, meths, None)), Item.MethodGroup (_, mostRecentMeths, None) ->
-                        x.Add(k, Item.MethodGroup (k, mostRecentMeths @ meths, None))
+                    | (true, Item.MethodGroup (_, minfosCurrent, None)), Item.MethodGroup (_, minfosNew, None) ->
+                        let minfos =
+                            (minfosNew, minfosCurrent)
+                            ||> List.fold (fun minfos minfo1 ->
+                                // Do not add the same exact same method.
+                                if minfos |> List.exists (fun minfo2 -> typeEquiv g minfo1.ApparentEnclosingAppType minfo2.ApparentEnclosingAppType && MethInfosEquivByNameAndSig Erasure.EraseNone false g amap m minfo1 minfo2) then
+                                    minfos
+                                else
+                                    minfo1 :: minfos
+                            )
+                        x.Add(k, Item.MethodGroup (k, minfos, None))
                     | _ ->
                         x.Add(k, v))
         }
