@@ -763,43 +763,80 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
     if amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
         let ty = generalizedTyconRef tcref
         let infoReader = InfoReader(g,amap)
-        let items =
-            [| let methGroups = 
-                   AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
-                   |> List.groupBy (fun m -> m.LogicalName)
 
-               for (methName, methGroup) in methGroups do
-                   let methGroup = methGroup |> List.filter (fun m -> not m.IsInstance && not m.IsClassConstructor)
-                   if not methGroup.IsEmpty then
-                       yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
-           
-               let propInfos = 
-                   AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
-                   |> List.groupBy (fun m -> m.PropertyName)
-               
-               for (propName, propInfos) in propInfos do
-                   let propInfos = propInfos |> List.filter (fun m -> m.IsStatic)
-                   for propInfo in propInfos do 
-                       yield KeyValuePair(propName , Item.Property(propName,[propInfo])) |]
+        let getMethItems () =
+            [   let methGroups = 
+                    AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
+                    |> List.groupBy (fun m -> m.LogicalName)
+
+                for (methName, methGroup) in methGroups do
+                    let methGroup = methGroup |> List.filter (fun m -> not m.IsInstance && not m.IsClassConstructor)
+                    if not methGroup.IsEmpty then
+                        yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
+            ]
+
+        let getPropItems () =
+            [   let propInfos = 
+                    AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
+                    |> List.groupBy (fun m -> m.PropertyName)
+            
+                for (propName, propInfos) in propInfos do
+                    let propInfos = propInfos |> List.filter (fun m -> m.IsStatic)
+                    for propInfo in propInfos do 
+                        yield KeyValuePair(propName , Item.Property(propName,[propInfo]))
+            ]
+
+        let items =
+            // This is to handle the current behavior with qualified extension members:
+            //     Extension member properties will hide all extension methods that share the same name.
+            [|
+                let propItems = getPropItems ()
+                let methItems = getMethItems ()
+
+                let itemGroups =
+                    propItems @ methItems
+                    |> List.groupBy (fun pair -> pair.Key)
+
+                for (_, items) in itemGroups do
+                    let sortedItems =
+                        items 
+                        |> List.sortBy (fun pair -> 
+                            match pair.Value with 
+                            | Item.Property (_, [propInfo]) -> not propInfo.IsExtensionMember 
+                            | Item.MethodGroup (_, methGroup, _) -> methGroup |> List.exists (fun x -> not x.IsExtensionMember)
+                            | _ -> false)
+                    match sortedItems with
+                    | item :: _ -> yield item
+                    | _ -> ()
+            |]
 
         { nenv with 
             eUnqualifiedItems = 
                 (nenv.eUnqualifiedItems, items) 
                 ||> Array.fold (fun x (KeyValue(k, v)) -> 
-                    match x.TryGetValue k, v with
-                    | (true, Item.MethodGroup (_, minfosCurrent, None)), Item.MethodGroup (_, minfosNew, None) ->
-                        let minfos =
-                            (minfosCurrent, minfosNew)
-                            ||> List.fold (fun minfos minfo1 ->
-                                // Shadow methods with the same signature.
-                                if minfos |> List.exists (fun minfo2 -> MethInfosEquivByNameAndSig Erasure.EraseAll true g amap m minfo1 minfo2) then
-                                    minfos
-                                else
-                                    minfo1 :: minfos
-                            )
-                        x.Add(k, Item.MethodGroup (k, minfos, None))
-                    | _ ->
-                        x.Add(k, v))
+                    match x.TryGetValue k with
+                    | true, existingItem ->
+                        match existingItem, v with
+                        
+                        // Combine methods groups.
+                        | Item.MethodGroup (_, minfosCurrent, None), Item.MethodGroup (_, minfosNew, None) ->
+                            let minfos =
+                                (minfosNew, minfosCurrent)
+                                ||> List.fold (fun minfos minfo1 ->
+                                    // Shadow methods with the same signature.
+                                    if minfos |> List.exists (fun minfo2 -> MethInfosEquivByNameAndSig Erasure.EraseAll true g amap m minfo1 minfo2) then
+                                        minfos
+                                    else
+                                        minfo1 :: minfos
+                                )
+                            x.Add(k, Item.MethodGroup (k, minfos, None))
+
+                        // Methods will hide properties, events, and fields with the same name.
+                        | Item.MethodGroup _, Item.Property _
+                        | Item.MethodGroup _, Item.Event _
+                        | Item.MethodGroup _, Item.ILField _ -> x
+                        | _ -> x.Add(k, v)
+                    | _ -> x.Add(k, v))
         }
     else
         nenv
