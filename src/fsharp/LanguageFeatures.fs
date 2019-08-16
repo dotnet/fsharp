@@ -52,7 +52,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.SingleUnderscorePattern, languageVersion47
         LanguageFeature.WildCardInForLoop, languageVersion47
         LanguageFeature.RelaxWhitespace, languageVersion47
-        LanguageFeature.NameOf, languageVersion47
+        LanguageFeature.NameOf, previewVersion
         LanguageFeature.ImplicitYield, languageVersion47
         LanguageFeature.OpenStaticClasses, previewVersion
         |]

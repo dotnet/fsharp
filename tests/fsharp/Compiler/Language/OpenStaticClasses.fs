@@ -171,3 +171,18 @@ module OpenAutoMath =
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
             [| |]
+
+    [<Test>]
+    let ``OpenStaticClassesTests - OpenAccessibleFields - langversion:preview`` () =
+        CompilerAssert.TypeCheckWithErrorsAndOptions
+            [| "--langversion:preview" |]
+            (baseModule + """
+module OpenAFieldFromMath =
+    open System.Math
+    
+    let pi = PI""")
+            [||]
+
+    // TODO - wait for Will's integration of testing changes that makes this easlier
+    // [<Test>]
+    // let ``OpenStaticClassesTests - InternalsVisibleWhenHavingAnIVT - langversion:preview``() = ...

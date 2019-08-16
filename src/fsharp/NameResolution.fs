@@ -758,7 +758,7 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs: Un
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
             acc.Add (ucref.CaseName, item))
 
-let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m (nenv: NameResolutionEnv)  (tcref:TyconRef) =
+let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (tcref:TyconRef) =
     // If OpenStaticClasses is not enabled then don't do this
     if amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
         let ty = generalizedTyconRef tcref
@@ -785,6 +785,17 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
                     for propInfo in propInfos do 
                         yield KeyValuePair(propName , Item.Property(propName,[propInfo]))
             ]
+            
+        let getFieldItems () =
+            [   let fields =
+                  infoReader.GetILFieldInfosOfType(None, ad, m, ty)
+                  |> List.groupBy (fun f -> f.FieldName)
+
+                for (fieldName, fieldInfos) in fields do
+                  let fieldInfos = fieldInfos |> List.filter (fun fi -> fi.IsStatic)
+                  for fieldInfo in fieldInfos do
+                      yield KeyValuePair(fieldName, Item.ILField(fieldInfo))
+            ]
 
         let items =
             // This is to handle the current behavior with qualified extension members:
@@ -808,6 +819,8 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
                     match sortedItems with
                     | item :: _ -> yield item
                     | _ -> ()
+                    
+                
             |]
 
         { nenv with 
@@ -842,7 +855,7 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
         nenv
     
 /// Add any implied contents of a type definition to the environment.
-let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap m  nenv (tcref: TyconRef) =
+let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
 
     let isIL = tcref.IsILTycon
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
@@ -915,16 +928,16 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
 
     let nenv = 
         if TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true && isStaticClass g tcref then
-           AddStaticContentOfTyconRefToNameEnv g amap m nenv tcref
+           AddStaticContentOfTyconRefToNameEnv g amap ad m nenv tcref
         else
            nenv
 
     nenv
 
 /// Add a set of type definitions to the name resolution environment
-let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
+let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs =
     if isNil tcrefs then nenv else
-    let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
+    let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap ad m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
     let tcrefs = Array.ofList tcrefs
     { env with
@@ -1023,7 +1036,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
            let tcref = modref.NestedTyconRef tycon
            if IsEntityAccessible amap m ad tcref then Some tcref else None)
 
-    let nenv = (nenv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false
+    let nenv = (nenv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap ad m false
     let vrefs =
         mty.AllValsAndMembers.ToList()
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
@@ -1048,7 +1061,7 @@ and AddEntityContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
     if modref.IsModuleOrNamespace then 
         AddModuleOrNamespaceContentsToNameEnv g amap ad m root nenv modref
     else
-        AddStaticContentOfTyconRefToNameEnv g amap m nenv modref
+        AddStaticContentOfTyconRefToNameEnv g amap ad m nenv modref
 
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefToNameEnv g amap m root ad nenv (modref: EntityRef) =
