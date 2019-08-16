@@ -5948,20 +5948,26 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets =
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
-let canIgnoreILTyconRefImmutabilityAssumption g tcref =
+/// Check if the tycon can ignore the immutability assumption.
+let canILTyconRefIgnoreImmutabilityAssumption g tcref =
     tyconRefEq g tcref g.decimal_tcr || tyconRefEq g tcref g.date_tcr
 
-let hasILStructImmutabilityAssumption g ty =
-    if isILStructTy g ty then
+/// .NET struct types are assumed immutable, meaning none of their properties or methods mutate even if in reality they do.
+/// This was from a decision made in F# 2.0, probably due to performance reasons from defensive copying.
+/// Turning this assumption off will be a severe breaking change.
+/// However, the assumption is turned off if we have an 'inref' of the struct type.
+let isILStructTyWithImmutabilityAssumption g ty =
+    // Enums are not assumed immutable, they *are* immutable.
+    if isILStructTy g ty && not (isEnumTy g ty) then
         let tcref, _ = destAppTy g ty
-        not (canIgnoreILTyconRefImmutabilityAssumption g tcref)
+        not (canILTyconRefIgnoreImmutabilityAssumption g tcref)
     else
         false
 
 let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
     tcref.CanDeref &&
     not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
-    canIgnoreILTyconRefImmutabilityAssumption g tcref
+    canILTyconRefIgnoreImmutabilityAssumption g tcref
 
 let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
     tcref.CanDeref &&
@@ -6021,8 +6027,18 @@ let MustTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) =
     isByrefTy g vref.Type && not (isInByrefTy g vref.Type)
 
 let CanTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) mut = 
-    isInByrefTy g vref.Type &&
-    CanTakeAddressOf g vref.Range (destByrefTy g vref.Type) mut
+    if isInByrefTy g vref.Type then
+        let destTy = destByrefTy g vref.Type
+        CanTakeAddressOf g vref.Range destTy mut &&
+        match mut with
+        | DefinitelyMutates -> false
+        | NeverMutates
+        | AddressOfOp -> true
+
+        // Disable immutability assumption on .NET structs when we have an 'inref'.
+        | PossiblyMutates -> not (isILStructTyWithImmutabilityAssumption g destTy)
+    else
+        false
 
 let MustTakeAddressOfRecdField (rfref: RecdField) = 
     // Static mutable fields must be private, hence we don't have to take their address
@@ -6051,8 +6067,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
     if mustTakeAddress then 
         match expr with 
         // LVALUE of "*x" where "x" is byref is just the byref itself
-        // Note: For this case, do not assume IL struct types are immutable.
-        | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) when MustTakeAddressOfByrefGet g vref || (CanTakeAddressOfByrefGet g vref mut && not (hasILStructImmutabilityAssumption g (destByrefTy g vref.Type))) -> 
+        | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) when MustTakeAddressOfByrefGet g vref || CanTakeAddressOfByrefGet g vref mut -> 
             let readonly = not (MustTakeAddressOfByrefGet g vref)
             let writeonly = isOutByrefTy g vref.Type
             None, exprForValRef m vref, readonly, writeonly

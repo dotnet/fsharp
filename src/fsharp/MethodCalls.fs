@@ -946,10 +946,15 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
             let objArgTy = tyOfExpr g objArgExpr
             
             let isMutable =
-                if isMutable <> NeverMutates && CanMethodNeverMutate g m minfo then
-                    NeverMutates
-                else
-                    isMutable
+                match isMutable with
+                | DefinitelyMutates
+                | NeverMutates 
+                | AddressOfOp -> isMutable
+                | PossiblyMutates ->
+                    if CanMethodNeverMutate g m minfo then
+                        NeverMutates
+                    else
+                        isMutable
 
             let wrap, objArgExprAddr, isReadOnly, _isWriteOnly =
                 mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
