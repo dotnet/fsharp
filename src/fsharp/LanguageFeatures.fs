@@ -54,7 +54,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.RelaxWhitespace, languageVersion47
         LanguageFeature.NameOf, previewVersion
         LanguageFeature.ImplicitYield, languageVersion47
-        LanguageFeature.OpenStaticClasses, languageVersion47
+        LanguageFeature.OpenStaticClasses, previewVersion
         |]
 
     let specified =

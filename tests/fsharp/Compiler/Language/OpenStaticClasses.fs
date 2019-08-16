@@ -8,7 +8,7 @@ open NUnit.Framework
 
 (*
     Tests in this file evaluate whether the language supports accessing functions on static classes using open
-    The feature was added in FSharp4.7, the test cases ensure that the original errors are reproduced when the langversion:4.6 is specified
+    The feature was added in preview, the test cases ensure that the original errors are reproduced when the langversion:4.6 is specified
 *)
 
 [<TestFixture>]
@@ -49,9 +49,9 @@ module OpenSystemMathOnce =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenSystemMathOnce - langversion:v4.7`` () =
+    let ``OpenStaticClassesTests - OpenSystemMathOnce - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.7" |]
+            [| "--langversion:preview" |]
             (baseModule + """
 module OpenSystemMathOnce =
 
@@ -79,9 +79,9 @@ module OpenSystemMathTwice =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenSystemMathTwice - langversion:v4.7`` () =
+    let ``OpenStaticClassesTests - OpenSystemMathTwice - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.7" |]
+            [| "--langversion:preview" |]
             (baseModule + """
 module OpenSystemMathOnce =
 
@@ -106,9 +106,9 @@ module OpenMyMathOnce =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenMyMathOnce - langversion:v4.7`` () =
+    let ``OpenStaticClassesTests - OpenMyMathOnce - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.7" |]
+            [| "--langversion:preview" |]
             (baseModule + """
 module OpenMyMathOnce = 
 
@@ -132,9 +132,9 @@ module DontOpenAutoMath =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - DontOpenAutoMath - langversion:v4.7`` () =
+    let ``OpenStaticClassesTests - DontOpenAutoMath - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.7" |]
+            [| "--langversion:preview" |]
             (baseModule + """
 module DontOpenAutoMath = 
 
@@ -160,9 +160,9 @@ module OpenAutoMath =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenAutoMath - langversion:v4.7`` () =
+    let ``OpenStaticClassesTests - OpenAutoMath - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.7" |]
+            [| "--langversion:preview" |]
             (baseModule + """
 module OpenAutoMath = 
     open AutoOpenMyMath
