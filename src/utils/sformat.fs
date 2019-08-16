@@ -386,7 +386,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
             // Analyze an object to see if it the representation
             // of an F# value.
-            let GetValueInfoOfObject (bindingFlags:BindingFlags) (obj : obj) =
+            let GetValueInfoOfObject (bindingFlags:BindingFlags) (obj : obj) = 
               match obj with 
               | null -> ObjectValue(obj)
               | _ -> 
@@ -454,7 +454,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let string_of_int (i:int) = i.ToString()
 
         let typeUsesSystemObjectToString (ty:System.Type) =
-            try
+            try 
                 let methInfo = ty.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
                 methInfo.DeclaringType = typeof<System.Object>
             with e -> false
@@ -1127,7 +1127,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                            let basicL = LayoutOps.objL obj  // This buries an obj in the layout, rendered at squash time via a leafFormatter.
                                                             // If the leafFormatter was directly here, then layout leaves could store strings.
                            match obj with 
-                           | _ when opts.ShowProperties ->
+                           | _ when opts.ShowProperties ->                  
                               let props = ty.GetProperties(BindingFlags.GetField ||| BindingFlags.Instance ||| BindingFlags.Public)
                               let fields = ty.GetFields(BindingFlags.Instance ||| BindingFlags.Public) |> Array.map (fun i -> i :> MemberInfo)
                               let propsAndFields = 
@@ -1143,11 +1143,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
                               // massively reign in deep printing of properties 
                               let nDepth = depthLim/10
-#if NETSTANDARD
-                              Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } )
-#else
-                              Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } )
-#endif
+                              Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );
 
                               if propsAndFields.Length = 0 || (nDepth <= 0) then basicL 
                               else basicL --- 

@@ -1127,7 +1127,7 @@ module Patterns =
         let argtyps : Type list = argTypes |> inst tyargs
         let retType : Type = retType |> inst tyargs |> removeVoid
         typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null) |> checkNonNullResult ("propName", String.Format(SR.GetString(SR.QfailedToBindProperty), propName)) // fxcop may not see "propName" as an arg
-
+    
     let bindField (tc, fldName, tyargs) =
         let typ = mkNamedType (tc, tyargs)
         typ.GetField(fldName, staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", String.Format(SR.GetString(SR.QfailedToBindField), fldName)) // fxcop may not see "fldName" as an arg

@@ -253,7 +253,10 @@ module Option =
     let attempt (f: unit -> 'T) = try Some (f()) with _ -> None
         
 module List = 
+<<<<<<< HEAD
 
+=======
+>>>>>>> no FS_RESHAPED_REFLECTION
     let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
     
     let splitAfter n l = 
@@ -1261,7 +1264,6 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
 [<AutoOpen>]
 module Shim =
-
     type IFileSystem = 
 
         /// A shim over File.ReadAllBytes

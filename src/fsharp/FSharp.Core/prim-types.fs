@@ -527,6 +527,10 @@ namespace Microsoft.FSharp.Core
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
 
         open IntrinsicOperators
+<<<<<<< HEAD
+=======
+
+>>>>>>> no FS_RESHAPED_REFLECTION
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK
         module IntrinsicFunctions =        
             
@@ -4483,7 +4487,7 @@ namespace Microsoft.FSharp.Core
         module OperatorIntrinsics =
 
             open System.Collections
-
+            
             let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
             let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
 

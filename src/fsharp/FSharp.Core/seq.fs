@@ -1159,7 +1159,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (source:seq<'T>) =
             checkNonNull "source" source
-
             if typeof<'Key>.IsValueType
                 then mkDelayedSeq (fun () -> countByValueType projection source)
                 else mkDelayedSeq (fun () -> countByRefType   projection source)
