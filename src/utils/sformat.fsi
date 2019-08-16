@@ -337,14 +337,13 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
 #if FSHARP_CORE   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
         val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T * Type -> string
-#else
+#endif
         val asTaggedTextWriter: writer: TextWriter -> TaggedTextWriter
         val any_to_layout   : options:FormatOptions -> value:'T * Type -> Layout
         val squash_layout   : options:FormatOptions -> layout:Layout -> Layout
         val output_layout_tagged   : options:FormatOptions -> writer:TaggedTextWriter -> layout:Layout -> unit
         val output_layout   : options:FormatOptions -> writer:TextWriter -> layout:Layout -> unit
         val layout_as_string: options:FormatOptions -> value:'T * Type -> string
-#endif
 
         /// Convert any value to a layout using the given formatting options.  The
         /// layout can then be processed using formatting display engines such as
