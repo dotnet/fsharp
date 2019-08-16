@@ -5948,26 +5948,26 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets =
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
-/// Check if the tycon can ignore the immutability assumption.
-let canILTyconRefIgnoreImmutabilityAssumption g tcref =
+/// Check if the tycon is immutable but not assumed immutable.
+let isSpecialTyconRefImmutableAndNotAssumedImmutable g tcref =
     tyconRefEq g tcref g.decimal_tcr || tyconRefEq g tcref g.date_tcr
 
 /// .NET struct types are assumed immutable, meaning none of their properties or methods mutate even if in reality they do.
 /// This was from a decision made in F# 2.0, probably due to performance reasons from defensive copying.
 /// Turning this assumption off will be a severe breaking change.
 /// However, the assumption is turned off if we have an 'inref' of the struct type.
-let isILStructTyWithImmutabilityAssumption g ty =
+let isILStructTyAssumedImmutable g ty =
     // Enums are not assumed immutable, they *are* immutable.
     if isILStructTy g ty && not (isEnumTy g ty) then
         let tcref, _ = destAppTy g ty
-        not (canILTyconRefIgnoreImmutabilityAssumption g tcref)
+        not (isSpecialTyconRefImmutableAndNotAssumedImmutable g tcref)
     else
         false
 
 let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
     tcref.CanDeref &&
     not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
-    canILTyconRefIgnoreImmutabilityAssumption g tcref
+    isSpecialTyconRefImmutableAndNotAssumedImmutable g tcref
 
 let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
     tcref.CanDeref &&
@@ -6035,8 +6035,8 @@ let CanTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) mut =
         | NeverMutates
         | AddressOfOp -> true
 
-        // Disable immutability assumption on .NET structs when we have an 'inref'.
-        | PossiblyMutates -> not (isILStructTyWithImmutabilityAssumption g destTy)
+        // Do not assume immutability on 'inref'.
+        | PossiblyMutates -> not (isILStructTyAssumedImmutable g destTy)
     else
         false
 
