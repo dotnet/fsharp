@@ -789,10 +789,10 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
                     match x.TryGetValue k, v with
                     | (true, Item.MethodGroup (_, minfosCurrent, None)), Item.MethodGroup (_, minfosNew, None) ->
                         let minfos =
-                            (minfosNew, minfosCurrent)
+                            (minfosCurrent, minfosNew)
                             ||> List.fold (fun minfos minfo1 ->
-                                // Do not add the same exact same method.
-                                if minfos |> List.exists (fun minfo2 -> typeEquiv g minfo1.ApparentEnclosingAppType minfo2.ApparentEnclosingAppType && MethInfosEquivByNameAndSig Erasure.EraseNone false g amap m minfo1 minfo2) then
+                                // Shadow methods with the same signature.
+                                if minfos |> List.exists (fun minfo2 -> MethInfosEquivByNameAndSig Erasure.EraseAll true g amap m minfo1 minfo2) then
                                     minfos
                                 else
                                     minfo1 :: minfos
