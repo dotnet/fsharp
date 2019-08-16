@@ -171,6 +171,14 @@ stages:
             clean: true
           - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
+          - task: PublishBuildArtifacts@1
+            displayName: (DEBUG) Publish VisualFSharpTemplates obj directory
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\obj\VisualFSharpTemplates'
+              ArtifactName: 'VisualFSharpTemplates_obj'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
