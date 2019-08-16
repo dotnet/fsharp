@@ -173,6 +173,43 @@ type AsyncType() =
         Assert.IsTrue (t.IsCompleted, "Task is not completed")
 
     [<Test>]
+    member this.``StartAsTask cancellation matches Task cancellation`` () =
+        let cts = new CancellationTokenSource()
+        cts.Cancel()
+
+        let tplTask = Task.Run(Func<_>(fun () -> 1), cts.Token)
+        let asyncTask = Async.StartAsTask(async { return 1 }, cancellationToken=cts.Token)
+
+        try
+            this.WaitASec tplTask
+            Assert.Fail("Expected exception from tplTask")
+        with :? AggregateException as a ->
+            match a.InnerException with
+            | :? TaskCanceledException as t -> 
+                Assert.AreEqual(t.CancellationToken, cts.Token)
+                Assert.AreEqual(t.Task, tplTask)
+            | _ -> reraise()
+
+        try
+            this.WaitASec asyncTask
+            Assert.Fail("Expected exception from asyncTask")
+        with :? AggregateException as a ->
+            match a.InnerException with
+            | :? TaskCanceledException as t -> 
+                Assert.AreEqual(t.CancellationToken, cts.Token)
+                Assert.AreEqual(t.Task, asyncTask)
+            | _ -> reraise()
+
+        Assert.IsTrue(tplTask.IsCompleted, "TPL Task is not completed")
+        Assert.IsTrue(asyncTask.IsCompleted, "Async Task is not completed")
+
+        Assert.IsTrue(tplTask.IsCanceled, "TPL Task is not canceled")
+        Assert.IsTrue(asyncTask.IsCanceled, "Async Task is not canceled")
+
+        Assert.AreEqual(tplTask.Exception, null)
+        Assert.AreEqual(asyncTask.Exception, null)
+
+    [<Test>]
     member this.StartTask () =
         let s = "Hello tasks!"
         let a = async { return s }

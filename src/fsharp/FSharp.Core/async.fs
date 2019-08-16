@@ -961,7 +961,10 @@ namespace Microsoft.FSharp.Control
                 cancellationToken
                 (fun r -> tcs.SetResult r |> fake)
                 (fun edi -> tcs.SetException edi.SourceException |> fake)
-                (fun _ -> tcs.SetCanceled() |> fake)
+                // TrySetCanceled is the only way to associate a cancellation token 
+                // with a TaskCancelledException from a TaskCompletionSource. Using TrySetCancelled
+                // is fine as only one async continuation should ever be called.
+                (fun _ -> tcs.TrySetCanceled(cancellationToken) |> ignore |> fake)
                 computation
             |> unfake
             task
