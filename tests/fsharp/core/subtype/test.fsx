@@ -1725,6 +1725,7 @@ module InliningOnSubTypes1 =
         (x1, x2)
     do check "clkewlijwlkw" (f()) (13, 17) 
 
+
 module StructUnionSingleCase = 
     [<Struct>]
     type S = S
