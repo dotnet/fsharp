@@ -26,6 +26,7 @@ module internal ReflectionUtils =
 
 [<AutoOpen>]
 module internal Impl =
+
     let getBindingFlags allowAccess = ReflectionUtils.toBindingFlags (defaultArg allowAccess false)
 
     let inline checkNonNull argName (v: 'T) =
@@ -61,6 +62,7 @@ module internal Impl =
         match getInstancePropertyInfo(typ, propName, bindingFlags) with
         | null -> None
         | prop -> Some(fun (obj: obj) -> prop.GetValue (obj, instancePropertyFlags ||| bindingFlags, null, null, null))
+
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
