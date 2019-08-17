@@ -2309,28 +2309,16 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type U = A of int | B of string | C of System.DateTime 
-<<<<<<< HEAD
-=======
-
->>>>>>> no FS_RESHAPED_REFLECTION
       for m in typeof<U>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
           check "celnwer33" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
       // This type has some implicit codegen
       exception X of string * int
-<<<<<<< HEAD
-=======
-
->>>>>>> no FS_RESHAPED_REFLECTION
       for m in typeof<X>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
           check "celnwer34" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       [<Struct>] type SR = { x:int; y:string; z:System.DateTime }
-<<<<<<< HEAD
-=======
-
->>>>>>> no FS_RESHAPED_REFLECTION
       for m in typeof<SR>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
           check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
