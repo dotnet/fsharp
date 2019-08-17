@@ -154,7 +154,7 @@ be another source of calls to `visitExpression`.
 ### Walking over declarations
 
 As mentioned earlier, the AST of a file contains a number of module or namespace declarations
-(top-level node) that contain declarations inside a module (let bindings or types) or inisde
+(top-level node) that contain declarations inside a module (let bindings or types) or inside
 a namespace (just types). The following functions walks over declarations - we ignore types,
 nested modules and all other elements and look only at top-level `let` bindings (values and 
 functions):
