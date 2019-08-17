@@ -42,9 +42,6 @@
     <Compile Include="..\Logger.fs">
       <Link>Logger.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Reflection\reshapedmsbuild.fs</Link>
-    </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
