@@ -423,9 +423,9 @@ type EntityFlags(flags: int64) =
     /// These two bits represents the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike                      = (flags       &&&     0b000000011000000L) 
                                                                 |> function 
-                                                                      | 0b000000011000000L -> Some true
-                                                                      | 0b000000010000000L -> Some false
-                                                                      | _                  -> None
+                                                                      | 0b000000011000000L -> ValueSome true
+                                                                      | 0b000000010000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
 
     /// Adjust the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.WithIsByRefLike flag = 
@@ -436,14 +436,14 @@ type EntityFlags(flags: int64) =
                       | false ->                                        0b000000010000000L) 
             EntityFlags flags
 
-    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly                       = (flags       &&&     0b000001100000000L) 
                                                                 |> function 
-                                                                      | 0b000001100000000L -> Some true
-                                                                      | 0b000001000000000L -> Some false
-                                                                      | _                  -> None
+                                                                      | 0b000001100000000L -> ValueSome true
+                                                                      | 0b000001000000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
 
-    /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.WithIsReadOnly flag = 
             let flags = 
                      (flags       &&&                                ~~~0b000001100000000L) |||
@@ -452,8 +452,24 @@ type EntityFlags(flags: int64) =
                       | false ->                                        0b000001000000000L) 
             EntityFlags flags
 
+    /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly                = (flags       &&&     0b000110000000000L) 
+                                                                |> function 
+                                                                      | 0b000110000000000L -> ValueSome true
+                                                                      | 0b000100000000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
+
+    /// Adjust the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.WithIsAssumedReadOnly flag = 
+            let flags = 
+                     (flags       &&&                                ~~~0b000110000000000L) |||
+                     (match flag with
+                      | true  ->                                        0b000110000000000L
+                      | false ->                                        0b000100000000000L) 
+            EntityFlags flags
+
     /// Get the flags as included in the F# binary metadata
-    member x.PickledBits =                         (flags       &&&  ~~~0b000001111000100L)
+    member x.PickledBits =                         (flags       &&&  ~~~0b000111111000100L)
 
 
 #if DEBUG
@@ -1065,11 +1081,17 @@ and /// Represents a type definition, exception definition, module definition or
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.SetIsByRefLike b = x.entity_flags <- x.entity_flags.WithIsByRefLike b 
 
-    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly = x.entity_flags.TryIsReadOnly
 
-    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.SetIsReadOnly b = x.entity_flags <- x.entity_flags.WithIsReadOnly b 
+
+    /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly = x.entity_flags.TryIsAssumedReadOnly
+
+    /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.SetIsAssumedReadOnly b = x.entity_flags <- x.entity_flags.WithIsAssumedReadOnly b 
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true | _ -> false
@@ -3551,11 +3573,17 @@ and
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.SetIsByRefLike b = x.Deref.SetIsByRefLike b
 
-    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    /// The on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly = x.Deref.TryIsReadOnly
 
-    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.SetIsReadOnly b = x.Deref.SetIsReadOnly b
+
+    /// The on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly = x.Deref.TryIsAssumedReadOnly
+
+    /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.SetIsAssumedReadOnly b = x.Deref.SetIsAssumedReadOnly b
 
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
     /// which in F# is called a 'unknown representation' type).

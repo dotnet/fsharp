@@ -3009,8 +3009,8 @@ let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) =
 let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) = 
     tcref.CanDeref &&
     match tcref.TryIsByRefLike with 
-    | Some res -> res
-    | None -> 
+    | ValueSome res -> res
+    | _ -> 
        let res = 
            isByrefTyconRef g tcref ||
            (isStructTyconRef tcref && TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref)
@@ -5948,30 +5948,32 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets =
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range
 
-/// .NET struct types are assumed immutable, meaning none of their properties or methods mutate even if in reality they do.
-/// This was from a decision made in F# 2.0, probably due to performance reasons from defensive copying.
-/// Turning this assumption off will be a severe breaking change.
-/// However, the assumption is turned off if we have an 'inref' of the struct type.
-let isILStructTyAssumedImmutable g ty =
-    // Enums are not assumed immutable, they *are* immutable.
-    isILStructTy g ty && not (isEnumTy g ty)
-
 let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
     tcref.CanDeref &&
     not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
     tyconRefEq g tcref g.decimal_tcr || 
     tyconRefEq g tcref g.date_tcr
 
-let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
+let isTyconRefReadOnly g m (tcref: TyconRef) =
     tcref.CanDeref &&
     match tcref.TryIsReadOnly with 
-    | Some res -> res
-    | None -> 
-        let isImmutable = isRecdOrStructTyconRefAssumedImmutable g tcref
-        let hasAttrib = TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
-        let res = isImmutable || hasAttrib
+    | ValueSome res -> res
+    | _ ->
+        let res = TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
         tcref.SetIsReadOnly res
         res
+
+let isTyconRefAssumedReadOnly g (tcref: TyconRef) =
+    tcref.CanDeref &&
+    match tcref.TryIsAssumedReadOnly with 
+    | ValueSome res -> res
+    | _ -> 
+        let res = isRecdOrStructTyconRefAssumedImmutable g tcref
+        tcref.SetIsAssumedReadOnly res
+        res
+
+let isRecdOrStructTyconRefReadOnly g m tcref =
+    isTyconRefReadOnly g m tcref || isTyconRefAssumedReadOnly g tcref
 
 let isRecdOrStructTyReadOnly (g: TcGlobals) m ty =
     match tryDestAppTy g ty with 
@@ -6027,9 +6029,11 @@ let CanTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) mut =
         | DefinitelyMutates -> false
         | NeverMutates
         | AddressOfOp -> true
-
-        // Do not assume immutability on 'inref'.
-        | PossiblyMutates -> not (isILStructTyAssumedImmutable g destTy)
+        | PossiblyMutates -> 
+            // Do not assume immutability for 'inref'.
+            match tryDestAppTy g destTy with
+            | ValueSome tcref -> not (isTyconRefAssumedReadOnly g tcref)
+            | _ -> false
     else
         false
 

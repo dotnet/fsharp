@@ -20,6 +20,7 @@ let f2 () =
 
     [<Test>]
     let ``Defensive copy on .NET struct for inref`` () =
+        // Note: This particular test could fail in the future when 'int' is considered read-only. When that happens, consider a custom C# struct type as part of the test.
         CompilerAssert.TypeCheckWithErrors
             """
 let f (x: inref<int>) = x.GetHashCode()
