@@ -1679,6 +1679,11 @@ let isILReferenceTy g ty =
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> not td.IsStructOrEnum
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isArrayTy g ty
 
+let isILStructTy g ty =
+    match tryDestAppTy g ty with
+    | ValueSome tcref -> tcref.Deref.IsILStructOrEnumTycon
+    | _ -> false
+
 let isILInterfaceTycon (tycon: Tycon) = 
     match metadataOfTycon tycon with 
 #if !NO_EXTENSIONTYPING
@@ -6025,9 +6030,12 @@ let CanTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) mut =
         | NeverMutates
         | AddressOfOp -> true
         | PossiblyMutates -> 
-            // Do not assume immutability for 'inref'.
+            // Do not assume immutability for IL types on 'inref'.
             match tryDestAppTy g destTy with
-            | ValueSome tcref -> not (isTyconRefAssumedReadOnly g tcref)
+            | ValueSome tcref -> 
+                not (isILStructTy g destTy 
+                     && isTyconRefAssumedReadOnly g tcref 
+                     && not (isTyconRefReadOnly g vref.Range tcref))
             | _ -> false
     else
         false

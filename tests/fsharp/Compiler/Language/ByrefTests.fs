@@ -12,34 +12,50 @@ module ByrefTests =
     let ``No defensive copy on .NET struct`` () =
         CompilerAssert.Pass
             """
-let f (x: int) = x.GetHashCode()
+open System
+let f (x: DateTime) = x.ToLocalTime()
 let f2 () =
-    let x = 1
-    x.GetHashCode()
+    let x = DateTime.Now
+    x.ToLocalTime()
             """
 
+#if NETCOREAPP
+    // NETCORE makes DateTime a readonly struct; therefore, it should not error.
+    [<Test>]
+    let ``No defensive copy on .NET struct - netcore`` () =
+        CompilerAssert.Pass
+            """
+open System
+let f (x: inref<DateTime>) = x.ToLocalTime()
+let f2 () =
+    let x = DateTime.Now
+    let y = &x
+    y.ToLocalTime()
+            """
+#else
     [<Test>]
     let ``Defensive copy on .NET struct for inref`` () =
-        // Note: This particular test could fail in the future when 'int' is considered read-only. When that happens, consider a custom C# struct type as part of the test.
         CompilerAssert.TypeCheckWithErrors
             """
-let f (x: inref<int>) = x.GetHashCode()
+open System
+let f (x: inref<DateTime>) = x.ToLocalTime()
 let f2 () =
-    let x = 1
+    let x = DateTime.Now
     let y = &x
-    y.GetHashCode()
+    y.ToLocalTime()
             """
             [|
                 (
                     FSharpErrorSeverity.Warning,
                     52,
-                    (2, 25, 2, 40),
+                    (3, 30, 3, 45),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (
                     FSharpErrorSeverity.Warning,
                     52,
-                    (6, 5, 6, 20),
+                    (7, 5, 7, 20),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
             |]
+#endif
