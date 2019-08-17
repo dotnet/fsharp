@@ -402,7 +402,7 @@ type AsyncType() =
         Async.RunSynchronously(a, 1000) |> Assert.IsTrue        
 
     [<Test>]
-    member this.AwaitTaskCancellation () =
+    member this.AwaitTaskTaskCancellation () =
         let test() = async {
             let tcs = new System.Threading.Tasks.TaskCompletionSource<unit>()
             tcs.SetCanceled()
@@ -412,8 +412,22 @@ type AsyncType() =
             with :? System.OperationCanceledException -> return true
         }
 
-        Async.RunSynchronously(test()) |> Assert.IsTrue   
-        
+        Async.RunSynchronously(test()) |> Assert.IsTrue
+
+    [<Test>]
+    member this.AwaitTaskAsyncCancellation () =
+        let tcs = new System.Threading.Tasks.TaskCompletionSource<unit>()
+        let test = Async.AwaitTask tcs.Task
+
+        use cts = new CancellationTokenSource()
+        cts.CancelAfter(250)
+        try
+            Async.RunSynchronously(test, cancellationToken=cts.Token) |> ignore
+            Assert.Fail("Expected async to throw")
+        with
+        | :? TaskCanceledException -> Assert.Fail("Did not expect TaskCanceledException")
+        | :? System.OperationCanceledException -> ()
+
     [<Test>]
     member this.AwaitTaskCancellationUntyped () =
         let test() = async {
