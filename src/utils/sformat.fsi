@@ -336,6 +336,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val output_any: writer:TextWriter -> value:'T * Type -> unit
 
 #if FSHARP_CORE   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
+
         val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T * Type -> string
 #else
         val asTaggedTextWriter: writer: TextWriter -> TaggedTextWriter
@@ -345,11 +346,13 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val output_layout   : options:FormatOptions -> writer:TextWriter -> layout:Layout -> unit
         val layout_as_string: options:FormatOptions -> value:'T * Type -> string
 #endif
+
         /// Convert any value to a layout using the given formatting options.  The
         /// layout can then be processed using formatting display engines such as
         /// those in the LayoutOps module.  any_to_string and output_any are
         /// built using any_to_layout with default format options.
         val layout_to_string: options:FormatOptions -> layout:Layout -> string
+
 
 #if COMPILER
         val fsi_any_to_layout : options:FormatOptions -> value:'T * Type -> Layout
