@@ -4483,7 +4483,7 @@ namespace Microsoft.FSharp.Core
         module OperatorIntrinsics =
 
             open System.Collections
-            
+
             let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
             let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
 
