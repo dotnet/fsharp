@@ -34,3 +34,6 @@ type LanguageVersion =
 
     /// Get the list of valid options
     member ValidOptions: string array
+
+    /// Get the specified LanguageVersion
+    member SpecifiedVerson: decimal

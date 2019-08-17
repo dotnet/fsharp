@@ -93,3 +93,6 @@ type LanguageVersion (specifiedVersion) =
             let label = if v = defaultVersion then " (Default)" else ""
             yield sprintf "%M%s" v label
             |]
+
+    /// Get the specified LanguageVersion
+    member __.SpecifiedVerson = specified

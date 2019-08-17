@@ -1178,8 +1178,8 @@ module ToStringOnRecordTest = begin
 
   let a1 = {A = "201"; B = 7}
   let c1 = {C = "20"; D = 17}
-  let expected1 = "{A = \"201\";\n B = 7;}"
-  let expected2 = "{C = \"20\";\n D = 17;}"
+  let expected1 = "{ A = \"201\"\n  B = 7 }"
+  let expected2 = "{ C = \"20\"\n  D = 17 }"
 
   do test "record-tostring-def" (a1.ToString() = expected1)
   do test "record-sprintfO-def" ((sprintf "%O" a1) = expected1)
