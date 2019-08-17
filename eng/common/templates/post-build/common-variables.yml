@@ -32,7 +32,7 @@ variables:
     value: $(MaestroAccessToken)
   - name: MaestroApiVersion
     value: "2019-01-16"
-    
+
   - name: SourceLinkCLIVersion
     value: 3.0.0
   - name: SymbolToolVersion
