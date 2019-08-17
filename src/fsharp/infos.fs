@@ -835,7 +835,15 @@ type ILMethInfo =
     member x.IsDllImport (g: TcGlobals) =
         match g.attrib_DllImportAttribute with
         | None -> false
-        | Some (AttribInfo(tref, _)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref |> Option.isSome
+        | Some attr ->
+            x.RawMetadata.CustomAttrs
+            |> TryFindILAttribute attr
+
+    /// Indicates if the method is marked with the [<IsReadOnly>] attribute. This is done by looking at the IL custom attributes on
+    /// the method.
+    member x.IsReadOnly (g: TcGlobals) =
+        x.RawMetadata.CustomAttrs
+        |> TryFindILAttribute g.attrib_IsReadOnlyAttribute
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
@@ -1238,8 +1246,15 @@ type MethInfo =
     member x.IsStruct =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
-    /// Indicates if this method is an IL method.
-    member x.IsILMethod = match x with ILMeth _ -> true | _ -> false
+    /// Indicates if this method is read-only; usually by the [<IsReadOnly>] attribute.
+    /// Method does not mutate the receiver's contents.
+    /// Receiver must be a struct type.
+    member x.IsReadOnly =
+        // Perf Review: Is there a way we can cache this result?
+        x.IsStruct &&
+        match x with
+        | ILMeth (g, ilMethInfo, _) -> ilMethInfo.IsReadOnly g
+        | _ -> false
 
     /// Build IL method infos.
     static member CreateILMeth (amap: Import.ImportMap, m, ty: TType, md: ILMethodDef) =
