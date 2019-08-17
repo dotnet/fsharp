@@ -67,7 +67,6 @@ module SurfaceArea =
         // get current FSharp.Core
         let asm = 
             typeof<int list>.Assembly
-        
         // public types only
         let types =
             asm.GetExportedTypes()
