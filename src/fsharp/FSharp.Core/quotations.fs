@@ -206,7 +206,7 @@ and [<CompiledName("FSharpExpr")>]
         x.Tree.GetHashCode()
 
     override x.ToString() = x.ToString false
-
+    
     member x.ToString full =
         Microsoft.FSharp.Text.StructuredPrintfImpl.Display.layout_to_string Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions.Default (x.GetLayout full)
 
