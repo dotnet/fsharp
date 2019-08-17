@@ -797,18 +797,27 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
                       yield KeyValuePair(fieldName, Item.ILField(fieldInfo))
             ]
 
-        let items =
-            // This is to handle the current behavior with qualified extension members:
-            //     Extension member properties will hide all extension methods that share the same name.
-            [|
-                let propItems = getPropItems ()
-                let methItems = getMethItems ()
+        let getEventItems () =
+            [   let events =
+                  infoReader.GetEventInfosOfType(None, ad, m, ty)
+                  |> List.groupBy (fun e -> e.EventName)
 
-                let itemGroups =
-                    propItems @ methItems
+                for (eventName, eventInfos) in events do
+                  let eventInfos = eventInfos |> List.filter (fun e -> e.IsStatic)
+                  for eventInfo in eventInfos do
+                      yield KeyValuePair(eventName, Item.Event(eventInfo))
+            ]
+
+        let items =
+            [
+                let propAndMethGroups =
+                    getPropItems () @ getMethItems ()
                     |> List.groupBy (fun pair -> pair.Key)
 
-                for (_, items) in itemGroups do
+                for (_, items) in propAndMethGroups do
+                    // This is to handle the current behavior with qualified extension members:
+                    //     Extension properties will shadow all extension methods that share the same name no matter the order in which the extensions are opened from modules.
+                    // TODO: What happens with CSharp-style extension methods?
                     let sortedItems =
                         items 
                         |> List.sortBy (fun pair -> 
@@ -820,31 +829,36 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
                     | item :: _ -> yield item
                     | _ -> ()
                     
-                
-            |]
+                yield! getFieldItems ()
+                yield! getEventItems ()
+            ]
 
         { nenv with 
             eUnqualifiedItems = 
                 (nenv.eUnqualifiedItems, items) 
-                ||> Array.fold (fun x (KeyValue(k, v)) -> 
+                ||> List.fold (fun x (KeyValue(k, v)) -> 
                     match x.TryGetValue k with
                     | true, existingItem ->
                         match existingItem, v with
                         
-                        // Combine methods groups.
+                        // Combine methods groups. This allows overloading on methods from different classes. Mimics C# behavior.
                         | Item.MethodGroup (_, minfosCurrent, None), Item.MethodGroup (_, minfosNew, None) ->
                             let minfos =
                                 (minfosNew, minfosCurrent)
                                 ||> List.fold (fun minfos minfo1 ->
-                                    // Shadow methods with the same signature.
-                                    if minfos |> List.exists (fun minfo2 -> MethInfosEquivByNameAndSig Erasure.EraseAll true g amap m minfo1 minfo2) then
+                                    // Shadow methods with the same signature. 
+                                    // F# specific behavior; the order of opening is significant and ambiguities are shadowed.
+                                    // In C#, an error would occur and asks the developer to resolve the ambiguity.
+                                    // We allow UoM (units of measure) to be significant in overloading here.
+                                    if minfosCurrent |> List.exists (fun minfo2 -> MethInfosEquivByNameAndSig Erasure.EraseNone true g amap m minfo1 minfo2) then
                                         minfos
                                     else
                                         minfo1 :: minfos
                                 )
                             x.Add(k, Item.MethodGroup (k, minfos, None))
 
-                        // Methods will hide properties, events, and fields with the same name.
+                        // Methods will always shadow properties, events, and fields with the same name; order of opening does not matter in this case.
+                        // This is to mimic the C# behavior of opening multiple static classes.
                         | Item.MethodGroup _, Item.Property _
                         | Item.MethodGroup _, Item.Event _
                         | Item.MethodGroup _, Item.ILField _ -> x
