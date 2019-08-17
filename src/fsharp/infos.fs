@@ -1254,6 +1254,7 @@ type MethInfo =
         x.IsStruct &&
         match x with
         | ILMeth (g, ilMethInfo, _) -> ilMethInfo.IsReadOnly g
+        | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
     /// Build IL method infos.
