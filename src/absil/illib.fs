@@ -252,7 +252,7 @@ module Option =
 
     let attempt (f: unit -> 'T) = try Some (f()) with _ -> None
         
-module List =
+module List = 
 
     let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
     
@@ -1260,7 +1260,7 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
     static member Empty : LayeredMultiMap<'Key, 'Value> = LayeredMultiMap LayeredMap.Empty
 
 [<AutoOpen>]
-module Shim 
+module Shim =
 
     type IFileSystem = 
 
