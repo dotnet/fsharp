@@ -1032,7 +1032,7 @@ type FSharpTypeTests() =
 
     // Regression for 5588, Reflection: unit is still treated as a record type, but only if you pass BindingFlags.NonPublic
     [<Test>]
-    member __.``IsRecord.Regression5588``() =    
+    member __.``IsRecord.Regression5588``() =
         // negative
         Assert.IsFalse(FSharpType.IsRecord(typeof<unit>))
         Assert.IsFalse( FSharpType.IsRecord(typeof<unit>, System.Reflection.BindingFlags.NonPublic) )
