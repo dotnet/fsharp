@@ -1679,11 +1679,6 @@ let isILReferenceTy g ty =
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> not td.IsStructOrEnum
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isArrayTy g ty
 
-let isILStructTy g ty =
-    match tryDestAppTy g ty with
-    | ValueSome tcref -> tcref.Deref.IsILStructOrEnumTycon
-    | _ -> false
-
 let isILInterfaceTycon (tycon: Tycon) = 
     match metadataOfTycon tycon with 
 #if !NO_EXTENSIONTYPING
