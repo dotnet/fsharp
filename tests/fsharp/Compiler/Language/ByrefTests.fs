@@ -13,10 +13,30 @@ module ByrefTests =
         CompilerAssert.Pass
             """
 open System
+open System.Runtime.CompilerServices
+
 let f (x: DateTime) = x.ToLocalTime()
 let f2 () =
     let x = DateTime.Now
     x.ToLocalTime()
+
+[<Extension; AbstractClass; Sealed>]
+type Extensions =
+
+    [<Extension>]
+    static member Test(x: inref<DateTime>) = &x
+
+    [<Extension>]
+    static member Test2(x: byref<DateTime>) = &x
+
+let test (x: inref<DateTime>) =
+    x.Test()
+
+let test2 (x: byref<DateTime>) =
+    x.Test2()
+
+let test3 (x: byref<DateTime>) =
+    x.Test()
             """
 
 #if NETCOREAPP
