@@ -8991,3 +8991,7 @@ let isStaticClass (g:TcGlobals) (x: EntityRef) =
 #endif
      || (not x.IsILTycon && not x.IsProvided && HasFSharpAttribute g g.attrib_AbstractClassAttribute x.Attribs)) &&
     not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute x.Attribs)
+
+let mkDereferencedByrefExpr mAddrGet expr mExpr exprTy =
+    let v, _ = mkCompGenLocal mAddrGet "byrefReturn" exprTy
+    mkCompGenLet mExpr v expr (mkAddrGet mAddrGet (mkLocalValRef v))

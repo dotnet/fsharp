@@ -2305,3 +2305,5 @@ val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
 val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool
+
+val mkDereferencedByrefExpr: mAddrGet: range -> expr: Expr -> mExpr: range -> exprTy: TType -> Expr
