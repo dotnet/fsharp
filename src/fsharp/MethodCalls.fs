@@ -930,11 +930,6 @@ let ComputeConstrainedCallInfo g amap m (objArgs, minfo: MethInfo) =
 let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
     let ccallInfo = ComputeConstrainedCallInfo g amap m (objArgs, minfo)
 
-    let inline isObjArgReadOnlyExtensionMember amap m (minfo: MethInfo) =
-        minfo.IsCSharpStyleExtensionMember && 
-        minfo.TryObjArgByrefType(amap, m, minfo.FormalMethodInst)
-        |> Option.exists (isInByrefTy g)
-
     let wrap, objArgs = 
 
         match objArgs with
@@ -951,8 +946,8 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
                 | AddressOfOp -> isMutable
                 | PossiblyMutates ->
                     // Check to see if the method is read-only. Perf optimization.
-                    // If there is an extension member whose obj arg (receiver) is an inref, we must return NeverMutates.
-                    if mustTakeAddress && (minfo.IsReadOnly || isObjArgReadOnlyExtensionMember amap m minfo) then
+                    // If there is an extension member whose first arg is an inref, we must return NeverMutates.
+                    if mustTakeAddress && (minfo.IsReadOnly || minfo.IsReadOnlyExtensionMember (amap, m)) then
                         NeverMutates
                     else
                         isMutable

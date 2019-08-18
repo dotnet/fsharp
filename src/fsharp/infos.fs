@@ -1247,15 +1247,23 @@ type MethInfo =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
     /// Indicates if this method is read-only; usually by the [<IsReadOnly>] attribute.
-    /// Method does not mutate the receiver's contents.
+    /// Must be an instance method.
     /// Receiver must be a struct type.
     member x.IsReadOnly =
         // Perf Review: Is there a way we can cache this result?
+        x.IsInstance &&
         x.IsStruct &&
         match x with
         | ILMeth (g, ilMethInfo, _) -> ilMethInfo.IsReadOnly g
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
+
+    /// Indicates if this method is an extension member that is read-only.
+    /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
+    member x.IsReadOnlyExtensionMember (amap: Import.ImportMap, m) =
+        x.IsExtensionMember && 
+        x.TryObjArgByrefType(amap, m, x.FormalMethodInst)
+        |> Option.exists (isInByrefTy amap.g)
 
     /// Build IL method infos.
     static member CreateILMeth (amap: Import.ImportMap, m, ty: TType, md: ILMethodDef) =
