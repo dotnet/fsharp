@@ -6023,22 +6023,19 @@ let MustTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) =
 
 let CanTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) mut = 
     isInByrefTy g vref.Type && 
-    CanTakeAddressOf g vref.Range (destByrefTy g vref.Type) mut
-
-let NoDefensiveCopy g m ty mut =
-    isInByrefTy g ty && 
+    let destTy = destByrefTy g vref.Type
+    CanTakeAddressOf g vref.Range destTy mut &&
     match mut with
     | DefinitelyMutates -> false
     | NeverMutates
     | AddressOfOp -> true
     | PossiblyMutates -> 
-        let destTy = destByrefTy g ty
         // Do not assume immutability for IL types on 'inref'.
         match tryDestAppTy g destTy with
         | ValueSome tcref -> 
             not (isILStructTy g destTy &&
                  isTyconRefAssumedReadOnly g tcref &&
-                 not (isTyconRefReadOnly g m tcref))
+                 not (isTyconRefReadOnly g vref.Range tcref))
         | _ -> false
 
 let MustTakeAddressOfRecdField (rfref: RecdField) = 
@@ -6068,7 +6065,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
     if mustTakeAddress then 
         match expr with 
         // LVALUE of "*x" where "x" is byref is just the byref itself
-        | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) when MustTakeAddressOfByrefGet g vref || (CanTakeAddressOfByrefGet g vref mut && NoDefensiveCopy g vref.Range vref.Type mut) -> 
+        | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) when MustTakeAddressOfByrefGet g vref || CanTakeAddressOfByrefGet g vref mut -> 
             let readonly = not (MustTakeAddressOfByrefGet g vref)
             let writeonly = isOutByrefTy g vref.Type
             None, exprForValRef m vref, readonly, writeonly

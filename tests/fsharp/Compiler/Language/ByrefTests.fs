@@ -31,6 +31,9 @@ let f2 () =
     let x = DateTime.Now
     let y = &x
     y.ToLocalTime()
+let f3 (x: inref<DateTime>) = &x
+let f4 (x: inref<DateTime>) =
+    (f3 &x).ToLocalTime()
             """
 #else
     [<Test>]
@@ -43,6 +46,9 @@ let f2 () =
     let x = DateTime.Now
     let y = &x
     y.ToLocalTime()
+let f3 (x: inref<DateTime>) = &x
+let f4 (x: inref<DateTime>) =
+    (f3 &x).ToLocalTime()
             """
             [|
                 (
@@ -55,6 +61,12 @@ let f2 () =
                     FSharpErrorSeverity.Warning,
                     52,
                     (7, 5, 7, 20),
+                    "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
+                )
+                (
+                    FSharpErrorSeverity.Warning,
+                    52,
+                    (10, 5, 10, 26),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
             |]
