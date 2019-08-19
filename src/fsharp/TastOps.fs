@@ -6051,9 +6051,8 @@ let CanTakeAddressOfUnionFieldRef (g: TcGlobals) m (uref: UnionCaseRef) cidx tin
 
 let mkDerefAddrExpr mAddrGet expr mExpr exprTy =
     let rec remap mAddrGet expr mExpr exprTy contf =
-        match expr with
-        // This helps chained method calls by preventing defensive copies.
         // To do this properly with the byref scoping rules, we need to dereference directly on the call, rather than the whole expression.
+        match expr with
         | Expr.Let (bind, bodyExpr, m, freeVars) ->
             remap mAddrGet bodyExpr mExpr exprTy (contf << fun bodyExpr' -> Expr.Let (bind, bodyExpr', m, freeVars))
         | _ ->
@@ -6070,6 +6069,7 @@ let tryEraseDerefAddr g expr mut =
                   (MustTakeAddressOfByrefGet g vref2 || CanTakeAddressOfByrefGet g vref2 mut) -> 
             ValueSome (contf e)
 
+        // This helps chained method calls by preventing defensive copies.
         | Expr.Let (bind, bodyExpr, m, freeVars) ->
             remap g bodyExpr mut (contf << fun bodyExpr' -> Expr.Let (bind, bodyExpr', m, freeVars))
 
