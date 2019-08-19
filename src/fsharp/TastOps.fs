@@ -6053,7 +6053,9 @@ let mkDerefAddrExpr mAddrGet expr mExpr exprTy =
     let rec remap mAddrGet expr mExpr exprTy contf =
         // To do this properly with the byref scoping rules, we need to dereference directly on the call, rather than the whole expression.
         match expr with
-        | Expr.Let (bind, bodyExpr, m, freeVars) ->
+        | Expr.Let (bind, (Expr.App (Expr.Val _, _, _, _, _) as bodyExpr), m, freeVars) ->         
+            remap mAddrGet bodyExpr mExpr exprTy (contf << fun bodyExpr' -> Expr.Let (bind, bodyExpr', m, freeVars))
+        | Expr.Let (bind, (Expr.Op (TOp.ILCall _, _, _, _) as bodyExpr), m, freeVars) ->         
             remap mAddrGet bodyExpr mExpr exprTy (contf << fun bodyExpr' -> Expr.Let (bind, bodyExpr', m, freeVars))
         | _ ->
             let v, _ = mkCompGenLocal mAddrGet "byrefReturn" exprTy
@@ -6069,8 +6071,7 @@ let tryEraseDerefAddr g expr mut =
                   (MustTakeAddressOfByrefGet g vref2 || CanTakeAddressOfByrefGet g vref2 mut) -> 
             ValueSome (contf e)
 
-        // This helps chained method calls by preventing defensive copies.
-        | Expr.Let (bind, bodyExpr, m, freeVars) ->
+        | Expr.Let (bind, (Expr.Let (_, Expr.Op (TOp.LValueOp (LByrefGet, _), _, _, _), _, _) as bodyExpr), m, freeVars) ->
             remap g bodyExpr mut (contf << fun bodyExpr' -> Expr.Let (bind, bodyExpr', m, freeVars))
 
         | _ -> 
