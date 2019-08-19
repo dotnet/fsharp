@@ -3394,7 +3394,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         let currentExpr, enumElemTy =
             // Implicitly dereference byref for expr 'for x in ...'
             if isByrefTy cenv.g enumElemTy then
-                let expr = mkDereferencedByrefExpr m currentExpr currentExpr.Range enumElemTy
+                let expr = mkDerefAddrExpr m currentExpr currentExpr.Range enumElemTy
                 expr, destByrefTy cenv.g enumElemTy
             else
                 currentExpr, enumElemTy
@@ -4139,7 +4139,7 @@ let buildApp cenv expr resultTy arg m =
     | _ when isByrefTy g resultTy ->
         // Handle byref returns, byref-typed returns get implicitly dereferenced 
         let expr = expr.SupplyArgument (arg, m)
-        let expr = mkDereferencedByrefExpr m expr.Expr m resultTy
+        let expr = mkDerefAddrExpr m expr.Expr m resultTy
         let resultTy = destByrefTy g resultTy
         MakeApplicableExprNoFlex cenv expr, resultTy
 
@@ -10212,7 +10212,7 @@ and TcMethodApplication
         // byref-typed returns get implicitly dereferenced 
         let vty = tyOfExpr cenv.g callExpr0
         if isByrefTy cenv.g vty then 
-            mkDereferencedByrefExpr mMethExpr callExpr0 mMethExpr vty
+            mkDerefAddrExpr mMethExpr callExpr0 mMethExpr vty
         else 
             callExpr0
 
