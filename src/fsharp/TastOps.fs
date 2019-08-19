@@ -6050,49 +6050,14 @@ let CanTakeAddressOfUnionFieldRef (g: TcGlobals) m (uref: UnionCaseRef) cidx tin
     CanTakeAddressOf g m false (actualTyOfUnionFieldRef uref cidx tinst) mut
 
 let mkDerefAddrExpr mAddrGet expr mExpr exprTy =
-    let rec remap mAddrGet expr mExpr exprTy contf =
-        // To do this properly with the byref scoping rules, we need to dereference directly on the call, rather than the whole expression.
-        match expr with
-        | Expr.Let (bind, (Expr.App (Expr.Val _, _, _, _, _) as bodyExpr), m, freeVars) ->         
-            remap mAddrGet bodyExpr mExpr exprTy (contf << fun bodyExpr' -> Expr.Let (bind, bodyExpr', m, freeVars))
-        | Expr.Let (bind, (Expr.Op (TOp.ILCall _, _, _, _) as bodyExpr), m, freeVars) ->         
-            remap mAddrGet bodyExpr mExpr exprTy (contf << fun bodyExpr' -> Expr.Let (bind, bodyExpr', m, freeVars))
-        | _ ->
-            let v, _ = mkCompGenLocal mAddrGet "byrefReturn" exprTy
-            contf (mkCompGenLet mExpr v expr (mkAddrGet mAddrGet (mkLocalValRef v)))
-    remap mAddrGet expr mExpr exprTy id
-
-let tryEraseDerefAddr g expr mut =
-    let rec remap g expr mut contf =
-        match expr with
-        // LVALUE: "&meth(args)" where meth has a byref or inref return. Includes "&span.[idx]".
-        | Expr.Let (TBind(vref, e, _), Expr.Op (TOp.LValueOp (LByrefGet, vref2), _, _, _), _, _)  
-             when (valRefEq g (mkLocalValRef vref) vref2) && 
-                  (MustTakeAddressOfByrefGet g vref2 || CanTakeAddressOfByrefGet g vref2 mut) -> 
-            ValueSome (contf e)
-
-        | Expr.Let (bind, (Expr.Let (_, Expr.Op (TOp.LValueOp (LByrefGet, _), _, _, _), _, _) as bodyExpr), m, freeVars) ->
-            remap g bodyExpr mut (contf << fun bodyExpr' -> Expr.Let (bind, bodyExpr', m, freeVars))
-
-        | _ -> 
-            ValueNone
-    remap g expr mut id
+    let v, _ = mkCompGenLocal mAddrGet "byrefReturn" exprTy
+    mkCompGenLet mExpr v expr (mkAddrGet mAddrGet (mkLocalValRef v))
 
 /// Make the address-of expression and return a wrapper that adds any allocated locals at an appropriate scope.
 /// Also return a flag that indicates if the resulting pointer is a not a pointer where writing is allowed and will 
 /// have intended effect (i.e. is a readonly pointer and/or a defensive copy).
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut expr addrExprVal m =
     if mustTakeAddress then 
-        // Since we are trying to take an address of an expression,
-        //     see if there is a dereferenced expression already. If so, just erase it and return.
-        match tryEraseDerefAddr g expr mut with
-        | ValueSome e ->
-            let ty = tyOfExpr g e
-            let readonly = isInByrefTy g ty
-            let writeonly = isOutByrefTy g ty
-            None, e, readonly, writeonly
-        | _ ->
-
         match expr with 
         // LVALUE of "*x" where "x" is byref is just the byref itself
         | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) when MustTakeAddressOfByrefGet g vref || CanTakeAddressOfByrefGet g vref mut -> 
@@ -6174,6 +6139,15 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
                 | _ -> false
             
             None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy, (aexpr :: args), m), readonly, writeonly
+
+        // LVALUE: "&meth(args)" where meth has a byref or inref return. Includes "&span.[idx]".
+        | Expr.Let (TBind(vref, e, _), Expr.Op (TOp.LValueOp (LByrefGet, vref2), _, _, _), _, _)  
+             when (valRefEq g (mkLocalValRef vref) vref2) && 
+                  (MustTakeAddressOfByrefGet g vref2 || CanTakeAddressOfByrefGet g vref2 mut) -> 
+            let ty = tyOfExpr g e
+            let readonly = isInByrefTy g ty
+            let writeonly = isOutByrefTy g ty
+            None, e, readonly, writeonly
         
         // Give a nice error message for address-of-byref
         | Expr.Val (vref, _, m) when isByrefTy g vref.Type -> 
@@ -6217,6 +6191,10 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
                 match mut with 
                 | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty
                 | _ -> mkMutableCompGenLocal m "copyOfStruct" ty
+
+            // This local is special in that it ignore byref scoping rules.
+            tmp.SetIgnoresByrefScope()
+
             let readonly = true
             let writeonly = false
             Some (tmp, expr), (mkValAddr m readonly (mkLocalValRef tmp)), readonly, writeonly

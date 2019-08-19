@@ -43,6 +43,9 @@ let test4 () =
 
 let test5 (x: inref<DateTime>) =
     &x.Test()
+
+let test6 () =
+    DateTime.Now.Test().Test().Test()
             """
 
     [<Test>]
@@ -136,6 +139,9 @@ type Extensions =
 
 let test1 () =
     DateTime.Now.Test().Date
+
+let test2 () =
+    DateTime.Now.Test().Test().Date.Test().Test().Date.Test()
             """
 #else
     // Note: Currently this is assuming NET472. That may change which might break these tests. Consider using custom C# code.
