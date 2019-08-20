@@ -239,6 +239,7 @@ function BuildSolution {
     MSBuild "$repo_root/proto.proj" \
       $bl \
       /restore \
+      /p:Configuration="ProtoTargetFramework=net472"
       /p:Configuration=$bootstrap_config \
       /t:Publish
 
