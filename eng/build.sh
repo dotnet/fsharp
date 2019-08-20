@@ -221,7 +221,7 @@ function BuildSolution {
   # build bootstrap tools
   bootstrap_config=Proto
 
-  echo "$bootstrap_config = ${!bootstrap_config}"
+  echo "$bootstrap_config = $(bootstrap_config)"
 
   bootstrap_dir=$artifacts_dir/Bootstrap
   if [[ "$force_bootstrap" == true ]]; then
