@@ -73,20 +73,14 @@ module AssemblyCheck =
         else
             printfn "All shipping assemblies had an appropriate version number."
 
-        printfn "\n\n\n----------BEGIN JOSEPH JOESTAR----------\n"
-
-        printfn "F# Assmeblies:\n%A" fsharpAssemblies
-        printfn "F# Assmeblies filtered:\n%A" (fsharpAssemblies |> List.filter (fun p -> not (p.Contains(@"\FSharpSdk\"))))
-
-
-        printfn "\n\n\n----------END JOSEPH JOESTAR----------\n"
-
         // verify that all assemblies have a commit hash
         let failedCommitHash =
             fsharpAssemblies
             |> List.filter (fun p -> not (p.Contains(@"\FSharpSdk\")))
             |> List.filter (fun a ->
                 let fileProductVersion = FileVersionInfo.GetVersionInfo(a).ProductVersion
+                if (isNull fileProductVersion) then
+                    printfn "Null product version: %s" a
                 not (commitHashPattern.IsMatch(fileProductVersion) || devVersionPattern.IsMatch(fileProductVersion)))
 
         if failedCommitHash.Length > 0 then
