@@ -5,7 +5,7 @@
     <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
   </PropertyGroup>
 
-  <!-- <ItemGroup>
+  <ItemGroup>
     <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj">
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
     </Projects>
@@ -15,7 +15,7 @@
     <Projects Include="src\fsharp\fsi\fsi.fsproj">
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
     </Projects>
-  </ItemGroup> -->
+  </ItemGroup>
 
   <Target Name="Build">
     <MSBuild Projects="@(Projects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
