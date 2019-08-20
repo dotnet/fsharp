@@ -239,7 +239,7 @@ function BuildSolution {
     MSBuild "$repo_root/proto.proj" \
       $bl \
       /restore \
-      /p:Configuration=bootstrap_config \
+      /p:Configuration=$bootstrap_config \
       /t:Publish
 
     cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
