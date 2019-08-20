@@ -219,7 +219,7 @@ function BuildSolution {
   node_reuse=false
 
   # build bootstrap tools
-  bootstrap_config="ProtoTargetFramework=net472"
+  bootstrap_config=Proto
 
   bootstrap_dir=$artifacts_dir/Bootstrap
   if [[ "$force_bootstrap" == true ]]; then
@@ -238,7 +238,8 @@ function BuildSolution {
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
       /restore \
-      /p:Configuration=$bootstrap_config \
+      /p:ProtoTargetFramework=net472
+      /p:Configuration=bootstrap_config \
       /t:Publish
 
     cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
