@@ -6,10 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Projects
-      Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj"
-      Include="src\fsharp\fsc\fsc.fsproj"
-      Include="src\fsharp\fsi\fsi.fsproj" />
+    <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj" />
+    <Projects Include="src\fsharp\fsc\fsc.fsproj" />
+    <Projects Include="src\fsharp\fsi\fsi.fsproj" />
   </ItemGroup>
 
   <Target Name="Build">
