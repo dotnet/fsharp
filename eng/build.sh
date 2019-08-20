@@ -219,9 +219,7 @@ function BuildSolution {
   node_reuse=false
 
   # build bootstrap tools
-  bootstrap_config=Proto
-
-  echo "$bootstrap_config = $(bootstrap_config)"
+  bootstrap_config="ProtoTargetFramework=net472"
 
   bootstrap_dir=$artifacts_dir/Bootstrap
   if [[ "$force_bootstrap" == true ]]; then
