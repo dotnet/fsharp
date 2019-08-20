@@ -1899,7 +1899,7 @@ let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualifie
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))
-        | id2 :: rest2 ->
+        | (id2:Ident) :: rest2 ->
             modrefs
             |> CollectResults2 atMostOne (fun (depth, modref, mty) ->
                 let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange, modref)
