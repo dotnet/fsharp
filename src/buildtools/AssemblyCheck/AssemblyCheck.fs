@@ -76,7 +76,7 @@ module AssemblyCheck =
         printfn "\n\n\n----------BEGIN JOSEPH JOESTAR----------\n"
 
         printfn "F# Assmeblies:\n%A" fsharpAssemblies
-        printfn "F# Assmeblies filtered:\n%A" (fsharpAssemblies |> List.filter (fun p -> not (p.Contains(@"\FSharpSdk\")))
+        printfn "F# Assmeblies filtered:\n%A" (fsharpAssemblies |> List.filter (fun p -> not (p.Contains(@"\FSharpSdk\"))))
 
 
         printfn "\n\n\n----------END JOSEPH JOESTAR----------\n"
