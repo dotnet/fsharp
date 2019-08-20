@@ -78,9 +78,9 @@ module AssemblyCheck =
             fsharpAssemblies
             |> List.filter (fun p -> not (p.Contains(@"\FSharpSdk\")))
             |> List.filter (fun a ->
-                let fileProductVersion = FileVersionInfo.GetVersionInfo(a).ProductVersion
-                if (isNull fileProductVersion) then
-                    printfn "Null product version: %s" a
+                let fileProductVersion =
+                    let v = FileVersionInfo.GetVersionInfo(a).ProductVersion
+                    if isNull v then String.Empty else v
                 not (commitHashPattern.IsMatch(fileProductVersion) || devVersionPattern.IsMatch(fileProductVersion)))
 
         if failedCommitHash.Length > 0 then
