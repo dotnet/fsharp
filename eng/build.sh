@@ -224,7 +224,6 @@ function BuildSolution {
 
   # build bootstrap tools
   bootstrap_config=Proto
-
   bootstrap_dir=$artifacts_dir/Bootstrap
   if [[ "$force_bootstrap" == true ]]; then
      rm -fr $bootstrap_dir
@@ -245,10 +244,13 @@ function BuildSolution {
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
-      $bl \
       /restore \
       /p:Configuration=$bootstrap_config \
-      /t:Publish
+      /t:Publish || {
+        local exit_code=$?
+        Write-PipelineTelemetryError -category 'Build' "Error building bootstrap compiler (exit code '$exit_code')."
+        ExitWithExitCode $exit_code
+      }
 
     cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
   fi
