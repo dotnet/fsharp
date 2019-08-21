@@ -1010,12 +1010,10 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         |> Seq.last
 
     member this.FindToken (position: int) =
-        let text: SourceText = this.Text
-
         let nodeSpan = this.Span
-        let line = text.Lines.GetLineFromPosition position
 
-        syntaxTree.GetTokens (line.Span)
+        // TODO: Optimize by getting a child node.
+        syntaxTree.GetTokens (nodeSpan)
         |> Seq.filter (fun (token: FSharpSyntaxToken) ->
             (token.Span.Contains position || token.Span.End = position) && nodeSpan.Contains token.Span
         )
