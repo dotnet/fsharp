@@ -63,11 +63,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: NuGetToolInstaller@0
-            inputs:
-              versionSpec: 5.1.0
-          - script: nuget.exe install FSharp.Core -Version 4.6.2 -Source https://api.nuget.org/v3/index.json
-            displayName: HACK - pre-restore FSharp.Core 4.6.2
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
@@ -174,11 +169,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: NuGetToolInstaller@0
-            inputs:
-              versionSpec: 5.1.0
-          - script: nuget.exe install FSharp.Core -Version 4.6.2 -Source https://api.nuget.org/v3/index.json
-            displayName: HACK - pre-restore FSharp.Core 4.6.2
           - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -257,11 +247,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: NuGetToolInstaller@0
-            inputs:
-              versionSpec: 5.1.0
-          - script: nuget.exe install FSharp.Core -Version 4.6.2 -Source https://api.nuget.org/v3/index.json
-            displayName: HACK - pre-restore FSharp.Core 4.6.2
           - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
             displayName: Build
 
@@ -272,11 +257,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: NuGetToolInstaller@0
-            inputs:
-              versionSpec: 5.1.0
-          - script: nuget.exe install FSharp.Core -Version 4.6.2 -Source https://api.nuget.org/v3/index.json
-            displayName: HACK - pre-restore FSharp.Core 4.6.2
           - task: PowerShell@2
             displayName: Run up-to-date build check
             inputs:
