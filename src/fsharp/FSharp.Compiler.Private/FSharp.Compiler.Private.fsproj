@@ -40,13 +40,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
-    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
-    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
@@ -72,12 +65,6 @@
     <Compile Include="..\Logger.fs">
       <Link>Logger.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshapedreflection.fs">
-      <Link>Reflection\reshapedreflection.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Reflection\reshapedmsbuild.fs</Link>
-    </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -89,6 +76,12 @@
     </Compile>
     <Compile Include="..\sr.fs">
       <Link>ErrorText\sr.fs</Link>
+    </Compile>
+    <Compile Include="..\LanguageFeatures.fsi">
+      <Link>Driver\LanguageFeatures.fsi</Link>
+    </Compile>
+    <Compile Include="..\LanguageFeatures.fs">
+      <Link>Driver\LanguageFeatures.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\prim-lexing.fsi">
       <Link>LexYaccRuntime\prim-lexing.fsi</Link>
@@ -155,6 +148,9 @@
     </Compile>
     <Compile Include="..\..\absil\bytes.fs">
       <Link>Utilities\bytes.fs</Link>
+    </Compile>
+    <Compile Include="..\XmlAdapters.fs">
+      <Link>Utilities\XmlAdapters.fs</Link>
     </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>Utilities\InternalCollections.fsi</Link>
@@ -257,14 +253,14 @@
     <Compile Include="..\..\absil\ilread.fs">
       <Link>AbsIL\ilread.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilwrite.fsi">
-      <Link>AbsIL\ilwrite.fsi</Link>
-    </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fsi">
       <Link>AbsIL\ilwritepdb.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fs">
       <Link>AbsIL\ilwritepdb.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwrite.fsi">
+      <Link>AbsIL\ilwrite.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fs">
       <Link>AbsIL\ilwrite.fs</Link>
@@ -275,7 +271,9 @@
     <Compile Include="..\ReferenceResolver.fs">
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
-    
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>ReferenceResolution/reshapedmsbuild.fs</Link>
+    </Compile>
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
     <Compile Include="..\LegacyMSBuildReferenceResolver.fsi">
       <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fsi</Link>
@@ -638,9 +636,6 @@
     </Compile>
     <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Service/reshapedmsbuild.fs</Link>
     </Compile>
     <Compile Include="..\service\ExternalSymbol.fsi">
       <Link>Service/ExternalSymbol.fsi</Link>

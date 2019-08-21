@@ -10,12 +10,14 @@ open Internal.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -337,6 +339,7 @@ type TcConfigBuilder =
       mutable maxErrors: int
       mutable abortOnError: bool
       mutable baseAddress: int32 option
+      mutable checksumAlgorithm: HashAlgorithm
  #if DEBUG
       mutable showOptimizationData: bool
 #endif
@@ -384,6 +387,8 @@ type TcConfigBuilder =
       mutable noConditionalErasure: bool
 
       mutable pathMap : PathMap
+
+      mutable langVersion : LanguageVersion
     }
 
     static member Initial: TcConfigBuilder
@@ -497,6 +502,7 @@ type TcConfig =
 
     member maxErrors: int
     member baseAddress: int32 option
+    member checksumAlgorithm: HashAlgorithm
 #if DEBUG
     member showOptimizationData: bool
 #endif
@@ -546,6 +552,7 @@ type TcConfig =
     member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     member useSdkRefs: bool
+    member langVersion: LanguageVersion
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 

@@ -17,6 +17,7 @@ open Internal.Utilities.Text
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Extensions.ILX
@@ -28,6 +29,7 @@ open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Lexhelp
@@ -600,7 +602,20 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn: exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames: bool) =
+let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNames: bool) =
+
+    let suggestNames suggestionsF idText =
+        if canSuggestNames then
+            let buffer = ErrorResolutionHints.SuggestionBuffer idText
+            if not buffer.Disabled then
+              suggestionsF buffer.Add
+              if not buffer.IsEmpty then
+                  os.Append " " |> ignore
+                  os.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
+                  for value in buffer do
+                      os.AppendLine() |> ignore
+                      os.Append "   " |> ignore
+                      os.Append(DecompileOpName value) |> ignore
 
     let rec OutputExceptionR (os: StringBuilder) error = 
 
@@ -769,9 +784,6 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
           os.Append(PossibleOverloadE().Format minfo (buf.ToString())) |> ignore
 
-      //| PossibleBestOverload(_, minfo, m) -> 
-      //    Printf.bprintf os "\n\nPossible best overload: '%s'." minfo
-
       | FunctionExpected _ ->
           os.Append(FunctionExpectedE().Format) |> ignore
 
@@ -825,14 +837,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
       | UndefinedName(_, k, id, suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          if suggestNames then
-              let filtered = ErrorResolutionHints.FilterPredictions suggestionsF id.idText 
-              if List.isEmpty filtered |> not then
-                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
-          
+          suggestNames suggestionsF id.idText
 
       | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
-          let _, errs = f(smr, ccuName, s)  
+          let _, errs = f(smr, ccuName, s)
           os.Append errs |> ignore  
 
       | FieldNotMutable _ -> 
@@ -1366,10 +1374,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
       | ErrorWithSuggestions ((_, s), _, idText, suggestionF) -> 
           os.Append(DecompileOpName s) |> ignore
-          if suggestNames then
-              let filtered = ErrorResolutionHints.FilterPredictions suggestionF idText
-              if List.isEmpty filtered |> not then
-                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
+          suggestNames suggestionF idText
 
       | NumberedError ((_, s), _) -> os.Append s |> ignore
 
@@ -1585,10 +1590,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (suggestNames
 
 
 // remove any newlines and tabs
-let OutputPhasedDiagnostic (os: System.Text.StringBuilder) (err: PhasedDiagnostic) (flattenErrors: bool) (suggestNames: bool) =
+let OutputPhasedDiagnostic (os: System.Text.StringBuilder) (err: PhasedDiagnostic) (flattenErrors: bool) (canSuggestNames: bool) =
     let buf = new System.Text.StringBuilder()
 
-    OutputPhasedErrorR buf err suggestNames
+    OutputPhasedErrorR buf err canSuggestNames
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
     
     os.Append s |> ignore
@@ -1638,7 +1643,7 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err: PhasedDiagnostic, suggestNames: bool) =
+let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err: PhasedDiagnostic, canSuggestNames: bool) =
     let outputWhere (showFullPaths, errorStyle) m: DiagnosticLocation =
         if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
@@ -1711,7 +1716,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             let canonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedDiagnostic os mainError flattenErrors suggestNames
+                OutputPhasedDiagnostic os mainError flattenErrors canSuggestNames
                 os.ToString()
             
             let entry: DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
@@ -1726,7 +1731,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     let relCanonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedDiagnostic os err flattenErrors suggestNames
+                        OutputPhasedDiagnostic os err flattenErrors canSuggestNames
                         os.ToString()
 
                     let entry: DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1734,9 +1739,9 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedDiagnostic os err flattenErrors suggestNames
+                    OutputPhasedDiagnostic os err flattenErrors canSuggestNames
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
-        
+
             relatedErrors |> List.iter OutputRelatedError
 
         match err with
@@ -1755,7 +1760,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 /// prints error and related errors to the specified StringBuilder
 let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError) os (err: PhasedDiagnostic) = 
     
-    // 'true' for "suggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
+    // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
     let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err, true)
     for e in errors do
         Printf.bprintf os "\n"
@@ -1786,7 +1791,7 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 
 let (++) x s = x @ [s]
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 // General file name resolver
 //--------------------------------------------------------------------------
 
@@ -1971,7 +1976,7 @@ type ICompilationThread =
     /// Enqueue work to be done on a compilation thread.
     abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
 
-type ImportedBinary = 
+type ImportedBinary =
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData 
 #if !NO_EXTENSIONTYPING
@@ -1982,7 +1987,7 @@ type ImportedBinary =
       ILAssemblyRefs: ILAssemblyRef list
       ILScopeRef: ILScopeRef }
 
-type ImportedAssembly = 
+type ImportedAssembly =
     { ILScopeRef: ILScopeRef 
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
@@ -1997,7 +2002,7 @@ type AvailableImportedAssembly =
     | ResolvedImportedAssembly of ImportedAssembly
     | UnresolvedImportedAssembly of string
 
-type CcuLoadFailureAction = 
+type CcuLoadFailureAction =
     | RaiseError
     | ReturnNone
 
@@ -2097,6 +2102,7 @@ type TcConfigBuilder =
       mutable maxErrors: int
       mutable abortOnError: bool (* intended for fsi scripts that should exit on first error *)
       mutable baseAddress: int32 option
+      mutable checksumAlgorithm: HashAlgorithm
 #if DEBUG
       mutable showOptimizationData: bool
 #endif
@@ -2159,8 +2165,10 @@ type TcConfigBuilder =
       mutable internalTestSpanStackReferring: bool
 
       mutable noConditionalErasure: bool
-      
+
       mutable pathMap: PathMap
+
+      mutable langVersion: LanguageVersion
       }
 
     static member Initial =
@@ -2206,7 +2214,7 @@ type TcConfigBuilder =
           debuginfo = false
           testFlagEmitFeeFeeAs100001 = false
           dumpDebugInfo = false
-          debugSymbolFile = None          
+          debugSymbolFile = None
 
           (* Backend configuration *)
           typeCheckOnly = false
@@ -2228,6 +2236,7 @@ type TcConfigBuilder =
           maxErrors = 100
           abortOnError = false
           baseAddress = None
+          checksumAlgorithm = HashAlgorithm.Sha256
 
           delaysign = false
           publicsign = false
@@ -2300,6 +2309,7 @@ type TcConfigBuilder =
           internalTestSpanStackReferring = false
           noConditionalErasure = false
           pathMap = PathMap.empty
+          langVersion = LanguageVersion("default")
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2737,6 +2747,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.flatErrors = data.flatErrors
     member x.maxErrors = data.maxErrors
     member x.baseAddress = data.baseAddress
+    member x.checksumAlgorithm = data.checksumAlgorithm
  #if DEBUG
     member x.showOptimizationData = data.showOptimizationData
 #endif
@@ -2749,6 +2760,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.emitTailcalls = data.emitTailcalls
     member x.deterministic = data.deterministic
     member x.pathMap = data.pathMap
+    member x.langVersion = data.langVersion
     member x.preferredUiLang = data.preferredUiLang
     member x.lcid = data.lcid
     member x.optsOn = data.optsOn
@@ -3126,7 +3138,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member tcConfig.PrimaryAssemblyDllReference() = primaryAssemblyReference
     member tcConfig.CoreLibraryDllReference() = fslibReference
-               
+
 
 let ReportWarning options err = 
     warningOn err (options.WarnLevel) (options.WarnOn) && not (List.contains (GetDiagnosticNumber err) (options.WarnOff))
@@ -3477,8 +3489,8 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
        if List.exists (Filename.checkSuffix lower) (FSharpSigFileSuffixes@FSharpImplFileSuffixes) then  
             if not(FileSystem.SafeExists filename) then
                 error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
-            // bug 3155: if the file name is indirect, use a full path
-            let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(filename, tcConfig.inputCodePage, retryLocked) 
+            let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
+            let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(isFeatureSupported, filename, tcConfig.inputCodePage, retryLocked) 
             ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
        else error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None 
@@ -4722,7 +4734,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
                                   tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
                                   tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
-                                  tcConfig.noDebugData, tcConfig.pathMap)
+                                  tcConfig.noDebugData, tcConfig.pathMap, tcConfig.langVersion)
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing
@@ -5001,11 +5013,13 @@ module private ScriptPreprocessClosure =
             | CodeContext.CompilationAndEvaluation -> ["INTERACTIVE"]
             | CodeContext.Compilation -> ["COMPILED"]
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(sourceText) 
-        
+
+        let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText) 
+
         let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
         ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger) 
-          
+
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig 
            (legacyReferenceResolver, defaultFSharpBinariesDir, 
@@ -5217,7 +5231,7 @@ module private ScriptPreprocessClosure =
             useSimpleResolution, useFsiAuxLib, useSdkRefs,
             lexResourceManager: Lexhelp.LexResourceManager, 
             applyCommmandLineArgs, assumeDotNetFramework,
-            tryGetMetadataSnapshot, reduceMemoryUsage) = 
+            tryGetMetadataSnapshot, reduceMemoryUsage) =
 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
@@ -5315,11 +5329,8 @@ let CheckSimulateException(tcConfig: TcConfig) =
     | Some("tc-oom") -> raise(System.OutOfMemoryException())
     | Some("tc-an") -> raise(System.ArgumentNullException("simulated"))
     | Some("tc-invop") -> raise(System.InvalidOperationException())
-#if FX_REDUCED_EXCEPTIONS
-#else
     | Some("tc-av") -> raise(System.AccessViolationException())
     | Some("tc-nfn") -> raise(System.NotFiniteNumberException())
-#endif
     | Some("tc-aor") -> raise(System.ArgumentOutOfRangeException())
     | Some("tc-dv0") -> raise(System.DivideByZeroException())
     | Some("tc-oe") -> raise(System.OverflowException())

@@ -5,11 +5,13 @@ module internal FSharp.Compiler.ErrorResolutionHints
 
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.Internal.Library
+open System.Collections
+open System.Collections.Generic
 
 let maxSuggestions = 5
 let minThresholdForSuggestions = 0.7
 let highConfidenceThreshold = 0.85
-let minStringLengthForThreshold = 3
+let minStringLengthForSuggestion = 3
 
 /// We report a candidate if its edit distance is <= the threshold.
 /// The threshold is set to about a quarter of the number of characters.
@@ -23,60 +25,82 @@ let IsInEditDistanceProximity idText suggestion =
     
     editDistance <= threshold
 
-/// Filters predictions based on edit distance to the given unknown identifier.
-let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =    
+/// Demangles a suggestion
+let DemangleOperator (nm: string) =
+    if nm.StartsWithOrdinal("( ") && nm.EndsWithOrdinal(" )") then
+        nm.[2..nm.Length - 3]
+    else 
+        nm
+
+type SuggestionBufferEnumerator(tail: int, data: KeyValuePair<float,string> []) =
+    let mutable current = data.Length
+    interface IEnumerator<string> with
+        member __.Current 
+            with get () = 
+                let kvpr = &data.[current]
+                kvpr.Value
+    interface System.Collections.IEnumerator with
+        member __.Current with get () = box data.[current].Value
+        member __.MoveNext() =
+            current <- current - 1
+            current > tail || (current = tail && data.[current] <> Unchecked.defaultof<_>)
+        member __.Reset () = current <- data.Length
+    interface System.IDisposable with
+        member __.Dispose () = ()
+
+type SuggestionBuffer(idText: string) = 
+    let data = Array.zeroCreate<KeyValuePair<float,string>>(maxSuggestions)
+    let mutable tail = maxSuggestions - 1
     let uppercaseText = idText.ToUpperInvariant()
-    let allSuggestions = suggestionF()
-
-    let demangle (nm:string) =
-        if nm.StartsWithOrdinal("( ") && nm.EndsWithOrdinal(" )") then
-            let cleanName = nm.[2..nm.Length - 3]
-            cleanName
-        else nm
-
-    /// Returns `true` if given string is an operator display name, e.g. ( |>> )
-    let IsOperatorName (name: string) =
-        if not (name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")) then
-            false
-        else
-            let name = name.[2..name.Length - 3]
-            name |> Seq.forall (fun c -> c <> ' ')
-
-    if allSuggestions.Contains idText then [] else // some other parsing error occurred
     let dotIdText = "." + idText
-    allSuggestions
-    |> Seq.choose (fun suggestion ->
-        // Because beginning a name with _ is used both to indicate an unused
-        // value as well as to formally squelch the associated compiler
-        // error/warning (FS1182), we remove such names from the suggestions,
-        // both to prevent accidental usages as well as to encourage good taste
-        if IsOperatorName suggestion || suggestion.StartsWithOrdinal("_") then None else
-        let suggestion:string = demangle suggestion
-        let suggestedText = suggestion.ToUpperInvariant()
-        let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
-        if similarity >= highConfidenceThreshold || suggestion.EndsWithOrdinal(dotIdText) then
-            Some(similarity, suggestion)
-        elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
-            None
-        elif IsInEditDistanceProximity uppercaseText suggestedText then
-            Some(similarity, suggestion)
-        else
-            None)
-    |> Seq.sortByDescending fst
-    |> Seq.mapi (fun i x -> i, x) 
-    |> Seq.takeWhile (fun (i, _) -> i < maxSuggestions) 
-    |> Seq.map snd 
-    |> Seq.toList
+    let mutable disableSuggestions = idText.Length < minStringLengthForSuggestion
 
-/// Formats the given predictions according to the error style.
-let FormatPredictions normalizeF (predictions: (float * string) list) =
-    match predictions with
-    | [] -> System.String.Empty
-    | _ ->
-        let suggestions =
-            predictions
-            |> List.map (snd >> normalizeF) 
-            |> List.map (sprintf "%s   %s" System.Environment.NewLine)
-            |> String.concat ""
+    let insert (k,v) = 
+        let mutable pos = tail
+        while pos < maxSuggestions && (let kv = &data.[pos] in kv.Key < k) do
+            pos <- pos + 1
 
-        " " + FSComp.SR.undefinedNameSuggestionsIntro() + suggestions
+        if pos > 0 then
+            if pos >= maxSuggestions || (let kv = &data.[pos] in k <> kv.Key || v <> kv.Value) then
+                if tail < pos - 1 then
+                    for i = tail to pos - 2 do 
+                        data.[i] <- data.[i + 1]
+                data.[pos - 1] <- KeyValuePair(k,v)
+                if tail > 0 then tail <- tail - 1
+
+    member __.Add (suggestion: string) =
+        if not disableSuggestions then
+            if suggestion = idText then // some other parse error happened
+                disableSuggestions <- true
+
+            // Because beginning a name with _ is used both to indicate an unused
+            // value as well as to formally squelch the associated compiler
+            // error/warning (FS1182), we remove such names from the suggestions,
+            // both to prevent accidental usages as well as to encourage good taste
+            if suggestion.Length >= minStringLengthForSuggestion && not (suggestion.StartsWithOrdinal "_") then
+                let suggestion:string = DemangleOperator suggestion
+                let suggestedText = suggestion.ToUpperInvariant()
+                let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
+                if similarity >= highConfidenceThreshold ||
+                    suggestion.EndsWithOrdinal dotIdText ||
+                    (similarity >= minThresholdForSuggestions && IsInEditDistanceProximity uppercaseText suggestedText)
+                then
+                    insert(similarity, suggestion) |> ignore
+    
+    member __.Disabled with get () = disableSuggestions
+
+    member __.IsEmpty with get () = disableSuggestions || (tail = maxSuggestions - 1)
+
+    interface IEnumerable<string> with
+        member this.GetEnumerator () = 
+            if this.IsEmpty then
+                Seq.empty.GetEnumerator()
+            else
+                new SuggestionBufferEnumerator(tail, data) :> IEnumerator<string>
+
+    interface IEnumerable with
+        member this.GetEnumerator () = 
+            if this.IsEmpty then
+                Seq.empty.GetEnumerator() :> IEnumerator
+            else
+                new SuggestionBufferEnumerator(tail, data) :> IEnumerator

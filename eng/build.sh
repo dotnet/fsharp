@@ -176,7 +176,11 @@ function TestUsingNUnit() {
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
   args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
-  "$DOTNET_INSTALL_DIR/dotnet" $args
+  "$DOTNET_INSTALL_DIR/dotnet" $args || {
+    local exit_code=$?
+    echo "dotnet test failed (exit code '$exit_code')." >&2
+    ExitWithExitCode $exit_code
+  }
 }
 
 function BuildSolution {
@@ -242,6 +246,7 @@ function BuildSolution {
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
+    /v:$verbosity \
     /p:Configuration=$configuration \
     /p:Projects="$projects" \
     /p:RepoRoot="$repo_root" \
@@ -273,3 +278,4 @@ if [[ "$test_core_clr" == true ]]; then
 fi
 
 ExitWithExitCode 0
+

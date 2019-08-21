@@ -101,25 +101,6 @@ type UsingMSBuild() =
                             n
                    ) 0
 
-
-    [<Test>]
-    member public this.``PublicSurfaceArea.DotNetReflection``() =
-        let ps = publicTypesInAsm @"FSharp.ProjectSystem.FSharp.dll"
-        Assert.AreEqual(1, ps)  // BuildPropertyDescriptor
-        let ls = publicTypesInAsm @"FSharp.LanguageService.dll"
-        Assert.AreEqual(0, ls)
-        let compis = publicTypesInAsm @"FSharp.Compiler.Interactive.Settings.dll"
-        Assert.AreEqual(5, compis)
-        let compserver = publicTypesInAsm @"FSharp.Compiler.Server.Shared.dll"
-        Assert.AreEqual(0, compserver)
-        let lsbase = publicTypesInAsm @"FSharp.LanguageService.Base.dll"
-        Assert.AreEqual(0, lsbase)
-        let psbase = publicTypesInAsm @"FSharp.ProjectSystem.Base.dll"
-        Assert.AreEqual(17, psbase)
-        let fsi = publicTypesInAsm @"FSharp.VS.FSI.dll"
-        Assert.AreEqual(1, fsi)
-
-
     [<Test>]
     member public this.``ReconcileErrors.Test1``() = 
         let (_solution, project, file) = this.CreateSingleFileProject(["erroneous"])

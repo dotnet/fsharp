@@ -369,6 +369,9 @@ exception DefensiveCopyWarning of string * range
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 
+/// Helper to create an expression that dereferences an address.
+val mkDerefAddrExpr: mAddrGet: range -> expr: Expr -> mExpr: range -> exprTy: TType -> Expr
+
 /// Helper to take the address of an expression
 val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool * bool
 
@@ -1388,7 +1391,7 @@ val mkVoidPtrTy  : TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType      : TcGlobals -> TType -> TType
 
-/// Determine is a type is an option type
+/// Determine if a type is an option type
 val isOptionTy     : TcGlobals -> TType -> bool
 
 /// Take apart an option type
@@ -1396,6 +1399,15 @@ val destOptionTy   : TcGlobals -> TType -> TType
 
 /// Try to take apart an option type
 val tryDestOptionTy : TcGlobals -> TType -> ValueOption<TType>
+
+/// Determine is a type is a System.Nullable type
+val isNullableTy : TcGlobals -> TType -> bool
+
+/// Try to take apart a System.Nullable type
+val tryDestNullableTy: TcGlobals -> TType -> ValueOption<TType>
+
+/// Take apart a System.Nullable type
+val destNullableTy: TcGlobals -> TType -> TType
 
 /// Determine if a type is a System.Linq.Expression type
 val isLinqExpressionTy     : TcGlobals -> TType -> bool
@@ -2231,6 +2243,8 @@ val (|EnumExpr|_|) : TcGlobals -> Expr -> Expr option
 val (|TypeOfExpr|_|) : TcGlobals -> Expr -> TType option
 
 val (|TypeDefOfExpr|_|) : TcGlobals -> Expr -> TType option
+val (|NameOfExpr|_|) : TcGlobals -> Expr -> TType option
+val (|SeqExpr|_|) : TcGlobals -> Expr -> unit option
 
 val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 
@@ -2293,3 +2307,4 @@ val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
+val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool

@@ -9,6 +9,7 @@ open System
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
@@ -17,6 +18,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops 
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.IlxGen
@@ -522,9 +524,11 @@ let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
 let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
+let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
+let tagLangVersionValues = "{?|version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -812,28 +816,41 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 //----------------------
 
 let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
-      
+
 let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
        ("mlcompatibility", tagNone,
         OptionUnit (fun () -> tcConfigB.mlCompatibility<-true; tcConfigB.TurnWarningOff(rangeCmdArgs, "62")), None,
         Some (FSComp.SR.optsMlcompatibility()))
 
+/// LanguageVersion management
+let setLanguageVersion (specifiedVersion) =
+
+    let languageVersion = new LanguageVersion(specifiedVersion)
+    let dumpAllowedValues () =
+        printfn "%s" (FSComp.SR.optsSupportedLangVersions())
+        for v in languageVersion.ValidOptions do printfn "%s" v
+        for v in languageVersion.ValidVersions do printfn "%s" v
+        exit 0
+
+    if specifiedVersion = "?" then dumpAllowedValues ()
+    if not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    languageVersion
+
 let languageFlags tcConfigB =
     [
-        CompilerOption
-            ("checked", tagNone,
-             OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None,
-             Some (FSComp.SR.optsChecked()))
-        
-        CompilerOption
-            ("define", tagString,
-             OptionString (defineSymbol tcConfigB), None,
-             Some (FSComp.SR.optsDefine()))
-        
+        // -langversion:?                Display the allowed values for language version
+        // -langversion:<string>         Specify language version such as
+        //                               'default' (latest major version), or
+        //                               'latest' (latest version, including minor versions),
+        //                               'preview' (features for preview)
+        //                               or specific versions like '4.7'
+        CompilerOption("langversion", tagLangVersionValues, OptionString (fun switch -> tcConfigB.langVersion <- setLanguageVersion(switch)), None, Some (FSComp.SR.optsLangVersion()))
+
+        CompilerOption("checked", tagNone, OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsChecked()))
+        CompilerOption("define", tagString, OptionString (defineSymbol tcConfigB), None, Some (FSComp.SR.optsDefine()))
         mlCompatibilityFlag tcConfigB
     ]
-    
 
 // OptionBlock: Advanced user options
 //-----------------------------------
@@ -932,6 +949,16 @@ let advancedFlagsFsc tcConfigB =
                   ("baseaddress", tagAddress,
                    OptionString (fun s -> tcConfigB.baseAddress <- Some(int32 s)), None,
                    Some (FSComp.SR.optsBaseaddress()))
+
+        yield CompilerOption
+                  ("checksumalgorithm", tagAlgorithm,
+                   OptionString (fun s ->
+                       tcConfigB.checksumAlgorithm <-
+                        match s.ToUpperInvariant() with
+                        | "SHA1" -> HashAlgorithm.Sha1
+                        | "SHA256" -> HashAlgorithm.Sha256
+                        | _ -> error(Error(FSComp.SR.optsUnknownChecksumAlgorithm s, rangeCmdArgs))), None,
+                        Some (FSComp.SR.optsChecksumAlgorithm()))
 
         yield noFrameworkFlag true tcConfigB
 
@@ -1604,16 +1631,10 @@ let ReportTime (tcConfig:TcConfig) descr =
         | Some("fsc-oom") -> raise(System.OutOfMemoryException())
         | Some("fsc-an") -> raise(System.ArgumentNullException("simulated"))
         | Some("fsc-invop") -> raise(System.InvalidOperationException())
-#if FX_REDUCED_EXCEPTIONS
-#else
         | Some("fsc-av") -> raise(System.AccessViolationException())
-#endif
         | Some("fsc-aor") -> raise(System.ArgumentOutOfRangeException())
         | Some("fsc-dv0") -> raise(System.DivideByZeroException())
-#if FX_REDUCED_EXCEPTIONS
-#else
         | Some("fsc-nfn") -> raise(System.NotFiniteNumberException())
-#endif
         | Some("fsc-oe") -> raise(System.OverflowException())
         | Some("fsc-atmm") -> raise(System.ArrayTypeMismatchException())
         | Some("fsc-bif") -> raise(System.BadImageFormatException())

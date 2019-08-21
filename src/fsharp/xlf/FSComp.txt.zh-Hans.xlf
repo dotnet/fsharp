@@ -4,7 +4,37 @@
     <body>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="new">{0} for F# {1}</target>
+        <target state="translated">F# {1} 的 {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="new">Supported language versions:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="new">Unrecognized value '{0}' for --langversion use --langversion:? for complete list</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="new">Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsChecksumAlgorithm">
+        <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
+        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnknownChecksumAlgorithm">
+        <source>Algorithm '{0}' is not supported</source>
+        <target state="new">Algorithm '{0}' is not supported</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -144,7 +174,7 @@
       </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
-        <target state="new">Use reference assemblies for .NET framework references when available (Enabled by default).</target>
+        <target state="translated">如果可用，请对 .NET Framework 引用使用引用程序集(默认启用)。</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -5549,7 +5579,7 @@
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
         <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="needs-review-translation">确定性的生成仅支持可移植 PDB (--debug:portable 或 --debug:embedded)</target>
+        <target state="translated">决定性生成仅支持可移植的 PDB (--debug:portable 或 --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -7162,19 +7192,29 @@
         <target state="translated">没有为这些成员提供实现 (省略了一些结果): {0}请注意，必须实现所有接口成员，并在适当的 "interface" 声明下列出，例如 "interface ... with member ..."。</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
-        <target state="new">Maps physical paths to source path names output by the compiler</target>
+        <target state="translated">将物理路径映射到编译器输出的源路径名</target>
         <note />
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
+        <target state="translated">--pathmap 只能与可移植的 PDB 一起使用(--debug:portable 或 --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
-        <target state="new">Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</target>
+        <target state="translated">路径映射无效。映射必须以逗号分隔，且采用 "path=sourcePath" 格式</target>
         <note />
       </trans-unit>
     </body>

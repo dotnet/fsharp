@@ -18,6 +18,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 
 #if DEBUG
 let debugPrint(s) =
@@ -129,9 +130,11 @@ let mkDefnBindings (mWhole,BindingSetPreAttrs(_,isRec,isUse,declsPreAttrs,_bindi
     let attrDecls = if not (isNil freeAttrs) then [ SynModuleDecl.Attributes (freeAttrs,attrsm) ] else [] 
     attrDecls @ letDecls
 
-let idOfPat m p = 
-    match p with 
-    | SynPat.Named (SynPat.Wild _,id,false,_,_) -> id 
+let idOfPat (parseState:IParseState) m p = 
+    match p with
+    | SynPat.Wild r when parseState.LexBuffer.SupportsFeature LanguageFeature.WildCardInForLoop ->
+        mkSynId r "_"
+    | SynPat.Named (SynPat.Wild _,id,false,_,_) -> id
     | SynPat.LongIdent(LongIdentWithDots([id],_),_,None, SynConstructorArgs.Pats [], None,_) -> id
     | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier())
 
@@ -1913,8 +1916,12 @@ opt_typ:
    | /* EMPTY */ { None } 
    | COLON typ { Some $2 }
 
-   
 atomicPatternLongIdent:
+  | UNDERSCORE DOT pathOp {
+    if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
+        raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolDot())
+    let (LongIdentWithDots(lid,dotms)) = $3 in (None,LongIdentWithDots(ident("_",rhs parseState 1)::lid, rhs parseState 2::dotms))
+    }
   | GLOBAL DOT pathOp  { let (LongIdentWithDots(lid,dotms)) = $3 in (None,LongIdentWithDots(ident(MangledGlobalName,rhs parseState 1) :: lid, rhs parseState 2 :: dotms)) }
   | pathOp { (None,$1) }
   | access pathOp { (Some($1), $2) }
@@ -2106,7 +2113,7 @@ inlineAssemblyTyconRepr:
   | HASH stringOrKeywordString HASH 
      { libraryOnlyError (lhs parseState)
        let lhsm = lhs parseState 
-       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (ParseAssemblyCodeType $2 (rhs parseState 2),lhsm) }
+       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (internalParseAssemblyCodeType $2 parseState.LexBuffer.SupportsFeature (rhs parseState 2),lhsm) }
 
 classOrInterfaceOrStruct: 
   | CLASS     { TyconClass } 
@@ -4002,7 +4009,7 @@ forLoopBinder:
 
 forLoopRange: 
   | parenPattern EQUALS declExpr forLoopDirection declExpr 
-      { idOfPat (rhs parseState 1) $1,$3,$4,$5 }
+      { idOfPat parseState (rhs parseState 1) $1,$3,$4,$5 }
 
   | parenPattern EQUALS rangeSequenceExpr
      { raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolEqualsInsteadOfIn()) }
@@ -4015,11 +4022,11 @@ inlineAssemblyExpr:
   |  HASH stringOrKeywordString opt_inlineAssemblyTypeArg opt_curriedArgExprs  opt_inlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
         let s,sm = $2,rhs parseState 2
-        (fun m -> SynExpr.LibraryOnlyILAssembly (ParseAssemblyCodeInstructions s sm,$3,List.rev $4,$5,m)) }
-  
-opt_curriedArgExprs: 
-  | opt_curriedArgExprs argExpr  %prec expr_args 
-      { $2 :: $1 } 
+        (fun m -> SynExpr.LibraryOnlyILAssembly (internalParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm, $3, List.rev $4, $5, m)) }
+
+opt_curriedArgExprs:
+  | opt_curriedArgExprs argExpr  %prec expr_args
+      { $2 :: $1 }
 
   |  
       { [] }
