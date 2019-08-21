@@ -1894,12 +1894,12 @@ let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m first fullyQu
         | _ -> raze (namespaceNotFound.Force())
 
 
-let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id rest isOpenDecl f =
+let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl f =
     match ResolveLongIndentAsModuleOrNamespace sink ResultCollectionSettings.AllResults amap m true fullyQualified nenv ad id [] isOpenDecl with
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))
-        | (id2:Ident) :: rest2 ->
+        | id2 :: rest2 ->
             modrefs
             |> CollectResults2 atMostOne (fun (depth, modref, mty) ->
                 let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange, modref)
