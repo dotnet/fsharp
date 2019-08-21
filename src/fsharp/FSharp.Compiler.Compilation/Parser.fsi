@@ -22,6 +22,7 @@ type internal ParsingConfig =
         isExecutable: bool
         conditionalCompilationDefines: string list
         filePath: string
+        supportsFeature: Features.LanguageFeature -> bool
     }
 
 [<RequireQualifiedAccess>]

@@ -149,13 +149,13 @@ type IncrementalCheckerState =
                 isExecutable = parsingOptions.isExecutable
                 conditionalCompilationDefines = []
                 filePath = filePath
+                supportsFeature = tcConfig.langVersion.SupportsFeature
             }
 
         FSharpSyntaxTree.Create (filePath, pConfig, sourceSnapshot)
 
     static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSourceSnapshots: ImmutableArray<FSharpSourceSnapshot>) =
         cancellable {
-            let! cancellationToken = Cancellable.token ()
             let length = orderedSourceSnapshots.Length
 
             let orderedResultsBuilder = ImmutableArray.CreateBuilder length

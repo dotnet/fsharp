@@ -1768,6 +1768,24 @@ type AstVisitor<'T> () as this =
             expr2
             |> this.TryVisit expr2.Range this.VisitExpr
 
+        | SynExpr.SequentialOrImplicitYield (_, expr1, expr2, ifNotStmt, _) ->
+            let expr1 =
+                expr1
+                |> this.TryVisit expr1.Range this.VisitExpr
+
+            if expr1.IsSome then expr1
+            else
+
+            let expr2 =
+                expr2
+                |> this.TryVisit expr2.Range this.VisitExpr
+
+            if expr2.IsSome then expr2
+            else
+
+            ifNotStmt
+            |> this.TryVisit ifNotStmt.Range this.VisitExpr
+
         | SynExpr.IfThenElse (ifExpr, thenExpr, elseExprOpt, _, _, _, _) ->
             let ifExpr =
                 ifExpr

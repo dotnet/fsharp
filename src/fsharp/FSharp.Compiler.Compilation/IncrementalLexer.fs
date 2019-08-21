@@ -104,13 +104,13 @@ module LexerHelpers =
         lexLexbufCustom lexConfig lexbuf getNextToken lexCallback ct
 
     let lexText pConfig flags errorLogger (text: SourceText) lexCallback ct : unit =
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf (text.ToFSharpSourceText ())
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf (pConfig.supportsFeature, text.ToFSharpSourceText ())
         lexLexbuf pConfig flags errorLogger lexbuf lexCallback ct
 
     let lexStream pConfig flags errorLogger (stream: Stream) lexCallback ct : unit =
         let streamReader = new StreamReader (stream) // don't dispose of stream reader
         let lexbuf = 
-            UnicodeLexing.FunctionAsLexbuf (fun (chars, start, length) ->
+            UnicodeLexing.FunctionAsLexbuf (pConfig.supportsFeature, fun (chars, start, length) ->
                 streamReader.ReadBlock (chars, start, length)
             )
         lexLexbuf pConfig flags errorLogger lexbuf lexCallback ct
@@ -139,7 +139,7 @@ type TokenCacheItem =
     }
 
 [<Sealed>]
-type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: ResizeArray<TokenCacheItem> []) =
+type TokenCache private (_pConfig: ParsingConfig, text: SourceText, tokens: ResizeArray<TokenCacheItem> []) =
 
     member __.Add (t: token, m: range) =
         let lineNumber = m.StartLine - 1
@@ -152,138 +152,6 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
                 lineTokens
 
         lineTokens.Add { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; extraLineCount = m.EndLine - m.StartLine }
-
-    member private this.RedoLex (subTextSpan: TextSpan) =
-        let subText = text.GetSubText subTextSpan
-        let startLine = text.Lines.GetLineFromPosition subTextSpan.Start
-        let endLine = text.Lines.GetLineFromPosition subTextSpan.End
-        let lineCount = endLine.LineNumber - startLine.LineNumber
-        let isEof = subTextSpan.End = text.Length
-
-        let startLineTokens = tokens.[startLine.LineNumber]
-        let endLineTokens = tokens.[endLine.LineNumber]
-
-    //    printfn "pre-before: %A" startLineTokens
-
-        printfn "%A" (subText.ToString ())
-
-        // ** Adjust Start Line
-        let startLength = subTextSpan.Start - startLine.Start
-        let mutable startIndex = -1
-        let mutable startCount = 0
-        for i = 0 to startLineTokens.Count - 1 do
-            let token = startLineTokens.[i]
-            if startLength >= token.columnStart then
-                if startIndex = -1 then
-                    startIndex <- i
-                startCount <- startCount + 1
-        if startIndex >= 0 then
-            startLineTokens.RemoveRange (startIndex, startCount)
-
-        // ** Adjust End Line
-        let endLength = (subTextSpan.End - endLine.Start)
-        let mutable endIndex = -1
-        let mutable endCount = 0
-        let mutable endColumnOffset = 0
-        for i = 0 to endLineTokens.Count - 1 do
-            let token = endLineTokens.[i]
-            if endLength < token.columnStart then
-                if endIndex = -1 then
-                    endIndex <- i
-                endCount <- endCount + 1
-                endColumnOffset <- token.columnEnd
-            else
-                endLineTokens.[i] <- { token with columnStart = endLength + (token.columnStart - endColumnOffset) + (token.columnEnd - token.columnEnd) }           
-        if endIndex >= 0 then
-            printfn "removing stuff"
-            endLineTokens.RemoveRange (endIndex, endCount)
-
-        let addedEndLineTokens = ResizeArray ()
-        let errorLogger = CompilationErrorLogger("RedoLex", pConfig.tcConfig.errorSeverityOptions)
-        lexText pConfig LexFlags.SkipTrivia errorLogger subText (fun lexbuf getNextToken ->
-            while not lexbuf.IsPastEndOfStream do
-                match getNextToken lexbuf with
-                | token.EOF _ when not isEof -> ()
-                | t -> 
-                    let m = lexbuf.LexemeRange
-                        
-                    let isFirstLine = m.StartLine = 1
-                    let isLastLine = (m.StartLine - 1) = lineCount
-
-                    let columnStartOffset =
-                        if isFirstLine then
-                            startLength
-                        else
-                            0
-
-                    let columnEndOffset =
-                        if isFirstLine && m.StartLine = m.EndLine then
-                            startLength
-                        else
-                            0
-
-                    let m = 
-                        let startRangeLineNumber = m.Start.Line + startLine.LineNumber
-                        let endRangeLineNumber = m.End.Line + startLine.LineNumber
-                        let startPos = (mkPos startRangeLineNumber (m.Start.Column + columnStartOffset))
-                        let endPos = (mkPos endRangeLineNumber (m.End.Column + columnEndOffset))
-                        mkFileIndexRange m.FileIndex startPos endPos
-
-                    if isLastLine then
-                        addedEndLineTokens.Add { t = t; columnStart = m.StartColumn; columnEnd = m.EndColumn; extraLineCount = m.EndLine - m.StartLine }
-                    else
-                        this.Add (t, m)
-                        
-        ) CancellationToken.None
-
-     //   printfn "before: %A" startLineTokens
-
-        if addedEndLineTokens.Count > 0 then
-            endLineTokens.InsertRange (0, addedEndLineTokens)
-
-       // printfn "%A" startLineTokens
-
-    member this.TryCreateIncremental (newText: SourceText) =
-        let changes = newText.GetTextChanges text
-        if changes.Count = 0 || changes.Count > 1 || (changes.[0].Span.Start = 0 && changes.[0].Span.Length = text.Length) then
-            None
-        else
-            // For now, we only do incremental lexing on one change.
-            let change = Seq.head changes
-            let changedTokenSpan = this.GetTokenTextSpan change.Span
-            let subTextLength = change.NewText.Length + (changedTokenSpan.endPos - changedTokenSpan.startPos)
-            let subTextSpan = TextSpan (changedTokenSpan.startPos, subTextLength)
-
-            let linePosSpan = text.Lines.GetLinePositionSpan change.Span
-            let newLinePosSpan = newText.Lines.GetLinePositionSpan subTextSpan
-
-            let startLineNumber = linePosSpan.Start.Line
-            let endLineNumber = linePosSpan.Start.Line
-            let newEndLineNumber = newLinePosSpan.End.Line
-
-            let newTokensArr = ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Rent newText.Lines.Count
-            let newTokens = TokenCache (pConfig, newText, newTokensArr)
-
-            // re-use previous lines
-            Array.Copy (tokens, 0, newTokensArr, 0, startLineNumber + 1)
-            if startLineNumber <> endLineNumber then
-                Array.Copy (tokens, endLineNumber, newTokensArr, newEndLineNumber, text.Lines.Count - endLineNumber)
-
-            // change lines
-            for lineNumber = startLineNumber to newEndLineNumber do
-                newTokensArr.[lineNumber] <-
-                    let lineTokens = newTokensArr.[lineNumber]
-                    if lineNumber = startLineNumber || lineNumber = newEndLineNumber then
-                        if lineTokens = null then
-                            ResizeArray ()
-                        else
-                            ResizeArray lineTokens
-                    else
-                        ResizeArray ()
-
-            newTokens.RedoLex subTextSpan
-
-            Some newTokens
 
     member this.GetTokenTextSpan (span: TextSpan) =
         let startLineNumber, startIndex, startPos, startEndPos = 
@@ -366,46 +234,6 @@ type TokenCache private (pConfig: ParsingConfig, text: SourceText, tokens: Resiz
             | _ ->
                 span.Start <= position
         )
-        
-    member this.LexFilter (errorLogger, f, ct) =
-        let lineCount = text.Lines.Count
-        if lineCount > 0 then
-            let lexConfig = pConfig.ToLexerConfig ()
-
-            let filePath = lexConfig.filePath
-            let lightSyntaxStatus = LightSyntaxStatus (lexConfig.IsLightSyntaxOn, true) 
-            let lexargs = mkLexargs (filePath, lexConfig.conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager (), ref [], errorLogger, lexConfig.pathMap)
-            let lexargs = { lexargs with applyLineDirectives = not lexConfig.IsCompiling }
-
-            let dummyLexbuf =
-                Internal.Utilities.Text.Lexing.LexBuffer<char>.FromFunction (fun _ -> 0)
-
-            let fileIndex = Range.fileIndexOfFile filePath
-            let mutable line = 0
-            let mutable lineTokens = tokens.[line]
-            let mutable index = 0
-            let getNextToken = 
-                (fun (lexbuf: UnicodeLexing.Lexbuf) ->
-                    if index >= lineTokens.Count then
-                        line <- line + 1
-                        lineTokens <- tokens.[line]
-                        index <- 0
-                    
-                    let item = lineTokens.[index]
-                    let startLine = line
-                    let endLine = line + item.extraLineCount
-                    lexbuf.StartPos <- Internal.Utilities.Text.Lexing.Position (fileIndex, startLine, startLine, 0, item.columnStart)
-                    lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position (fileIndex, endLine, endLine, 0, item.columnEnd)
-                    item.t
-                )
-
-            let getNextToken =
-                (fun lexbuf ->
-                    let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, lexConfig.IsCompilingFSharpCore, getNextToken, lexbuf)
-                    tokenizer.Lexer lexbuf
-                )
-
-            lexLexbufCustom (pConfig.ToLexerConfig ()) dummyLexbuf getNextToken f ct
         
     override __.Finalize () =
         printfn "finalizer kicked off, returning array to pool"
@@ -493,7 +321,7 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
         else
             match newTextSnapshot.TryGetText (), this.TryGetCachedTokens () with
             | Some newText, Some tokens ->
-                IncrementalLexer (pConfig, newTextSnapshot, lazy tokens.TryCreateIncremental newText)
+                IncrementalLexer (pConfig, newTextSnapshot, lazy None) // TODO: Actual incremental?
             | _ ->
                 IncrementalLexer (pConfig, newTextSnapshot, lazy None)
 

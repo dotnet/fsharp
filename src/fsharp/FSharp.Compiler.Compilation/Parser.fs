@@ -22,6 +22,7 @@ type ParsingConfig =
         isExecutable: bool
         conditionalCompilationDefines: string list
         filePath: string
+        supportsFeature: Features.LanguageFeature -> bool
     }
 
 [<RequireQualifiedAccess>]
@@ -29,13 +30,13 @@ type SourceValue =
     | SourceText of SourceText
     | Stream of Stream
 
-    member this.CreateLexbuf () =
+    member this.CreateLexbuf (supportsFeature) =
         match this with
         | SourceValue.SourceText sourceText ->
-            UnicodeLexing.SourceTextAsLexbuf (sourceText.ToFSharpSourceText ())
+            UnicodeLexing.SourceTextAsLexbuf (supportsFeature, sourceText.ToFSharpSourceText ())
         | SourceValue.Stream stream ->
             let streamReader = new StreamReader(stream) // don't dispose of stream reader
-            UnicodeLexing.FunctionAsLexbuf (fun (chars, start, length) ->
+            UnicodeLexing.FunctionAsLexbuf (supportsFeature, fun (chars, start, length) ->
                 streamReader.ReadBlock (chars, start, length)
             )
 
@@ -59,7 +60,7 @@ module Lexer =
     let Lex pConfig (sourceValue: SourceValue) tokenCallback (ct: CancellationToken) =
         let skip = false
         let errorLogger = CompilationErrorLogger("Lex", pConfig.tcConfig.errorSeverityOptions)
-        LexAux pConfig (sourceValue.CreateLexbuf ()) errorLogger (fun lexargs lexbuf ->
+        LexAux pConfig (sourceValue.CreateLexbuf pConfig.supportsFeature) errorLogger (fun lexargs lexbuf ->
             while not lexbuf.IsPastEndOfStream do
                 ct.ThrowIfCancellationRequested ()
                 tokenCallback (Lexer.token lexargs skip lexbuf) lexbuf.LexemeRange
@@ -86,7 +87,7 @@ module Parser =
 
     let Parse pConfig (sourceValue: SourceValue) (ct: CancellationToken) =
         let skip = true
-        ParseAux pConfig (sourceValue.CreateLexbuf ()) (fun lexargs -> 
+        ParseAux pConfig (sourceValue.CreateLexbuf pConfig.supportsFeature) (fun lexargs -> 
             (fun lexbuf -> ct.ThrowIfCancellationRequested (); Lexer.token lexargs skip lexbuf))
 
     let ParseWithTokens pConfig (tokens: ImmutableArray<Parser.token * range>) =
@@ -94,7 +95,7 @@ module Parser =
             invalidArg "tokens" "no tokens"
 
         let dummyLexbuf =
-            Internal.Utilities.Text.Lexing.LexBuffer<char>.FromFunction (fun _ -> 0)
+            Internal.Utilities.Text.Lexing.LexBuffer<char>.FromFunction (pConfig.supportsFeature, fun _ -> 0)
 
         let mutable index = 0
         let lex =
