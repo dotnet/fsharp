@@ -237,7 +237,6 @@ function BuildSolution {
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
-      $bl \
       /restore \
       /p:Configuration=$bootstrap_config \
       /t:Publish
