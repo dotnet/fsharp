@@ -514,7 +514,7 @@ module CoreTests =
 
         peverify cfg "test.dll"
 
-        csc cfg """/r:"%s" /reference:test.dll /debug+""" cfg.FSCOREDLLPATH ["testcs.cs"]
+        csc cfg """/r:"%s" "/r:netstandard.dll" /reference:test.dll /debug+""" cfg.FSCOREDLLPATH ["testcs.cs"]
 
         peverify cfg "testcs.exe"
         
@@ -618,13 +618,13 @@ module CoreTests =
 
         peverify cfg "lib.dll"
 
-        csc cfg """/nologo /r:"%s" /r:System.Core.dll /r:lib.dll /out:test.exe""" cfg.FSCOREDLLPATH ["test.cs"]
+        csc cfg """/nologo /r:"%s" /r:System.Core.dll /r:netstandard.dll /r:lib.dll /out:test.exe""" cfg.FSCOREDLLPATH ["test.cs"]
 
         fsc cfg """%s -a --doc:lib--optimize.xml -o:lib--optimize.dll -g""" cfg.fsc_flags ["lib.fs"]
 
         peverify cfg "lib--optimize.dll"
 
-        csc cfg """/nologo /r:"%s"  /r:System.Core.dll /r:lib--optimize.dll    /out:test--optimize.exe""" cfg.FSCOREDLLPATH ["test.cs"]
+        csc cfg """/nologo /r:"%s"  /r:System.Core.dll /r:netstandard.dll /r:lib--optimize.dll    /out:test--optimize.exe""" cfg.FSCOREDLLPATH ["test.cs"]
 
         exec cfg ("." ++ "test.exe") ""
 
@@ -638,9 +638,9 @@ module CoreTests =
 
         peverify cfg "lib.dll"
 
-        csc cfg """/nologo /target:library /r:"%s" /r:lib.dll /out:lib2.dll /langversion:7.2""" cfg.FSCOREDLLPATH ["lib2.cs"]
+        csc cfg """/nologo /target:library /r:"%s" /r:netstandard.dll /r:lib.dll /out:lib2.dll /langversion:7.2""" cfg.FSCOREDLLPATH ["lib2.cs"]
 
-        csc cfg """/nologo /target:library /r:"%s" /out:lib3.dll  /langversion:7.2""" cfg.FSCOREDLLPATH ["lib3.cs"]
+        csc cfg """/nologo /target:library /r:"%s" /r:netstandard.dll /out:lib3.dll  /langversion:7.2""" cfg.FSCOREDLLPATH ["lib3.cs"]
 
         fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
