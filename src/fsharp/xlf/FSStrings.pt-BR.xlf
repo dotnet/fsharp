@@ -77,11 +77,6 @@
         <target state="translated">Sobrecarga possível: '{0}'. {1}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\nMelhor sobrecarga possível: '{0}'.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Esta função obtém muitos argumentos, ou é usada em um contexto onde uma função não é esperada</target>

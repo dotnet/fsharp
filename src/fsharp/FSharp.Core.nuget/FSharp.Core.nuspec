@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         $CommonMetadataElements$
-        <iconUrl>http://fsharp.org/img/logo.png</iconUrl>
+        <iconUrl>https://fsharp.org/img/logo.png</iconUrl>
         <language>en-US</language>
         <dependencies>
             <group targetFramework=".NETStandard1.6">

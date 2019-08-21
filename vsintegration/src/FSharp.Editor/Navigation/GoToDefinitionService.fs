@@ -9,12 +9,13 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open System
 
-[<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpGoToDefinitionService>)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
@@ -26,7 +27,7 @@ type internal FSharpGoToDefinitionService
     let gtd = GoToDefinition(checkerProvider.Checker, projectInfoManager)
     let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())  
    
-    interface IGoToDefinitionService with
+    interface IFSharpGoToDefinitionService with
         /// Invoked with Peek Definition.
         member __.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
             gtd.FindDefinitionsForPeekTask(document, position, cancellationToken)
