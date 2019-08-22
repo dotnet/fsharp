@@ -315,6 +315,19 @@ let x = FromAnotherScript ()
             try File.Delete tmpPath with | _ -> ()
             try File.Delete tmpFsx with | _ -> ()
 
+    [<Test>]
+    member __.``Script Test - Simple Emit`` () =
+        let text = """
+let x = 1 + 1
+        """
+
+        let c = semanticModelScript text
+        
+        use peStream = new MemoryStream()
+        match c.Compilation.Emit (peStream) with
+        | Ok _ -> ()
+        | Error diags -> Assert.Fail (sprintf "%A" diags)
+
 [<TestFixture>]
 type UtilitiesTest () =
 

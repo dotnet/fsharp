@@ -101,6 +101,7 @@ module FSharpCompilationHelpers =
             assemblyDataOpt: IRawFSharpAssemblyData option
             assemblyExprOpt: TypedImplFile list option
             finalAccWithErrors: TcAccumulator
+            tcStates: TcAccumulator []
         }
 
     let preEmit (assemblyName: string) (outfile: string) (tcConfig: TcConfig) (tcGlobals: TcGlobals) (tcStates: TcAccumulator []) =
@@ -181,6 +182,7 @@ module FSharpCompilationHelpers =
             assemblyDataOpt = tcAssemblyDataOpt
             assemblyExprOpt = tcAssemblyExprOpt
             finalAccWithErrors = finalAccWithErrors
+            tcStates = tcStates
         }
 
 [<Struct>]
@@ -475,6 +477,9 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
     member this.Emit (peStream, ?pdbStreamOpt, ?ct) =
         let ct = defaultArg ct CancellationToken.None
 
+        if not this.Options.KeepAssemblyContents then
+            failwith "This kind of compilation does not support Emit."
+
         let diags = this.GetDiagnostics ct
 
         if not diags.IsEmpty then
@@ -494,9 +499,16 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             let topAttribs = finalAcc.topAttribs.Value
             let outfile = this.OutputFilePath
             let assemblyName = Path.GetFileNameWithoutExtension this.OutputFilePath
-            let pdbfile = None // TODO:
+            let pdbfile = Some (Path.ChangeExtension(this.OutputFilePath, ".pdb"))
 
-            let typedImplFiles = [] // TODO:
+            let typedImplFiles = 
+                preEmitResult.tcStates
+                |> Array.map (fun tcAcc ->
+                    if tcAcc.latestImplFile.IsNone then
+                        failwith "No imple file"
+                    tcAcc.latestImplFile.Value
+                )
+                |> List.ofArray
 
             let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttribs)
 
@@ -526,7 +538,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
                 { new Exiter with
                     member __.Exit _ = Unchecked.defaultof<_> }
 
-            CompilationWorker.Enqueue (fun ctok ->
+            do! CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->
                 Driver.encodeAndOptimizeAndCompile (
                     ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, 
                     topAttribs, pdbfile, assemblyName, None, signingInfo, exiter, dynamicAssemblyCreator peStream pdbStreamOpt)
@@ -560,7 +572,7 @@ type FSharpCompilation with
                 Script = scriptSnapshot
                 AssemblyPath = assemblyPath
                 IsExecutable = false
-                KeepAssemblyContents = false
+                KeepAssemblyContents = canEmit
                 KeepAllBackgroundResolutions = false
                 SourceSnapshots = if isScript then ImmutableArray.Create scriptSnapshot.Value else sourceSnapshots
                 MetadataReferences = metadataReferences
