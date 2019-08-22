@@ -54,6 +54,8 @@ type internal TcInitial =
 
 module TcInitial =
 
+    // TODO: Revisit this. A lot of the code below was taken from FCS and has assumptions on language service.
+    //     This will mean that some config options may not be right for actual compilation.
     let create ctok options =
         let useSimpleResolutionSwitch = "--simpleresolution"
         let sourceFiles = options.sourceFiles
