@@ -10,7 +10,6 @@ open FSharp.Compiler.Compilation.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open NUnit.Framework
-open Microsoft.CodeAnalysis.MSBuild
 
 [<AutoOpen>]
 module Helpers =
