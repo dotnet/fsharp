@@ -5951,12 +5951,15 @@ let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
 
 let isTyconRefReadOnly g m (tcref: TyconRef) =
     tcref.CanDeref &&
-    match tcref.TryIsReadOnly with 
-    | ValueSome res -> res
-    | _ ->
-        let res = TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
-        tcref.SetIsReadOnly res
-        res
+    if
+        match tcref.TryIsReadOnly with 
+        | ValueSome res -> res
+        | _ ->
+            let res = TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
+            tcref.SetIsReadOnly res
+            res 
+    then true
+    else tcref.IsEnumTycon
 
 let isTyconRefAssumedReadOnly g (tcref: TyconRef) =
     tcref.CanDeref &&
