@@ -2212,25 +2212,3 @@ let mainCompile
     typecheckAndCompile
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
         defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
-
-module Phases =
-
-    type EncodeAndOptimizeResult =
-        {
-            SigDataAttributes: ILAttribute list
-            SigDataResources: ILResource list
-            OptDataResources: ILResource list
-        }
-
-    let encodeAndOptimize ( ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, 
-                            typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo) =
-        let exiter =
-            { new Exiter with
-                member __.Exit _ = Unchecked.defaultof<_>
-            }
-
-        let outArgs =
-            Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
-            |> main2a
-
-        ()
