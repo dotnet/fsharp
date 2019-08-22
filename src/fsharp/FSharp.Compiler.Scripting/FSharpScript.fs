@@ -39,10 +39,9 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool) as this =
     member __.ErrorProduced = errorProduced.Publish
 
     member __.Eval(code: string) =
-        let ch, errors = fsi.EvalExpressionNonThrowing code
+        let ch, errors = fsi.EvalInteractionNonThrowing code
         match ch with
-        | Choice1Of2(Some(value)) -> Ok(value), errors
-        | Choice1Of2 None -> Error(Exception("No value produced")), errors
+        | Choice1Of2 v -> Ok(v), errors
         | Choice2Of2 ex -> Error(ex), errors
 
     interface IDisposable with
