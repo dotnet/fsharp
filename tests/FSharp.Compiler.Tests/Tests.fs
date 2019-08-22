@@ -36,11 +36,48 @@ module TestModule%i =
         ]
         |> List.reduce (+)
 
+    // TODO: Unfortunately, we have to do this. F# requires a primary assembly. We should probably do the work to not have a primary assembly so we never have to do this.
+    let defaultArgs = ["--targetprofile:netcore_private"]
+
     let createSource name amount =
         (sprintf """namespace Test.%s""" name) + createTestModules name amount
 
     let workspace = new AdhocWorkspace ()
     let temporaryStorage = workspace.Services.TemporaryStorage
+
+    let getMetadataReferences () =
+        let currentReferencedAssemblies =
+            let asmLocations =
+                AppDomain.CurrentDomain.GetAssemblies()
+                |> Array.choose (fun asm ->
+                    if not asm.IsDynamic then
+                        Some asm.Location
+                    else
+                        None
+                )
+            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
+
+        let metadataReferences =
+            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
+            |> Seq.choose (fun filePath ->
+                // This is indeed, quite hacky, but it works for now.
+                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && 
+                   ((Path.GetFileNameWithoutExtension filePath).StartsWith("System.Runtime.Numerics") || 
+                    (Path.GetFileNameWithoutExtension filePath).StartsWith("System.Net.Requests") || 
+                    (Path.GetFileNameWithoutExtension filePath).StartsWith("System.Net.WebClient") ||
+                    currentReferencedAssemblies.Contains filePath) then
+                    Some (PortableExecutableReference.CreateFromFile filePath)
+                else
+                    None
+            )
+            |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
+            |> ImmutableArray.CreateRange
+
+        let fsharpCoreMetadataReference =
+            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
+            |> FSharpMetadataReference.PortableExecutable
+
+        metadataReferences.Add fsharpCoreMetadataReference
 
     let getSemanticModel (text: SourceText) =
         let sources =
@@ -55,63 +92,11 @@ module TestModule%i =
             |> List.map (fun (filePath, sourceText) -> temporaryStorage.CreateFSharpSourceSnapshot (filePath, sourceText, CancellationToken.None))
             |> ImmutableArray.CreateRange
 
-        let currentReferencedAssemblies =
-            let asmLocations =
-                AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.choose (fun asm -> 
-                    if not asm.IsDynamic then
-                        Some asm.Location
-                    else
-                        None
-                )
-            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
-
-        let metadataReferences =
-            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
-            |> Seq.choose (fun filePath ->
-                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
-                    Some (PortableExecutableReference.CreateFromFile filePath)
-                else
-                    None
-            )
-            |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
-            |> ImmutableArray.CreateRange
-
-        let fsharpCoreMetadataReference =
-            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
-            |> FSharpMetadataReference.PortableExecutable
-
-        let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, metadataReferences.Add fsharpCoreMetadataReference)
+        let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, getMetadataReferences(), defaultArgs)
         c.GetSemanticModel "test1.fs"
 
     let createScriptAux (text: string) =
-        let currentReferencedAssemblies =
-            let asmLocations =
-                AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.choose (fun asm -> 
-                    if not asm.IsDynamic then
-                        Some asm.Location
-                    else
-                        None
-                )
-            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
-
-        let metadataReferences =
-            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
-            |> Seq.choose (fun filePath ->
-                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
-                    Some (PortableExecutableReference.CreateFromFile filePath)
-                else
-                    None
-            )
-            |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
-            |> ImmutableArray.CreateRange
-
-        let fsharpCoreMetadataReference =
-            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
-            |> FSharpMetadataReference.PortableExecutable
-
-        FSharpCompilation.CreateScript ("""C:\test.dll""", """C:\""", FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text), metadataReferences.Add fsharpCoreMetadataReference)
+        FSharpCompilation.CreateScript ("""C:\test.dll""", """C:\""", FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text), getMetadataReferences(), defaultArgs)
 
     let semanticModelScript text =
         let c = createScriptAux text
@@ -329,7 +314,7 @@ let x = 1 + 1
 
     [<Test>]
     member __.``Script Test - Simple Evaluation`` () =
-        match FSharpScript.Evaluate "1 + 1" with
+        match FSharpScript.Evaluate ("1 + 1", defaultArgs) with
         | Ok (value, _) -> Assert.AreEqual (2, value)
         | Error diags -> Assert.Fail (sprintf "%A" diags)
 

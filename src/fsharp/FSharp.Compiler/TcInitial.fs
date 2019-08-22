@@ -135,6 +135,7 @@ module TcInitial =
             | _ ->
                 None
 
+        // TODO: We should stop doing this since we have compilation. Need to do it earlier in the process.
         match loadClosureOpt with
         | Some loadClosure ->
             let dllReferences =

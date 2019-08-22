@@ -564,7 +564,7 @@ type FSharpCompilation with
     static member Create options =
         FSharpCompilation (CompilationId.Create (), CompilationState.Create options, VersionStamp.Create ())
 
-    static member CreateAux (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences, ?canEmit, ?scriptSnapshot) =
+    static member CreateAux (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences, ?canEmit, ?scriptSnapshot, ?args) =
         let canEmit = defaultArg canEmit true
 
         let isScript = scriptSnapshot.IsSome
@@ -574,7 +574,7 @@ type FSharpCompilation with
         let options =
             {
                 SuggestNamesForErrors = suggestNamesForErrors
-                CommandLineArgs = []
+                CommandLineArgs = defaultArg args []
                 ProjectDirectory = projectDirectory
                 UseScriptResolutionRules = useScriptResolutionRules
                 Script = scriptSnapshot
@@ -587,11 +587,11 @@ type FSharpCompilation with
             }
         FSharpCompilation.Create options
 
-    static member Create (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences) =
-        FSharpCompilation.CreateAux (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences)
+    static member Create (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences, ?args) =
+        FSharpCompilation.CreateAux (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences, args = defaultArg args [])
 
-    static member CreateScript (assemblyPath, projectDirectory, scriptSnapshot, metadataReferences) =
-        FSharpCompilation.CreateAux (assemblyPath, projectDirectory, ImmutableArray.Empty, metadataReferences, scriptSnapshot = scriptSnapshot)
+    static member CreateScript (assemblyPath, projectDirectory, scriptSnapshot, metadataReferences, ?args) =
+        FSharpCompilation.CreateAux (assemblyPath, projectDirectory, ImmutableArray.Empty, metadataReferences, scriptSnapshot = scriptSnapshot, args = defaultArg args [])
 
 [<AutoOpen>]
 module FSharpSemanticModelExtensions =
@@ -604,7 +604,7 @@ module FSharpSemanticModelExtensions =
 [<Sealed>]
 type FSharpScript () =
 
-    static member Evaluate (source: string, ?ct) =
+    static member Evaluate (source: string, ?args, ?ct) =
         let ct = defaultArg ct CancellationToken.None
 
         let currentReferencedAssemblies =
@@ -637,7 +637,7 @@ type FSharpScript () =
         let source =
             """[<EntryPoint>]
 let main _ = """ + source
-        let c = FSharpCompilation.CreateScript ("C:\\script", "C:\\", FSharpSourceSnapshot.FromText ("C:\\script.fsx", Microsoft.CodeAnalysis.Text.SourceText.From source), metadataReferences.Add fsharpCoreMetadataReference)
+        let c = FSharpCompilation.CreateScript ("C:\\script", "C:\\", FSharpSourceSnapshot.FromText ("C:\\script.fsx", Microsoft.CodeAnalysis.Text.SourceText.From source), metadataReferences.Add fsharpCoreMetadataReference, args = defaultArg args [])
         
         use peStream = new MemoryStream()
         match c.Emit (peStream, ct = ct) with

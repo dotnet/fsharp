@@ -61,12 +61,14 @@ type PrimaryAssembly =
     | Mscorlib
     | System_Runtime
     | NetStandard
+    | System_Private_CoreLib
 
     member this.Name =
         match this with
         | Mscorlib -> "mscorlib"
         | System_Runtime -> "System.Runtime"
         | NetStandard -> "netstandard"
+        | System_Private_CoreLib -> "System.Private.CoreLib"
     static member IsSomePrimaryAssembly n =
       n = PrimaryAssembly.Mscorlib.Name
       || n = PrimaryAssembly.System_Runtime.Name

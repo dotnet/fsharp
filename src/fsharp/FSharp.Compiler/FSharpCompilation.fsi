@@ -41,9 +41,9 @@ and [<Sealed>] FSharpCompilation =
 
     member Emit: peStream: Stream * ?pdbStreamOpt: Stream * ?ct: CancellationToken -> Result<unit, ImmutableArray<Diagnostic>>
 
-    static member Create: assmeblyPath: string * projectDirectory: string * sourceSnapshots: ImmutableArray<FSharpSourceSnapshot> * metadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
+    static member Create: assmeblyPath: string * projectDirectory: string * sourceSnapshots: ImmutableArray<FSharpSourceSnapshot> * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 
-    static member CreateScript: assemblyPath: string * ProjectDirectory: string * scriptSnapshot: FSharpSourceSnapshot * metadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
+    static member CreateScript: assemblyPath: string * ProjectDirectory: string * scriptSnapshot: FSharpSourceSnapshot * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 
     static member internal Create: FSharpCompilationOptions -> FSharpCompilation
 
@@ -57,4 +57,4 @@ module FSharpSemanticModelExtensions =
 [<Sealed>]
 type FSharpScript =
 
-    static member Evaluate: source: string * ?ct: CancellationToken -> Result<obj * FSharpScript, ImmutableArray<Diagnostic>>
+    static member Evaluate: source: string * ?args: string list * ?ct: CancellationToken -> Result<obj * FSharpScript, ImmutableArray<Diagnostic>>
