@@ -529,7 +529,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
                           signer = GetStrongNameSigner signingInfo
                           dumpDebugInfo = tcConfig.dumpDebugInfo
                           pathMap = tcConfig.pathMap }
-                    ILBinaryWriter.WriteILBinaryToStreams (assemblyName, options, ilModDef, (fun x -> x), asmStream, pdbStreamOpt)
+                    ILBinaryWriter.WriteILBinaryToStreams (this.OutputFilePath, options, ilModDef, (fun x -> x), asmStream, pdbStreamOpt)
                 )
 
             let errorLogger = CompilationErrorLogger("Emit", tcConfig.errorSeverityOptions)
@@ -541,7 +541,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             do! CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->
                 Driver.encodeAndOptimizeAndCompile (
                     ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, 
-                    topAttribs, pdbfile, assemblyName, None, signingInfo, exiter, dynamicAssemblyCreator peStream pdbStreamOpt)
+                    topAttribs, pdbfile, assemblyName, signingInfo, exiter, dynamicAssemblyCreator peStream pdbStreamOpt)
             )
 
             let diags = errorLogger.GetErrors().ToErrorInfos().ToDiagnostics()

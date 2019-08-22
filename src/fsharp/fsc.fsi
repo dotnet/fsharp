@@ -83,7 +83,6 @@ val encodeAndOptimizeAndCompile :
     topAttrs: TypeChecker.TopAttribs *
     pdbfile: string option *
     assemblyName: string *
-    assemVerFromAttrib: ILVersionInfo option *
     signingInfo: StrongNameSigningInfo *
     exiter: Exiter * 
     dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option

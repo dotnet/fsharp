@@ -100,6 +100,8 @@ module TcInitial =
 
             tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 
+            tcConfigB.includewin32manifest <- false
+
             // Apply command-line arguments and collect more source files if they are in the arguments
             let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
 

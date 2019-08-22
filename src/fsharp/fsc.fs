@@ -2197,13 +2197,26 @@ let compileOfAst
     |> main3
     |> main4 dynamicAssemblyCreator
 
-let encodeAndOptimizeAndCompile (   ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, 
-                                    typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter, dynamicAssemblyCreator) =
+let encodeAndOptimizeAndCompileAux (    ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, 
+                                        typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter, dynamicAssemblyCreator) =
     Args (ctok, tcConfig, tcImports, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
     |> main2a
     |> main2b (None, dynamicAssemblyCreator)
     |> main3
     |> main4 dynamicAssemblyCreator
+
+let encodeAndOptimizeAndCompile (   ctok, tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, 
+                                    typedImplFiles, topAttrs, pdbfile, assemblyName, signingInfo, exiter, dynamicAssemblyCreator) =
+    // Try to find an AssemblyVersion attribute 
+    let assemVerFromAttrib = 
+        match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" "AssemblyVersionAttribute" topAttrs.assemblyAttrs tcConfig.deterministic with
+        | Some v -> 
+           match tcConfig.version with 
+           | VersionNone -> Some v
+           | _ -> warning(Error(FSComp.SR.fscAssemblyVersionAttributeIgnored(), Range.rangeStartup)); None
+        | _ -> None
+    encodeAndOptimizeAndCompileAux (ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile,
+                                    typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter, dynamicAssemblyCreator)
 
 let mainCompile 
         (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
