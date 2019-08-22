@@ -369,6 +369,9 @@ exception DefensiveCopyWarning of string * range
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 
+/// Helper to create an expression that dereferences an address.
+val mkDerefAddrExpr: mAddrGet: range -> expr: Expr -> mExpr: range -> exprTy: TType -> Expr
+
 /// Helper to take the address of an expression
 val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool * bool
 
