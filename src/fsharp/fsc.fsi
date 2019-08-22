@@ -79,7 +79,7 @@ val encodeAndOptimizeAndCompile :
     errorLogger: ErrorLogger *
     generatedCcu: Tast.CcuThunk *
     outfile: string *
-    typedImplFiles: Tast.TypedImplFile *
+    typedImplFiles: Tast.TypedImplFile list *
     topAttrs: TypeChecker.TopAttribs *
     pdbfile: string option *
     assemblyName: string *

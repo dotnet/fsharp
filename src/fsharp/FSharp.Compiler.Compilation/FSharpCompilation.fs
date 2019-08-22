@@ -472,7 +472,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         builder.AddRange finalDiagnostics
         builder.ToImmutable ()
 
-    member this.EmitAsFile ?ct =
+    member this.Emit ?ct =
         let ct = defaultArg ct CancellationToken.None
 
         let diags = this.GetDiagnostics ct
@@ -480,48 +480,75 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         if not diags.IsEmpty then
             failwithf "%A" diags
 
-        let preEmitResult = Async.RunSynchronously (state.asyncLazyPreEmit.GetValueAsync (), cancellationToken = ct)
-        ()
+        Async.RunSynchronously (async {
+            let! preEmitResult = state.asyncLazyPreEmit.GetValueAsync ()
+            let! checker = state.asyncLazyGetChecker.GetValueAsync ()
+
+            let finalAcc = preEmitResult.finalAccWithErrors
+            
+            let tcConfig = checker.TcInitial.tcConfig
+            let tcGlobals = checker.TcGlobals
+            let tcImports = checker.TcImports
+            let generatedCcu = finalAcc.tcState.Ccu
+            let topAttribs = finalAcc.topAttribs.Value
+            let outfile = this.OutputFilePath
+            let assemblyName = Path.GetFileNameWithoutExtension this.OutputFilePath
+            let pdbfile = None // TODO:
+
+            let typedImplFiles = [] // TODO:
+
+            let dynamicAssemblyCreator =
+                Some (fun (g, assemblyName, ilModDef) -> ())
+
+            let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttribs)
+
+            let errorLogger = CompilationErrorLogger("Emit", tcConfig.errorSeverityOptions)
+
+            let exiter =
+                { new Exiter with
+                    member __.Exit _ = Unchecked.defaultof<_> }
+
+            return CompilationWorker.Enqueue (fun ctok -> 
+                Driver.encodeAndOptimizeAndCompile (
+                    ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, 
+                    topAttribs, pdbfile, assemblyName, None, signingInfo, exiter, dynamicAssemblyCreator)
+            )
+        }, cancellationToken = ct)
+
+
+type FSharpCompilation with
 
     static member Create options =
         FSharpCompilation (CompilationId.Create (), CompilationState.Create options, VersionStamp.Create ())
 
-    static member Create (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences) =
-        let suggestNamesForErrors = false
-        let useScriptResolutionRules = false
+    static member CreateAux (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences, ?canEmit, ?scriptSnapshot) =
+        let canEmit = defaultArg canEmit true
+
+        let isScript = scriptSnapshot.IsSome
+        let suggestNamesForErrors = not canEmit
+        let useScriptResolutionRules = isScript
+
         let options =
             {
                 SuggestNamesForErrors = suggestNamesForErrors
                 CommandLineArgs = []
                 ProjectDirectory = projectDirectory
                 UseScriptResolutionRules = useScriptResolutionRules
-                Script = None
+                Script = scriptSnapshot
                 AssemblyPath = assemblyPath
                 IsExecutable = false
                 KeepAssemblyContents = false
                 KeepAllBackgroundResolutions = false
-                SourceSnapshots = sourceSnapshots
+                SourceSnapshots = if isScript then ImmutableArray.Create scriptSnapshot.Value else sourceSnapshots
                 MetadataReferences = metadataReferences
             }
         FSharpCompilation.Create options
 
+    static member Create (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences) =
+        FSharpCompilation.CreateAux (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences)
+
     static member CreateScript (assemblyPath, projectDirectory, scriptSnapshot, metadataReferences) =
-        let suggestNamesForErrors = false
-        let options =
-            {
-                SuggestNamesForErrors = suggestNamesForErrors
-                CommandLineArgs = []
-                ProjectDirectory = projectDirectory
-                UseScriptResolutionRules = true
-                Script = Some scriptSnapshot 
-                AssemblyPath = assemblyPath
-                IsExecutable = true
-                KeepAssemblyContents = false
-                KeepAllBackgroundResolutions = false
-                SourceSnapshots = ImmutableArray.Create scriptSnapshot
-                MetadataReferences = metadataReferences
-            }
-        FSharpCompilation.Create options
+        FSharpCompilation.CreateAux (assemblyPath, projectDirectory, ImmutableArray.Empty, metadataReferences, scriptSnapshot = scriptSnapshot)
 
 [<AutoOpen>]
 module FSharpSemanticModelExtensions =
