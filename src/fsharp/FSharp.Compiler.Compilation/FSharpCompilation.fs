@@ -472,13 +472,14 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         builder.AddRange finalDiagnostics
         builder.ToImmutable ()
 
-    member this.Emit ?ct =
+    member this.Emit (peStream, ?pdbStreamOpt, ?ct) =
         let ct = defaultArg ct CancellationToken.None
 
         let diags = this.GetDiagnostics ct
 
         if not diags.IsEmpty then
-            failwithf "%A" diags
+            Result.Error diags
+        else
 
         Async.RunSynchronously (async {
             let! preEmitResult = state.asyncLazyPreEmit.GetValueAsync ()
@@ -497,10 +498,27 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
             let typedImplFiles = [] // TODO:
 
-            let dynamicAssemblyCreator =
-                Some (fun (g, assemblyName, ilModDef) -> ())
-
             let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttribs)
+
+            let dynamicAssemblyCreator asmStream pdbStreamOpt =
+                Some (fun (_, _, ilModDef: ILModuleDef) ->
+                    let options: ILBinaryWriter.options =
+                        { ilg = tcGlobals.ilg
+                          pdbfile=pdbfile
+                          emitTailcalls = tcConfig.emitTailcalls
+                          deterministic = tcConfig.deterministic
+                          showTimes = tcConfig.showTimes
+                          portablePDB = tcConfig.portablePDB
+                          embeddedPDB = tcConfig.embeddedPDB
+                          embedAllSource = tcConfig.embedAllSource
+                          embedSourceList = tcConfig.embedSourceList
+                          sourceLink = tcConfig.sourceLink
+                          checksumAlgorithm = tcConfig.checksumAlgorithm
+                          signer = GetStrongNameSigner signingInfo
+                          dumpDebugInfo = tcConfig.dumpDebugInfo
+                          pathMap = tcConfig.pathMap }
+                    ILBinaryWriter.WriteILBinaryToStreams (assemblyName, options, ilModDef, (fun x -> x), asmStream, pdbStreamOpt)
+                )
 
             let errorLogger = CompilationErrorLogger("Emit", tcConfig.errorSeverityOptions)
 
@@ -508,13 +526,18 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
                 { new Exiter with
                     member __.Exit _ = Unchecked.defaultof<_> }
 
-            return CompilationWorker.Enqueue (fun ctok -> 
+            CompilationWorker.Enqueue (fun ctok ->
                 Driver.encodeAndOptimizeAndCompile (
                     ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, 
-                    topAttribs, pdbfile, assemblyName, None, signingInfo, exiter, dynamicAssemblyCreator)
+                    topAttribs, pdbfile, assemblyName, None, signingInfo, exiter, dynamicAssemblyCreator peStream pdbStreamOpt)
             )
-        }, cancellationToken = ct)
 
+            let diags = errorLogger.GetErrors().ToErrorInfos().ToDiagnostics()
+            if not diags.IsEmpty then
+                return Result.Error diags
+            else
+                return Result.Ok ()
+        }, cancellationToken = ct)
 
 type FSharpCompilation with
 

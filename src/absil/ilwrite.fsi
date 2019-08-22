@@ -3,6 +3,7 @@
 /// The IL Binary writer.
 module internal FSharp.Compiler.AbstractIL.ILBinaryWriter
 
+open System.IO
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
@@ -35,3 +36,6 @@ type options =
 
 /// Write a binary to the file system. Extra configuration parameters can also be specified. 
 val WriteILBinary: filename: string * options:  options * input: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit
+
+/// Write a binary to the specified streams. Extra configuration parameters can also be specified.
+val WriteILBinaryToStreams: filename: string * options:  options * input: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) * peStream: Stream * pdbStream: Stream option -> unit

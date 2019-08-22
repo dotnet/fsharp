@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System.IO
 open System.Threading
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
@@ -37,6 +38,8 @@ and [<Sealed>] FSharpCompilation =
     member SetOptions: FSharpCompilationOptions -> FSharpCompilation
 
     member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
+
+    member Emit: peStream: Stream * ?pdbStreamOpt: Stream * ?ct: CancellationToken -> Result<unit, ImmutableArray<Diagnostic>>
 
     static member Create: assmeblyPath: string * projectDirectory: string * sourceSnapshots: ImmutableArray<FSharpSourceSnapshot> * metadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
 

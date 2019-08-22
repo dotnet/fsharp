@@ -3514,7 +3514,7 @@ let writeBytes (os: BinaryWriter) (chunk: byte[]) = os.Write(chunk, 0, chunk.Len
 
 let writeBinaryAndReportMappings (outfile, 
                                   ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB,
-                                  embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, dumpDebugInfo, pathMap)
+                                  embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, emitTailcalls, deterministic, showTimes, dumpDebugInfo, pathMap, peStreamOpt, pdbStreamOpt)
                                   modul normalizeAssemblyRefs =
     // Store the public key from the signer into the manifest. This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -3557,9 +3557,12 @@ let writeBinaryAndReportMappings (outfile,
     let os = 
         try
             // Ensure the output directory exists otherwise it will fail
-            let dir = Path.GetDirectoryName outfile
-            if not (Directory.Exists dir) then Directory.CreateDirectory dir |>ignore
-            new BinaryWriter(FileSystem.FileStreamCreateShim outfile)
+            match peStreamOpt with 
+            | Some stream -> new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen = true) 
+            | _ -> 
+                let dir = Path.GetDirectoryName outfile
+                if not (Directory.Exists dir) then Directory.CreateDirectory dir |>ignore
+                new BinaryWriter(FileSystem.FileStreamCreateShim outfile)
         with e -> 
             failwith ("Could not open file for writing (binary mode): " + outfile)    
 
@@ -4247,8 +4250,8 @@ let writeBinaryAndReportMappings (outfile,
             reportTime showTimes "Generate PDB Info"
 
             // Now we have the debug data we can go back and fill in the debug directory in the image 
-            let fs2 = FileSystem.FileStreamWriteExistingShim outfile
-            let os2 = new BinaryWriter(fs2)
+            let fs2 = match pdbStreamOpt with Some stream -> stream | _ -> FileSystem.FileStreamWriteExistingShim outfile
+            let os2 = new BinaryWriter(fs2, System.Text.Encoding.UTF8, leaveOpen = pdbStreamOpt.IsSome)
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
                 os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
@@ -4316,5 +4319,15 @@ type options =
 let WriteILBinary (outfile, (args: options), modul, normalizeAssemblyRefs) =
     writeBinaryAndReportMappings (outfile, 
                                   args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
-                                  args.embedSourceList, args.sourceLink, args.checksumAlgorithm, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo, args.pathMap) modul normalizeAssemblyRefs
+                                  args.embedSourceList, args.sourceLink, args.checksumAlgorithm, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo, args.pathMap, None, None) modul normalizeAssemblyRefs
+    |> ignore
+
+let WriteILBinaryToStreams (outfile, (args: options), modul, normalizeAssemblyRefs, peStream, pdbStreamOpt) =
+    let pdbfile =
+        match pdbStreamOpt with
+        | Some _ -> args.pdbfile
+        | _ -> None
+    writeBinaryAndReportMappings (outfile, 
+                                  args.ilg, pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
+                                  args.embedSourceList, args.sourceLink, args.checksumAlgorithm, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo, args.pathMap, Some peStream, pdbStreamOpt) modul normalizeAssemblyRefs
     |> ignore
