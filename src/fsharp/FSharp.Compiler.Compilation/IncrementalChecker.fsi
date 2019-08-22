@@ -11,6 +11,7 @@ open FSharp.Compiler.NameResolution
 type internal CheckerParsingOptions =
     {
         isExecutable: bool
+        isScript: bool
     }
 
 [<NoEquality; NoComparison>]

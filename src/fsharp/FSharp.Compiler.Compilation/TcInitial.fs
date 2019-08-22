@@ -9,6 +9,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open Internal.Utilities.Collections
 open FSharp.Compiler
+open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
@@ -38,6 +39,7 @@ type TcInitialOptions =
         isExecutable: bool
         keepAssemblyContents: bool
         keepAllBackgroundResolutions: bool
+        script: (string * ISourceText) option
     }
 
 type internal TcInitial =
@@ -52,7 +54,7 @@ type internal TcInitial =
 
 module TcInitial =
 
-    let create options =
+    let create ctok options =
         let useSimpleResolutionSwitch = "--simpleresolution"
         let sourceFiles = options.sourceFiles
         let commandLineArgs = options.commandLineArgs
@@ -62,7 +64,7 @@ module TcInitial =
         let projectReferences = options.projectReferences
         let tryGetMetadataSnapshot = options.tryGetMetadataSnapshot
         let useScriptResolutionRules = options.useScriptResolutionRules
-        let loadClosureOpt : LoadClosure option = None // TODO:
+        let scriptOpt = options.script   
 
         // Trap and report warnings and errors from creation.
         let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
@@ -111,6 +113,23 @@ module TcInitial =
                 }
 
             tcConfigB, sourceFilesNew
+
+        let loadClosureOpt =
+            match scriptOpt with
+            | Some (filename, sourceText) ->
+
+                let applyCompilerOptions tcConfigB  = 
+                    let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
+                    CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
+
+                LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
+                    options.defaultFSharpBinariesDir, filename, sourceText, 
+                    CodeContext.CompilationAndEvaluation, true, false, false, new Lexhelp.LexResourceManager(), 
+                    applyCompilerOptions, false, 
+                    tryGetMetadataSnapshot=tryGetMetadataSnapshot, 
+                    reduceMemoryUsage=tcConfigB.reduceMemoryUsage) |> Some
+            | _ ->
+                None
 
         match loadClosureOpt with
         | Some loadClosure ->

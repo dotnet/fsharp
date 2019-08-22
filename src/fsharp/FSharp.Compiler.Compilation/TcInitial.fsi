@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Compiler.Compilation
 
 open FSharp.Compiler
+open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
@@ -23,6 +24,7 @@ type internal TcInitialOptions =
         isExecutable: bool
         keepAssemblyContents: bool
         keepAllBackgroundResolutions: bool
+        script: (string * ISourceText) option
     }
 
 /// This represents the initial data and info necessary to build a checker.
@@ -40,4 +42,4 @@ type internal TcInitial =
 [<RequireQualifiedAccess>]
 module internal TcInitial =
 
-    val create: TcInitialOptions -> TcInitial
+    val create: CompilationThreadToken -> TcInitialOptions -> TcInitial

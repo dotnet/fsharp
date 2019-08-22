@@ -98,6 +98,7 @@ open FSharp.Compiler.Tastops
 type internal CheckerParsingOptions =
     {
         isExecutable: bool
+        isScript: bool
     }
 
 type internal CheckerOptions =
@@ -156,6 +157,7 @@ type IncrementalCheckerState =
 
     static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSourceSnapshots: ImmutableArray<FSharpSourceSnapshot>) =
         cancellable {
+            let isScript = options.parsingOptions.isScript
             let length = orderedSourceSnapshots.Length
 
             let orderedResultsBuilder = ImmutableArray.CreateBuilder length
@@ -166,7 +168,7 @@ type IncrementalCheckerState =
             orderedSourceSnapshots
             |> ImmutableArray.iteri (fun i sourceSnapshot ->
                 let isLastFile = (orderedSourceSnapshots.Length - 1) = i
-                let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isLastFile, sourceSnapshot)
+                let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isScript || isLastFile, sourceSnapshot)
                 orderedResultsBuilder.[i] <- NotParsed syntaxTree
                 indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
             )
@@ -309,7 +311,9 @@ type IncrementalCheckerState =
                     )
                     
                 match! asyncTimeSlicedComputation with
-                | Some result -> return result
+                | Some (tcAcc, info) ->
+                    this.SetPartialCheckResultByIndex (cacheIndex, PartialCheckResult.Checked (syntaxTree, tcAcc))
+                    return (tcAcc, info)
                 | _ -> return raise (OperationCanceledException ())
             | _ ->
                 return (tcAcc, None)

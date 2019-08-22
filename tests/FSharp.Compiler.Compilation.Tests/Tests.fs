@@ -40,6 +40,9 @@ module TestModule%i =
     let createSource name amount =
         (sprintf """namespace Test.%s""" name) + createTestModules name amount
 
+    let workspace = new AdhocWorkspace ()
+    let temporaryStorage = workspace.Services.TemporaryStorage
+
     let getSemanticModel (text: SourceText) =
         let sources =
             [
@@ -80,7 +83,40 @@ module TestModule%i =
             |> FSharpMetadataReference.PortableExecutable
 
         let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, metadataReferences.Add fsharpCoreMetadataReference)
-        c.GetSemanticModel "test1.fs", temporaryStorage
+        c.GetSemanticModel "test1.fs"
+
+    let createScriptAux (text: string) =
+        let currentReferencedAssemblies =
+            let asmLocations =
+                AppDomain.CurrentDomain.GetAssemblies()
+                |> Array.choose (fun asm -> 
+                    if not asm.IsDynamic then
+                        Some asm.Location
+                    else
+                        None
+                )
+            HashSet(asmLocations, StringComparer.OrdinalIgnoreCase)
+
+        let metadataReferences =
+            Directory.EnumerateFiles(Path.GetDirectoryName typeof<System.Object>.Assembly.Location)
+            |> Seq.choose (fun filePath ->
+                if String.Equals (Path.GetExtension filePath, ".dll", StringComparison.OrdinalIgnoreCase) && currentReferencedAssemblies.Contains filePath then
+                    Some (PortableExecutableReference.CreateFromFile filePath)
+                else
+                    None
+            )
+            |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
+            |> ImmutableArray.CreateRange
+
+        let fsharpCoreMetadataReference =
+            PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
+            |> FSharpMetadataReference.PortableExecutable
+
+        FSharpCompilation.CreateScript ("""C:\test.dll""", """C:\""", FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text), metadataReferences.Add fsharpCoreMetadataReference)
+
+    let semanticModelScript text =
+        let c = createScriptAux text
+        c.GetSemanticModel("C:\\test1.fsx")
 
 [<TestFixture>]
 type CompilationTests () =
@@ -121,7 +157,7 @@ type CompiltationTest<'T> () =
 let testFunction (x: CompilationTest) =
     x.X + x.Y + x.Z"""
 
-        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+        let semanticModel = getSemanticModel (SourceText.From textString)
 
         let position = textString.IndexOf("""CompiltationTest<'T> ()""")
         let symbol = semanticModel.TryGetEnclosingSymbol (position, CancellationToken.None)
@@ -146,7 +182,7 @@ module TestModuleCompilationTest =
     let testFunction (x: CompilationTest<'T>) =
         x.X + x.Y + x.Z"""
 
-        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+        let semanticModel = getSemanticModel (SourceText.From textString)
 
         let position = textString.IndexOf("""x.X + x.Y + x.Z""")
         let token = (semanticModel.SyntaxTree.GetRootNode ()).FindToken position
@@ -163,7 +199,7 @@ module TestModuleCompilationTest =
 
     [<Test>]
     member __.``Get Completion Symbols - Open Declaration`` () =
-        let semanticModel, _ = 
+        let semanticModel = 
             getSemanticModel (SourceText.From """
 module CompilationTest.Test
 open System.Collections
@@ -194,7 +230,7 @@ type Class1 (* inside comment *) () =
     member val Z = 1
         
 """         
-        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+        let semanticModel = getSemanticModel (SourceText.From textString)
         let syntaxTree = semanticModel.SyntaxTree
         let rootNode = semanticModel.SyntaxTree.GetRootNode ()
 
@@ -231,7 +267,7 @@ there
 
     let y = 1
 """         
-        let semanticModel, _ = getSemanticModel (SourceText.From textString)
+        let semanticModel = getSemanticModel (SourceText.From textString)
 
         let text = "hello"
         let position = textString.IndexOf(text)
@@ -241,6 +277,43 @@ there
         let token = rootNode.FindToken position
 
         Assert.IsTrue token.IsString
+
+    [<Test>]
+    member __.``Script Test - Simple`` () =
+        let text = """
+let x = 1 + 1
+        """
+
+        let c = semanticModelScript text
+        let diags = c.GetDiagnostics()
+        Assert.True (diags.IsEmpty, sprintf "%A" diags)
+
+    [<Test>]
+    member __.``Script Test - Reference Script`` () =
+
+        let tmpPath = Path.GetTempFileName()
+        let tmpFsx = Path.ChangeExtension(tmpPath, ".fsx")
+        try
+            let refText = """
+module RefScript
+
+type FromAnotherScript () = class end
+"""
+            File.WriteAllText(tmpFsx, refText)
+            let text = sprintf """
+#load @"%s"
+
+open RefScript
+
+let x = FromAnotherScript ()
+                               """ tmpFsx
+
+            let c = semanticModelScript text
+            let diags = c.Compilation.GetDiagnostics()
+            Assert.True (diags.IsEmpty, sprintf "%A" diags)
+        finally
+            try File.Delete tmpPath with | _ -> ()
+            try File.Delete tmpFsx with | _ -> ()
 
 [<TestFixture>]
 type UtilitiesTest () =

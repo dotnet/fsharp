@@ -211,6 +211,7 @@ type FSharpCompilationOptions =
         CommandLineArgs: string list
         ProjectDirectory: string
         UseScriptResolutionRules: bool
+        Script: FSharpSourceSnapshot option
         AssemblyPath: string
         IsExecutable: bool
         KeepAssemblyContents: bool
@@ -219,7 +220,7 @@ type FSharpCompilationOptions =
         MetadataReferences: ImmutableArray<FSharpMetadataReference>
     }
 
-    member options.CreateTcInitial () =
+    member options.CreateTcInitial ctok =
         let tryGetMetadataSnapshot (path, _) =
             let metadataReferenceOpt = 
                 options.MetadataReferences
@@ -288,19 +289,35 @@ type FSharpCompilationOptions =
                 isExecutable = options.IsExecutable
                 keepAssemblyContents = options.KeepAssemblyContents
                 keepAllBackgroundResolutions = options.KeepAllBackgroundResolutions
+                script = match options.Script with Some script -> Some (script.FilePath, script.GetText(CancellationToken.None).ToFSharpSourceText()) | _ -> None
             }
-        TcInitial.create tcInitialOptions
+        TcInitial.create ctok tcInitialOptions
 
     member options.CreateIncrementalChecker ctok =
-        let tcInitial = options.CreateTcInitial ()
+        let tcInitial = options.CreateTcInitial ctok
         let tcGlobals, tcImports, tcAcc = TcAccumulator.createInitial tcInitial ctok |> Cancellable.runWithoutCancellation
         let checkerOptions =
             {
                 keepAssemblyContents = options.KeepAssemblyContents
                 keepAllBackgroundResolutions = options.KeepAllBackgroundResolutions
-                parsingOptions = { isExecutable = options.IsExecutable }
+                parsingOptions = { isExecutable = options.IsExecutable; isScript = options.UseScriptResolutionRules }
             }
-        IncrementalChecker.create tcInitial tcGlobals tcImports tcAcc checkerOptions options.SourceSnapshots
+
+        let sourceSnapshots =
+            match tcInitial.loadClosureOpt with
+            | Some loadClosure ->
+                loadClosure.SourceFiles
+                |> List.map (fun (filePath, _) ->
+                    if options.Script.Value.FilePath = filePath then
+                        options.Script.Value
+                    else
+                        FSharpSourceSnapshot.FromText (filePath, Text.SourceText.From (File.ReadAllText filePath))
+                )
+                |> ImmutableArray.CreateRange
+            | _ ->
+                options.SourceSnapshots
+
+        IncrementalChecker.create tcInitial tcGlobals tcImports tcAcc checkerOptions sourceSnapshots
         |> Cancellable.runWithoutCancellation
 
 and [<RequireQualifiedAccess>] FSharpMetadataReference =
@@ -468,11 +485,30 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
                 CommandLineArgs = []
                 ProjectDirectory = projectDirectory
                 UseScriptResolutionRules = useScriptResolutionRules
+                Script = None
                 AssemblyPath = assemblyPath
                 IsExecutable = false
                 KeepAssemblyContents = false
                 KeepAllBackgroundResolutions = false
                 SourceSnapshots = sourceSnapshots
+                MetadataReferences = metadataReferences
+            }
+        FSharpCompilation.Create options
+
+    static member CreateScript (assemblyPath, projectDirectory, scriptSnapshot, metadataReferences) =
+        let suggestNamesForErrors = false
+        let options =
+            {
+                SuggestNamesForErrors = suggestNamesForErrors
+                CommandLineArgs = []
+                ProjectDirectory = projectDirectory
+                UseScriptResolutionRules = true
+                Script = Some scriptSnapshot 
+                AssemblyPath = assemblyPath
+                IsExecutable = true
+                KeepAssemblyContents = false
+                KeepAllBackgroundResolutions = false
+                SourceSnapshots = ImmutableArray.Create scriptSnapshot
                 MetadataReferences = metadataReferences
             }
         FSharpCompilation.Create options

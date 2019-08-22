@@ -5,12 +5,13 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 
 [<NoEquality;NoComparison>]
-type FSharpCompilationOptions =
+type internal FSharpCompilationOptions =
     {
         SuggestNamesForErrors: bool
         CommandLineArgs: string list
         ProjectDirectory: string
         UseScriptResolutionRules: bool
+        Script: FSharpSourceSnapshot option
         AssemblyPath: string
         IsExecutable: bool
         KeepAssemblyContents: bool
@@ -25,7 +26,7 @@ and [<RequireQualifiedAccess>] FSharpMetadataReference =
 
 and [<Sealed>] FSharpCompilation =
 
-    member Options: FSharpCompilationOptions
+    member internal Options: FSharpCompilationOptions
 
     member ReplaceSourceSnapshot: FSharpSourceSnapshot -> FSharpCompilation
 
@@ -39,7 +40,9 @@ and [<Sealed>] FSharpCompilation =
 
     static member Create: assmeblyPath: string * projectDirectory: string * sourceSnapshots: ImmutableArray<FSharpSourceSnapshot> * metadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
 
-    static member Create: FSharpCompilationOptions -> FSharpCompilation
+    static member CreateScript: assemblyPath: string * ProjectDirectory: string * scriptSnapshot: FSharpSourceSnapshot * metadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
+
+    static member internal Create: FSharpCompilationOptions -> FSharpCompilation
 
 [<AutoOpen>]
 module FSharpSemanticModelExtensions =
