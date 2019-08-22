@@ -328,6 +328,12 @@ let x = 1 + 1
         | Ok _ -> ()
         | Error diags -> Assert.Fail (sprintf "%A" diags)
 
+    [<Test>]
+    member __.``Script Test - Simple Evaluation`` () =
+        match FSharpScript.Evaluate "1 + 1" with
+        | Ok (value, _) -> Assert.AreEqual (2, value)
+        | Error diags -> Assert.Fail (sprintf "%A" diags)
+
 [<TestFixture>]
 type UtilitiesTest () =
 
