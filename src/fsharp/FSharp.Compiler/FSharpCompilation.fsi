@@ -53,8 +53,3 @@ module FSharpSemanticModelExtensions =
     type FSharpSemanticModel with
 
         member Compilation: FSharpCompilation
-
-[<Sealed>]
-type FSharpScript =
-
-    static member Evaluate: source: string * ?args: string list * ?ct: CancellationToken -> Result<obj * FSharpScript, ImmutableArray<Diagnostic>>

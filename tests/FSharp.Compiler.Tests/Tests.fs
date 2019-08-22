@@ -314,8 +314,22 @@ let x = 1 + 1
 
     [<Test>]
     member __.``Script Test - Simple Evaluation`` () =
-        match FSharpScript.Evaluate ("1 + 1", defaultArgs) with
-        | Ok (value, _) -> Assert.AreEqual (2, value)
+
+        use peStream = new MemoryStream()
+        let sm = semanticModelScript "[<EntryPoint>] let main _ = 1 + 1"
+        let c = sm.Compilation
+
+        let res =
+            match c.Emit (peStream) with
+            | Result.Ok _ ->
+                let asm = System.Reflection.Assembly.Load(peStream.ToArray())
+                let res = asm.EntryPoint.Invoke(null, [|Array.zeroCreate<string> 0|])
+                Result.Ok (res)
+            | Result.Error diags ->
+                Result.Error diags
+
+        match res with
+        | Ok (value) -> Assert.AreEqual (2, value)
         | Error diags -> Assert.Fail (sprintf "%A" diags)
 
 [<TestFixture>]
