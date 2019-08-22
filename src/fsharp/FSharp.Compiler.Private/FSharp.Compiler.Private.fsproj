@@ -48,8 +48,8 @@
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Compilation" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Compilation.Tests" />
+    <InternalsVisibleTo Include="FSharp.Compiler" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Tests" />
   </ItemGroup>
 
   <ItemGroup>

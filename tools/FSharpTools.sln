@@ -7,7 +7,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core", "..\src\fshar
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Private", "..\src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Compilation", "..\src\fsharp\FSharp.Compiler.Compilation\FSharp.Compiler.Compilation.fsproj", "{B13184B7-7B95-4D66-AEAF-487F09B35A9C}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler", "..\src\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj", "{B13184B7-7B95-4D66-AEAF-487F09B35A9C}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Tools.Visualizer.WPF", "src\FSharp.Tools.Visualizer.WPF\FSharp.Tools.Visualizer.WPF.fsproj", "{A8058380-BAEE-4D57-A73A-FBB7A5E954D0}"
 EndProject

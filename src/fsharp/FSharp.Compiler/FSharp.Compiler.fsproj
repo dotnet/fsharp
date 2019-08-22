@@ -7,12 +7,8 @@
     <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-
   <ItemGroup>
-    <InternalsVisibleTo Include="FSharp.Compiler.Compilation.Tests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Tests" />
     <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
   </ItemGroup>
 

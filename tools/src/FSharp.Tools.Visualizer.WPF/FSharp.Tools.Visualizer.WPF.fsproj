@@ -26,7 +26,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\src\fsharp\FSharp.Compiler.Compilation\FSharp.Compiler.Compilation.fsproj" />
+	  <ProjectReference Include="..\..\..\src\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj" />
 	  <ProjectReference Include="..\..\..\src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
 	  <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
 	</ItemGroup>

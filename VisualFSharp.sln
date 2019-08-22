@@ -154,15 +154,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TutorialProject", "vsintegr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.Core.nuget", "src\fsharp\FSharp.Core.nuget\FSharp.Core.nuget.csproj", "{8EC30B2E-F1F9-4A98-BBB5-DD0CF6C84DDC}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Compilation", "src\fsharp\FSharp.Compiler.Compilation\FSharp.Compiler.Compilation.fsproj", "{6C05C603-43BB-4A6F-8485-3ED1F685F4A0}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler", "src\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj", "{6C05C603-43BB-4A6F-8485-3ED1F685F4A0}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Compilation.Tests", "tests\FSharp.Compiler.Compilation.Tests\FSharp.Compiler.Compilation.Tests.fsproj", "{0661AF4D-5655-4038-A254-0AC57DEFBD2A}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Tests", "tests\FSharp.Compiler.Tests\FSharp.Compiler.Tests.fsproj", "{0661AF4D-5655-4038-A254-0AC57DEFBD2A}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer", "src\fsharp\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj", "{60BAFFA5-6631-4328-B044-2E012AB76DCA}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer.UnitTests", "tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj", "{AAF2D233-1C38-4090-8FFA-F7C545625E06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSharp.Editor.Helpers", "vsintegration\src\FSharp.Editor.Helpers\FSharp.Editor.Helpers.csproj", "{79255A92-ED00-40BA-9D64-12FCC664A976}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.Editor.Helpers", "vsintegration\src\FSharp.Editor.Helpers\FSharp.Editor.Helpers.csproj", "{79255A92-ED00-40BA-9D64-12FCC664A976}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
