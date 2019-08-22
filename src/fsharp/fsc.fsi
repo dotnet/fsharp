@@ -71,6 +71,23 @@ val compileOfAst :
     dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
       -> unit
 
+val encodeAndOptimizeAndCompile :
+    ctok: CompilationThreadToken *
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    errorLogger: ErrorLogger *
+    generatedCcu: Tast.CcuThunk *
+    outfile: string *
+    typedImplFiles: Tast.TypedImplFile *
+    topAttrs: TypeChecker.TopAttribs *
+    pdbfile: string option *
+    assemblyName: string *
+    assemVerFromAttrib: ILVersionInfo option *
+    signingInfo: StrongNameSigningInfo *
+    exiter: Exiter * 
+    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+        -> unit
 
 /// Part of LegacyHostedCompilerForTesting
 type InProcErrorLoggerProvider = 
@@ -90,3 +107,30 @@ module internal MainModuleBuilder =
     val fileVersion: findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
     val productVersion: findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
     val productVersionToILVersionInfo: string -> ILVersionInfo
+
+[<RequireQualifiedAccess>]
+module internal Phases =
+
+    type EncodeAndOptimizeResult =
+        {
+            SigDataAttributes: ILAttribute list
+            SigDataResources: ILResource list
+            OptDataResources: ILResource list
+        }
+
+    val encodeAndOptimize :
+        ctok: CompilationThreadToken *
+        tcConfig: TcConfig *
+        tcImports: TcImports *
+        frameworkTcImports: TcImports *
+        tcGlobals: TcGlobals *
+        errorLogger: ErrorLogger *
+        generatedCcu: Tast.CcuThunk *
+        outfile: string *
+        typedImplFiles: Tast.TypedImplFile *
+        topAttrs: TypeChecker.TopAttribs *
+        pdbfile: string option *
+        assemblyName: string *
+        assemVerFromAttrib: ILVersionInfo option *
+        signingInfo: StrongNameSigningInfo
+            -> EncodeAndOptimizeResult

@@ -472,6 +472,16 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         builder.AddRange finalDiagnostics
         builder.ToImmutable ()
 
+    member this.EmitAsFile ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
+        let diags = this.GetDiagnostics ct
+
+        if not diags.IsEmpty then
+            failwithf "%A" diags
+
+        let preEmitResult = Async.RunSynchronously (state.asyncLazyPreEmit.GetValueAsync (), cancellationToken = ct)
+        ()
 
     static member Create options =
         FSharpCompilation (CompilationId.Create (), CompilationState.Create options, VersionStamp.Create ())
