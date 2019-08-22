@@ -539,9 +539,17 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
                     member __.Exit _ = Unchecked.defaultof<_> }
 
             do! CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->
-                Driver.encodeAndOptimizeAndCompile (
-                    ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, 
-                    topAttribs, pdbfile, assemblyName, signingInfo, exiter, dynamicAssemblyCreator peStream pdbStreamOpt)
+                let pdbStream =
+                    match pdbStreamOpt with
+                    | Some pdbStream -> pdbStream
+                    | _ -> new MemoryStream() :> Stream
+                try
+                    Driver.encodeAndOptimizeAndCompile (
+                        ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, 
+                        topAttribs, pdbfile, assemblyName, signingInfo, exiter, dynamicAssemblyCreator peStream (Some pdbStream))
+                finally
+                    if pdbStreamOpt.IsNone then
+                        pdbStream.Dispose()
             )
 
             let diags = errorLogger.GetErrors().ToErrorInfos().ToDiagnostics()

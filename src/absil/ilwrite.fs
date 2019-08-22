@@ -4240,7 +4240,7 @@ let writeBinaryAndReportMappings (outfile,
                     if embeddedPDB then
                         embedPortablePdbInfo originalLength contentId stream showTimes fpdb debugDataChunk debugEmbeddedPdbChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
                     else
-                        writePortablePdbInfo contentId stream showTimes fpdb pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
+                        writePortablePdbInfo contentId stream showTimes fpdb pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic pdbStreamOpt
                 | None ->
 #if FX_NO_PDB_WRITER
                     Array.empty<idd>
@@ -4250,7 +4250,7 @@ let writeBinaryAndReportMappings (outfile,
             reportTime showTimes "Generate PDB Info"
 
             // Now we have the debug data we can go back and fill in the debug directory in the image 
-            let fs2 = match pdbStreamOpt with Some stream -> stream | _ -> FileSystem.FileStreamWriteExistingShim outfile
+            let fs2 = match peStreamOpt with Some stream -> stream | _ -> FileSystem.FileStreamWriteExistingShim outfile
             let os2 = new BinaryWriter(fs2, System.Text.Encoding.UTF8, leaveOpen = pdbStreamOpt.IsSome)
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 

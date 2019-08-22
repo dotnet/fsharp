@@ -556,12 +556,21 @@ let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobConten
     stream.WriteTo compressionStream
     (uncompressedLength, contentId, compressedStream)
 
-let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb pathMap cvChunk deterministicPdbChunk checksumPdbChunk algName checksum embeddedPdb deterministicPdb =
-    try FileSystem.FileDelete fpdb with _ -> ()
-    use pdbFile = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
-    stream.WriteTo pdbFile
-    reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None deterministicPdbChunk checksumPdbChunk algName checksum 0L None embeddedPdb deterministicPdb
+let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb pathMap cvChunk deterministicPdbChunk checksumPdbChunk algName checksum embeddedPdb deterministicPdb pdbStreamOpt =
+    let pdbFile =
+        match pdbStreamOpt with
+        | Some stream -> stream
+        | _ ->
+            try FileSystem.FileDelete fpdb with _ -> ()
+            new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite) :> Stream
+
+    try
+        stream.WriteTo pdbFile
+        reportTime showTimes "PDB: Closed"
+        pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None deterministicPdbChunk checksumPdbChunk algName checksum 0L None embeddedPdb deterministicPdb
+    finally
+        if pdbStreamOpt.IsNone then
+            pdbFile.Dispose()
 
 let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk deterministicPdbChunk checksumPdbChunk algName checksum embeddedPdb deterministicPdb =
     reportTime showTimes "PDB: Closed"
