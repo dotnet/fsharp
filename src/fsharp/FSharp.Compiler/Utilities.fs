@@ -188,6 +188,25 @@ type AsyncLazy<'T> (computation) =
 
     member __.TryGetValue () = cachedResult
 
+[<Sealed>]
+type CancellableLazy<'T> (computation) =
+
+    let gate = obj ()
+    let mutable cachedResult = ValueNone
+
+    member __.GetValue(?ct) =
+        let ct = defaultArg ct CancellationToken.None
+
+        lock gate <| fun () ->
+            ct.ThrowIfCancellationRequested ()
+            match cachedResult with
+            | ValueSome result -> result
+            | _ ->
+                cachedResult <- ValueSome (computation ct)
+                cachedResult.Value
+
+    member __.TryGetValue () = cachedResult
+
 /// Thread safe.
 [<Sealed>]
 type LruCache<'Key, 'Value when 'Key : equality and 'Value : not struct> (cacheSize: int, equalityComparer: IEqualityComparer<'Key>) =
