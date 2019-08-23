@@ -837,8 +837,6 @@ and IlxGenEnv =
 
       /// Are we inside of a recursive let binding, while loop, or a for loop?
       isInLoop: bool
-
-      ignoreDiscardOnModDefDo: bool
     }
 
 let SetIsInLoop isInLoop eenv =
@@ -6442,7 +6440,7 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
         GenBindings cenv cgbuf eenv [bind]
 
     | TMDefDo(e, _) ->
-        GenExpr cenv cgbuf eenv SPAlways e (if eenv.ignoreDiscardOnModDefDo then Return else discard)
+        GenExpr cenv cgbuf eenv SPAlways e discard
 
     | TMAbstract mexpr ->
         GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
@@ -6543,7 +6541,7 @@ and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname,
         CodeGenMethod cenv mgbuf
             ([], methodName, eenv, 0,
              (fun cgbuf eenv ->
-                  GenModuleExpr cenv cgbuf qname lazyInitInfo { eenv with ignoreDiscardOnModDefDo = cenv.opts.canScriptReturnValueOnEntryPoint } mexpr
+                  GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
                   CG.EmitInstr cgbuf (pop 0) Push0 I_ret), m)
 
     // The code generation for the initialization is now complete and the IL code is in topCode.
@@ -6626,8 +6624,6 @@ and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname,
                         match mexpr with
                         | ModuleOrNamespaceExprWithSig (_, mexpr, _) ->
                             getILRetTy mexpr
-                        | _ ->
-                            ILType.Void
                     else
                         ILType.Void
 
@@ -7560,8 +7556,7 @@ let GetEmptyIlxGenEnv (ilg: ILGlobals) ccu =
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false
-      isInLoop = false
-      ignoreDiscardOnModDefDo = false }
+      isInLoop = false }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list
