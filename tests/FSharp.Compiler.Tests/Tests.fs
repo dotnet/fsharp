@@ -316,9 +316,7 @@ let x = 1 + 1
     member __.``Script Test - Simple Evaluation`` () =
 
         use peStream = new MemoryStream()
-        let sm = semanticModelScript """
-1 + 1
-let main _ = "test" """
+        let sm = semanticModelScript """1 + 1"""
         let c = sm.Compilation
 
         let res =

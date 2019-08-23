@@ -69,6 +69,42 @@ module Lexer =
 [<RequireQualifiedAccess>]
 module Parser =
 
+    let tryItBinding (pConfig: ParsingConfig) input =
+        if pConfig.isLastFileOrScript && pConfig.isExecutable && pConfig.tcConfig.canScriptReturnValueOnEntryPoint then
+            match input with
+            | ParsedInput.ImplFile (ParsedImplFileInput (fileName, (true as isScript), qualifiedNameOfFile, scopedPragmas, hashDirectives, [modDef], ((true, true) as isLastCompiland))) ->
+
+                let newModDef =
+                    match modDef with
+                    | SynModuleOrNamespace (longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, mModDef) ->
+                        let lastIndex = decls.Length - 1
+
+                        let newDecls =
+                            decls
+                            |> List.mapi (fun i decl ->
+                                if i = lastIndex then
+                                    match decl with
+                                    | SynModuleDecl.DoExpr (_, expr, _) ->
+                                        let m = expr.Range
+                                        let itName = "it" 
+
+                                        let itID  = mkSynId m itName
+                                        let mkBind pat expr = Binding (None, DoBinding, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, NoSequencePointAtInvisibleBinding)
+                                        let bindingA = mkBind (mkSynPatVar None itID) expr (* let it = <expr> *)  // NOTE: the generalizability of 'expr' must not be damaged, e.g. this can't be an application 
+                                        SynModuleDecl.Let (false, [bindingA], m)
+                                    | _ -> decl
+                                else
+                                    decl
+                            )
+
+                        SynModuleOrNamespace (longId, isRecursive, kind, newDecls, xmlDoc, attribs, accessibility, mModDef)
+
+                ParsedInput.ImplFile(ParsedImplFileInput (fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, [newModDef], isLastCompiland))
+            | _ ->
+                input
+        else
+            input
+
     let ParseAux (pConfig: ParsingConfig) lexbuf lex =
         let isLastCompiland = (pConfig.isLastFileOrScript, pConfig.isExecutable)
         let tcConfig = pConfig.tcConfig
@@ -83,7 +119,13 @@ module Parser =
                     ) |> Some
                 with
                 | _ -> None
-        (input, errorLogger.GetErrorInfos ())
+
+
+        let input2 =
+            input
+            |> Option.map (tryItBinding pConfig)
+
+        (input2, errorLogger.GetErrorInfos ())
 
     let Parse pConfig (sourceValue: SourceValue) (ct: CancellationToken) =
         let skip = true

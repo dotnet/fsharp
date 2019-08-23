@@ -585,7 +585,7 @@ type FSharpCompilation with
                 UseScriptResolutionRules = useScriptResolutionRules
                 Script = scriptSnapshot
                 AssemblyPath = assemblyPath
-                IsExecutable = false
+                IsExecutable = isScript
                 KeepAssemblyContents = canEmit
                 KeepAllBackgroundResolutions = false
                 SourceSnapshots = if isScript then ImmutableArray.Create scriptSnapshot.Value else sourceSnapshots
