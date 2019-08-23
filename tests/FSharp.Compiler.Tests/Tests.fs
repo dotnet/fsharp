@@ -318,7 +318,7 @@ let x = 1 + 1
         use peStream = new MemoryStream()
         let sm = semanticModelScript """
 1 + 1
-"test" """
+let main _ = "test" """
         let c = sm.Compilation
 
         let res =

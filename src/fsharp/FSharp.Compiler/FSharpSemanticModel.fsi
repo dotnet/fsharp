@@ -5,6 +5,7 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Compilation.Utilities
+open FSharp.Compiler.Compilation.IncrementalChecker
 open FSharp.Compiler.NameResolution
 
 [<Sealed>]
@@ -29,7 +30,7 @@ type FSharpSymbolInfo =
 [<Sealed>]
 type FSharpSemanticModel =
 
-    internal new: filePath: string * AsyncLazy<IncrementalChecker> * compilationObj: obj -> FSharpSemanticModel
+    internal new: filePath: string * AsyncLazy<IncrementalChecker> * checkFlags: CheckFlags * compilationObj: obj -> FSharpSemanticModel
 
     member internal GetToolTipTextAsync: line: int * column: int -> Async<FSharp.Compiler.SourceCodeServices.FSharpToolTipText<FSharp.Compiler.SourceCodeServices.Layout> option>
 

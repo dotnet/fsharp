@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Compilation
+﻿module FSharp.Compiler.Compilation.IncrementalChecker
 
 open System
 open System.IO
@@ -109,7 +109,8 @@ type internal CheckerOptions =
     }
 
 type CheckFlags =
-    | None = 0x00
+    | None = 0x0
+    | Recheck = 0x1
 
 type PartialCheckResult =
     | NotParsed of FSharpSyntaxTree
@@ -195,6 +196,18 @@ type IncrementalCheckerState =
     member private this.SetPartialCheckResultByIndex (index, result) =
         this.orderedResults.[index] <- result
 
+    member private this.IsChecked filePath =
+        let index = this.GetIndex filePath
+        match this.orderedResults.[index] with
+        | PartialCheckResult.Checked _ -> true
+        | _ -> false
+
+    member private this.GetCheckedTcAccumulator filePath =
+        let index = this.GetIndex filePath
+        match this.orderedResults.[index] with
+        | PartialCheckResult.Checked (_, tcAcc) -> tcAcc
+        | _ -> failwith "file is not checked yet"
+
     member private this.GetPriorTcAccumulatorAsync (filePath: string) =
         async {
             match this.GetIndex filePath with
@@ -206,7 +219,7 @@ type IncrementalCheckerState =
                 | PartialCheckResult.NotParsed syntaxTree
                 | PartialCheckResult.Parsed (syntaxTree, _) ->
                     // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
-                    let! tcAcc, _ = this.CheckAsync (syntaxTree.FilePath, CheckFlags.None)
+                    let! tcAcc, _, _ = this.CheckAsync (syntaxTree.FilePath, CheckFlags.None)
                     return (tcAcc, cacheIndex)
                 | PartialCheckResult.Checked (_, tcAcc) ->
                     return (tcAcc, cacheIndex)
@@ -233,11 +246,19 @@ type IncrementalCheckerState =
         | true, i -> this.orderedResults.[i].SyntaxTree
         | _ -> failwith "file for syntax tree does not exist in incremental checker"
 
-    member this.CheckAsync (filePath: string, flags: CheckFlags) =
+    member this.CheckAsync (filePath: string, flags: CheckFlags) : Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)> =
         let tcConfig = this.tcConfig
         let tcGlobals = this.tcGlobals
         let tcImports = this.tcImports
         let options = this.options
+
+        if flags = CheckFlags.None && this.IsChecked filePath then
+            async {
+                let tcAcc = this.GetCheckedTcAccumulator filePath
+                let senv = SymbolEnv (tcGlobals, tcAcc.tcState.Ccu, tcAcc.latestCcuSigForFile, tcImports)
+                return (tcAcc, TcResultsSinkImpl tcGlobals, senv)
+            }
+        else
 
         async {
             let! ct = Async.CancellationToken
@@ -283,7 +304,7 @@ type IncrementalCheckerState =
                                             latestImplFile=implFile
                                             latestCcuSigForFile=Some ccuSigForFile
                                             tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
-                                            tcModuleNamesDict = moduleNamesDict }, (Some (sink, symbolEnv))
+                                            tcModuleNamesDict = moduleNamesDict }, sink, symbolEnv
                     }
 
                 // No one has ever changed this value, although a bit arbitrary.
@@ -311,12 +332,13 @@ type IncrementalCheckerState =
                     )
                     
                 match! asyncTimeSlicedComputation with
-                | Some (tcAcc, info) ->
+                | Some (tcAcc, sink, senv) ->
                     this.SetPartialCheckResultByIndex (cacheIndex, PartialCheckResult.Checked (syntaxTree, tcAcc))
-                    return (tcAcc, info)
+                    return (tcAcc, sink, senv)
                 | _ -> return raise (OperationCanceledException ())
             | _ ->
-                return (tcAcc, None)
+                let senv = SymbolEnv (tcGlobals, tcAcc.tcState.Ccu, tcAcc.latestCcuSigForFile, tcImports)
+                return (tcAcc, TcResultsSinkImpl tcGlobals, senv)
         }
 
     member this.SpeculativeCheckAsync (filePath: string, tcState: TcState, synExpr: SynExpr) =
@@ -359,13 +381,8 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
     member __.ReplaceSourceSnapshot sourceSnapshot =
         IncrementalChecker (tcInitial, state.ReplaceSourceSnapshot sourceSnapshot)
 
-    member __.CheckAsync filePath =
-        async {
-            let! tcAcc, info = state.CheckAsync (filePath, CheckFlags.None)
-            match info with
-            | None -> return raise (InvalidOperationException ())
-            | Some (sink, symbolEnv) -> return (tcAcc, sink, symbolEnv)
-        }
+    member __.CheckAsync (filePath, flags) =
+        state.CheckAsync (filePath, flags)
 
     member __.SpeculativeCheckAsync (filePath, tcState, synExpr) =
         state.SpeculativeCheckAsync (filePath, tcState, synExpr)
@@ -385,13 +402,11 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
             async { return getTcAccs () }
         | result -> 
             async {
-                let! _ = this.CheckAsync (result.SyntaxTree.FilePath)
+                let! _ = this.CheckAsync (result.SyntaxTree.FilePath, CheckFlags.None)
                 return getTcAccs ()
-            }           
-
-module IncrementalChecker =
-
-    let create (tcInitial: TcInitial) tcGlobals tcImports tcAcc (checkerOptions: CheckerOptions) sourceSnapshots =
+            }
+            
+    static member Create(tcInitial: TcInitial, tcGlobals, tcImports, tcAcc, checkerOptions: CheckerOptions, sourceSnapshots) =
         cancellable {
             let! state = IncrementalCheckerState.Create (tcInitial.tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)
             return IncrementalChecker (tcInitial, state)

@@ -22,6 +22,7 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
+open FSharp.Compiler.Compilation.IncrementalChecker
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Tastops
@@ -319,7 +320,7 @@ type FSharpCompilationOptions =
             | _ ->
                 options.SourceSnapshots
 
-        IncrementalChecker.create tcInitial tcGlobals tcImports tcAcc checkerOptions sourceSnapshots
+        IncrementalChecker.Create (tcInitial, tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)
         |> Cancellable.runWithoutCancellation
 
 and [<RequireQualifiedAccess>] FSharpMetadataReference =
@@ -391,7 +392,7 @@ and [<NoEquality; NoComparison>] CompilationState =
 
             { this with options = options; asyncLazyGetChecker = asyncLazyGetChecker }
 
-and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, version: VersionStamp) =
+and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, version: VersionStamp) as this =
 
     let asyncLazyGetChecker =
         AsyncLazy (async {
@@ -407,6 +408,10 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         if not (state.filePathIndexMap.ContainsKey filePath) then
             failwithf "File path does not exist in compilation. File path: %s" filePath
 
+    let getSemanticModel filePath checkFlags =
+        checkFilePath filePath
+        FSharpSemanticModel (filePath, asyncLazyGetChecker, checkFlags, this)
+
     member __.Id = id
 
     member __.Version = version
@@ -420,9 +425,8 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         checkFilePath sourceSnapshot.FilePath
         FSharpCompilation (id, state.ReplaceSourceSnapshot sourceSnapshot, version.GetNewerVersion ())
 
-    member this.GetSemanticModel filePath =
-        checkFilePath filePath
-        FSharpSemanticModel (filePath, asyncLazyGetChecker, this)
+    member __.GetSemanticModel filePath =
+        getSemanticModel filePath CheckFlags.Recheck
 
     member __.GetSyntaxTree filePath =
         checkFilePath filePath
@@ -457,7 +461,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             let builder = ImmutableArray.CreateBuilder ()
             state.options.SourceSnapshots
             |> ImmutableArray.iter (fun x -> 
-                let semanticModel = this.GetSemanticModel x.FilePath
+                let semanticModel = getSemanticModel x.FilePath CheckFlags.None
                 builder.AddRange(semanticModel.GetDiagnostics ct)
             )
             builder.ToImmutable ()

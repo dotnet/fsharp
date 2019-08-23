@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Compilation
+﻿module internal FSharp.Compiler.Compilation.IncrementalChecker
 
 open System.Collections.Immutable
 open FSharp.Compiler
@@ -8,28 +8,32 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.NameResolution
 
 [<NoEquality; NoComparison>]
-type internal CheckerParsingOptions =
+type CheckerParsingOptions =
     {
         isExecutable: bool
         isScript: bool
     }
 
 [<NoEquality; NoComparison>]
-type internal CheckerOptions =
+type CheckerOptions =
     {
         keepAssemblyContents: bool
         keepAllBackgroundResolutions: bool
         parsingOptions: CheckerParsingOptions
     }
 
+type CheckFlags =
+    | None = 0x0
+    | Recheck = 0x1
+
 /// This is immutable.
 /// Its job is to do the least amount of work to get a result.
 [<Sealed>]
-type internal IncrementalChecker =
+type IncrementalChecker =
 
     member ReplaceSourceSnapshot: sourceSnapshot: FSharpSourceSnapshot -> IncrementalChecker
 
-    member CheckAsync: filePath: string -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
+    member CheckAsync: filePath: string * flags: CheckFlags -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
 
     member SpeculativeCheckAsync: filePath: string * TcState * Ast.SynExpr -> Async<(Tast.TType * TcResultsSinkImpl) option>
 
@@ -45,7 +49,4 @@ type internal IncrementalChecker =
     /// Once finished, the results will be cached.
     member FinishAsync: unit -> Async<TcAccumulator []>
 
-[<RequireQualifiedAccess>]
-module internal IncrementalChecker =
-
-    val create: TcInitial -> TcGlobals -> TcImports -> TcAccumulator -> CheckerOptions -> ImmutableArray<FSharpSourceSnapshot> -> Cancellable<IncrementalChecker>
+    static member Create: TcInitial * TcGlobals * TcImports * TcAccumulator * CheckerOptions * ImmutableArray<FSharpSourceSnapshot> -> Cancellable<IncrementalChecker>

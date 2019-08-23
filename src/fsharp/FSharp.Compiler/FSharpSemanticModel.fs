@@ -24,6 +24,7 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
+open FSharp.Compiler.Compilation.IncrementalChecker
 open Microsoft.CodeAnalysis.Text
 
 [<AutoOpen>]
@@ -220,14 +221,14 @@ type FSharpSymbolInfo =
     static member Empty = Candidates ImmutableArray.Empty
 
 [<Sealed>]
-type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>, compilationObj: obj) =
+type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>, checkFlags, compilationObj: obj) =
 
     let getChecker ct =
         Async.RunSynchronously (asyncLazyChecker.GetValueAsync (), cancellationToken = ct)
 
     let check ct =
         let checker = getChecker ct
-        Async.RunSynchronously (checker.CheckAsync filePath, cancellationToken = ct)
+        Async.RunSynchronously (checker.CheckAsync (filePath, checkFlags), cancellationToken = ct)
 
     let getErrors ct =
         let tcAcc, _, _ = check ct
