@@ -316,14 +316,14 @@ let x = 1 + 1
     member __.``Script Test - Simple Evaluation`` () =
 
         use peStream = new MemoryStream()
-        let sm = semanticModelScript "[<EntryPoint>] let main _ = 1 + 1"
+        let sm = semanticModelScript "1 + 1"
         let c = sm.Compilation
 
         let res =
             match c.Emit (peStream) with
             | Result.Ok _ ->
                 let asm = System.Reflection.Assembly.Load(peStream.ToArray())
-                let res = asm.EntryPoint.Invoke(null, [|Array.zeroCreate<string> 0|])
+                let res = asm.EntryPoint.Invoke(null, [||])
                 Result.Ok (res)
             | Result.Error diags ->
                 Result.Error diags

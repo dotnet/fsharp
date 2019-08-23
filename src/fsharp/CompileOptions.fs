@@ -1827,7 +1827,8 @@ let GenerateIlxCode
           ilxBackend = ilxBackend
           isInteractive = tcConfig.isInteractive
           isInteractiveItExpr = isInteractiveItExpr
-          alwaysCallVirt = tcConfig.alwaysCallVirt }
+          alwaysCallVirt = tcConfig.alwaysCallVirt
+          canScriptReturnValueOnEntryPoint = tcConfig.canScriptReturnValueOnEntryPoint }
 
     ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs) 
 

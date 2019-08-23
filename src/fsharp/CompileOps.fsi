@@ -389,6 +389,8 @@ type TcConfigBuilder =
       mutable pathMap : PathMap
 
       mutable langVersion : LanguageVersion
+
+      mutable canScriptReturnValueOnEntryPoint: bool
     }
 
     static member Initial: TcConfigBuilder
@@ -553,6 +555,7 @@ type TcConfig =
     member shadowCopyReferences: bool
     member useSdkRefs: bool
     member langVersion: LanguageVersion
+    member canScriptReturnValueOnEntryPoint: bool
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 
