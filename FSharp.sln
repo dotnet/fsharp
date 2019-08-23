@@ -39,9 +39,9 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageSer
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.LanguageServer.UnitTests", "tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj", "{C97819B0-B428-4B96-9CD7-497D2D1C738C}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Scripting", "src\fsharp\FSharp.Compiler.Scripting\FSharp.Compiler.Scripting.fsproj", "{6771860A-614D-4FDD-A655-4C70EBCC91B0}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Private.Scripting", "src\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj", "{6771860A-614D-4FDD-A655-4C70EBCC91B0}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Scripting.UnitTests", "tests\FSharp.Compiler.Scripting.UnitTests\FSharp.Compiler.Scripting.UnitTests.fsproj", "{4FEDF286-0252-4EBC-9E75-879CCA3B85DC}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Private.Scripting.UnitTests", "tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj", "{4FEDF286-0252-4EBC-9E75-879CCA3B85DC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -56,7 +56,6 @@ stages:
           - group: DotNet-Blob-Feed
           - group: DotNet-Symbol-Server-Pats
           - group: DotNet-DevDiv-Insertion-Workflow-Variables
-          - group: 'F# MyGet API Keys'
           - name: _SignType
             value: Real
           - name: _DotNetPublishToBlobFeed
@@ -131,13 +130,6 @@ stages:
               DropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
               AccessToken: $(dn-bot-devdiv-drop-rw-code-rw)
             condition: succeeded()
-          - pwsh: .\eng\publish-myget.ps1
-                  -artifactsDir "$(Build.SourcesDirectory)\artifacts"
-                  -apiKey "$(FSharpMyGetAPIKey)"
-                  -configuration $(_BuildConfig)
-            displayName: Upload MyGet packages
-            continueOnError: true
-            condition: and(succeeded(), eq('$(Build.SourceBranch)', 'master'))
 
   #-------------------------------------------------------------------------------------------------------------------#
   #                                                    PR builds                                                      #

@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Scripting\FSharp.Compiler.Scripting.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
   </ItemGroup>
 
 </Project>
