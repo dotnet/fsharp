@@ -211,9 +211,7 @@ type IlxGenOptions =
       isInteractiveItExpr: bool
 
       /// Whenever possible, use callvirt instead of call
-      alwaysCallVirt: bool 
-
-      canScriptReturnValueOnEntryPoint: bool
+      alwaysCallVirt: bool
     }
 
 /// Compilation environment for compiling a fragment of an assembly
@@ -6593,43 +6591,9 @@ and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname,
                     let errorM = m.EndRange
                     warning (Error(FSComp.SR.ilMainModuleEmpty(), errorM))
 
-                let rec getILRetTy mexpr =
-                    match mexpr with
-                    | TMAbstract _
-                    | TMDefLet _ -> ILType.Void
-
-                    | TMDefs mexprs ->
-                        mexprs
-                        |> List.map getILRetTy
-                        |> List.tryFind ((<>)ILType.Void)
-                        |> Option.defaultValue ILType.Void
-
-                    | TMDefDo (e, _) ->
-                        let ty = tyOfExpr cenv.g e
-                        GenReturnType cenv.amap m TypeReprEnv.Empty (Some ty)
-
-                    | TMDefRec (_, _, bindings, _) ->
-                        bindings
-                        |> List.choose (fun binding ->
-                            match binding with
-                            | ModuleOrNamespaceBinding.Binding _ -> None
-                            | ModuleOrNamespaceBinding.Module (_, mexpr) ->
-                                Some (getILRetTy mexpr)
-                        )
-                        |> List.tryFind ((<>)ILType.Void)
-                        |> Option.defaultValue ILType.Void
-
-                let ilRetTy =
-                    if cenv.opts.canScriptReturnValueOnEntryPoint then
-                        match mexpr with
-                        | ModuleOrNamespaceExprWithSig (_, mexpr, _) ->
-                            getILRetTy mexpr
-                    else
-                        ILType.Void
-
                 // generate main@
                 let ilMainMethodDef =
-                    let mdef = mkILNonGenericStaticMethod(mainMethName, ILMemberAccess.Public, [], mkILReturn ilRetTy, MethodBody.IL topCode)
+                    let mdef = mkILNonGenericStaticMethod(mainMethName, ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL topCode)
                     mdef.With(isEntryPoint= true, customAttrs = ilAttrs)
 
                 mgbuf.AddMethodDef(initClassTy.TypeRef, ilMainMethodDef)

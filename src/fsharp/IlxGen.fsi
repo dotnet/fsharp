@@ -52,9 +52,7 @@ type internal IlxGenOptions =
       isInteractiveItExpr                    : bool
 
       /// Indicates that, whenever possible, use callvirt instead of call
-      alwaysCallVirt                         : bool 
-      
-      canScriptReturnValueOnEntryPoint       : bool}
+      alwaysCallVirt                         : bool }
 
 /// The results of the ILX compilation of one fragment of an assembly
 type public IlxGenResults = 
