@@ -192,7 +192,7 @@ type AsyncLazy<'T> (computation) =
 type CancellableLazy<'T> (computation) =
 
     let gate = obj ()
-    let mutable cachedResult = ValueNone
+    let mutable cachedResult: 'T voption = ValueNone
 
     member __.GetValue(?ct) =
         let ct = defaultArg ct CancellationToken.None

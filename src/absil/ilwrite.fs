@@ -4322,12 +4322,8 @@ let WriteILBinary (outfile, (args: options), modul, normalizeAssemblyRefs) =
                                   args.embedSourceList, args.sourceLink, args.checksumAlgorithm, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo, args.pathMap, None, None) modul normalizeAssemblyRefs
     |> ignore
 
-let WriteILBinaryToStreams (outfile, (args: options), modul, normalizeAssemblyRefs, peStream, pdbStreamOpt) =
-    let pdbfile =
-        match pdbStreamOpt with
-        | Some _ -> args.pdbfile
-        | _ -> None
+let WriteILBinaryToStreams (outfile, (args: options), modul, normalizeAssemblyRefs, peStream, pdbStream) =
     writeBinaryAndReportMappings (outfile, 
-                                  args.ilg, pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
-                                  args.embedSourceList, args.sourceLink, args.checksumAlgorithm, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo, args.pathMap, Some peStream, pdbStreamOpt) modul normalizeAssemblyRefs
+                                  args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
+                                  args.embedSourceList, args.sourceLink, args.checksumAlgorithm, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo, args.pathMap, Some peStream, Some pdbStream) modul normalizeAssemblyRefs
     |> ignore

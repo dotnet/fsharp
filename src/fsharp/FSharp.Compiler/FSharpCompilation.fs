@@ -331,7 +331,7 @@ and [<NoEquality; NoComparison>] CompilationState =
     {
         filePathIndexMap: ImmutableDictionary<string, int>
         options: FSharpCompilationOptions
-        asyncLazyGetChecker: AsyncLazy<IncrementalChecker>
+        lazyGetChecker: CancellableLazy<IncrementalChecker>
         asyncLazyPreEmit: AsyncLazy<PreEmitResult>
     }
 
@@ -346,16 +346,19 @@ and [<NoEquality; NoComparison>] CompilationState =
             else
                 filePathIndexMapBuilder.Add (sourceSnapshot.FilePath, i)
 
-        let asyncLazyGetChecker =
-            AsyncLazy (async {
-                return! CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
-                    options.CreateIncrementalChecker (ctok)
-                )
-            })
+        let lazyGetChecker =
+            CancellableLazy (fun ct ->
+                let work =
+                    CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
+                        options.CreateIncrementalChecker (ctok)
+                    )
+                Async.RunSynchronously (work, cancellationToken = ct)
+            )
 
         let asyncLazyPreEmit =
             AsyncLazy (async {
-                let! checker = asyncLazyGetChecker.GetValueAsync ()
+                let! ct = Async.CancellationToken
+                let checker = lazyGetChecker.GetValue ct
                 let! tcAccs = checker.FinishAsync ()
                 let tcInitial = checker.TcInitial
                 let tcGlobals = checker.TcGlobals
@@ -366,7 +369,7 @@ and [<NoEquality; NoComparison>] CompilationState =
         {
             filePathIndexMap = filePathIndexMapBuilder.ToImmutableDictionary ()
             options = options
-            asyncLazyGetChecker = asyncLazyGetChecker
+            lazyGetChecker = lazyGetChecker
             asyncLazyPreEmit= asyncLazyPreEmit
         }
 
@@ -384,25 +387,25 @@ and [<NoEquality; NoComparison>] CompilationState =
 
             let options = { this.options with SourceSnapshots = sourceSnapshotsBuilder.MoveToImmutable () }
 
-            let asyncLazyGetChecker =
-                AsyncLazy (async {
-                    let! checker = this.asyncLazyGetChecker.GetValueAsync ()
-                    return checker.ReplaceSourceSnapshot sourceSnapshot
-                })
+            let lazyGetChecker =
+                CancellableLazy (fun ct ->
+                    let checker = this.lazyGetChecker.GetValue ct
+                    checker.ReplaceSourceSnapshot sourceSnapshot
+                )
 
-            { this with options = options; asyncLazyGetChecker = asyncLazyGetChecker }
+            { this with options = options; lazyGetChecker = lazyGetChecker }
 
 and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, version: VersionStamp) as this =
 
-    let asyncLazyGetChecker =
-        AsyncLazy (async {
+    let lazyGetChecker =
+        CancellableLazy (fun ct ->
             match IncrementalCheckerCache.tryGetValue struct (id, version) with
-            | ValueSome checker -> return checker
+            | ValueSome checker -> checker
             | _ -> 
-                let! checker = state.asyncLazyGetChecker.GetValueAsync ()
+                let checker = state.lazyGetChecker.GetValue ct
                 IncrementalCheckerCache.set struct (id, version) checker
-                return checker
-        })
+                checker
+        )
 
     let checkFilePath filePath =
         if not (state.filePathIndexMap.ContainsKey filePath) then
@@ -410,7 +413,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
     let getSemanticModel filePath =
         checkFilePath filePath
-        FSharpSemanticModel (filePath, asyncLazyGetChecker, this)
+        FSharpSemanticModel (filePath, lazyGetChecker, this)
 
     member __.Id = id
 
@@ -433,10 +436,8 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         // Note: Getting a syntax tree requires that the checker be built. This is due to the tcConfig dependency when parsing a syntax tree.
         //       When parsing does not require tcConfig, we can build the syntax trees in Compilation and pass them directly to the checker when it gets built.
         // TODO: Remove this when we fix the tcConfig dependency on parsing.
-        Async.RunSynchronously (async {
-            let! checker = state.asyncLazyGetChecker.GetValueAsync ()
-            return checker.GetSyntaxTree filePath
-        })
+        let checker = state.lazyGetChecker.GetValue ()
+        checker.GetSyntaxTree filePath
 
     member __.GetAssemblyDataAsync () =
         async {
@@ -478,7 +479,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         builder.AddRange finalDiagnostics
         builder.ToImmutable ()
 
-    member this.Emit (peStream, ?pdbStreamOpt, ?ct) =
+    member this.Emit (peStream, ?pdbStream, ?ct) =
         let ct = defaultArg ct CancellationToken.None
 
         if not this.Options.KeepAssemblyContents then
@@ -491,8 +492,9 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         else
 
         Async.RunSynchronously (async {
+            let! ct = Async.CancellationToken
             let! preEmitResult = state.asyncLazyPreEmit.GetValueAsync ()
-            let! checker = state.asyncLazyGetChecker.GetValueAsync ()
+            let checker = state.lazyGetChecker.GetValue ct
 
             let finalAcc = preEmitResult.finalAccWithErrors
             
@@ -543,17 +545,17 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
                     member __.Exit _ = Unchecked.defaultof<_> }
 
             do! CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->
-                let pdbStream =
-                    match pdbStreamOpt with
+                let pdbStream2 =
+                    match pdbStream with
                     | Some pdbStream -> pdbStream
                     | _ -> new MemoryStream() :> Stream
                 try
                     Driver.encodeAndOptimizeAndCompile (
                         ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, 
-                        topAttribs, pdbfile, assemblyName, signingInfo, exiter, dynamicAssemblyCreator peStream (Some pdbStream))
+                        topAttribs, pdbfile, assemblyName, signingInfo, exiter, dynamicAssemblyCreator peStream pdbStream2)
                 finally
-                    if pdbStreamOpt.IsNone then
-                        pdbStream.Dispose()
+                    if pdbStream.IsNone then
+                        pdbStream2.Dispose()
             )
 
             let diags = errorLogger.GetErrors().ToErrorInfos().ToDiagnostics()
