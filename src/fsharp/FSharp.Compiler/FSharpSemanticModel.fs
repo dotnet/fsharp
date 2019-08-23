@@ -221,14 +221,14 @@ type FSharpSymbolInfo =
     static member Empty = Candidates ImmutableArray.Empty
 
 [<Sealed>]
-type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>, checkFlags, compilationObj: obj) =
+type FSharpSemanticModel (filePath, asyncLazyChecker: AsyncLazy<IncrementalChecker>, compilationObj: obj) =
 
     let getChecker ct =
         Async.RunSynchronously (asyncLazyChecker.GetValueAsync (), cancellationToken = ct)
 
     let check ct =
         let checker = getChecker ct
-        Async.RunSynchronously (checker.CheckAsync (filePath, checkFlags), cancellationToken = ct)
+        Async.RunSynchronously (checker.CheckAsync filePath, cancellationToken = ct)
 
     let getErrors ct =
         let tcAcc, _, _ = check ct

@@ -408,9 +408,9 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         if not (state.filePathIndexMap.ContainsKey filePath) then
             failwithf "File path does not exist in compilation. File path: %s" filePath
 
-    let getSemanticModel filePath checkFlags =
+    let getSemanticModel filePath =
         checkFilePath filePath
-        FSharpSemanticModel (filePath, asyncLazyGetChecker, checkFlags, this)
+        FSharpSemanticModel (filePath, asyncLazyGetChecker, this)
 
     member __.Id = id
 
@@ -426,7 +426,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         FSharpCompilation (id, state.ReplaceSourceSnapshot sourceSnapshot, version.GetNewerVersion ())
 
     member __.GetSemanticModel filePath =
-        getSemanticModel filePath CheckFlags.Recheck
+        getSemanticModel filePath
 
     member __.GetSyntaxTree filePath =
         checkFilePath filePath
@@ -461,7 +461,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             let builder = ImmutableArray.CreateBuilder ()
             state.options.SourceSnapshots
             |> ImmutableArray.iter (fun x -> 
-                let semanticModel = getSemanticModel x.FilePath CheckFlags.None
+                let semanticModel = getSemanticModel x.FilePath
                 builder.AddRange(semanticModel.GetDiagnostics ct)
             )
             builder.ToImmutable ()

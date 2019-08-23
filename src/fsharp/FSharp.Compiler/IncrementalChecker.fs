@@ -108,10 +108,6 @@ type internal CheckerOptions =
         parsingOptions: CheckerParsingOptions
     }
 
-type CheckFlags =
-    | None = 0x0
-    | Recheck = 0x1
-
 type PartialCheckResult =
     | NotParsed of FSharpSyntaxTree
     | Parsed of FSharpSyntaxTree * ParseResult
@@ -219,7 +215,7 @@ type IncrementalCheckerState =
                 | PartialCheckResult.NotParsed syntaxTree
                 | PartialCheckResult.Parsed (syntaxTree, _) ->
                     // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
-                    let! tcAcc, _, _ = this.CheckAsync (syntaxTree.FilePath, CheckFlags.None)
+                    let! tcAcc, _, _ = this.CheckAsync (syntaxTree.FilePath)
                     return (tcAcc, cacheIndex)
                 | PartialCheckResult.Checked (_, tcAcc) ->
                     return (tcAcc, cacheIndex)
@@ -246,19 +242,11 @@ type IncrementalCheckerState =
         | true, i -> this.orderedResults.[i].SyntaxTree
         | _ -> failwith "file for syntax tree does not exist in incremental checker"
 
-    member this.CheckAsync (filePath: string, flags: CheckFlags) : Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)> =
+    member this.CheckAsync (filePath: string) : Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)> =
         let tcConfig = this.tcConfig
         let tcGlobals = this.tcGlobals
         let tcImports = this.tcImports
         let options = this.options
-
-        if flags = CheckFlags.None && this.IsChecked filePath then
-            async {
-                let tcAcc = this.GetCheckedTcAccumulator filePath
-                let senv = SymbolEnv (tcGlobals, tcAcc.tcState.Ccu, tcAcc.latestCcuSigForFile, tcImports)
-                return (tcAcc, TcResultsSinkImpl tcGlobals, senv)
-            }
-        else
 
         async {
             let! ct = Async.CancellationToken
@@ -381,8 +369,8 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
     member __.ReplaceSourceSnapshot sourceSnapshot =
         IncrementalChecker (tcInitial, state.ReplaceSourceSnapshot sourceSnapshot)
 
-    member __.CheckAsync (filePath, flags) =
-        state.CheckAsync (filePath, flags)
+    member __.CheckAsync filePath =
+        state.CheckAsync filePath
 
     member __.SpeculativeCheckAsync (filePath, tcState, synExpr) =
         state.SpeculativeCheckAsync (filePath, tcState, synExpr)
@@ -402,7 +390,7 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
             async { return getTcAccs () }
         | result -> 
             async {
-                let! _ = this.CheckAsync (result.SyntaxTree.FilePath, CheckFlags.None)
+                let! _ = this.CheckAsync (result.SyntaxTree.FilePath)
                 return getTcAccs ()
             }
             

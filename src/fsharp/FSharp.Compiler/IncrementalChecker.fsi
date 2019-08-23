@@ -22,10 +22,6 @@ type CheckerOptions =
         parsingOptions: CheckerParsingOptions
     }
 
-type CheckFlags =
-    | None = 0x0
-    | Recheck = 0x1
-
 /// This is immutable.
 /// Its job is to do the least amount of work to get a result.
 [<Sealed>]
@@ -33,7 +29,7 @@ type IncrementalChecker =
 
     member ReplaceSourceSnapshot: sourceSnapshot: FSharpSourceSnapshot -> IncrementalChecker
 
-    member CheckAsync: filePath: string * flags: CheckFlags -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
+    member CheckAsync: filePath: string -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
 
     member SpeculativeCheckAsync: filePath: string * TcState * Ast.SynExpr -> Async<(Tast.TType * TcResultsSinkImpl) option>
 
