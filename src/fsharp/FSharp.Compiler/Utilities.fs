@@ -197,13 +197,18 @@ type CancellableLazy<'T> (computation) =
     member __.GetValue(?ct) =
         let ct = defaultArg ct CancellationToken.None
 
-        lock gate <| fun () ->
-            ct.ThrowIfCancellationRequested ()
-            match cachedResult with
-            | ValueSome result -> result
-            | _ ->
-                cachedResult <- ValueSome (computation ct)
-                cachedResult.Value
+        // fast path
+        ct.ThrowIfCancellationRequested ()
+        match cachedResult with
+        | ValueSome result -> result
+        | _ ->
+            lock gate <| fun () ->
+                ct.ThrowIfCancellationRequested ()
+                match cachedResult with
+                | ValueSome result -> result
+                | _ ->
+                    cachedResult <- ValueSome (computation ct)
+                    cachedResult.Value
 
     member __.TryGetValue () = cachedResult
 
