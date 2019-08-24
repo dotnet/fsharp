@@ -393,7 +393,17 @@ and [<NoEquality; NoComparison>] CompilationState =
                     checker.ReplaceSourceSnapshot sourceSnapshot
                 )
 
-            { this with options = options; lazyGetChecker = lazyGetChecker }
+            let asyncLazyPreEmit =
+                AsyncLazy (async {
+                    let! ct = Async.CancellationToken
+                    let checker = lazyGetChecker.GetValue ct
+                    let! tcAccs = checker.FinishAsync ()
+                    let tcInitial = checker.TcInitial
+                    let tcGlobals = checker.TcGlobals
+                    return preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
+                })
+
+            { this with options = options; lazyGetChecker = lazyGetChecker; asyncLazyPreEmit = asyncLazyPreEmit }
 
     member this.SubmitSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
         let options = { this.options with SourceSnapshots = ImmutableArray.Create sourceSnapshot }
@@ -404,10 +414,21 @@ and [<NoEquality; NoComparison>] CompilationState =
                 checker.SubmitSourceSnapshot (sourceSnapshot, ct)
             )
 
+        let asyncLazyPreEmit =
+            AsyncLazy (async {
+                let! ct = Async.CancellationToken
+                let checker = lazyGetChecker.GetValue ct
+                let! tcAccs = checker.FinishAsync ()
+                let tcInitial = checker.TcInitial
+                let tcGlobals = checker.TcGlobals
+                return preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
+            })
+
         { this with 
             options = options
             lazyGetChecker = lazyGetChecker
-            filePathIndexMap = ImmutableDictionary.CreateRange [|KeyValuePair(sourceSnapshot.FilePath, 0)|] }              
+            filePathIndexMap = ImmutableDictionary.CreateRange [|KeyValuePair(sourceSnapshot.FilePath, 0)|]
+            asyncLazyPreEmit = asyncLazyPreEmit }              
 
 and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, version: VersionStamp) as this =
 

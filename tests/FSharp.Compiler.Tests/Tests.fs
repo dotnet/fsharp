@@ -152,6 +152,9 @@ module TestModule%i =
 
     let runScriptAndContinue (text1: string) (text2: string) =
         let c = createScriptAux text1
+        //c.GetSemanticModel "C:\\test1.fsx"
+        //|> runScriptAux
+        //|> ignore
         let c2 = FSharpCompilation.CreateScript (c, FSharpSourceSnapshot.FromText ("C:\\test2.fsx", SourceText.From text2))
         c2.GetSemanticModel "C:\\test2.fsx"
         |> runScriptAux
@@ -428,10 +431,11 @@ type C () = class end
 let y = 1 + 1
                 """
                 """
+open Test1
 y
                 """
         match res with
-        | Ok (value) -> Assert.AreEqual (null, value)
+        | Ok (value) -> Assert.AreEqual (2, value)
         | Error diags -> Assert.Fail (sprintf "%A" diags)
 
 //[<TestFixture>]
