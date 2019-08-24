@@ -2411,7 +2411,7 @@ and
     ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref 
+    | TTrait of _tys: TTypes * memberName: string * _memFlags: MemberFlags * _argTys: TTypes * returnType: TType option * solution: TraitConstraintSln option ref 
 
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
@@ -2426,10 +2426,11 @@ and
     member x.Solution 
         with get() = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value)
         and set v = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value <- v)
-
+    member x._Tys = let (TTrait(_tys, _, _, _, _, _)) = x in _tys
+    member x.MemberFlags = let (TTrait(_, _, _memFlags, _, _, _)) = x in _memFlags
+    member x.ArgTys = let (TTrait(_, _, _, _argTys, _, _)) = x in _argTys
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
-
     override x.ToString() = "TTrait(" + x.MemberName + ")"
     
 and 
