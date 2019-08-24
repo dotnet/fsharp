@@ -155,8 +155,8 @@ module TestModule%i =
         //c.GetSemanticModel "C:\\test1.fsx"
         //|> runScriptAux
         //|> ignore
-        let c2 = FSharpCompilation.CreateScript (c, FSharpSourceSnapshot.FromText ("C:\\test2.fsx", SourceText.From text2))
-        c2.GetSemanticModel "C:\\test2.fsx"
+        let c2 = FSharpCompilation.CreateScript (c, FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text2))
+        c2.GetSemanticModel "C:\\test1.fsx"
         |> runScriptAux
 
 [<TestFixture>]
@@ -336,15 +336,11 @@ let x = 1 + 1
         let tmpFsx = Path.ChangeExtension(tmpPath, ".fsx")
         try
             let refText = """
-module RefScript
-
 type FromAnotherScript () = class end
 """
             File.WriteAllText(tmpFsx, refText)
             let text = sprintf """
 #load @"%s"
-
-open RefScript
 
 let x = FromAnotherScript ()
                                """ tmpFsx
@@ -431,7 +427,6 @@ type C () = class end
 let y = 1 + 1
                 """
                 """
-open Test1
 y
                 """
         match res with

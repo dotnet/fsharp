@@ -77,6 +77,21 @@ module Parser =
                 let newModDef =
                     match modDef with
                     | SynModuleOrNamespace (longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, mModDef) ->
+                        let newAttribs =
+                            match kind with
+                            | SynModuleOrNamespaceKind.AnonModule ->
+                                let autoOpenAttrib =
+                                    { 
+                                        SynAttribute.TypeName = LongIdentWithDots([Ident("AutoOpen", range0)], [])
+                                        SynAttribute.ArgExpr = SynExpr.Const(SynConst.Unit, range0)
+                                        SynAttribute.Target = None
+                                        SynAttribute.AppliesToGetterAndSetter = false
+                                        SynAttribute.Range = range0
+                                    }
+                                attribs @ [ { Attributes = [autoOpenAttrib]; Range = range0 } ]
+                            | _ ->
+                                attribs
+
                         let lastIndex = decls.Length - 1
 
                         let newDecls =
@@ -97,7 +112,7 @@ module Parser =
                                     decl
                             )
 
-                        SynModuleOrNamespace (longId, isRecursive, kind, newDecls, xmlDoc, attribs, accessibility, mModDef)
+                        SynModuleOrNamespace (longId, isRecursive, kind, newDecls, xmlDoc, newAttribs, accessibility, mModDef)
 
                 ParsedInput.ImplFile(ParsedImplFileInput (fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, [newModDef], isLastCompiland))
             | _ ->

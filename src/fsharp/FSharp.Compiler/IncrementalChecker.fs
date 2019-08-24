@@ -26,75 +26,6 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Tastops
 
-//type ItemKind =
-//    | Local = 0
-//    | Method = 1
-//    | Property = 2
-//    | 
-
-//type Item with
-
-//    member this.SymbolKind =
-//        match this with
-//        | Item.Value vref ->
-//            if vref.IsLocalRef then
-//                Microsoft.CodeAnalysis.SymbolKind.Local
-//            elif vref.IsConstructor then
-//                Microsoft.CodeAnalysis.SymbolKind.Method
-//            elif vref.IsModuleBinding then
-//                Microsoft.CodeAnalysis.SymbolKind.Property
-//            elif vref.IsMember then
-//                Microsoft.CodeAnalysis.SymbolKind.Property
-//            elif vref.IsExtensionMember then
-//                Microsoft.CodeAnalysis.SymbolKind.
-
-//type ItemTable () =
-
-//    let namespaceDeclarations = Dictionary<string, Range.range> ()
-//    let moduleDeclarations = Dictionary<string, Range.range> ()
-//    let typeDeclarations = Dictionary<string, Range.range> ()
-
-//    member __.TryAdd (item: Item, range: Range.range) =
-//        match item with
-//        | Item.Value vref ->
-            
-
-//type Item with
-
-//    member this.PossibleTopLevelDefinitionRange =
-//        match this with
-//        | Item.Value vref when vref.IsModuleBinding || (vref.IsMember && not vref.IsInstanceMember) -> 
-//            vref.Range
-
-        //| Item.UnionCase (info, _) -> 
-        //    info.UnionCase.Range
-
-        //| Item.ActivePatternResult (_, _, _, m) -> 
-        //    m
-        //| Item.ActivePatternCase eref ->
-        //    eref.ActivePatternVal.Range
-
-        //| Item.ExnCase tcref ->
-        //    tcref.Range
-        //| Item.RecdField info -> 
-        //    info.RecdField.Range
-
-        //| Item.AnonRecdField (_, _, _, m) ->
-        //    m
-
-        //| Item.NewDef id -> 
-        //    id.idRange
-
-        //| Item.ILField _ -> 
-        //    Range.range0
-
-        //| Item.Event info -> 
-        //    match info.ArbitraryValRef with
-        //    | None -> Range.range0
-        //    | Some vref -> vref.Range
-
-        //| Item.
-
 type internal CheckerParsingOptions =
     {
         isExecutable: bool
@@ -192,18 +123,6 @@ type IncrementalCheckerState =
     member private this.SetPartialCheckResultByIndex (index, result) =
         this.orderedResults.[index] <- result
 
-    member private this.IsChecked filePath =
-        let index = this.GetIndex filePath
-        match this.orderedResults.[index] with
-        | PartialCheckResult.Checked _ -> true
-        | _ -> false
-
-    member private this.GetCheckedTcAccumulator filePath =
-        let index = this.GetIndex filePath
-        match this.orderedResults.[index] with
-        | PartialCheckResult.Checked (_, tcAcc) -> tcAcc
-        | _ -> failwith "file is not checked yet"
-
     member private this.GetPriorTcAccumulatorAsync (filePath: string) =
         async {
             match this.GetIndex filePath with
@@ -238,6 +157,9 @@ type IncrementalCheckerState =
         { this with orderedResults = orderedResults }
 
     member this.SubmitSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot, tcAcc) =
+        let tcAcc =
+            { this.initialTcAcc with
+                tcState = tcAcc.tcState }
         IncrementalCheckerState.Create (this.tcConfig, this.tcGlobals, this.tcImports, tcAcc, this.options, ImmutableArray.Create sourceSnapshot)
         |> Cancellable.runWithoutCancellation
 
