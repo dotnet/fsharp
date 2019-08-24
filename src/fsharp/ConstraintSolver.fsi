@@ -102,8 +102,12 @@ type OverloadInformation =
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
 type OverloadResolutionFailure =
-    | NoOverloadsFound   of methodName: string * candidates: OverloadInformation list
-    | PossibleCandidates of methodName: string * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
+  | NoOverloadsFound   of methodName: string
+                        * candidates: OverloadInformation list 
+                        * cx: TraitConstraintInfo option
+  | PossibleCandidates of methodName: string 
+                        * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
+                        * cx: TraitConstraintInfo option
 
 exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range

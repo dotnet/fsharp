@@ -791,20 +791,38 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               |> List.sort
               |> List.map FSComp.SR.formatDashItem
               |> String.concat nl
-          
-          let msg =
+          let formatTraitInfo (cx: TraitConstraintInfo) =
+
+            let prettyArgTys =
+              cx.ArgTys 
+              |> List.map (NicePrint.prettyStringOfTy denv)
+              |> String.concat " +!+ "
+                          
+            [ sprintf "cx.ArgTys      %s" prettyArgTys
+              sprintf "cx.MemberFlags %A" cx.MemberFlags
+              sprintf "cx.MemberName  %A" cx.MemberName
+              sprintf "cx.ReturnType  %A" (cx.ReturnType |> Option.map (NicePrint.prettyStringOfTy denv))
+              sprintf "cx.Solution    %A" cx.Solution
+              sprintf "cx._Tys        %A" (cx._Tys |> List.map (NicePrint.prettyStringOfTy denv))
+            
+            ] |> String.concat nl
+          let cx, msg =
               match failure with
-              | NoOverloadsFound (methodName, overloads) -> FSComp.SR.csNoOverloadsFound methodName + argsMessage + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
-              | PossibleCandidates (methodName, methodNames) ->
-                  let msg = FSComp.SR.csMethodIsOverloaded methodName
-                  match methodNames with
-                  | [] -> msg
-                  | names -> 
-                      let overloads = FSComp.SR.csCandidates (formatOverloads names)
-                      msg 
-                      + argsMessage
-                      + overloads
-          os.Append msg |> ignore
+              | NoOverloadsFound (methodName, overloads, cx) ->
+                cx, FSComp.SR.csNoOverloadsFound methodName + argsMessage + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
+              | PossibleCandidates (methodName, methodNames, cx) ->
+                  cx
+                  , (let msg = FSComp.SR.csMethodIsOverloaded methodName
+                     match methodNames with
+                     | [] -> msg
+                     | names -> 
+                         let overloads = FSComp.SR.csCandidates (formatOverloads names)
+                         msg 
+                         + argsMessage
+                         + overloads)
+                  
+          let traitInfo = cx |> Option.map (fun cx -> nl + nl + "TRAIIAT" + nl + formatTraitInfo cx + nl + nl) |> Option.defaultValue ""
+          os.Append (msg + traitInfo) |> ignore
 
       | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy

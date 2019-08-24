@@ -194,8 +194,12 @@ type OverloadInformation =
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
 type OverloadResolutionFailure =
-    | NoOverloadsFound   of methodName: string * candidates: OverloadInformation list
-    | PossibleCandidates of methodName: string * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
+  | NoOverloadsFound   of methodName: string
+                        * candidates: OverloadInformation list 
+                        * cx: TraitConstraintInfo option
+  | PossibleCandidates of methodName: string 
+                        * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
+                        * cx: TraitConstraintInfo option
 
 exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
@@ -2557,7 +2561,7 @@ and ResolveOverloading
                             | OkResult _ -> None
                             | ErrorResult(_, exn) -> Some {methodSlot = calledMeth; amap = amap; error = exn })
 
-                None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors))), NoTrace
+                None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors, cx))), NoTrace
 
             | [(calledMeth, warns, t)] ->
                 Some calledMeth, OkResult (warns, ()), WithTrace t
@@ -2748,7 +2752,7 @@ and ResolveOverloading
 
                     let methods = List.concat methods
 
-                    None, ErrorD (failOverloading (PossibleCandidates(methodName, methods))), NoTrace
+                    None, ErrorD (failOverloading (PossibleCandidates(methodName, methods,cx))), NoTrace
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
