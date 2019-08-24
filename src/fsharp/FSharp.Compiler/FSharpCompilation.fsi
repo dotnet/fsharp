@@ -19,7 +19,7 @@ and [<Sealed>] FSharpCompilation =
 
     member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
 
-    member Emit: peStream: Stream * ?pdbStreamOpt: Stream * ?ct: CancellationToken -> Result<unit, ImmutableArray<Diagnostic>>
+    member Emit: peStream: Stream * ?pdbStream: Stream * ?ct: CancellationToken -> Result<unit, ImmutableArray<Diagnostic>>
 
     static member Create: assemblyName: string * sourceSnapshots: ImmutableArray<FSharpSourceSnapshot> * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 

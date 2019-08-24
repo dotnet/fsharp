@@ -95,7 +95,7 @@ module TestModule%i =
         c.GetSemanticModel "test1.fs"
 
     let createScriptAux (text: string) =
-        FSharpCompilation.CreateScript ("""C:\test.dll""", FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text), getMetadataReferences(), defaultArgs)
+        FSharpCompilation.CreateScript ("test", FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text), getMetadataReferences(), defaultArgs)
 
     let semanticModelScript text =
         let c = createScriptAux text

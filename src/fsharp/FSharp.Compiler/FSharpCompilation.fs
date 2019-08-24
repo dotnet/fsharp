@@ -212,10 +212,10 @@ type CompilationConfig =
     {
         suggestNamesForErrors: bool
         commandLineArgs: string list
-        projectDirectory: string
         useScriptResolutionRules: bool
         script: FSharpSourceSnapshot option
         assemblyName: string
+        assemblyPath: string
         isExecutable: bool
         keepAssemblyContents: bool
         keepAllBackgroundResolutions: bool
@@ -249,7 +249,7 @@ type CompilationConfig =
                 | FSharpMetadataReference.PortableExecutable peReference ->
                     "-r:" + peReference.FilePath
                 | FSharpMetadataReference.FSharpCompilation compilation ->
-                    "-r:" + compilation.OutputFilePath
+                    "-r:" + compilation.State.cConfig.assemblyPath
              )
              |> List.ofSeq)
 
@@ -264,7 +264,7 @@ type CompilationConfig =
             |> Seq.map (fun x ->
                 { new IProjectReference with
                 
-                    member __.FileName = x.OutputFilePath
+                    member __.FileName = x.State.cConfig.assemblyPath
 
                     member __.EvaluateRawContents _ =
                         cancellable {
@@ -285,10 +285,10 @@ type CompilationConfig =
                 suggestNamesForErrors = this.suggestNamesForErrors
                 sourceFiles = this.sourceSnapshots |> Seq.map (fun x -> x.FilePath) |> List.ofSeq
                 commandLineArgs = commandLineArgs
-                projectDirectory = this.projectDirectory
+                projectDirectory = Environment.CurrentDirectory
                 projectReferences = projectReferences
                 useScriptResolutionRules = this.useScriptResolutionRules
-                assemblyPath = this.assemblyName
+                assemblyPath = this.assemblyPath
                 isExecutable = this.isExecutable
                 keepAssemblyContents = this.keepAssemblyContents
                 keepAllBackgroundResolutions = this.keepAllBackgroundResolutions
@@ -482,7 +482,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             return result.assemblyDataOpt
         }
 
-    member __.OutputFilePath = state.cConfig.assemblyName
+    member __.AssemblyName = state.cConfig.assemblyName
 
     member __.GetDiagnostics ?ct =
         let ct = defaultArg ct CancellationToken.None
@@ -540,9 +540,9 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             let tcImports = checker.TcImports
             let generatedCcu = finalAcc.tcState.Ccu
             let topAttribs = finalAcc.topAttribs.Value
-            let outfile = this.OutputFilePath
-            let assemblyName = Path.GetFileNameWithoutExtension this.OutputFilePath
-            let pdbfile = Some (Path.ChangeExtension(this.OutputFilePath, ".pdb"))
+            let outfile = checker.TcInitial.outfile
+            let assemblyName = this.AssemblyName
+            let pdbfile = Some (Path.ChangeExtension(outfile, ".pdb"))
 
             let typedImplFiles = 
                 preEmitResult.tcStates
@@ -555,7 +555,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
             let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttribs)
 
-            let dynamicAssemblyCreator asmStream pdbStreamOpt =
+            let dynamicAssemblyCreator asmStream pdbStream =
                 Some (fun (_, _, ilModDef: ILModuleDef) ->
                     let options: ILBinaryWriter.options =
                         { ilg = tcGlobals.ilg
@@ -572,7 +572,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
                           signer = GetStrongNameSigner signingInfo
                           dumpDebugInfo = tcConfig.dumpDebugInfo
                           pathMap = tcConfig.pathMap }
-                    ILBinaryWriter.WriteILBinaryToStreams (this.OutputFilePath, options, ilModDef, (fun x -> x), asmStream, pdbStreamOpt)
+                    ILBinaryWriter.WriteILBinaryToStreams (outfile, options, ilModDef, (fun x -> x), asmStream, pdbStream)
                 )
 
             let errorLogger = CompilationErrorLogger("Emit", tcConfig.errorSeverityOptions)
@@ -608,6 +608,15 @@ type FSharpCompilation with
         FSharpCompilation (CompilationId.Create (), CompilationState.Create options, VersionStamp.Create ())
 
     static member CreateAux (assemblyName, sourceSnapshots, metadataReferences, ?canEmit, ?scriptSnapshot, ?args) =
+        if Path.HasExtension assemblyName || Path.IsPathRooted assemblyName then
+            failwith "Assembly name must not be a file path."
+
+        if String.IsNullOrWhiteSpace assemblyName then
+            failwith "Assembly name must not be null or contain whitespace."
+
+        if assemblyName |> String.exists (Char.IsLetterOrDigit >> not) then
+            failwith "Assembly name contains an invalid character."
+
         let canEmit = defaultArg canEmit true
 
         let isScript = scriptSnapshot.IsSome
@@ -618,10 +627,10 @@ type FSharpCompilation with
             {
                 suggestNamesForErrors = suggestNamesForErrors
                 commandLineArgs = defaultArg args []
-                projectDirectory = "\\"
                 useScriptResolutionRules = useScriptResolutionRules
                 script = scriptSnapshot
                 assemblyName = assemblyName
+                assemblyPath = Path.Combine (Environment.CurrentDirectory, Path.ChangeExtension (Path.GetFileNameWithoutExtension assemblyName, ".dll"))
                 isExecutable = isScript
                 keepAssemblyContents = canEmit
                 keepAllBackgroundResolutions = false
