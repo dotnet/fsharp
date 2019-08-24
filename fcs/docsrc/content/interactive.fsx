@@ -44,8 +44,8 @@ open System.IO
 open System.Text
 
 // Intialize output and input streams
-let sbOut = new StringBuilder()
-let sbErr = new StringBuilder()
+let sbOut = StringBuilder()
+let sbErr = StringBuilder()
 let inStream = new StringReader("")
 let outStream = new StringWriter(sbOut)
 let errStream = new StringWriter(sbErr)
@@ -242,7 +242,7 @@ If you want your scripting code to be able to access the 'fsi' object, you shoul
 Normally the one fromm FSharp.Compiler.Interactive.Settings.dll is used.
 *)
 
-let fsiConfig2 = FsiEvaluationSession.GetDefaultConfiguration(fsi)
+let fsiConfig2 = FsiEvaluationSession.GetDefaultConfiguration(fsiSession)
 
 (**
 Collectible code generation
