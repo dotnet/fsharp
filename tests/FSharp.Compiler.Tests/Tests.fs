@@ -91,11 +91,11 @@ module TestModule%i =
             |> List.map (fun (filePath, sourceText) -> temporaryStorage.CreateFSharpSourceSnapshot (filePath, sourceText, CancellationToken.None))
             |> ImmutableArray.CreateRange
 
-        let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, getMetadataReferences(), defaultArgs)
+        let c = FSharpCompilation.Create ("test", sourceSnapshots, getMetadataReferences(), defaultArgs)
         c.GetSemanticModel "test1.fs"
 
     let createScriptAux (text: string) =
-        FSharpCompilation.CreateScript ("""C:\test.dll""", """C:\""", FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text), getMetadataReferences(), defaultArgs)
+        FSharpCompilation.CreateScript ("""C:\test.dll""", FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text), getMetadataReferences(), defaultArgs)
 
     let semanticModelScript text =
         let c = createScriptAux text
@@ -177,7 +177,7 @@ type CompilationTests () =
             |> List.map (fun (filePath, sourceText) -> temporaryStorage.CreateFSharpSourceSnapshot (filePath, sourceText, CancellationToken.None))
             |> ImmutableArray.CreateRange
 
-        let c = FSharpCompilation.Create ("""C:\test.dll""", """C:\""", sourceSnapshots, ImmutableArray.Empty)
+        let c = FSharpCompilation.Create ("test", sourceSnapshots, ImmutableArray.Empty)
 
         c.GetSemanticModel "test3.fs" |> ignore
         Assert.Throws<Exception> (fun () -> c.GetSemanticModel "badfile.fs" |> ignore) |> ignore

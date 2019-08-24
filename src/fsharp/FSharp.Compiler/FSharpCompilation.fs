@@ -208,25 +208,25 @@ module IncrementalCheckerCache =
     let tryGetValue key =
         cache.TryGetValue key
 
-type FSharpCompilationOptions =
+type CompilationConfig =
     {
-        SuggestNamesForErrors: bool
-        CommandLineArgs: string list
-        ProjectDirectory: string
-        UseScriptResolutionRules: bool
-        Script: FSharpSourceSnapshot option
-        AssemblyPath: string
-        IsExecutable: bool
-        KeepAssemblyContents: bool
-        KeepAllBackgroundResolutions: bool
-        SourceSnapshots: ImmutableArray<FSharpSourceSnapshot>
-        MetadataReferences: ImmutableArray<FSharpMetadataReference>
+        suggestNamesForErrors: bool
+        commandLineArgs: string list
+        projectDirectory: string
+        useScriptResolutionRules: bool
+        script: FSharpSourceSnapshot option
+        assemblyName: string
+        isExecutable: bool
+        keepAssemblyContents: bool
+        keepAllBackgroundResolutions: bool
+        sourceSnapshots: ImmutableArray<FSharpSourceSnapshot>
+        metadataReferences: ImmutableArray<FSharpMetadataReference>
     }
 
-    member options.CreateTcInitial ctok =
+    member this.CreateTcInitial ctok =
         let tryGetMetadataSnapshot (path, _) =
             let metadataReferenceOpt = 
-                options.MetadataReferences
+                this.metadataReferences
                 |> Seq.choose(function
                     | FSharpMetadataReference.PortableExecutable peReference -> Some peReference
                     | _ -> None
@@ -238,13 +238,13 @@ type FSharpCompilationOptions =
 
         let commandLineArgs =
             // clear any references as we get them from metadata references
-            options.CommandLineArgs
+            this.commandLineArgs
             |> List.filter (fun x -> not (x.Contains("-r:")))
 
         let commandLineArgs =
             ["--noframework"] @
             commandLineArgs @
-            (options.MetadataReferences
+            (this.metadataReferences
              |> Seq.map (function
                 | FSharpMetadataReference.PortableExecutable peReference ->
                     "-r:" + peReference.FilePath
@@ -254,7 +254,7 @@ type FSharpCompilationOptions =
              |> List.ofSeq)
 
         let projectReferences =
-            options.MetadataReferences
+            this.metadataReferences
             |> Seq.choose(function
                 | FSharpMetadataReference.FSharpCompilation compilation ->
                     Some compilation
@@ -282,28 +282,28 @@ type FSharpCompilationOptions =
                 legacyReferenceResolver = legacyReferenceResolver
                 defaultFSharpBinariesDir = defaultFSharpBinariesDir
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot
-                suggestNamesForErrors = options.SuggestNamesForErrors
-                sourceFiles = options.SourceSnapshots |> Seq.map (fun x -> x.FilePath) |> List.ofSeq
+                suggestNamesForErrors = this.suggestNamesForErrors
+                sourceFiles = this.sourceSnapshots |> Seq.map (fun x -> x.FilePath) |> List.ofSeq
                 commandLineArgs = commandLineArgs
-                projectDirectory = options.ProjectDirectory
+                projectDirectory = this.projectDirectory
                 projectReferences = projectReferences
-                useScriptResolutionRules = options.UseScriptResolutionRules
-                assemblyPath = options.AssemblyPath
-                isExecutable = options.IsExecutable
-                keepAssemblyContents = options.KeepAssemblyContents
-                keepAllBackgroundResolutions = options.KeepAllBackgroundResolutions
-                script = match options.Script with Some script -> Some (script.FilePath, script.GetText(CancellationToken.None).ToFSharpSourceText()) | _ -> None
+                useScriptResolutionRules = this.useScriptResolutionRules
+                assemblyPath = this.assemblyName
+                isExecutable = this.isExecutable
+                keepAssemblyContents = this.keepAssemblyContents
+                keepAllBackgroundResolutions = this.keepAllBackgroundResolutions
+                script = match this.script with Some script -> Some (script.FilePath, script.GetText(CancellationToken.None).ToFSharpSourceText()) | _ -> None
             }
         TcInitial.create ctok tcInitialOptions
 
-    member options.CreateIncrementalChecker ctok =
-        let tcInitial = options.CreateTcInitial ctok
+    member this.CreateIncrementalChecker ctok =
+        let tcInitial = this.CreateTcInitial ctok
         let tcGlobals, tcImports, tcAcc = TcAccumulator.createInitial tcInitial ctok |> Cancellable.runWithoutCancellation
         let checkerOptions =
             {
-                keepAssemblyContents = options.KeepAssemblyContents
-                keepAllBackgroundResolutions = options.KeepAllBackgroundResolutions
-                parsingOptions = { isExecutable = options.IsExecutable; isScript = options.UseScriptResolutionRules }
+                keepAssemblyContents = this.keepAssemblyContents
+                keepAllBackgroundResolutions = this.keepAllBackgroundResolutions
+                parsingOptions = { isExecutable = this.isExecutable; isScript = this.useScriptResolutionRules }
             }
 
         let sourceSnapshots =
@@ -311,14 +311,14 @@ type FSharpCompilationOptions =
             | Some loadClosure ->
                 loadClosure.SourceFiles
                 |> List.map (fun (filePath, _) ->
-                    if options.Script.Value.FilePath = filePath then
-                        options.Script.Value
+                    if this.script.Value.FilePath = filePath then
+                        this.script.Value
                     else
                         FSharpSourceSnapshot.FromText (filePath, Text.SourceText.From (File.ReadAllText filePath))
                 )
                 |> ImmutableArray.CreateRange
             | _ ->
-                options.SourceSnapshots
+                this.sourceSnapshots
 
         IncrementalChecker.Create (tcInitial, tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)
         |> Cancellable.runWithoutCancellation
@@ -330,13 +330,13 @@ and [<RequireQualifiedAccess>] FSharpMetadataReference =
 and [<NoEquality; NoComparison>] CompilationState =
     {
         filePathIndexMap: ImmutableDictionary<string, int>
-        options: FSharpCompilationOptions
+        cConfig: CompilationConfig
         lazyGetChecker: CancellableLazy<IncrementalChecker>
         asyncLazyPreEmit: AsyncLazy<PreEmitResult>
     }
 
-    static member Create options =
-        let sourceSnapshots = options.SourceSnapshots
+    static member Create cConfig =
+        let sourceSnapshots = cConfig.sourceSnapshots
 
         let filePathIndexMapBuilder = ImmutableDictionary.CreateBuilder (StringComparer.OrdinalIgnoreCase)
         for i = 0 to sourceSnapshots.Length - 1 do
@@ -350,7 +350,7 @@ and [<NoEquality; NoComparison>] CompilationState =
             CancellableLazy (fun ct ->
                 let work =
                     CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
-                        options.CreateIncrementalChecker (ctok)
+                        cConfig.CreateIncrementalChecker (ctok)
                     )
                 Async.RunSynchronously (work, cancellationToken = ct)
             )
@@ -368,24 +368,24 @@ and [<NoEquality; NoComparison>] CompilationState =
 
         {
             filePathIndexMap = filePathIndexMapBuilder.ToImmutableDictionary ()
-            options = options
+            cConfig = cConfig
             lazyGetChecker = lazyGetChecker
             asyncLazyPreEmit= asyncLazyPreEmit
         }
 
-    member this.SetOptions options =
-        CompilationState.Create options
+    member this.SetOptions cConfig =
+        CompilationState.Create cConfig
 
     member this.ReplaceSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
         match this.filePathIndexMap.TryGetValue sourceSnapshot.FilePath with
         | false, _ -> failwith "source snapshot does not exist in compilation"
         | _, filePathIndex ->
 
-            let sourceSnapshotsBuilder = this.options.SourceSnapshots.ToBuilder ()
+            let sourceSnapshotsBuilder = this.cConfig.sourceSnapshots.ToBuilder ()
 
             sourceSnapshotsBuilder.[filePathIndex] <- sourceSnapshot
 
-            let options = { this.options with SourceSnapshots = sourceSnapshotsBuilder.MoveToImmutable () }
+            let options = { this.cConfig with sourceSnapshots = sourceSnapshotsBuilder.MoveToImmutable () }
 
             let lazyGetChecker =
                 CancellableLazy (fun ct ->
@@ -403,10 +403,10 @@ and [<NoEquality; NoComparison>] CompilationState =
                     return preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
                 })
 
-            { this with options = options; lazyGetChecker = lazyGetChecker; asyncLazyPreEmit = asyncLazyPreEmit }
+            { this with cConfig = options; lazyGetChecker = lazyGetChecker; asyncLazyPreEmit = asyncLazyPreEmit }
 
     member this.SubmitSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
-        let options = { this.options with SourceSnapshots = ImmutableArray.Create sourceSnapshot }
+        let options = { this.cConfig with sourceSnapshots = ImmutableArray.Create sourceSnapshot }
 
         let lazyGetChecker =
             CancellableLazy (fun ct ->
@@ -425,7 +425,7 @@ and [<NoEquality; NoComparison>] CompilationState =
             })
 
         { this with 
-            options = options
+            cConfig = options
             lazyGetChecker = lazyGetChecker
             filePathIndexMap = ImmutableDictionary.CreateRange [|KeyValuePair(sourceSnapshot.FilePath, 0)|]
             asyncLazyPreEmit = asyncLazyPreEmit }              
@@ -456,10 +456,10 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
     member __.Version = version
 
-    member __.Options = state.options
+    member __.Config = state.cConfig
 
-    member __.SetOptions options =
-        FSharpCompilation (id, state.SetOptions options, version.GetNewerVersion ())
+    member __.SetConfig cConfig =
+        FSharpCompilation (id, state.SetOptions cConfig, version.GetNewerVersion ())
 
     member __.ReplaceSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
         checkFilePath sourceSnapshot.FilePath
@@ -482,7 +482,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             return result.assemblyDataOpt
         }
 
-    member __.OutputFilePath = state.options.AssemblyPath
+    member __.OutputFilePath = state.cConfig.assemblyName
 
     member __.GetDiagnostics ?ct =
         let ct = defaultArg ct CancellationToken.None
@@ -497,7 +497,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
         let allSemanticModelDiagnostics =
             let builder = ImmutableArray.CreateBuilder ()
-            state.options.SourceSnapshots
+            state.cConfig.sourceSnapshots
             |> ImmutableArray.iter (fun x -> 
                 let semanticModel = getSemanticModel x.FilePath
                 builder.AddRange(semanticModel.GetDiagnostics ct)
@@ -519,7 +519,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
     member this.Emit (peStream, ?pdbStream, ?ct) =
         let ct = defaultArg ct CancellationToken.None
 
-        if not this.Options.KeepAssemblyContents then
+        if not this.Config.keepAssemblyContents then
             failwith "This kind of compilation does not support Emit."
 
         let diags = this.GetDiagnostics ct
@@ -607,7 +607,7 @@ type FSharpCompilation with
     static member Create options =
         FSharpCompilation (CompilationId.Create (), CompilationState.Create options, VersionStamp.Create ())
 
-    static member CreateAux (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences, ?canEmit, ?scriptSnapshot, ?args) =
+    static member CreateAux (assemblyName, sourceSnapshots, metadataReferences, ?canEmit, ?scriptSnapshot, ?args) =
         let canEmit = defaultArg canEmit true
 
         let isScript = scriptSnapshot.IsSome
@@ -616,25 +616,25 @@ type FSharpCompilation with
 
         let options =
             {
-                SuggestNamesForErrors = suggestNamesForErrors
-                CommandLineArgs = defaultArg args []
-                ProjectDirectory = projectDirectory
-                UseScriptResolutionRules = useScriptResolutionRules
-                Script = scriptSnapshot
-                AssemblyPath = assemblyPath
-                IsExecutable = isScript
-                KeepAssemblyContents = canEmit
-                KeepAllBackgroundResolutions = false
-                SourceSnapshots = if isScript then ImmutableArray.Create scriptSnapshot.Value else sourceSnapshots
-                MetadataReferences = metadataReferences
+                suggestNamesForErrors = suggestNamesForErrors
+                commandLineArgs = defaultArg args []
+                projectDirectory = "\\"
+                useScriptResolutionRules = useScriptResolutionRules
+                script = scriptSnapshot
+                assemblyName = assemblyName
+                isExecutable = isScript
+                keepAssemblyContents = canEmit
+                keepAllBackgroundResolutions = false
+                sourceSnapshots = if isScript then ImmutableArray.Create scriptSnapshot.Value else sourceSnapshots
+                metadataReferences = metadataReferences
             }
         FSharpCompilation.Create options
 
-    static member Create (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences, ?args) =
-        FSharpCompilation.CreateAux (assemblyPath, projectDirectory, sourceSnapshots, metadataReferences, args = defaultArg args [])
+    static member Create (assemblyName, sourceSnapshots, metadataReferences, ?args) =
+        FSharpCompilation.CreateAux (assemblyName, sourceSnapshots, metadataReferences, args = defaultArg args [])
 
-    static member CreateScript (assemblyPath, projectDirectory, scriptSnapshot, metadataReferences, ?args) =
-        FSharpCompilation.CreateAux (assemblyPath, projectDirectory, ImmutableArray.Empty, metadataReferences, scriptSnapshot = scriptSnapshot, args = defaultArg args [])
+    static member CreateScript (assemblyName, scriptSnapshot, metadataReferences, ?args) =
+        FSharpCompilation.CreateAux (assemblyName, ImmutableArray.Empty, metadataReferences, scriptSnapshot = scriptSnapshot, args = defaultArg args [])
 
     static member CreateScript (previousCompilation: FSharpCompilation, scriptSnapshot, ?additionalMetadataReferences: ImmutableArray<FSharpMetadataReference>) =
         let _additionalMetadataReferences = defaultArg additionalMetadataReferences ImmutableArray.Empty
