@@ -62,43 +62,41 @@ type IncrementalCheckerState =
         options: CheckerOptions
         /// Mutable item, used for caching results. Gets copied when new state gets built.
         orderedResults: PartialCheckResult []
-        indexLookup: ImmutableDictionary<string, int>
+        indexLookup: ImmutableDictionary<FSharpSource, int>
     }
 
     // TODO: This should be moved out of the checker (possibly to Compilation), but we have a dependency on tcConfig; which gets built as part of the checker.
-    //       The checker should not be thinking about source snapshots and only be thinking about consuming syntax trees.
+    //       The checker should not be thinking about sources and only be thinking about consuming syntax trees.
     /// Create a syntax tree.
-    static member private CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, sourceSnapshot: FSharpSourceSnapshot) =
-        let filePath = sourceSnapshot.FilePath
-
+    static member private CreateSyntaxTree (tcConfig, parsingOptions, isLastFileOrScript, src: FSharpSource) =
         let pConfig =
             {
                 tcConfig = tcConfig
                 isLastFileOrScript = isLastFileOrScript
                 isExecutable = parsingOptions.isExecutable
                 conditionalCompilationDefines = []
-                filePath = filePath
+                filePath = src.FilePath
                 supportsFeature = tcConfig.langVersion.SupportsFeature
             }
 
-        FSharpSyntaxTree.Create (filePath, pConfig, sourceSnapshot)
+        FSharpSyntaxTree.Create (pConfig, src)
 
-    static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSourceSnapshots: ImmutableArray<FSharpSourceSnapshot>) =
+    static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSources: ImmutableArray<FSharpSource>) =
         cancellable {
             let isScript = options.parsingOptions.isScript
-            let length = orderedSourceSnapshots.Length
+            let length = orderedSources.Length
 
             let orderedResultsBuilder = ImmutableArray.CreateBuilder length
             let indexLookup = Array.zeroCreate length
 
             orderedResultsBuilder.Count <- length
 
-            orderedSourceSnapshots
-            |> ImmutableArray.iteri (fun i sourceSnapshot ->
-                let isLastFile = (orderedSourceSnapshots.Length - 1) = i
-                let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isScript || isLastFile, sourceSnapshot)
+            orderedSources
+            |> ImmutableArray.iteri (fun i src ->
+                let isLastFile = (orderedSources.Length - 1) = i
+                let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isScript || isLastFile, src)
                 orderedResultsBuilder.[i] <- NotParsed syntaxTree
-                indexLookup.[i] <- KeyValuePair (syntaxTree.FilePath, i)
+                indexLookup.[i] <- KeyValuePair (src, i)
             )
 
             return {
@@ -112,8 +110,8 @@ type IncrementalCheckerState =
             }
         }
 
-    member private this.GetIndex (filePath: string) =
-        match this.indexLookup.TryGetValue filePath with
+    member private this.GetIndex src =
+        match this.indexLookup.TryGetValue src with
         | false, _ -> failwith "source does not exist in incremental checker"
         | true, index -> index
 
@@ -123,9 +121,9 @@ type IncrementalCheckerState =
     member private this.SetPartialCheckResultByIndex (index, result) =
         this.orderedResults.[index] <- result
 
-    member private this.GetPriorTcAccumulatorAsync (filePath: string) =
+    member private this.GetPriorTcAccumulatorAsync (src: FSharpSource) =
         async {
-            match this.GetIndex filePath with
+            match this.GetIndex src with
             | 0 -> return (this.initialTcAcc, 0) // first file
 
             | cacheIndex ->
@@ -134,20 +132,20 @@ type IncrementalCheckerState =
                 | PartialCheckResult.NotParsed syntaxTree
                 | PartialCheckResult.Parsed (syntaxTree, _) ->
                     // We set no checker flags as we don't want to ask for extra information when checking a dependent file.
-                    let! tcAcc, _, _ = this.CheckAsync (syntaxTree.FilePath)
+                    let! tcAcc, _, _ = this.CheckAsync syntaxTree.Source
                     return (tcAcc, cacheIndex)
                 | PartialCheckResult.Checked (_, tcAcc) ->
                     return (tcAcc, cacheIndex)
         }
 
-    member this.ReplaceSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
-        let index = this.GetIndex sourceSnapshot.FilePath
+    member this.ReplaceSource (oldSrc, newSrc: FSharpSource) =
+        let index = this.GetIndex oldSrc
         let orderedResults =
             this.orderedResults
             |> Array.mapi (fun i result ->
                 // invalidate compilation results of the source and all sources below it.
                 if i = index then
-                    let syntaxTree = result.SyntaxTree.WithChangedTextSnapshot sourceSnapshot
+                    let syntaxTree = result.SyntaxTree.WithChangedSource newSrc
                     PartialCheckResult.NotParsed syntaxTree
                 elif i > index then
                     PartialCheckResult.NotParsed result.SyntaxTree
@@ -156,11 +154,11 @@ type IncrementalCheckerState =
             )
         { this with orderedResults = orderedResults }
 
-    member this.SubmitSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot, tcAcc) =
+    member this.SubmitSource (src: FSharpSource, tcAcc) =
         let tcAcc =
             { this.initialTcAcc with
                 tcState = tcAcc.tcState }
-        IncrementalCheckerState.Create (this.tcConfig, this.tcGlobals, this.tcImports, tcAcc, this.options, ImmutableArray.Create sourceSnapshot)
+        IncrementalCheckerState.Create (this.tcConfig, this.tcGlobals, this.tcImports, tcAcc, this.options, ImmutableArray.Create src)
         |> Cancellable.runWithoutCancellation
 
     member this.GetSyntaxTree filePath =
@@ -168,7 +166,7 @@ type IncrementalCheckerState =
         | true, i -> this.orderedResults.[i].SyntaxTree
         | _ -> failwith "file for syntax tree does not exist in incremental checker"
 
-    member this.CheckAsync (filePath: string) : Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)> =
+    member this.CheckAsync (src: FSharpSource) : Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)> =
         let tcConfig = this.tcConfig
         let tcGlobals = this.tcGlobals
         let tcImports = this.tcImports
@@ -177,7 +175,7 @@ type IncrementalCheckerState =
         async {
             let! ct = Async.CancellationToken
 
-            let! (tcAcc, cacheIndex) = this.GetPriorTcAccumulatorAsync (filePath)
+            let! (tcAcc, cacheIndex) = this.GetPriorTcAccumulatorAsync src
             let syntaxTree = (this.GetPartialCheckResultByIndex cacheIndex).SyntaxTree
             let (inputOpt, parseErrors) = syntaxTree.GetParseResult ct
             match inputOpt with
@@ -186,8 +184,10 @@ type IncrementalCheckerState =
                 let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
 
                 let fullComputation = 
-                    eventually {                    
-                        ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filePath) |> ignore
+                    eventually {                 
+                        if not (String.IsNullOrWhiteSpace src.FilePath) then
+                            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName src.FilePath) |> ignore
+
                         let sink = TcResultsSinkImpl tcGlobals
                         let hadParseErrors = not (Array.isEmpty parseErrors)
 
@@ -253,7 +253,7 @@ type IncrementalCheckerState =
                 return (tcAcc, TcResultsSinkImpl tcGlobals, senv)
         }
 
-    member this.SpeculativeCheckAsync (filePath: string, tcState: TcState, synExpr: SynExpr) =
+    member this.SpeculativeCheckAsync (src, tcState: TcState, synExpr: SynExpr) =
         let tcConfig = this.tcConfig
         let tcGlobals = this.tcGlobals
         let tcImports = this.tcImports
@@ -261,13 +261,15 @@ type IncrementalCheckerState =
         async {
             let! ct = Async.CancellationToken
 
-            let syntaxTree = this.GetSyntaxTree filePath
+            let syntaxTree = this.GetSyntaxTree src
             let (inputOpt, _) = syntaxTree.GetParseResult ct
             match inputOpt with
             | Some input ->
                 let fullComputation =           
                     CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->                        
-                        ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filePath) |> ignore
+                        if not (String.IsNullOrWhiteSpace src.FilePath) then
+                            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName src.FilePath) |> ignore
+
                         let sink = TcResultsSinkImpl tcGlobals
                         TryTypeCheckOneInputSynExpr (ctok, tcConfig, tcImports, tcGlobals, TcResultsSink.WithSink sink, tcState, input, synExpr)
                         |> Option.map (fun ty ->
@@ -290,17 +292,17 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
             | _ -> failwith "should not happen, missing a checked file"
         )
 
-    member __.ReplaceSourceSnapshot sourceSnapshot =
-        IncrementalChecker (tcInitial, state.ReplaceSourceSnapshot sourceSnapshot)
+    member __.ReplaceSource (oldSrc, newSrc) =
+        IncrementalChecker (tcInitial, state.ReplaceSource (oldSrc, newSrc))
 
-    member __.CheckAsync filePath =
-        state.CheckAsync filePath
+    member __.CheckAsync src =
+        state.CheckAsync src
 
-    member __.SpeculativeCheckAsync (filePath, tcState, synExpr) =
-        state.SpeculativeCheckAsync (filePath, tcState, synExpr)
+    member __.SpeculativeCheckAsync (src, tcState, synExpr) =
+        state.SpeculativeCheckAsync (src, tcState, synExpr)
 
-    member __.GetSyntaxTree filePath =
-        state.GetSyntaxTree filePath
+    member __.GetSyntaxTree src =
+        state.GetSyntaxTree src
 
     member __.TcInitial = tcInitial
 
@@ -314,16 +316,16 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
             async { return getTcAccs () }
         | result -> 
             async {
-                let! _ = this.CheckAsync (result.SyntaxTree.FilePath)
+                let! _ = this.CheckAsync result.SyntaxTree.Source
                 return getTcAccs ()
             }
 
-    member this.SubmitSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot, ct) =
+    member this.SubmitSource (src: FSharpSource, ct) =
         let lastTcAcc = Async.RunSynchronously(this.FinishAsync (), cancellationToken = ct) |> Array.last
-        IncrementalChecker (tcInitial, state.SubmitSourceSnapshot (sourceSnapshot, lastTcAcc))
+        IncrementalChecker (tcInitial, state.SubmitSource (src, lastTcAcc))
 
-    static member Create(tcInitial: TcInitial, tcGlobals, tcImports, tcAcc, checkerOptions: CheckerOptions, sourceSnapshots) =
+    static member Create(tcInitial: TcInitial, tcGlobals, tcImports, tcAcc, checkerOptions: CheckerOptions, srcs) =
         cancellable {
-            let! state = IncrementalCheckerState.Create (tcInitial.tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)
+            let! state = IncrementalCheckerState.Create (tcInitial.tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, srcs)
             return IncrementalChecker (tcInitial, state)
         }

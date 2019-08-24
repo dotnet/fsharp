@@ -1062,7 +1062,7 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         let index = this.DebugString.IndexOf ("\n")
         this.Kind.GetType().Name + ": " + if index <> -1 then this.DebugString.Substring(0, index) else this.DebugString
 
-and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, lexer: IncrementalLexer) =
+and [<Sealed>] FSharpSyntaxTree (pConfig: ParsingConfig, src: FSharpSource, lexer: IncrementalLexer) =
 
     let gate = obj ()
     let mutable lazyText = ValueNone
@@ -1072,11 +1072,13 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
 
     member this.ConvertSpanToRange (span: TextSpan) =
         let text = this.GetText CancellationToken.None
-        match text.TrySpanToRange (filePath, span) with
+        match text.TrySpanToRange (this.FilePath, span) with
         | ValueSome range -> range
         | _ -> failwith "Invalid span to range conversion."
 
-    member __.FilePath = filePath
+    member __.FilePath = src.FilePath
+
+    member __.Source = src
 
     member __.ParsingConfig = pConfig
 
@@ -1091,11 +1093,11 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                     | ValueSome text ->
                         Parser.Parse pConfig (SourceValue.SourceText text) ct
                     | _ ->
-                        match textSnapshot.TryGetStream ct with
+                        match src.TryGetStream ct with
                         | Some stream ->
                             Parser.Parse pConfig (SourceValue.Stream stream) ct
                         | _ ->
-                            let text = textSnapshot.GetText ct
+                            let text = src.GetText ct
                             lazyText <- ValueSome text
                             Parser.Parse pConfig (SourceValue.SourceText text) ct
                 parseResult <- ValueStrength.Weak (WeakReference<_> result)
@@ -1112,7 +1114,7 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
                 match lazyText with
                 | ValueSome text -> text
                 | _ ->
-                    let text = textSnapshot.GetText ct
+                    let text = src.GetText ct
                     lazyText <- ValueSome text
                     text
             )
@@ -1147,18 +1149,18 @@ and [<Sealed>] FSharpSyntaxTree (filePath: string, pConfig: ParsingConfig, textS
             rootNode
         )
 
-    member this.WithChangedTextSnapshot (newTextSnapshot: FSharpSourceSnapshot) =
-        if obj.ReferenceEquals (textSnapshot, newTextSnapshot) then
+    member this.WithChangedSource (newSrc: FSharpSource) =
+        if obj.ReferenceEquals (src, newSrc) then
             this
         else
-            FSharpSyntaxTree (filePath, pConfig, newTextSnapshot, lexer.WithChangedTextSnapshot newTextSnapshot)
+            FSharpSyntaxTree (pConfig, newSrc, lexer.WithChangedTextSnapshot newSrc)
 
     member this.GetDiagnostics ?ct =
         let ct = defaultArg ct CancellationToken.None
 
         let text = this.GetText ct
         let _, errors = this.GetParseResult ct
-        errors.ToDiagnostics (filePath, text)
+        errors.ToDiagnostics (this.FilePath, text)
 
-    static member Create (filePath, pConfig, textSnapshot) =
-        FSharpSyntaxTree (filePath, pConfig, textSnapshot, IncrementalLexer.Create (pConfig, textSnapshot))
+    static member Create (pConfig, src) =
+        FSharpSyntaxTree (pConfig, src, IncrementalLexer.Create (pConfig, src))

@@ -256,14 +256,14 @@ type FSharpSymbolInfo =
     static member Empty = Candidates ImmutableArray.Empty
 
 [<Sealed>]
-type FSharpSemanticModel (filePath, lazyChecker: CancellableLazy<IncrementalChecker>, compilationObj: obj) =
+type FSharpSemanticModel (src: FSharpSource, lazyChecker: CancellableLazy<IncrementalChecker>, compilationObj: obj) =
 
     let getChecker ct =
        lazyChecker.GetValue ct
 
     let check ct =
         let checker = getChecker ct
-        Async.RunSynchronously (checker.CheckAsync filePath, cancellationToken = ct)
+        Async.RunSynchronously (checker.CheckAsync src, cancellationToken = ct)
 
     let getErrors ct =
         let tcAcc, _, _ = check ct
@@ -273,7 +273,7 @@ type FSharpSemanticModel (filePath, lazyChecker: CancellableLazy<IncrementalChec
         lazy
             // This will go away when incremental checker doesn't build syntax trees.
             let checker = getChecker CancellationToken.None
-            checker.GetSyntaxTree filePath
+            checker.GetSyntaxTree src
 
     let asyncLazyGetAllSymbols =
         AsyncLazy(async {
@@ -320,7 +320,7 @@ type FSharpSemanticModel (filePath, lazyChecker: CancellableLazy<IncrementalChec
             let! ct = Async.CancellationToken
             let! checker, _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
 
-            let syntaxTree = checker.GetSyntaxTree filePath
+            let syntaxTree = checker.GetSyntaxTree src
             let (parsedInputOpt, _) = syntaxTree.GetParseResult ct
 
             match parsedInputOpt with
@@ -367,7 +367,7 @@ type FSharpSemanticModel (filePath, lazyChecker: CancellableLazy<IncrementalChec
                     match env with
                     | :? TcEnv as tcEnv ->
                         let tcState = tcAcc.tcState.NextStateAfterIncrementalFragment tcEnv
-                        let resultOpt = Async.RunSynchronously (checker.SpeculativeCheckAsync (filePath, tcState, synExpr), cancellationToken = ct)
+                        let resultOpt = Async.RunSynchronously (checker.SpeculativeCheckAsync (src, tcState, synExpr), cancellationToken = ct)
                         match resultOpt with
                         | Some (ty, sink) ->
                             let specCnrs = sink.GetResolutions().CapturedNameResolutions
@@ -418,7 +418,7 @@ type FSharpSemanticModel (filePath, lazyChecker: CancellableLazy<IncrementalChec
 
         let text = this.SyntaxTree.GetText ct
         let errors = getErrors ct
-        errors.ToDiagnostics (filePath, text)
+        errors.ToDiagnostics (src.FilePath, text)
 
     member this.GetDiagnostics ?ct =
         let ct = defaultArg ct CancellationToken.None

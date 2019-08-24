@@ -41,9 +41,6 @@ module TestModule%i =
     let createSource name amount =
         (sprintf """namespace Test.%s""" name) + createTestModules name amount
 
-    let workspace = new AdhocWorkspace ()
-    let temporaryStorage = workspace.Services.TemporaryStorage
-
     let getMetadataReferences () =
         let currentReferencedAssemblies =
             let asmLocations =
@@ -78,28 +75,18 @@ module TestModule%i =
 
         metadataReferences.Add fsharpCoreMetadataReference
 
-    let getSemanticModel (text: SourceText) =
-        let sources =
-            [
-                ("test1.fs", text)
-            ]
-        let workspace = new AdhocWorkspace ()
-        let temporaryStorage = workspace.Services.TemporaryStorage
-
-        let sourceSnapshots =
-            sources
-            |> List.map (fun (filePath, sourceText) -> temporaryStorage.CreateFSharpSourceSnapshot (filePath, sourceText, CancellationToken.None))
-            |> ImmutableArray.CreateRange
-
-        let c = FSharpCompilation.Create ("test", sourceSnapshots, getMetadataReferences(), defaultArgs)
-        c.GetSemanticModel "test1.fs"
+    let getSemanticModel (text: string) =
+        let src = FSharpSource.FromText (text, "c:\\test1.fs")
+        let c = FSharpCompilation.Create ("test", ImmutableArray.Create src, getMetadataReferences(), defaultArgs)
+        c.GetSemanticModel src
 
     let createScriptAux (text: string) =
-        FSharpCompilation.CreateScript ("test", FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text), getMetadataReferences(), defaultArgs)
+        let src = FSharpSource.FromText (text, "c:\\test1.fsx")
+        FSharpCompilation.CreateScript ("test", src, getMetadataReferences(), defaultArgs), src
 
     let semanticModelScript text =
-        let c = createScriptAux text
-        c.GetSemanticModel("C:\\test1.fsx")
+        let c, src = createScriptAux text
+        c.GetSemanticModel src
 
     let runScriptAux (sm: FSharpSemanticModel) =
         let c = sm.Compilation
@@ -151,36 +138,18 @@ module TestModule%i =
         |> runScriptAux
 
     let runScriptAndContinue (text1: string) (text2: string) =
-        let c = createScriptAux text1
+        let c, src = createScriptAux text1
         //c.GetSemanticModel "C:\\test1.fsx"
         //|> runScriptAux
         //|> ignore
-        let c2 = FSharpCompilation.CreateScript (c, FSharpSourceSnapshot.FromText ("C:\\test1.fsx", SourceText.From text2))
-        c2.GetSemanticModel "C:\\test1.fsx"
+
+        let src2 = FSharpSource.FromText (text2, "c:\\test2.fsx")
+        let c2 = FSharpCompilation.CreateScript (c, src2)
+        c2.GetSemanticModel src2
         |> runScriptAux
 
 [<TestFixture>]
 type CompilationTests () =
-
-    [<Test>]
-    member __.``Basic Check``() =
-        let sources =
-            [
-                for i = 1 to 3 do
-                    yield ("test" + i.ToString() + ".fs", SourceText.From (createSource "CompilationTest" 1))
-            ]
-        let workspace = new AdhocWorkspace ()
-        let temporaryStorage = workspace.Services.TemporaryStorage
-
-        let sourceSnapshots =
-            sources
-            |> List.map (fun (filePath, sourceText) -> temporaryStorage.CreateFSharpSourceSnapshot (filePath, sourceText, CancellationToken.None))
-            |> ImmutableArray.CreateRange
-
-        let c = FSharpCompilation.Create ("test", sourceSnapshots, ImmutableArray.Empty)
-
-        c.GetSemanticModel "test3.fs" |> ignore
-        Assert.Throws<Exception> (fun () -> c.GetSemanticModel "badfile.fs" |> ignore) |> ignore
 
     [<Test>]
     member __.``Find Symbol - Basic`` () =
@@ -198,7 +167,7 @@ type CompiltationTest<'T> () =
 let testFunction (x: CompilationTest) =
     x.X + x.Y + x.Z"""
 
-        let semanticModel = getSemanticModel (SourceText.From textString)
+        let semanticModel = getSemanticModel textString
 
         let position = textString.IndexOf("""CompiltationTest<'T> ()""")
         let symbol = semanticModel.TryGetEnclosingSymbol (position, CancellationToken.None)
@@ -223,7 +192,7 @@ module TestModuleCompilationTest =
     let testFunction (x: CompilationTest<'T>) =
         x.X + x.Y + x.Z"""
 
-        let semanticModel = getSemanticModel (SourceText.From textString)
+        let semanticModel = getSemanticModel textString
 
         let position = textString.IndexOf("""x.X + x.Y + x.Z""")
         let token = (semanticModel.SyntaxTree.GetRootNode ()).FindToken position
@@ -241,14 +210,14 @@ module TestModuleCompilationTest =
     [<Test>]
     member __.``Get Completion Symbols - Open Declaration`` () =
         let semanticModel = 
-            getSemanticModel (SourceText.From """
+            getSemanticModel """
 module CompilationTest.Test
 open System.Collections
 open System. 
 
 let beef = obj ()
 let x = beef.
-let yopac = 1""")
+let yopac = 1"""
 
         let symbols = semanticModel.GetCompletionSymbolsAsync (4, 13) |> Async.RunSynchronously
         Assert.False (symbols.IsEmpty)
@@ -271,7 +240,7 @@ type Class1 (* inside comment *) () =
     member val Z = 1
         
 """         
-        let semanticModel = getSemanticModel (SourceText.From textString)
+        let semanticModel = getSemanticModel textString
         let syntaxTree = semanticModel.SyntaxTree
         let rootNode = semanticModel.SyntaxTree.GetRootNode ()
 
@@ -308,7 +277,7 @@ there
 
     let y = 1
 """         
-        let semanticModel = getSemanticModel (SourceText.From textString)
+        let semanticModel = getSemanticModel textString
 
         let text = "hello"
         let position = textString.IndexOf(text)

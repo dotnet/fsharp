@@ -16,6 +16,6 @@ type internal IncrementalLexer =
 
     member LexFilter: ErrorLogger.ErrorLogger * (UnicodeLexing.Lexbuf -> (UnicodeLexing.Lexbuf -> Parser.token) -> unit) * CancellationToken -> unit
 
-    member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> IncrementalLexer
+    member WithChangedTextSnapshot: newSrc: FSharpSource -> IncrementalLexer
 
-    static member Create: ParsingConfig * textSnapshot: FSharpSourceSnapshot -> IncrementalLexer
+    static member Create: ParsingConfig * src: FSharpSource -> IncrementalLexer

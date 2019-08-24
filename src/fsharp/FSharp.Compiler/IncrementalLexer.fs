@@ -243,7 +243,7 @@ type TokenCache private (_pConfig: ParsingConfig, text: SourceText, tokens: Resi
         TokenCache (pConfig, text, ArrayPool<ResizeArray<TokenCacheItem>>.Shared.Rent text.Lines.Count)
 
 [<Sealed>]
-type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapshot, incrementalTokenCacheOpt: Lazy<TokenCache option>) =
+type IncrementalLexer (pConfig: ParsingConfig, src: FSharpSource, incrementalTokenCacheOpt: Lazy<TokenCache option>) =
 
     let gate = obj ()
 
@@ -251,15 +251,15 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
 
         let lex = 
             // Check to see if we have a cached text; can happen when GetText is called, even for a stream.
-            match textSnapshot.TryGetText () with
+            match src.TryGetText () with
             | Some text -> lexText pConfig flags errorLogger text
             | _ ->
                 // If we don't have cached text, check to see if textSnapshot is a stream.
-                match textSnapshot.TryGetStream ct with
+                match src.TryGetStream ct with
                 | Some stream -> lexStream pConfig flags errorLogger stream
                 | _ ->
                     // Looks like we have text that is not cached.
-                    let text = textSnapshot.GetText ct
+                    let text = src.GetText ct
                     lexText pConfig flags errorLogger text
 
 
@@ -270,7 +270,7 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
         lex LexFlags.SkipTrivia errorLogger lexCallback ct
 
     let getCachedTokens ct =
-        let text = textSnapshot.GetText ct
+        let text = src.GetText ct
         let tokenCache = TokenCache.Create (pConfig, text)
 
         lexEverything (fun lexbuf getNextToken ->
@@ -315,15 +315,15 @@ type IncrementalLexer (pConfig: ParsingConfig, textSnapshot: FSharpSourceSnapsho
     member this.LexFilter (errorLogger, f, ct) =
         lex LexFlags.UseLexFilter errorLogger f ct
 
-    member this.WithChangedTextSnapshot (newTextSnapshot: FSharpSourceSnapshot) =
-        if obj.ReferenceEquals (textSnapshot, newTextSnapshot) then
+    member this.WithChangedTextSnapshot (newSrc: FSharpSource) =
+        if obj.ReferenceEquals (src, newSrc) then
             this
         else
-            match newTextSnapshot.TryGetText (), this.TryGetCachedTokens () with
+            match newSrc.TryGetText (), this.TryGetCachedTokens () with
             | Some newText, Some tokens ->
-                IncrementalLexer (pConfig, newTextSnapshot, lazy None) // TODO: Actual incremental?
+                IncrementalLexer (pConfig, newSrc, lazy None) // TODO: Actual incremental?
             | _ ->
-                IncrementalLexer (pConfig, newTextSnapshot, lazy None)
+                IncrementalLexer (pConfig, newSrc, lazy None)
 
     static member Create (pConfig, textSnapshot) =
         IncrementalLexer (pConfig, textSnapshot, lazy None)

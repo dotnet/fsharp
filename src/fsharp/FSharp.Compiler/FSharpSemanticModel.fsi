@@ -45,7 +45,7 @@ type FSharpSymbolInfo =
 [<Sealed>]
 type FSharpSemanticModel =
 
-    internal new: filePath: string * CancellableLazy<IncrementalChecker> * compilationObj: obj -> FSharpSemanticModel
+    internal new: FSharpSource * CancellableLazy<IncrementalChecker> * compilationObj: obj -> FSharpSemanticModel
 
     member internal GetToolTipTextAsync: line: int * column: int -> Async<FSharp.Compiler.SourceCodeServices.FSharpToolTipText<FSharp.Compiler.SourceCodeServices.Layout> option>
 

@@ -28,13 +28,13 @@ type CheckerOptions =
 [<Sealed>]
 type IncrementalChecker =
 
-    member ReplaceSourceSnapshot: sourceSnapshot: FSharpSourceSnapshot -> IncrementalChecker
+    member ReplaceSource: oldSrc: FSharpSource * newSrc: FSharpSource -> IncrementalChecker
 
-    member CheckAsync: filePath: string -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
+    member CheckAsync: FSharpSource -> Async<(TcAccumulator * TcResultsSinkImpl * SymbolEnv)>
 
-    member SpeculativeCheckAsync: filePath: string * TcState * Ast.SynExpr -> Async<(Tast.TType * TcResultsSinkImpl) option>
+    member SpeculativeCheckAsync: FSharpSource * TcState * Ast.SynExpr -> Async<(Tast.TType * TcResultsSinkImpl) option>
 
-    member GetSyntaxTree: filePath: string -> FSharpSyntaxTree
+    member GetSyntaxTree: FSharpSource -> FSharpSyntaxTree
 
     member TcInitial: TcInitial
 
@@ -46,6 +46,6 @@ type IncrementalChecker =
     /// Once finished, the results will be cached.
     member FinishAsync: unit -> Async<TcAccumulator []>
 
-    member SubmitSourceSnapshot: FSharpSourceSnapshot * CancellationToken -> IncrementalChecker
+    member SubmitSource: FSharpSource * CancellationToken -> IncrementalChecker
 
-    static member Create: TcInitial * TcGlobals * TcImports * TcAccumulator * CheckerOptions * ImmutableArray<FSharpSourceSnapshot> -> Cancellable<IncrementalChecker>
+    static member Create: TcInitial * TcGlobals * TcImports * TcAccumulator * CheckerOptions * ImmutableArray<FSharpSource> -> Cancellable<IncrementalChecker>

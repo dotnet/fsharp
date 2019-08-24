@@ -125,7 +125,12 @@ and [<Sealed>] FSharpSyntaxNode =
 
 and [<Sealed>] FSharpSyntaxTree =
 
+    /// The file that was parsed to form a syntax tree.
+    /// Will be empty if there is no file associated with the syntax tree.
+    /// Will never be null.
     member FilePath: string
+
+    member internal Source: FSharpSource
 
     /// TODO: Make this public when we have a better way to handling ParsingInfo, perhaps have a better ParsingOptions?
     member internal ParsingConfig: ParsingConfig
@@ -150,10 +155,10 @@ and [<Sealed>] FSharpSyntaxTree =
     /// Get the text associated with the syntax tree.
     member GetText: ?ct: CancellationToken -> SourceText
 
-    /// Creates a new syntax tree with the given text snapshot.
-    member WithChangedTextSnapshot: newTextSnapshot: FSharpSourceSnapshot -> FSharpSyntaxTree
+    /// Creates a new syntax tree with the given source.
+    member WithChangedSource: newSrc: FSharpSource -> FSharpSyntaxTree
 
     /// Get diagnostics.
     member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
 
-    static member internal Create: filePath: string * ParsingConfig * FSharpSourceSnapshot -> FSharpSyntaxTree
+    static member internal Create: ParsingConfig * FSharpSource -> FSharpSyntaxTree

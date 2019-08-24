@@ -127,13 +127,10 @@ module Parser =
         let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
 
         let input =
-                try
-                    Lexer.LexAux pConfig lexbuf errorLogger (fun lexargs lexbuf ->
-                        let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, tcConfig.compilingFslib, lex lexargs, lexbuf)
-                        ParseInput(tokenizer.Lexer, errorLogger, lexbuf, None, filePath, isLastCompiland)
-                    ) |> Some
-                with
-                | _ -> None
+            Lexer.LexAux pConfig lexbuf errorLogger (fun lexargs lexbuf ->
+                let tokenizer = LexFilter.LexFilter(lexargs.lightSyntaxStatus, tcConfig.compilingFslib, lex lexargs, lexbuf)
+                ParseInput(tokenizer.Lexer, errorLogger, lexbuf, None, filePath, isLastCompiland)
+            ) |> Some
 
 
         let input2 =

@@ -11,21 +11,21 @@ type [<RequireQualifiedAccess>] FSharpMetadataReference =
 
 and [<Sealed>] FSharpCompilation =
 
-    member ReplaceSourceSnapshot: FSharpSourceSnapshot -> FSharpCompilation
+    member ReplaceSource: oldSrc: FSharpSource * newSrc: FSharpSource -> FSharpCompilation
 
-    member GetSemanticModel: filePath: string -> FSharpSemanticModel
+    member GetSemanticModel: FSharpSource -> FSharpSemanticModel
 
-    member GetSyntaxTree: filePath: string -> FSharpSyntaxTree
+    member GetSyntaxTree: FSharpSource -> FSharpSyntaxTree
 
     member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
 
     member Emit: peStream: Stream * ?pdbStream: Stream * ?ct: CancellationToken -> Result<unit, ImmutableArray<Diagnostic>>
 
-    static member Create: assemblyName: string * sourceSnapshots: ImmutableArray<FSharpSourceSnapshot> * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
+    static member Create: assemblyName: string * srcs: ImmutableArray<FSharpSource> * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 
-    static member CreateScript: assemblyName: string * scriptSnapshot: FSharpSourceSnapshot * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
+    static member CreateScript: assemblyName: string * scriptSnapshot: FSharpSource * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 
-    static member CreateScript: previousCompilation: FSharpCompilation * scriptSnapshot: FSharpSourceSnapshot * ?additionalMetadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
+    static member CreateScript: previousCompilation: FSharpCompilation * scriptSnapshot: FSharpSource * ?additionalMetadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
 
 [<AutoOpen>]
 module FSharpSemanticModelExtensions =

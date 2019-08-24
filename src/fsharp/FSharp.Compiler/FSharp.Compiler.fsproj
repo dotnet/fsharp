@@ -19,8 +19,8 @@
     <Compile Include="TcAccumulator.fs" />
     <Compile Include="AstVisitor.fsi" />
     <Compile Include="AstVisitor.fs" />
-    <Compile Include="FSharpSourceSnapshot.fsi" />
-    <Compile Include="FSharpSourceSnapshot.fs" />
+    <Compile Include="FSharpSource.fsi" />
+    <Compile Include="FSharpSource.fs" />
     <Compile Include="Parser.fsi" />
     <Compile Include="Parser.fs" />
     <Compile Include="IncrementalLexer.fsi" />
