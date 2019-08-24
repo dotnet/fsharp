@@ -237,6 +237,10 @@ type IncrementalCheckerState =
             )
         { this with orderedResults = orderedResults }
 
+    member this.SubmitSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot, tcAcc) =
+        IncrementalCheckerState.Create (this.tcConfig, this.tcGlobals, this.tcImports, tcAcc, this.options, ImmutableArray.Create sourceSnapshot)
+        |> Cancellable.runWithoutCancellation
+
     member this.GetSyntaxTree filePath =
         match this.indexLookup.TryGetValue filePath with
         | true, i -> this.orderedResults.[i].SyntaxTree
@@ -283,8 +287,6 @@ type IncrementalCheckerState =
                         let symbolEnv = SymbolEnv (tcGlobals, tcState.Ccu, Some ccuSigForFile, tcImports)
                                 
                         let newErrors = capturingErrorLogger.GetErrorInfos ()
-
-                        this.SetPartialCheckResultByIndex (cacheIndex, PartialCheckResult.Checked (syntaxTree, tcAcc))
 
                         return {tcAcc with  tcState=tcState 
                                             tcEnvAtEndOfFile=tcEnvAtEndOfFile
@@ -393,7 +395,11 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
                 let! _ = this.CheckAsync (result.SyntaxTree.FilePath)
                 return getTcAccs ()
             }
-            
+
+    member this.SubmitSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot, ct) =
+        let lastTcAcc = Async.RunSynchronously(this.FinishAsync (), cancellationToken = ct) |> Array.last
+        IncrementalChecker (tcInitial, state.SubmitSourceSnapshot (sourceSnapshot, lastTcAcc))
+
     static member Create(tcInitial: TcInitial, tcGlobals, tcImports, tcAcc, checkerOptions: CheckerOptions, sourceSnapshots) =
         cancellable {
             let! state = IncrementalCheckerState.Create (tcInitial.tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, sourceSnapshots)

@@ -9,11 +9,26 @@ open FSharp.Compiler.Compilation.IncrementalChecker
 open FSharp.Compiler.NameResolution
 
 [<Sealed>]
+type FSharpTypeInfo =
+
+    member IsModule: bool
+
+    member CompiledName: string
+
+[<Sealed>]
 type FSharpSymbol = 
 
     member internal Item: Item
 
     member Name: string
+
+    member IsInvisible: bool
+
+    member IsModuleBinding: bool
+
+    member TryGetCompiledName: unit -> string option
+
+    member TryGetParentTypeInfo: unit -> FSharpTypeInfo option
 
 [<Sealed>]
 type FSharpSymbolInfo =
@@ -34,9 +49,9 @@ type FSharpSemanticModel =
 
     member internal GetToolTipTextAsync: line: int * column: int -> Async<FSharp.Compiler.SourceCodeServices.FSharpToolTipText<FSharp.Compiler.SourceCodeServices.Layout> option>
 
-    member internal GetCompletionSymbolsAsync: line: int * column: int -> Async<InternalFSharpSymbol list>
+    member GetCompletionSymbolsAsync: line: int * column: int -> Async<InternalFSharpSymbol list>
 
-    member GetSymbolInfo: node: FSharpSyntaxNode * ct: CancellationToken -> FSharpSymbolInfo
+    member GetSymbolInfo: node: FSharpSyntaxNode * ?ct: CancellationToken -> FSharpSymbolInfo
 
     member TryGetEnclosingSymbol: position: int * ct: CancellationToken -> FSharpSymbol option
 

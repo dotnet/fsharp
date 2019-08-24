@@ -8,11 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="FSharp.Compiler.Tests" />
-    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="Utilities.fs" />
     <Compile Include="Abbreviations.fs" />
     <Compile Include="Extensions.fs" />

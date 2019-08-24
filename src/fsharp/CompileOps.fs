@@ -2169,8 +2169,6 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
-
-      mutable canScriptReturnValueOnEntryPoint: bool
       }
 
     static member Initial =
@@ -2312,7 +2310,6 @@ type TcConfigBuilder =
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
-          canScriptReturnValueOnEntryPoint = false
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2788,7 +2785,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member x.noConditionalErasure = data.noConditionalErasure
-    member x.canScriptReturnValueOnEntryPoint = data.canScriptReturnValueOnEntryPoint
 
     static member Create(builder, validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter

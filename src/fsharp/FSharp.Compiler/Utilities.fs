@@ -191,6 +191,8 @@ type AsyncLazy<'T> (computation) =
 [<Sealed>]
 type CancellableLazy<'T> (computation) =
 
+    let mutable computation = computation
+
     let gate = obj ()
     let mutable cachedResult: 'T voption = ValueNone
 
@@ -208,6 +210,7 @@ type CancellableLazy<'T> (computation) =
                 | ValueSome result -> result
                 | _ ->
                     cachedResult <- ValueSome (computation ct)
+                    computation <- Unchecked.defaultof<_>
                     cachedResult.Value
 
     member __.TryGetValue () = cachedResult

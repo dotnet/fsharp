@@ -6,7 +6,6 @@ open System.Collections.Immutable
 open System.Collections.Generic
 open System.Threading
 open FSharp.Compiler.Compilation
-open FSharp.Compiler.Compilation.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open NUnit.Framework
@@ -101,6 +100,61 @@ module TestModule%i =
     let semanticModelScript text =
         let c = createScriptAux text
         c.GetSemanticModel("C:\\test1.fsx")
+
+    let runScriptAux (sm: FSharpSemanticModel) =
+        let c = sm.Compilation
+
+        use peStream = new MemoryStream()
+        match c.Emit (peStream) with
+        | Result.Ok _ ->
+            
+            let asm = System.Reflection.Assembly.Load(peStream.ToArray())
+            asm.EntryPoint.Invoke(null, [||]) |> ignore
+
+            let itNodeOpt =
+                sm.SyntaxTree.GetRootNode().GetDescendants()
+                |> Seq.filter (fun node ->
+                    match node.Kind with
+                    | FSharpSyntaxNodeKind.Ident (0, ident) when ident.idText = "$it" ->
+                        node.GetAncestors()
+                        |> Seq.exists (fun ancest ->
+                            match ancest.Kind with
+                            | FSharpSyntaxNodeKind.ModuleDecl (FSharp.Compiler.Ast.SynModuleDecl.Let _) ->
+                                true
+                            | _ ->
+                                false
+                        )
+                    | _ -> false
+                )
+                |> Seq.tryLast
+
+            match itNodeOpt with
+            | Some itNode ->
+                let it = sm.GetSymbolInfo(itNode).Symbol.Value
+                let itCompiledName = it.TryGetCompiledName().Value
+                let parentTypeInfo = it.TryGetParentTypeInfo().Value
+
+                let asm = System.Reflection.Assembly.Load(peStream.ToArray())
+                asm.EntryPoint.Invoke(null, [||]) |> ignore
+                let parentRuntimeType = asm.GetType(parentTypeInfo.CompiledName)
+                let itRuntimeProperty = parentRuntimeType.GetProperty(itCompiledName)
+                let value = itRuntimeProperty.GetMethod.Invoke(null, [||])
+
+                Result.Ok value
+            | _ ->
+                Result.Ok null
+        | Result.Error diags ->
+            Result.Error diags
+
+    let runScript (text: string) =
+        semanticModelScript text
+        |> runScriptAux
+
+    let runScriptAndContinue (text1: string) (text2: string) =
+        let c = createScriptAux text1
+        let c2 = FSharpCompilation.CreateScript (c, FSharpSourceSnapshot.FromText ("C:\\test2.fsx", SourceText.From text2))
+        c2.GetSemanticModel "C:\\test2.fsx"
+        |> runScriptAux
 
 [<TestFixture>]
 type CompilationTests () =
@@ -314,133 +368,181 @@ let x = 1 + 1
 
     [<Test>]
     member __.``Script Test - Simple Evaluation`` () =
-
-        use peStream = new MemoryStream()
-        let sm = semanticModelScript """1 + 1"""
-        let c = sm.Compilation
-
-        let res =
-            match c.Emit (peStream) with
-            | Result.Ok _ ->
-                let asm = System.Reflection.Assembly.Load(peStream.ToArray())
-                let res = asm.EntryPoint.Invoke(null, [||])
-                Result.Ok (res)
-            | Result.Error diags ->
-                Result.Error diags
-
-        match res with
+        match runScript "1 + 1" with
         | Ok (value) -> Assert.AreEqual (2, value)
         | Error diags -> Assert.Fail (sprintf "%A" diags)
 
-[<TestFixture>]
-type UtilitiesTest () =
 
     [<Test>]
-    member __.``Lru Cache Validation`` () =
-        let lru = LruCache<int, obj> (5, Collections.Generic.EqualityComparer.Default)
-
-        Assert.Throws<ArgumentNullException> (fun () -> lru.Set (1, null)) |> ignore
-
-        let o1 = obj ()
-        lru.Set (1, o1)
-
-        Assert.AreEqual (1, lru.Count)
-
-        match lru.TryGetValue 1 with
-        | ValueSome o -> Assert.AreSame (o1, o)
-        | _ -> failwith "couldn't find object in Lru"
-
-        lru.Set (1, obj ())
-
-        match lru.TryGetValue 1 with
-        | ValueSome o -> Assert.AreNotSame (o1, o)
-        | _ -> failwith "couldn't find object in Lru"
-
-        lru.Set (2, obj ())
-        lru.Set (3, obj ())
-        lru.Set (4, obj ())
-        lru.Set (5, obj ())
-
-        Assert.AreEqual (5, lru.Count)
-
-        lru.Set (6, obj ())
-
-        Assert.AreEqual (5, lru.Count)
-
-        Assert.True ((lru.TryGetValue 1).IsNone)
-
-        lru.TryGetValue 2 |> ignore
-
-        lru.Set (7, obj ())
-
-        // Because we tried to acess 2 before setting 7, it put 3 at the back.
-        Assert.True ((lru.TryGetValue 3).IsNone)
-
-        Assert.True ((lru.TryGetValue 2).IsSome)
-
-        Assert.AreEqual (5, lru.Count)
-
-        Assert.True ((lru.TryGetValue 1).IsNone)
-        Assert.True ((lru.TryGetValue 2).IsSome)
-        Assert.True ((lru.TryGetValue 3).IsNone)
-        Assert.True ((lru.TryGetValue 4).IsSome)
-        Assert.True ((lru.TryGetValue 5).IsSome)
-        Assert.True ((lru.TryGetValue 6).IsSome)
+    member __.``Script Test - Simple Evaluation - 2`` () =
+        let res =
+            runScript
+                """
+1 + 1
+5 + 5
+                """
+        match res with
+        | Ok (value) -> Assert.AreEqual (10, value)
+        | Error diags -> Assert.Fail (sprintf "%A" diags)
 
     [<Test>]
-    member __.``Mru Weak Cache Validation`` () =
-        let mru = MruWeakCache<int, obj> (5, 10, Collections.Generic.EqualityComparer.Default)
+    member __.``Script Test - Simple Evaluation - 3`` () =
+        let res =
+            runScript
+                """
+let it = 1 + 1
+5 + 5
+                """
+        match res with
+        | Ok (value) -> Assert.AreEqual (10, value)
+        | Error diags -> Assert.Fail (sprintf "%A" diags)
 
-        Assert.Throws<ArgumentNullException> (fun () -> mru.Set (1, null)) |> ignore
+    [<Test>]
+    member __.``Script Test - Simple Evaluation - 4`` () =
+        let res =
+            runScript
+                """
+let it = 1 + 1
+                """
+        match res with
+        | Ok (value) -> Assert.AreEqual (null, value)
+        | Error diags -> Assert.Fail (sprintf "%A" diags)
 
-        let stackF () =
-            let o1 = obj ()
-            mru.Set (1, o1)
+    [<Test>]
+    member __.``Script Test - Simple Evaluation - 5`` () =
+        let res =
+            runScript
+                """
+1 + 1
+type C () = class end
+                """
+        match res with
+        | Ok (value) -> Assert.AreEqual (null, value)
+        | Error diags -> Assert.Fail (sprintf "%A" diags)
 
-            Assert.AreEqual (1, mru.Count)
-            Assert.AreEqual (0, mru.WeakReferenceCount)
+    [<Test>]
+    member __.``Script Test - Evaluation with continue`` () =
+        let res =
+            runScriptAndContinue
+                """
+let y = 1 + 1
+                """
+                """
+y
+                """
+        match res with
+        | Ok (value) -> Assert.AreEqual (null, value)
+        | Error diags -> Assert.Fail (sprintf "%A" diags)
 
-            match mru.TryGetValue 1 with
-            | ValueSome o -> Assert.AreSame (o1, o)
-            | _ -> failwith "couldn't find object in mru"
+//[<TestFixture>]
+//type UtilitiesTest () =
 
-            mru.Set (2, obj ())
-            mru.Set (3, obj ())
-            mru.Set (4, obj ())
+//    [<Test>]
+//    member __.``Lru Cache Validation`` () =
+//        let lru = LruCache<int, obj> (5, Collections.Generic.EqualityComparer.Default)
 
-            let o5 = obj ()
-            mru.Set (5, o5)
+//        Assert.Throws<ArgumentNullException> (fun () -> lru.Set (1, null)) |> ignore
 
-            Assert.AreEqual (5, mru.Count)
-            Assert.AreEqual (0, mru.WeakReferenceCount)
+//        let o1 = obj ()
+//        lru.Set (1, o1)
 
-            let o6 = obj ()
-            mru.Set (6, o6)
+//        Assert.AreEqual (1, lru.Count)
 
-            Assert.AreEqual (5, mru.Count)
-            Assert.AreEqual (1, mru.WeakReferenceCount)
+//        match lru.TryGetValue 1 with
+//        | ValueSome o -> Assert.AreSame (o1, o)
+//        | _ -> failwith "couldn't find object in Lru"
 
-            Assert.True ((mru.TryGetValue 5) = ValueSome o5)
+//        lru.Set (1, obj ())
 
-            // trying to get 6, evicts 5 out of the cache and into the weak reference cache.
-            Assert.True ((mru.TryGetValue 6) = ValueSome o6)
+//        match lru.TryGetValue 1 with
+//        | ValueSome o -> Assert.AreNotSame (o1, o)
+//        | _ -> failwith "couldn't find object in Lru"
 
-            Assert.AreEqual (5, mru.Count)
-            Assert.AreEqual (1, mru.WeakReferenceCount)
+//        lru.Set (2, obj ())
+//        lru.Set (3, obj ())
+//        lru.Set (4, obj ())
+//        lru.Set (5, obj ())
 
-        stackF ()
-        GC.Collect ()
+//        Assert.AreEqual (5, lru.Count)
 
-        Assert.AreEqual (5, mru.Count)
-        Assert.AreEqual (1, mru.WeakReferenceCount)
+//        lru.Set (6, obj ())
 
-        Assert.True ((mru.TryGetValue 5).IsNone)
-        Assert.True ((mru.TryGetValue 6).IsSome)
-        Assert.True ((mru.TryGetValue 4).IsSome)
-        Assert.True ((mru.TryGetValue 3).IsSome)
-        Assert.True ((mru.TryGetValue 2).IsSome)
-        Assert.True ((mru.TryGetValue 1).IsSome)
+//        Assert.AreEqual (5, lru.Count)
 
-        Assert.AreEqual (5, mru.Count)
-        Assert.AreEqual (0, mru.WeakReferenceCount)
-        ()
+//        Assert.True ((lru.TryGetValue 1).IsNone)
+
+//        lru.TryGetValue 2 |> ignore
+
+//        lru.Set (7, obj ())
+
+//        // Because we tried to acess 2 before setting 7, it put 3 at the back.
+//        Assert.True ((lru.TryGetValue 3).IsNone)
+
+//        Assert.True ((lru.TryGetValue 2).IsSome)
+
+//        Assert.AreEqual (5, lru.Count)
+
+//        Assert.True ((lru.TryGetValue 1).IsNone)
+//        Assert.True ((lru.TryGetValue 2).IsSome)
+//        Assert.True ((lru.TryGetValue 3).IsNone)
+//        Assert.True ((lru.TryGetValue 4).IsSome)
+//        Assert.True ((lru.TryGetValue 5).IsSome)
+//        Assert.True ((lru.TryGetValue 6).IsSome)
+
+//    [<Test>]
+//    member __.``Mru Weak Cache Validation`` () =
+//        let mru = MruWeakCache<int, obj> (5, 10, Collections.Generic.EqualityComparer.Default)
+
+//        Assert.Throws<ArgumentNullException> (fun () -> mru.Set (1, null)) |> ignore
+
+//        let stackF () =
+//            let o1 = obj ()
+//            mru.Set (1, o1)
+
+//            Assert.AreEqual (1, mru.Count)
+//            Assert.AreEqual (0, mru.WeakReferenceCount)
+
+//            match mru.TryGetValue 1 with
+//            | ValueSome o -> Assert.AreSame (o1, o)
+//            | _ -> failwith "couldn't find object in mru"
+
+//            mru.Set (2, obj ())
+//            mru.Set (3, obj ())
+//            mru.Set (4, obj ())
+
+//            let o5 = obj ()
+//            mru.Set (5, o5)
+
+//            Assert.AreEqual (5, mru.Count)
+//            Assert.AreEqual (0, mru.WeakReferenceCount)
+
+//            let o6 = obj ()
+//            mru.Set (6, o6)
+
+//            Assert.AreEqual (5, mru.Count)
+//            Assert.AreEqual (1, mru.WeakReferenceCount)
+
+//            Assert.True ((mru.TryGetValue 5) = ValueSome o5)
+
+//            // trying to get 6, evicts 5 out of the cache and into the weak reference cache.
+//            Assert.True ((mru.TryGetValue 6) = ValueSome o6)
+
+//            Assert.AreEqual (5, mru.Count)
+//            Assert.AreEqual (1, mru.WeakReferenceCount)
+
+//        stackF ()
+//        GC.Collect ()
+
+//        Assert.AreEqual (5, mru.Count)
+//        Assert.AreEqual (1, mru.WeakReferenceCount)
+
+//        Assert.True ((mru.TryGetValue 5).IsNone)
+//        Assert.True ((mru.TryGetValue 6).IsSome)
+//        Assert.True ((mru.TryGetValue 4).IsSome)
+//        Assert.True ((mru.TryGetValue 3).IsSome)
+//        Assert.True ((mru.TryGetValue 2).IsSome)
+//        Assert.True ((mru.TryGetValue 1).IsSome)
+
+//        Assert.AreEqual (5, mru.Count)
+//        Assert.AreEqual (0, mru.WeakReferenceCount)
+//        ()

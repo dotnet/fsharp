@@ -395,6 +395,20 @@ and [<NoEquality; NoComparison>] CompilationState =
 
             { this with options = options; lazyGetChecker = lazyGetChecker }
 
+    member this.SubmitSourceSnapshot (sourceSnapshot: FSharpSourceSnapshot) =
+        let options = { this.options with SourceSnapshots = ImmutableArray.Create sourceSnapshot }
+
+        let lazyGetChecker =
+            CancellableLazy (fun ct ->
+                let checker = this.lazyGetChecker.GetValue ct
+                checker.SubmitSourceSnapshot (sourceSnapshot, ct)
+            )
+
+        { this with 
+            options = options
+            lazyGetChecker = lazyGetChecker
+            filePathIndexMap = ImmutableDictionary.CreateRange [|KeyValuePair(sourceSnapshot.FilePath, 0)|] }              
+
 and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, version: VersionStamp) as this =
 
     let lazyGetChecker =
@@ -414,6 +428,8 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
     let getSemanticModel filePath =
         checkFilePath filePath
         FSharpSemanticModel (filePath, lazyGetChecker, this)
+
+    member __.State = state
 
     member __.Id = id
 
@@ -447,7 +463,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
     member __.OutputFilePath = state.options.AssemblyPath
 
-    member this.GetDiagnostics ?ct =
+    member __.GetDiagnostics ?ct =
         let ct = defaultArg ct CancellationToken.None
 
         let preEmitResult = Async.RunSynchronously (state.asyncLazyPreEmit.GetValueAsync (), cancellationToken = ct)
@@ -598,6 +614,11 @@ type FSharpCompilation with
 
     static member CreateScript (assemblyPath, projectDirectory, scriptSnapshot, metadataReferences, ?args) =
         FSharpCompilation.CreateAux (assemblyPath, projectDirectory, ImmutableArray.Empty, metadataReferences, scriptSnapshot = scriptSnapshot, args = defaultArg args [])
+
+    static member CreateScript (previousCompilation: FSharpCompilation, scriptSnapshot, ?additionalMetadataReferences: ImmutableArray<FSharpMetadataReference>) =
+        let _additionalMetadataReferences = defaultArg additionalMetadataReferences ImmutableArray.Empty
+
+        FSharpCompilation (CompilationId.Create (), previousCompilation.State.SubmitSourceSnapshot scriptSnapshot, VersionStamp.Create ())
 
 [<AutoOpen>]
 module FSharpSemanticModelExtensions =

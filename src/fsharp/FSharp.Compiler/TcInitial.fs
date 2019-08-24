@@ -116,9 +116,6 @@ module TcInitial =
                         CompilationWorker.Enqueue work
                 }
 
-            // TODO: We may not want to compile scripts to always return a value on entry point.
-            tcConfigB.canScriptReturnValueOnEntryPoint <- scriptOpt.IsSome
-
             tcConfigB, sourceFilesNew
 
         let loadClosureOpt =

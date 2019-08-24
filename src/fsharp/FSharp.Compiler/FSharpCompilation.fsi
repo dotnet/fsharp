@@ -45,6 +45,8 @@ and [<Sealed>] FSharpCompilation =
 
     static member CreateScript: assemblyPath: string * ProjectDirectory: string * scriptSnapshot: FSharpSourceSnapshot * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 
+    static member CreateScript: previousCompilation: FSharpCompilation * scriptSnapshot: FSharpSourceSnapshot * ?additionalMetadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
+
     static member internal Create: FSharpCompilationOptions -> FSharpCompilation
 
 [<AutoOpen>]

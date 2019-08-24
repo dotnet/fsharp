@@ -70,7 +70,7 @@ module Lexer =
 module Parser =
 
     let tryItBinding (pConfig: ParsingConfig) input =
-        if pConfig.isLastFileOrScript && pConfig.isExecutable && pConfig.tcConfig.canScriptReturnValueOnEntryPoint then
+        if pConfig.isLastFileOrScript && pConfig.isExecutable then
             match input with
             | ParsedInput.ImplFile (ParsedImplFileInput (fileName, (true as isScript), qualifiedNameOfFile, scopedPragmas, hashDirectives, [modDef], ((true, true) as isLastCompiland))) ->
 
@@ -86,7 +86,7 @@ module Parser =
                                     match decl with
                                     | SynModuleDecl.DoExpr (_, expr, _) ->
                                         let m = expr.Range
-                                        let itName = "it" 
+                                        let itName = "$it" 
 
                                         let itID  = mkSynId m itName
                                         let mkBind pat expr = Binding (None, DoBinding, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, NoSequencePointAtInvisibleBinding)

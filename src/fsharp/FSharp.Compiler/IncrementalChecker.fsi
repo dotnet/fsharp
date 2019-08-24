@@ -1,5 +1,6 @@
 ﻿module internal FSharp.Compiler.Compilation.IncrementalChecker
 
+open System.Threading
 open System.Collections.Immutable
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -44,5 +45,7 @@ type IncrementalChecker =
     /// Finishes checking everything.
     /// Once finished, the results will be cached.
     member FinishAsync: unit -> Async<TcAccumulator []>
+
+    member SubmitSourceSnapshot: FSharpSourceSnapshot * CancellationToken -> IncrementalChecker
 
     static member Create: TcInitial * TcGlobals * TcImports * TcAccumulator * CheckerOptions * ImmutableArray<FSharpSourceSnapshot> -> Cancellable<IncrementalChecker>

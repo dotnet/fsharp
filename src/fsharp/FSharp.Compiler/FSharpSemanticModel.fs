@@ -189,11 +189,46 @@ type FSharpSymbolKind =
     | Namespace
 
 [<Sealed>]
+type FSharpTypeInfo (tcref: TyconRef) =
+    
+    member __.IsModule = tcref.IsModule
+
+    member __.CompiledName = tcref.CompiledName
+
+[<Sealed>]
 type FSharpSymbol private (senv: SymbolEnv, item: Item) =
 
     member __.Item = item
 
     member __.Name = item.DisplayName
+
+    member __.IsInvisible =
+        match item with
+        | Item.Value vref -> vref.IsCompilerGenerated
+        | _ -> false
+
+    member __.IsModuleBinding =
+        match item with
+        | Item.Value vref -> vref.IsModuleBinding
+        | _ -> false
+
+    member __.TryGetCompiledName () =
+        match item with
+        | Item.Value vref ->
+            Some (vref.CompiledName senv.g.CompilerGlobalState)
+        | _ ->
+            None
+
+    member __.TryGetParentTypeInfo () =
+        match item with
+        | Item.Value vref ->
+            match vref.ApparentEnclosingEntity with
+            | ParentRef.Parent tcref ->
+                Some (FSharpTypeInfo tcref)
+            | ParentRef.ParentNone -> 
+                None
+        | _ ->
+            None
 
     static member Create (senv: SymbolEnv, item) =
         FSharpSymbol (senv, item)
@@ -301,7 +336,8 @@ type FSharpSemanticModel (filePath, lazyChecker: CancellableLazy<IncrementalChec
         let rootNode = this.SyntaxTree.GetRootNode ct
         rootNode.FindToken position
 
-    member __.GetSymbolInfo (node: FSharpSyntaxNode, ct) =
+    member __.GetSymbolInfo (node: FSharpSyntaxNode, ?ct) =
+        let ct = defaultArg ct CancellationToken.None
         let _checker, _tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
         let cnrs = resolutions.CapturedNameResolutions
         getSymbolInfo symbolEnv cnrs node
