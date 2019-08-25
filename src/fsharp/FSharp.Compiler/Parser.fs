@@ -100,7 +100,7 @@ module Parser =
                                 if i = lastIndex then
                                     match decl with
                                     | SynModuleDecl.DoExpr (_, expr, _) ->
-                                        let m = expr.Range
+                                        let m = range0
                                         let itName = "$it" 
 
                                         let itID  = mkSynId m itName

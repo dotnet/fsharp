@@ -394,12 +394,15 @@ type C () = class end
             runScriptAndContinue
                 """
 let y = 1 + 1
+type Doot () =
+    member __.Test(x: int) = x + 10
                 """
                 """
-y
+let d = Doot ()
+d.Test(y) + 10
                 """
         match res with
-        | Ok (value) -> Assert.AreEqual (2, value)
+        | Ok value -> Assert.AreEqual (22, value)
         | Error diags -> Assert.Fail (sprintf "%A" diags)
 
 //[<TestFixture>]
