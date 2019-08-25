@@ -8,7 +8,7 @@ module PatternMatchingWarningTests =
 
     [<Test>]
     let ``Complete pattern match on byte should not trigger FS0025 warning`` () =
-        CompilerAssert.CompileExe
+        CompilerAssert.Pass
             """
     let f x =
            match x with
@@ -272,7 +272,7 @@ module PatternMatchingWarningTests =
             """
     [<Test>]
     let ``Complete pattern match on sbyte should not trigger FS0025 warning`` () =
-        CompilerAssert.CompileExe
+        CompilerAssert.Pass
             """
     let f x =
         match x with
