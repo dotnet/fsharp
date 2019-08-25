@@ -315,7 +315,7 @@ let x = FromAnotherScript ()
                                """ tmpFsx
 
             let c = semanticModelScript text
-            let diags = c.Compilation.GetDiagnostics()
+            let diags = c.Compilation.GetSyntaxAndSemanticDiagnostics()
             Assert.True (diags.IsEmpty, sprintf "%A" diags)
         finally
             try File.Delete tmpPath with | _ -> ()

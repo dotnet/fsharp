@@ -23,6 +23,15 @@ type CheckerOptions =
         parsingOptions: CheckerParsingOptions
     }
 
+[<NoEquality;NoComparison; Sealed>]
+type PreEmitState =
+
+    member ImplFiles: Tast.TypedImplFile list
+
+    member TypeCheckErrors: FSharpErrorInfo []
+
+    member FinalTcAcc: TcAccumulator
+
 /// This is immutable.
 /// Its job is to do the least amount of work to get a result.
 [<Sealed>]
@@ -44,7 +53,8 @@ type IncrementalChecker =
 
     /// Finishes checking everything.
     /// Once finished, the results will be cached.
-    member FinishAsync: unit -> Async<TcAccumulator []>
+    /// Returns the state used prior to emitting an assembly.
+    member FinishAsync: unit -> Async<PreEmitState>
 
     member SubmitSource: FSharpSource * CancellationToken -> IncrementalChecker
 

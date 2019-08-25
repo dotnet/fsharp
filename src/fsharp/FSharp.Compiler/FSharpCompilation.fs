@@ -249,33 +249,34 @@ type CompilationConfig =
                 | FSharpMetadataReference.PortableExecutable peReference ->
                     "-r:" + peReference.FilePath
                 | FSharpMetadataReference.FSharpCompilation compilation ->
-                    "-r:" + compilation.State.cConfig.assemblyPath
+                    failwith "F# compilation reference not support yet."
+                    //"-r:" + compilation.State.cConfig.assemblyPath
              )
              |> List.ofSeq)
 
-        let projectReferences =
-            this.metadataReferences
-            |> Seq.choose(function
-                | FSharpMetadataReference.FSharpCompilation compilation ->
-                    Some compilation
-                | _ ->
-                    None
-            )
-            |> Seq.map (fun x ->
-                { new IProjectReference with
+        //let projectReferences =
+        //    this.metadataReferences
+        //    |> Seq.choose(function
+        //        | FSharpMetadataReference.FSharpCompilation compilation ->
+        //            Some compilation
+        //        | _ ->
+        //            None
+        //    )
+        //    |> Seq.map (fun x ->
+        //        { new IProjectReference with
                 
-                    member __.FileName = x.State.cConfig.assemblyPath
+        //            member __.FileName = x.State.cConfig.assemblyPath
 
-                    member __.EvaluateRawContents _ =
-                        cancellable {
-                            let! ct = Cancellable.token ()
-                            return Async.RunSynchronously(x.GetAssemblyDataAsync (), cancellationToken = ct)
-                        }
+        //            member __.EvaluateRawContents _ =
+        //                cancellable {
+        //                    let! ct = Cancellable.token ()
+        //                    return Async.RunSynchronously(x.GetAssemblyDataAsync (), cancellationToken = ct)
+        //                }
 
-                    member __.TryGetLogicalTimeStamp (_, _) = None
-                }
-            )
-            |> List.ofSeq
+        //            member __.TryGetLogicalTimeStamp (_, _) = None
+        //        }
+        //    )
+        //    |> List.ofSeq
 
         let tcInitialOptions =
             {
@@ -286,7 +287,7 @@ type CompilationConfig =
                 sourceFiles = []
                 commandLineArgs = commandLineArgs
                 projectDirectory = Environment.CurrentDirectory
-                projectReferences = projectReferences
+                projectReferences = [] // TODO:
                 useScriptResolutionRules = this.useScriptResolutionRules
                 assemblyPath = this.assemblyPath
                 isExecutable = this.isExecutable
@@ -332,7 +333,7 @@ and [<NoEquality; NoComparison>] CompilationState =
         filePathIndexMap: ImmutableDictionary<FSharpSource, int>
         cConfig: CompilationConfig
         lazyGetChecker: CancellableLazy<IncrementalChecker>
-        asyncLazyPreEmit: AsyncLazy<PreEmitResult>
+        asyncLazyPreEmit: AsyncLazy<PreEmitState>
     }
 
     static member Create cConfig =
@@ -359,12 +360,8 @@ and [<NoEquality; NoComparison>] CompilationState =
             AsyncLazy (async {
                 let! ct = Async.CancellationToken
                 let checker = lazyGetChecker.GetValue ct
-                let! tcAccs = checker.FinishAsync ()
-                let tcInitial = checker.TcInitial
-                let tcGlobals = checker.TcGlobals
-                return preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
-            })
-               
+                return! checker.FinishAsync ()
+            })            
 
         {
             filePathIndexMap = filePathIndexMapBuilder.ToImmutableDictionary ()
@@ -397,11 +394,8 @@ and [<NoEquality; NoComparison>] CompilationState =
                 AsyncLazy (async {
                     let! ct = Async.CancellationToken
                     let checker = lazyGetChecker.GetValue ct
-                    let! tcAccs = checker.FinishAsync ()
-                    let tcInitial = checker.TcInitial
-                    let tcGlobals = checker.TcGlobals
-                    return preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
-                })
+                    return! checker.FinishAsync ()
+                })  
 
             { this with cConfig = options; lazyGetChecker = lazyGetChecker; asyncLazyPreEmit = asyncLazyPreEmit }
 
@@ -418,11 +412,8 @@ and [<NoEquality; NoComparison>] CompilationState =
             AsyncLazy (async {
                 let! ct = Async.CancellationToken
                 let checker = lazyGetChecker.GetValue ct
-                let! tcAccs = checker.FinishAsync ()
-                let tcInitial = checker.TcInitial
-                let tcGlobals = checker.TcGlobals
-                return preEmit tcInitial.assemblyName tcInitial.outfile tcInitial.tcConfig tcGlobals tcAccs
-            })
+                return! checker.FinishAsync ()
+            })  
 
         { this with 
             cConfig = options
@@ -450,6 +441,14 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         check src
         FSharpSemanticModel (src, lazyGetChecker, this)
 
+    let getSyntaxTree src =
+        check src
+        // Note: Getting a syntax tree requires that the checker be built. This is due to the tcConfig dependency when parsing a syntax tree.
+        //       When parsing does not require tcConfig, we can build the syntax trees in Compilation and pass them directly to the checker when it gets built.
+        // TODO: Remove this when we fix the tcConfig dependency on parsing.
+        let checker = state.lazyGetChecker.GetValue ()
+        checker.GetSyntaxTree src
+
     member __.State = state
 
     member __.Id = id
@@ -469,33 +468,16 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         getSemanticModel src
 
     member __.GetSyntaxTree src =
-        check src
-        // Note: Getting a syntax tree requires that the checker be built. This is due to the tcConfig dependency when parsing a syntax tree.
-        //       When parsing does not require tcConfig, we can build the syntax trees in Compilation and pass them directly to the checker when it gets built.
-        // TODO: Remove this when we fix the tcConfig dependency on parsing.
-        let checker = state.lazyGetChecker.GetValue ()
-        checker.GetSyntaxTree src
-
-    member __.GetAssemblyDataAsync () =
-        async {
-            let! result = state.asyncLazyPreEmit.GetValueAsync ()
-            return result.assemblyDataOpt
-        }
+        getSyntaxTree src
 
     member __.AssemblyName = state.cConfig.assemblyName
 
-    member __.GetDiagnostics ?ct =
+    member __.GetSyntaxAndSemanticDiagnostics ?ct =
         let ct = defaultArg ct CancellationToken.None
 
-        let preEmitResult = Async.RunSynchronously (state.asyncLazyPreEmit.GetValueAsync (), cancellationToken = ct)
-        
-        let initialDiagnostics =
-            let errors =
-                preEmitResult.finalAccWithErrors.tcErrorsRev
-                |> List.head
-            errors.ToDiagnostics ()
+        let preEmitState = Async.RunSynchronously (state.asyncLazyPreEmit.GetValueAsync (), cancellationToken = ct)
 
-        let allSemanticModelDiagnostics =
+        let syntaxDiagnostics =
             let builder = ImmutableArray.CreateBuilder ()
             state.cConfig.sources
             |> ImmutableArray.iter (fun x -> 
@@ -504,16 +486,11 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             )
             builder.ToImmutable ()
 
-        let finalDiagnostics =
-            let errors =
-                preEmitResult.finalAccWithErrors.tcErrorsRev
-                |> List.last
-            errors.ToDiagnostics ()
+        let semanticDiagnostics = preEmitState.TypeCheckErrors.ToDiagnostics ()
         
-        let builder = ImmutableArray.CreateBuilder (allSemanticModelDiagnostics.Length + finalDiagnostics.Length + initialDiagnostics.Length)
-        builder.AddRange initialDiagnostics
-        builder.AddRange allSemanticModelDiagnostics
-        builder.AddRange finalDiagnostics
+        let builder = ImmutableArray.CreateBuilder (syntaxDiagnostics.Length + semanticDiagnostics.Length)
+        builder.AddRange syntaxDiagnostics
+        builder.AddRange semanticDiagnostics
         builder.ToImmutable ()
 
     member this.Emit (peStream, ?pdbStream, ?ct) =
@@ -522,18 +499,18 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         if not this.Config.keepAssemblyContents then
             failwith "This kind of compilation does not support Emit."
 
-        let diags = this.GetDiagnostics ct
+        let synSemDiags = this.GetSyntaxAndSemanticDiagnostics ct
 
-        if not diags.IsEmpty then
-            Result.Error diags
+        if synSemDiags |> Seq.exists (fun x -> x.Severity = DiagnosticSeverity.Error) then
+            Result.Error synSemDiags
         else
 
         Async.RunSynchronously (async {
             let! ct = Async.CancellationToken
-            let! preEmitResult = state.asyncLazyPreEmit.GetValueAsync ()
+            let! preEmitState = state.asyncLazyPreEmit.GetValueAsync ()
             let checker = state.lazyGetChecker.GetValue ct
 
-            let finalAcc = preEmitResult.finalAccWithErrors
+            let finalAcc = preEmitState.FinalTcAcc
             
             let tcConfig = checker.TcInitial.tcConfig
             let tcGlobals = checker.TcGlobals
@@ -543,15 +520,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             let outfile = checker.TcInitial.outfile
             let assemblyName = this.AssemblyName
             let pdbfile = Some (Path.ChangeExtension(outfile, ".pdb"))
-
-            let typedImplFiles = 
-                preEmitResult.tcStates
-                |> Array.map (fun tcAcc ->
-                    if tcAcc.latestImplFile.IsNone then
-                        failwith "No imple file"
-                    tcAcc.latestImplFile.Value
-                )
-                |> List.ofArray
+            let typedImplFiles = preEmitState.ImplFiles
 
             let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttribs)
 

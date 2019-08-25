@@ -17,7 +17,7 @@ and [<Sealed>] FSharpCompilation =
 
     member GetSyntaxTree: FSharpSource -> FSharpSyntaxTree
 
-    member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
+    member GetSyntaxAndSemanticDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
 
     member Emit: peStream: Stream * ?pdbStream: Stream * ?ct: CancellationToken -> Result<unit, ImmutableArray<Diagnostic>>
 

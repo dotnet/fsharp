@@ -39,6 +39,22 @@ type internal CheckerOptions =
         parsingOptions: CheckerParsingOptions
     }
 
+[<NoEquality;NoComparison>]
+type PreEmitState =
+    {
+        finalAcc: TcAccumulator
+        tcEnvAtEndOfLastFile: TcEnv
+        topAttrs: TopAttribs
+        implFiles: TypedImplFile list
+        tcState: TcState
+    }
+
+    member x.ImplFiles = x.implFiles
+
+    member x.TypeCheckErrors = x.finalAcc.tcErrorsRev |> List.last
+
+    member x.FinalTcAcc = x.finalAcc
+
 type PartialCheckResult =
     | NotParsed of FSharpSyntaxTree
     | Parsed of FSharpSyntaxTree * ParseResult
@@ -154,11 +170,11 @@ type IncrementalCheckerState =
             )
         { this with orderedResults = orderedResults }
 
-    member this.SubmitSource (src: FSharpSource, tcAcc) =
-        let tcAcc =
+    member this.SubmitSource (src: FSharpSource, preEmitState) =
+        let initialTcAcc =
             { this.initialTcAcc with
-                tcState = tcAcc.tcState }
-        IncrementalCheckerState.Create (this.tcConfig, this.tcGlobals, this.tcImports, tcAcc, this.options, ImmutableArray.Create src)
+                tcState = preEmitState.tcState }
+        IncrementalCheckerState.Create (this.tcConfig, this.tcGlobals, this.tcImports, initialTcAcc, this.options, ImmutableArray.Create src)
         |> Cancellable.runWithoutCancellation
 
     member this.GetSyntaxTree filePath =
@@ -282,15 +298,34 @@ type IncrementalCheckerState =
                 return None
         }
 
+let getTcAccs state =
+    state.orderedResults 
+    |> Array.map (function
+        | PartialCheckResult.Checked (_, tcAcc) -> tcAcc
+        | _ -> failwith "should not happen, missing a checked file"
+    )
+
+let getPreEmitState state =
+    let tcAccs = getTcAccs state
+
+    // Get the state at the end of the type-checking of the last file
+    let finalAcc = tcAccs.[tcAccs.Length-1]
+
+    // Finish the checking
+    let (tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
+        let results = tcAccs |> List.ofArray |> List.map (fun acc-> acc.tcEnvAtEndOfFile, defaultArg acc.topAttribs EmptyTopAttrs, acc.latestImplFile, acc.latestCcuSigForFile)
+        TypeCheckMultipleInputsFinish (results, finalAcc.tcState)
+
+    {
+        finalAcc = finalAcc
+        tcEnvAtEndOfLastFile = tcEnvAtEndOfLastFile
+        topAttrs = topAttrs
+        implFiles = mimpls
+        tcState = tcState
+    }
+
 [<Sealed>]
 type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
-
-    let getTcAccs () =
-        state.orderedResults 
-        |> Array.map (function
-            | PartialCheckResult.Checked (_, tcAcc) -> tcAcc
-            | _ -> failwith "should not happen, missing a checked file"
-        )
 
     member __.ReplaceSource (oldSrc, newSrc) =
         IncrementalChecker (tcInitial, state.ReplaceSource (oldSrc, newSrc))
@@ -313,16 +348,16 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
     member this.FinishAsync () =
         match state.orderedResults.[state.orderedResults.Length - 1] with
         | PartialCheckResult.Checked _ ->
-            async { return getTcAccs () }
+            async { return getPreEmitState state }
         | result -> 
             async {
                 let! _ = this.CheckAsync result.SyntaxTree.Source
-                return getTcAccs ()
+                return getPreEmitState state
             }
 
     member this.SubmitSource (src: FSharpSource, ct) =
-        let lastTcAcc = Async.RunSynchronously(this.FinishAsync (), cancellationToken = ct) |> Array.last
-        IncrementalChecker (tcInitial, state.SubmitSource (src, lastTcAcc))
+        let preEmitState = Async.RunSynchronously(this.FinishAsync (), cancellationToken = ct)
+        IncrementalChecker (tcInitial, state.SubmitSource (src, preEmitState))
 
     static member Create(tcInitial: TcInitial, tcGlobals, tcImports, tcAcc, checkerOptions: CheckerOptions, srcs) =
         cancellable {
