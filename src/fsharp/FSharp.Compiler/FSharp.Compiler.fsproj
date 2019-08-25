@@ -17,14 +17,14 @@
     <Compile Include="TcInitial.fs" />
     <Compile Include="TcAccumulator.fsi" />
     <Compile Include="TcAccumulator.fs" />
-    <Compile Include="AstVisitor.fsi" />
-    <Compile Include="AstVisitor.fs" />
     <Compile Include="FSharpSource.fsi" />
     <Compile Include="FSharpSource.fs" />
     <Compile Include="Parser.fsi" />
     <Compile Include="Parser.fs" />
     <Compile Include="IncrementalLexer.fsi" />
     <Compile Include="IncrementalLexer.fs" />
+    <Compile Include="AstVisitor.fsi" />
+    <Compile Include="AstVisitor.fs" />
     <Compile Include="FSharpSyntaxTree.fsi" />
     <Compile Include="FSharpSyntaxTree.fs" />
     <Compile Include="IncrementalChecker.fsi" />

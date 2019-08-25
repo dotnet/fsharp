@@ -698,28 +698,11 @@ and FSharpSyntaxNodeVisitor (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
-and FSharpSyntaxNodeAllDescendantVisitor (syntaxTree, f) =
-    inherit FSharpSyntaxVisitor (syntaxTree)
-
-    override __.CanVisit _ = true
-
-    override this.OnVisit (visitedNode, _) =
-        if this.VisitStackCount > 1 then
-            f visitedNode
-        None
-
 and FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree, f) =
     inherit FSharpSyntaxNodeVisitor (findm, syntaxTree)
 
-    let isZeroRange (r: range) =
-        posEq r.Start r.End
-   
-
-    override __.CanVisit m = rangeContainsRange findm m && not (isZeroRange m)
-
-    override this.OnVisit (visitedNode, _) =
-        if this.VisitStackCount > 1 then
-            f visitedNode
+    override __.OnVisit (visitedNode, _) =
+        f visitedNode
         None
 
 and FSharpSyntaxNodeChildVisitor (findm, syntaxTree, f) =
@@ -727,7 +710,7 @@ and FSharpSyntaxNodeChildVisitor (findm, syntaxTree, f) =
 
     override this.CanVisit m =
         // We want to visit direct children only.
-        if this.VisitStackCount > 2 then
+        if this.VisitStackCount > 1 then
             false
         else
             base.CanVisit m
@@ -918,8 +901,6 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
 
 and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxNode (parent: FSharpSyntaxNode, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
-    let mutable lazySpan = TextSpan ()
-
     member __.Text: SourceText = 
         syntaxTree.GetText CancellationToken.None
 
@@ -936,15 +917,12 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
     member __.Kind = kind
 
     member this.Span =
-        if lazySpan.Length = 0 then
-            lazySpan <-
-                match kind with
-                | FSharpSyntaxNodeKind.ParsedInput _ -> TextSpan (0, this.Text.Length)
-                | _ ->
-                    match this.Text.TryRangeToSpan kind.Range with
-                    | ValueSome span -> span
-                    | _ -> failwith "should not happen"
-        lazySpan
+        match kind with
+        | FSharpSyntaxNodeKind.ParsedInput _ -> TextSpan (0, this.Text.Length)
+        | _ ->
+            match this.Text.TryRangeToSpan kind.Range with
+            | ValueSome span -> span
+            | _ -> failwith "should not happen"
     
     member __.GetAncestors () =            
         seq {
@@ -984,11 +962,7 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
             Seq.empty
 
     member this.GetDescendants () =
-        let result = ImmutableArray.CreateBuilder ()
-        // TODO: This isn't lazy, make it lazy so we don't try to evaluate everything. Will require work here and in the visitor.
-        let visitor = FSharpSyntaxNodeAllDescendantVisitor (syntaxTree, result.Add)
-        visitor.VisitNode this |> ignore
-        result :> FSharpSyntaxNode seq
+        this.GetDescendants (this.Span)
 
     member this.GetChildren (span: TextSpan) =
         let text: SourceText = this.Text

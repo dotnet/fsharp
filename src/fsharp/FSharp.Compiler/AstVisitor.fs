@@ -290,6 +290,7 @@ module AstVisitorHelpers =
 [<AbstractClass>]
 type AstVisitor<'T> () as this =
 
+    // TODO: This will go away. Use member TryVisitList.
     let tryVisitList (xs: ((unit -> range) * (unit -> 'T option)) list) : 'T option =
         let mutable result = None
         let mutable xs = xs
@@ -303,10 +304,12 @@ type AstVisitor<'T> () as this =
                     result <- visit ()
         result
 
+    // TODO: This will go away. Use member TryVisitList.
     let mapVisitList (getRange: 'Syn -> range) visit xs =
         xs
         |> List.map (fun x -> ((fun () -> getRange x), fun () -> visit x))
 
+    // TODO: This will go away. Use member TryVisitListIndex.
     let mapiVisitList (getRange: 'Syn -> range) visit xs =
         xs
         |> List.mapi (fun i x -> ((fun () -> getRange x), fun () -> visit (i, x)))

@@ -88,6 +88,15 @@ module TestModule%i =
         let c, src = createScriptAux text
         c.GetSemanticModel src
 
+    let deps = Dictionary<string, System.Reflection.Assembly> ()
+
+    let doot = 
+        AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ x ->
+            match deps.TryGetValue x.Name with
+            | true, asm -> asm
+            | _ -> null
+        ))
+
     let runScriptAux (sm: FSharpSemanticModel) =
         let c = sm.Compilation
 
@@ -95,41 +104,22 @@ module TestModule%i =
         match c.Emit (peStream) with
         | Result.Ok _ ->
             
-            let asm = System.Reflection.Assembly.Load(peStream.ToArray())
+            let bytes = peStream.ToArray()
+            let asm = System.Reflection.Assembly.Load(bytes)
+            deps.[asm.FullName] <- asm
             asm.EntryPoint.Invoke(null, [||]) |> ignore
-
-            let itNodeOpt =
-                sm.SyntaxTree.GetRootNode().GetDescendants()
-                |> Seq.filter (fun node ->
-                    match node.Kind with
-                    | FSharpSyntaxNodeKind.Ident (0, ident) when ident.idText = "$it" ->
-                        node.GetAncestors()
-                        |> Seq.exists (fun ancest ->
-                            match ancest.Kind with
-                            | FSharpSyntaxNodeKind.ModuleDecl (FSharp.Compiler.Ast.SynModuleDecl.Let _) ->
-                                true
-                            | _ ->
-                                false
-                        )
-                    | _ -> false
+            let itPropOpt = 
+                asm.DefinedTypes 
+                |> Seq.tryPick (fun x -> 
+                    x.DeclaredProperties
+                    |> Seq.tryFind (fun prop -> prop.Name = "$it")
                 )
-                |> Seq.tryLast
+            let value = 
+                match itPropOpt with
+                | Some itProp -> itProp.GetMethod.Invoke(null, [||])
+                | _ -> null
 
-            match itNodeOpt with
-            | Some itNode ->
-                let it = sm.GetSymbolInfo(itNode).Symbol.Value
-                let itCompiledName = it.TryGetCompiledName().Value
-                let parentTypeInfo = it.TryGetParentTypeInfo().Value
-
-                let asm = System.Reflection.Assembly.Load(peStream.ToArray())
-                asm.EntryPoint.Invoke(null, [||]) |> ignore
-                let parentRuntimeType = asm.GetType(parentTypeInfo.CompiledName)
-                let itRuntimeProperty = parentRuntimeType.GetProperty(itCompiledName)
-                let value = itRuntimeProperty.GetMethod.Invoke(null, [||])
-
-                Result.Ok value
-            | _ ->
-                Result.Ok null
+            Result.Ok value
         | Result.Error diags ->
             Result.Error diags
 
@@ -139,9 +129,9 @@ module TestModule%i =
 
     let runScriptAndContinue (text1: string) (text2: string) =
         let c, src = createScriptAux text1
-        //c.GetSemanticModel "C:\\test1.fsx"
-        //|> runScriptAux
-        //|> ignore
+        c.GetSemanticModel src
+        |> runScriptAux
+        |> ignore
 
         let src2 = FSharpSource.FromText (text2, "c:\\test2.fsx")
         let c2 = FSharpCompilation.CreateScript (c, src2)
