@@ -1,4 +1,5 @@
-﻿namespace FSharp.Compiler.Compilation
+﻿[<AutoOpen>]
+module FSharp.Compiler.Compilation.FSharpCompilation
 
 open System.IO
 open System.Threading

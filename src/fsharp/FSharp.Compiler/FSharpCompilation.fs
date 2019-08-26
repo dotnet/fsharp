@@ -1,190 +1,51 @@
-﻿namespace FSharp.Compiler.Compilation
+﻿[<AutoOpen>] 
+module FSharp.Compiler.Compilation.FSharpCompilation
 
 open System
 open System.IO
 open System.Threading
-open System.Threading.Tasks
+open System.Diagnostics
 open System.Collections.Immutable
 open System.Collections.Generic
-open System.Collections.Concurrent
-open Internal.Utilities.Collections
+open FSharp.NativeInterop
+
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Driver
-open FSharp.Compiler.Tast
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.TypeChecker
-open FSharp.Compiler.NameResolution
-open Internal.Utilities
 open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.Compilation.IncrementalChecker
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Tastops
-open System.Diagnostics
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.ErrorLogger
+open Internal.Utilities
+
 open Microsoft.CodeAnalysis
 
 #nowarn "9" // NativePtr.toNativeInt
 
-[<AutoOpen>]
-module FSharpCompilationHelpers = 
+let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
-    open FSharp.NativeInterop
+// TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
+let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharp.Compiler.CompileOps.TcState>.Assembly.Location)).Value
 
-    let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
+let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata) =
+    let amd = (md :?> Microsoft.CodeAnalysis.AssemblyMetadata)
+    let mmd = amd.GetModules().[0]
+    let mmr = mmd.GetMetadataReader()
 
-    // TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
-    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharp.Compiler.CompileOps.TcState>.Assembly.Location)).Value
+    // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+    // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
+    // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
+    // You shouldn't dispose it directly."
 
-    let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata) =
-        let amd = (md :?> Microsoft.CodeAnalysis.AssemblyMetadata)
-        let mmd = amd.GetModules().[0]
-        let mmr = mmd.GetMetadataReader()
+    let objToHold = box md
 
-        // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
-        // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
-        // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-        // You shouldn't dispose it directly."
+    // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
+    Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
 
-        let objToHold = box md
-
-        // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
-        Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
-
-        (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
-
-    /// The implementation of the information needed by TcImports in CompileOps.fs for an F# assembly reference.
-    //
-    /// Constructs the build data (IRawFSharpAssemblyData) representing the assembly when used 
-    /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
-    /// a virtualized view of the assembly contents as computed by background checking.
-    type private RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState: TcState, outfile, topAttrs, assemblyName, ilAssemRef) = 
-    
-        let generatedCcu = tcState.Ccu
-        let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
-                          
-        let sigData = 
-            let _sigDataAttributes, sigDataResources = Driver.EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
-            [ for r in sigDataResources  do
-                let ccuName = GetSignatureDataResourceName r
-                yield (ccuName, (fun () -> r.GetBytes())) ]
-    
-        let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
-    
-        let ivtAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute)
-    
-        interface IRawFSharpAssemblyData with 
-            member __.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
-            member __.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
-            member __.TryGetILModuleDef() = None
-            member __.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
-            member __.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
-            member __.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
-            member __.ShortAssemblyName = assemblyName
-            member __.ILScopeRef = IL.ILScopeRef.Assembly ilAssemRef
-            member __.ILAssemblyRefs = [] // These are not significant for service scenarios
-            member __.HasAnyFSharpSignatureDataAttribute =  true
-            member __.HasMatchingFSharpSignatureDataAttribute _ilg = true
-
-    let private TryFindFSharpStringAttribute tcGlobals attribSpec attribs =
-        match TryFindFSharpAttribute tcGlobals attribSpec attribs with
-        | Some (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some s
-        | _ -> None
-
-    type PreEmitResult =
-        {
-            ilAssemblyRef: ILAssemblyRef
-            assemblyDataOpt: IRawFSharpAssemblyData option
-            assemblyExprOpt: TypedImplFile list option
-            finalAccWithErrors: TcAccumulator
-            tcStates: TcAccumulator []
-        }
-
-    let preEmit (assemblyName: string) (outfile: string) (tcConfig: TcConfig) (tcGlobals: TcGlobals) (tcStates: TcAccumulator []) =
-        let errorLogger = CompilationErrorLogger("preEmit", tcConfig.errorSeverityOptions)
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
-
-        // Get the state at the end of the type-checking of the last file
-        let finalAcc = tcStates.[tcStates.Length-1]
-
-        // Finish the checking
-        let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
-            let results = tcStates |> List.ofArray |> List.map (fun acc-> acc.tcEnvAtEndOfFile, defaultArg acc.topAttribs EmptyTopAttrs, acc.latestImplFile, acc.latestCcuSigForFile)
-            TypeCheckMultipleInputsFinish (results, finalAcc.tcState)
-  
-        let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 
-            try
-                // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this, 
-                // so we make this temporary here
-                let oldContents = tcState.Ccu.Deref.Contents
-                try
-                    let tcState, tcAssemblyExpr = TypeCheckClosedInputSetFinish (mimpls, tcState)
-
-                    // Compute the identity of the generated assembly based on attributes, options etc.
-                    // Some of this is duplicated from fsc.fs
-                    let ilAssemRef = 
-                        let publicKey = 
-                            try 
-                                let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
-                                match Driver.GetStrongNameSigner signingInfo with 
-                                | None -> None
-                                | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
-                            with e -> 
-                                errorRecoveryNoRange e
-                                None
-                        let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib  "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
-                        let assemVerFromAttrib = 
-                            TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
-                            |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
-                        let ver = 
-                            match assemVerFromAttrib with 
-                            | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
-                            | Some v -> v
-                        ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
-            
-                    let tcAssemblyDataOpt = 
-                        try
-
-                          // Assemblies containing type provider components can not successfully be used via cross-assembly references.
-                          // We return 'None' for the assembly portion of the cross-assembly reference 
-                          let hasTypeProviderAssemblyAttrib = 
-                              topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) -> 
-                                  let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName 
-                                  nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
-
-                          if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
-                            None
-                          else
-                            Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
-
-                        with e -> 
-                            errorRecoveryNoRange e
-                            None
-                    ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
-                finally 
-                    tcState.Ccu.Deref.Contents <- oldContents
-            with e -> 
-                errorRecoveryNoRange e
-                mkSimpleAssemblyRef assemblyName, None, None
-
-        let finalAccWithErrors = 
-            { finalAcc with 
-                tcErrorsRev = errorLogger.GetErrorInfos() :: finalAcc.tcErrorsRev 
-                topAttribs = Some topAttrs
-            }
-
-        {
-            ilAssemblyRef = ilAssemRef
-            assemblyDataOpt = tcAssemblyDataOpt
-            assemblyExprOpt = tcAssemblyExprOpt
-            finalAccWithErrors = finalAccWithErrors
-            tcStates = tcStates
-        }
+    (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
 
 [<Struct>]
 type CompilationId private (_guid: Guid) =
