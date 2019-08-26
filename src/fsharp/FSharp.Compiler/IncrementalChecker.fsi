@@ -48,7 +48,7 @@ type IncrementalChecker =
 
     member GetSyntaxTree: FSharpSource -> FSharpSyntaxTree
 
-    member TcInitial: TcInitial
+    member TcConfig: TcConfig
 
     member TcGlobals: TcGlobals
 
@@ -61,4 +61,4 @@ type IncrementalChecker =
 
     member SubmitSource: FSharpSource * CancellationToken -> IncrementalChecker
 
-    static member Create: TcInitial * TcGlobals * TcImports * TcAccumulator * CheckerOptions * ImmutableArray<FSharpSource> -> Cancellable<IncrementalChecker>
+    static member Create: TcConfig * TcGlobals * TcImports * TcAccumulator * CheckerOptions * ImmutableArray<FSharpSource> -> IncrementalChecker

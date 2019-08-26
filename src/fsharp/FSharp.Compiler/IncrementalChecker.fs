@@ -92,32 +92,30 @@ type IncrementalCheckerState =
         FSharpSyntaxTree.Create (pConfig, src)
 
     static member Create (tcConfig, tcGlobals, tcImports, initialTcAcc, options, orderedSources: ImmutableArray<FSharpSource>) =
-        cancellable {
-            let isScript = options.parsingOptions.isScript
-            let length = orderedSources.Length
+        let isScript = options.parsingOptions.isScript
+        let length = orderedSources.Length
 
-            let orderedResultsBuilder = ImmutableArray.CreateBuilder length
-            let indexLookup = Array.zeroCreate length
+        let orderedResultsBuilder = ImmutableArray.CreateBuilder length
+        let indexLookup = Array.zeroCreate length
 
-            orderedResultsBuilder.Count <- length
+        orderedResultsBuilder.Count <- length
 
-            orderedSources
-            |> ImmutableArray.iteri (fun i src ->
-                let isLastFile = (orderedSources.Length - 1) = i
-                let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isScript || isLastFile, src)
-                orderedResultsBuilder.[i] <- NotParsed syntaxTree
-                indexLookup.[i] <- KeyValuePair (src, i)
-            )
+        orderedSources
+        |> ImmutableArray.iteri (fun i src ->
+            let isLastFile = (orderedSources.Length - 1) = i
+            let syntaxTree = IncrementalCheckerState.CreateSyntaxTree (tcConfig, options.parsingOptions, isScript || isLastFile, src)
+            orderedResultsBuilder.[i] <- NotParsed syntaxTree
+            indexLookup.[i] <- KeyValuePair (src, i)
+        )
 
-            return {
-                tcConfig = tcConfig
-                tcGlobals = tcGlobals
-                tcImports = tcImports
-                initialTcAcc = initialTcAcc
-                options = options
-                orderedResults = orderedResultsBuilder.ToArray ()
-                indexLookup = ImmutableDictionary.CreateRange indexLookup
-            }
+        {
+            tcConfig = tcConfig
+            tcGlobals = tcGlobals
+            tcImports = tcImports
+            initialTcAcc = initialTcAcc
+            options = options
+            orderedResults = orderedResultsBuilder.ToArray ()
+            indexLookup = ImmutableDictionary.CreateRange indexLookup
         }
 
     member private this.GetIndex src =
@@ -169,7 +167,6 @@ type IncrementalCheckerState =
             { this.initialTcAcc with
                 tcState = preEmitState.tcState }
         IncrementalCheckerState.Create (this.tcConfig, this.tcGlobals, this.tcImports, initialTcAcc, this.options, ImmutableArray.Create src)
-        |> Cancellable.runWithoutCancellation
 
     member this.GetSyntaxTree filePath =
         match this.indexLookup.TryGetValue filePath with
@@ -321,10 +318,10 @@ let getPreEmitState state =
     }
 
 [<Sealed>]
-type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
+type IncrementalChecker (state: IncrementalCheckerState) =
 
     member __.ReplaceSource (oldSrc, newSrc) =
-        IncrementalChecker (tcInitial, state.ReplaceSource (oldSrc, newSrc))
+        IncrementalChecker (state.ReplaceSource (oldSrc, newSrc))
 
     member __.CheckAsync src =
         state.CheckAsync src
@@ -335,7 +332,7 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
     member __.GetSyntaxTree src =
         state.GetSyntaxTree src
 
-    member __.TcInitial = tcInitial
+    member __.TcConfig = state.tcConfig
 
     member __.TcGlobals = state.tcGlobals
 
@@ -353,10 +350,8 @@ type IncrementalChecker (tcInitial: TcInitial, state: IncrementalCheckerState) =
 
     member this.SubmitSource (src: FSharpSource, ct) =
         let preEmitState = Async.RunSynchronously(this.FinishAsync (), cancellationToken = ct)
-        IncrementalChecker (tcInitial, state.SubmitSource (src, preEmitState))
+        IncrementalChecker (state.SubmitSource (src, preEmitState))
 
-    static member Create(tcInitial: TcInitial, tcGlobals, tcImports, tcAcc, checkerOptions: CheckerOptions, srcs) =
-        cancellable {
-            let! state = IncrementalCheckerState.Create (tcInitial.tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, srcs)
-            return IncrementalChecker (tcInitial, state)
-        }
+    static member Create(tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions: CheckerOptions, srcs) =
+        let state = IncrementalCheckerState.Create (tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, srcs)
+        IncrementalChecker state

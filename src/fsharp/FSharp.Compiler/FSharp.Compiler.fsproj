@@ -13,8 +13,6 @@
     <Compile Include="Extensions.fs" />
     <Compile Include="CompilationWorker.fsi" />
     <Compile Include="CompilationWorker.fs" />
-    <Compile Include="TcInitial.fsi" />
-    <Compile Include="TcInitial.fs" />
     <Compile Include="TcAccumulator.fsi" />
     <Compile Include="TcAccumulator.fs" />
     <Compile Include="FSharpSource.fsi" />

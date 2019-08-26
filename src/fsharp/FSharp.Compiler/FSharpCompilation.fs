@@ -47,6 +47,95 @@ let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata) =
 
     (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
 
+// TODO: Revisit this. A lot of the code below was taken from FCS and has assumptions on language service.
+//     This will mean that some config options may not be right for actual compilation.
+let createTcConfig assemblyPath projectDirectory projectReferences tryGetMetadataSnapshot useScriptResolutionRules =
+    /// Create a type-check configuration
+    let tcConfigB =
+        // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
+        let tcConfigB = 
+            TcConfigBuilder.CreateNew(
+                legacyReferenceResolver, 
+                defaultFSharpBinariesDir, 
+                implicitIncludeDir = projectDirectory, 
+                reduceMemoryUsage = ReduceMemoryFlag.Yes, 
+                isInteractive = false, 
+                isInvalidationSupported = true, 
+                defaultCopyFSharpCore = CopyFSharpCoreFlag.No, 
+                tryGetMetadataSnapshot = tryGetMetadataSnapshot) 
+
+        tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
+
+        tcConfigB.conditionalCompilationDefines <- 
+            let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
+            define :: tcConfigB.conditionalCompilationDefines
+
+        tcConfigB.projectReferences <- projectReferences
+
+        tcConfigB.useSimpleResolution <- true
+
+        tcConfigB.includewin32manifest <- false
+
+        // Never open PDB files for the language service, even if --standalone is specified
+        tcConfigB.openDebugInformationForLaterStaticLinking <- false
+
+        tcConfigB.compilationThread <-
+            { new ICompilationThread with
+                member __.EnqueueWork work =
+                    CompilationWorker.Enqueue work
+            }
+
+        tcConfigB.outputFile <- Some assemblyPath
+
+        tcConfigB
+
+    TcConfig.Create(tcConfigB, validate = true)
+
+let createLoadClosure filename sourceText tryGetMetadataSnapshot ctok =
+    let applyCompilerOptions tcConfigB  = 
+        let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
+        CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
+
+    LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
+        defaultFSharpBinariesDir, filename, sourceText, 
+        CodeContext.CompilationAndEvaluation, true, false, false, new Lexhelp.LexResourceManager(), 
+        applyCompilerOptions, false, 
+        tryGetMetadataSnapshot = tryGetMetadataSnapshot, 
+        reduceMemoryUsage = ReduceMemoryFlag.Yes)
+
+let createTcGlobalsAndTcImports (tcConfig: TcConfig) assemblyResolutions (importsInvalidated: Event<string>) ctok =
+      cancellable {
+        let errorLogger = CompilationErrorLogger("createTcGlobalsAndTcImports", tcConfig.errorSeverityOptions)
+        // Return the disposable object that cleans up
+        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
+
+        let tcConfigP = TcConfigProvider.Constant tcConfig
+
+        let! (tcGlobals, tcImports) = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, assemblyResolutions, [])
+
+#if !NO_EXTENSIONTYPING
+        tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 
+            // When a CCU reports an invalidation, merge them together and just report a 
+            // general "imports invalidated". This triggers a rebuild.
+            //
+            // We are explicit about what the handler closure captures to help reason about the
+            // lifetime of captured objects, especially in case the type provider instance gets leaked
+            // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
+            //
+            // The handler only captures
+            //    1. a weak reference to the importsInvalidated event.
+            //
+            // In the invalidation handler we use a weak reference to allow the owner to 
+            // be collected if, for some reason, a TP instance is not disposed or not GC'd.
+            let capturedImportsInvalidated = WeakReference<_>(importsInvalidated)
+            ccu.Deref.InvalidateEvent.Add(fun msg -> 
+                match capturedImportsInvalidated.TryGetTarget() with 
+                | true, tg -> tg.Trigger msg
+                | _ -> ()))
+#endif
+
+        return (tcGlobals, tcImports) } |> Cancellable.runWithoutCancellation
+
 [<Struct>]
 type CompilationId private (_guid: Guid) =
 
@@ -69,12 +158,17 @@ module IncrementalCheckerCache =
     let tryGetValue key =
         cache.TryGetValue key
 
+// This handles the lifetime of FSharpCompilation's emitted PE reference which allows FSharp.Compiler.Private's binary reader to read
+//     the raw pointer of the PE reference.
+let fsPEWeakTable = System.Runtime.CompilerServices.ConditionalWeakTable<obj, PortableExecutableReference> ()
+
 type CompilationConfig =
     {
         suggestNamesForErrors: bool
         commandLineArgs: string list
         useScriptResolutionRules: bool
         script: FSharpSource option
+        assemblyPath: string
         assemblyName: string
         isExecutable: bool
         keepAssemblyContents: bool
@@ -83,83 +177,70 @@ type CompilationConfig =
         metadataReferences: ImmutableArray<FSharpMetadataReference>
     }
 
-    member this.CreateTcInitial ctok =
-        let tryGetMetadataSnapshot (path, _) =
+    member this.CreateIncrementalChecker (ctok, importsInvalidated) =
+        let tryGetMetadataSnapshot (id, _) =
             let metadataReferenceOpt = 
                 this.metadataReferences
-                |> Seq.choose(function
-                    | FSharpMetadataReference.PortableExecutable peReference -> Some peReference
-                    | _ -> None
-                )
-                |> Seq.tryFind (fun x -> String.Equals (path, x.FilePath, StringComparison.OrdinalIgnoreCase))
+                |> Seq.tryFind (fun x -> String.Equals (id, x.Id, StringComparison.OrdinalIgnoreCase))
+
             match metadataReferenceOpt with
-            | Some metadata -> Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
-            | _ -> failwith "should not happen" // this should not happen because we construct references for the command line args here. existing references from the command line args are removed.
 
-        let commandLineArgs =
-            // clear any references as we get them from metadata references
-            this.commandLineArgs
-            |> List.filter (fun x -> not (x.Contains("-r:")))
+            | Some (FSharpMetadataReference.PortableExecutable metadata) -> 
+                Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
 
-        let commandLineArgs =
-            ["--noframework"] @
-            commandLineArgs @
-            (this.metadataReferences
-             |> Seq.map (function
-                | FSharpMetadataReference.PortableExecutable peReference ->
-                    "-r:" + peReference.FilePath
-                | FSharpMetadataReference.FSharpCompilation compilation ->
-                    failwith "F# compilation reference not support yet."
-                    //"-r:" + compilation.State.cConfig.assemblyPath
-             )
-             |> List.ofSeq)
+            // TODO: This could be optimized in that we may not need to emit the entire compilation and/or keep the PE reference in a weak table.
+            //       At the moment, this is just necessary for correct importing.
+            //       A possible way to optimize this is to grab the results just before IL generation (IlxGen) and after optimization.
+            //           Once we have the results, we should have a Ccu and other pieces such as optimization data. 
+            //           The Ccu will need to be remapped to a different scope so that it can be used from the outside.
+            //           The reason is that the Ccu has the assumption that it is being used in a local context.
+            //           At the moment, the code responsible for remapping is not fitted to fix the local scope in all cases, but can be.
+            //           When the Ccu is remapped properly, an IRawFSharpAssemblyData will need to be implemented based off of it.
+            //           Once that is complete, it should be able to passed to an IProjectReference which AssemblyResolution has as an option.
+            //           IProjectReference is not exactly a good name for itself. Compiler should not know about 'projects'.
+            //       Other optimizations will be necessary for editor/tooling scenarios in IDEs where emitting is too expensive.
+            //           For that scenario, we only need to get the results right after type checking.
+            //           The current state of compilation is not ready for a full IDE experience yet.
+            | Some (FSharpMetadataReference.FSharpCompilation c) ->
+                // lock this so we do not emit twice on separate threads for the exact same compilation
+                lock c <| fun () ->
+                    match fsPEWeakTable.TryGetValue c with
+                    | true, metadata -> 
+                        Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
+                    | _ ->
+                        use ms = new MemoryStream ()
+                        c.Emit ms |> ignore
+                        let metadata = PortableExecutableReference.CreateFromStream ms
+                        fsPEWeakTable.Add (c, metadata)
+                        Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
 
-        //let projectReferences =
-        //    this.metadataReferences
-        //    |> Seq.choose(function
-        //        | FSharpMetadataReference.FSharpCompilation compilation ->
-        //            Some compilation
-        //        | _ ->
-        //            None
-        //    )
-        //    |> Seq.map (fun x ->
-        //        { new IProjectReference with
-                
-        //            member __.FileName = x.State.cConfig.assemblyPath
+            | _ -> failwithf "Metadata now found for '%s'." id
 
-        //            member __.EvaluateRawContents _ =
-        //                cancellable {
-        //                    let! ct = Cancellable.token ()
-        //                    return Async.RunSynchronously(x.GetAssemblyDataAsync (), cancellationToken = ct)
-        //                }
+        let tcConfig = createTcConfig this.assemblyName this.assemblyPath [] tryGetMetadataSnapshot this.useScriptResolutionRules
 
-        //            member __.TryGetLogicalTimeStamp (_, _) = None
-        //        }
-        //    )
-        //    |> List.ofSeq
+        let assemblyResolutions =
+            this.metadataReferences
+            |> Seq.map (function
+                | FSharpMetadataReference.PortableExecutable peRef ->
+                    {
+                        originalReference = AssemblyReference (Range.range0, peRef.FilePath, None)
+                        resolvedPath = peRef.FilePath
+                        prepareToolTip = fun () -> peRef.Display
+                        sysdir = false
+                        ilAssemblyRef = ref None
+                    }
+                | FSharpMetadataReference.FSharpCompilation c ->
+                    {
+                        originalReference = AssemblyReference (Range.range0, c.AssemblyName, None)
+                        resolvedPath = c.AssemblyName
+                        prepareToolTip = fun () -> c.AssemblyName
+                        sysdir = false
+                        ilAssemblyRef = ref None
+                    }
+            ) |> List.ofSeq
 
-        let tcInitialOptions =
-            {
-                legacyReferenceResolver = legacyReferenceResolver
-                defaultFSharpBinariesDir = defaultFSharpBinariesDir
-                tryGetMetadataSnapshot = tryGetMetadataSnapshot
-                suggestNamesForErrors = this.suggestNamesForErrors
-                sourceFiles = []
-                commandLineArgs = commandLineArgs
-                projectDirectory = Environment.CurrentDirectory
-                projectReferences = [] // TODO:
-                useScriptResolutionRules = this.useScriptResolutionRules
-                assemblyPath = ""
-                isExecutable = this.isExecutable
-                keepAssemblyContents = this.keepAssemblyContents
-                keepAllBackgroundResolutions = this.keepAllBackgroundResolutions
-                script = match this.script with Some script -> Some (script.FilePath, script.GetText(CancellationToken.None).ToFSharpSourceText()) | _ -> None
-            }
-        TcInitial.create ctok tcInitialOptions
+        let tcGlobals, tcImports = createTcGlobalsAndTcImports tcConfig assemblyResolutions importsInvalidated ctok
 
-    member this.CreateIncrementalChecker ctok =
-        let tcInitial = this.CreateTcInitial ctok
-        let tcGlobals, tcImports, tcAcc = TcAccumulator.createInitial tcInitial ctok |> Cancellable.runWithoutCancellation
         let checkerOptions =
             {
                 keepAssemblyContents = this.keepAssemblyContents
@@ -167,8 +248,13 @@ type CompilationConfig =
                 parsingOptions = { isExecutable = this.isExecutable; isScript = this.useScriptResolutionRules }
             }
 
+        let loadClosureOpt =           
+            this.script
+            |> Option.map (fun src -> (src.FilePath, src.GetText(CancellationToken.None).ToFSharpSourceText()))
+            |> Option.map (fun (filename, sourceText) -> createLoadClosure filename sourceText tryGetMetadataSnapshot ctok)
+
         let srcs =
-            match tcInitial.loadClosureOpt with
+            match loadClosureOpt with
             | Some loadClosure ->
                 loadClosure.SourceFiles
                 |> List.map (fun (filePath, _) ->
@@ -181,12 +267,19 @@ type CompilationConfig =
             | _ ->
                 this.sources
 
-        IncrementalChecker.Create (tcInitial, tcGlobals, tcImports, tcAcc, checkerOptions, srcs)
-        |> Cancellable.runWithoutCancellation
+        let tcAcc = TcAccumulator.create this.assemblyName tcConfig tcGlobals tcImports (NiceNameGenerator ()) loadClosureOpt
+
+        IncrementalChecker.Create (tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, srcs)
 
 and [<RequireQualifiedAccess>] FSharpMetadataReference =
     | PortableExecutable of PortableExecutableReference
     | FSharpCompilation of FSharpCompilation 
+    // TODO: Add CSharp and VB compilations.
+
+    member this.Id =
+        match this with
+        | FSharpMetadataReference.PortableExecutable peRef -> peRef.FilePath
+        | FSharpMetadataReference.FSharpCompilation c -> c.AssemblyName
 
 and [<NoEquality; NoComparison>] CompilationState =
     {
@@ -194,6 +287,7 @@ and [<NoEquality; NoComparison>] CompilationState =
         cConfig: CompilationConfig
         lazyGetChecker: CancellableLazy<IncrementalChecker>
         asyncLazyPreEmit: AsyncLazy<PreEmitState>
+        invalidated: Event<string>
     }
 
     static member Create cConfig =
@@ -207,11 +301,13 @@ and [<NoEquality; NoComparison>] CompilationState =
             else
                 filePathIndexMapBuilder.Add (src, i)
 
+        let invalidated = Event<string> ()
+
         let lazyGetChecker =
             CancellableLazy (fun ct ->
                 let work =
                     CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
-                        cConfig.CreateIncrementalChecker (ctok)
+                        cConfig.CreateIncrementalChecker (ctok, invalidated)
                     )
                 Async.RunSynchronously (work, cancellationToken = ct)
             )
@@ -228,6 +324,7 @@ and [<NoEquality; NoComparison>] CompilationState =
             cConfig = cConfig
             lazyGetChecker = lazyGetChecker
             asyncLazyPreEmit= asyncLazyPreEmit
+            invalidated = invalidated
         }
 
     member this.SetOptions cConfig =
@@ -356,7 +453,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
         builder.AddRange semanticDiagnostics
         builder.ToImmutable ()
 
-    member this.Emit (peStream, ?pdbStream, ?ct) =
+    member this.Emit (peStream: Stream, ?pdbStream, ?ct) =
         let ct = defaultArg ct CancellationToken.None
 
         if not this.Config.keepAssemblyContents then
@@ -373,12 +470,12 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             let! preEmitState = state.asyncLazyPreEmit.GetValueAsync ()
             let checker = state.lazyGetChecker.GetValue ct
             
-            let tcConfig = checker.TcInitial.tcConfig
+            let tcConfig = checker.TcConfig
             let tcGlobals = checker.TcGlobals
             let tcImports = checker.TcImports
             let generatedCcu = preEmitState.tcState.Ccu
             let topAttribs = preEmitState.topAttribs
-            let outfile = checker.TcInitial.outfile
+            let outfile = this.Config.assemblyPath
             let assemblyName = this.AssemblyName
             let pdbfile = Some (Path.ChangeExtension(outfile, ".pdb"))
             let typedImplFiles = preEmitState.implFiles
@@ -434,9 +531,6 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
 type FSharpCompilation with
 
-    static member Create cConfig =
-        FSharpCompilation (CompilationId.Create (), CompilationState.Create cConfig, VersionStamp.Create ())
-
     static member CreateAux (assemblyName, srcs, metadataReferences, ?canEmit, ?script, ?args) =
         if Path.HasExtension assemblyName || Path.IsPathRooted assemblyName then
             failwith "Assembly name must not be a file path."
@@ -450,23 +544,31 @@ type FSharpCompilation with
         let canEmit = defaultArg canEmit true
 
         let isScript = script.IsSome
-        let suggestNamesForErrors = not canEmit
+        let suggestNamesForErrors = canEmit
         let useScriptResolutionRules = isScript
+        let isExecutable = isScript
 
-        let options =
+        let fileExt =
+            if isExecutable then
+                ".exe"
+            else
+                ".dll"
+
+        let cConfig =
             {
                 suggestNamesForErrors = suggestNamesForErrors
                 commandLineArgs = defaultArg args []
                 useScriptResolutionRules = useScriptResolutionRules
                 script = script
                 assemblyName = assemblyName
-                isExecutable = isScript
+                assemblyPath = Path.Combine (Environment.CurrentDirectory, Path.ChangeExtension (assemblyName, fileExt))
+                isExecutable = isExecutable
                 keepAssemblyContents = canEmit
                 keepAllBackgroundResolutions = false
                 sources = if isScript then ImmutableArray.Create script.Value else srcs
                 metadataReferences = metadataReferences
             }
-        FSharpCompilation.Create options
+        FSharpCompilation (CompilationId.Create (), CompilationState.Create cConfig, VersionStamp.Create ())
 
     static member Create (assemblyName, srcs, metadataReferences, ?args) =
         FSharpCompilation.CreateAux (assemblyName, srcs, metadataReferences, args = defaultArg args [])

@@ -7,6 +7,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler
 
 /// Accumulated results of type checking.
 [<NoEquality; NoComparison>]
@@ -30,4 +31,4 @@ type internal TcAccumulator =
 [<RequireQualifiedAccess>]
 module internal TcAccumulator =
 
-    val createInitial: TcInitial -> CompilationThreadToken -> Cancellable<TcGlobals * TcImports * TcAccumulator>
+    val create: assemblyName: string -> tcConfig: TcConfig -> tcGlobals: TcGlobals -> tcImports: TcImports -> niceNameGen: NiceNameGenerator -> loadClosureOpt: LoadClosure option -> TcAccumulator
