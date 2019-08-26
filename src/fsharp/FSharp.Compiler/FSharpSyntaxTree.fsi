@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Compilation
+﻿namespace rec FSharp.Compiler.Compilation
 
 open System
 open System.Threading
@@ -15,63 +15,14 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open Microsoft.CodeAnalysis
 
-[<CustomEquality;NoComparison;RequireQualifiedAccess>]
-type FSharpSyntaxNodeKind =
-    | ParsedInput of ParsedInput
-    | ModuleOrNamespace of SynModuleOrNamespace
-    | ModuleDecl of SynModuleDecl
-    | LongIdentWithDots of LongIdentWithDots
-    | Ident of index: int * Ident
-    | ComponentInfo of SynComponentInfo
-    | TypeConstraint of SynTypeConstraint
-    | MemberSig of SynMemberSig
-    | TypeDefnSig of SynTypeDefnSig
-    | TypeDefnSigRepr of SynTypeDefnSigRepr
-    | ExceptionDefnRepr of SynExceptionDefnRepr
-    | UnionCase of SynUnionCase
-    | UnionCaseType of SynUnionCaseType
-    | ArgInfo of SynArgInfo
-    | TypeDefnSimpleRepr of SynTypeDefnSimpleRepr
-    | SimplePat of SynSimplePat
-    | EnumCase of SynEnumCase
-    | Const of SynConst
-    | Measure of SynMeasure
-    | RationalConst of SynRationalConst
-    | TypeDefnKind of SynTypeDefnKind
-    | Field of SynField
-    | ValSig of SynValSig
-    | ValTyparDecls of SynValTyparDecls
-    | Type of SynType
-    | SimplePats of SynSimplePats
-    | Typar of SynTypar
-    | TyparDecl of SynTyparDecl
-    | Binding of SynBinding
-    | ValData of SynValData
-    | ValInfo of SynValInfo
-    | Pat of SynPat
-    | ConstructorArgs of SynConstructorArgs
-    | BindingReturnInfo of SynBindingReturnInfo
-    | Expr of SynExpr
-    | StaticOptimizationConstraint of SynStaticOptimizationConstraint
-    | IndexerArg of SynIndexerArg
-    | SimplePatAlternativeIdInfo of SynSimplePatAlternativeIdInfo
-    | MatchClause of SynMatchClause
-    | InterfaceImpl of SynInterfaceImpl
-    | TypeDefn of SynTypeDefn
-    | TypeDefnRepr of SynTypeDefnRepr
-    | MemberDefn of SynMemberDefn
-    | ExceptionDefn of SynExceptionDefn
-    | ParsedHashDirective of ParsedHashDirective
-    | AttributeList of SynAttributeList
-    | Attribute of SynAttribute
-
 [<Struct;NoEquality;NoComparison>]
 type FSharpSyntaxToken =
 
     member IsNone: bool
 
-    /// Gets the parent node that owns the token.
+    /// Gets the parent node that best owns the token.
     /// Does a full parse of the syntax tree if neccessary.
+    /// This means having a token does not necessarily mean that the syntax tree has actually been parsed.
     /// Throws an exception if the token is None.
     member GetParentNode: ?ct: CancellationToken -> FSharpSyntaxNode
 
@@ -89,19 +40,22 @@ type FSharpSyntaxToken =
 
     static member None: FSharpSyntaxToken
 
-and [<Sealed>] FSharpSyntaxNode =
+[<Class>]
+type FSharpSyntaxNode =
 
     member Parent: FSharpSyntaxNode option
 
     member SyntaxTree: FSharpSyntaxTree
-
-    member Kind: FSharpSyntaxNodeKind
 
     member Span: TextSpan
 
     member GetAncestors: unit -> FSharpSyntaxNode seq
 
     member GetAncestorsAndSelf: unit -> FSharpSyntaxNode seq
+
+    member TryFirstAncestorOrSelf: ('TNode -> bool) -> 'TNode option when 'TNode :> FSharpSyntaxNode
+
+    member TryFirstAncestorOrSelf: unit -> 'TNode option when 'TNode :> FSharpSyntaxNode
 
     member GetDescendantTokens: unit -> FSharpSyntaxToken seq
 
@@ -123,7 +77,7 @@ and [<Sealed>] FSharpSyntaxNode =
 
     member TryFindNode: span: TextSpan -> FSharpSyntaxNode option
 
-and [<Sealed>] FSharpSyntaxTree =
+type [<Sealed>] FSharpSyntaxTree =
 
     /// The file that was parsed to form a syntax tree.
     /// Will be empty if there is no file associated with the syntax tree.
@@ -162,3 +116,15 @@ and [<Sealed>] FSharpSyntaxTree =
     member GetDiagnostics: ?ct: CancellationToken -> ImmutableArray<Diagnostic>
 
     static member internal Create: ParsingConfig * FSharpSource -> FSharpSyntaxTree
+
+// ------------------------------------------------------------------------
+//
+// Syntax Nodes
+//
+// ------------------------------------------------------------------------
+
+[<Class>]
+type ExpressionSyntax =
+    inherit FSharpSyntaxNode
+
+    member internal Green: SynExpr

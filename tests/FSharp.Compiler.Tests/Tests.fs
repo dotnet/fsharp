@@ -195,7 +195,7 @@ module TestModuleCompilationTest =
         let speculativeSymbolInfo = semanticModel.GetSpeculativeSymbolInfo (position, node, CancellationToken.None)
 
         Assert.True (symbol.IsSome)
-        Assert.True (speculativeSymbolInfo.Symbol.IsSome)
+        Assert.False (speculativeSymbolInfo.GetAllSymbols().IsEmpty)
 
     [<Test>]
     member __.``Get Completion Symbols - Open Declaration`` () =

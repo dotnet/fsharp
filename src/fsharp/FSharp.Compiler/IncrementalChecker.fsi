@@ -7,6 +7,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.Tast
 
 [<NoEquality; NoComparison>]
 type CheckerParsingOptions =
@@ -23,14 +25,15 @@ type CheckerOptions =
         parsingOptions: CheckerParsingOptions
     }
 
-[<NoEquality;NoComparison; Sealed>]
+[<NoEquality;NoComparison>]
 type PreEmitState =
-
-    member ImplFiles: Tast.TypedImplFile list
-
-    member TypeCheckErrors: FSharpErrorInfo []
-
-    member FinalTcAcc: TcAccumulator
+    {
+        tcErrors: FSharpErrorInfo []
+        tcEnvAtEndOfLastFile: TcEnv
+        topAttribs: TopAttribs
+        implFiles: TypedImplFile list
+        tcState: TcState
+    }
 
 /// This is immutable.
 /// Its job is to do the least amount of work to get a result.

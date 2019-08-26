@@ -352,13 +352,13 @@ type FSharpSemanticModel (src: FSharpSource, lazyChecker: CancellableLazy<Increm
 
     /// VERY EXPERIMENTAL.
     /// But, if we figure out the right heuristics, this can be fantastic.
-    member this.GetSpeculativeSymbolInfo (position: int, node: FSharpSyntaxNode, ct) =
+    member this.GetSpeculativeSymbolInfo (position: int, target: FSharpSyntaxNode, ct) =
         let token = this.FindToken (position, ct)
         if token.IsNone then
             FSharpSymbolInfo.Empty
         else
-            match node.GetAncestorsAndSelf () |> Seq.tryPick (fun x -> match x.Kind with FSharpSyntaxNodeKind.Expr synExpr -> Some synExpr | _ -> None) with
-            | Some synExpr ->
+            match target.TryFirstAncestorOrSelf<ExpressionSyntax> () with
+            | Some node ->
                 let checker, tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
 
                 let range = this.SyntaxTree.ConvertSpanToRange token.Span
@@ -367,7 +367,7 @@ type FSharpSemanticModel (src: FSharpSource, lazyChecker: CancellableLazy<Increm
                     match env with
                     | :? TcEnv as tcEnv ->
                         let tcState = tcAcc.tcState.NextStateAfterIncrementalFragment tcEnv
-                        let resultOpt = Async.RunSynchronously (checker.SpeculativeCheckAsync (src, tcState, synExpr), cancellationToken = ct)
+                        let resultOpt = Async.RunSynchronously (checker.SpeculativeCheckAsync (src, tcState, node.Green), cancellationToken = ct)
                         match resultOpt with
                         | Some (ty, sink) ->
                             let specCnrs = sink.GetResolutions().CapturedNameResolutions

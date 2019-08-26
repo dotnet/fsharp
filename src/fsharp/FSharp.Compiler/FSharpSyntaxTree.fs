@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.Compilation
+﻿namespace rec FSharp.Compiler.Compilation
 
 open System
 open System.IO
@@ -290,12 +290,14 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
         let visitedNode = visitStack.Pop ()
         this.OnVisit (visitedNode, resultOpt)
 
+    let getParent () =
+        if visitStack.Count > 0 then
+            visitStack.Peek ()
+        else
+            Unchecked.defaultof<_>
+
     let createNode kind =
-        let parent =
-            if visitStack.Count > 0 then
-                visitStack.Peek ()
-            else
-                Unchecked.defaultof<_>
+        let parent = getParent ()
         FSharpSyntaxNode (parent, syntaxTree, kind)
 
     member __.VisitStackCount = visitStack.Count
@@ -608,7 +610,7 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
         endVisit resultOpt
 
     override __.VisitExpr item =
-        let node = createNode (FSharpSyntaxNodeKind.Expr item)
+        let node = ExpressionSyntax.Create(item, getParent (), syntaxTree, FSharpSyntaxNodeKind.Expr item)
         startVisit node
         let resultOpt = base.VisitExpr item
         endVisit resultOpt
@@ -685,7 +687,7 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
         let resultOpt = base.VisitAttribute item
         endVisit resultOpt
 
-and FSharpSyntaxNodeVisitor (findm: range, syntaxTree) =
+type FSharpSyntaxNodeVisitor (findm: range, syntaxTree) =
     inherit FSharpSyntaxVisitor (syntaxTree)
 
     let isZeroRange (r: range) =
@@ -698,14 +700,14 @@ and FSharpSyntaxNodeVisitor (findm: range, syntaxTree) =
         | Some _ -> resultOpt
         | _ -> Some visitedNode
 
-and FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree, f) =
+type FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree, f) =
     inherit FSharpSyntaxNodeVisitor (findm, syntaxTree)
 
     override __.OnVisit (visitedNode, _) =
         f visitedNode
         None
 
-and FSharpSyntaxNodeChildVisitor (findm, syntaxTree, f) =
+type FSharpSyntaxNodeChildVisitor (findm, syntaxTree, f) =
     inherit FSharpSyntaxNodeDescendantVisitor (findm, syntaxTree, f)
 
     override this.CanVisit m =
@@ -715,9 +717,9 @@ and FSharpSyntaxNodeChildVisitor (findm, syntaxTree, f) =
         else
             base.CanVisit m
 
-and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSyntaxTree, token: Parser.token, span: TextSpan) =
+type [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (tree: FSharpSyntaxTree, token: Parser.token, span: TextSpan) =
 
-    member __.IsNone = obj.ReferenceEquals (syntaxTree, null)
+    member __.IsNone = obj.ReferenceEquals (tree, null)
 
     member this.GetParentNode ?ct =
         let ct = defaultArg ct CancellationToken.None
@@ -725,10 +727,14 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
         if this.IsNone then
             failwith "Token's kind is None and will not have a parent. Check if the token's kind is None before calling GetParentNode."
 
-        let rootNode: FSharpSyntaxNode = syntaxTree.GetRootNode ct
-        match rootNode.TryFindNode span with
+        let text: SourceText = tree.GetText ct
+        let rootNode = tree.GetRootNode ct
+        let m = text.SpanToRange (tree.FilePath, span)
+        let visitor = FSharpSyntaxNodeVisitor (m, tree)
+
+        match visitor.VisitNode rootNode with
         | Some node -> node
-        | _ -> failwith "should not happen"
+        | _ -> rootNode
 
     member __.Span = span
 
@@ -899,7 +905,8 @@ and [<Struct;NoEquality;NoComparison>] FSharpSyntaxToken (syntaxTree: FSharpSynt
 
     // TODO: Implement TryGetNextToken / TryGetPreviousToken
 
-and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxNode (parent: FSharpSyntaxNode, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
+    // TODO: Potentially get rid of FSharpSyntaxNodeKind.
+and [<System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxNode (parent: FSharpSyntaxNode, syntaxTree: FSharpSyntaxTree, kind: FSharpSyntaxNodeKind) =
 
     member __.Text: SourceText = 
         syntaxTree.GetText CancellationToken.None
@@ -939,6 +946,20 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
                 yield node
                 node <- node.UnsafeParent
         }
+
+    member this.TryFirstAncestorOrSelf<'TNode when 'TNode :> FSharpSyntaxNode> predicate =
+        this.GetAncestorsAndSelf ()
+        |> Seq.tryPick (function
+            | :? 'TNode as node when predicate node -> Some node
+            | _ -> None
+        )
+
+    member this.TryFirstAncestorOrSelf<'TNode when 'TNode :> FSharpSyntaxNode> () =
+        this.GetAncestorsAndSelf ()
+        |> Seq.tryPick (function
+            | :? 'TNode as node -> Some node
+            | _ -> None
+        )
 
     member this.GetDescendantTokens () =
         syntaxTree.GetTokens this.Span
@@ -1000,20 +1021,15 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         |> Option.defaultValue FSharpSyntaxToken.None
 
     member this.TryFindNode (span: TextSpan) =
-        let text = this.Text
+        let tok = this.FindToken span.Start
 
-        match text.TrySpanToRange (syntaxTree.FilePath, span) with
-        | ValueSome m ->
-            let visitor = FSharpSyntaxNodeVisitor (m, syntaxTree)
-            visitor.VisitNode this
-        | _ ->
+        if tok.IsNone then
             None
+        else
+            tok.GetParentNode().TryFirstAncestorOrSelf<FSharpSyntaxNode> (fun a -> a.Span.Contains span)
 
     member private this.DebugString = 
-        let span =
-            match this.Text.TryRangeToSpan kind.Range with
-            | ValueSome span -> span
-            | _ -> failwith "should not happen"
+        let span = this.Text.RangeToSpan kind.Range
         this.Text.GetSubText(span).ToString () 
 
     override this.Equals target =
@@ -1036,7 +1052,7 @@ and [<Sealed;System.Diagnostics.DebuggerDisplay("{DebugString}")>] FSharpSyntaxN
         let index = this.DebugString.IndexOf ("\n")
         this.Kind.GetType().Name + ": " + if index <> -1 then this.DebugString.Substring(0, index) else this.DebugString
 
-and [<Sealed>] FSharpSyntaxTree (pConfig: ParsingConfig, src: FSharpSource, lexer: IncrementalLexer) =
+type [<Sealed>] FSharpSyntaxTree (pConfig: ParsingConfig, src: FSharpSource, lexer: IncrementalLexer) =
 
     let gate = obj ()
     let mutable lazyText = ValueNone
@@ -1138,3 +1154,17 @@ and [<Sealed>] FSharpSyntaxTree (pConfig: ParsingConfig, src: FSharpSource, lexe
 
     static member Create (pConfig, src) =
         FSharpSyntaxTree (pConfig, src, IncrementalLexer.Create (pConfig, src))
+
+// ------------------------------------------------------------------------
+//
+// Syntax Nodes
+//
+// ------------------------------------------------------------------------
+
+type ExpressionSyntax (green, parent, tree, kind) =
+    inherit FSharpSyntaxNode (parent, tree, kind)
+
+    member __.Green = green
+
+    static member Create(green, parent, tree, kind) =
+        ExpressionSyntax (green, parent, tree, kind)

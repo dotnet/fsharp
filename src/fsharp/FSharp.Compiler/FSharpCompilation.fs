@@ -486,7 +486,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             )
             builder.ToImmutable ()
 
-        let semanticDiagnostics = preEmitState.TypeCheckErrors.ToDiagnostics ()
+        let semanticDiagnostics = preEmitState.tcErrors.ToDiagnostics ()
         
         let builder = ImmutableArray.CreateBuilder (syntaxDiagnostics.Length + semanticDiagnostics.Length)
         builder.AddRange syntaxDiagnostics
@@ -509,18 +509,16 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
             let! ct = Async.CancellationToken
             let! preEmitState = state.asyncLazyPreEmit.GetValueAsync ()
             let checker = state.lazyGetChecker.GetValue ct
-
-            let finalAcc = preEmitState.FinalTcAcc
             
             let tcConfig = checker.TcInitial.tcConfig
             let tcGlobals = checker.TcGlobals
             let tcImports = checker.TcImports
-            let generatedCcu = finalAcc.tcState.Ccu
-            let topAttribs = finalAcc.topAttribs.Value
+            let generatedCcu = preEmitState.tcState.Ccu
+            let topAttribs = preEmitState.topAttribs
             let outfile = checker.TcInitial.outfile
             let assemblyName = this.AssemblyName
             let pdbfile = Some (Path.ChangeExtension(outfile, ".pdb"))
-            let typedImplFiles = preEmitState.ImplFiles
+            let typedImplFiles = preEmitState.implFiles
 
             let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttribs)
 

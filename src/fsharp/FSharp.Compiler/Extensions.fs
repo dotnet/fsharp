@@ -96,13 +96,29 @@ module private SourceText =
         sourceText
 
 [<AutoOpen>]
-module SourceTextExtensions =
+module internal SourceTextExtensions =
 
     type SourceText with
 
         member this.ToFSharpSourceText() =
             SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
+        member this.RangeToSpan (r: range) =
+            let startLine = this.Lines.[r.StartLine - 1]
+            let endLine = this.Lines.[r.EndLine - 1]              
+            let start = startLine.Start + r.StartColumn
+            let length = (endLine.Start + r.EndColumn) - start
+            TextSpan (startLine.Start + r.StartColumn, length)
+
+        member this.SpanToRange (filePath, span: TextSpan) =
+            let startLine = (this.Lines.GetLineFromPosition span.Start)
+            let endLine = (this.Lines.GetLineFromPosition span.End)
+            mkRange 
+                filePath
+                (Pos.fromZ startLine.LineNumber (span.Start - startLine.Start))
+                (Pos.fromZ endLine.LineNumber (span.End - endLine.Start))
+
+        // TODO: Try to re-use from RangeToSpan.
         member this.TryRangeToSpan (r: range) =
             let startLineIndex = r.StartLine - 1
             let endLineIndex = r.EndLine - 1
@@ -123,13 +139,8 @@ module SourceTextExtensions =
             if (span.Start + span.Length) > this.Length then
                 ValueNone
             else
-                let startLine = (this.Lines.GetLineFromPosition span.Start)
-                let endLine = (this.Lines.GetLineFromPosition span.End)
-                mkRange 
-                    filePath
-                    (Pos.fromZ startLine.LineNumber (span.Start - startLine.Start))
-                    (Pos.fromZ endLine.LineNumber (span.End - endLine.Start))
-                |> ValueSome
+                this.SpanToRange (filePath, span)
+                |> ValueSome        
 
 [<AutoOpen>]
 module internal FSharpErrorInfoExtensions =

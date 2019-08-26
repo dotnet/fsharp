@@ -42,18 +42,12 @@ type internal CheckerOptions =
 [<NoEquality;NoComparison>]
 type PreEmitState =
     {
-        finalAcc: TcAccumulator
+        tcErrors: FSharpErrorInfo []
         tcEnvAtEndOfLastFile: TcEnv
-        topAttrs: TopAttribs
+        topAttribs: TopAttribs
         implFiles: TypedImplFile list
         tcState: TcState
     }
-
-    member x.ImplFiles = x.implFiles
-
-    member x.TypeCheckErrors = x.finalAcc.tcErrorsRev |> List.last
-
-    member x.FinalTcAcc = x.finalAcc
 
 type PartialCheckResult =
     | NotParsed of FSharpSyntaxTree
@@ -316,10 +310,12 @@ let getPreEmitState state =
         let results = tcAccs |> List.ofArray |> List.map (fun acc-> acc.tcEnvAtEndOfFile, defaultArg acc.topAttribs EmptyTopAttrs, acc.latestImplFile, acc.latestCcuSigForFile)
         TypeCheckMultipleInputsFinish (results, finalAcc.tcState)
 
+    let tcState, mimpls = TypeCheckClosedInputSetFinish (mimpls, tcState)
+
     {
-        finalAcc = finalAcc
+        tcErrors = finalAcc.tcErrorsRev |> List.last
         tcEnvAtEndOfLastFile = tcEnvAtEndOfLastFile
-        topAttrs = topAttrs
+        topAttribs = topAttrs
         implFiles = mimpls
         tcState = tcState
     }
