@@ -82,7 +82,7 @@ module TestModule%i =
 
     let createScriptAux (text: string) =
         let src = FSharpSource.FromText (text, "c:\\test1.fsx")
-        FSharpCompilation.CreateScript ("test", src, getMetadataReferences(), defaultArgs), src
+        FSharpCompilation.CreateScript (src, getMetadataReferences(), defaultArgs), src
 
     let semanticModelScript text =
         let c, src = createScriptAux text

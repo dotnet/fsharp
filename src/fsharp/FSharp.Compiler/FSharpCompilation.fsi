@@ -23,7 +23,7 @@ and [<Sealed>] FSharpCompilation =
 
     static member Create: assemblyName: string * srcs: ImmutableArray<FSharpSource> * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 
-    static member CreateScript: assemblyName: string * scriptSnapshot: FSharpSource * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
+    static member CreateScript: scriptSnapshot: FSharpSource * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 
     static member CreateScript: previousCompilation: FSharpCompilation * scriptSnapshot: FSharpSource * ?additionalMetadataReferences: ImmutableArray<FSharpMetadataReference> -> FSharpCompilation
 

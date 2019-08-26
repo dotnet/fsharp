@@ -215,7 +215,6 @@ type CompilationConfig =
         useScriptResolutionRules: bool
         script: FSharpSource option
         assemblyName: string
-        assemblyPath: string
         isExecutable: bool
         keepAssemblyContents: bool
         keepAllBackgroundResolutions: bool
@@ -289,7 +288,7 @@ type CompilationConfig =
                 projectDirectory = Environment.CurrentDirectory
                 projectReferences = [] // TODO:
                 useScriptResolutionRules = this.useScriptResolutionRules
-                assemblyPath = this.assemblyPath
+                assemblyPath = ""
                 isExecutable = this.isExecutable
                 keepAssemblyContents = this.keepAssemblyContents
                 keepAllBackgroundResolutions = this.keepAllBackgroundResolutions
@@ -400,7 +399,10 @@ and [<NoEquality; NoComparison>] CompilationState =
             { this with cConfig = options; lazyGetChecker = lazyGetChecker; asyncLazyPreEmit = asyncLazyPreEmit }
 
     member this.SubmitSource (src: FSharpSource) =
-        let options = { this.cConfig with sources = ImmutableArray.Create src }
+        let cConfig = 
+            { this.cConfig with 
+                sources = ImmutableArray.Create src
+                assemblyName = Path.GetFileNameWithoutExtension src.FilePath }
 
         let lazyGetChecker =
             CancellableLazy (fun ct ->
@@ -416,7 +418,7 @@ and [<NoEquality; NoComparison>] CompilationState =
             })  
 
         { this with 
-            cConfig = options
+            cConfig = cConfig
             lazyGetChecker = lazyGetChecker
             filePathIndexMap = ImmutableDictionary.CreateRange [|KeyValuePair(src, 0)|]
             asyncLazyPreEmit = asyncLazyPreEmit }              
@@ -571,8 +573,8 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
 type FSharpCompilation with
 
-    static member Create options =
-        FSharpCompilation (CompilationId.Create (), CompilationState.Create options, VersionStamp.Create ())
+    static member Create cConfig =
+        FSharpCompilation (CompilationId.Create (), CompilationState.Create cConfig, VersionStamp.Create ())
 
     static member CreateAux (assemblyName, srcs, metadataReferences, ?canEmit, ?script, ?args) =
         if Path.HasExtension assemblyName || Path.IsPathRooted assemblyName then
@@ -597,7 +599,6 @@ type FSharpCompilation with
                 useScriptResolutionRules = useScriptResolutionRules
                 script = script
                 assemblyName = assemblyName
-                assemblyPath = Path.Combine (Environment.CurrentDirectory, Path.ChangeExtension (Path.GetFileNameWithoutExtension assemblyName, ".dll"))
                 isExecutable = isScript
                 keepAssemblyContents = canEmit
                 keepAllBackgroundResolutions = false
@@ -609,8 +610,8 @@ type FSharpCompilation with
     static member Create (assemblyName, srcs, metadataReferences, ?args) =
         FSharpCompilation.CreateAux (assemblyName, srcs, metadataReferences, args = defaultArg args [])
 
-    static member CreateScript (assemblyName, script, metadataReferences, ?args) =
-        FSharpCompilation.CreateAux (assemblyName, ImmutableArray.Empty, metadataReferences, script = script, args = defaultArg args [])
+    static member CreateScript (script: FSharpSource, metadataReferences, ?args) =
+        FSharpCompilation.CreateAux (Path.GetFileNameWithoutExtension script.FilePath, ImmutableArray.Empty, metadataReferences, script = script, args = defaultArg args [])
 
     static member CreateScript (previousCompilation: FSharpCompilation, script, ?additionalMetadataReferences: ImmutableArray<FSharpMetadataReference>) =
         let _additionalMetadataReferences = defaultArg additionalMetadataReferences ImmutableArray.Empty
