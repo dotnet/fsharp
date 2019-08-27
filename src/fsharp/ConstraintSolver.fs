@@ -201,9 +201,12 @@ type OverloadResolutionFailure =
                         * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
                         * cx: TraitConstraintInfo option
 
-exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
-exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
-exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
+exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range * range
+
+exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
+
+exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
+
 exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argT: TType * paramT: TType * range * range
 
 exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
@@ -217,9 +220,12 @@ exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: Display
 exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * range
 
 exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * ContextInfo * range
-exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
-exception UnresolvedOverloading                 of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
-exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
+
+exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * range
+
+exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
+
+exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 
