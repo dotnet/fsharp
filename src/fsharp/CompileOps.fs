@@ -2169,6 +2169,8 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
+
+      mutable skipAssemblyResolution: bool
       }
 
     static member Initial =
@@ -2310,6 +2312,7 @@ type TcConfigBuilder =
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
+          skipAssemblyResolution = false
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2785,6 +2788,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member x.noConditionalErasure = data.noConditionalErasure
+    member x.skipAssemblyResolution = data.skipAssemblyResolution
 
     static member Create(builder, validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -3599,8 +3603,11 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
         frameworkDLLs, nonFrameworkReferences, unresolved
 
     static member BuildFromPriorResolutions (ctok, tcConfig: TcConfig, resolutions, knownUnresolved) =
-        let references = resolutions |> List.map (fun r -> r.originalReference)
-        TcAssemblyResolutions.ResolveAssemblyReferences (ctok, tcConfig, references, knownUnresolved)
+        if tcConfig.skipAssemblyResolution then
+            TcAssemblyResolutions (tcConfig, resolutions, knownUnresolved)
+        else
+            let references = resolutions |> List.map (fun r -> r.originalReference)
+            TcAssemblyResolutions.ResolveAssemblyReferences (ctok, tcConfig, references, knownUnresolved)
             
 
 //----------------------------------------------------------------------------

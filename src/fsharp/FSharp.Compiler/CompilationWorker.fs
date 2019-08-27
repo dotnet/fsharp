@@ -46,29 +46,40 @@ type CompilationWorkerInstance () =
     do
         agent.Start ()
 
-    member __.Enqueue (work: CompilationThreadToken -> unit) =
-        agent.Post (WorkUnit work)
+    member __.QueueEnabled = false
 
-    member __.EnqueueAndAwaitAsync (work: CompilationThreadToken -> 'T) =
-        async {
-            let! ct = Async.CancellationToken
-            match! agent.PostAndAsyncReply (fun replyChannel -> Work ((fun ctok -> (work ctok) :> obj), replyChannel, ct)) with
-            | Result.Ok result -> return (result :?> 'T)
-            | Result.Error ex -> return raise ex
-        }
+    member this.Enqueue (work: CompilationThreadToken -> unit) =
+        if this.QueueEnabled then
+            agent.Post (WorkUnit work)
+        else
+            work ctok
 
-    member __.EnqueueAsyncAndAwaitAsync (work: CompilationThreadToken -> Async<'T>) =
-        async {
-            let work ctok = 
-                async { 
-                    let! result = work ctok
-                    return (result :> obj)
-                }
-            let! ct = Async.CancellationToken
-            match! agent.PostAndAsyncReply (fun replyChannel -> WorkAsync (work, replyChannel, ct)) with
-            | Result.Ok result -> return (result :?> 'T)
-            | Result.Error ex -> return raise ex
-        }
+    member this.EnqueueAndAwaitAsync (work: CompilationThreadToken -> 'T) =
+        if this.QueueEnabled then
+            async {
+                let! ct = Async.CancellationToken
+                match! agent.PostAndAsyncReply (fun replyChannel -> Work ((fun ctok -> (work ctok) :> obj), replyChannel, ct)) with
+                | Result.Ok result -> return (result :?> 'T)
+                | Result.Error ex -> return raise ex
+            }
+        else
+            async { return work ctok }
+
+    member this.EnqueueAsyncAndAwaitAsync (work: CompilationThreadToken -> Async<'T>) =
+        if this.QueueEnabled then
+            async {
+                let work ctok = 
+                    async { 
+                        let! result = work ctok
+                        return (result :> obj)
+                    }
+                let! ct = Async.CancellationToken
+                match! agent.PostAndAsyncReply (fun replyChannel -> WorkAsync (work, replyChannel, ct)) with
+                | Result.Ok result -> return (result :?> 'T)
+                | Result.Error ex -> return raise ex
+            }
+        else
+            async { return! work ctok }
 
 module CompilationWorker =
 

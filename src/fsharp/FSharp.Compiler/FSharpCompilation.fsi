@@ -6,9 +6,17 @@ open System.Threading
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 
-type [<RequireQualifiedAccess>] FSharpMetadataReference =
-    | PortableExecutable of PortableExecutableReference
-    | FSharpCompilation of FSharpCompilation 
+type FSharpOutputKind =
+    | Exe = 0
+    | WinExe = 1
+    | Library = 2
+
+[<Sealed>]
+type FSharpMetadataReference =
+
+    static member FromPortableExecutableReference: PortableExecutableReference -> FSharpMetadataReference
+
+    static member FromFSharpCompilation: FSharpCompilation -> FSharpMetadataReference
 
 and [<Sealed>] FSharpCompilation =
 
@@ -22,7 +30,7 @@ and [<Sealed>] FSharpCompilation =
 
     member Emit: peStream: Stream * ?pdbStream: Stream * ?ct: CancellationToken -> Result<unit, ImmutableArray<Diagnostic>>
 
-    static member Create: assemblyName: string * srcs: ImmutableArray<FSharpSource> * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
+    static member Create: assemblyName: string * srcs: ImmutableArray<FSharpSource> * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?outputKind: FSharpOutputKind * ?args: string list -> FSharpCompilation
 
     static member CreateScript: scriptSnapshot: FSharpSource * metadataReferences: ImmutableArray<FSharpMetadataReference> * ?args: string list -> FSharpCompilation
 

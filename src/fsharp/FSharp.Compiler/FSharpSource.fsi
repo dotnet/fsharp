@@ -18,7 +18,7 @@ type FSharpSource =
     /// Will never be null.
     member FilePath: string
 
-    member GetText: CancellationToken -> SourceText
+    member GetText: ?ct: CancellationToken -> SourceText
 
     member internal TryGetText: unit -> SourceText option
 

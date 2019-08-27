@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.Compilation
 
+open System
 open System.IO
 open System.Threading
 open System.Threading.Tasks
@@ -188,50 +189,72 @@ type IFSharpDefinitionAndDeclarationFinder =
 type FSharpSymbolKind =
     | Namespace
 
+[<AbstractClass>]
+type FSharpSymbol () =
+
+    abstract Name: string
+
+[<AbstractClass>]
+type TypeSymbol () =
+    inherit FSharpSymbol ()
+
 [<Sealed>]
-type FSharpTypeInfo (tcref: TyconRef) =
-    
-    member __.IsModule = tcref.IsModule
+type NamedTypeSymbol (senv: SymbolEnv, tcref: TyconRef) =
+    inherit TypeSymbol ()
 
-    member __.CompiledName = tcref.CompiledName
+    override x.Name = tcref.DisplayName
+
+    member __.CompiledName =
+        tcref.CompiledName 
+        
+type TypeSymbol with
+
+    static member Create (senv: SymbolEnv, ty: TType) =
+        match tryDestAppTy senv.g ty with
+        | ValueSome tcref ->
+            NamedTypeSymbol (senv, tcref) :> TypeSymbol
+        | _ ->
+            { new TypeSymbol () with
+                member __.Name = String.Empty
+            }
+
+[<AbstractClass>]
+type BindingSymbol (senv: SymbolEnv, vref: ValRef) =
+    inherit FSharpSymbol ()
+
+    override __.Name = vref.DisplayName
+
+    member __.IsMutable = vref.IsMutable
+
+    member __.Type = TypeSymbol.Create (senv, vref.Type)
 
 [<Sealed>]
-type FSharpSymbol private (senv: SymbolEnv, item: Item) =
+type LocalValueSymbol (senv: SymbolEnv, vref: ValRef) =
+    inherit BindingSymbol (senv, vref)
 
-    member __.Item = item
+[<Sealed>]
+type ModuleValueSymbol (senv: SymbolEnv, vref: ValRef) =
+    inherit BindingSymbol (senv, vref)
 
-    member __.Name = item.DisplayName
-
-    member __.IsInvisible =
-        match item with
-        | Item.Value vref -> vref.IsCompilerGenerated
-        | _ -> false
-
-    member __.IsModuleBinding =
-        match item with
-        | Item.Value vref -> vref.IsModuleBinding
-        | _ -> false
-
-    member __.TryGetCompiledName () =
-        match item with
-        | Item.Value vref ->
-            Some (vref.CompiledName senv.g.CompilerGlobalState)
-        | _ ->
-            None
-
-    member __.TryGetParentTypeInfo () =
-        match item with
-        | Item.Value vref ->
-            match vref.ApparentEnclosingEntity with
-            | ParentRef.Parent tcref ->
-                Some (FSharpTypeInfo tcref)
-            | ParentRef.ParentNone -> 
-                None
-        | _ ->
-            None
+type FSharpSymbol with
 
     static member Create (senv: SymbolEnv, item) =
-        FSharpSymbol (senv, item)
+        match item with
+        | Item.Value vref ->
+
+            if vref.IsModuleBinding then
+                ModuleValueSymbol (senv, vref) :> FSharpSymbol
+
+            elif vref.IsLocalRef then
+                LocalValueSymbol (senv, vref) :> FSharpSymbol
+
+            else
+                { new FSharpSymbol () with
+                    member __.Name = vref.DisplayName }
+
+        | _ ->
+            { new FSharpSymbol () with
+                member __.Name = item.DisplayName }
 
 [<NoEquality;NoComparison;RequireQualifiedAccess>]
 type FSharpSymbolInfo =

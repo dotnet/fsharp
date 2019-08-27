@@ -76,6 +76,8 @@ let createTcConfig assemblyPath projectDirectory projectReferences tryGetMetadat
 
         tcConfigB.includewin32manifest <- false
 
+        tcConfigB.implicitlyResolveAssemblies <- false
+
         // Never open PDB files for the language service, even if --standalone is specified
         tcConfigB.openDebugInformationForLaterStaticLinking <- false
 
@@ -86,6 +88,10 @@ let createTcConfig assemblyPath projectDirectory projectReferences tryGetMetadat
             }
 
         tcConfigB.outputFile <- Some assemblyPath
+
+        tcConfigB.primaryAssembly <- PrimaryAssembly.System_Private_CoreLib // TODO: fix this.
+
+        tcConfigB.skipAssemblyResolution <- true
 
         tcConfigB
 
@@ -136,31 +142,14 @@ let createTcGlobalsAndTcImports (tcConfig: TcConfig) assemblyResolutions (import
 
         return (tcGlobals, tcImports) } |> Cancellable.runWithoutCancellation
 
-[<Struct>]
-type CompilationId private (_guid: Guid) =
-
-    static member Create () = CompilationId (Guid.NewGuid ())
-
-[<RequireQualifiedAccess>]
-module IncrementalCheckerCache =
-
-    let private cache = 
-        // Is a Mru algorithm really the right cache for these? A Lru might be better.
-        MruWeakCache<struct (CompilationId * VersionStamp), IncrementalChecker> (
-            cacheSize = 3, 
-            weakReferenceCacheSize = 1000, 
-            equalityComparer = EqualityComparer<struct (CompilationId * VersionStamp)>.Default
-        ) 
-
-    let set key value =
-        cache.Set (key, value)
-
-    let tryGetValue key =
-        cache.TryGetValue key
+type FSharpOutputKind =
+    | Exe = 0
+    | WinExe = 1
+    | Library = 2
 
 // This handles the lifetime of FSharpCompilation's emitted PE reference which allows FSharp.Compiler.Private's binary reader to read
 //     the raw pointer of the PE reference.
-let fsPEWeakTable = System.Runtime.CompilerServices.ConditionalWeakTable<obj, PortableExecutableReference> ()
+let metadataWeakTable = System.Runtime.CompilerServices.ConditionalWeakTable<obj, Metadata> ()
 
 type CompilationConfig =
     {
@@ -181,7 +170,12 @@ type CompilationConfig =
         let tryGetMetadataSnapshot (id, _) =
             let metadataReferenceOpt = 
                 this.metadataReferences
-                |> Seq.tryFind (fun x -> String.Equals (id, x.Id, StringComparison.OrdinalIgnoreCase))
+                |> Seq.tryFind (fun x -> 
+                    String.Equals (id, x.Id, StringComparison.OrdinalIgnoreCase) ||
+                    // TODO: This is currently a hack to get around from having to have a path.
+                    //       OpenILModuleReader calls FileSystem.GetPullPathShim and passes that result to tryGetMetadataSnapshot.
+                    String.Equals (id, FileSystem.GetFullPathShim x.Id, StringComparison.OrdinalIgnoreCase)
+                )
 
             match metadataReferenceOpt with
 
@@ -203,16 +197,24 @@ type CompilationConfig =
             //           The current state of compilation is not ready for a full IDE experience yet.
             | Some (FSharpMetadataReference.FSharpCompilation c) ->
                 // lock this so we do not emit twice on separate threads for the exact same compilation
-                lock c <| fun () ->
-                    match fsPEWeakTable.TryGetValue c with
+                lock c.Gate <| fun () ->
+                    match metadataWeakTable.TryGetValue c with
                     | true, metadata -> 
-                        Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
+                        Some (getRawPointerMetadataSnapshot metadata)
                     | _ ->
                         use ms = new MemoryStream ()
-                        c.Emit ms |> ignore
-                        let metadata = PortableExecutableReference.CreateFromStream ms
-                        fsPEWeakTable.Add (c, metadata)
-                        Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
+                        match c.Emit ms with
+                        | Ok _ -> ()
+                        | Result.Error diags -> failwithf "%A" diags
+                        try
+                            ms.Position <- 0L
+                            let md = AssemblyMetadata.CreateFromStream(ms, options = Reflection.PortableExecutable.PEStreamOptions.PrefetchMetadata)
+                            metadataWeakTable.Add (c, md)
+                            Some (getRawPointerMetadataSnapshot md)
+                        with
+                        | ex ->
+                            printfn "%A" ex
+                            reraise()
 
             | _ -> failwithf "Metadata now found for '%s'." id
 
@@ -232,7 +234,7 @@ type CompilationConfig =
                 | FSharpMetadataReference.FSharpCompilation c ->
                     {
                         originalReference = AssemblyReference (Range.range0, c.AssemblyName, None)
-                        resolvedPath = c.AssemblyName
+                        resolvedPath = c.AssemblyName // ugly be ok
                         prepareToolTip = fun () -> c.AssemblyName
                         sysdir = false
                         ilAssemblyRef = ref None
@@ -271,7 +273,7 @@ type CompilationConfig =
 
         IncrementalChecker.Create (tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, srcs)
 
-and [<RequireQualifiedAccess>] FSharpMetadataReference =
+and [<NoEquality;NoComparison;RequireQualifiedAccess>] FSharpMetadataReference =
     | PortableExecutable of PortableExecutableReference
     | FSharpCompilation of FSharpCompilation 
     // TODO: Add CSharp and VB compilations.
@@ -280,6 +282,12 @@ and [<RequireQualifiedAccess>] FSharpMetadataReference =
         match this with
         | FSharpMetadataReference.PortableExecutable peRef -> peRef.FilePath
         | FSharpMetadataReference.FSharpCompilation c -> c.AssemblyName
+
+    static member FromPortableExecutableReference peRef =
+        FSharpMetadataReference.PortableExecutable peRef
+
+    static member FromFSharpCompilation c =
+        FSharpMetadataReference.FSharpCompilation c
 
 and [<NoEquality; NoComparison>] CompilationState =
     {
@@ -381,17 +389,10 @@ and [<NoEquality; NoComparison>] CompilationState =
             filePathIndexMap = ImmutableDictionary.CreateRange [|KeyValuePair(src, 0)|]
             asyncLazyPreEmit = asyncLazyPreEmit }              
 
-and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, version: VersionStamp) as this =
+and [<Sealed>] FSharpCompilation (state: CompilationState) as this =
 
-    let lazyGetChecker =
-        CancellableLazy (fun ct ->
-            match IncrementalCheckerCache.tryGetValue struct (id, version) with
-            | ValueSome checker -> checker
-            | _ -> 
-                let checker = state.lazyGetChecker.GetValue ct
-                IncrementalCheckerCache.set struct (id, version) checker
-                checker
-        )
+    let lazyGetChecker = state.lazyGetChecker
+    let gate = obj ()
 
     let check src =
         if not (state.filePathIndexMap.ContainsKey src) then
@@ -411,18 +412,16 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
     member __.State = state
 
-    member __.Id = id
-
-    member __.Version = version
-
     member __.Config = state.cConfig
 
+    member __.Gate = gate
+
     member __.SetConfig cConfig =
-        FSharpCompilation (id, state.SetOptions cConfig, version.GetNewerVersion ())
+        FSharpCompilation (state.SetOptions cConfig)
 
     member __.ReplaceSource (oldSrc, newSrc) =
         check oldSrc
-        FSharpCompilation (id, state.ReplaceSource (oldSrc, newSrc), version.GetNewerVersion ())
+        FSharpCompilation (state.ReplaceSource (oldSrc, newSrc))
 
     member __.GetSemanticModel src =
         getSemanticModel src
@@ -482,6 +481,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
             let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttribs)
 
+            // TODO: Need to look at what happens when we specify a dynamic assembly creator. I think it changes the IlBackend writing slightly.
             let dynamicAssemblyCreator asmStream pdbStream =
                 Some (fun (_, _, ilModDef: ILModuleDef) ->
                     let options: ILBinaryWriter.options =
@@ -531,7 +531,7 @@ and [<Sealed>] FSharpCompilation (id: CompilationId, state: CompilationState, ve
 
 type FSharpCompilation with
 
-    static member CreateAux (assemblyName, srcs, metadataReferences, ?canEmit, ?script, ?args) =
+    static member CreateAux (assemblyName, srcs, metadataReferences, ?outputKind, ?canEmit, ?script, ?args) =
         if Path.HasExtension assemblyName || Path.IsPathRooted assemblyName then
             failwith "Assembly name must not be a file path."
 
@@ -541,12 +541,13 @@ type FSharpCompilation with
         if assemblyName |> String.exists (Char.IsLetterOrDigit >> not) then
             failwith "Assembly name contains an invalid character."
 
+        let outputKind = defaultArg outputKind FSharpOutputKind.Exe
         let canEmit = defaultArg canEmit true
 
         let isScript = script.IsSome
         let suggestNamesForErrors = canEmit
         let useScriptResolutionRules = isScript
-        let isExecutable = isScript
+        let isExecutable = outputKind = FSharpOutputKind.Exe || outputKind = FSharpOutputKind.WinExe
 
         let fileExt =
             if isExecutable then
@@ -568,18 +569,19 @@ type FSharpCompilation with
                 sources = if isScript then ImmutableArray.Create script.Value else srcs
                 metadataReferences = metadataReferences
             }
-        FSharpCompilation (CompilationId.Create (), CompilationState.Create cConfig, VersionStamp.Create ())
+        FSharpCompilation (CompilationState.Create cConfig)
 
-    static member Create (assemblyName, srcs, metadataReferences, ?args) =
-        FSharpCompilation.CreateAux (assemblyName, srcs, metadataReferences, args = defaultArg args [])
+    static member Create (assemblyName, srcs, metadataReferences, ?outputKind: FSharpOutputKind, ?args) =
+        let outputKind = defaultArg outputKind FSharpOutputKind.Exe
+        FSharpCompilation.CreateAux (assemblyName, srcs, metadataReferences, outputKind = outputKind, args = defaultArg args [])
 
-    static member CreateScript (script: FSharpSource, metadataReferences, ?args) =
+    static member CreateScript (script: FSharpSource, metadataReferences, args) =
         FSharpCompilation.CreateAux (Path.GetFileNameWithoutExtension script.FilePath, ImmutableArray.Empty, metadataReferences, script = script, args = defaultArg args [])
 
     static member CreateScript (previousCompilation: FSharpCompilation, script, ?additionalMetadataReferences: ImmutableArray<FSharpMetadataReference>) =
         let _additionalMetadataReferences = defaultArg additionalMetadataReferences ImmutableArray.Empty
 
-        FSharpCompilation (CompilationId.Create (), previousCompilation.State.SubmitSource script, VersionStamp.Create ())
+        FSharpCompilation (previousCompilation.State.SubmitSource script)
 
 [<AutoOpen>]
 module FSharpSemanticModelExtensions =

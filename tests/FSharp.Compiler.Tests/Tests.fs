@@ -41,7 +41,7 @@ module TestModule%i =
     let createSource name amount =
         (sprintf """namespace Test.%s""" name) + createTestModules name amount
 
-    let getMetadataReferences () =
+    let metadataReferences =
         let currentReferencedAssemblies =
             let asmLocations =
                 AppDomain.CurrentDomain.GetAssemblies()
@@ -66,23 +66,31 @@ module TestModule%i =
                 else
                     None
             )
-            |> Seq.map (fun peReference -> FSharpMetadataReference.PortableExecutable peReference)
+            |> Seq.map FSharpMetadataReference.FromPortableExecutableReference
             |> ImmutableArray.CreateRange
 
         let fsharpCoreMetadataReference =
             PortableExecutableReference.CreateFromFile typeof<int list>.Assembly.Location
-            |> FSharpMetadataReference.PortableExecutable
+            |> FSharpMetadataReference.FromPortableExecutableReference
 
         metadataReferences.Add fsharpCoreMetadataReference
 
+    let singleFile name outputKind text =
+        let src = FSharpSource.FromText (text, "c:\\" + name + ".fs")
+        FSharpCompilation.Create (name, ImmutableArray.Create src, metadataReferences, outputKind = outputKind, args = defaultArgs), src
+
+    let singleFileWith name outputKind (cs: seq<FSharpMetadataReference>) text =
+        let src = FSharpSource.FromText (text, "c:\\" + name + ".fs")
+        FSharpCompilation.Create (name, ImmutableArray.Create src, metadataReferences.AddRange cs, outputKind = outputKind, args = defaultArgs), src
+
     let getSemanticModel (text: string) =
         let src = FSharpSource.FromText (text, "c:\\test1.fs")
-        let c = FSharpCompilation.Create ("test", ImmutableArray.Create src, getMetadataReferences(), defaultArgs)
+        let c = FSharpCompilation.Create ("test", ImmutableArray.Create src, metadataReferences, args = defaultArgs)
         c.GetSemanticModel src
 
     let createScriptAux (text: string) =
         let src = FSharpSource.FromText (text, "c:\\test1.fsx")
-        FSharpCompilation.CreateScript (src, getMetadataReferences(), defaultArgs), src
+        FSharpCompilation.CreateScript (src, metadataReferences, defaultArgs), src
 
     let semanticModelScript text =
         let c, src = createScriptAux text
@@ -125,17 +133,6 @@ module TestModule%i =
 
     let runScript (text: string) =
         semanticModelScript text
-        |> runScriptAux
-
-    let runScriptAndContinue (text1: string) (text2: string) =
-        let c, src = createScriptAux text1
-        c.GetSemanticModel src
-        |> runScriptAux
-        |> ignore
-
-        let src2 = FSharpSource.FromText (text2, "c:\\test2.fsx")
-        let c2 = FSharpCompilation.CreateScript (c, src2)
-        c2.GetSemanticModel src2
         |> runScriptAux
 
 [<TestFixture>]
@@ -379,21 +376,49 @@ type C () = class end
         | Error diags -> Assert.Fail (sprintf "%A" diags)
 
     [<Test>]
-    member __.``Script Test - Evaluation with continue`` () =
-        let res =
-            runScriptAndContinue
-                """
-let y = 1 + 1
-type Doot () =
-    member __.Test(x: int) = x + 10
-                """
-                """
-let d = Doot ()
-d.Test(y) + 10
-                """
-        match res with
-        | Ok value -> Assert.AreEqual (22, value)
-        | Error diags -> Assert.Fail (sprintf "%A" diags)
+    member __.``Two compilations - one references the other`` () =
+        let c1, _ = singleFile "test1" FSharpOutputKind.Library """
+module Test1
+
+type C () = 
+
+    member __.M() = ()
+        """
+
+        let c2, src2 = singleFileWith "test2" FSharpOutputKind.Library [FSharpMetadataReference.FromFSharpCompilation c1] """
+module Test2
+
+open Test1
+
+let x = C ()
+let y = x.M()
+        """
+
+        use ms = new MemoryStream()
+        match c2.Emit ms with
+        | Ok _ -> ()
+        | Error diags -> failwithf "%A" diags
+
+        let text2 = src2.GetText().ToString()
+        let pos = text2.IndexOf("x = C ()")
+        let sm = c2.GetSemanticModel src2
+        let root = sm.SyntaxTree.GetRootNode()
+
+        let symbolInfo =
+            let node = root.TryFindNode (TextSpan(pos, 1))
+            sm.GetSymbolInfo node.Value
+
+        match symbolInfo.Symbol.Value with
+        | :? ModuleValueSymbol as symbol ->
+            Assert.AreEqual("x", symbol.Name)
+
+            match symbol.Type with
+            | :? NamedTypeSymbol as tySymbol ->
+                Assert.AreEqual("Test1.C", tySymbol.CompiledName)
+            | _ ->
+                Assert.Fail(sprintf "Unexpected type symbol: %A" symbol.Type)
+        | _ ->
+            Assert.Fail(sprintf "Unexpected symbol: %A" symbolInfo.Symbol)
 
 //[<TestFixture>]
 //type UtilitiesTest () =

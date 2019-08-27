@@ -8,27 +8,36 @@ open FSharp.Compiler.Compilation.Utilities
 open FSharp.Compiler.Compilation.IncrementalChecker
 open FSharp.Compiler.NameResolution
 
-[<Sealed>]
-type FSharpTypeInfo =
+[<AbstractClass>]
+type FSharpSymbol =
 
-    member IsModule: bool
+    abstract Name: string
+
+[<AbstractClass>]
+type TypeSymbol =
+    inherit FSharpSymbol
+
+[<Sealed;Class>]
+type NamedTypeSymbol =
+    inherit TypeSymbol
 
     member CompiledName: string
 
-[<Sealed>]
-type FSharpSymbol = 
+[<AbstractClass>]
+type BindingSymbol =
+    inherit FSharpSymbol
 
-    member internal Item: Item
+    member IsMutable: bool
 
-    member Name: string
+    member Type: TypeSymbol
 
-    member IsInvisible: bool
+[<Sealed;Class>]
+type LocalValueSymbol =
+    inherit BindingSymbol
 
-    member IsModuleBinding: bool
-
-    member TryGetCompiledName: unit -> string option
-
-    member TryGetParentTypeInfo: unit -> FSharpTypeInfo option
+[<Sealed;Class>]
+type ModuleValueSymbol =
+    inherit BindingSymbol
 
 [<Sealed>]
 type FSharpSymbolInfo =

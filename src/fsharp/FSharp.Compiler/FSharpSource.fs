@@ -37,7 +37,9 @@ type FSharpSource (filePath: string, sourceStorage: SourceStorage, initialText: 
 
     member __.Kind = kind
 
-    member this.GetText ct =
+    member this.GetText ?ct =
+        let ct = defaultArg ct CancellationToken.None
+
         match this.TryGetText () with
         | Some text -> text
         | _ ->
