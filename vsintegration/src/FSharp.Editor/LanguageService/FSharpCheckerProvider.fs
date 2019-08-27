@@ -42,7 +42,7 @@ type internal FSharpCheckerProvider
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
             Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
 
-            Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
+            Some ((objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength), None)
         with ex -> 
             // We catch all and let the backup routines in the F# compiler find the error
             Assert.Exception(ex)

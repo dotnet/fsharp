@@ -30,7 +30,7 @@ let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 // TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
 let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharp.Compiler.CompileOps.TcState>.Assembly.Location)).Value
 
-let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata) =
+let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata, peDataOpt) =
     let amd = (md :?> Microsoft.CodeAnalysis.AssemblyMetadata)
     let mmd = amd.GetModules().[0]
     let mmr = mmd.GetMetadataReader()
@@ -41,11 +41,10 @@ let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata) =
     // You shouldn't dispose it directly."
 
     let objToHold = box md
-
     // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
     Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
 
-    (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
+    (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength), peDataOpt
 
 // TODO: Revisit this. A lot of the code below was taken from FCS and has assumptions on language service.
 //     This will mean that some config options may not be right for actual compilation.
@@ -147,10 +146,6 @@ type FSharpOutputKind =
     | WinExe = 1
     | Library = 2
 
-// This handles the lifetime of FSharpCompilation's emitted PE reference which allows FSharp.Compiler.Private's binary reader to read
-//     the raw pointer of the PE reference.
-let metadataWeakTable = System.Runtime.CompilerServices.ConditionalWeakTable<obj, Metadata> ()
-
 type CompilationConfig =
     {
         suggestNamesForErrors: bool
@@ -180,7 +175,7 @@ type CompilationConfig =
             match metadataReferenceOpt with
 
             | Some (FSharpMetadataReference.PortableExecutable metadata) -> 
-                Some (getRawPointerMetadataSnapshot (metadata.GetMetadata ()))
+                Some (getRawPointerMetadataSnapshot (metadata.GetMetadata (), None))
 
             // TODO: This could be optimized in that we may not need to emit the entire compilation and/or keep the PE reference in a weak table.
             //       At the moment, this is just necessary for correct importing.
@@ -196,25 +191,24 @@ type CompilationConfig =
             //           For that scenario, we only need to get the results right after type checking.
             //           The current state of compilation is not ready for a full IDE experience yet.
             | Some (FSharpMetadataReference.FSharpCompilation c) ->
-                // lock this so we do not emit twice on separate threads for the exact same compilation
-                lock c.Gate <| fun () ->
-                    match metadataWeakTable.TryGetValue c with
-                    | true, metadata -> 
-                        Some (getRawPointerMetadataSnapshot metadata)
-                    | _ ->
-                        use ms = new MemoryStream ()
-                        match c.Emit ms with
-                        | Ok _ -> ()
-                        | Result.Error diags -> failwithf "%A" diags
-                        try
-                            ms.Position <- 0L
-                            let md = AssemblyMetadata.CreateFromStream(ms, options = Reflection.PortableExecutable.PEStreamOptions.PrefetchMetadata)
-                            metadataWeakTable.Add (c, md)
-                            Some (getRawPointerMetadataSnapshot md)
-                        with
-                        | ex ->
-                            printfn "%A" ex
-                            reraise()
+                let ms = new MemoryStream ()
+                match c.Emit ms with
+                | Ok _ -> ()
+                | Result.Error diags -> failwithf "%A" diags
+                ms.Position <- 0L
+                let peReader = new System.Reflection.PortableExecutable.PEReader(ms)
+                let md = peReader.GetMetadata()
+                let pe = peReader.GetEntireImage()
+
+                let o =
+                    { new System.Object () with
+                        override this.Finalize() =
+                            GC.SuppressFinalize(this)
+                            peReader.Dispose() }
+
+                let mddata = (o, md.Pointer |> NativePtr.toNativeInt, md.Length)
+                let pedata = (o, pe.Pointer |> NativePtr.toNativeInt, pe.Length)
+                Some (mddata, Some pedata)
 
             | _ -> failwithf "Metadata now found for '%s'." id
 
