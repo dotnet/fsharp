@@ -187,12 +187,26 @@ module TestModuleCompilationTest =
         Assert.False (token.IsNone)
         Assert.True (token.IsIdentifier)
 
-        let node = token.GetParentNode ()
-        let symbol = semanticModel.TryGetEnclosingSymbol (position, CancellationToken.None)
-        let speculativeSymbolInfo = semanticModel.GetSpeculativeSymbolInfo (position, node, CancellationToken.None)
+        let target = token.GetParentNode ()
+        let symbolInfo = semanticModel.GetSymbolInfo (target)
 
-        Assert.True (symbol.IsSome)
-        Assert.False (speculativeSymbolInfo.Symbol.IsSome)
+        //
+
+        let semanticModel2 = getSemanticModel textString
+
+        let position = textString.IndexOf("""x.X + x.Y + x.Z""")
+        let token = (semanticModel2.SyntaxTree.GetRootNode ()).FindToken position
+
+        Assert.False (token.IsNone)
+        Assert.True (token.IsIdentifier)
+
+        //
+
+        let target = token.GetParentNode ()
+        let speculativeSymbolInfo = semanticModel.GetSpeculativeSymbolInfo (position, target)
+
+        Assert.True (symbolInfo.Symbol.IsSome)
+        Assert.True (speculativeSymbolInfo.Symbol.IsSome)
 
     [<Test>]
     member __.``Get Completion Symbols - Open Declaration`` () =

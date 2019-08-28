@@ -280,7 +280,7 @@ type FSharpSymbolInfo =
     static member Empty = Candidates ImmutableArray.Empty
 
 [<Sealed>]
-type FSharpSemanticModel (src: FSharpSource, lazyChecker: CancellableLazy<IncrementalChecker>, compilationObj: obj) =
+type FSharpSemanticModel (src: FSharpSource, lazyChecker: CancellableLazy<IncrementalChecker>, compilationObj: obj) as this =
 
     let getChecker ct =
        lazyChecker.GetValue ct
@@ -327,6 +327,17 @@ type FSharpSemanticModel (src: FSharpSource, lazyChecker: CancellableLazy<Increm
         | _ ->
             FSharpSymbolInfo.Candidates (candidateSymbols.ToImmutable ())
 
+    let isInTree (node: FSharpSyntaxNode) =
+        node.SyntaxTree = this.SyntaxTree
+
+    let checkNode node =
+        if not (isInTree node) then
+            failwith "Syntax node is not within the syntax tree."
+
+    let checkSpeculativeNode node =
+        if isInTree node then
+            failwith "Syntax node is part of the syntax tree and cannot be used in a speculative context."
+
     member __.FindSymbolUsesAsync symbol =
         async {
             let! _, _, resolutions, symbolEnv = asyncLazyGetAllSymbols.GetValueAsync ()
@@ -361,12 +372,16 @@ type FSharpSemanticModel (src: FSharpSource, lazyChecker: CancellableLazy<Increm
         rootNode.FindToken position
 
     member __.GetSymbolInfo (node: FSharpSyntaxNode, ?ct) =
+        checkNode node
+
         let ct = defaultArg ct CancellationToken.None
         let _checker, _tcAcc, resolutions, symbolEnv = Async.RunSynchronously (asyncLazyGetAllSymbols.GetValueAsync (), cancellationToken = ct)
         let cnrs = resolutions.CapturedNameResolutions
         getSymbolInfo symbolEnv cnrs node
 
-    member this.TryGetEnclosingSymbol (position: int, ct) =
+    member this.TryGetEnclosingSymbol (position: int, ?ct) =
+        let ct = defaultArg ct CancellationToken.None
+
         let token = this.FindToken (position, ct)
         if token.IsNone then
             None
@@ -376,7 +391,11 @@ type FSharpSemanticModel (src: FSharpSource, lazyChecker: CancellableLazy<Increm
 
     /// VERY EXPERIMENTAL.
     /// But, if we figure out the right heuristics, this can be fantastic.
-    member this.GetSpeculativeSymbolInfo (position: int, target: FSharpSyntaxNode, ct) =
+    member this.GetSpeculativeSymbolInfo (position: int, target: FSharpSyntaxNode, ?ct) =
+        checkSpeculativeNode target
+
+        let ct = defaultArg ct CancellationToken.None
+
         let token = this.FindToken (position, ct)
         if token.IsNone then
             FSharpSymbolInfo.Empty

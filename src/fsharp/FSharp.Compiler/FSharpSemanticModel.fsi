@@ -62,9 +62,9 @@ type FSharpSemanticModel =
 
     member GetSymbolInfo: node: FSharpSyntaxNode * ?ct: CancellationToken -> FSharpSymbolInfo
 
-    member TryGetEnclosingSymbol: position: int * ct: CancellationToken -> FSharpSymbol option
+    member TryGetEnclosingSymbol: position: int * ?ct: CancellationToken -> FSharpSymbol option
 
-    member GetSpeculativeSymbolInfo: position: int * node: FSharpSyntaxNode * ct: CancellationToken -> FSharpSymbolInfo
+    member GetSpeculativeSymbolInfo: position: int * node: FSharpSyntaxNode * ?ct: CancellationToken -> FSharpSymbolInfo
 
     member LookupSymbols: position: int * ct: CancellationToken -> ImmutableArray<FSharpSymbol>
 
