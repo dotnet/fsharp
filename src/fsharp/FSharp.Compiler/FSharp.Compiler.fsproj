@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="CcuImporter.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="Abbreviations.fs" />
     <Compile Include="Extensions.fs" />
