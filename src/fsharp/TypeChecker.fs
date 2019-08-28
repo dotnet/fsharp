@@ -2963,7 +2963,7 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
                 then actualType 
                 else 
                    let flexibleType = NewInferenceType ()
-                   AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace actualType flexibleType
+                   AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace true actualType flexibleType
                    flexibleType)
 
         // Create a coercion to represent the expansion of the application
@@ -2985,9 +2985,9 @@ let TcRuntimeTypeTest isCast isOperator cenv denv m tgtTy srcTy =
 
     if isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy) then 
         if isCast then
-            AddCxTypeMustSubsumeType (ContextInfo.RuntimeTypeTest isOperator) denv cenv.css m NoTrace srcTy tgtTy
+            AddCxTypeMustSubsumeType (ContextInfo.RuntimeTypeTest isOperator) denv cenv.css m NoTrace true srcTy tgtTy
         else
-            AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace srcTy tgtTy
+            AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace true srcTy tgtTy
 
     if isErasedType g tgtTy then
         if isCast then
@@ -3013,7 +3013,7 @@ let TcStaticUpcast cenv denv m tgtTy srcTy =
     if typeEquiv cenv.g srcTy tgtTy then 
         warning(UpcastUnnecessary m) 
 
-    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace tgtTy srcTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace true tgtTy srcTy
 
 let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseFlags minst objArgs args =
 
@@ -3458,7 +3458,7 @@ let mkSeqCollect cenv env m enumElemTy genTy lam enumExpr =
     mkCallSeqCollect cenv.g m enumElemTy genResultTy lam enumExpr
 
 let mkSeqUsing cenv (env: TcEnv) m resourceTy genTy resourceExpr lam =
-    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_ty resourceTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace true cenv.g.system_IDisposable_ty resourceTy
     let genResultTy = NewInferenceType ()
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam 
@@ -4294,7 +4294,7 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
         let tp', tpenv = TcTypar cenv env newOk tpenv tp
         if newOk = NoNewTypars && isSealedTy cenv.g ty' then 
             errorR(Error(FSComp.SR.tcInvalidConstraintTypeSealed(), m))
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty' (mkTyparTy tp') 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace true ty' (mkTyparTy tp') 
         tpenv
 
     | WhereTyparSupportsNull(tp, m) -> checkSimpleConstraint tp m AddCxTypeMustSupportNull
@@ -4716,7 +4716,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
     | SynType.HashConstraint(ty, m) ->  
         let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
         let ty', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty' (mkTyparTy tp) 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace true ty' (mkTyparTy tp) 
         tp.AsType, tpenv
 
     | SynType.StaticConstant (c, m) ->
@@ -5606,7 +5606,7 @@ and TcExprFlex cenv flex compat ty (env: TcEnv) tpenv (e: SynExpr) =
         let argty = NewInferenceType ()
         if compat then 
             (destTyparTy cenv.g argty).SetIsCompatFlex(true)
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css e.Range NoTrace ty argty 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css e.Range NoTrace true ty argty 
         let e', tpenv = TcExpr cenv argty env tpenv e 
         let e' = mkCoerceIfNeeded cenv.g ty argty e'
         e', tpenv
@@ -8553,7 +8553,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
 
             if not isYield then errorR(Error(FSComp.SR.tcUseYieldBangForMultipleResults(), m)) 
 
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace genOuterTy genExprTy
+            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace true genOuterTy genExprTy
             Some(mkCoerceExpr(resultExpr, genOuterTy, m, genExprTy), tpenv)
 
         | SynExpr.YieldOrReturn ((isYield, _), yieldExpr, m) -> 
@@ -9460,7 +9460,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         RecdFieldInstanceChecks cenv.g cenv.amap ad mItem rfinfo
         let tgtTy = rfinfo.DeclaringType
         let valu = isStructTy cenv.g tgtTy
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace tgtTy objExprTy 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace true tgtTy objExprTy 
         let objExpr = if valu then objExpr else mkCoerceExpr(objExpr, tgtTy, mExprAndItem, objExprTy)
         let fieldTy = rfinfo.FieldType
         match delayed with 
@@ -9481,7 +9481,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         
     | Item.AnonRecdField (anonInfo, tinst, n, _) ->
         let tgty = TType_anon (anonInfo, tinst)
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace tgty objExprTy 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace true tgty objExprTy 
         let fieldTy = List.item n tinst
         match delayed with 
         | DelayedSet _ :: _otherDelayed ->
@@ -11081,7 +11081,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
                     let propNameItem = Item.SetterArg(id, setterItem)
                     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, propNameItem, propNameItem, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad)
 
-                    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace argty argtyv
+                    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace true argty argtyv
 
                     AttribNamedArg(nm, argty, isProp, mkAttribExpr callerArgExpr))
 
@@ -11245,7 +11245,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         let mkCleanup (bodyExpr, bodyExprTy) =
             if isUse && not isFixed then 
                 (allValsDefinedByPattern, (bodyExpr, bodyExprTy)) ||> List.foldBack (fun v (bodyExpr, bodyExprTy) ->
-                    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_ty v.Type
+                    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace true cenv.g.system_IDisposable_ty v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
                     mkTryFinally cenv.g (bodyExpr, cleanupE, m, bodyExprTy, SequencePointInBodyOfTry, NoSequencePointAtFinally), bodyExprTy)
             else 
