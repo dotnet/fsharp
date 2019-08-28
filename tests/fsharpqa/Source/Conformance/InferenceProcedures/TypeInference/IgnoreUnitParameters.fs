@@ -2,7 +2,7 @@
 // Regression test for https://github.com/Microsoft/visualfsharp/issues/1749
 // Type Inference
 // Explicit program entry point: [<ExtryPoint>]
-//<Expected status=success></Expects>
+//<Expects status="success"></Expects>
 
 
 let run1 (f: unit -> string) = f()

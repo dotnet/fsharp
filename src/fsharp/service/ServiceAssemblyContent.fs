@@ -529,7 +529,7 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
     
-        and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, _)) =
+        and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, Attributes attrs, _, _)) =
             List.iter walkAttribute attrs
             List.iter walkSynModuleDecl decls
     
@@ -537,7 +537,7 @@ module ParsedInput =
             addLongIdentWithDots attr.TypeName
             walkExpr attr.ArgExpr
     
-        and walkTyparDecl (SynTyparDecl.TyparDecl (attrs, typar)) =
+        and walkTyparDecl (SynTyparDecl.TyparDecl (Attributes attrs, typar)) =
             List.iter walkAttribute attrs
             walkTypar typar
     
@@ -564,7 +564,7 @@ module ParsedInput =
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
                 walkType t
-            | SynPat.Attrib (pat, attrs, _) ->
+            | SynPat.Attrib (pat, Attributes attrs, _) ->
                 walkPat pat
                 List.iter walkAttribute attrs
             | SynPat.Or (pat1, pat2, _) -> List.iter walkPat [pat1; pat2]
@@ -582,7 +582,7 @@ module ParsedInput =
     
         and walkTypar (Typar (_, _, _)) = ()
     
-        and walkBinding (SynBinding.Binding (_, _, _, _, attrs, _, _, pat, returnInfo, e, _, _)) =
+        and walkBinding (SynBinding.Binding (_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e
@@ -726,7 +726,7 @@ module ParsedInput =
             | SynMeasure.Anon _ -> ()
     
         and walkSimplePat = function
-            | SynSimplePat.Attrib (pat, attrs, _) ->
+            | SynSimplePat.Attrib (pat, Attributes attrs, _) ->
                 walkSimplePat pat
                 List.iter walkAttribute attrs
             | SynSimplePat.Typed(pat, t, _) ->
@@ -734,15 +734,15 @@ module ParsedInput =
                 walkType t
             | _ -> ()
     
-        and walkField (SynField.Field(attrs, _, _, t, _, _, _, _)) =
+        and walkField (SynField.Field(Attributes attrs, _, _, t, _, _, _, _)) =
             List.iter walkAttribute attrs
             walkType t
     
-        and walkValSig (SynValSig.ValSpfn(attrs, _, _, t, SynValInfo(argInfos, argInfo), _, _, _, _, _, _)) =
+        and walkValSig (SynValSig.ValSpfn(Attributes attrs, _, _, t, SynValInfo(argInfos, argInfo), _, _, _, _, _, _)) =
             List.iter walkAttribute attrs
             walkType t
             argInfo :: (argInfos |> List.concat)
-            |> List.map (fun (SynArgInfo(attrs, _, _)) -> attrs)
+            |> List.map (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
             |> List.concat
             |> List.iter walkAttribute
     
@@ -765,9 +765,9 @@ module ParsedInput =
         and walkMember = function
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
-            | SynMemberDefn.ImplicitCtor (_, attrs, pats, _, _) ->
+            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _) ->
                 List.iter walkAttribute attrs
-                List.iter walkSimplePat pats
+                List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) -> walkType t; walkExpr e
             | SynMemberDefn.LetBindings (bindings, _, _, _) -> List.iter walkBinding bindings
             | SynMemberDefn.Interface (t, members, _) ->
@@ -776,19 +776,19 @@ module ParsedInput =
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
             | SynMemberDefn.ValField (field, _) -> walkField field
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
-            | SynMemberDefn.AutoProperty (attrs, _, _, t, _, _, _, _, e, _, _) ->
+            | SynMemberDefn.AutoProperty (Attributes attrs, _, _, t, _, _, _, _, e, _, _) ->
                 List.iter walkAttribute attrs
                 Option.iter walkType t
                 walkExpr e
             | _ -> ()
     
-        and walkEnumCase (EnumCase(attrs, _, _, _, _)) = List.iter walkAttribute attrs
+        and walkEnumCase (EnumCase(Attributes attrs, _, _, _, _)) = List.iter walkAttribute attrs
     
         and walkUnionCaseType = function
             | SynUnionCaseType.UnionCaseFields fields -> List.iter walkField fields
             | SynUnionCaseType.UnionCaseFullType (t, _) -> walkType t
     
-        and walkUnionCase (SynUnionCase.UnionCase (attrs, _, t, _, _, _)) =
+        and walkUnionCase (SynUnionCase.UnionCase (Attributes attrs, _, t, _, _, _)) =
             List.iter walkAttribute attrs
             walkUnionCaseType t
     
@@ -799,7 +799,7 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev (_, t, _) -> walkType t
             | _ -> ()
     
-        and walkComponentInfo isTypeExtensionOrAlias (ComponentInfo(attrs, typars, constraints, longIdent, _, _, _, _)) =
+        and walkComponentInfo isTypeExtensionOrAlias (ComponentInfo(Attributes attrs, typars, constraints, longIdent, _, _, _, _)) =
             List.iter walkAttribute attrs
             List.iter walkTyparDecl typars
             List.iter walkTypeConstraint constraints
@@ -836,7 +836,7 @@ module ParsedInput =
             | SynModuleDecl.Let (_, bindings, _) -> List.iter walkBinding bindings
             | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.iter walkTypeDefn types
-            | SynModuleDecl.Attributes (attrs, _) -> List.iter walkAttribute attrs
+            | SynModuleDecl.Attributes (Attributes attrs, _) -> List.iter walkAttribute attrs
             | _ -> ()
     
         match input with

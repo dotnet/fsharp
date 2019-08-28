@@ -39,6 +39,7 @@
 //<Expects status="success">section='- ADVANCED -             ' ! option=fullpaths                      kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=lib                            kind=OptionStringList</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=baseaddress                    kind=OptionString</Expects>
+//<Expects status="success">section='- ADVANCED -             ' ! option=checksumalgorithm              kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=noframework                    kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=standalone                     kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=staticlink                     kind=OptionString</Expects>

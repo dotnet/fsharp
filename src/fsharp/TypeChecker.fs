@@ -534,7 +534,7 @@ type cenv =
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring }
 
-    override __.ToString() = "cenv(...)"
+    override __.ToString() = "<cenv>"
 
 let CopyAndFixupTypars m rigid tpsorig = 
     ConstraintSolver.FreshenAndFixupTypars m rigid [] [] tpsorig
@@ -962,7 +962,7 @@ let AdjustValSynInfoInSignature g ty (SynValInfo(argsData, retData) as sigMD) =
 /// The ValReprInfo for a value, except the number of typars is not yet inferred 
 type PartialValReprInfo = PartialValReprInfo of ArgReprInfo list list * ArgReprInfo 
 
-let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(attrs, isOpt, nm)) = 
+let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) = 
     // Synthesize an artificial "OptionalArgument" attribute for the parameter
     let optAttrs = 
         if isOpt then 
@@ -2453,7 +2453,7 @@ type NormalizedBinding =
       SynBindingKind *
       bool * (* pesudo/mustinline value? *)
       bool * (* mutable *)
-      SynAttributes * 
+      SynAttribute list * 
       XmlDoc *
       SynValTyparDecls * 
       SynValData * 
@@ -2583,7 +2583,7 @@ module BindingNormalization =
 
     let NormalizeBinding isObjExprBinding cenv (env: TcEnv) b = 
         match b with 
-        | Binding (vis, bkind, isInline, isMutable, attrs, doc, valSynData, p, retInfo, rhsExpr, mBinding, spBind) ->
+        | Binding (vis, bkind, isInline, isMutable, Attributes attrs, doc, valSynData, p, retInfo, rhsExpr, mBinding, spBind) ->
             let (NormalizedBindingPat(pat, rhsExpr, valSynData, typars)) = 
                 NormalizeBindingPattern cenv cenv.nameResolver isObjExprBinding env valSynData p (NormalizedBindingRhs ([], retInfo, rhsExpr))
             NormalizedBinding(vis, bkind, isInline, isMutable, attrs, doc.ToXmlDoc(), typars, valSynData, pat, rhsExpr, mBinding, spBind)
@@ -4544,23 +4544,17 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
     | Some res -> checkRes res
     | None -> 
         if newOk = NoNewTypars then
-            let predictTypeParameters() =
-                let predictions1 =
-                    env.eNameResEnv.eTypars
-                    |> Seq.map (fun p -> "'" + p.Key)
+            let suggestTypeParameters (addToBuffer: string -> unit) =
+                for p in env.eNameResEnv.eTypars do
+                    addToBuffer ("'" + p.Key)
 
-                let predictions2 =
-                    match tpenv with
-                    | UnscopedTyparEnv elements ->
-                        elements
-                        |> Seq.map (fun p -> "'" + p.Key)
+                match tpenv with
+                | UnscopedTyparEnv elements ->
+                    for p in elements do
+                        addToBuffer ("'" + p.Key)
 
-                [ yield! predictions1 
-                  yield! predictions2 ]
-                |> HashSet
-            
             let reportedId = Ident("'" + id.idText, id.idRange)
-            error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, predictTypeParameters))
+            error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, suggestTypeParameters))
         
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
@@ -4572,7 +4566,7 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
 and TcTypar cenv env newOk tpenv tp =
     TcTyparOrMeasurePar (Some TyparKind.Type) cenv env newOk tpenv tp
 
-and TcTyparDecl cenv env (TyparDecl(synAttrs, (Typar(id, _, _) as stp))) =
+and TcTyparDecl cenv env (TyparDecl(Attributes synAttrs, (Typar(id, _, _) as stp))) =
     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
     let hasMeasureAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
     let hasEqDepAttr = HasFSharpAttribute cenv.g cenv.g.attrib_EqualityConditionalOnAttribute attrs
@@ -6548,10 +6542,9 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty: TType) virtNameAndArit
                 tcref.MembersOfFSharpTyconByName
                 |> Seq.exists (fun kv -> kv.Value |> List.exists (fun valRef -> valRef.DisplayName = bindName))
 
-            let suggestVirtualMembers() =
-                virtNameAndArityPairs
-                |> List.map (fst >> fst)
-                |> HashSet
+            let suggestVirtualMembers (addToBuffer: string -> unit) =
+                for ((x,_),_) in virtNameAndArityPairs do
+                    addToBuffer x
 
             if containsNonAbstractMemberWithSameName then
                 errorR(ErrorWithSuggestions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName), mBinding, bindName, suggestVirtualMembers))
@@ -9678,75 +9671,74 @@ and TcMethodApplication
     // In one case (the second "single named item" rule) we delay the application of a
     // argument until we've produced a lambda that detuples an input tuple
     let curriedCallerArgsOpt, unnamedDelayedCallerArgExprOpt, exprTy = 
-      match curriedCallerArgs with 
-      | [] -> 
-          None, None, exprTy
-      | _ -> 
-          let unnamedCurriedCallerArgs, namedCurriedCallerArgs = curriedCallerArgs |> List.map GetMethodArgs |> List.unzip 
+        match curriedCallerArgs with 
+        | [] -> 
+            None, None, exprTy
+        | _ -> 
+            let unnamedCurriedCallerArgs, namedCurriedCallerArgs = curriedCallerArgs |> List.map GetMethodArgs |> List.unzip 
           
-          // There is an mismatch when _uses_ of indexed property setters in the tc.fs code that calls this function. 
-          // The arguments are passed as if they are curried with arity [numberOfIndexParameters;1], however in the TAST, indexed property setters
-          // are uncurried and have arity [numberOfIndexParameters+1].
-          //
-          // Here we work around this mismatch by crunching all property argument lists to uncirred form. 
-          // Ideally the problem needs to be solved at its root cause at the callsites to this function
-          let unnamedCurriedCallerArgs, namedCurriedCallerArgs = 
-              if isProp then 
-                  [List.concat unnamedCurriedCallerArgs], [List.concat namedCurriedCallerArgs]
-              else 
-                  unnamedCurriedCallerArgs, namedCurriedCallerArgs
+            // There is an mismatch when _uses_ of indexed property setters in the tc.fs code that calls this function. 
+            // The arguments are passed as if they are curried with arity [numberOfIndexParameters;1], however in the TAST, indexed property setters
+            // are uncurried and have arity [numberOfIndexParameters+1].
+            //
+            // Here we work around this mismatch by crunching all property argument lists to uncirred form. 
+            // Ideally the problem needs to be solved at its root cause at the callsites to this function
+            let unnamedCurriedCallerArgs, namedCurriedCallerArgs = 
+                if isProp then 
+                    [List.concat unnamedCurriedCallerArgs], [List.concat namedCurriedCallerArgs]
+                else 
+                    unnamedCurriedCallerArgs, namedCurriedCallerArgs
           
-          let MakeUnnamedCallerArgInfo x = (x, GetNewInferenceTypeForMethodArg cenv env tpenv x, x.Range)
+            let MakeUnnamedCallerArgInfo x = (x, GetNewInferenceTypeForMethodArg cenv env tpenv x, x.Range)
 
-          // "single named item" rule. This is where we have a single accessible method 
-          //      member x.M(arg1) 
-          // being used with  
-          //      x.M (x, y) 
-          // Without this rule this requires 
-          //      x.M ((x, y)) 
-          match candidates with 
-          | [calledMeth] 
-                when (namedCurriedCallerArgs |> List.forall isNil && 
-                      let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-                      curriedCalledArgs.Length = 1 &&
-                      curriedCalledArgs.Head.Length = 1 && 
-                      curriedCalledArgs.Head.Head |> isSimpleFormalArg) ->
-              let unnamedCurriedCallerArgs = curriedCallerArgs |> List.map (MakeUnnamedCallerArgInfo >> List.singleton)
-              let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.map (fun _ -> [])
-              (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
+            // "single named item" rule. This is where we have a single accessible method 
+            //      member x.M(arg1) 
+            // being used with  
+            //      x.M (x, y) 
+            // Without this rule this requires 
+            //      x.M ((x, y)) 
+            match candidates with 
+            | [calledMeth] 
+                  when (namedCurriedCallerArgs |> List.forall isNil && 
+                        let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
+                        curriedCalledArgs.Length = 1 &&
+                        curriedCalledArgs.Head.Length = 1 && 
+                        curriedCalledArgs.Head.Head |> isSimpleFormalArg) ->
+                let unnamedCurriedCallerArgs = curriedCallerArgs |> List.map (MakeUnnamedCallerArgInfo >> List.singleton)
+                let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.map (fun _ -> [])
+                (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
 
-          // "single named item" rule. This is where we have a single accessible method 
-          //      member x.M(arg1, arg2) 
-          // being used with  
-          //      x.M p
-          // We typecheck this as if it has been written "(fun (v1, v2) -> x.M(v1, v2)) p" 
-          // Without this rule this requires 
-          //      x.M (fst p, snd p) 
-          | [calledMeth] 
-                when (namedCurriedCallerArgs |> List.forall isNil && 
-                      unnamedCurriedCallerArgs.Length = 1 &&
-                      unnamedCurriedCallerArgs.Head.Length = 1 && 
-                      let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-                      curriedCalledArgs.Length = 1 &&
-                      curriedCalledArgs.Head.Length > 1 &&
-                      curriedCalledArgs.Head |> List.forall isSimpleFormalArg) ->
+            // "single named item" rule. This is where we have a single accessible method 
+            //      member x.M(arg1, arg2) 
+            // being used with  
+            //      x.M p
+            // We typecheck this as if it has been written "(fun (v1, v2) -> x.M(v1, v2)) p" 
+            // Without this rule this requires 
+            //      x.M (fst p, snd p) 
+            | [calledMeth] 
+                  when (namedCurriedCallerArgs |> List.forall isNil && 
+                        unnamedCurriedCallerArgs.Length = 1 &&
+                        unnamedCurriedCallerArgs.Head.Length = 1 && 
+                        let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
+                        curriedCalledArgs.Length = 1 &&
+                        curriedCalledArgs.Head.Length > 1 &&
+                        curriedCalledArgs.Head |> List.forall isSimpleFormalArg) ->
 
-              // The call lambda has function type
-              let exprTy = mkFunTy (NewInferenceType ()) exprTy
+                // The call lambda has function type
+                let exprTy = mkFunTy (NewInferenceType ()) exprTy
               
-              (None, Some unnamedCurriedCallerArgs.Head.Head, exprTy)
+                (None, Some unnamedCurriedCallerArgs.Head.Head, exprTy)
 
-          | _ ->
-              let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared MakeUnnamedCallerArgInfo
-              let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (isOpt, nm, x) -> 
-                let ty = GetNewInferenceTypeForMethodArg cenv env tpenv x
-                // #435263: compiler crash with .net optional parameters and F# optional syntax
-                // named optional arguments should always have option type
-                let ty = if isOpt then mkOptionTy denv.g ty else ty
-                nm, isOpt, x, ty, x.Range
-                )
+            | _ ->
+                let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared MakeUnnamedCallerArgInfo
+                let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (isOpt, nm, x) -> 
+                    let ty = GetNewInferenceTypeForMethodArg cenv env tpenv x
+                    // #435263: compiler crash with .net optional parameters and F# optional syntax
+                    // named optional arguments should always have option type
+                    let ty = if isOpt then mkOptionTy denv.g ty else ty
+                    nm, isOpt, x, ty, x.Range)
 
-              (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
+                (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
     
 
     let CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
@@ -9990,21 +9982,12 @@ and TcMethodApplication
 
     let finalCalledMethInfo = finalCalledMeth.Method
     let finalCalledMethInst = finalCalledMeth.CalledTyArgs
-    let finalArgSets = finalCalledMeth.ArgSets
     let finalAssignedItemSetters = finalCalledMeth.AssignedItemSetters
-    let finalCalledPropInfoOpt = finalCalledMeth.AssociatedPropertyInfo
     let finalAttributeAssignedNamedItems = finalCalledMeth.AttributeAssignedNamedArgs
-    let finalUnnamedCalledOptArgs = finalCalledMeth.UnnamedCalledOptArgs
-    let finalUnnamedCalledOutArgs = finalCalledMeth.UnnamedCalledOutArgs
 
-    let finalAssignedNamedArgs = finalArgSets |> List.collect (fun argSet -> argSet.AssignedNamedArgs)
-    let finalParamArrayCallerArgs = finalArgSets |> List.collect (fun argSet -> argSet.ParamArrayCallerArgs)
-    let finalUnnamedCalledArgs = finalArgSets |> List.collect (fun argSet -> argSet.UnnamedCalledArgs)
-    let finalUnnamedCallerArgs = finalArgSets |> List.collect (fun argSet -> argSet.UnnamedCallerArgs)
-    
     // STEP 4. Check the attributes on the method and the corresponding event/property, if any 
 
-    finalCalledPropInfoOpt |> Option.iter (fun pinfo -> CheckPropInfoAttributes pinfo mItem |> CommitOperationResult) 
+    finalCalledMeth.AssociatedPropertyInfo |> Option.iter (fun pinfo -> CheckPropInfoAttributes pinfo mItem |> CommitOperationResult) 
 
     let isInstance = not (isNil objArgs)
     MethInfoChecks cenv.g cenv.amap isInstance tyargsOpt objArgs ad mItem finalCalledMethInfo
@@ -10033,266 +10016,13 @@ and TcMethodApplication
             | _ -> ()
     end
 
-    if (finalArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
+    if (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
         errorR(Deprecated(FSComp.SR.tcUnnamedArgumentsDoNotFormPrefix(), mMethExpr))
 
+    /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
-    // STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
-    // For example, if you pass an F# reference cell to a byref then we must get the address of the 
-    // contents of the ref. Likewise lots of adjustments are made for optional arguments etc.
-
-    // Some of the code below must allocate temporary variables or bind other variables to particular values. 
-    // As usual we represent variable allocators by expr -> expr functions 
-    // which we then use to wrap the whole expression. These will either do nothing or pre-bind a variable. It doesn't
-    // matter what order they are applied in as long as they are all composed together.
-    let emptyPreBinder (e: Expr) = e
-    
-    // For unapplied 'e.M' we first evaluate 'e' outside the lambda, i.e. 'let v = e in (fun arg -> v.M(arg))' 
-    let objArgPreBinder, objArgs = 
-        match objArgs, lambdaVars with 
-        | [objArg], Some _ -> 
-            if finalCalledMethInfo.IsExtensionMember && finalCalledMethInfo.ObjArgNeedsAddress(cenv.amap, mMethExpr) then
-                error(Error(FSComp.SR.tcCannotPartiallyApplyExtensionMethodForByref(finalCalledMethInfo.DisplayName), mMethExpr))
-            let objArgTy = tyOfExpr cenv.g objArg
-            let v, ve = mkCompGenLocal mMethExpr "objectArg" objArgTy
-            (fun body -> mkCompGenLet mMethExpr v objArg body), [ve]
-        | _ -> 
-            emptyPreBinder, objArgs
-
-    // Handle adhoc argument conversions
-    let coerceExpr isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
-       let g = cenv.g
-
-       if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
-           None, Expr.Op (TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
-
-#if IMPLICIT_ADDRESS_OF
-       elif isInByrefTy g calledArgTy && not (isByrefTy cenv.g callerArgTy) then 
-           let wrap, callerArgExprAddress, _readonly, _writeonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
-           Some wrap, callerArgExprAddress
-#endif
-
-       elif isDelegateTy cenv.g calledArgTy && isFunTy cenv.g callerArgTy then 
-           None, CoerceFromFSharpFuncToDelegate cenv.g cenv.amap cenv.infoReader ad callerArgTy m callerArgExpr calledArgTy
-
-       elif isLinqExpressionTy cenv.g calledArgTy && isDelegateTy cenv.g (destLinqExpressionTy cenv.g calledArgTy) && isFunTy cenv.g callerArgTy then 
-           let delegateTy = destLinqExpressionTy cenv.g calledArgTy
-           let expr = CoerceFromFSharpFuncToDelegate cenv.g cenv.amap cenv.infoReader ad callerArgTy m callerArgExpr delegateTy
-           None, mkCallQuoteToLinqLambdaExpression cenv.g m delegateTy (Expr.Quote (expr, ref None, false, m, mkQuotedExprTy cenv.g delegateTy))
-
-       // auto conversions to quotations (to match auto conversions to LINQ expressions)
-       elif reflArgInfo.AutoQuote && isQuotedExprTy cenv.g calledArgTy && not (isQuotedExprTy cenv.g callerArgTy) then 
-           match reflArgInfo with 
-           | ReflectedArgInfo.Quote true -> 
-               None, mkCallLiftValueWithDefn cenv.g m calledArgTy callerArgExpr
-           | ReflectedArgInfo.Quote false -> 
-               None, Expr.Quote (callerArgExpr, ref None, false, m, calledArgTy)
-           | ReflectedArgInfo.None -> failwith "unreachable" // unreachable due to reflArgInfo.AutoQuote condition
-
-       // Note: out args do not need to be coerced 
-       elif isOutArg then 
-           None, callerArgExpr
-
-       // Note: not all these casts are reported in quotations 
-       else 
-           None, mkCoerceIfNeeded cenv.g calledArgTy callerArgTy callerArgExpr
-
-    // Handle param array and optional arguments
-    let optArgPreBinder, paramArrayPreBinders, allArgs, outArgExprs, outArgTmpBinds = 
-
-        let normalUnnamedArgs = 
-          (finalUnnamedCalledArgs, finalUnnamedCallerArgs) ||> List.map2 (fun called caller -> { NamedArgIdOpt = None; CalledArg=called; CallerArg=caller })
-
-        let paramArrayPreBinders, paramArrayArgs = 
-            match finalCalledMeth.ParamArrayCalledArgOpt with 
-            | None -> 
-                [], []
-            | Some paramArrayCalledArg -> 
-                let paramArrayCalledArgElementType = destArrayTy cenv.g paramArrayCalledArg.CalledArgumentType
-
-                let paramArrayPreBinders, es = 
-                    finalParamArrayCallerArgs  
-                    |> List.map (fun callerArg -> 
-                        let (CallerArg(callerArgTy, m, isOutArg, callerArgExpr)) = callerArg
-                        coerceExpr isOutArg paramArrayCalledArgElementType paramArrayCalledArg.ReflArgInfo callerArgTy m callerArgExpr)
-                    |> List.unzip
-
-                let arg = 
-                    [ { NamedArgIdOpt = None
-                        CalledArg=paramArrayCalledArg
-                        CallerArg=CallerArg(paramArrayCalledArg.CalledArgumentType, mMethExpr, false, Expr.Op (TOp.Array, [paramArrayCalledArgElementType], es, mMethExpr)) } ]
-                paramArrayPreBinders, arg
-
-        // CLEANUP: Move all this code into some isolated file, e.g. "optional.fs"
-        //
-        // Handle CallerSide optional arguments. 
-        //
-        // CallerSide optional arguments are largely for COM interop, e.g. to PIA assemblies for Word etc.
-        // As a result we follow the VB and C# behavior here.
-        //
-        //   "1. If the parameter is statically typed as System.Object and does not have a value, then there are four cases:
-        //       a. The parameter is marked with MarshalAs(IUnknown), MarshalAs(Interface), or MarshalAs(IDispatch). In this case we pass null.
-        //       b. Else if the parameter is marked with IUnknownConstantAttribute. In this case we pass new System.Runtime.InteropServices.UnknownWrapper(null)
-        //       c. Else if the parameter is marked with IDispatchConstantAttribute. In this case we pass new System.Runtime.InteropServices.DispatchWrapper(null)
-        //       d. Else, we will pass Missing.Value.
-        //    2. Otherwise, if there is a value attribute, then emit the default value.
-        //    3. Otherwise, we emit default(T).
-        //    4. Finally, we apply conversions from the value to the parameter type. This is where the nullable conversions take place for VB.
-        //    - VB allows you to mark ref parameters as optional. The semantics of this is that we create a temporary 
-        //        with type = type of parameter, load the optional value to it, and call the method. 
-        //    - VB also allows you to mark arrays with Nothing as the optional value.
-        //    - VB also allows you to pass intrinsic values as optional values to parameters 
-        //        typed as Object. What we do in this case is we box the intrinsic value."
-        //
-        let optArgs, optArgPreBinder = 
-          (emptyPreBinder, finalUnnamedCalledOptArgs) ||> List.mapFold (fun wrapper calledArg -> 
-              let calledArgTy = calledArg.CalledArgumentType
-              let wrapper2, expr = 
-                  match calledArg.OptArgInfo with 
-                  | NotOptional -> 
-                      error(InternalError("Unexpected NotOptional", mItem))
-                  | CallerSide dfltVal ->
-                      let rec build currCalledArgTy currDfltVal =
-                          match currDfltVal with
-                          | MissingValue -> 
-                              // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
-                              emptyPreBinder, mkAsmExpr ([ mkNormalLdsfld (fspec_Missing_Value cenv.g); AI_nop ], [], [], [currCalledArgTy], mMethExpr)
-                          | DefaultValue -> 
-                              emptyPreBinder, mkDefault(mMethExpr, currCalledArgTy)
-                          | Constant fieldInit -> 
-                                match currCalledArgTy with
-                                | NullableTy cenv.g inst when fieldInit <> ILFieldInit.Null ->
-                                    let nullableTy = mkILNonGenericBoxedTy(cenv.g.FindSysILTypeRef "System.Nullable`1")
-                                    let ctor = mkILCtorMethSpecForTy(nullableTy, [ILType.TypeVar 0us]).MethodRef
-                                    let ctorArgs = [Expr.Const (TcFieldInit mMethExpr fieldInit, mMethExpr, inst)]
-                                    emptyPreBinder, Expr.Op (TOp.ILCall (false, false, true, true, NormalValUse, false, false, ctor, [inst], [], [currCalledArgTy]), [], ctorArgs, mMethExpr)
-                                | ByrefTy cenv.g inst ->
-                                    build inst (PassByRef(inst, currDfltVal))
-                                | _ ->
-                                    match calledArg.CallerInfo, env.eCallerMemberName with
-                                    | CallerLineNumber, _ when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
-                                        emptyPreBinder, Expr.Const (Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
-                                    | CallerFilePath, _ when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
-                                        let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply cenv.g.pathMap
-                                        emptyPreBinder, Expr.Const (Const.String fileName, mMethExpr, currCalledArgTy)
-                                    | CallerMemberName, Some callerName when (typeEquiv cenv.g currCalledArgTy cenv.g.string_ty) ->
-                                        emptyPreBinder, Expr.Const (Const.String callerName, mMethExpr, currCalledArgTy)
-                                    | _ ->
-                                        emptyPreBinder, Expr.Const (TcFieldInit mMethExpr fieldInit, mMethExpr, currCalledArgTy)
-                                    
-                          | WrapperForIDispatch ->
-                              match cenv.g.TryFindSysILTypeRef "System.Runtime.InteropServices.DispatchWrapper" with
-                              | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
-                              | Some tref ->
-                                  let ty = mkILNonGenericBoxedTy tref
-                                  let mref = mkILCtorMethSpecForTy(ty, [cenv.g.ilg.typ_Object]).MethodRef
-                                  let expr = Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [cenv.g.obj_ty]), [], [mkDefault(mMethExpr, currCalledArgTy)], mMethExpr)
-                                  emptyPreBinder, expr
-                          | WrapperForIUnknown ->
-                              match cenv.g.TryFindSysILTypeRef "System.Runtime.InteropServices.UnknownWrapper" with
-                              | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
-                              | Some tref ->
-                                  let ty = mkILNonGenericBoxedTy tref
-                                  let mref = mkILCtorMethSpecForTy(ty, [cenv.g.ilg.typ_Object]).MethodRef
-                                  let expr = Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [cenv.g.obj_ty]), [], [mkDefault(mMethExpr, currCalledArgTy)], mMethExpr)
-                                  emptyPreBinder, expr
-                          | PassByRef (ty, dfltVal2) ->
-                              let v, _ = mkCompGenLocal mMethExpr "defaultByrefArg" ty
-                              let wrapper2, rhs = build currCalledArgTy dfltVal2
-                              (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr false (mkLocalValRef v)
-                      build calledArgTy dfltVal
-                  | CalleeSide ->
-                      let calledNonOptTy = 
-                          if isOptionTy cenv.g calledArgTy then 
-                              destOptionTy cenv.g calledArgTy 
-                          else
-                              calledArgTy // should be unreachable
-
-                      match calledArg.CallerInfo, env.eCallerMemberName with
-                      | CallerLineNumber, _ when typeEquiv cenv.g calledNonOptTy cenv.g.int_ty ->
-                          let lineExpr = Expr.Const(Const.Int32 mMethExpr.StartLine, mMethExpr, calledNonOptTy)
-                          emptyPreBinder, mkSome cenv.g calledNonOptTy lineExpr mMethExpr
-                      | CallerFilePath, _ when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
-                          let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply cenv.g.pathMap
-                          let filePathExpr = Expr.Const (Const.String(fileName), mMethExpr, calledNonOptTy)
-                          emptyPreBinder, mkSome cenv.g calledNonOptTy filePathExpr mMethExpr
-                      | CallerMemberName, Some(callerName) when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
-                          let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
-                          emptyPreBinder, mkSome cenv.g calledNonOptTy memberNameExpr mMethExpr
-                      | _ ->
-                          emptyPreBinder, mkNone cenv.g calledNonOptTy mMethExpr
-
-              // Combine the variable allocators (if any)
-              let wrapper = (wrapper >> wrapper2)
-              let callerArg = CallerArg(calledArgTy, mMethExpr, false, expr)
-              { NamedArgIdOpt = None; CalledArg = calledArg; CallerArg = callerArg }, wrapper)
-
-
-        // Handle optional arguments
-        let wrapOptionalArg (assignedArg: AssignedCalledArg<_>) =
-            let (CallerArg(callerArgTy, m, isOptCallerArg, expr)) = assignedArg.CallerArg
-            match assignedArg.CalledArg.OptArgInfo with 
-            | NotOptional -> 
-                if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
-                assignedArg
-            | _ -> 
-                let expr = 
-                    match assignedArg.CalledArg.OptArgInfo with 
-                    | CallerSide _ -> 
-                        if isOptCallerArg then 
-                            // STRUCT OPTIONS: if we allow struct options as optional arguments then we should take
-                            // the address correctly. 
-                            mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase cenv.g, [destOptionTy cenv.g callerArgTy], 0, m) 
-                        else 
-                            expr
-                    | CalleeSide -> 
-                        if isOptCallerArg then 
-                            // M(?x=bopt) when M(A) --> M(?x=Some(b.Value))
-                            expr 
-                        else                            
-                            // M(x=b) when M(A) --> M(?x=Some(b :> A))
-                            let calledArgTy = assignedArg.CalledArg.CalledArgumentType
-                            if isOptionTy cenv.g calledArgTy then 
-                                let calledNonOptTy = destOptionTy cenv.g calledArgTy 
-                                mkSome cenv.g calledNonOptTy (mkCoerceIfNeeded cenv.g calledNonOptTy callerArgTy expr) m
-                            else 
-                                expr // should be unreachable 
-                            
-                    | _ -> failwith "Unreachable"
-                { assignedArg with CallerArg=CallerArg((tyOfExpr cenv.g expr), m, isOptCallerArg, expr) }
-
-        let outArgsAndExprs, outArgTmpBinds = 
-            finalUnnamedCalledOutArgs |> List.map (fun calledArg -> 
-                let calledArgTy = calledArg.CalledArgumentType
-                let outArgTy = destByrefTy cenv.g calledArgTy
-                let outv, outArgExpr = mkMutableCompGenLocal mMethExpr PrettyNaming.outArgCompilerGeneratedName outArgTy // mutable! 
-                let expr = mkDefault(mMethExpr, outArgTy)
-                let callerArg = CallerArg(calledArgTy, mMethExpr, false, mkValAddr mMethExpr false (mkLocalValRef outv))
-                let outArg = { NamedArgIdOpt=None;CalledArg=calledArg;CallerArg=callerArg }
-                (outArg, outArgExpr), mkCompGenBind outv expr) 
-              |> List.unzip
-
-        let outArgs, outArgExprs = List.unzip outArgsAndExprs
-
-        let allArgs =
-            List.map wrapOptionalArg normalUnnamedArgs @ 
-            List.map wrapOptionalArg finalAssignedNamedArgs @ 
-            paramArrayArgs @
-            optArgs @ 
-            outArgs
-        
-        let allArgs = 
-            allArgs |> List.sortBy (fun x -> x.Position)
-
-        optArgPreBinder, paramArrayPreBinders, allArgs, outArgExprs, outArgTmpBinds
-
-    let coerce (assignedArg: AssignedCalledArg<_>) = 
-        let isOutArg = assignedArg.CalledArg.IsOutArg
-        let reflArgInfo = assignedArg.CalledArg.ReflArgInfo
-        let calledArgTy = assignedArg.CalledArg.CalledArgumentType
-        let (CallerArg(callerArgTy, m, _, e)) = assignedArg.CallerArg
-    
-        coerceExpr isOutArg calledArgTy reflArgInfo callerArgTy m e
+    let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
+        AdjustCallerArgExprs TcFieldInit env.eCallerMemberName cenv.g cenv.amap cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr
 
     // Record the resolution of the named argument for the Language Service
     allArgs |> List.iter (fun assignedArg ->
@@ -10302,84 +10032,61 @@ and TcMethodApplication
             let item = Item.ArgName (defaultArg assignedArg.CalledArg.NameOpt id, assignedArg.CalledArg.CalledArgumentType, Some(ArgumentContainer.Method finalCalledMethInfo))
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad))
 
-    let allArgsPreBinders, allArgsCoerced = List.map coerce allArgs |> List.unzip
 
-    // Make the call expression 
-    let expr, exprty = 
+    /// STEP 6. Build the call expression, then adjust for byref-returns, out-parameters-as-tuples, post-hoc property assignments, methods-as-first-class-value,
+    /// 
+
+    let callExpr0, exprty = 
         BuildPossiblyConditionalMethodCall cenv env mut mMethExpr isProp finalCalledMethInfo isSuperInit finalCalledMethInst objArgs allArgsCoerced
         
     // Handle byref returns
-    let expr = 
+    let callExpr1 = 
         // byref-typed returns get implicitly dereferenced 
-        let vty = tyOfExpr cenv.g expr
+        let vty = tyOfExpr cenv.g callExpr0
         if isByrefTy cenv.g vty then 
             let v, _ = mkCompGenLocal mMethExpr "byrefReturn" vty
-            mkCompGenLet mMethExpr v expr (mkAddrGet mMethExpr (mkLocalValRef v))
+            mkCompGenLet mMethExpr v callExpr0 (mkAddrGet mMethExpr (mkLocalValRef v))
         else 
-            expr
+            callExpr0
 
     // Bind "out" parameters as part of the result tuple 
-    let expr, exprty = 
+    let callExpr2, exprty = 
+        let expr = callExpr1
         if isNil outArgTmpBinds then expr, exprty
         else 
             let outArgTys = outArgExprs |> List.map (tyOfExpr cenv.g)
-            let expr = if isUnitTy cenv.g exprty then mkCompGenSequential mMethExpr expr (mkRefTupled cenv.g mMethExpr outArgExprs outArgTys)
-                       else mkRefTupled cenv.g mMethExpr (expr :: outArgExprs) (exprty :: outArgTys)
+            let expr =
+                if isUnitTy cenv.g exprty then
+                    mkCompGenSequential mMethExpr expr (mkRefTupled cenv.g mMethExpr outArgExprs outArgTys)
+                else
+                    mkRefTupled cenv.g mMethExpr (expr :: outArgExprs) (exprty :: outArgTys)
             let expr = mkLetsBind mMethExpr outArgTmpBinds expr
             expr, tyOfExpr cenv.g expr
 
     // Handle post-hoc property assignments 
-    let setterExprPrebinders, expr = 
-      if isCheckingAttributeCall then 
-          [], expr 
-      elif isNil finalAssignedItemSetters then 
-          [], expr 
-      else 
-        // This holds the result of the call 
-        let objv, objExpr = mkMutableCompGenLocal mMethExpr "returnVal" exprty // mutable in case it's a struct 
-        // This expression mutates the properties on the result of the call
-        let setterExprPrebinders, propSetExpr = 
-            (mkUnit cenv.g mMethExpr, finalAssignedItemSetters) ||> List.mapFold (fun acc (AssignedItemSetter(id, setter, CallerArg(callerArgTy, m, isOptCallerArg, argExpr))) ->
-                    if isOptCallerArg then error(Error(FSComp.SR.tcInvalidOptionalAssignmentToPropertyOrField(), m))
-                    
-                    let argExprPrebinder, action, defnItem = 
-                        match setter with 
-                        | AssignedPropSetter (pinfo, pminfo, pminst) -> 
-                            MethInfoChecks cenv.g cenv.amap true None [objExpr] ad m pminfo
-                            let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
-                            let argExprPrebinder, argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
-                            let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
-                            let action = BuildPossiblyConditionalMethodCall cenv env mut m true pminfo NormalValUse pminst [objExpr] [argExpr] |> fst 
-                            argExprPrebinder, action, Item.Property (pinfo.PropertyName, [pinfo])
+    let setterExprPrebinders, callExpr3 = 
+        let expr = callExpr2
+        if isCheckingAttributeCall then 
+            [], expr 
+        elif isNil finalAssignedItemSetters then 
+            [], expr 
+        else 
+            // This holds the result of the call 
+            let objv, objExpr = mkMutableCompGenLocal mMethExpr "returnVal" exprty // mutable in case it's a struct 
 
-                        | AssignedILFieldSetter finfo ->
-                            // Get or set instance IL field 
-                            ILFieldInstanceChecks cenv.g cenv.amap ad m finfo
-                            let calledArgTy = finfo.FieldType (cenv.amap, m)
-                            let argExprPrebinder, argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
-                            let action = BuildILFieldSet cenv.g m objExpr finfo argExpr 
-                            argExprPrebinder, action, Item.ILField finfo
-                        
-                        | AssignedRecdFieldSetter rfinfo ->
-                            RecdFieldInstanceChecks cenv.g cenv.amap ad m rfinfo 
-                            let calledArgTy = rfinfo.FieldType
-                            CheckRecdFieldMutation m denv rfinfo
-                            let argExprPrebinder, argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
-                            let action = BuildRecdFieldSet cenv.g m objExpr rfinfo argExpr 
-                            argExprPrebinder, action, Item.RecdField rfinfo
+            // Build the expression that mutates the properties on the result of the call
+            let setterExprPrebinders, propSetExpr = 
+                (mkUnit cenv.g mMethExpr, finalAssignedItemSetters) ||> List.mapFold (fun acc assignedItemSetter ->
+                        let argExprPrebinder, action, m = TcSetterArgExpr cenv env denv objExpr ad assignedItemSetter
+                        argExprPrebinder, mkCompGenSequential m acc action)
 
-                    // Record the resolution for the Language Service
-                    let item = Item.SetterArg (id, defnItem)
-                    CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad)
+            // now put them together 
+            let expr = mkCompGenLet mMethExpr objv expr (mkCompGenSequential mMethExpr propSetExpr objExpr)
+            setterExprPrebinders, expr
 
-                    argExprPrebinder, mkCompGenSequential m acc action)
-
-        // now put them together 
-        let expr = mkCompGenLet mMethExpr objv expr (mkCompGenSequential mMethExpr propSetExpr objExpr)
-        setterExprPrebinders, expr
-
-    // Build the lambda expression if any 
-    let expr = 
+    // Build the lambda expression if any, if the method is used as a first-class value
+    let callExpr4 = 
+        let expr = callExpr3
         match lambdaVars with 
         | None -> expr
         | Some curriedLambdaVars -> 
@@ -10389,7 +10096,8 @@ and TcMethodApplication
                 | _ -> mkMultiLambda mMethExpr vs (expr, tyOfExpr cenv.g expr)
             List.foldBack mkLambda curriedLambdaVars expr
 
-    let expr, tpenv = 
+    let callExpr5, tpenv = 
+        let expr = callExpr4
         match unnamedDelayedCallerArgExprOpt with 
         | Some synArgExpr -> 
             match lambdaVars with 
@@ -10402,15 +10110,53 @@ and TcMethodApplication
             expr, tpenv
 
     // Apply the PreBinders, if any 
-    let expr = (expr, setterExprPrebinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
-    let expr = (expr, paramArrayPreBinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
-    let expr = (expr, allArgsPreBinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
+    let callExpr6 = 
+        let expr = callExpr5
+        let expr = (expr, setterExprPrebinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
+        let expr = (expr, paramArrayPreBinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
+        let expr = (expr, allArgsPreBinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
     
-    let expr = optArgPreBinder expr
-    let expr = objArgPreBinder expr
+        let expr = optArgPreBinder expr
+        let expr = objArgPreBinder expr
+        expr
     
-    (expr, finalAttributeAssignedNamedItems, delayed), tpenv
+    (callExpr6, finalAttributeAssignedNamedItems, delayed), tpenv
             
+and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, CallerArg(callerArgTy, m, isOptCallerArg, argExpr))) =
+    if isOptCallerArg then error(Error(FSComp.SR.tcInvalidOptionalAssignmentToPropertyOrField(), m))
+                    
+    let argExprPrebinder, action, defnItem = 
+        match setter with 
+        | AssignedPropSetter (pinfo, pminfo, pminst) -> 
+            MethInfoChecks cenv.g cenv.amap true None [objExpr] ad m pminfo
+            let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExprForCoercions cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
+            let action = BuildPossiblyConditionalMethodCall cenv env mut m true pminfo NormalValUse pminst [objExpr] [argExpr] |> fst 
+            argExprPrebinder, action, Item.Property (pinfo.PropertyName, [pinfo])
+
+        | AssignedILFieldSetter finfo ->
+            // Get or set instance IL field 
+            ILFieldInstanceChecks cenv.g cenv.amap ad m finfo
+            let calledArgTy = finfo.FieldType (cenv.amap, m)
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExprForCoercions cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let action = BuildILFieldSet cenv.g m objExpr finfo argExpr 
+            argExprPrebinder, action, Item.ILField finfo
+                        
+        | AssignedRecdFieldSetter rfinfo ->
+            RecdFieldInstanceChecks cenv.g cenv.amap ad m rfinfo 
+            let calledArgTy = rfinfo.FieldType
+            CheckRecdFieldMutation m denv rfinfo
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExprForCoercions cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let action = BuildRecdFieldSet cenv.g m objExpr rfinfo argExpr 
+            argExprPrebinder, action, Item.RecdField rfinfo
+
+    // Record the resolution for the Language Service
+    let item = Item.SetterArg (id, defnItem)
+    CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad)
+
+    argExprPrebinder, action, m
+
 and TcUnnamedMethodArgs cenv env lambdaPropagationInfo tpenv args =  
     List.mapiFoldSquared (TcUnnamedMethodArg cenv env) (lambdaPropagationInfo, tpenv) args 
 
@@ -10763,7 +10509,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter))
         let retAttribs = 
             match rtyOpt with 
-            | Some (SynBindingReturnInfo(_, _, retAttrs)) -> TcAttrs AttributeTargets.ReturnValue retAttrs 
+            | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> TcAttrs AttributeTargets.ReturnValue retAttrs 
             | None -> [] 
 
         let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
@@ -12289,7 +12035,7 @@ and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
 
 let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memFlagsOpt, tpenv, valSpfn) = 
 
-  let (ValSpfn (synAttrs, _, SynValTyparDecls (synTypars, synCanInferTypars, _), _, _, isInline, mutableFlag, doc, vis, literalExprOpt, m)) = valSpfn 
+  let (ValSpfn (Attributes synAttrs, _, SynValTyparDecls (synTypars, synCanInferTypars, _), _, _, isInline, mutableFlag, doc, vis, literalExprOpt, m)) = valSpfn 
 
   GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, synTypars, m)
   let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, synCanInferTypars, memFlagsOpt)
@@ -12405,7 +12151,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         rfspec
 
 
-    let TcAnonFieldDecl cenv env parent tpenv nm (Field(attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
+    let TcAnonFieldDecl cenv env parent tpenv nm (Field(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
         let id = (match idOpt with None -> mkSynId m nm | Some id -> id)
         let f = TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmldoc.ToXmlDoc(), vis, m) 
         match idOpt with 
@@ -12416,7 +12162,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         f
 
 
-    let TcNamedFieldDecl cenv env parent isIncrClass tpenv (Field(attribs, isStatic, id, ty, isMutable, xmldoc, vis, m)) =
+    let TcNamedFieldDecl cenv env parent isIncrClass tpenv (Field(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m)) =
         match id with 
         | None -> error (Error(FSComp.SR.tcFieldRequiresName(), m))
         | Some id -> TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmldoc.ToXmlDoc(), vis, m) 
@@ -12453,7 +12199,7 @@ module TcRecdUnionAndEnumDeclarations = begin
             | _ ->
                 seen.Add(f.Name, sf)
                 
-    let TcUnionCaseDecl cenv env parent thisTy tpenv (UnionCase (synAttrs, id, args, xmldoc, vis, m)) =
+    let TcUnionCaseDecl cenv env parent thisTy tpenv (UnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
@@ -12490,7 +12236,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         let unionCases' = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy tpenv) 
         unionCases' |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let TcEnumDecl cenv env parent thisTy fieldTy (EnumCase (synAttrs, id, v, xmldoc, m)) =
+    let TcEnumDecl cenv env parent thisTy fieldTy (EnumCase(Attributes synAttrs, id, v, xmldoc, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
         match v with 
         | SynConst.Bytes _
@@ -12545,15 +12291,18 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId: Ident list) =
     let ad = env.eAccessRights
     match longId with
-    | [] -> Result []
+    | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
         match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
-        | Result res -> Result res
-        | Exception err -> raze err
+        | Result res -> res
+        | Exception err ->
+            errorR(err); []
 
 let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) = 
-    let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId)
+    match TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId with
+    | [] -> env
+    | modrefs ->
 
     // validate opened namespace names
     for id in longId do
@@ -13556,7 +13305,7 @@ module MutRecBindingChecking =
                             error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
 
                         match classMemberDef, containerInfo with
-                        | SynMemberDefn.ImplicitCtor (vis, attrs, spats, thisIdOpt, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
+                        | SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(spats, _), thisIdOpt, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
@@ -14810,7 +14559,7 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations = 
 
-    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(synAttrs, UnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
+    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, UnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isUpper id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
@@ -15016,7 +14765,7 @@ module EstablishTypeDefinitionCores =
               match implicitCtorSynPats with
               | None -> ()
               | Some spats -> 
-                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv (SynSimplePats.SimplePats (spats, m))
+                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv spats
                   for arg in ctorArgNames do
                       let ty = names.[arg].Type
                       let m = names.[arg].Ident.idRange
@@ -15075,7 +14824,7 @@ module EstablishTypeDefinitionCores =
             |> set
 
     let TcTyconDefnCore_Phase1A_BuildInitialModule cenv envInitial parent typeNames compInfo decls =
-        let (ComponentInfo(attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo 
+        let (ComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo 
         let id = ComputeModuleName longPath
         let modAttrs = TcAttributes cenv envInitial AttributeTargets.ModuleDecl attribs 
         let modKind = ComputeModuleOrNamespaceKind cenv.g true typeNames modAttrs id.idText
@@ -15146,7 +14895,7 @@ module EstablishTypeDefinitionCores =
     ///  synTyconInfo: Syntactic AST for the name, attributes etc. of the type constructor
     ///  synTyconRepr: Syntactic AST for the RHS of the type definition
     let private TcTyconDefnCore_Phase1B_EstablishBasicKind cenv inSig envinner (MutRecDefnsPhase1DataForTycon(synTyconInfo, synTyconRepr, _, _, _, _)) (tycon: Tycon) = 
-        let (ComponentInfo(synAttrs, typars, _, _, _, _, _, _)) = synTyconInfo
+        let (ComponentInfo(Attributes synAttrs, typars, _, _, _, _, _, _)) = synTyconInfo
         let m = tycon.Range
         let id = tycon.Id
 
@@ -15816,7 +15565,7 @@ module EstablishTypeDefinitionCores =
                               ()
                           | Some spats -> 
                               if tycon.IsFSharpStructOrEnumTycon then 
-                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv (SynSimplePats.SimplePats (spats, m))
+                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
                                   for arg in ctorArgNames do
                                       let ty = names.[arg].Type
                                       let id = names.[arg].Ident
@@ -16520,7 +16269,7 @@ module TcDeclarations =
                 // Convert autoproperties to let bindings in the pre-list
                 let rec preAutoProps memb =
                     match memb with 
-                    | SynMemberDefn.AutoProperty (attribs, isStatic, id, tyOpt, propKind, _, xmlDoc, _access, synExpr, _mGetSet, mWholeAutoProp) -> 
+                    | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, _, xmlDoc, _access, synExpr, _mGetSet, mWholeAutoProp) -> 
                         // Only the keep the field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
                         let mLetPortion = synExpr.Range
@@ -16532,6 +16281,7 @@ module TcDeclarations =
                             | MemberKind.PropertySet 
                             | MemberKind.PropertyGetSet -> true 
                             | _ -> false
+                        let attribs = mkAttributeList attribs mWholeAutoProp
                         let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, NoSequencePointAtInvisibleBinding, retInfo, synExpr, synExpr.Range, [], attribs, None)
 
                         [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
@@ -16546,7 +16296,7 @@ module TcDeclarations =
                 // Convert autoproperties to member bindings in the post-list
                 let rec postAutoProps memb =
                     match memb with 
-                    | SynMemberDefn.AutoProperty (attribs, isStatic, id, tyOpt, propKind, memberFlags, xmlDoc, access, _synExpr, mGetSetOpt, _mWholeAutoProp) ->
+                    | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, memberFlags, xmlDoc, access, _synExpr, mGetSetOpt, _mWholeAutoProp) ->
                         let mMemberPortion = id.idRange
                         // Only the keep the non-field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
@@ -16566,6 +16316,7 @@ module TcDeclarations =
                                 let getter = 
                                     let rhsExpr = SynExpr.Ident fldId
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
+                                    let attribs = mkAttributeList attribs mMemberPortion
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, NoSequencePointAtInvisibleBinding, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags MemberKind.Member))
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
@@ -16619,7 +16370,7 @@ module TcDeclarations =
 
             let implicitCtorSynPats = 
                 members |> List.tryPick (function 
-                    | SynMemberDefn.ImplicitCtor (_, _, spats, _, _) -> Some spats
+                    | SynMemberDefn.ImplicitCtor (_, _, (SynSimplePats.SimplePats _ as spats), _, _) -> Some spats
                     | _ -> None)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
@@ -16628,7 +16379,7 @@ module TcDeclarations =
                 members |> List.exists (function 
                     | SynMemberDefn.Member(Binding(_, _, _, _, _, _, SynValData(Some memberFlags, _, _), SynPatForConstructorDecl SynPatForNullaryArgs, _, _, _, _), _) -> 
                         memberFlags.MemberKind=MemberKind.Constructor 
-                    | SynMemberDefn.ImplicitCtor (_, _, spats, _, _) -> isNil spats
+                    | SynMemberDefn.ImplicitCtor (_, _, SynSimplePats.SimplePats(spats, _), _, _) -> isNil spats
                     | _ -> false)
             let repr = SynTypeDefnSimpleRepr.General(kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, m)
             let isAtOriginalTyconDefn = not (isAugmentationTyconDefnRepr repr)
@@ -16870,7 +16621,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let env = List.foldBack (AddLocalVal cenv.tcSink scopem) idvs env
             return env
 
-        | SynModuleSigDecl.NestedModule(ComponentInfo(attribs, _parms, _constraints, longPath, xml, _, vis, im) as compInfo, isRec, mdefs, m) ->
+        | SynModuleSigDecl.NestedModule(ComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im) as compInfo, isRec, mdefs, m) ->
             if isRec then 
                 // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
                 let modDecl = SynModuleSigDecl.NestedModule(compInfo, false, mdefs, m)
@@ -17175,7 +16926,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.DoExpr _ -> return! failwith "unreachable"
 
-      | SynModuleDecl.Attributes (synAttrs, _) -> 
+      | SynModuleDecl.Attributes (Attributes synAttrs, _) -> 
           let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs
           return ((fun e -> e), attrs), env, env
 
@@ -17190,7 +16941,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let modDecl = SynModuleDecl.NestedModule(compInfo, false, mdefs, isContinuingModule, m)
               return! TcModuleOrNamespaceElementsMutRec cenv parent typeNames m env None [modDecl]
           else
-              let (ComponentInfo(attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo
+              let (ComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im)) = compInfo
               let id = ComputeModuleName longPath
 
               let modAttrs = TcAttributes cenv env AttributeTargets.ModuleDecl attribs
@@ -17327,7 +17078,7 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
     let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
     let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
-    let (mutRecDefns, (_, _, synAttrs)) = 
+    let (mutRecDefns, (_, _, Attributes synAttrs)) = 
       let rec loop isNamespace attrs defs: (MutRecDefnsInitialData * _) = 
         ((true, true, attrs), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk, attrs) def -> 
             match ElimModuleDoBinding def with

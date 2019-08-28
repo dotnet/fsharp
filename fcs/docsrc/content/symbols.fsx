@@ -19,6 +19,7 @@ of `FSharpChecker`:
 open System
 open System.IO
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -72,7 +73,7 @@ type C() =
     member x.P = 1
       """
 let parseFileResults, checkFileResults = 
-    parseAndTypeCheckSingleFile(file, input2)
+    parseAndTypeCheckSingleFile(file, SourceText.ofString input2)
 
 (**
 Now get the partial assembly signature for the code:

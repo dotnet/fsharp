@@ -32,8 +32,8 @@ module internal PrintUtilities =
     let bracketIfL x lyt = if x then bracketL lyt else lyt
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
     let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
-    let braceL x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
-    let braceBarL x = leftL Literals.leftBraceBar ^^ x ^^ rightL Literals.rightBraceBar
+    let braceL x = wordL Literals.leftBrace ^^ x ^^ wordL Literals.rightBrace
+    let braceBarL x = wordL Literals.leftBraceBar ^^ x ^^ wordL Literals.rightBraceBar
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
@@ -942,7 +942,7 @@ module private PrintTypes =
 
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->
-            let core = sepListL (wordL (tagPunctuation ";")) (List.map2 (fun nm ty -> wordL (tagField nm) ^^ wordL (tagPunctuation ":") ^^ layoutTypeWithInfoAndPrec denv env prec ty) (Array.toList anonInfo.SortedNames) tys)
+            let core = sepListL (rightL (tagPunctuation ";")) (List.map2 (fun nm ty -> wordL (tagField nm) ^^ rightL (tagPunctuation ":") ^^ layoutTypeWithInfoAndPrec denv env prec ty) (Array.toList anonInfo.SortedNames) tys)
             if evalAnonInfoIsStruct anonInfo then 
                 WordL.keywordStruct --- braceBarL core
             else 
@@ -1405,12 +1405,24 @@ module InfoMemberPrinting =
             | None -> tagProperty
             | Some vref -> tagProperty >> mkNav vref.DefinitionRange
         let nameL = DemangleOperatorNameAsLayout tagProp pinfo.PropertyName
+        let getterSetter =
+            match pinfo.HasGetter, pinfo.HasSetter with
+            | (true, false) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "get")
+            | (false, true) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "set")
+            | (true, true) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
+            | (false, false) ->
+                emptyL
+
         wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
         layoutTyconRef denv pinfo.ApparentEnclosingTyconRef ^^
         SepL.dot ^^
         nameL ^^
         RightL.colon ^^
-        layoutType denv rty
+        layoutType denv rty ^^
+        getterSetter
 
     let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
         let _, resL = prettyLayoutOfMethInfoFreeStyle amap m denv emptyTyparInst minfo 
@@ -1445,7 +1457,7 @@ module private TastDefinitionPrinting =
         let lhs =
             tagRecordField fld.Name
             |> mkNav fld.DefinitionRange
-            |> wordL 
+            |> wordL
         let lhs = (if addAccess then layoutAccessibility denv fld.Accessibility lhs else lhs)
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
         (lhs ^^ RightL.colon) --- layoutType denv fld.FormalType
@@ -1726,8 +1738,15 @@ module private TastDefinitionPrinting =
                   let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
                   match repr with 
                   | TRecdRepr _ ->
-                      let recdFieldRefL fld = layoutRecdField false denv fld ^^ rightL (tagPunctuation ";")
-                      let recdL = tycon.TrueFieldsAsList |> List.map recdFieldRefL |> applyMaxMembers denv.maxMembers |> aboveListL |> braceL
+                      let recdFieldRefL fld = layoutRecdField false denv fld
+
+                      let recdL =
+                          tycon.TrueFieldsAsList
+                          |> List.map recdFieldRefL
+                          |> applyMaxMembers denv.maxMembers
+                          |> aboveListL
+                          |> braceL
+
                       Some (addMembersAsWithEnd (addReprAccessL recdL))
                         
                   | TFSharpObjectRepr r -> 
@@ -1759,8 +1778,7 @@ module private TastDefinitionPrinting =
                                   | _ -> []
                               let vsprs = 
                                   tycon.MembersOfFSharpTyconSorted
-                                  |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs) 
-                                  |> List.filter (fun v -> v.IsDispatchSlot)
+                                  |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs && v.IsDispatchSlot) 
                                   |> List.map (fun vref -> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv vref.Deref)
                               let staticValsLs = 
                                   tycon.TrueFieldsAsList
