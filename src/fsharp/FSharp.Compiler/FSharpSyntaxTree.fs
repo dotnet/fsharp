@@ -431,9 +431,15 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
         endVisit resultOpt
 
     override __.VisitLongIdentWithDots item =
-        let node = createNode (FSharpSyntaxNodeKind.LongIdentWithDots item)
+        let node = LongIdentifierSyntax.Create (item.Lid, getParent(), syntaxTree, FSharpSyntaxNodeKind.LongIdentWithDots item)
         startVisit node
         let resultOpt = base.VisitLongIdentWithDots item
+        endVisit resultOpt
+
+    override __.VisitLongIdent item =
+        let node = LongIdentifierSyntax.Create (item, getParent(), syntaxTree, FSharpSyntaxNodeKind.LongIdent item)
+        startVisit node
+        let resultOpt = base.VisitLongIdent item
         endVisit resultOpt
 
     override __.VisitIdent (index, item) =
@@ -1176,6 +1182,7 @@ type ExpressionSyntax (green, parent, tree, kind) =
     static member Create(green, parent, tree, kind) =
         ExpressionSyntax (green, parent, tree, kind)
 
+[<Sealed>]
 type IdentifierSyntax (green: Ident, parent, tree, kind) =
     inherit FSharpSyntaxNode (parent, tree, kind)
 
@@ -1186,6 +1193,7 @@ type IdentifierSyntax (green: Ident, parent, tree, kind) =
     static member Create(green, parent, tree, kind) =
         IdentifierSyntax (green, parent, tree, kind)
 
+[<Sealed>]
 type LongIdentifierSyntax (green: Ast.LongIdent, parent, tree, kind) =  
     inherit FSharpSyntaxNode (parent, tree, kind)
 

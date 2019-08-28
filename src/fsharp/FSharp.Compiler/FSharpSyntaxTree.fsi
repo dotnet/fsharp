@@ -128,3 +128,15 @@ type ExpressionSyntax =
     inherit FSharpSyntaxNode
 
     member internal Green: SynExpr
+
+[<Sealed;Class>]
+type IdentifierSyntax =
+    inherit FSharpSyntaxNode
+
+    member internal Green: Ident
+
+[<Sealed;Class>]
+type LongIdentifierSyntax =
+    inherit FSharpSyntaxNode
+
+    member internal Green: LongIdent
