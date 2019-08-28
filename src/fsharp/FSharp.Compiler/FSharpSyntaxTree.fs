@@ -1175,3 +1175,23 @@ type ExpressionSyntax (green, parent, tree, kind) =
 
     static member Create(green, parent, tree, kind) =
         ExpressionSyntax (green, parent, tree, kind)
+
+type IdentifierSyntax (green: Ident, parent, tree, kind) =
+    inherit FSharpSyntaxNode (parent, tree, kind)
+
+    member __.Green = green
+
+    member __.Text = green.idText
+
+    static member Create(green, parent, tree, kind) =
+        IdentifierSyntax (green, parent, tree, kind)
+
+type LongIdentifierSyntax (green: Ast.LongIdent, parent, tree, kind) =  
+    inherit FSharpSyntaxNode (parent, tree, kind)
+
+    member __.Green = green
+
+    static member Create(green, parent, tree, kind) =
+        LongIdentifierSyntax (green, parent, tree, kind)
+
+    
