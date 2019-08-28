@@ -161,56 +161,59 @@ type CompilationConfig =
         metadataReferences: ImmutableArray<FSharpMetadataReference>
     }
 
-    member this.CreateIncrementalChecker (ctok, importsInvalidated) =
-        let tryGetMetadataSnapshot (id, _) =
-            let metadataReferenceOpt = 
-                this.metadataReferences
-                |> Seq.tryFind (fun x -> 
-                    String.Equals (id, x.Id, StringComparison.OrdinalIgnoreCase) ||
-                    // TODO: This is currently a hack to get around from having to have a path.
-                    //       OpenILModuleReader calls FileSystem.GetPullPathShim and passes that result to tryGetMetadataSnapshot.
-                    String.Equals (id, FileSystem.GetFullPathShim x.Id, StringComparison.OrdinalIgnoreCase)
-                )
+    member this.CreateIncrementalChecker (importsInvalidated) =
 
-            match metadataReferenceOpt with
+        let metadataPointers =
+            this.metadataReferences
+            |> Seq.map (fun x ->
+                match x with
+                | FSharpMetadataReference.PortableExecutable metadata -> 
+                    x.Id, (getRawPointerMetadataSnapshot (metadata.GetMetadata (), None))
 
-            | Some (FSharpMetadataReference.PortableExecutable metadata) -> 
-                Some (getRawPointerMetadataSnapshot (metadata.GetMetadata (), None))
+                // TODO: This could be optimized in that we may not need to emit the entire compilation and/or keep the PE reference in a weak table.
+                //       At the moment, this is just necessary for correct importing.
+                //       A possible way to optimize this is to grab the results just before IL generation (IlxGen) and after optimization.
+                //           Once we have the results, we should have a Ccu and other pieces such as optimization data. 
+                //           The Ccu will need to be remapped to a different scope so that it can be used from the outside.
+                //           The reason is that the Ccu has the assumption that it is being used in a local context.
+                //           At the moment, the code responsible for remapping is not fitted to fix the local scope in all cases, but can be.
+                //           When the Ccu is remapped properly, an IRawFSharpAssemblyData will need to be implemented based off of it.
+                //           Once that is complete, it should be able to passed to an IProjectReference which AssemblyResolution has as an option.
+                //           IProjectReference is not exactly a good name for itself. Compiler should not know about 'projects'.
+                //       Other optimizations will be necessary for editor/tooling scenarios in IDEs where emitting is too expensive.
+                //           For that scenario, we only need to get the results right after type checking.
+                //           The current state of compilation is not ready for a full IDE experience yet.
+                | FSharpMetadataReference.FSharpCompilation c ->
+                    let ms = new MemoryStream ()
+                    match c.Emit ms with
+                    | Ok _ -> ()
+                    | Result.Error diags -> failwithf "%A" diags
+                    ms.Position <- 0L
+                    let peReader = new System.Reflection.PortableExecutable.PEReader(ms)
+                    let md = peReader.GetMetadata()
+                    let pe = peReader.GetEntireImage()
 
-            // TODO: This could be optimized in that we may not need to emit the entire compilation and/or keep the PE reference in a weak table.
-            //       At the moment, this is just necessary for correct importing.
-            //       A possible way to optimize this is to grab the results just before IL generation (IlxGen) and after optimization.
-            //           Once we have the results, we should have a Ccu and other pieces such as optimization data. 
-            //           The Ccu will need to be remapped to a different scope so that it can be used from the outside.
-            //           The reason is that the Ccu has the assumption that it is being used in a local context.
-            //           At the moment, the code responsible for remapping is not fitted to fix the local scope in all cases, but can be.
-            //           When the Ccu is remapped properly, an IRawFSharpAssemblyData will need to be implemented based off of it.
-            //           Once that is complete, it should be able to passed to an IProjectReference which AssemblyResolution has as an option.
-            //           IProjectReference is not exactly a good name for itself. Compiler should not know about 'projects'.
-            //       Other optimizations will be necessary for editor/tooling scenarios in IDEs where emitting is too expensive.
-            //           For that scenario, we only need to get the results right after type checking.
-            //           The current state of compilation is not ready for a full IDE experience yet.
-            | Some (FSharpMetadataReference.FSharpCompilation c) ->
-                let ms = new MemoryStream ()
-                match c.Emit ms with
-                | Ok _ -> ()
-                | Result.Error diags -> failwithf "%A" diags
-                ms.Position <- 0L
-                let peReader = new System.Reflection.PortableExecutable.PEReader(ms)
-                let md = peReader.GetMetadata()
-                let pe = peReader.GetEntireImage()
+                    let o =
+                        { new System.Object () with
+                            override this.Finalize() =
+                                GC.SuppressFinalize(this)
+                                peReader.Dispose() }
 
-                let o =
-                    { new System.Object () with
-                        override this.Finalize() =
-                            GC.SuppressFinalize(this)
-                            peReader.Dispose() }
+                    let mddata = (o, md.Pointer |> NativePtr.toNativeInt, md.Length)
+                    let pedata = (o, pe.Pointer |> NativePtr.toNativeInt, pe.Length)
+                    x.Id, (mddata, Some pedata)
+            )
+            |> Array.ofSeq
 
-                let mddata = (o, md.Pointer |> NativePtr.toNativeInt, md.Length)
-                let pedata = (o, pe.Pointer |> NativePtr.toNativeInt, pe.Length)
-                Some (mddata, Some pedata)
-
-            | _ -> failwithf "Metadata now found for '%s'." id
+        let tryGetMetadataSnapshot (id, _) = 
+            metadataPointers
+            |> Seq.tryFind (fun (metadataId, _) -> 
+                String.Equals (id, metadataId, StringComparison.OrdinalIgnoreCase) ||
+                // TODO: This is currently a hack to get around from having to have a path.
+                //       OpenILModuleReader calls FileSystem.GetPullPathShim and passes that result to tryGetMetadataSnapshot.
+                String.Equals (id, FileSystem.GetFullPathShim metadataId, StringComparison.OrdinalIgnoreCase)
+            )
+            |> Option.map (fun (_, pointerInfo) -> pointerInfo)
 
         let tcConfig = createTcConfig this.assemblyName this.assemblyPath [] tryGetMetadataSnapshot this.useScriptResolutionRules
 
@@ -235,37 +238,39 @@ type CompilationConfig =
                     }
             ) |> List.ofSeq
 
-        let tcGlobals, tcImports = createTcGlobalsAndTcImports tcConfig assemblyResolutions importsInvalidated ctok
+        CompilationWorker.EnqueueAndAwaitAsync (fun ctok ->
+            let tcGlobals, tcImports = createTcGlobalsAndTcImports tcConfig assemblyResolutions importsInvalidated ctok
 
-        let checkerOptions =
-            {
-                keepAssemblyContents = this.keepAssemblyContents
-                keepAllBackgroundResolutions = this.keepAllBackgroundResolutions
-                parsingOptions = { isExecutable = this.isExecutable; isScript = this.useScriptResolutionRules }
-            }
+            let checkerOptions =
+                {
+                    keepAssemblyContents = this.keepAssemblyContents
+                    keepAllBackgroundResolutions = this.keepAllBackgroundResolutions
+                    parsingOptions = { isExecutable = this.isExecutable; isScript = this.useScriptResolutionRules }
+                }
 
-        let loadClosureOpt =           
-            this.script
-            |> Option.map (fun src -> (src.FilePath, src.GetText(CancellationToken.None).ToFSharpSourceText()))
-            |> Option.map (fun (filename, sourceText) -> createLoadClosure filename sourceText tryGetMetadataSnapshot ctok)
+            let loadClosureOpt =           
+                this.script
+                |> Option.map (fun src -> (src.FilePath, src.GetText(CancellationToken.None).ToFSharpSourceText()))
+                |> Option.map (fun (filename, sourceText) -> createLoadClosure filename sourceText tryGetMetadataSnapshot ctok)
 
-        let srcs =
-            match loadClosureOpt with
-            | Some loadClosure ->
-                loadClosure.SourceFiles
-                |> List.map (fun (filePath, _) ->
-                    if this.script.Value.FilePath = filePath then
-                        this.script.Value
-                    else
-                        FSharpSource.FromFile filePath
-                )
-                |> ImmutableArray.CreateRange
-            | _ ->
-                this.sources
+            let srcs =
+                match loadClosureOpt with
+                | Some loadClosure ->
+                    loadClosure.SourceFiles
+                    |> List.map (fun (filePath, _) ->
+                        if this.script.Value.FilePath = filePath then
+                            this.script.Value
+                        else
+                            FSharpSource.FromFile filePath
+                    )
+                    |> ImmutableArray.CreateRange
+                | _ ->
+                    this.sources
 
-        let tcAcc = TcAccumulator.create this.assemblyName tcConfig tcGlobals tcImports (NiceNameGenerator ()) loadClosureOpt
+            let tcAcc = TcAccumulator.create this.assemblyName tcConfig tcGlobals tcImports (NiceNameGenerator ()) loadClosureOpt
 
-        IncrementalChecker.Create (tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, srcs)
+            IncrementalChecker.Create (tcConfig, tcGlobals, tcImports, tcAcc, checkerOptions, srcs)
+        ) |> Async.RunSynchronously
 
 and [<NoEquality;NoComparison;RequireQualifiedAccess>] FSharpMetadataReference =
     | PortableExecutable of PortableExecutableReference
@@ -306,12 +311,8 @@ and [<NoEquality; NoComparison>] CompilationState =
         let invalidated = Event<string> ()
 
         let lazyGetChecker =
-            CancellableLazy (fun ct ->
-                let work =
-                    CompilationWorker.EnqueueAndAwaitAsync (fun ctok -> 
-                        cConfig.CreateIncrementalChecker (ctok, invalidated)
-                    )
-                Async.RunSynchronously (work, cancellationToken = ct)
+            CancellableLazy (fun _ ->
+                cConfig.CreateIncrementalChecker (invalidated)
             )
 
         let asyncLazyPreEmit =

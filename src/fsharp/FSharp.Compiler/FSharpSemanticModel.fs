@@ -202,10 +202,11 @@ type TypeSymbol () =
 type NamedTypeSymbol (senv: SymbolEnv, tcref: TyconRef) =
     inherit TypeSymbol ()
 
-    override x.Name = tcref.DisplayName
+    override __.Name = 
+        tcref.CompiledName
 
-    member __.CompiledName =
-        tcref.CompiledName 
+    member __.FullName =
+        tcref.CompiledRepresentationForNamedType.FullName
         
 type TypeSymbol with
 

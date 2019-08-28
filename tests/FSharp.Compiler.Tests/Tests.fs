@@ -388,9 +388,7 @@ type C () =
         let c2, src2 = singleFileWith "test2" FSharpOutputKind.Library [FSharpMetadataReference.FromFSharpCompilation c1] """
 module Test2
 
-open Test1
-
-let x = C ()
+let x = Test1.C ()
 let y = x.M()
         """
 
@@ -400,7 +398,7 @@ let y = x.M()
         | Error diags -> failwithf "%A" diags
 
         let text2 = src2.GetText().ToString()
-        let pos = text2.IndexOf("x = C ()")
+        let pos = text2.IndexOf("x = Test1.C ()")
         let sm = c2.GetSemanticModel src2
         let root = sm.SyntaxTree.GetRootNode()
 
@@ -414,7 +412,8 @@ let y = x.M()
 
             match symbol.Type with
             | :? NamedTypeSymbol as tySymbol ->
-                Assert.AreEqual("Test1.C", tySymbol.CompiledName)
+                Assert.AreEqual("C", tySymbol.Name)
+                Assert.AreEqual("Test1.C", tySymbol.FullName)
             | _ ->
                 Assert.Fail(sprintf "Unexpected type symbol: %A" symbol.Type)
         | _ ->

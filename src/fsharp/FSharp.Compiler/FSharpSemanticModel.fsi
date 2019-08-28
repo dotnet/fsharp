@@ -21,7 +21,7 @@ type TypeSymbol =
 type NamedTypeSymbol =
     inherit TypeSymbol
 
-    member CompiledName: string
+    member FullName: string
 
 [<AbstractClass>]
 type BindingSymbol =
