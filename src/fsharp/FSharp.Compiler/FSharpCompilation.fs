@@ -170,7 +170,7 @@ type CompilationConfig =
                 | FSharpMetadataReference.PortableExecutable metadata -> 
                     x.Id, (getRawPointerMetadataSnapshot (metadata.GetMetadata (), None))
 
-                // TODO: This could be optimized in that we may not need to emit the entire compilation and/or keep the PE reference in a weak table.
+                // TODO: This could be optimized in that we may not need to emit the entire compilation.
                 //       At the moment, this is just necessary for correct importing.
                 //       A possible way to optimize this is to grab the results just before IL generation (IlxGen) and after optimization.
                 //           Once we have the results, we should have a Ccu and other pieces such as optimization data. 
