@@ -1110,12 +1110,298 @@ module MainModuleBuilder =
 
 /// Optional static linking of all DLLs that depend on the F# Library, plus other specified DLLs
 module StaticLinker = 
+
+    // Handles TypeForwarding for the generated IL model
+    type TypeForwarding (tcImports: TcImports) =
+
+        // Make a dictionary of ccus passed to the compiler will be looked up by qualified assembly name
+        let ccuThunks =
+            tcImports.GetCcusInDeclOrder()
+            |> List.filter(fun ccuThunk -> ccuThunk.QualifiedName |> Option.isSome)
+            |> List.map(fun ccuThunk -> ccuThunk.QualifiedName |> Option.defaultValue "Assembly Name Not Passed", ccuThunk)
+            |> dict
+
+        let followTypeForwardForILTypeRef (tref:ILTypeRef) =
+            let  scoref = tref.Scope 
+            match scoref with
+            | ILScopeRef.Assembly scope ->
+                match ccuThunks.TryGetValue(scope.QualifiedName) with
+                | true, ccu ->
+                    let typename =
+                        let parts =  tref.FullName.Split([|'.'|])
+                        match parts.Length with
+                        | 0 -> None
+                        | 1 -> Some (Array.empty<string>, parts.[0])
+                        | n -> Some (parts.[0..n-2], parts.[n-1])
+                    match typename with
+                    | Some (parts, name) ->
+                        let forwarded = ccu.TryForward(parts, name)
+                        let result =
+                            match forwarded with
+                            | Some fwd -> fwd.CompilationPath.ILScopeRef
+                            | None -> scoref
+                        result
+                    | None -> scoref
+                | false, _ -> scoref
+            | _ -> scoref
+
+        let typeForwardILTypeRef (tref: ILTypeRef) =
+            let scoref1 = tref.Scope
+            let scoref2 = followTypeForwardForILTypeRef tref
+            if scoref1 === scoref2 then tref
+            else ILTypeRef.Create (scoref2, tref.Enclosing, tref.Name)
+    
+        let rec typeForwardILTypeSpec (tspec: ILTypeSpec) =
+            let tref1 = tspec.TypeRef
+            let tinst1 = tspec.GenericArgs
+            let tref2 = typeForwardILTypeRef tref1
+    
+            // avoid reallocation in the common case
+            if tref1 === tref2 then
+                if isNil tinst1 then tspec else
+                let tinst2 = typeForwardILTypes tinst1
+                if tinst1 === tinst2 then tspec else
+                ILTypeSpec.Create (tref2, tinst2)
+            else
+                let tinst2 = typeForwardILTypes tinst1
+                ILTypeSpec.Create (tref2, tinst2)
+
+        and typeForwardILType ty =
+            match ty with
+            | ILType.Ptr t -> ILType.Ptr (typeForwardILType t)
+            | ILType.FunctionPointer t -> ILType.FunctionPointer (typeForwardILCallSig t)
+            | ILType.Byref t -> ILType.Byref (typeForwardILType t)
+            | ILType.Boxed cr1 ->
+                let cr2 = typeForwardILTypeSpec cr1
+                if cr1 === cr2 then ty else
+                mkILBoxedType cr2
+            | ILType.Array (s, ety1) ->
+                let ety2 = typeForwardILType ety1
+                if ety1 === ety2 then ty else
+                ILType.Array (s, ety2)
+            | ILType.Value cr1 ->
+                let cr2 = typeForwardILTypeSpec cr1
+                if cr1 === cr2 then ty else
+                ILType.Value cr2
+            | ILType.Modified (b, tref, ty) -> ILType.Modified (b, typeForwardILTypeRef tref, typeForwardILType ty)
+            | ty -> ty
+
+        and typeForwardILTypes (ilTypes: ILType list) =
+            if isNil ilTypes then ilTypes
+            else List.mapq typeForwardILType ilTypes
+
+        and typeForwardILCallSig csig =
+            mkILCallSig (csig.CallingConv, typeForwardILTypes csig.ArgTypes, typeForwardILType csig.ReturnType)
+
+        let typeForwardILMethodRef (methodRef: ILMethodRef) =
+            // TBD: What about custom attributes?
+            let mrefParent = typeForwardILTypeRef methodRef.DeclaringTypeRef
+            let mrefArgs = typeForwardILTypes methodRef.ArgTypes
+            let mrefReturn = typeForwardILType methodRef.ReturnType
+            ILMethodRef.Create (mrefParent, methodRef.CallingConv, methodRef.Name, methodRef.GenericArity, mrefArgs, mrefReturn)
+
+        let typeForwardILMethodRefOption method =
+            match method with
+            | Some method -> Some (typeForwardILMethodRef method)
+            | None -> None
+
+        let typeForwardILParameter (parameter: ILParameter) =
+            // TBD: What about custom attributes?
+            { ILParameter.Name = parameter.Name
+              ILParameter.Type = typeForwardILType parameter.Type
+              ILParameter.Default = parameter.Default
+              ILParameter.Marshal = parameter.Marshal
+              ILParameter.IsIn = parameter.IsIn
+              ILParameter.IsOut = parameter.IsOut
+              ILParameter.IsOptional = parameter.IsOptional
+              ILParameter.CustomAttrsStored = parameter.CustomAttrsStored
+              ILParameter.MetadataIndex = parameter.MetadataIndex }
+
+        let typeForwardILParameters parameters =
+            parameters |> List.map(typeForwardILParameter)
+
+        let typeForwardILReturn (ret: ILReturn) =
+            // TBD: What about custom attributes?
+            { ILReturn.Marshal = ret.Marshal
+              ILReturn.Type = typeForwardILType ret.Type
+              ILReturn.CustomAttrsStored = ret.CustomAttrsStored
+              ILReturn.MetadataIndex = ret.MetadataIndex }
+
+        let typeForwardILLocals (locals: ILLocal list) =
+            locals |> List.map(fun local -> { local with Type = typeForwardILType local.Type })
+
+        let typeForwardILFieldRef (fr: ILFieldRef) =
+            { fr with
+                DeclaringTypeRef = typeForwardILTypeRef fr.DeclaringTypeRef
+                Type = typeForwardILType fr.Type }
+
+        let typeForwardILFieldDef (fieldDef: ILFieldDef) =
+            // TBD: What about custom Attributes
+            let fieldType = typeForwardILType fieldDef.FieldType
+            fieldDef.With(fieldType = fieldType)
+
+        let typeForwardILFieldDefs (fieldDefs: ILFieldDefs) =
+            mkILFields (fieldDefs.AsList |> List.map(typeForwardILFieldDef))
+
+        let typeForwardILFieldSpec (fs: ILFieldSpec) =
+            let fieldRef = typeForwardILFieldRef fs.FieldRef        
+            let declaringType = typeForwardILType fs.DeclaringType
+            { fs with FieldRef = fieldRef; DeclaringType = declaringType }
+
+        let typeForwardILMethodSpec (ms: ILMethodSpec) =
+            let declaringType = typeForwardILType ms.DeclaringType
+            let methodRef = typeForwardILMethodRef ms.MethodRef
+            let methodInst = ms.GenericArgs
+            ILMethodSpec.Create (declaringType, methodRef, methodInst)
+
+        let typeForwardILToken (token: ILToken) =
+            match token with
+            | ILToken.ILType ty -> ILToken.ILType (typeForwardILType ty)
+            | ILToken.ILMethod ms -> ILToken.ILMethod (typeForwardILMethodSpec ms)
+            | ILToken.ILField fs -> ILToken.ILField (typeForwardILFieldSpec fs)
+
+        let typeForwardILInstr (instr: ILInstr) =
+            match instr with
+            | I_jmp ms -> ILInstr.I_jmp (typeForwardILMethodSpec ms)
+
+            | I_call (tc, ms, va) -> ILInstr.I_call (tc, typeForwardILMethodSpec ms, va)
+            | I_callvirt (tc, ms, va) -> ILInstr.I_callvirt (tc, typeForwardILMethodSpec ms, va)
+            | I_callconstraint (tc, ty, ms, va) -> ILInstr.I_callconstraint (tc, (typeForwardILType ty), (typeForwardILMethodSpec ms), va)
+
+            //| I_calli of ILTailcall * ILCallingSignature * ILVarArgs ->
+
+            | I_ldftn ms -> ILInstr.I_ldftn (typeForwardILMethodSpec ms)
+            | I_newobj (ms, va) -> ILInstr.I_newobj ((typeForwardILMethodSpec ms), va)
+
+            | I_ldsfld (vol, fs) -> ILInstr.I_ldsfld (vol, typeForwardILFieldSpec fs)
+            | I_ldfld (al, vol, fs) -> ILInstr.I_ldfld (al, vol, typeForwardILFieldSpec fs)
+            | I_ldsflda fs -> ILInstr.I_ldsflda (typeForwardILFieldSpec fs)
+            | I_ldflda fs -> ILInstr.I_ldflda (typeForwardILFieldSpec fs)
+            | I_stsfld (vol, fs) -> ILInstr.I_stsfld (vol, typeForwardILFieldSpec fs)
+            | I_stfld (al, vol, fs) -> ILInstr.I_stfld (al, vol, typeForwardILFieldSpec fs)
+
+            | I_isinst ty -> ILInstr.I_isinst (typeForwardILType ty)
+            | I_castclass ty -> ILInstr.I_castclass (typeForwardILType ty)
+            | I_ldtoken token -> ILInstr.I_ldtoken (typeForwardILToken token)
+            | I_ldvirtftn ms -> ILInstr.I_ldvirtftn (typeForwardILMethodSpec ms)
+
+            | I_cpobj ty -> ILInstr.I_cpobj (typeForwardILType ty)
+            | I_initobj ty -> ILInstr.I_initobj (typeForwardILType ty)
+            | I_ldobj (a, v, ty) -> ILInstr.I_ldobj (a, v, (typeForwardILType ty))
+            | I_stobj (a, v, ty) -> ILInstr.I_stobj (a, v, (typeForwardILType ty))
+            | I_box ty -> ILInstr.I_box (typeForwardILType ty)
+            | I_unbox ty -> ILInstr.I_unbox (typeForwardILType ty)
+            | I_unbox_any ty -> ILInstr.I_unbox_any (typeForwardILType ty)
+            | I_sizeof ty -> ILInstr.I_sizeof (typeForwardILType ty)
+
+            | I_ldelema (ro, b, shape, ty) -> ILInstr.I_ldelema (ro, b , shape, (typeForwardILType ty))
+            | I_ldelem_any (shape, ty) -> ILInstr.I_ldelem_any (shape, (typeForwardILType ty))
+            | I_stelem_any (shape, ty) -> ILInstr.I_stelem_any (shape, (typeForwardILType ty))
+            | I_newarr (shape, ty) -> ILInstr.I_newarr (shape, (typeForwardILType ty))
+
+            | I_mkrefany ty -> ILInstr.I_mkrefany (typeForwardILType ty)
+            | I_refanyval ty -> ILInstr.I_refanyval (typeForwardILType ty)
+
+            //(* FOR EXTENSIONS, e.g. MS-ILX *)
+            | EI_ilzero ty-> ILInstr.EI_ilzero (typeForwardILType ty)
+
+            | inst -> inst
+
+
+        let typeForwardILCode (code: ILCode) =
+            { code with ILCode.Instrs = code.Instrs |> Array.map(typeForwardILInstr) }
+
+        let typeforwardMethodBody (body: ILMethodBody) =
+            // TBD: What about custom attributes?
+            // TBD: What about code?
+            let locals = typeForwardILLocals body.Locals
+            let code =  typeForwardILCode body.Code
+            mkMethodBody (body.IsZeroInit, locals, body.MaxStack, code, body.SourceMarker)
+
+        let typeForwardILMethodDef (methodDef:ILMethodDef) =
+            // TBD: What about custom Attributes
+            let parameters = typeForwardILParameters methodDef.Parameters
+            let ret = typeForwardILReturn methodDef.Return
+            let body =
+                mkMethBodyLazyAux (
+                    lazy
+                        match methodDef.Body.Contents with
+                        | MethodBody .IL body -> typeforwardMethodBody body
+                        | _ as body -> body)
+            methodDef.With(parameters = parameters, ret = ret, body = body)
+
+        let typeForwardILMethodDefs (mdefs : ILMethodDefs) =
+            mkILMethodsFromArray (Array.mapq typeForwardILMethodDef mdefs.AsArray)
+
+        let typeForwardILPropertyDef (propertyDef:ILPropertyDef) =
+            // TBD: What about custom Attributes
+            let getMethod = typeForwardILMethodRefOption propertyDef.GetMethod
+            let setMethod = typeForwardILMethodRefOption propertyDef.SetMethod
+            let propertyType = typeForwardILType propertyDef.PropertyType
+            let args = typeForwardILTypes propertyDef.Args
+            propertyDef.With(args = args, getMethod = getMethod, setMethod = setMethod, propertyType = propertyType )
+
+        let typeForwardILPropertyDefs (propertyDefs: ILPropertyDefs) =
+            mkILProperties (propertyDefs.AsList |> List.map(typeForwardILPropertyDef))
+
+        let typeForwardILEventDef (eventDef: ILEventDef) =
+            //TBD: What about custom Attributes !!!!!!!
+            let addMethod = typeForwardILMethodRef eventDef.AddMethod
+            let eventType =
+                match eventDef.EventType with
+                | Some t -> Some (typeForwardILType t)
+                | None -> None
+            let fireMethod =
+                match eventDef.FireMethod with
+                | Some m -> Some (typeForwardILMethodRef m)
+                | None -> None
+            let otherMethods = eventDef.OtherMethods |> List.map(typeForwardILMethodRef)
+            let removeMethod = typeForwardILMethodRef eventDef.RemoveMethod
+            eventDef.With(eventType = eventType, addMethod = addMethod, removeMethod = removeMethod, fireMethod = fireMethod, otherMethods = otherMethods)
+
+        let typeForwardILEventDefs (evts: ILEventDefs) =
+            mkILEvents (evts.AsList |> List.map(typeForwardILEventDef))
+
+        let typeForwardILOverridesSpec (os: ILOverridesSpec) =
+            match os with | OverridesSpec (mr, ty) -> ILOverridesSpec.OverridesSpec (typeForwardILMethodRef mr, typeForwardILType ty)
+
+        let typeForwardILMethodImplDef (mid: ILMethodImplDef) =
+            { mid with
+                  Overrides = typeForwardILOverridesSpec mid.Overrides 
+                  OverrideBy = typeForwardILMethodSpec mid.OverrideBy }
+
+        let typeForwardILMethodImplDefs (mids: ILMethodImplDefs) =
+            mkILMethodImpls (mids.AsList |> List.map(typeForwardILMethodImplDef))
+
+        let rec typeForwardILTypeDefs (tdefs: ILTypeDef list) =
+            mkILTypeDefs (tdefs |> List.map(typeForwardILTypeDef))
+
+        and typeForwardILTypeDef (typeDef: ILTypeDef) =
+            // TBD: What about CustomAttributes, MethodImpls, SecurityDecls ?????
+            let extends =
+                match typeDef.Extends with
+                | Some t -> Some (typeForwardILType t)
+                | None -> None
+
+            let implements = typeForwardILTypes typeDef.Implements
+            let nestedTypes = typeForwardILTypeDefs typeDef.NestedTypes.AsList
+            let fields: ILFieldDefs = typeForwardILFieldDefs typeDef.Fields
+            let methods: ILMethodDefs = typeForwardILMethodDefs typeDef.Methods
+            let methodImpls: ILMethodImplDefs = typeForwardILMethodImplDefs typeDef.MethodImpls
+            let propertys: ILPropertyDefs = typeForwardILPropertyDefs typeDef.Properties
+            let events:ILEventDefs = typeForwardILEventDefs typeDef.Events
+            typeDef.With(extends = extends, implements = implements, methods = methods, methodImpls = methodImpls, nestedTypes = nestedTypes, events = events, fields = fields, properties = propertys)
+
+        member __.TypeForwardILTypeDefs tdefs = typeForwardILTypeDefs tdefs
+
+
     let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
 
-    let StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list) = 
+    let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list) = 
         if isNil dependentILModules then 
             ilxMainModule, (fun x -> x) 
         else
+            let typeForwarding = new TypeForwarding(tcImports)
 
             // Check no dependent assemblies use quotations   
             let dependentCcuUsingQuotations = dependentILModules |> List.tryPick (function (Some ccu, _) when ccu.UsesFSharp20PlusQuotations -> Some ccu | _ -> None)   
@@ -1202,10 +1488,11 @@ module StaticLinker =
                     mkILFields (topTypeDefs |> List.collect (fun td -> td.Fields.AsList)))
 
             let ilxMainModule = 
+                let typeDefs = typeForwarding.TypeForwardILTypeDefs(topTypeDef :: List.concat normalTypeDefs)
                 { ilxMainModule with 
                     Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs)) })
                     CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ])
-                    TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
+                    TypeDefs = typeDefs
                     Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
                     NativeResources = savedNativeResources }
 
@@ -1578,7 +1865,7 @@ module StaticLinker =
 
               // Glue all this stuff into ilxMainModule 
               let ilxMainModule, rewriteExternalRefsToLocalRefs = 
-                  StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModules @ providerGeneratedILModules)
+                  StaticLinkILModules (tcConfig, ilGlobals, tcImports, ilxMainModule, dependentILModules @ providerGeneratedILModules)
               
               // Rewrite type and assembly references
               let ilxMainModule =
