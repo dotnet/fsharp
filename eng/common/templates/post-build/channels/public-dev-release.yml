@@ -128,7 +128,6 @@ stages:
             -PersonalAccessToken $(dn-bot-dnceng-unviersal-packages-rw)
         enabled: false
 
-
 - stage: PublishValidation
   displayName: Publish Validation
   variables:

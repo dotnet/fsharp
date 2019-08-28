@@ -2730,8 +2730,25 @@ let UndoIfFailed f =
         ReportWarnings warns
         true
 
+let UndoIfFailedOrWarnings f =
+    let trace = Trace.New()
+    let res = 
+        try 
+            f trace 
+            |> CheckNoErrorsAndGetWarnings
+        with e -> None
+    match res with 
+    | Some [] -> 
+        true
+    | _ -> 
+        trace.Undo()
+        false
+
 let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
+
+let AddCxTypeEqualsTypeUndoIfFailedOrWarnings denv css m ty1 ty2 =
+    UndoIfFailedOrWarnings (fun trace -> SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
     let csenv = { MakeConstraintSolverEnv ContextInfo.NoContext css m denv with MatchingOnly = true }

@@ -9,9 +9,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.CompilerServices
     open System.Collections.Generic
-#if FX_RESHAPED_REFLECTION
-    open System.Reflection
-#endif
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
@@ -71,11 +68,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (list:'T list) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then countByValueType projection list
                 else countByRefType   projection list
 
@@ -446,11 +439,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (list:'T list) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then groupByValueType projection list
                 else groupByRefType   projection list
 

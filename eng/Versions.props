@@ -12,25 +12,25 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
-    <FSLanguageVersion>4.6</FSLanguageVersion>
+    <FSLanguageVersion>4.7</FSLanguageVersion>
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).1</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersion>4.6.2</FSharpCoreShippedPackageVersion>
+    <FSharpCoreShippedPackageVersion>4.7.0</FSharpCoreShippedPackageVersion>
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.5</FSPackageMajorVersion>
+    <FSPackageMajorVersion>10.7</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>2</VSMinorVersion>
+    <VSMinorVersion>4</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -55,7 +55,6 @@
       https://dotnet.myget.org/F/roslyn-tools/api/v3/index.json;
       https://api.nuget.org/v3/index.json;
       https://dotnet.myget.org/F/roslyn/api/v3/index.json;
-      https://dotnet.myget.org/F/roslyn-analyzers/api/v3/index.json;
       https://dotnet.myget.org/F/symreader-converter/api/v3/index.json;
       https://dotnet.myget.org/F/interactive-window/api/v3/index.json;
       https://myget.org/F/vs-devcore/api/v3/index.json;

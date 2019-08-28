@@ -22,6 +22,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Features
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
@@ -3003,8 +3004,8 @@ let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) =
 let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) = 
     tcref.CanDeref &&
     match tcref.TryIsByRefLike with 
-    | Some res -> res
-    | None -> 
+    | ValueSome res -> res
+    | _ -> 
        let res = 
            isByrefTyconRef g tcref ||
            (isStructTyconRef tcref && TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref)
@@ -3221,6 +3222,11 @@ let isSizeOfValRef g vref =
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "sizeof") 
 
+let isNameOfValRef g vref =
+    valRefEq g vref g.nameof_vref
+    // There is an internal version of nameof defined in prim-types.fs that needs to be detected
+    || (g.compilingFslib && vref.LogicalName = "nameof")
+
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
     // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
@@ -3244,6 +3250,16 @@ let (|SizeOfExpr|_|) g expr =
 let (|TypeDefOfExpr|_|) g expr = 
     match expr with 
     | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isTypeDefOfValRef g vref -> Some ty
+    | _ -> None
+
+let (|NameOfExpr|_|) g expr = 
+    match expr with 
+    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isNameOfValRef g vref  -> Some ty
+    | _ -> None
+
+let (|SeqExpr|_|) g expr = 
+    match expr with 
+    | Expr.App(Expr.Val(vref,_,_),_,_,_,_) when valRefEq g vref g.seq_vref -> Some()
     | _ -> None
 
 //--------------------------------------------------------------------------
@@ -5925,34 +5941,56 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets =
 //------------------------------------------------------------------------- 
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
-exception DefensiveCopyWarning of string * range 
+exception DefensiveCopyWarning of string * range
 
 let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
     tcref.CanDeref &&
     not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
-    tyconRefEq g tcref g.decimal_tcr ||
+    tyconRefEq g tcref g.decimal_tcr || 
     tyconRefEq g tcref g.date_tcr
 
-let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
+let isTyconRefReadOnly g m (tcref: TyconRef) =
     tcref.CanDeref &&
-    match tcref.TryIsReadOnly with 
-    | Some res -> res
-    | None -> 
-        let isImmutable = isRecdOrStructTyconRefAssumedImmutable g tcref
-        let hasAttrib = TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
-        let res = isImmutable || hasAttrib
-        tcref.SetIsReadOnly res
+    if
+        match tcref.TryIsReadOnly with 
+        | ValueSome res -> res
+        | _ ->
+            let res = TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
+            tcref.SetIsReadOnly res
+            res 
+    then true
+    else tcref.IsEnumTycon
+
+let isTyconRefAssumedReadOnly g (tcref: TyconRef) =
+    tcref.CanDeref &&
+    match tcref.TryIsAssumedReadOnly with 
+    | ValueSome res -> res
+    | _ -> 
+        let res = isRecdOrStructTyconRefAssumedImmutable g tcref
+        tcref.SetIsAssumedReadOnly res
         res
 
-let isRecdOrStructTyReadOnly (g: TcGlobals) m ty =
+let isRecdOrStructTyconRefReadOnlyAux g m isInref (tcref: TyconRef) =
+    if isInref && tcref.IsILStructOrEnumTycon then
+        isTyconRefReadOnly g m tcref
+    else
+        isTyconRefReadOnly g m tcref || isTyconRefAssumedReadOnly g tcref
+
+let isRecdOrStructTyconRefReadOnly g m tcref =
+    isRecdOrStructTyconRefReadOnlyAux g m false tcref
+
+let isRecdOrStructTyReadOnlyAux (g: TcGlobals) m isInref ty =
     match tryDestAppTy g ty with 
     | ValueNone -> false
-    | ValueSome tcref -> isRecdOrStructTyconRefReadOnly g m tcref
+    | ValueSome tcref -> isRecdOrStructTyconRefReadOnlyAux g m isInref tcref
 
-let CanTakeAddressOf g m ty mut =
+let isRecdOrStructTyReadOnly g m ty =
+    isRecdOrStructTyReadOnlyAux g m false ty
+
+let CanTakeAddressOf g m isInref ty mut =
     match mut with 
     | NeverMutates -> true 
-    | PossiblyMutates -> isRecdOrStructTyReadOnly g m ty
+    | PossiblyMutates -> isRecdOrStructTyReadOnlyAux g m isInref ty
     | DefinitelyMutates -> false
     | AddressOfOp -> true // you can take the address but you might get a (readonly) inref<T> as a result
 
@@ -5980,7 +6018,7 @@ let CanTakeAddressOfImmutableVal (g: TcGlobals) m (vref: ValRef) mut =
     //    || valRefInThisAssembly g.compilingFslib vref
     // This is because we don't actually guarantee to generate static backing fields for all values like these, e.g. simple constants "let x = 1".  
     // We always generate a static property but there is no field to take an address of
-    CanTakeAddressOf g m vref.Type mut
+    CanTakeAddressOf g m false vref.Type mut
 
 let MustTakeAddressOfVal (g: TcGlobals) (vref: ValRef) = 
     vref.IsMutable &&
@@ -5992,7 +6030,7 @@ let MustTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) =
 
 let CanTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) mut = 
     isInByrefTy g vref.Type &&
-    CanTakeAddressOf g vref.Range (destByrefTy g vref.Type) mut
+    CanTakeAddressOf g vref.Range true (destByrefTy g vref.Type) mut
 
 let MustTakeAddressOfRecdField (rfref: RecdField) = 
     // Static mutable fields must be private, hence we don't have to take their address
@@ -6005,14 +6043,18 @@ let CanTakeAddressOfRecdFieldRef (g: TcGlobals) m (rfref: RecdFieldRef) tinst mu
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
     not rfref.RecdField.IsMutable &&
-    CanTakeAddressOf g m (actualTyOfRecdFieldRef rfref tinst) mut
+    CanTakeAddressOf g m false (actualTyOfRecdFieldRef rfref tinst) mut
 
 let CanTakeAddressOfUnionFieldRef (g: TcGlobals) m (uref: UnionCaseRef) cidx tinst mut =
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
     let rfref = uref.FieldByIndex cidx
     not rfref.IsMutable &&
-    CanTakeAddressOf g m (actualTyOfUnionFieldRef uref cidx tinst) mut
+    CanTakeAddressOf g m false (actualTyOfUnionFieldRef uref cidx tinst) mut
+
+let mkDerefAddrExpr mAddrGet expr mExpr exprTy =
+    let v, _ = mkCompGenLocal mAddrGet "byrefReturn" exprTy
+    mkCompGenLet mExpr v expr (mkAddrGet mAddrGet (mkLocalValRef v))
 
 /// Make the address-of expression and return a wrapper that adds any allocated locals at an appropriate scope.
 /// Also return a flag that indicates if the resulting pointer is a not a pointer where writing is allowed and will 
@@ -6150,8 +6192,12 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             // Take a defensive copy
             let tmp, _ = 
                 match mut with 
-                | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty 
+                | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty
                 | _ -> mkMutableCompGenLocal m "copyOfStruct" ty
+
+            // This local is special in that it ignore byref scoping rules.
+            tmp.SetIgnoresByrefScope()
+
             let readonly = true
             let writeonly = false
             Some (tmp, expr), (mkValAddr m readonly (mkLocalValRef tmp)), readonly, writeonly
@@ -8569,6 +8615,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | UncheckedDefaultOfExpr g _ 
         | SizeOfExpr g _ 
         | TypeOfExpr g _ -> true
+        | NameOfExpr g _ when g.langVersion.SupportsFeature LanguageFeature.NameOf -> true
         // All others are not simple constant expressions
         | _ -> false
 
@@ -8939,3 +8986,19 @@ let isThreadOrContextStatic g attrs =
 let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
+
+
+let isStaticClass (g:TcGlobals) (x: EntityRef) =
+    not x.IsModuleOrNamespace &&
+    x.TyparsNoRange.IsEmpty &&
+    ((x.IsILTycon && 
+      x.ILTyconRawMetadata.IsSealed &&
+      x.ILTyconRawMetadata.IsAbstract) 
+#if !NO_EXTENSIONTYPING
+     || (x.IsProvided &&
+        match x.TypeReprInfo with 
+        | TProvidedTypeExtensionPoint info -> info.IsSealed && info.IsAbstract 
+        | _ -> false)
+#endif
+     || (not x.IsILTycon && not x.IsProvided && HasFSharpAttribute g g.attrib_AbstractClassAttribute x.Attribs)) &&
+    not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute x.Attribs)
