@@ -24,6 +24,7 @@ type FSharpSyntaxNodeKind =
     | ModuleOrNamespace of SynModuleOrNamespace
     | ModuleDecl of SynModuleDecl
     | LongIdentWithDots of LongIdentWithDots
+    | LongIdent of LongIdent
     | Ident of index: int * Ident
     | ComponentInfo of SynComponentInfo
     | TypeConstraint of SynTypeConstraint
@@ -78,6 +79,8 @@ type FSharpSyntaxNodeKind =
             item.Range
         | FSharpSyntaxNodeKind.LongIdentWithDots item ->
             item.Range
+        | FSharpSyntaxNodeKind.LongIdent item ->
+            longIdentRange item
         | FSharpSyntaxNodeKind.Ident (_, item) ->
             item.idRange
         | FSharpSyntaxNodeKind.ComponentInfo item ->
@@ -174,6 +177,8 @@ type FSharpSyntaxNodeKind =
         | FSharpSyntaxNodeKind.ModuleDecl item ->
             item :> obj
         | FSharpSyntaxNodeKind.LongIdentWithDots item ->
+            item :> obj
+        | FSharpSyntaxNodeKind.LongIdent item ->
             item :> obj
         | FSharpSyntaxNodeKind.Ident (_, item) ->
             item :> obj
@@ -318,6 +323,8 @@ type FSharpSyntaxVisitor (syntaxTree: FSharpSyntaxTree) as this =
             this.VisitModuleDecl item
         | FSharpSyntaxNodeKind.LongIdentWithDots item ->
             this.VisitLongIdentWithDots item
+        | FSharpSyntaxNodeKind.LongIdent item ->
+            this.VisitLongIdent item
         | FSharpSyntaxNodeKind.Ident (index, item) ->
             this.VisitIdent (index, item)
         | FSharpSyntaxNodeKind.ComponentInfo item ->

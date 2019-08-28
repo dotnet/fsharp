@@ -117,6 +117,8 @@ module AstVisitorHelpers =
 
         member PossibleRange: range
 
+    val longIdentRange: LongIdent -> range
+
 [<AbstractClass>]
 type AstVisitor<'T> =
 
@@ -136,6 +138,9 @@ type AstVisitor<'T> =
 
     abstract VisitLongIdentWithDots: LongIdentWithDots -> 'T option
     default VisitLongIdentWithDots: LongIdentWithDots -> 'T option
+
+    abstract VisitLongIdent: LongIdent -> 'T option
+    default VisitLongIdent: LongIdent -> 'T option
 
     abstract VisitIdent: index: int * Ident -> 'T option
     default VisitIdent: index: int * Ident -> 'T option

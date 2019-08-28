@@ -287,6 +287,11 @@ module AstVisitorHelpers =
                 else
                     unionRanges ty.Range valInfoPossibleRange
 
+    let longIdentRange (longId: LongIdent) =
+        longId
+        |> List.map (fun x -> x.idRange)
+        |> List.reduce unionRanges
+
 [<AbstractClass>]
 type AstVisitor<'T> () as this =
 
@@ -365,7 +370,10 @@ type AstVisitor<'T> () as this =
         | SynModuleOrNamespace (longId, _, _, decls, _, attribs, _, _) ->
             let longId =
                 longId
-                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
+                |> this.TryVisit (longId |> longIdentRange) this.VisitLongIdent
+
+            if longId.IsSome then longId
+            else
 
             let decls =
                 decls
@@ -375,7 +383,7 @@ type AstVisitor<'T> () as this =
                 attribs
                 |> mapVisitList (fun x -> x.Range) this.VisitAttributeList
 
-            (longId @ decls @ attribs)
+            (decls @ attribs)
             |> tryVisitList
 
     abstract VisitModuleDecl: SynModuleDecl -> 'T option
@@ -431,7 +439,12 @@ type AstVisitor<'T> () as this =
         match longDotId with
         | LongIdentWithDots (longId, _) ->
             longId
-            |> this.TryVisitListIndex (fun x -> x.idRange) (fun i item -> this.VisitIdent (i, item))
+            |> this.TryVisit (longId |> longIdentRange) this.VisitLongIdent
+
+    abstract VisitLongIdent: LongIdent -> 'T option
+    default this.VisitLongIdent longId =
+        longId
+        |> this.TryVisitListIndex (fun x -> x.idRange) (fun i item -> this.VisitIdent (i, item))
 
     abstract VisitIdent: index: int * Ident -> 'T option
     default this.VisitIdent (_, _) =
@@ -453,12 +466,16 @@ type AstVisitor<'T> () as this =
                 constraints
                 |> mapVisitList (fun x -> x.Range) this.VisitTypeConstraint
 
-            let longId =
-                longId
-                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
+            let result =
+                (attribs @ typarDecls @ constraints)
+                |> tryVisitList
 
-            (attribs @ typarDecls @ constraints @ longId)
-            |> tryVisitList
+            if result.IsSome then result
+            else
+
+            longId
+            |> this.TryVisit (longId |> longIdentRange) this.VisitLongIdent
+
 
     abstract VisitTypeConstraint: SynTypeConstraint -> 'T option
     default this.VisitTypeConstraint c =
@@ -624,16 +641,19 @@ type AstVisitor<'T> () as this =
                 [unionCase]
                 |> mapVisitList (fun x -> x.Range) this.VisitUnionCase
 
-            let longId =
-                match longIdOpt with
-                | Some longId ->
-                    longId
-                    |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
-                | _ ->
-                    []
+            let result =
+                (attribs @ unionCase)
+                |> tryVisitList
 
-            (attribs @ unionCase @ longId)
-            |> tryVisitList
+            if result.IsSome then result
+            else
+
+            match longIdOpt with
+            | Some longId ->
+                longId
+                |> this.TryVisit (longId |> longIdentRange) this.VisitLongIdent
+            | _ ->
+                None
 
     abstract VisitUnionCase: SynUnionCase -> 'T option
     default this.VisitUnionCase unionCase =
@@ -853,8 +873,7 @@ type AstVisitor<'T> () as this =
         match measure with
         | SynMeasure.Named (longId, _) ->
             longId
-            |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
-            |> tryVisitList
+            |> this.TryVisit (longId |> longIdentRange) this.VisitLongIdent
 
         | SynMeasure.Product (measure1, measure2, _) ->
             [measure1; measure2]
@@ -1341,8 +1360,7 @@ type AstVisitor<'T> () as this =
 
             let longIds =
                 longIds
-                |> List.reduce (@)
-                |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
+                |> mapVisitList (fun x -> x |> longIdentRange) this.VisitLongIdent
 
             let ids =
                 ids
@@ -2119,7 +2137,7 @@ type AstVisitor<'T> () as this =
             else
 
             longId
-            |> this.TryVisitListIndex (fun x -> x.idRange) (fun i item -> this.VisitIdent (i, item))
+            |> this.TryVisit (longId |> longIdentRange) this.VisitLongIdent
 
         | SynExpr.LibraryOnlyUnionCaseFieldSet (expr1, longId, _, expr2, _) ->
             let expr1 =
@@ -2131,7 +2149,7 @@ type AstVisitor<'T> () as this =
 
             let longId =
                 longId
-                |> this.TryVisitListIndex (fun x -> x.idRange) (fun i item -> this.VisitIdent (i, item))
+                |> this.TryVisit (longId |> longIdentRange) this.VisitLongIdent
 
             if longId.IsSome then longId
             else
@@ -2285,8 +2303,7 @@ type AstVisitor<'T> () as this =
         match memberDefn with
         | SynMemberDefn.Open (longId, _) ->
             longId
-            |> mapiVisitList (fun x -> x.idRange) this.VisitIdent
-            |> tryVisitList
+            |> this.TryVisit (longId |> longIdentRange) this.VisitLongIdent
 
         | SynMemberDefn.Member (binding, _) ->
             binding
