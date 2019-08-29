@@ -344,6 +344,45 @@ type ByteFile(fileName: string, bytes: byte[]) =
     member __.FileName = fileName
     interface BinaryFile with
         override bf.GetView() = view :> BinaryView
+
+type StreamView(s: Stream) = 
+    inherit BinaryView()
+
+    let r = new BinaryReader(s)
+
+    override __.ReadByte addr =
+        s.Seek (int64 addr, SeekOrigin.Begin) |> ignore
+        r.ReadByte ()
+
+    override __.ReadBytes addr len =
+        s.Seek (int64 addr, SeekOrigin.Begin) |> ignore
+        r.ReadBytes len
+
+    override __.CountUtf8String addr = 
+        s.Seek (int64 addr, SeekOrigin.Begin) |> ignore
+        while (s.ReadByte () |> byte) <> 0uy do ()
+        int s.Position - addr
+
+    override bfv.ReadUTF8String addr = 
+        let n = bfv.CountUtf8String addr 
+        s.Seek (int64 addr, SeekOrigin.Begin) |> ignore
+        System.Text.Encoding.UTF8.GetString (r.ReadBytes n)
+
+    override bfv.ReadInt32 addr = 
+        s.Seek (int64 addr, SeekOrigin.Begin) |> ignore
+        r.ReadInt32 ()
+
+    override bfv.ReadUInt16 addr = 
+        s.Seek (int64 addr, SeekOrigin.Begin) |> ignore
+        r.ReadUInt16 ()
+
+[<DebuggerDisplay("{FileName}")>]
+type StreamFile(fileName: string, bytes: byte[]) = 
+    let view = ByteView bytes
+    do stats.byteFileCount <- stats.byteFileCount + 1
+    member __.FileName = fileName
+    interface BinaryFile with
+        override bf.GetView() = view :> BinaryView
  
 /// Same as ByteFile but holds the bytes weakly. The bytes will be re-read from the backing file when a view is requested.
 /// This is the default implementation used by F# Compiler Services when accessing "stable" binaries. It is not used
