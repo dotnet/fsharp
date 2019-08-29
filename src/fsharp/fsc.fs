@@ -1115,24 +1115,32 @@ module StaticLinker =
     type TypeForwarding (tcImports: TcImports) =
 
         // Make a dictionary of ccus passed to the compiler will be looked up by qualified assembly name
-        let ccuThunks =
+        let ccuThunksQualifiedName =
             tcImports.GetCcusInDeclOrder()
             |> List.filter(fun ccuThunk -> ccuThunk.QualifiedName |> Option.isSome)
             |> List.map(fun ccuThunk -> ccuThunk.QualifiedName |> Option.defaultValue "Assembly Name Not Passed", ccuThunk)
             |> dict
 
+        // If we can't type forward using exact assembly match, we need to rely on the loader (Policy, Configuration or the coreclr load heuristics), so use try simple name
+        let ccuThunksSimpleName =
+            tcImports.GetCcusInDeclOrder()
+            |> List.filter(fun ccuThunk -> not (String.IsNullOrEmpty(ccuThunk.AssemblyName)))
+            |> List.map(fun ccuThunk -> ccuThunk.AssemblyName, ccuThunk)
+            |> dict
+
         let followTypeForwardForILTypeRef (tref:ILTypeRef) =
-            let  scoref = tref.Scope 
+            let typename =
+                let parts =  tref.FullName.Split([|'.'|])
+                match parts.Length with
+                | 0 -> None
+                | 1 -> Some (Array.empty<string>, parts.[0])
+                | n -> Some (parts.[0..n-2], parts.[n-1])
+
+            let  scoref = tref.Scope
             match scoref with
             | ILScopeRef.Assembly scope ->
-                match ccuThunks.TryGetValue(scope.QualifiedName) with
+                match ccuThunksQualifiedName.TryGetValue(scope.QualifiedName) with
                 | true, ccu ->
-                    let typename =
-                        let parts =  tref.FullName.Split([|'.'|])
-                        match parts.Length with
-                        | 0 -> None
-                        | 1 -> Some (Array.empty<string>, parts.[0])
-                        | n -> Some (parts.[0..n-2], parts.[n-1])
                     match typename with
                     | Some (parts, name) ->
                         let forwarded = ccu.TryForward(parts, name)
@@ -1142,7 +1150,20 @@ module StaticLinker =
                             | None -> scoref
                         result
                     | None -> scoref
-                | false, _ -> scoref
+                | false, _ ->
+                    // Couldn't find an assembly with the version so try using a simple name
+                    match ccuThunksSimpleName.TryGetValue(scope.Name) with
+                    | true, ccu ->
+                        match typename with
+                        | Some (parts, name) ->
+                            let forwarded = ccu.TryForward(parts, name)
+                            let result =
+                                match forwarded with
+                                | Some fwd -> fwd.CompilationPath.ILScopeRef
+                                | None -> scoref
+                            result
+                        | None -> scoref
+                    | false, _ -> scoref
             | _ -> scoref
 
         let typeForwardILTypeRef (tref: ILTypeRef) =
