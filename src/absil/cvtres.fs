@@ -54,37 +54,39 @@ type CvtResFile() =
     static member ReadResFile(stream : Stream) = 
         let mutable reader = new BinaryReader(stream, Encoding.Unicode)
         let mutable resourceNames = new List<RESOURCE>()
-        let mutable startPos = stream.Position
-        let mutable initial32Bits = reader.ReadUInt32 ()
-        if initial32Bits <> uint32 0
-        then raise <| ResourceException("Stream does not begin with a null resource and is not in .RES format.")
-        stream.Position <- startPos
-        while (stream.Position < stream.Length) do
-            let mutable cbData = reader.ReadUInt32 ()
-            let mutable cbHdr = reader.ReadUInt32 ()
-            if cbHdr < 2u * uint32 sizeof<DWORD>
-            then raise <| ResourceException(String.Format ("Resource header beginning at offset 0x{0:x} is malformed.", (stream.Position - 8L)))
-            if cbData = 0u
-            then 
-                stream.Position <- stream.Position + int64 cbHdr - 2L * int64 sizeof<DWORD>
-            else            
-                let mutable pAdditional = RESOURCE() 
-                pAdditional.HeaderSize <- cbHdr
-                pAdditional.DataSize <- cbData
-                pAdditional.pstringType <- CvtResFile.ReadStringOrID (reader)
-                pAdditional.pstringName <- CvtResFile.ReadStringOrID (reader)
-                stream.Position <- stream.Position + 3L &&& ~~~3L
-                pAdditional.DataVersion <- reader.ReadUInt32 ()
-                pAdditional.MemoryFlags <- reader.ReadUInt16 ()
-                pAdditional.LanguageId <- reader.ReadUInt16 ()
-                pAdditional.Version <- reader.ReadUInt32 ()
-                pAdditional.Characteristics <- reader.ReadUInt32 ()
-                pAdditional.data <- Array.zeroCreate (int pAdditional.DataSize)
-                reader.Read (pAdditional.data, 0, pAdditional.data.Length) |> ignore<int>
-                stream.Position <- stream.Position + 3L &&& ~~~3L
-                if pAdditional.pstringType.theString = Unchecked.defaultof<_> && (pAdditional.pstringType.Ordinal = uint16 CvtResFile.RT_DLGINCLUDE)
-                then () (* ERROR ContinueNotSupported *)
-                else resourceNames.Add (pAdditional)
+        // The stream might be empty, so let's check
+        if not (reader.PeekChar() = -1) then
+            let mutable startPos = stream.Position
+            let mutable initial32Bits = reader.ReadUInt32 ()
+            if initial32Bits <> uint32 0
+            then raise <| ResourceException("Stream does not begin with a null resource and is not in .RES format.")
+            stream.Position <- startPos
+            while (stream.Position < stream.Length) do
+                let mutable cbData = reader.ReadUInt32 ()
+                let mutable cbHdr = reader.ReadUInt32 ()
+                if cbHdr < 2u * uint32 sizeof<DWORD>
+                then raise <| ResourceException(String.Format ("Resource header beginning at offset 0x{0:x} is malformed.", (stream.Position - 8L)))
+                if cbData = 0u
+                then 
+                    stream.Position <- stream.Position + int64 cbHdr - 2L * int64 sizeof<DWORD>
+                else            
+                    let mutable pAdditional = RESOURCE() 
+                    pAdditional.HeaderSize <- cbHdr
+                    pAdditional.DataSize <- cbData
+                    pAdditional.pstringType <- CvtResFile.ReadStringOrID (reader)
+                    pAdditional.pstringName <- CvtResFile.ReadStringOrID (reader)
+                    stream.Position <- stream.Position + 3L &&& ~~~3L
+                    pAdditional.DataVersion <- reader.ReadUInt32 ()
+                    pAdditional.MemoryFlags <- reader.ReadUInt16 ()
+                    pAdditional.LanguageId <- reader.ReadUInt16 ()
+                    pAdditional.Version <- reader.ReadUInt32 ()
+                    pAdditional.Characteristics <- reader.ReadUInt32 ()
+                    pAdditional.data <- Array.zeroCreate (int pAdditional.DataSize)
+                    reader.Read (pAdditional.data, 0, pAdditional.data.Length) |> ignore<int>
+                    stream.Position <- stream.Position + 3L &&& ~~~3L
+                    if pAdditional.pstringType.theString = Unchecked.defaultof<_> && (pAdditional.pstringType.Ordinal = uint16 CvtResFile.RT_DLGINCLUDE)
+                    then () (* ERROR ContinueNotSupported *)
+                    else resourceNames.Add (pAdditional)
         resourceNames
     static member private ReadStringOrID(fhIn : BinaryReader) = 
         let mutable (pstring : RESOURCE_STRING) = RESOURCE_STRING()
