@@ -1215,7 +1215,6 @@ module StaticLinker =
             mkILCallSig (csig.CallingConv, typeForwardILTypes csig.ArgTypes, typeForwardILType csig.ReturnType)
 
         let typeForwardILMethodRef (methodRef: ILMethodRef) =
-            // TBD: What about custom attributes?
             let mrefParent = typeForwardILTypeRef methodRef.DeclaringTypeRef
             let mrefArgs = typeForwardILTypes methodRef.ArgTypes
             let mrefReturn = typeForwardILType methodRef.ReturnType
@@ -1227,7 +1226,6 @@ module StaticLinker =
             | None -> None
 
         let typeForwardILParameter (parameter: ILParameter) =
-            // TBD: What about custom attributes?
             { ILParameter.Name = parameter.Name
               ILParameter.Type = typeForwardILType parameter.Type
               ILParameter.Default = parameter.Default
@@ -1242,7 +1240,6 @@ module StaticLinker =
             parameters |> List.map(typeForwardILParameter)
 
         let typeForwardILReturn (ret: ILReturn) =
-            // TBD: What about custom attributes?
             { ILReturn.Marshal = ret.Marshal
               ILReturn.Type = typeForwardILType ret.Type
               ILReturn.CustomAttrsStored = ret.CustomAttrsStored
@@ -1257,7 +1254,6 @@ module StaticLinker =
                 Type = typeForwardILType fr.Type }
 
         let typeForwardILFieldDef (fieldDef: ILFieldDef) =
-            // TBD: What about custom Attributes
             let fieldType = typeForwardILType fieldDef.FieldType
             fieldDef.With(fieldType = fieldType)
 
@@ -1333,14 +1329,11 @@ module StaticLinker =
             { code with ILCode.Instrs = code.Instrs |> Array.map(typeForwardILInstr) }
 
         let typeforwardMethodBody (body: ILMethodBody) =
-            // TBD: What about custom attributes?
-            // TBD: What about code?
             let locals = typeForwardILLocals body.Locals
             let code =  typeForwardILCode body.Code
             mkMethodBody (body.IsZeroInit, locals, body.MaxStack, code, body.SourceMarker)
 
         let typeForwardILMethodDef (methodDef:ILMethodDef) =
-            // TBD: What about custom Attributes
             let parameters = typeForwardILParameters methodDef.Parameters
             let ret = typeForwardILReturn methodDef.Return
             let body =
@@ -1355,7 +1348,6 @@ module StaticLinker =
             mkILMethodsFromArray (Array.mapq typeForwardILMethodDef mdefs.AsArray)
 
         let typeForwardILPropertyDef (propertyDef:ILPropertyDef) =
-            // TBD: What about custom Attributes
             let getMethod = typeForwardILMethodRefOption propertyDef.GetMethod
             let setMethod = typeForwardILMethodRefOption propertyDef.SetMethod
             let propertyType = typeForwardILType propertyDef.PropertyType
@@ -1366,7 +1358,6 @@ module StaticLinker =
             mkILProperties (propertyDefs.AsList |> List.map(typeForwardILPropertyDef))
 
         let typeForwardILEventDef (eventDef: ILEventDef) =
-            //TBD: What about custom Attributes !!!!!!!
             let addMethod = typeForwardILMethodRef eventDef.AddMethod
             let eventType =
                 match eventDef.EventType with
@@ -1398,7 +1389,6 @@ module StaticLinker =
             mkILTypeDefs (tdefs |> List.map(typeForwardILTypeDef))
 
         and typeForwardILTypeDef (typeDef: ILTypeDef) =
-            // TBD: What about CustomAttributes, MethodImpls, SecurityDecls ?????
             let extends =
                 match typeDef.Extends with
                 | Some t -> Some (typeForwardILType t)
@@ -1508,12 +1498,11 @@ module StaticLinker =
                    (mkILMethods (topTypeDefs |> List.collect (fun td -> td.Methods.AsList)), 
                     mkILFields (topTypeDefs |> List.collect (fun td -> td.Fields.AsList)))
 
-            let ilxMainModule = 
-                let typeDefs = typeForwarding.TypeForwardILTypeDefs(topTypeDef :: List.concat normalTypeDefs)
-                { ilxMainModule with 
+            let ilxMainModule =
+                { ilxMainModule with
                     Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs)) })
                     CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ])
-                    TypeDefs = typeDefs
+                    TypeDefs = typeForwarding.TypeForwardILTypeDefs(topTypeDef :: List.concat normalTypeDefs)
                     Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
                     NativeResources = savedNativeResources }
 
