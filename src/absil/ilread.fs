@@ -3942,7 +3942,7 @@ let ClosePdbReader pdb =
     | None -> ()
 #endif
 
-type ILReaderMetadataSnapshot = (obj * nativeint * int) * (obj * nativeint * int) option
+type ILReaderMetadataSnapshot = (obj * nativeint * int)
 type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
@@ -4075,22 +4075,16 @@ let OpenILModuleReader fileName opts =
             if metadataOnly then 
 
                 // See if tryGetMetadata gives us a BinaryFile for the metadata section alone.
-                let mdfileOpt, peDataOpt = 
+                let mdfileOpt = 
                     match opts.tryGetMetadataSnapshot (fullPath, writeStamp) with 
-                    | Some ((obj, start, len), peDataOpt) -> Some (RawMemoryFile(fullPath, obj, start, len) :> BinaryFile), peDataOpt
-                    | None -> None, None
+                    | Some (obj, start, len) -> Some (RawMemoryFile(fullPath, obj, start, len) :> BinaryFile)
+                    | None -> None
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
                 // Then use the metadata blob as the long-lived memory resource.
-                let disposer, pefileEager = 
-                    match peDataOpt with
-                    | Some (obj, start, len) -> 
-                        { new IDisposable with member __.Dispose () = () }, RawMemoryFile(fullPath, obj, start, len) :> BinaryFile
-                    | _ ->
-                        tryMemoryMapWholeFile opts fullPath
+                let disposer, pefileEager = tryMemoryMapWholeFile opts fullPath
                 use _disposer = disposer
-                // Having PE data assumes that the file is not on disk.
-                let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None, peDataOpt.IsSome) 
+                let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None, false) 
                 let mdfile = 
                     match mdfileOpt with 
                     | Some mdfile -> mdfile

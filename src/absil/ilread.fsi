@@ -34,7 +34,7 @@ open FSharp.Compiler.ErrorLogger
 open System.IO
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration
-type ILReaderMetadataSnapshot = (obj * nativeint * int) * (obj * nativeint * int) option
+type ILReaderMetadataSnapshot = (obj * nativeint * int)
 type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
