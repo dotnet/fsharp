@@ -54,7 +54,7 @@ type CvtResFile() =
     static member ReadResFile(stream : Stream) = 
         let mutable reader = new BinaryReader(stream, Encoding.Unicode)
         let mutable resourceNames = new List<RESOURCE>()
-        // The stream might be empty ...  so lets check
+        // The stream might be empty, so let's check
         if not (reader.PeekChar() = -1) then
             let mutable startPos = stream.Position
             let mutable initial32Bits = reader.ReadUInt32 ()
