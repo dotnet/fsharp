@@ -145,10 +145,12 @@ type AsyncType() =
     [<Test>]
     member this.StartAsTaskCancellation () =
         let cts = new CancellationTokenSource()
-        let tcs = TaskCompletionSource<unit>()
+        let mutable spinloop = true
+        let doSpinloop () = while spinloop do ()
         let a = async {
             cts.CancelAfter (100)
-            do! tcs.Task |> Async.AwaitTask }
+            doSpinloop()
+        }        
 #if !NET46
         let t : Task<unit> =
 #else
@@ -156,13 +158,13 @@ type AsyncType() =
 #endif
             Async.StartAsTask(a, cancellationToken = cts.Token)
 
-        // Should not finish
+        // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
             let result = t.Wait(300)
             Assert.IsFalse (result)
-        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+        with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
-        tcs.SetCanceled()
+        spinloop <- false
         
         try
             this.WaitASec t
