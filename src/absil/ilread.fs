@@ -376,10 +376,18 @@ type StreamView(s: Stream) =
         s.Seek (int64 addr, SeekOrigin.Begin) |> ignore
         r.ReadUInt16 ()
 
+    override bfv.Finalize() =
+        (bfv :> IDisposable).Dispose()
+
+    interface IDisposable with
+
+        member this.Dispose() =
+            GC.SurpressFinalize(this)
+            r.Dispose()
+
 [<DebuggerDisplay("{FileName}")>]
-type StreamFile(fileName: string, bytes: byte[]) = 
-    let view = ByteView bytes
-    do stats.byteFileCount <- stats.byteFileCount + 1
+type StreamFile(fileName: string, s: Stream) = 
+    let view = StreamView s
     member __.FileName = fileName
     interface BinaryFile with
         override bf.GetView() = view :> BinaryView
@@ -4059,6 +4067,11 @@ let tryMemoryMapWholeFile opts fileName =
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
+    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
+    new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
+
+let OpenILModuleReaderFromStream fileName s opts = 
+    let pefile = StreamFile(fileName, s) :> BinaryFile
     let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
     new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
 
