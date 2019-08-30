@@ -19,17 +19,17 @@
       </trans-unit>
       <trans-unit id="ComVisible-Line1">
         <source>Setting ComVisible to false makes the types in this assembly not visible</source>
-        <target state="translated">Durch Festlegen von ComVisible auf 'false' werden die Typen in dieser Assembly unsichtbar</target>
+        <target state="translated">Durch Festlegen von ComVisible auf FALSE sind die Typen in dieser Assembly nicht</target>
         <note />
       </trans-unit>
       <trans-unit id="ComVisible-Line2">
         <source>to COM components.  If you need to access a type in this assembly from</source>
-        <target state="translated">für COM-Komponenten.  Wenn Sie auf einen Typ in dieser Assembly von</target>
+        <target state="translated">für COM-Komponenten sichtbar. Wenn Sie auf einen Typ in dieser Assembly von</target>
         <note />
       </trans-unit>
       <trans-unit id="ComVisible-Line3">
         <source>COM, set the ComVisible attribute to true on that type.</source>
-        <target state="translated">COM aus zugreifen müssen, sollten Sie das ComVisible-Attribut für diesen Typ auf "True" festlegen.</target>
+        <target state="translated">COM aus zugreifen müssen, sollten Sie das ComVisible-Attribut für diesen Typ auf TRUE festlegen.</target>
         <note />
       </trans-unit>
       <trans-unit id="Guid-Line1">

@@ -119,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Error">
         <source>error</source>
-        <target state="translated">Błąd</target>
+        <target state="translated">błąd</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidFileName">
@@ -387,7 +387,7 @@
       </trans-unit>
       <trans-unit id="Warning">
         <source>warning</source>
-        <target state="translated">Ostrzeżenie</target>
+        <target state="translated">ostrzeżenie</target>
         <note />
       </trans-unit>
       <trans-unit id="WinExe">
@@ -462,7 +462,7 @@
       </trans-unit>
       <trans-unit id="BuildCaption">
         <source>Build</source>
-        <target state="translated">Kompiluj</target>
+        <target state="translated">Kompilacja</target>
         <note />
       </trans-unit>
       <trans-unit id="OutputPath">
