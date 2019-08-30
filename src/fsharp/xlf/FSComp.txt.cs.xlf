@@ -9,32 +9,32 @@
       </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
+        <target state="translated">Zobrazte si povolené hodnoty verze jazyka a pak zadejte požadovanou verzi, například latest nebo preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
-        <target state="new">Supported language versions:</target>
+        <target state="translated">Podporované jazykové verze:</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
-        <target state="new">Unrecognized value '{0}' for --langversion use --langversion:? for complete list</target>
+        <target state="translated">Nerozpoznaná hodnota {0} pro parametr --langversion; seznam možností zobrazíte zadáním --langversion:?</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="new">Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</target>
+        <target state="translated">Neočekávaný symbol . v definici členu. Očekávalo se with, = nebo jiný token.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">Zadejte algoritmus pro výpočet kontrolního součtu zdrojového souboru uloženého v PDB. Podporované hodnoty jsou: SHA1 nebo SHA256 (výchozí).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">Algoritmus {0} není podporovaný.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2034,7 +2034,7 @@
       </trans-unit>
       <trans-unit id="parsTypeAnnotationsOnGetSet">
         <source>Type annotations on property getters and setters must be given after the 'get()' or 'set(v)', e.g. 'with get() : string = ...'</source>
-        <target state="translated">Poznámky typu u metod getter nebo setter vlastnosti se musí předávat až po get() nebo set(v). Příklad: with get() : string = </target>
+        <target state="translated">Poznámky typu u metod getter nebo setter vlastnosti se musí předávat až po get() nebo set(v). Příklad: with get() : string = ...</target>
         <note />
       </trans-unit>
       <trans-unit id="parsGetterMustHaveAtLeastOneArgument">
@@ -7194,12 +7194,12 @@
       </trans-unit>
       <trans-unit id="expressionHasNoName">
         <source>Expression does not have a name.</source>
-        <target state="new">Expression does not have a name.</target>
+        <target state="translated">Výraz není pojmenovaný.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoFirstClassNameOf">
         <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
-        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <target state="translated">Použití operátoru nameof jako hodnoty funkce první třídy není povolené.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

@@ -9,32 +9,32 @@
       </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
+        <target state="translated">Exibe os valores permitidos para a versão do idioma, especifica a versão do idioma, como 'mais recente ' ou 'prévia'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
-        <target state="new">Supported language versions:</target>
+        <target state="translated">Versões de linguagens com suporte:</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
-        <target state="new">Unrecognized value '{0}' for --langversion use --langversion:? for complete list</target>
+        <target state="translated">Valor não reconhecido '{0}' para --langversion use --langversion:? para a lista completa</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="new">Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</target>
+        <target state="translated">Símbolo inesperado '.' na definição de membro. Esperado 'com', '=' ou outro token.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">Especifique o algoritmo para calcular a soma de verificação do arquivo de origem armazenada no PDB. Os valores suportados são: SHA1 ou SHA256 (padrão)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">Algoritmo '{0}' sem suporte</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -1984,7 +1984,7 @@
       </trans-unit>
       <trans-unit id="parsSyntaxError">
         <source>Syntax error</source>
-        <target state="translated">erro de sintaxe</target>
+        <target state="translated">Erro de sintaxe</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAugmentationsIllegalOnDelegateType">
@@ -7194,12 +7194,12 @@
       </trans-unit>
       <trans-unit id="expressionHasNoName">
         <source>Expression does not have a name.</source>
-        <target state="new">Expression does not have a name.</target>
+        <target state="translated">A expressão não tem um nome.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoFirstClassNameOf">
         <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
-        <target state="new">Using the 'nameof' operator as a first-class function value is not permitted.</target>
+        <target state="translated">O uso do operador ' nameof ' como um valor de função de primeira classe não é permitido.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">
