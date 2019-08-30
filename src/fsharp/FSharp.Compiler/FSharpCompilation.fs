@@ -30,7 +30,7 @@ let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 // TcState is arbitrary, doesn't matter as long as the type is inside FSharp.Compiler.Private, also this is yuck.
 let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharp.Compiler.CompileOps.TcState>.Assembly.Location)).Value
 
-let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata, peDataOpt) =
+let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata) =
     let amd = (md :?> Microsoft.CodeAnalysis.AssemblyMetadata)
     let mmd = amd.GetModules().[0]
     let mmr = mmd.GetMetadataReader()
@@ -44,7 +44,7 @@ let getRawPointerMetadataSnapshot (md: Microsoft.CodeAnalysis.Metadata, peDataOp
     // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
     Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
 
-    (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength), peDataOpt
+    (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
 
 // TODO: Revisit this. A lot of the code below was taken from FCS and has assumptions on language service.
 //     This will mean that some config options may not be right for actual compilation.
@@ -163,45 +163,14 @@ type CompilationConfig =
 
     member this.CreateIncrementalChecker (importsInvalidated) =
 
+        // TODO: Maybe make this a map?
         let metadataPointers =
             this.metadataReferences
-            |> Seq.map (fun x ->
+            |> Seq.choose (fun x ->
                 match x with
                 | FSharpMetadataReference.PortableExecutable metadata -> 
-                    x.Id, (getRawPointerMetadataSnapshot (metadata.GetMetadata (), None))
-
-                // TODO: This could be optimized in that we may not need to emit the entire compilation.
-                //       At the moment, this is just necessary for correct importing.
-                //       A possible way to optimize this is to grab the results just before IL generation (IlxGen) and after optimization.
-                //           Once we have the results, we should have a Ccu and other pieces such as optimization data. 
-                //           The Ccu will need to be remapped to a different scope so that it can be used from the outside.
-                //           The reason is that the Ccu has the assumption that it is being used in a local context.
-                //           At the moment, the code responsible for remapping is not fitted to fix the local scope in all cases, but can be.
-                //           When the Ccu is remapped properly, an IRawFSharpAssemblyData will need to be implemented based off of it.
-                //           Once that is complete, it should be able to passed to an IProjectReference which AssemblyResolution has as an option.
-                //           IProjectReference is not exactly a good name for itself. Compiler should not know about 'projects'.
-                //       Other optimizations will be necessary for editor/tooling scenarios in IDEs where emitting is too expensive.
-                //           For that scenario, we only need to get the results right after type checking.
-                //           The current state of compilation is not ready for a full IDE experience yet.
-                | FSharpMetadataReference.FSharpCompilation c ->
-                    let ms = new MemoryStream ()
-                    match c.Emit ms with
-                    | Ok _ -> ()
-                    | Result.Error diags -> failwithf "%A" diags
-                    ms.Position <- 0L
-                    let peReader = new System.Reflection.PortableExecutable.PEReader(ms)
-                    let md = peReader.GetMetadata()
-                    let pe = peReader.GetEntireImage()
-
-                    let o =
-                        { new System.Object () with
-                            override this.Finalize() =
-                                GC.SuppressFinalize(this)
-                                peReader.Dispose() }
-
-                    let mddata = (o, md.Pointer |> NativePtr.toNativeInt, md.Length)
-                    let pedata = (o, pe.Pointer |> NativePtr.toNativeInt, pe.Length)
-                    x.Id, (mddata, Some pedata)
+                    Some (x.Id, (getRawPointerMetadataSnapshot (metadata.GetMetadata ())))
+                | _ -> None
             )
             |> Array.ofSeq
 
@@ -229,8 +198,46 @@ type CompilationConfig =
                         ilAssemblyRef = ref None
                     }
                 | FSharpMetadataReference.FSharpCompilation c ->
+                    // TODO: This could be optimized in that we may not need to emit the entire compilation.
+                    //       At the moment, this is just necessary for correct importing.
+                    //       A possible way to optimize this is to grab the results just before IL generation (IlxGen) and after optimization.
+                    //           Once we have the results, we should have a Ccu and other pieces such as optimization data. 
+                    //           The Ccu will need to be remapped to a different scope so that it can be used from the outside.
+                    //           The reason is that the Ccu has the assumption that it is being used in a local context.
+                    //           At the moment, the code responsible for remapping is not fitted to fix the local scope in all cases, but can be.
+                    //           When the Ccu is remapped properly, an IRawFSharpAssemblyData will need to be implemented based off of it.
+                    //           Once that is complete, it should be able to passed to an IProjectReference which AssemblyResolution has as an option.
+                    //           IProjectReference is not exactly a good name for itself. Compiler should not know about 'projects'.
+                    //       Other optimizations will be necessary for editor/tooling scenarios in IDEs where emitting is too expensive.
+                    //           For that scenario, we only need to get the results right after type checking.
+                    //           The current state of compilation is not ready for a full IDE experience yet.
+                    let peStream = new MemoryStream ()
+                    match c.Emit peStream with // TODO: Add pdb stream
+                    | Ok _ -> ()
+                    | Result.Error diags -> failwithf "%A" diags
+
+                    let opts =
+                        { pdbDirPath = None
+                          ilGlobals = mkILGlobals ILScopeRef.Local
+                          reduceMemoryUsage = ReduceMemoryFlag.Yes
+                          metadataOnly = MetadataOnlyFlag.Yes
+                          tryGetMetadataSnapshot = fun _ -> None }
+
+                    let ilModuleReader = OpenILModuleReaderFromStream c.AssemblyName peStream opts
+                    let assemblyData = mkRawFSharpAssemblyData (ilModuleReader.ILModuleDef, ilModuleReader.ILAssemblyRefs)
+
+                    let projRef =
+                        { new IProjectReference with
+
+                            member __.FileName = c.AssemblyName
+
+                            member __.EvaluateRawContents _ = 
+                                Cancellable.ret (Some assemblyData)
+
+                            member __.TryGetLogicalTimeStamp(_, _) = None }
+
                     {
-                        originalReference = AssemblyReference (Range.range0, c.AssemblyName, None)
+                        originalReference = AssemblyReference (Range.range0, c.AssemblyName, Some projRef)
                         resolvedPath = c.AssemblyName // ugly be ok
                         prepareToolTip = fun () -> c.AssemblyName
                         sysdir = false

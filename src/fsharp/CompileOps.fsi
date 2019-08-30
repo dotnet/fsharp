@@ -164,6 +164,8 @@ type IRawFSharpAssemblyData =
     abstract ILAssemblyRefs: ILAssemblyRef list
     abstract ShortAssemblyName: string
 
+val mkRawFSharpAssemblyData: ilModule: ILModuleDef * ilAssemblyRefs: ILAssemblyRef list -> IRawFSharpAssemblyData
+
 type TimeStampCache = 
     new: defaultTimeStamp: DateTime -> TimeStampCache
     member GetFileTimeStamp: string -> DateTime
