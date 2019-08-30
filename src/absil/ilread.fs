@@ -382,12 +382,12 @@ type StreamView(s: Stream) =
     interface IDisposable with
 
         member this.Dispose() =
-            GC.SurpressFinalize(this)
+            GC.SuppressFinalize(this)
             r.Dispose()
 
 [<DebuggerDisplay("{FileName}")>]
 type StreamFile(fileName: string, s: Stream) = 
-    let view = StreamView s
+    let view = new StreamView (s)
     member __.FileName = fileName
     interface BinaryFile with
         override bf.GetView() = view :> BinaryView
