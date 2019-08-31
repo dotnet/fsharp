@@ -218,7 +218,7 @@ type CompilationConfig =
 
                     let opts =
                         { pdbDirPath = None
-                          ilGlobals = mkILGlobals ILScopeRef.Local
+                          ilGlobals = mkILGlobals ILScopeRef.Local // TODO: We need to change this to get the ilGlobals from building tcimports.
                           reduceMemoryUsage = ReduceMemoryFlag.Yes
                           metadataOnly = MetadataOnlyFlag.Yes
                           tryGetMetadataSnapshot = fun _ -> None }
