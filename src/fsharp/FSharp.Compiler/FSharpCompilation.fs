@@ -174,13 +174,10 @@ type CompilationConfig =
             )
             |> Array.ofSeq
 
-        let tryGetMetadataSnapshot (id, _) = 
+        let tryGetMetadataSnapshot (filePath2, _) = 
             metadataPointers
-            |> Seq.tryFind (fun (metadataId, _) -> 
-                String.Equals (id, metadataId, StringComparison.OrdinalIgnoreCase) ||
-                // TODO: This is currently a hack to get around from having to have a path.
-                //       OpenILModuleReader calls FileSystem.GetPullPathShim and passes that result to tryGetMetadataSnapshot.
-                String.Equals (id, FileSystem.GetFullPathShim metadataId, StringComparison.OrdinalIgnoreCase)
+            |> Seq.tryFind (fun (filePath, _) -> 
+                String.Equals (filePath2, filePath, StringComparison.OrdinalIgnoreCase)
             )
             |> Option.map (fun (_, pointerInfo) -> pointerInfo)
 
