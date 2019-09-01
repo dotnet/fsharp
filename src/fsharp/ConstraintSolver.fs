@@ -824,7 +824,7 @@ and solveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ad
       | TyparConstraint.IsReferenceType m2             -> SolveTypeIsReferenceType            csenv ndeep m2 trace addCoerceCx ty
       | TyparConstraint.RequiresDefaultConstructor m2  -> SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace addCoerceCx ty
       | TyparConstraint.SimpleChoice(tys, m2)          -> SolveTypeChoice                     csenv ndeep m2 trace addCoerceCx ty tys
-      | TyparConstraint.CoercesTo(ty2, m2)             -> SolveTypeSubsumesTypeKeepAbbrevs    csenv ndeep m2 trace addCoerceCx true None ty2 ty
+      | TyparConstraint.CoercesTo(ty2, m2)             -> SolveTypeSubsumesTypeKeepAbbrevs    csenv ndeep m2 trace addCoerceCx None ty2 ty
       | TyparConstraint.MayResolveMember(traitInfo, m2) -> 
           SolveMemberConstraint csenv false false ndeep m2 trace addCoerceCx traitInfo |> OperationResult.ignore
   }
@@ -2192,7 +2192,7 @@ and ArgsMustSubsumeOrConvert
     let g = csenv.g
     let m = callerArg.Range
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg    
-    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace addCoerceCx true cxsln calledArgTy callerArg.Type
+    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace addCoerceCx cxsln calledArgTy callerArg.Type
     if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.Type) then 
         return! ErrorD(Error(FSComp.SR.csMethodExpectsParams(), m))
     else ()
