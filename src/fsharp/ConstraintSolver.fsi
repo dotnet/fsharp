@@ -114,16 +114,16 @@ type OptionalTrace =
 | WithTrace of Trace
 
 val SimplifyMeasuresInTypeScheme             : TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
-val SolveTyparEqualsType                     : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
-val SolveTypeEqualsTypeKeepAbbrevs           : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
+val SolveTyparEqualsType                     : ConstraintSolverEnv -> int -> range -> OptionalTrace -> bool -> TType -> TType -> OperationResult<unit>
+val SolveTypeEqualsTypeKeepAbbrevs           : ConstraintSolverEnv -> int -> range -> OptionalTrace -> bool -> TType -> TType -> OperationResult<unit>
 val CanonicalizeRelevantMemberConstraints    : ConstraintSolverEnv -> int -> OptionalTrace -> Typars -> OperationResult<unit>
-val ResolveOverloading                       : ConstraintSolverEnv -> OptionalTrace -> string -> ndeep: int -> TraitConstraintInfo option -> int * int -> AccessorDomain -> CalledMeth<Expr> list ->  bool -> TType option -> CalledMeth<Expr> option * OperationResult<unit>
+val ResolveOverloading                       : ConstraintSolverEnv -> OptionalTrace -> bool -> string -> ndeep: int -> TraitConstraintInfo option -> int * int -> AccessorDomain -> CalledMeth<Expr> list ->  bool -> TType option -> CalledMeth<Expr> option * OperationResult<unit>
 val UnifyUniqueOverloading                   : ConstraintSolverEnv -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
 val EliminateConstraintsForGeneralizedTypars : ConstraintSolverEnv -> OptionalTrace -> Typars -> unit 
 
 val CheckDeclaredTypars                       : DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
 
-val AddConstraint                             : ConstraintSolverEnv -> int -> Range.range -> OptionalTrace -> Typar -> TyparConstraint -> OperationResult<unit>
+val AddConstraint                             : ConstraintSolverEnv -> int -> Range.range -> OptionalTrace -> bool -> Typar -> TyparConstraint -> OperationResult<unit>
 val AddCxTypeEqualsType                       : ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
 val AddCxTypeEqualsTypeUndoIfFailed           : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
@@ -143,6 +143,6 @@ val AddCxTypeIsDelegate                       : DisplayEnv -> ConstraintSolverSt
 
 val CodegenWitnessThatTypeSupportsTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
-val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> Typar -> unit
+val ChooseTyparSolutionAndSolve : bool -> ConstraintSolverState -> DisplayEnv -> Typar -> unit
 
 val IsApplicableMethApprox : TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
