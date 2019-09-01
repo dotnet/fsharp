@@ -2276,7 +2276,7 @@ module GeneralizationHelpers =
 
         // Condensation solves type variables eagerly and removes them from the generalization set 
         condensationTypars |> List.iter (fun tp -> 
-            ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denv tp)
+            ConstraintSolver.ChooseTyparSolutionAndSolve true cenv.css denv tp)
         generalizedTypars
 
     let CanonicalizePartialInferenceProblem (cenv, denv, m) tps =
@@ -4286,7 +4286,7 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
         let ty', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
         let tp', tpenv = TcTypar cenv env newOk tpenv tp
         let csenv = MakeConstraintSolverEnv env.eContextInfo cenv.css m env.DisplayEnv
-        AddConstraint csenv 0 m NoTrace tp' (TyparConstraint.DefaultsTo(ridx, ty', m)) |> CommitOperationResult
+        AddConstraint csenv 0 m NoTrace true tp' (TyparConstraint.DefaultsTo(ridx, ty', m)) |> CommitOperationResult
         tpenv
 
     | WhereTyparSubtypeOfType(tp, ty, m) ->
@@ -5550,7 +5550,7 @@ and TcPatterns warnOnUpper cenv env vFlags s argTys args =
 and solveTypAsError cenv denv m ty =
     let ty2 = NewErrorType ()
     assert((destTyparTy cenv.g ty2).IsFromError)
-    SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv) 0 m NoTrace ty ty2 |> ignore
+    SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv) 0 m NoTrace true ty ty2 |> ignore
 
 and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv expr =
     // This function is motivated by cases like
@@ -9934,7 +9934,7 @@ and TcMethodApplication
                   (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight cenv.g false callerArg.Type)))
 
         let result, errors = 
-            ResolveOverloading csenv NoTrace methodName 0 None callerArgCounts ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy) 
+            ResolveOverloading csenv NoTrace true methodName 0 None callerArgCounts ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy) 
 
         match afterResolution, result with
         | AfterResolution.DoNothing, _ -> ()
@@ -14014,7 +14014,7 @@ module MutRecBindingChecking =
         for tp in unsolvedTyparsForRecursiveBlockInvolvingGeneralizedVariables do
             //printfn "solving unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" tp.DisplayName tp.Stamp
             if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denv tp
+                ConstraintSolver.ChooseTyparSolutionAndSolve true cenv.css denv tp
           
         // Now that we know what we've generalized we can adjust the recursive references 
         let defnsCs = TcMutRecBindings_Phase2C_FixupRecursiveReferences cenv (denv, defnsBs, generalizedTyparsForRecursiveBlock, generalizedRecBinds, scopem)
@@ -17323,7 +17323,7 @@ let SolveInternalUnknowns g cenv denvAtEnd mexpr extraAttribs =
 
     unsolved |> List.iter (fun tp -> 
             if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+                ConstraintSolver.ChooseTyparSolutionAndSolve true cenv.css denvAtEnd tp)
 
 let CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr =
         match rootSigOpt with 
