@@ -2748,7 +2748,7 @@ let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
     let csenv = { csenv with MatchingOnly = true }
     UndoIfFailed (fun trace -> SolveTypeSubsumesTypeKeepAbbrevs csenv 0 m (WithTrace trace) true None ty1 ty2)
 
-let AddCxTypeMustSubsumeType contextInfo denv css m trace addCoerceCx ty1 ty2 = 
+let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 = 
     SolveTypeSubsumesTypeWithReport (MakeConstraintSolverEnv contextInfo css m denv) 0 m trace true None ty1 ty2
     |> RaiseOperationResult
 
@@ -2918,7 +2918,7 @@ let ChooseTyparSolutionAndSolve addCoerceCx css denv tp =
     let amap = css.amap
     let max, m = ChooseTyparSolutionAndRange g amap tp 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD (fun () -> SolveTyparEqualsType csenv 0 m NoTrace false (mkTyparTy tp) max)
+    TryD (fun () -> SolveTyparEqualsType csenv 0 m NoTrace addCoerceCx (mkTyparTy tp) max)
          (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
 
