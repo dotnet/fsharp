@@ -358,7 +358,7 @@ let AddLocalExnDefnAndReport tcSink scopem env (exnc: Tycon) =
 /// Add a list of type definitions to TcEnv
 let AddLocalTyconRefs ownDefinition g amap m tcrefs env =
     if isNil tcrefs then env else
-    { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false env.eNameResEnv tcrefs }
+    { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap env.eAccessRights m false env.eNameResEnv tcrefs }
 
 /// Add a list of type definitions to TcEnv
 let AddLocalTycons g amap m (tycons: Tycon list) env =
@@ -407,7 +407,7 @@ let AddNonLocalCcu g amap scopem env assemblyName (ccu: CcuThunk, internalsVisib
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
     let env =
         if isNil tcrefs then env else
-        { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.Yes false g amap scopem true env.eNameResEnv tcrefs }
+        { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.Yes false g amap env.eAccessRights scopem true env.eNameResEnv tcrefs }
     env
 
 /// Adjust the TcEnv to account for a fully processed "namespace" declaration in thie file
@@ -418,7 +418,7 @@ let AddLocalRootModuleOrNamespace tcSink g amap scopem env (mtyp: ModuleOrNamesp
     let tcrefs = mtyp.TypeAndExceptionDefinitions |> List.map mkLocalTyconRef
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
     let env = { env with
-                    eNameResEnv = if isNil tcrefs then env.eNameResEnv else AddTyconRefsToNameEnv BulkAdd.No false g amap scopem true env.eNameResEnv tcrefs
+                    eNameResEnv = if isNil tcrefs then env.eNameResEnv else AddTyconRefsToNameEnv BulkAdd.No false g amap env.eAccessRights scopem true env.eNameResEnv tcrefs
                     eUngeneralizableItems = addFreeItemOfModuleTy mtyp env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
@@ -3394,8 +3394,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         let currentExpr, enumElemTy =
             // Implicitly dereference byref for expr 'for x in ...'
             if isByrefTy cenv.g enumElemTy then
-                let v, _ = mkCompGenLocal m "byrefReturn" enumElemTy
-                let expr = mkCompGenLet currentExpr.Range v currentExpr (mkAddrGet m (mkLocalValRef v))
+                let expr = mkDerefAddrExpr m currentExpr currentExpr.Range enumElemTy
                 expr, destByrefTy cenv.g enumElemTy
             else
                 currentExpr, enumElemTy
@@ -4139,9 +4138,8 @@ let buildApp cenv expr resultTy arg m =
 
     | _ when isByrefTy g resultTy ->
         // Handle byref returns, byref-typed returns get implicitly dereferenced 
-        let v, _ = mkCompGenLocal m "byrefReturn" resultTy
         let expr = expr.SupplyArgument (arg, m)
-        let expr = mkCompGenLet m v expr.Expr (mkAddrGet m (mkLocalValRef v))
+        let expr = mkDerefAddrExpr m expr.Expr m resultTy
         let resultTy = destByrefTy g resultTy
         MakeApplicableExprNoFlex cenv expr, resultTy
 
@@ -10214,8 +10212,7 @@ and TcMethodApplication
         // byref-typed returns get implicitly dereferenced 
         let vty = tyOfExpr cenv.g callExpr0
         if isByrefTy cenv.g vty then 
-            let v, _ = mkCompGenLocal mMethExpr "byrefReturn" vty
-            mkCompGenLet mMethExpr v callExpr0 (mkAddrGet mMethExpr (mkLocalValRef v))
+            mkDerefAddrExpr mMethExpr callExpr0 mMethExpr vty
         else 
             callExpr0
 
