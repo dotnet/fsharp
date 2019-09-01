@@ -3744,28 +3744,18 @@ let writeBinaryAndReportMappings (outfile,
             match modul.NativeResources with
             | [] -> [||]
             | resources ->
-#if ENABLE_MONO_SUPPORT
-                if runningOnMono then
-                  [||]
-                else
-#endif
-#if FX_NO_LINKEDRESOURCES
-                  ignore resources
-                  ignore resourceFormat
-                  [||]
-#else
-                  let unlinkedResources = 
-                      resources |> List.map (function 
-                          | ILNativeResource.Out bytes -> bytes
-                          | ILNativeResource.In (fileName, linkedResourceBase, start, len) -> 
-                               let linkedResource = File.ReadBinaryChunk (fileName, start, len)
-                               unlinkResource linkedResourceBase linkedResource)
-                               
-                  begin
-                    try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName outfile)
-                    with e -> failwith ("Linking a native resource failed: "+e.Message+"")
-                  end
-#endif
+                let unlinkedResources = 
+                    resources |> List.map (function 
+                        | ILNativeResource.Out bytes -> bytes
+                        | ILNativeResource.In (fileName, linkedResourceBase, start, len) -> 
+                             let linkedResource = File.ReadBinaryChunk (fileName, start, len)
+                             unlinkResource linkedResourceBase linkedResource)
+                             
+                begin
+                  try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName outfile)
+                  with e -> failwith ("Linking a native resource failed: "+e.Message+"")
+                end
+
           let nativeResourcesSize = nativeResources.Length
 
           let nativeResourcesChunk, next = chunk nativeResourcesSize next
@@ -4169,14 +4159,12 @@ let writeBinaryAndReportMappings (outfile,
 
           writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize)
           
-          // DATA SECTION 
-#if !FX_NO_LINKEDRESOURCES
+          // DATA SECTION
           match nativeResources with
           | [||] -> ()
           | resources ->
                 write (Some (dataSectionVirtToPhys nativeResourcesChunk.addr)) os "raw native resources" [| |]
                 writeBytes os resources
-#endif
 
           if dummydatap.size <> 0x0 then
               write (Some (dataSectionVirtToPhys dummydatap.addr)) os "dummy data" [| 0x0uy |]

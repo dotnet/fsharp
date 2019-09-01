@@ -242,7 +242,7 @@ If you want your scripting code to be able to access the 'fsi' object, you shoul
 Normally the one from FSharp.Compiler.Interactive.Settings.dll is used.
 *)
 
-let fsiConfig2 = FsiEvaluationSession.GetDefaultConfiguration(fsi)
+let fsiConfig2 = FsiEvaluationSession.GetDefaultConfiguration(fsiSession)
 
 (**
 Collectible code generation
