@@ -17282,7 +17282,7 @@ let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs =
                             let ty1 = mkTyparTy tp
                             if not tp.IsSolved && not (typeEquiv cenv.g ty1 ty2) then
                                 let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denvAtEnd
-                                TryD (fun () -> ConstraintSolver.SolveTyparEqualsType csenv 0 m NoTrace ty1 ty2)
+                                TryD (fun () -> ConstraintSolver.SolveTyparEqualsType csenv 0 m NoTrace true ty1 ty2)
                                       (fun e -> solveTypAsError cenv denvAtEnd m ty1
                                                 ErrorD(ErrorFromApplyingDefault(g, denvAtEnd, tp, ty2, e, m)))
                                 |> RaiseOperationResult
@@ -17295,7 +17295,7 @@ let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs =
         unsolved |> List.iter (fun tp ->     
             if not tp.IsSolved then 
                 if (tp.StaticReq <> NoStaticReq) then
-                    ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+                    ConstraintSolver.ChooseTyparSolutionAndSolve false cenv.css denvAtEnd tp)
     with e -> errorRecovery e m
 
 let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m = 
