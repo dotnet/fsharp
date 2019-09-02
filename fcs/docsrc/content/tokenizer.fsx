@@ -49,7 +49,7 @@ on the `FSharpSourceTokenizer` object that we created earlier:
 let tokenizer = sourceTok.CreateLineTokenizer("let answer=42")
 (**
 Now, we can write a simple recursive function that calls `ScanToken` on the `tokenizer`
-until it returns `None` (indicating the end of line). When the function suceeds, it 
+until it returns `None` (indicating the end of line). When the function succeeds, it 
 returns `FSharpTokenInfo` object with all the interesting details:
 *)
 /// Tokenize a single line of F# code

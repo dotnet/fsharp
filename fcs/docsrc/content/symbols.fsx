@@ -101,7 +101,7 @@ Now get the value that corresponds to the function defined in the code:
 let fnVal = moduleEntity.MembersFunctionsAndValues.[0]
 
 (**
-Now look around at the properties describing the function value. All fo the following evaluate to `true`:
+Now look around at the properties describing the function value. All of the following evaluate to `true`:
 *)
 fnVal.Attributes.Count = 1
 fnVal.CurriedParameterGroups.Count // 1
@@ -178,9 +178,9 @@ for assembly in projectContext.GetReferencedAssemblies() do
 (**
 **Notes:**
 
-  - If incomplete code is present, some or all of the attirbutes may not be quite as expected.
+  - If incomplete code is present, some or all of the attributes may not be quite as expected.
   - If some assembly references are missing (which is actually very, very common), then 'IsUnresolved'  may
-    be true on values, members and/or entites related to external assemblies.  You should be sure to make your
+    be true on values, members and/or entities related to external assemblies.  You should be sure to make your
     code robust against IsUnresolved exceptions.
 
 *)
