@@ -110,7 +110,7 @@ let FreshenAndFixupTypars (traitFreshner: TraitFreshener option) m rigid fctps t
 let FreshenTypeInst traitFreshner m tpsorig =
     FreshenAndFixupTypars traitFreshner m TyparRigidity.Flexible [] [] tpsorig 
 
-let FreshMethInst traitFreshner m fctps tinst tpsorig =
+let FreshenMethInst traitFreshner m fctps tinst tpsorig =
     FreshenAndFixupTypars traitFreshner m TyparRigidity.Flexible fctps tinst tpsorig 
 
 let FreshenTypars traitFreshner m tpsorig = 
