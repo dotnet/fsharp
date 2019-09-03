@@ -149,7 +149,7 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalInteractionNonThrowing : code: string -> Choice<unit, exn> * FSharpErrorInfo[]
+    member EvalInteractionNonThrowing : code: string -> Choice<FsiValue option, exn> * FSharpErrorInfo[]
 
     /// Execute the given script. Stop on first error, discarding the rest
     /// of the script. Errors are sent to the output writer, a 'true' return value indicates there

@@ -253,6 +253,8 @@ type cenv =
       delayedGenMethods: Queue<cenv -> unit>
     }
 
+    override x.ToString() = "<cenv>"
+
 
 let mkTypeOfExpr cenv m ilty =
     let g = cenv.g
@@ -771,17 +773,26 @@ and NamedLocalIlxClosureInfo =
     | NamedLocalIlxClosureInfoGenerator of (IlxGenEnv -> IlxClosureInfo)
     | NamedLocalIlxClosureInfoGenerated of IlxClosureInfo
 
+    override __.ToString() = "<NamedLocalIlxClosureInfo>"
+
 /// Indicates the overall representation decisions for all the elements of a namespace of module
 and ModuleStorage =
-    { Vals: Lazy<NameMap<ValStorage>>
-      SubModules: Lazy<NameMap<ModuleStorage>> }
+    { 
+      Vals: Lazy<NameMap<ValStorage>>
+      
+      SubModules: Lazy<NameMap<ModuleStorage>>
+    }
+
+    override __.ToString() = "<ModuleStorage>"
 
 /// Indicate whether a call to the value can be implemented as
 /// a branch. At the moment these are only used for generating branch calls back to
 /// the entry label of the method currently being generated when a direct tailcall is
 /// made in the method itself.
 and BranchCallItem =
+
     | BranchCallClosure of ArityInfo
+
     | BranchCallMethod of
         // Argument counts for compiled form of F# method or value
         ArityInfo *
@@ -793,6 +804,8 @@ and BranchCallItem =
         int *
         // num obj args
         int
+
+    override __.ToString() = "<BranchCallItem>"
   
 /// Represents a place we can branch to
 and Mark =
@@ -836,6 +849,8 @@ and IlxGenEnv =
       /// Are we inside of a recursive let binding, while loop, or a for loop?
       isInLoop: bool
     }
+
+    override __.ToString() = "<IlxGenEnv>"
 
 let SetIsInLoop isInLoop eenv =
     if eenv.isInLoop = isInLoop then eenv
