@@ -28,6 +28,7 @@ of `InteractiveChecker`:
 open System
 open System.Collections.Generic
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -220,7 +221,7 @@ in the project are still read from disk, unless you are using the [FileSystem AP
 *)
 
 let parseResults1, checkAnswer1 = 
-    checker.ParseAndCheckFileInProject(Inputs.fileName1, 0, Inputs.fileSource1, projectOptions) 
+    checker.ParseAndCheckFileInProject(Inputs.fileName1, 0, SourceText.ofString Inputs.fileSource1, projectOptions)
     |> Async.RunSynchronously
 
 let checkResults1 = 
@@ -229,7 +230,7 @@ let checkResults1 =
     | _ -> failwith "unexpected aborted"
 
 let parseResults2, checkAnswer2 = 
-    checker.ParseAndCheckFileInProject(Inputs.fileName2, 0, Inputs.fileSource2, projectOptions)
+    checker.ParseAndCheckFileInProject(Inputs.fileName2, 0, SourceText.ofString Inputs.fileSource2, projectOptions)
     |> Async.RunSynchronously
 
 let checkResults2 = 
@@ -313,7 +314,7 @@ F# projects normally use the '.fsproj' project file format.
 A project cracking facility for legacy old-style .fsproj is provided as a separate NuGet package:
 FSharp.Compiler.Service.ProjectCracker. 
 
-Projecet cracking for modern project files should be done using a library such as DotNetProjInfo.
+Project cracking for modern project files should be done using a library such as DotNetProjInfo.
 See FsAutoComplete for example code.
 
 The legacy NuGet package `FSharp.Compiler.Service.ProjectCracker` contains a

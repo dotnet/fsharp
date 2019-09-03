@@ -26,10 +26,11 @@ let y = Foo(3) --> Foo(4)
 let x2 = Foo(3) + 4
 let y2 = Foo(3) + Foo(4)
 
-if x.Val <> 7 then exit 1
-if y.Val <> 7 then exit 1
-if x2.Val <> 7 then exit 1
-if y2.Val <> 7 then exit 1
+if x.Val <> 7 then failwith "x.Val <> 7"
+elif y.Val <> 7 then  failwith "y.Val <> 7"
+elif x2.Val <> 7 then  failwith "x2.Val <> 7"
+elif y2.Val <> 7 then  failwith "x.Val <> 7"
+else ()
             """
 
     [<Test>]

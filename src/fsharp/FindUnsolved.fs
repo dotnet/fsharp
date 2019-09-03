@@ -21,6 +21,8 @@ type cenv =
       denv: DisplayEnv 
       mutable unsolved: Typars }
 
+    override x.ToString() = "<cenv>"
+
 /// Walk types, collecting type variables
 let accTy cenv _env ty =
     let normalizedTy = tryNormalizeMeasureInType cenv.g ty

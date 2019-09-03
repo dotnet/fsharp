@@ -99,5 +99,5 @@ FSharp.Compiler.Service is a somewhat awkward component. There are some things w
 1. Remove the use of Paket and FAKE
 1. Move all projects under fcs\... to new .NET SDK project file format
 1. Drop the use of ``dotnet mergenupkg`` since we should be able to use cross targeting
-1. Make FCS a DLL similar ot the rest of the build and make this an official component from Microsoft (signed etc.)
+1. Make FCS a DLL similar to the rest of the build and make this an official component from Microsoft (signed etc.)
 1. Replace FSharp.Compiler.Private by FSharp.Compiler.Service

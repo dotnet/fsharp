@@ -22,16 +22,15 @@ open System.Diagnostics.SymbolStore
 open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
 
+
 let DateTime1970Jan01 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
-#if !FX_NO_LINKEDRESOURCES
 // Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
 let inline ignore _x = ()
 
 // Native Resource linking/unlinking
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
-#endif
 
 let check _action (hresult) =
   if uint32 hresult >= 0x80000000ul then
@@ -56,7 +55,6 @@ let bytesToQWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte), (b4: byte), (b
 let dwToBytes n = [| byte (n &&& 0xff) ; byte ((n >>> 8) &&& 0xff) ; byte ((n >>> 16) &&& 0xff) ; byte ((n >>> 24) &&& 0xff) |], 4
 let wToBytes (n: int16) = [| byte (n &&& 0xffs) ; byte ((n >>> 8) &&& 0xffs) |], 2
 
-#if !FX_NO_LINKEDRESOURCES
 // REVIEW: factor these classes under one hierarchy, use reflection for creation from buffer and toBytes()
 // Though, everything I'd like to unify is static - metaclasses?
 type IMAGE_FILE_HEADER (m: int16, secs: int16, tds: int32, ptst: int32, nos: int32, soh: int16, c: int16) =
@@ -583,7 +581,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
 
         !size
 
-let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseRVA: int32) (fileType: PEFileType) (outputFilePath: string) =
+let linkNativeResourcesViaCVTres (unlinkedResources: byte[] list)  (ulLinkedResourceBaseRVA: int32) (fileType: PEFileType) (outputFilePath: string) = 
     let nPEFileType = match fileType with X86  -> 0 | X64 -> 2
     let mutable tempResFiles: string list = []
     let mutable objBytes: byte[] = [||]
@@ -751,6 +749,39 @@ let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseR
         // return the buffer
         pResBuffer
 
+let linkNativeResourcesManaged (unlinkedResources: byte[] list)  (ulLinkedResourceBaseRVA: int32) (fileType: PEFileType) (outputFilePath: string) =
+   ignore fileType
+   ignore outputFilePath
+   
+   let resources =
+       unlinkedResources
+       |> Seq.map (fun s -> new MemoryStream(s))
+       |> Seq.map (fun s -> 
+           let res = CVTres.CvtResFile.ReadResFile s
+           s.Dispose()
+           res)
+       |> Seq.collect id
+       // See MakeWin32ResourceList https://github.com/dotnet/roslyn/blob/f40b89234db51da1e1153c14af184e618504be41/src/Compilers/Core/Portable/Compilation/Compilation.cs
+       |> Seq.map (fun r -> 
+           WriteNativeRes.Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId, 
+                               id = int (int16 r.pstringName.Ordinal), name = r.pstringName.theString,
+                               typeId = int (int16 r.pstringType.Ordinal), typeName = r.pstringType.theString))
+   let bb = new System.Reflection.Metadata.BlobBuilder()
+   WriteNativeRes.NativeResourceWriter.SerializeWin32Resources(bb, resources, ulLinkedResourceBaseRVA)
+   bb.ToArray()
+
+let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseRVA: int32) (fileType: PEFileType) (outputFilePath: string) =
+#if ENABLE_MONO_SUPPORT
+    if IL.runningOnMono then
+        linkNativeResourcesManaged unlinkedResources ulLinkedResourceBaseRVA fileType outputFilePath
+    else
+#endif
+#if !FX_NO_LINKEDRESOURCES
+        linkNativeResourcesViaCVTres unlinkedResources ulLinkedResourceBaseRVA fileType outputFilePath
+#else
+        linkNativeResourcesManaged unlinkedResources ulLinkedResourceBaseRVA fileType outputFilePath
+#endif
+
 let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
     let mutable nResNodes = 0
 
@@ -854,7 +885,6 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
             resBufferOffset <- resBufferOffset + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset)
 
     pResBuffer
-#endif
 
 #if !FX_NO_PDB_WRITER
 // PDB Writing

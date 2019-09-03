@@ -18,6 +18,8 @@ type cenv =
     { g: TcGlobals
       amap: Import.ImportMap }
 
+    override x.ToString() = "<cenv>"
+
 /// Find all the mutable locals that escape a method, function or lambda expression
 let DecideEscapes syntacticArgs body =
     let cantBeFree v = 
