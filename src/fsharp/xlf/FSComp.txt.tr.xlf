@@ -57,11 +57,6 @@
         <target state="translated">{0}' algoritması desteklenmiyor</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAndBangNotSupported">
-        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
         <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
@@ -82,14 +77,9 @@
         <target state="translated">Öznitelikler tür uzantılarına uygulanamaz.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
-        <source>use! may not be combined with and!</source>
-        <target state="new">use! may not be combined with and!</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+      <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
+        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
+        <target state="new">The type '{0}' does not define the field, constructor or member '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
