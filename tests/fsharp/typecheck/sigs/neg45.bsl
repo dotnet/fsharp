@@ -11,7 +11,7 @@ neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too compli
 
 neg45.fs(41,23,41,41): typecheck error FS0827: This is not a valid name for an active pattern
 
-neg45.fs(52,14,52,17): typecheck error FS0039: The field, constructor or member 'Foo' is not defined.
+neg45.fs(52,14,52,17): typecheck error FS0039: The type 'FooBir' does not define the field, constructor or member 'Foo'.
 
 neg45.fs(56,16,56,31): typecheck error FS0827: This is not a valid name for an active pattern
 

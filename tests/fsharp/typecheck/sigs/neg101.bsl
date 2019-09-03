@@ -1,5 +1,5 @@
 
-neg101.fs(7,11,7,14): typecheck error FS0039: The field, constructor or member 'Foo' is not defined.
+neg101.fs(7,11,7,14): typecheck error FS0039: The type 'Int32' does not define the field, constructor or member 'Foo'.
 
 neg101.fs(14,6,14,17): typecheck error FS3220: This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.
 
