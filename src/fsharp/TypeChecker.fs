@@ -16429,6 +16429,11 @@ module TcDeclarations =
                 if not (isNil members) && tcref.IsTypeAbbrev then 
                     errorR(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), tyDeclRange))
 
+                let (ComponentInfo (attributes, _, _, _, _, _, _, _)) = synTyconInfo
+                if not (List.isEmpty attributes) && (declKind = ExtrinsicExtensionBinding || declKind = IntrinsicExtensionBinding) then
+                    let attributeRange = (List.head attributes).Range
+                    error(Error(FSComp.SR.tcAugmentationsCannotHaveAttributes(), attributeRange))
+
                 MutRecDefnsPhase2DataForTycon(tyconOpt, innerParent, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, tyDeclRange, newslotsOK, fixupFinalAttrs))
 
         // By now we've established the full contents of type definitions apart from their
