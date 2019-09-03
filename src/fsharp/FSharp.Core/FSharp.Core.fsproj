@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
@@ -212,18 +212,5 @@
     <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
   </ItemGroup>
-
-  <!-- Hook compilation phase to do custom work -->
-  <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
-  <!-- integrated as resources into more recent FSharp.Core.dll's. However they are still produced to -->
-  <!-- allow older versions of the F# compiler to reference more recent FSharp.Core packages -->
-  <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
-    <ItemGroup>
-      <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.optdata" />
-    </ItemGroup>
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-  </Target>
 
 </Project>
