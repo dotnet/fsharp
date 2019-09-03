@@ -17,6 +17,11 @@
         <target state="new">Algorithm '{0}' is not supported</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be assigned to type extensions.</source>
+        <target state="new">Attributes cannot be assigned to type extensions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">Der Namespace "{0}" ist nicht definiert.</target>
