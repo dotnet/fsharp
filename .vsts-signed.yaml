@@ -11,117 +11,142 @@ variables:
 #- name: SkipTests
 #  defaultValue: false
 
-jobs:
-- job: Full_Signed
-  pool:
-    name: VSEng-MicroBuildVS2019
-  timeoutInMinutes: 300
-  variables:
-    BuildConfiguration: 'Release'
-  steps:
+stages:
+- stage: build
+  displayName: Build
 
-  # Install Signing Plugin
-  - task: ms-vseng.MicroBuildTasks.30666190-6959-11e5-9f96-f56098202fef.MicroBuildSigningPlugin@1
-    displayName: Install Signing Plugin
-    inputs:
-      signType: real
-      esrpSigning: true
-    condition: and(succeeded(), ne(variables['SignType'], ''))
-
-  # Build
-  - script: eng\CIBuild.cmd
-            -configuration $(BuildConfiguration)
-            -testAll
-            -officialSkipTests $(SkipTests)
-            /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
-            /p:VisualStudioDropName=$(VisualStudioDropName)
-            /p:DotNetSignType=$(SignType)
-            /p:DotNetPublishToBlobFeed=true
-            /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
-            /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
-            /p:PublishToSymbolServer=true
-            /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
-            /p:DotNetSymbolServerTokenSymWeb=$(symweb-symbol-server-pat)
-    displayName: Build
-
-  # Publish logs
-  - task: PublishBuildArtifacts@1
-    displayName: Publish Logs
-    inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\log\$(BuildConfiguration)'
-      ArtifactName: 'Build Diagnostic Files'
-      publishLocation: Container
-    continueOnError: true
-    condition: succeededOrFailed()
-
-  # Publish test results
-  - task: PublishBuildArtifacts@1
-    displayName: Publish Test Results
-    inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults'
-      ArtifactName: 'Test Results'
-      publishLocation: Container
-    continueOnError: true
-    condition: and(succeededOrFailed(), ne(variables['SkipTests'], 'true'))
-
-  # Upload VSTS Drop
-  - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
-    displayName: Upload VSTS Drop
-    inputs:
-      DropName: $(VisualStudioDropName)
-      DropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\Insertion'
-    condition: succeeded()
-
-  # Publish an artifact that the RoslynInsertionTool is able to find by its name.
-  - task: PublishBuildArtifacts@1
-    displayName: Publish Artifact VSSetup
-    inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\Insertion'
-      ArtifactName: 'VSSetup'
-    condition: succeeded()
-
-  # Archive NuGet packages to DevOps.
-  - task: PublishBuildArtifacts@1
-    displayName: Publish Artifact Packages
-    inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(BuildConfiguration)'
-      ArtifactName: 'Packages'
-    condition: succeeded()
-
-  # Publish nightly package to ADO
-  - task: PublishBuildArtifacts@1
-    displayName: Publish Artifact Nightly
-    inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\VisualFSharpFull.vsix'
-      ArtifactName: 'Nightly'
-    condition: succeeded()
-
-  # Package publish
-  - task: PublishBuildArtifacts@1
-    displayName: Push Asset Manifests
-    inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/AssetManifest'
-      ArtifactName: AssetManifests
-    continueOnError: true
-    condition: succeeded()
-
-  # Publish native PDBs for archiving
-  - task: PublishBuildArtifacts@1
-    displayName: Publish Artifact Symbols
-    inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/SymStore/$(BuildConfiguration)'
-      ArtifactName: NativeSymbols
-    condition: succeeded()
-
-  # Execute cleanup tasks
-  - task: ms-vseng.MicroBuildTasks.521a94ea-9e68-468a-8167-6dcf361ea776.MicroBuildCleanup@1
-    displayName: Execute cleanup tasks
-    condition: succeededOrFailed()
-
-- template: /eng/common/templates/job/publish-build-assets.yml
-  parameters:
-    dependsOn:
-    - Full_Signed
+  jobs:
+  - job: Full_Signed
     pool:
-      vmImage: windows-2019
-    enablePublishBuildArtifacts: true
+      name: VSEng-MicroBuildVS2019
+    timeoutInMinutes: 300
+    variables:
+      BuildConfiguration: 'Release'
+    steps:
+
+    # Install Signing Plugin
+    - task: ms-vseng.MicroBuildTasks.30666190-6959-11e5-9f96-f56098202fef.MicroBuildSigningPlugin@1
+      displayName: Install Signing Plugin
+      inputs:
+        signType: real
+        esrpSigning: true
+      condition: and(succeeded(), ne(variables['SignType'], ''))
+
+    # Build
+    - script: eng\CIBuild.cmd
+              -configuration $(BuildConfiguration)
+              -testAll
+              -officialSkipTests $(SkipTests)
+              /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
+              /p:VisualStudioDropName=$(VisualStudioDropName)
+              /p:DotNetSignType=$(SignType)
+              /p:DotNetPublishToBlobFeed=true
+              /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
+              /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+              /p:PublishToSymbolServer=true
+              /p:DotNetSymbolServerTokenMsdl=$(microsoft-symbol-server-pat)
+              /p:DotNetSymbolServerTokenSymWeb=$(symweb-symbol-server-pat)
+      displayName: Build
+
+    # Publish logs
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Logs
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)\artifacts\log\$(BuildConfiguration)'
+        ArtifactName: 'Build Diagnostic Files'
+        publishLocation: Container
+      continueOnError: true
+      condition: succeededOrFailed()
+
+    # Publish test results
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Test Results
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults'
+        ArtifactName: 'Test Results'
+        publishLocation: Container
+      continueOnError: true
+      condition: and(succeededOrFailed(), ne(variables['SkipTests'], 'true'))
+
+    # Upload VSTS Drop
+    - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
+      displayName: Upload VSTS Drop
+      inputs:
+        DropName: $(VisualStudioDropName)
+        DropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\Insertion'
+      condition: succeeded()
+
+    # Publish an artifact that the RoslynInsertionTool is able to find by its name.
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact VSSetup
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\Insertion'
+        ArtifactName: 'VSSetup'
+      condition: succeeded()
+
+    # Archive NuGet packages to DevOps.
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact Packages
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(BuildConfiguration)'
+        ArtifactName: 'Packages'
+      condition: succeeded()
+
+    # Publish nightly package to ADO
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact Nightly
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\VisualFSharpFull.vsix'
+        ArtifactName: 'Nightly'
+      condition: succeeded()
+
+    # Package publish
+    - task: PublishBuildArtifacts@1
+      displayName: Push Asset Manifests
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/AssetManifest'
+        ArtifactName: AssetManifests
+      continueOnError: true
+      condition: succeeded()
+
+    # Publish PackageArtifacts for Arcade verification
+    - task: PublishBuildArtifacts@1
+      displayName: Publish PackageArtifacts
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(BuildConfiguration)\Shipping'
+        ArtifactName: 'PackageArtifacts'
+      condition: succeeded()
+
+    # Publish BlobArtifacts for Arcade verification
+    - task: PublishBuildArtifacts@1
+      displayName: Publish BlobArtifacts
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)\artifacts\packages\$(BuildConfiguration)\Shipping'
+        ArtifactName: 'BlobArtifacts'
+      condition: succeeded()
+
+    # Publish native PDBs for archiving
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact Symbols
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)/artifacts/SymStore/$(BuildConfiguration)'
+        ArtifactName: NativeSymbols
+      condition: succeeded()
+
+    # Execute cleanup tasks
+    - task: ms-vseng.MicroBuildTasks.521a94ea-9e68-468a-8167-6dcf361ea776.MicroBuildCleanup@1
+      displayName: Execute cleanup tasks
+      condition: succeededOrFailed()
+
+  - template: /eng/common/templates/job/publish-build-assets.yml
+    parameters:
+      dependsOn:
+      - Full_Signed
+      pool:
+        vmImage: windows-2019
+      enablePublishBuildArtifacts: true
+
+- template: eng/common/templates/post-build/post-build.yml
+  parameters:
+    # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
+    enableSymbolValidation: false

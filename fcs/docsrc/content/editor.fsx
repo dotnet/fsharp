@@ -27,6 +27,7 @@ of `InteractiveChecker`:
 
 open System
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -53,7 +54,7 @@ let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
 let projOptions, errors = 
-    checker.GetProjectOptionsFromScript(file, input)
+    checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
     |> Async.RunSynchronously
 
 let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
@@ -68,7 +69,7 @@ together.
 // Perform parsing  
 
 let parseFileResults = 
-    checker.ParseFile(file, input, parsingOptions) 
+    checker.ParseFile(file, SourceText.ofString input, parsingOptions)
     |> Async.RunSynchronously
 (**
 Before we look at the interesting operations provided by `TypeCheckResults`, we 
@@ -78,7 +79,7 @@ result (but it may contain incorrectly "guessed" results).
 
 // Perform type checking
 let checkFileAnswer = 
-    checker.CheckFileInProject(parseFileResults, file, 0, input, projOptions) 
+    checker.CheckFileInProject(parseFileResults, file, 0, SourceText.ofString input, projOptions)
     |> Async.RunSynchronously
 
 (**
@@ -86,7 +87,7 @@ Alternatively you can use `ParseAndCheckFileInProject` to check both in one step
 *)
 
 let parseResults2, checkFileAnswer2 = 
-    checker.ParseAndCheckFileInProject(file, 0, input, projOptions) 
+    checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projOptions)
     |> Async.RunSynchronously
 
 (**
@@ -159,7 +160,7 @@ list of members of the string value `msg`.
 
 To do this, we call `GetDeclarationListInfo` with the location of the `.` symbol on the last line 
 (ending with `printfn "%s" msg.`). The offsets are one-based, so the location is `7, 23`.
-We also need to specify a function that says that the text has not changed and the current identifer
+We also need to specify a function that says that the text has not changed and the current identifier
 where we need to perform the completion.
 *)
 // Get declarations (autocomplete) for a location

@@ -29,8 +29,9 @@ let test2 (x : Bar) = (x.Value, x.Value2)
 let f = new Foo(128)
 let b = new Bar(256)
 
-if test1 f <> 128       then exit 1
-if test2 b <> (-1, 256) then exit 1
+if test1 f <> 128       then failwith "test1 f <> 128"
+elif test2 b <> (-1, 256) then failwith "test2 b <> (-1, 256)"
+else ()
 """
 
     [<Test>]
@@ -58,9 +59,10 @@ let f = new Foo(128)
 let b = new Bar(256)
 let r = new Ram(314)
 
-if test f <> (128, "Foo") then exit 1
-if test b <> (-1, "Bar") then exit 1
-if test r <> (10, "Ram") then exit 1
+if test f <> (128, "Foo") then failwith "test f <> (128, 'Foo')"
+elif test b <> (-1, "Bar") then failwith "test b <> (-1, 'Bar')"
+elif test r <> (10, "Ram") then failwith "test r <> (10, 'Ram')"
+else ()
 """
 
     [<Test>]
@@ -72,17 +74,15 @@ let inline isNull<'a when 'a : null> (x : 'a) =
     | null -> "is null"
     | _    -> (x :> obj).ToString()
 
-let runTest =  
+let runTest =
     // Wrapping in try block to work around FSB 1989
     try
-        if isNull null <> "is null" then exit 1
-        if isNull "F#" <> "F#"      then exit 1
-        true
-    with _ -> exit 1
+        if isNull null <> "is null" then failwith "isNull null <> is null"
+        if isNull "F#" <> "F#"      then  failwith "isNull F# <> F#"
+        ()
+    with _ -> reraise()
 
-if runTest <> true then exit 1
-
-exit 0
+runTest
 """
 
     [<Test>]

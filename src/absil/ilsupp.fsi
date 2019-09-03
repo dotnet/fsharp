@@ -29,9 +29,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.IL 
 
-#if !FX_NO_LINKEDRESOURCES
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
-#endif
 
 /// Unmanaged resource file linker - for native resources (not managed ones).
 /// The function may be called twice, once with a zero-RVA and
@@ -39,10 +37,8 @@ type IStream = System.Runtime.InteropServices.ComTypes.IStream
 /// required buffer is returned.
 type PEFileType = X86 | X64
 
-#if !FX_NO_LINKEDRESOURCES
 val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileType -> tempFilePath:string -> byte[]
 val unlinkResource: int32 -> byte[] -> byte[]
-#endif
 
 #if !FX_NO_PDB_WRITER
 /// PDB reader and associated types
