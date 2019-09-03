@@ -839,16 +839,6 @@ let tryNiceEntityRefOfTyOption ty =
     | TType_app (tcref, _) -> Some tcref
     | TType_measure (Measure.Con tcref) -> Some tcref
     | _ -> None
-
-let (|NullableTy|_|) g ty =
-    match tryAppTy g ty with 
-    | ValueSome (tcref, [tyarg]) when tyconRefEq g tcref g.system_Nullable_tcref -> Some tyarg
-    | _ -> None
-
-let (|StripNullableTy|) g ty = 
-    match tryAppTy g ty with 
-    | ValueSome (tcref, [tyarg]) when tyconRefEq g tcref g.system_Nullable_tcref -> tyarg
-    | _ -> ty
     
 let mkInstForAppTy g ty = 
     match tryAppTy g ty with
@@ -3124,6 +3114,31 @@ let destOptionTy g ty =
     match tryDestOptionTy g ty with 
     | ValueSome ty -> ty
     | ValueNone -> failwith "destOptionTy: not an option type"
+
+let isNullableTy (g: TcGlobals) ty = 
+    match tryDestAppTy g ty with 
+    | ValueNone -> false
+    | ValueSome tcref -> tyconRefEq g g.system_Nullable_tcref tcref
+
+let tryDestNullableTy g ty = 
+    match argsOfAppTy g ty with 
+    | [ty1] when isNullableTy g ty -> ValueSome ty1
+    | _ -> ValueNone
+
+let destNullableTy g ty = 
+    match tryDestNullableTy g ty with 
+    | ValueSome ty -> ty
+    | ValueNone -> failwith "destNullableTy: not a Nullable type"
+
+let (|NullableTy|_|) g ty =
+    match tryAppTy g ty with 
+    | ValueSome (tcref, [tyarg]) when tyconRefEq g tcref g.system_Nullable_tcref -> Some tyarg
+    | _ -> None
+
+let (|StripNullableTy|) g ty = 
+    match tryDestNullableTy g ty with 
+    | ValueSome tyarg -> tyarg
+    | _ -> ty
 
 let isLinqExpressionTy g ty = 
     match tryDestAppTy g ty with 

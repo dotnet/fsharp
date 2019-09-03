@@ -24,58 +24,30 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
-    let mapCpsProjectToSite(workspace:VisualStudioWorkspace, project:Project, serviceProvider:System.IServiceProvider, cpsCommandLineOptions: IDictionary<ProjectId, string[] * string[]>) =
-        let hier = workspace.GetHierarchy(project.Id)
+    let mapCpsProjectToSite(project:Project, cpsCommandLineOptions: IDictionary<ProjectId, string[] * string[]>) =
         let sourcePaths, referencePaths, options =
             match cpsCommandLineOptions.TryGetValue(project.Id) with
             | true, (sourcePaths, options) -> sourcePaths, [||], options
             | false, _ -> [||], [||], [||]
+        let mutable errorReporter = Unchecked.defaultof<_>
         {
-            new IProvideProjectSite with
-                member x.GetProjectSite() =
-                    let mutable errorReporter = 
-                        let reporter = ProjectExternalErrorReporter(project.Id, "FS", serviceProvider)
-                        Some(reporter:> IVsLanguageServiceBuildErrorReporter2)
-
-                    {
-                        new IProjectSite with
-                            member __.Description = project.Name
-                            member __.CompilationSourceFiles = sourcePaths
-                            member __.CompilationOptions =
-                                Array.concat [options; referencePaths |> Array.map(fun r -> "-r:" + r)]
-                            member __.CompilationReferences = referencePaths
-                            member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
-                            member __.ProjectFileName = project.FilePath
-                            member __.AdviseProjectSiteChanges(_,_) = ()
-                            member __.AdviseProjectSiteCleaned(_,_) = ()
-                            member __.AdviseProjectSiteClosed(_,_) = ()
-                            member __.IsIncompleteTypeCheckEnvironment = false
-                            member __.TargetFrameworkMoniker = ""
-                            member __.ProjectGuid =  project.Id.Id.ToString()
-                            member __.LoadTime = System.DateTime.Now
-                            member __.ProjectProvider = Some (x)
-                            member __.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
-                    }
-            interface IVsHierarchy with
-                member __.SetSite(psp) = hier.SetSite(psp)
-                member __.GetSite(psp) = hier.GetSite(ref psp)
-                member __.QueryClose(pfCanClose)= hier.QueryClose(ref pfCanClose)
-                member __.Close() = hier.Close()
-                member __.GetGuidProperty(itemid, propid, pguid) = hier.GetGuidProperty(itemid, propid, ref pguid)
-                member __.SetGuidProperty(itemid, propid, rguid) = hier.SetGuidProperty(itemid, propid, ref rguid)
-                member __.GetProperty(itemid, propid, pvar) = hier.GetProperty(itemid, propid, ref pvar) 
-                member __.SetProperty(itemid, propid, var)  = hier.SetProperty(itemid, propid, var)
-                member __.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = 
-                    hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
-                member __.GetCanonicalName(itemid, pbstrName) = hier.GetCanonicalName(itemid, ref pbstrName)
-                member __.ParseCanonicalName(pszName, pitemid) = hier.ParseCanonicalName(pszName, ref pitemid)
-                member __.Unused0() = hier.Unused0()
-                member __.AdviseHierarchyEvents(pEventSink, pdwCookie) = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
-                member __.UnadviseHierarchyEvents(dwCookie) = hier.UnadviseHierarchyEvents(dwCookie)
-                member __.Unused1() = hier.Unused1()
-                member __.Unused2() = hier.Unused2()
-                member __.Unused3() = hier.Unused3()
-                member __.Unused4() = hier.Unused4()
+            new IProjectSite with
+                member __.Description = project.Name
+                member __.CompilationSourceFiles = sourcePaths
+                member __.CompilationOptions =
+                    Array.concat [options; referencePaths |> Array.map(fun r -> "-r:" + r)]
+                member __.CompilationReferences = referencePaths
+                member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                member __.ProjectFileName = project.FilePath
+                member __.AdviseProjectSiteChanges(_,_) = ()
+                member __.AdviseProjectSiteCleaned(_,_) = ()
+                member __.AdviseProjectSiteClosed(_,_) = ()
+                member __.IsIncompleteTypeCheckEnvironment = false
+                member __.TargetFrameworkMoniker = ""
+                member __.ProjectGuid =  project.Id.Id.ToString()
+                member __.LoadTime = System.DateTime.Now
+                member __.ProjectProvider = None
+                member __.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
         }
 
     let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
@@ -108,11 +80,13 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspace, settings: EditorOptions, serviceProvider, checkerProvider: FSharpCheckerProvider) =
+type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
-    let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, string[] * string[]>()
+    let cpsCommandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
+
+    let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
     let cache = Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
     let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
@@ -158,6 +132,16 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspace, sett
                 else
                     return Some(parsingOptions, projectOptions)
         }
+
+    let tryGetProjectSite (project: Project) =
+        // Cps
+        if cpsCommandLineOptions.ContainsKey project.Id then
+            Some (mapCpsProjectToSite(project, cpsCommandLineOptions))
+        else
+            // Legacy
+            match legacyProjectSites.TryGetValue project.Id with
+            | true, site -> Some site
+            | _ -> None
     
     let rec tryComputeOptions (project: Project) =
         async {
@@ -183,15 +167,9 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspace, sett
                     return None
                 else
 
-                let hier = workspace.GetHierarchy(projectId)
-                let projectSite = 
-                    match hier with
-                    // Legacy
-                    | (:? IProvideProjectSite as provideSite) -> provideSite.GetProjectSite()
-                    // Cps
-                    | _ -> 
-                        let provideSite = mapCpsProjectToSite(workspace, project, serviceProvider, cpsCommandLineOptions)
-                        provideSite.GetProjectSite()
+                match tryGetProjectSite project with
+                | None -> return None
+                | Some projectSite ->             
 
                 let otherOptions =
                     project.ProjectReferences
@@ -283,6 +261,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspace, sett
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     cache.Remove(projectId) |> ignore
+                    legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     singleFileCache.Remove(documentId) |> ignore
         }
@@ -303,6 +282,9 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspace, sett
 
     member __.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
         cpsCommandLineOptions.[projectId] <- (sourcePaths, options)
+
+    member __.SetLegacyProjectSite (projectId, projectSite) =
+        legacyProjectSites.[projectId] <- projectSite
 
     member __.TryGetCachedOptionsByProjectId(projectId) =
         match cache.TryGetValue(projectId) with
@@ -343,6 +325,9 @@ type internal FSharpProjectOptionsManager
             | WorkspaceChangeKind.ProjectRemoved -> reactor.ClearOptionsByProjectId(args.ProjectId)
             | _ -> ()
         )
+
+    member __.SetLegacyProjectSite (projectId, projectSite) =
+        reactor.SetLegacyProjectSite (projectId, projectSite)
 
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId:ProjectId) = 
@@ -393,11 +378,15 @@ type internal FSharpProjectOptionsManager
             match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
             | true, projectId -> projectId
             | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
-        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId);
-        let fullPath p =
-            if Path.IsPathRooted(p) || path = null then p
-            else Path.Combine(Path.GetDirectoryName(path), p)
-        let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
+        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId)
+
+        let getFullPath p =
+            let p' =
+                if Path.IsPathRooted(p) || path = null then p
+                else Path.Combine(Path.GetDirectoryName(path), p)
+            Path.GetFullPathSafe(p')
+
+        let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
 
         reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
 

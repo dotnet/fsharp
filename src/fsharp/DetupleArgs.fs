@@ -644,17 +644,26 @@ let hasTransfrom penv f = Zmap.tryFind f penv.transforms
 *)
 
 type env = 
-    { eg : TcGlobals
-      prefix : string
-      m      : Range.range }
+    { 
+      eg: TcGlobals
+
+      prefix: string
+
+      m: Range.range
+    }
+
+    override __.ToString() = "<env>"
 
 let suffixE env s = {env with prefix = env.prefix + s}
+
 let rangeE  env m = {env with m = m}
 
 let push  b  bs = b :: bs
+
 let pushL xs bs = xs@bs
 
 let newLocal  env   ty = mkCompGenLocal env.m env.prefix ty
+
 let newLocalN env i ty = mkCompGenLocal env.m (env.prefix + string i) ty
 
 let noEffectExpr env bindings x =
@@ -711,7 +720,6 @@ and collapseArgs env bindings n (callPattern) args =
         bindings, xty @ xtys
     | _ts :: _tss, []            -> 
         internalError "collapseArgs: CallPattern longer than callsite args. REPORT BUG"
-
 
 //-------------------------------------------------------------------------
 // pass - app fixup

@@ -66,14 +66,18 @@ type TaskStep<'T> =
 [<Struct; NoComparison; NoEquality>]
 /// This is used by the compiler as a template for creating state machine structs
 type TaskStateMachine<'T> =
+
+    /// Holds the final result of the state machine
     [<DefaultValue(false)>]
     val mutable Result : 'T
 
+    /// When statically compiled, holds the continuation goto-label further execution of the state machine
     [<DefaultValue(false)>]
     val mutable ResumptionPoint : int
 
+    /// When interpreted, holds the continuation for the further execution of the state machine
     [<DefaultValue(false)>]
-    val mutable MachineFunc : MachineFunc<TaskStateMachine<'T>, obj>
+    val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'T>, obj>
 
     [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>

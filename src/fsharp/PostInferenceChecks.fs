@@ -93,7 +93,10 @@ type env =
       returnScope : int 
       
       /// Are we in an app expression (Expr.App)?
-      isInAppExpr: bool } 
+      isInAppExpr: bool
+    } 
+
+    override __.ToString() = "<env>"
 
 let BindTypar env (tp: Typar) = 
     { env with 
@@ -183,22 +186,38 @@ let CombineLimits limits =
 
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
+
       limitVals: Dictionary<Stamp, Limit>
+
       mutable potentialUnboundUsesOfVals: StampMap<range> 
+
       mutable anonRecdTypes: StampMap<AnonRecdTypeInfo> 
+
       g: TcGlobals 
+
       amap: Import.ImportMap 
+
       /// For reading metadata
       infoReader: InfoReader
+
       internalsVisibleToPaths : CompilationPath list
+
       denv: DisplayEnv 
+
       viewCcu : CcuThunk
+
       reportErrors: bool
+
       isLastCompiland : bool*bool
+
       isInternalTestSpanStackReferring: bool
+
       // outputs
       mutable usesQuotations : bool
+
       mutable entryPointGiven: bool  }
+
+    override x.ToString() = "<cenv>"
 
 /// Check if the value is an argument of a function
 let IsValArgument env (v: Val) =

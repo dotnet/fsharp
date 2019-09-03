@@ -225,6 +225,18 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)/absil/writenativeres.fsi">
+      <Link>AbsIL/writenativeres.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/absil/writenativeres.fs">
+      <Link>AbsIL/writenativeres.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/absil/cvtres.fsi">
+      <Link>AbsIL/cvtres.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/absil/cvtres.fs">
+      <Link>AbsIL/cvtres.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/absil/ilsupp.fsi">
       <Link>AbsIL/ilsupp.fsi</Link>
     </Compile>

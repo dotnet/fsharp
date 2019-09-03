@@ -34,7 +34,6 @@
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
-    <Compile Include="Common\ContentType.fs" />
     <Compile Include="Common\Vs.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.LanguageServer\LspExternalAccess.fs">
       <Link>Common\LspExternalAccess.fs</Link>
@@ -94,7 +93,6 @@
     <Compile Include="QuickInfo\Navigation.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
-    <Compile Include="BlockComment\CommentSelectionService.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
@@ -173,6 +171,7 @@
     <PackageReference Include="System.Design" Version="$(SystemDesignVersion)" />
     <PackageReference Include="System.ValueTuple" Version="$(SystemValueTupleVersion)" />
     <PackageReference Include="VSSDK.VSLangProj" Version="$(VSSDKVSLangProjVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+	<PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
   </ItemGroup>
 
   <ItemGroup>
