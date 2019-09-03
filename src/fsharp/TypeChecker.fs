@@ -534,7 +534,7 @@ type cenv =
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring }
 
-    override __.ToString() = "cenv(...)"
+    override __.ToString() = "<cenv>"
 
 let CopyAndFixupTypars m rigid tpsorig = 
     ConstraintSolver.FreshenAndFixupTypars m rigid [] [] tpsorig
