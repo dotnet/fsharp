@@ -1,5 +1,4 @@
 // #Regression #NoMT #Import 
-//<Expects status="error" span="(8,5)" id="FS0509">Method or object constructor 'Accessibility' not found</Expects>
 //<Expects status="error" span="(8,13)" id="FS1092">The type 'Accessibility' is not defined</Expects>
 namespace NS
 
