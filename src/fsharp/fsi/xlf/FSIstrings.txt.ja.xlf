@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="fsiTimeInfoGCGenerationLabelSomeShorthandForTheWordGeneration">
         <source>gen</source>
-        <target state="translated">gen</target>
+        <target state="translated">全般</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
