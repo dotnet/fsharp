@@ -528,9 +528,7 @@ let (|ConstNeedsDefaultCase|_|) c =
     | Const.Decimal _
     | Const.String _
     | Const.Single _
-    |  Const.Double _
-    | Const.SByte _
-    | Const.Byte _
+    | Const.Double _
     | Const.Int16 _
     | Const.UInt16 _
     | Const.Int32 _
@@ -1084,6 +1082,8 @@ let CompilePatternBasic
 
         match simulSetOfDiscrims with
         | DecisionTreeTest.Const (Const.Bool _b) :: _ when simulSetOfCases.Length = 2 ->  None
+        | DecisionTreeTest.Const (Const.Byte _) :: _  when simulSetOfCases.Length = 256 ->  None
+        | DecisionTreeTest.Const (Const.SByte _) :: _  when simulSetOfCases.Length = 256 ->  None
         | DecisionTreeTest.Const (Const.Unit) :: _  ->  None
         | DecisionTreeTest.UnionCase (ucref, _) :: _ when  simulSetOfCases.Length = ucref.TyconRef.UnionCasesArray.Length -> None
         | DecisionTreeTest.ActivePatternCase _ :: _ -> error(InternalError("DecisionTreeTest.ActivePatternCase should have been eliminated", matchm))

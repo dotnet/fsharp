@@ -314,7 +314,7 @@ F# projects normally use the '.fsproj' project file format.
 A project cracking facility for legacy old-style .fsproj is provided as a separate NuGet package:
 FSharp.Compiler.Service.ProjectCracker. 
 
-Projecet cracking for modern project files should be done using a library such as DotNetProjInfo.
+Project cracking for modern project files should be done using a library such as DotNetProjInfo.
 See FsAutoComplete for example code.
 
 The legacy NuGet package `FSharp.Compiler.Service.ProjectCracker` contains a

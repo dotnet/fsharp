@@ -27,6 +27,16 @@
         <target state="translated">Simbolo '.' imprevisto nella definizione di membro. È previsto 'with', '=' o un altro token.</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
         <target state="translated">Consente di specificare l'algoritmo per calcolare il checksum del file di origine archiviato nel file PDB. I valori supportati sono SHA1 e SHA256 (predefinito).</target>

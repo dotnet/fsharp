@@ -160,7 +160,7 @@ list of members of the string value `msg`.
 
 To do this, we call `GetDeclarationListInfo` with the location of the `.` symbol on the last line 
 (ending with `printfn "%s" msg.`). The offsets are one-based, so the location is `7, 23`.
-We also need to specify a function that says that the text has not changed and the current identifer
+We also need to specify a function that says that the text has not changed and the current identifier
 where we need to perform the completion.
 *)
 // Get declarations (autocomplete) for a location

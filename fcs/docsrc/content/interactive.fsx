@@ -43,9 +43,9 @@ open System
 open System.IO
 open System.Text
 
-// Intialize output and input streams
-let sbOut = StringBuilder()
-let sbErr = StringBuilder()
+// Initialize output and input streams
+let sbOut = new StringBuilder()
+let sbErr = new StringBuilder()
 let inStream = new StringReader("")
 let outStream = new StringWriter(sbOut)
 let errStream = new StringWriter(sbErr)
@@ -121,7 +121,7 @@ result and an exception.
 
 The result part of ``EvalExpression`` and ``EvalExpressionNonThrowing`` is an optional ``FSharpValue``.
 If that value is not present then it just indicates that the expression didn't have a tangible
-result that could be represented as a .NET object.  This siutation shouldn't actually
+result that could be represented as a .NET object.  This situation shouldn't actually
 occur for any normal input expressions, and only for primitives used in libraries.
 *)
 
@@ -239,7 +239,7 @@ The 'fsi' object
 ------------------
 
 If you want your scripting code to be able to access the 'fsi' object, you should pass in an implementation of this object explicitly.
-Normally the one fromm FSharp.Compiler.Interactive.Settings.dll is used.
+Normally the one from FSharp.Compiler.Interactive.Settings.dll is used.
 *)
 
 let fsiConfig2 = FsiEvaluationSession.GetDefaultConfiguration(fsiSession)
