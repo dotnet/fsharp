@@ -168,10 +168,11 @@ type FSharpEmbedResourceText() =
                     match txt.[i+1] with
                     | 'd' -> AddHole "System.Int32"
                     | 'x' -> AddHole "System.UInt32"
+                    | 'X' -> AddHole "System.UInt32"
                     | 'f' -> AddHole "System.Double"
                     | 's' -> AddHole "System.String"
                     | '%' -> sb.Append('%') |> ignore
-                    | c -> Err(filename, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%x %%f %%s or %%%%" c)
+                    | c -> Err(filename, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%x %%X %%f %%s or %%%%" c)
                 i <- i + 2
             else
                 match txt.[i] with
@@ -282,7 +283,6 @@ open Printf
         match fmt.[i] with
         | '%' -> go args ty (i+1)
         | 'd'
-        | 'x'
         | 'f'
         | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n :: args) rty (i+1))
         | _ -> failwith ""bad format specifier""

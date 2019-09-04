@@ -496,11 +496,10 @@ module BinaryGenerationUtilities =
            for _ in 1..(4 - (initialAlignment + v.Length) % 4) % 4 do
                yield 0x0uy |]
 
-// Generate nodes in a .res file format. These are then linked by Abstract IL using the 
-// linkNativeResources function, which invokes the cvtres.exe utility
-module ResFileFormat = 
+// Generate nodes in a .res file format. These are then linked by Abstract IL using linkNativeResources
+module ResFileFormat =
     open BinaryGenerationUtilities
-    
+
     let ResFileNode(dwTypeID, dwNameID, wMemFlags, wLangID, data: byte[]) =
         [| yield! i32 data.Length  // DWORD ResHdr.dwDataSize
            yield! i32 0x00000020  // dwHeaderSize
