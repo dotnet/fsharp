@@ -18,8 +18,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
-        <source>Attributes cannot be assigned to type extensions.</source>
-        <target state="new">Attributes cannot be assigned to type extensions.</target>
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
