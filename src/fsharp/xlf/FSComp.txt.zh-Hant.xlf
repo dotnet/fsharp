@@ -27,6 +27,16 @@
         <target state="translated">成員定義中的非預期符號 '.'。預期為 'with'、'=' 或其他語彙基元。</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
         <target state="translated">請指定用來計算 PDB 中所儲存來源檔案總和檢查碼的演算法。支援的值為: SHA1 或 SHA256 (預設)</target>

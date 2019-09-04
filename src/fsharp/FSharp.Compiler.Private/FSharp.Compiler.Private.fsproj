@@ -227,17 +227,11 @@
     <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith(netstandard))">
       <Link>AbsIL\ilsign.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\writenativeres.fsi">
-      <Link>AbsIL\writenativeres.fsi</Link>
+    <Compile Include="..\..\absil\ilnativeres.fsi">
+      <Link>AbsIL\ilnativeres.fsi</Link>
     </Compile>
-    <Compile Include="..\..\absil\writenativeres.fs">
-      <Link>AbsIL\writenativeres.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\cvtres.fsi">
-      <Link>AbsIL\cvtres.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\cvtres.fs">
-      <Link>AbsIL\cvtres.fs</Link>
+    <Compile Include="..\..\absil\ilnativeres.fs">
+      <Link>AbsIL\ilnativeres.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
       <Link>AbsIL\ilsupp.fsi</Link>
