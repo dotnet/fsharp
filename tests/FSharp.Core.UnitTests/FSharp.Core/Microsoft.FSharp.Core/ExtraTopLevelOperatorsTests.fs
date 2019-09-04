@@ -1,4 +1,4 @@
-﻿namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Core
+﻿namespace FSharp.Core.UnitTests.Core
 
 open NUnit.Framework
 open FSharp.Core.UnitTests.LibraryTestFx

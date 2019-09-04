@@ -1,7 +1,7 @@
 ﻿// A set of regression tests for equality/relational operators and the IComparer<> and IEqualityComparer<>
 // implementation provided by ComparisonIdentity.Structural and HashIdentity.Structural
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Core
+namespace FSharp.Core.UnitTests.Core
 
 open System
 open System.Numerics 

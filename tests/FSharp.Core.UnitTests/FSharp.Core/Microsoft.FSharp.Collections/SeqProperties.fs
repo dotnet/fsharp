@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 [<NUnit.Framework.Category "Collections.Seq">][<NUnit.Framework.Category "FSharp.Core.Collections">]
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.SeqProperties
+module FSharp.Core.UnitTests.Collections.SeqProperties
 
 open System
 open System.Collections.Generic

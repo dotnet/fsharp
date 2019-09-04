@@ -116,6 +116,23 @@ type TaskSeqBuilder() =
             if ``__machine_step$cont`` then
                 __expand_task2.Invoke &sm
             else 
+                if __stateMachinesSupported then
+                    // If state machines are supported, then the resumption jumps directly into the code for __expand_task1
+                    // at the point where computation was suspended.  This code includes the subsequent invoke of
+                    // __expand_task2
+                    ()
+                else
+                    // If state machines are not supported, then we must adjust the resumption to also run __expand_task2
+                    let rec combine () =
+                        MachineFunc<TaskSeqStateMachine<_>>(fun sm -> 
+                            let ``__machine_step$cont`` = sm.ResumptionFunc.Invoke(&sm)
+                            if ``__machine_step$cont`` then 
+                                __expand_task2.Invoke(&sm)
+                            else
+                                sm.ResumptionFunc <- combine ()
+                                false)
+
+                    sm.ResumptionFunc <- combine ()
                 false)
             
     [<NoDynamicInvocation>]
@@ -146,6 +163,8 @@ type TaskSeqBuilder() =
             try
                 let ``__machine_step$cont`` = __expand_body.Invoke &sm
                 step <- ``__machine_step$cont``
+                // TODO: If we are not doing state machine compilation, then if "``__machine_step$cont``" is false we must adjust the 
+                // ResumptionFunc to re-enter the try/with
             with exn -> 
                 caught <- true
                 savedExn <- exn

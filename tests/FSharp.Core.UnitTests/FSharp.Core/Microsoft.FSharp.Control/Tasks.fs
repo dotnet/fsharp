@@ -14,7 +14,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Control.Async type
 
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control.Tasks
+module FSharp.Core.UnitTests.Control.Tasks
 
 //open NUnit.Framework
 open System

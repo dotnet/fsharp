@@ -211,66 +211,152 @@ type TaskBuilder() =
     /// This prevents constructs like `task { return 1; return 2; }`.
     member inline __.Combine(__expand_task1: TaskCode<'TOverall, unit>, __expand_task2: TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
         TaskCode<_,_>(fun sm ->
-            let ``__machine_step$cont`` = __expand_task1.Invoke(&sm)
-            if ``__machine_step$cont``.IsCompleted then 
-                __expand_task2.Invoke(&sm)
+            if __stateMachinesSupported then
+                // NOTE: The code for __expand_task1 may contain await points! Resuming may branch directly
+                // into this code!
+                let ``__machine_step$cont`` = __expand_task1.Invoke(&sm)
+                if ``__machine_step$cont``.IsCompleted then 
+                    __expand_task2.Invoke(&sm)
+                else
+                    TaskStep<'T>(false)
             else
-                TaskStep<'T>(false))
+                let step0 = __expand_task1.Invoke(&sm)
+                if step0.IsCompleted then 
+                    __expand_task2.Invoke(&sm)
+                else
+                    // If state machines are not supported, then we must adjust the resumption to also run __expand_task2
+                    let rec combine () =
+                        MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                            let step = sm.ResumptionFunc.Invoke(&sm)
+                            if step then 
+                                __expand_task2.Invoke(&sm).IsCompleted
+                            else
+                                sm.ResumptionFunc <- combine ()
+                                false)
+
+                    sm.ResumptionFunc <- combine ()
+                    TaskStep<'T>(false))
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline __.While (__expand_condition : unit -> bool, __expand_body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         TaskCode<_,_>(fun sm ->
-            let mutable __stack_completed = true 
-            while __stack_completed && __expand_condition() do
-                __stack_completed <- false 
-                // The body of the 'while' may include an early exit, e.g. return from entire method
-                let ``__machine_step$cont`` = __expand_body.Invoke (&sm)
-                // If we make it to the assignment we prove we've made a step 
-                __stack_completed <- ``__machine_step$cont``.IsCompleted
-            TaskStep<unit>(__stack_completed))
+            if __stateMachinesSupported then 
+                let mutable __stack_completed = true 
+                while __stack_completed && __expand_condition() do
+                    __stack_completed <- false 
+                    // NOTE: The body of the 'while' may contain await points, resuming may branch directly
+                    // into the while loop!
+                    let ``__machine_step$cont`` = __expand_body.Invoke (&sm)
+                    // If we make it to the assignment we prove we've made a step 
+                    __stack_completed <- ``__machine_step$cont``.IsCompleted
+                TaskStep<unit>(__stack_completed)
+            else
+                let rec repeat() = 
+                    MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                        if __expand_condition() then 
+                            let step = __expand_body.Invoke (&sm)
+                            if step.IsCompleted then
+                                repeat().Invoke(&sm)
+                            else
+                                sm.ResumptionFunc <- resume sm.ResumptionFunc
+                                false
+                        else
+                            true)
+                and resume (mf: MachineFunc<_>) =
+                    MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                        let step = mf.Invoke(&sm)
+                        if step then 
+                            repeat().Invoke(&sm)
+                        else
+                            sm.ResumptionFunc <- resume sm.ResumptionFunc
+                            false)
+
+                let step = repeat().Invoke(&sm)
+                TaskStep(step))
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryWith (__expand_body : TaskCode<'TOverall, 'T>, __expand_catch : exn -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
         TaskCode<_,_>(fun sm ->
-            let mutable __stack_completed = false
-            let mutable __stack_caught = false
-            let mutable __stack_savedExn = Unchecked.defaultof<_>
-            try
-                // The try block may contain resumption points.
-                // This is handled by the state machine rewriting 
-                let ``__machine_step$cont`` = __expand_body.Invoke (&sm)
-                // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
-                // may skip this step.
-                __stack_completed <- ``__machine_step$cont``.IsCompleted
-            with exn -> 
-                // The catch block may not contain resumption points.
-                __stack_caught <- true
-                __stack_savedExn <- exn
+            if __stateMachinesSupported then 
+                let mutable __stack_completed = false
+                let mutable __stack_caught = false
+                let mutable __stack_savedExn = Unchecked.defaultof<_>
+                try
+                    // The try block may contain await points.
+                    // This is handled by the state machine rewriting 
+                    let ``__machine_step$cont`` = __expand_body.Invoke (&sm)
+                    // If we make it to the assignment we prove we've made a step
+                    __stack_completed <- ``__machine_step$cont``.IsCompleted
+                with exn -> 
+                    // The catch block may not contain await points.
+                    __stack_caught <- true
+                    __stack_savedExn <- exn
 
-            if __stack_caught then 
-                // Place the catch code outside the catch block 
-                (__expand_catch __stack_savedExn).Invoke(&sm)
+                if __stack_caught then 
+                    // Place the catch code outside the catch block 
+                    (__expand_catch __stack_savedExn).Invoke(&sm)
+                else
+                    TaskStep<'T>(__stack_completed)
             else
-                TaskStep<'T>(__stack_completed))
+                let rec resume (mf: MachineFunc<_>) =
+                    MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                        try
+                            let step = mf.Invoke (&sm)
+                            if step then 
+                                true
+                            else
+                                sm.ResumptionFunc <- resume sm.ResumptionFunc
+                                false
+                        with exn -> 
+                            (__expand_catch exn).Invoke(&sm).IsCompleted)
+                try
+                    let step = __expand_body.Invoke (&sm)
+                    if not step.IsCompleted then 
+                        sm.ResumptionFunc <- resume sm.ResumptionFunc
+                    step
+                        
+                with exn -> 
+                    (__expand_catch exn).Invoke(&sm))
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryFinally (__expand_body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
         TaskCode<_,_>(fun sm ->
-            let mutable __stack_completed = false
-            try
-                let ``__machine_step$cont`` = __expand_body.Invoke (&sm)
-                // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
-                // may skip this step.
-                __stack_completed <- ``__machine_step$cont``.IsCompleted
-            with _ ->
-                compensation()
-                reraise()
+            if __stateMachinesSupported then 
+                let mutable __stack_completed = false
+                try
+                    let ``__machine_step$cont`` = __expand_body.Invoke (&sm)
+                    // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
+                    // may skip this step.
+                    __stack_completed <- ``__machine_step$cont``.IsCompleted
+                with _ ->
+                    compensation()
+                    reraise()
 
-            if __stack_completed then 
-                compensation()
-            TaskStep<'T>(__stack_completed))
+                if __stack_completed then 
+                    compensation()
+                TaskStep<'T>(__stack_completed)
+            else
+                let rec resume (mf: MachineFunc<_>) =
+                    MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                        try
+                            let step = mf.Invoke (&sm)
+                            if not step then 
+                                sm.ResumptionFunc <- resume sm.ResumptionFunc
+                            step
+                        with _ ->
+                            compensation()
+                            reraise())
+                try
+                    let step = __expand_body.Invoke (&sm)
+                    if not step.IsCompleted then 
+                        sm.ResumptionFunc <- resume sm.ResumptionFunc
+                    step
+                        
+                with _ ->
+                    compensation()
+                    reraise())
 
     member inline builder.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (disp : 'Resource, __expand_body : 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.

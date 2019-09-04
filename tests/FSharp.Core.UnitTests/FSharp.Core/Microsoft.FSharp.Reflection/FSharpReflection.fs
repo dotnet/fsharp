@@ -2,7 +2,7 @@
 
 // Various tests for Microsoft.FSharp.Reflection
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Reflection
+namespace FSharp.Core.UnitTests.Reflection
 
 open System
 open System.Reflection

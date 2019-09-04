@@ -86,7 +86,7 @@ CHK							Stress (2766.fs) -- failed
 
 # compiler/runtime unit test known failures
 
-!NETFX35					FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.SeqModule2.SystemLinqSelectWithException -- failed
-!NETFX35					FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.SeqModule2.SystemLinqSelectWithSideEffects -- failed
-!CURRENTUICULTURE1033		FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control.AsyncModule.ContinuationsThreadingDetails.AsyncSansSyncContext -- failed
-!CURRENTUICULTURE1033		FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control.AsyncModule.ContinuationsThreadingDetails.AsyncWithSyncContext -- failed
+!NETFX35					FSharp.Core.UnitTests.Collections.SeqModule2.SystemLinqSelectWithException -- failed
+!NETFX35					FSharp.Core.UnitTests.Collections.SeqModule2.SystemLinqSelectWithSideEffects -- failed
+!CURRENTUICULTURE1033		FSharp.Core.UnitTests.Control.AsyncModule.ContinuationsThreadingDetails.AsyncSansSyncContext -- failed
+!CURRENTUICULTURE1033		FSharp.Core.UnitTests.Control.AsyncModule.ContinuationsThreadingDetails.AsyncWithSyncContext -- failed

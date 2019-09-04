@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 [<NUnit.Framework.Category "Collections.List">][<NUnit.Framework.Category "FSharp.Core.Collections">]
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.ListProperties
+module FSharp.Core.UnitTests.Collections.ListProperties
 
 open System
 open System.Collections.Generic
