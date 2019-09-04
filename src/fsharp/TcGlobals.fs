@@ -306,6 +306,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_raw_expr_tcr             = mk_MFQuotations_tcref fslibCcu "Expr" 
   let v_query_builder_tcref         = mk_MFLinq_tcref fslibCcu "QueryBuilder" 
   let v_querySource_tcr         = mk_MFLinq_tcref fslibCcu "QuerySource`2" 
+  let v_MachineFunc_tcr         = mk_MFCompilerServices_tcref fslibCcu "MachineFunc`1" 
   let v_linqExpression_tcr     = findSysTyconRef ["System";"Linq";"Expressions"] "Expression`1"
 
   let v_il_arr_tcr_map =
@@ -399,6 +400,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkRawQuotedExprTy = TType_app(v_raw_expr_tcr, []) 
   let mkQueryBuilderTy = TType_app(v_query_builder_tcref, []) 
   let mkLinqExpressionTy aty = TType_app(v_linqExpression_tcr, [aty]) 
+  let mkMachineFuncTy aty = TType_app(v_MachineFunc_tcr, [aty]) 
   let v_cons_ucref = mkUnionCaseRef v_list_tcr_canon "op_ColonColon" 
   let v_nil_ucref  = mkUnionCaseRef v_list_tcr_canon "op_Nil" 
 
@@ -692,15 +694,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))  
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
-  //let v_cgh_stateMachinesSupported_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,              "__stateMachinesSupported"             , None                 , None          , [vara],     ([[]], v_bool_ty))
-  let v_cgh_jumptable_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__jumptable"                          , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
-  let v_cgh_stateMachine_info      = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara],     ([[varaTy]], varaTy))
-  let v_cgh_stateMachineStruct_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                  "__stateMachineStruct"                 , None                 , None          , [vara; varb],     ([[varbTy; varcTy; (v_unit_ty --> vardTy)]], vardTy))
-  let v_cgh_machine_info           = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__machine"                            , None                 , None          , [vara],     ([[]], varaTy))
-  let v_cgh_machineAddr_info       = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__machineAddr"                        , None                 , None          , [vara],     ([[]], mkByrefTy varaTy))
-  let v_cgh_newEntryPoint_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__newEntryPoint"                      , None                 , None          , [],          ([[v_unit_ty]], v_int_ty))
-  let v_cgh_entryPoint_info        = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__entryPoint"                         , None                 , None          , [vara],     ([[v_int_ty]; [v_unit_ty --> varaTy]], varaTy))
-  let v_cgh_return_info            = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__return"                             , None                 , None          , [vara],     ([[varaTy]], varaTy))
+  let v_cgh_stateMachinesSupported_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,              "__stateMachinesSupported"             , None                 , None          , [vara],     ([[]], v_bool_ty))
+  let v_cgh_jumptable_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__jumptableSMH"                       , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
+  let v_cgh_stateMachine_info      = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachineSMH"                    , None                 , None          , [vara],     ([[varaTy]], varaTy))
+  let v_cgh_stateMachineStruct_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                  "__stateMachineStructSMH"              , None                 , None          , [vara; varb],     ([[varbTy; varcTy; (v_unit_ty --> vardTy)]], vardTy))
+  let v_cgh_entryPoint_info        = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__entryPoint"                         , None                 , None          , [vara],     ([[mkMachineFuncTy varaTy]], mkMachineFuncTy varaTy))
+  let v_cgh_entryPointStaticId_info  = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                 "__entryPointIdSMH"                    , None                 , None          , [vara],     ([[mkMachineFuncTy varaTy]], v_int_ty))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -1432,14 +1431,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.quote_to_linq_lambda_info        = v_quote_to_linq_lambda_info
 
 
-  member val cgh_machine_vref = ValRefForIntrinsic v_cgh_machine_info
-  member val cgh_machineAddr_vref = ValRefForIntrinsic v_cgh_machineAddr_info
   member val cgh_stateMachineStruct_vref = ValRefForIntrinsic v_cgh_stateMachineStruct_info
   member val cgh_stateMachine_vref = ValRefForIntrinsic v_cgh_stateMachine_info
+  member val cgh_stateMachinesSupported_vref = ValRefForIntrinsic v_cgh_stateMachinesSupported_info
   member val cgh_jumptable_vref = ValRefForIntrinsic v_cgh_jumptable_info
-  member val cgh_newEntryPoint_vref = ValRefForIntrinsic v_cgh_newEntryPoint_info
   member val cgh_entryPoint_vref = ValRefForIntrinsic v_cgh_entryPoint_info
-  member val cgh_return_vref = ValRefForIntrinsic v_cgh_return_info
+  member val cgh_entryPointStaticId_vref = ValRefForIntrinsic v_cgh_entryPointStaticId_info
 
   member val generic_hash_withc_tuple2_vref = ValRefForIntrinsic v_generic_hash_withc_tuple2_info
   member val generic_hash_withc_tuple3_vref = ValRefForIntrinsic v_generic_hash_withc_tuple3_info

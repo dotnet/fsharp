@@ -26,50 +26,47 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// A marker interface to give priority to different available overloads
     type IPriority1 = interface inherit IPriority2 end
 
+    type MachineFunc<'Machine> = delegate of byref<'Machine> -> bool
+
+    type MoveNextMethod<'Template> = delegate of byref<'Template> -> unit
+
+    type SetMachineStateMethod<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
+
+    type AfterMethod<'Template, 'Result> = delegate of byref<'Template> -> 'Result
+
     module StateMachineHelpers = 
 
-        type MachineFunc<'Machine, 'Result> = delegate of byref<'Machine> -> 'Result
-
-        type MachineFunc<'Machine, 'Arg, 'Result> = delegate of byref<'Machine> * 'Arg -> 'Result
-
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        /// Indicates whether a computation description is converted or not
+        /// Statically determines whether a computation description is converted or not
         let __stateMachinesSupported<'T> : bool = false
         
+        /// Indicates that the given closure can be used as an entry point in a state machine
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        let __entryPoint(code: MachineFunc<'Machine>) : MachineFunc<'Machine> = code
+
+        /// In converted code, fetches the jumptable ID of the given entry point
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        let __entryPointIdSMH(_ep: MachineFunc<'Machine>) : int =
+            failwith "__entryPointIdSMH should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
+
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         /// If a computation description has been converted, inserts a jump table between different entry points
-        let __jumptable<'T> (_x:int) (_code: 'T)  : 'T = failwith "__jumptable should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
+        let __jumptableSMH<'T> (_x:int) (_code: 'T)  : 'T =
+            failwith "__jumptableSMH should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         /// Attempts to convert a computation description to a reference state machine
-        let __stateMachine<'T> (_x: 'T) : 'T =
-            failwith "__stateMachine should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
+        let __stateMachineSMH<'T> (_x: 'T) : 'T =
+            failwith "__stateMachineSMH should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         /// Describes a value-type (struct) state machine based on the given template.
         ///
         /// The template guides the generation of a new struct type.  Any mention of the template in any of the code is rewritten to that
         /// new struct type.  Meth1 and Meth2 are used to implement the methods on the interface implemented by the struct type.
-        let __stateMachineStruct<'Template, 'Result> (_moveNext: MachineFunc<'Template, unit>) (_setMachineState: MachineFunc<'Template, IAsyncStateMachine, unit>) (_after: MachineFunc<'Template, 'Result>): 'Result =
-            failwith "__stateMachineStruct should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
+        let __stateMachineStructSMH<'Template, 'Result> (_moveNext: MoveNextMethod<'Template>) (_setMachineState: MoveNextMethod<'Template>) (_after: AfterMethod<'Template, 'Result>): 'Result =
+            failwith "__stateMachineStructSMH should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
         
-        /// Indicates that the given closure can be used as an entry point in a state machine
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __entryPoint(code: 'Machine -> 'Step) : ('Machine -> 'Step) = code
-
-        /// In converted code, fetches the jumptable ID of the given entry point
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __entryPointStaticId(_ep: 'Machine -> 'Step) : int =
-            failwith "__entryPointStaticId should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
-
-        /// Indicates that the given closure can be used as an entry point in a state machine
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __entryPointStruct(code: MachineFunc<'Machine, 'Step>) : MachineFunc<'Machine, 'Step> = code
-
-        /// In converted code, fetches the jumptable ID of the given entry point
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __entryPointStructStaticId(_ep: MachineFunc<'Machine, 'Step>) : int = failwith "__entryPointStructStaticId should always be guarded by __stateMachinesSupported and only used in valid state machine implementations"
-
 #endif
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
@@ -95,14 +92,13 @@ open Microsoft.FSharp.Collections
 type TaskStep<'T>(completed: bool) = 
     member x.IsCompleted = completed
 
-
 //[<NoComparison; NoEquality>]
 //type TaskStateMachine<'T> =
 //    [<DefaultValue(false)>]
 //    val mutable State : TaskStateMachine<'T>
 
 [<Struct; NoComparison; NoEquality>]
-/// Acts as a template for struct state machines introduced by __stateMachineStruct, and also as a reflective implementation
+/// Acts as a template for struct state machines introduced by __stateMachineStructSMH, and also as a reflective implementation
 type TaskStateMachine<'TOverall> =
 
     /// Holds the final result of the state machine
@@ -115,26 +111,26 @@ type TaskStateMachine<'TOverall> =
 
     /// When interpreted, holds the continuation for the further execution of the state machine
     [<DefaultValue(false)>]
-    val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'TOverall>, obj>
+    val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'TOverall>>
 
     [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'TOverall>
 
     interface IAsyncStateMachine with 
         
-        // Used when interpreted.  For "__stateMachineStruct" it is replaced.
+        // Used when interpreted.  For "__stateMachineStructSMH" it is replaced.
         member sm.MoveNext() = 
             try
                 //Console.WriteLine("unconverted [{0}] step from {1}", sm.GetHashCode(), resumptionPoint)
-                let step = sm.ResumptionFunc.Invoke(&sm) :?> TaskStep<_> // TODO needs to account for wrong type of task step
-                if step.IsCompleted then 
+                let step = sm.ResumptionFunc.Invoke(&sm) 
+                if step then 
                     //Console.WriteLine("unconverted [{0}] SetResult {1}", sm.GetHashCode(), res)
                     sm.MethodBuilder.SetResult(sm.Result)
             with exn ->
                 //Console.WriteLine("unconverted [{0}] exception {1}", sm.GetHashCode(), exn)
                 sm.MethodBuilder.SetException exn
 
-        // Used when interpreted.  For "__stateMachineStruct" it is replaced.
+        // Used when interpreted.  For "__stateMachineStructSMH" it is replaced.
         member sm.SetStateMachine(state) = 
             sm.MethodBuilder.SetStateMachine(state)
 
@@ -161,11 +157,12 @@ type TaskBuilder() =
         TaskCode<'TOverall, 'T>(fun sm -> (__expand_f()).Invoke(&sm))
 
     member inline __.Run(__expand_code : TaskCode<'TOverall, 'TOverall>) : Task<'TOverall> = 
+#if ENABLED
         if __stateMachinesSupported then 
-            __stateMachineStruct<TaskStateMachine<'TOverall>, Task<'TOverall>>
+            __stateMachineStructSMH<TaskStateMachine<'TOverall>, Task<'TOverall>>
                 // MoveNext
                 (MachineFunc<_,_>(fun sm -> 
-                    __jumptable 
+                    __jumptableSMH 
                         sm.ResumptionPoint 
                         (   try
                                 //Console.WriteLine("[{0}] step from {1}", sm.GetHashCode(), resumptionPoint)
@@ -189,7 +186,9 @@ type TaskBuilder() =
                     //Console.WriteLine("[{0}] unwrap", sm.GetHashCode())
                     sm.MethodBuilder.Task))
         else
+#endif
             let mutable sm = TaskStateMachine<'TOverall>()
+            sm.ResumptionFunc <- MachineFunc<_>(fun sm -> __expand_code.Invoke(&sm).IsCompleted) 
             //Console.WriteLine("[{0}] start", sm.GetHashCode())
             sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
             sm.MethodBuilder.Start(&sm)
@@ -216,7 +215,7 @@ type TaskBuilder() =
             if ``__machine_step$cont``.IsCompleted then 
                 __expand_task2.Invoke(&sm)
             else
-                TaskStep<'T>(``__machine_step$cont``.IsCompleted))
+                TaskStep<'T>(false))
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline __.While (__expand_condition : unit -> bool, __expand_body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
@@ -291,21 +290,26 @@ type TaskBuilder() =
             let mutable awaiter = task.GetAwaiter()
 
             let CONT =
-                __entryPointStruct (MachineFunc<TaskStateMachine< ^T >, _>(fun sm -> 
+                __entryPoint (MachineFunc<TaskStateMachine<'T>>(fun sm -> 
                     let result = awaiter.GetResult()
                     sm.Result <- result
-                    TaskStep<'T>(true)))
+                    true))
 
             // shortcut to continue immediately
             if task.IsCompleted then
-                CONT.Invoke(&sm)
+                let __stack_completed = CONT.Invoke(&sm)
+                TaskStep<'T>(__stack_completed)
             else
+#if ENABLED
                 if __stateMachinesSupported then 
                     // If the task definition has been converted to a state machine then a continuation label is used
-                    sm.ResumptionPoint <- __entryPointStructStaticId CONT
+                    sm.ResumptionPoint <- __entryPointIdSMH CONT
                 else
                     // If the task definition has not been converted to a state machine then a continuation function is used
-                    sm.ResumptionFunc <- MachineFunc<_,_>(fun sm -> box(CONT.Invoke(&sm))) 
+                    sm.ResumptionFunc <- CONT
+#else
+                sm.ResumptionFunc <- CONT
+#endif
                 sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'T>(false))
 
@@ -327,18 +331,25 @@ and [<Sealed>] Witnesses() =
             let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
             let CONT = 
-                __entryPointStruct (MachineFunc<TaskStateMachine<'TOverall>, TaskStep<'TResult2>>( fun sm -> 
+                __entryPoint (MachineFunc<TaskStateMachine<'TOverall>>( fun sm -> 
                     let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                    (__expand_continuation result).Invoke(&sm)))
+                    let ``__machine_step$cont`` = (__expand_continuation result).Invoke(&sm)
+                    ``__machine_step$cont``.IsCompleted))
 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                CONT.Invoke(&sm)
+                let __stack_completed = CONT.Invoke(&sm)
+                TaskStep<'TResult2>(__stack_completed)
             else
+#if ENABLED
                 if __stateMachinesSupported then 
-                    sm.ResumptionPoint <- __entryPointStructStaticId CONT
+                    sm.ResumptionPoint <- __entryPointIdSMH CONT
                 else
-                    sm.ResumptionFunc <- MachineFunc<_,_>(fun sm -> box(CONT.Invoke(&sm))) 
+                    sm.ResumptionFunc <- CONT
+#else
+                ignore sm.ResumptionFunc
+                //sm.ResumptionFunc <- CONT
+#endif
                 sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'TResult2>(false))
 
@@ -349,18 +360,24 @@ and [<Sealed>] Witnesses() =
             let mutable awaiter = task.GetAwaiter()
 
             let CONT = 
-                __entryPointStruct (MachineFunc<_,_>(fun sm -> 
+                __entryPoint (MachineFunc<TaskStateMachine<'TOverall>>(fun sm -> 
                     let result = awaiter.GetResult()
-                    (__expand_continuation result).Invoke(&sm)))
+                    let ``__machine_step$cont`` = (__expand_continuation result).Invoke(&sm)
+                    ``__machine_step$cont``.IsCompleted))
 
             // shortcut to continue immediately
             if awaiter.IsCompleted then 
-                CONT.Invoke(&sm)
+                let __stack_completed = CONT.Invoke(&sm)
+                TaskStep<'TResult2>(__stack_completed)
             else
+#if ENABLED
                 if __stateMachinesSupported then 
-                    sm.ResumptionPoint <- __entryPointStructStaticId CONT
+                    sm.ResumptionPoint <- __entryPointIdSMH CONT
                 else
-                    sm.ResumptionFunc <- MachineFunc<_,_>(fun sm -> box(CONT.Invoke(&sm))) 
+                    sm.ResumptionFunc <- CONT
+#else
+                sm.ResumptionFunc <- CONT
+#endif
                 sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'TResult2>(false))
 
@@ -379,19 +396,24 @@ and [<Sealed>] Witnesses() =
             let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
             let CONT =
-                __entryPointStruct (MachineFunc<TaskStateMachine< ^T >, _>(fun sm -> 
+                __entryPoint (MachineFunc<TaskStateMachine< ^T >>(fun sm -> 
                     let result = (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
                     sm.Result <- result
-                    TaskStep<'T>(true)))
+                    true))
 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                CONT.Invoke(&sm)
+                let __stack_completed = CONT.Invoke(&sm)
+                TaskStep< ^T > (__stack_completed)
             else
+#if ENABLED
                 if __stateMachinesSupported then 
-                    sm.ResumptionPoint <- __entryPointStructStaticId CONT
+                    sm.ResumptionPoint <- __entryPointIdSMH CONT
                 else
-                    sm.ResumptionFunc <- MachineFunc<_,_>(fun sm -> box(CONT.Invoke(&sm))) 
+                    sm.ResumptionFunc <- CONT
+#else
+                sm.ResumptionFunc <- CONT
+#endif
                 sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'T>(false))
 
@@ -401,21 +423,26 @@ and [<Sealed>] Witnesses() =
             let mutable awaiter = task.GetAwaiter()
 
             let CONT =
-                __entryPointStruct (MachineFunc<TaskStateMachine< ^T >, _>(fun sm -> 
+                __entryPoint (MachineFunc<TaskStateMachine<'T>>(fun sm -> 
                     let result = awaiter.GetResult()
                     sm.Result <- result
-                    TaskStep<'T>(true)))
+                    true))
 
             // shortcut to continue immediately
             if task.IsCompleted then
-                CONT.Invoke(&sm)
+                let __stack_completed = CONT.Invoke(&sm)
+                TaskStep<'T>(__stack_completed)
             else
+#if ENABLED
                 if __stateMachinesSupported then 
                     // If the task definition has been converted to a state machine then a continuation label is used
-                    sm.ResumptionPoint <- __entryPointStructStaticId CONT
+                    sm.ResumptionPoint <- __entryPointIdSMH CONT
                 else
                     // If the task definition has not been converted to a state machine then a continuation function is used
-                    sm.ResumptionFunc <- MachineFunc<_,_>(fun sm -> box(CONT.Invoke(&sm))) 
+                    sm.ResumptionFunc <- CONT
+#else
+                sm.ResumptionFunc <- CONT
+#endif
                 sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'T>(false))
 
@@ -462,7 +489,7 @@ module ContextInsensitiveTasks =
 
             // get an awaiter from the task
             let mutable awaiter = (^TaskLike : (member GetAwaiter : unit -> ^Awaiter)(task))
-            let CONT = __entryPointStruct (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
+            let CONT = __entryPoint (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
                 CONT.Invoke(&sm)
@@ -482,7 +509,7 @@ module ContextInsensitiveTasks =
             let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
-            let CONT = __entryPointStruct (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
+            let CONT = __entryPoint (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
                 CONT.Invoke(&sm)
@@ -493,7 +520,7 @@ module ContextInsensitiveTasks =
         [<NoDynamicInvocation>]
         static member inline CanBind (_priority :IPriority1, sm: TaskStateMachine<'TOverall>, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
             let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
-            let CONT = __entryPointStruct (fun () -> __expand_continuation (awaiter.GetResult()))
+            let CONT = __entryPoint (fun () -> __expand_continuation (awaiter.GetResult()))
             if awaiter.IsCompleted then
                 CONT.Invoke(&sm)
             else
@@ -514,7 +541,7 @@ module ContextInsensitiveTasks =
 
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(task))
-            let CONT = __entryPointStruct (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
+            let CONT = __entryPoint (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
@@ -534,7 +561,7 @@ module ContextInsensitiveTasks =
             let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
-            let CONT = __entryPointStruct (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
+            let CONT = __entryPoint (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
@@ -546,7 +573,7 @@ module ContextInsensitiveTasks =
         [<NoDynamicInvocation>]
         static member inline CanReturnFrom (_priority: IPriority1, sm: TaskStateMachine<'T>, task: Task<'T>) : TaskStep<'T> =
             let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
-            let CONT = __entryPointStruct (fun () -> sm.SetResult (awaiter.GetResult()); TaskStep<'T>(true))
+            let CONT = __entryPoint (fun () -> sm.SetResult (awaiter.GetResult()); TaskStep<'T>(true))
             if task.IsCompleted then
                 CONT.Invoke(&sm)
             else

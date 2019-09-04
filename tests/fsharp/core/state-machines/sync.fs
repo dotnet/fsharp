@@ -20,9 +20,17 @@ type SyncBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : SyncCode<'T>) : 'T = 
+#if ENABLED
         (__stateMachine
             { new SyncMachine<'T>() with 
-                member __.Step ()  = __jumptable 0 (__expand_code ()) }).Start()
+                member __.Step ()  = __jumptableSMH 0 (__expand_code ()) }).Start()
+#else
+        let sm = 
+            { new SyncMachine<'T>() with 
+                member sm.Step () = 
+                    __expand_code () }
+        sm.Start()
+#endif
 
     [<NoDynamicInvocation>]
     member inline __.Zero() : SyncCode<unit> = 

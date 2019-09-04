@@ -6,6 +6,7 @@ open System
 open System.Collections
 open System.Collections.Generic
 open System.Runtime.CompilerServices
+open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 
 [<AbstractClass>]
@@ -13,13 +14,15 @@ type SeqStateMachine<'T>() =
     let disposalStack = ResizeArray<(unit -> unit)>()
 
     /// Proceed to the next state or raise an exception
-    abstract Step : pc: int -> bool
+    abstract Step : unit -> bool
 
     member val Current : 'T = Unchecked.defaultof<'T> with get, set
 
+#if ENABLED
     member val ResumptionPoint : int = 0 with get, set
+#endif
 
-    member val Resumption : (SeqStateMachine<'T> -> bool) = Unchecked.defaultof<_> with get, set
+    member val ResumptionFunc : MachineFunc<SeqStateMachine<'T>> = Unchecked.defaultof<_> with get, set
 
     interface IEnumerable with
         member this.GetEnumerator() = 
@@ -46,21 +49,16 @@ type SeqStateMachine<'T>() =
     interface IEnumerator with
         
         member __.Reset() = failwith "no reset supported"
-        member sm.Current = box sm.Current
-        
-        member this.MoveNext() = 
-            this.MoveNextImpl()
+        member sm.Current = box sm.Current        
+        member sm.MoveNext() = sm.Step()
         
     interface IEnumerator<'T> with
         member sm.Current = sm.Current
 
     member __.PushDispose (f: unit -> unit) = disposalStack.Add(f)
+
     member __.PopDispose () = disposalStack.RemoveAt(disposalStack.Count - 1)
     
-    member sm.MoveNextImpl() : bool =
-        Console.WriteLine("[{0}] step from {1}", sm.GetHashCode(), sm.ResumptionPoint)
-        sm.Step sm.ResumptionPoint
-
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     member sm.Start() = (sm :> IEnumerable<'T>)
 
@@ -73,9 +71,19 @@ type SeqBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : SeqCode<'T>) : IEnumerable<'T> = 
+#if ENABLED
         (__stateMachine
             { new SeqStateMachine<'T>() with 
-                member sm.Step pc = __jumptable pc (__expand_code sm) }).Start()
+                member sm.Step () = __jumptableSMH sm.ResumptionPoint (__expand_code sm) }).Start()
+#else
+            let sm = 
+                { new SeqStateMachine<'T>() with 
+                    member sm.Step () = 
+                        let mutable sm = sm
+                        sm.ResumptionFunc.Invoke(&sm) }
+            sm.ResumptionFunc <- MachineFunc<_>(fun sm -> __expand_code sm)
+            sm.Start()
+#endif
 
     [<NoDynamicInvocation>]
     member inline __.Zero() : SeqCode<'T> =
@@ -153,11 +161,15 @@ type SeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Yield (v: 'T) : SeqCode<'T> =
         (fun sm ->
-            let CONT = __entryPoint (fun sm -> false)
+            let CONT = __entryPoint (MachineFunc<_>(fun sm -> false))
+#if ENABLED
             if __stateMachinesSupported then 
-                sm.ResumptionPoint <- __entryPointStaticId CONT
+                sm.ResumptionPoint <- __entryPointIdSMH CONT
             else 
-                sm.Resumption <- CONT
+                sm.ResumptionFunc <- CONT
+#else
+            sm.ResumptionFunc <- CONT
+#endif
             sm.Current <- v
             true)
 

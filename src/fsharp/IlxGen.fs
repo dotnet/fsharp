@@ -3099,14 +3099,11 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel =
       GenSequel cenv eenv.cloc cgbuf sequel
 
   | Expr.Val (v, _, m), _, _ 
-      when valRefEq g v g.cgh_entryPoint_vref || 
+      when valRefEq g v g.cgh_entryPointStaticId_vref || 
            valRefEq g v g.cgh_jumptable_vref || 
-           valRefEq g v g.cgh_machine_vref || 
-           valRefEq g v g.cgh_machineAddr_vref || 
-           valRefEq g v g.cgh_newEntryPoint_vref || 
-           valRefEq g v g.cgh_return_vref || 
            valRefEq g v g.cgh_stateMachineStruct_vref|| 
-           valRefEq g v g.cgh_stateMachine_vref ->
+           valRefEq g v g.cgh_stateMachine_vref 
+           ->
                 errorR(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(), m))
 
   // Emit "methodhandleof" calls as ldtoken instructions
@@ -4212,7 +4209,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, 
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects made via `__stateMachine` and LowerCallsAndSeqs.
+    // State vars are only populated for state machine objects made via `__stateMachineSMH` and LowerCallsAndSeqs.
     //
     // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.
@@ -4378,7 +4375,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects made via `__stateMachine` and LowerCallsAndSeqs.
+    // State vars are only populated for state machine objects made via `__stateMachineSMH` and LowerCallsAndSeqs.
     //
     // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.

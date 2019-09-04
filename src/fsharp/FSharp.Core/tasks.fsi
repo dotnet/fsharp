@@ -16,34 +16,32 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// A marker interface to give priority to different available overloads
     type IPriority1 = interface inherit IPriority2 end
 
-    module StateMachineHelpers = 
-        type MachineFunc<'Machine, 'Result> = delegate of byref<'Machine> -> 'Result
+    type MachineFunc<'Machine> = delegate of byref<'Machine> -> bool
 
-        type MachineFunc<'Machine, 'Arg, 'Result> = delegate of byref<'Machine> * 'Arg -> 'Result
+    type MoveNextMethod<'Template> = delegate of byref<'Template> -> unit
+
+    type SetMachineStateMethod<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
+
+    type AfterMethod<'Template, 'Result> = delegate of byref<'Template> -> 'Result
+
+    module StateMachineHelpers = 
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        val __entryPoint: MachineFunc<'Machine> -> MachineFunc<'Machine>
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         val __stateMachinesSupported<'T> : bool 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __jumptable : pc: int -> code: 'T -> 'T
+        val __jumptableSMH : pc: int -> code: 'T -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __stateMachine<'T> : _obj: 'T -> 'T
+        val __stateMachineSMH<'T> : _obj: 'T -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __stateMachineStruct<'Template, 'Result> : moveNext: MachineFunc<'Template, unit> -> _setMachineState: MachineFunc<'Template, IAsyncStateMachine, unit> -> after: MachineFunc<'Template, 'Result> -> 'Result
+        val __stateMachineStructSMH<'Template, 'Result> : moveNext: MoveNextMethod<'Template> -> _setMachineState: MoveNextMethod<'Template> -> after: AfterMethod<'Template, 'Result> -> 'Result
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __entryPointStruct: MachineFunc<'Machine, 'Step> -> MachineFunc<'Machine, 'Step>
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __entryPointStructStaticId: MachineFunc<'Machine, 'Step> -> int
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __entryPoint: ('Machine -> 'Step) -> ('Machine -> 'Step)
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __entryPointStaticId: ('Machine -> 'Step) -> int
+        val __entryPointIdSMH: MachineFunc<'Machine> -> int
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
@@ -77,7 +75,7 @@ type TaskStateMachine<'T> =
 
     /// When interpreted, holds the continuation for the further execution of the state machine
     [<DefaultValue(false)>]
-    val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'T>, obj>
+    val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'T>>
 
     [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>

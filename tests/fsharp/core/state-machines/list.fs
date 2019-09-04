@@ -97,9 +97,14 @@ type ResizeArrayBuilder() =
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : ListCode<'T>) : ResizeArray<'T> = 
+#if ENABLED
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member sm.Populate () = __jumptable 0 (__expand_code sm) }).ToResizeArray()
+                member sm.Populate () = __jumptableSMH 0 (__expand_code sm) }).ToResizeArray()
+#else
+            { new ListStateMachine<'T>() with 
+                member sm.Populate () = __expand_code sm }.ToResizeArray()
+#endif
 
 let rsarray = ResizeArrayBuilder()
 
@@ -107,19 +112,29 @@ type ListBuilder() =
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : ListCode<'T>) : 'T list = 
+#if ENABLED
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member sm.Populate () = __jumptable 0 (__expand_code sm) }).ToList()
-        
+                member sm.Populate () = __jumptableSMH 0 (__expand_code sm) }).ToList()
+#else
+        { new ListStateMachine<'T>() with 
+            member sm.Populate () = __expand_code sm }.ToList()
+#endif
+
 let list = ListBuilder()
 
 type ArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : ListCode<'T>) : 'T[] = 
+#if ENABLED
         (__stateMachine
             { new ListStateMachine<'T>() with 
-                member sm.Populate () = __jumptable 0 (__expand_code sm) }).ToArray()
+                member sm.Populate () = __jumptableSMH 0 (__expand_code sm) }).ToArray()
+#else
+        { new ListStateMachine<'T>() with 
+            member sm.Populate () = __expand_code sm }.ToArray()
+#endif
         
 let array = ArrayBuilder()
 

@@ -814,8 +814,6 @@ type StateMachineConversionFirstPhaseResult =
    }
 
 
-
-
 let (|RefStateMachineExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh_stateMachine_vref (_, [e], _m) -> Some e
@@ -826,11 +824,12 @@ let (|StructStateMachineExpr|_|) g expr =
     | ValApp g g.cgh_stateMachineStruct_vref ([templateStructTy; _ty2; _ty3; _afterTy], [meth1Expr; meth2Expr; afterExpr], _m) -> Some (templateStructTy, meth1Expr, meth2Expr, afterExpr)
     | _ -> None
 
-let (|NewEntryPointExpr|_|) g expr =
+let (|EntryPointExpr|_|) g expr =
     match expr with
-    | ValApp g g.cgh_newEntryPoint_vref (_, [_], _m) -> Some ()
+    | ValApp g g.cgh_entryPoint_vref (_, [e], _m) -> Some (e)
     | _ -> None
 
+(*
 let (|ReturnExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh_return_vref (_, [e], m) -> Some (e, m)
@@ -845,10 +844,11 @@ let (|MachineAddrExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh_machineAddr_vref ([ty], _, m) -> Some (ty, m)
     | _ -> None
+*)
 
-let (|EntryPointExpr|_|) g expr =
+let (|EntryPointStaticIdExpr|_|) g expr =
     match expr with
-    | ValApp g g.cgh_entryPoint_vref (_, [e], m) -> Some (e, m)
+    | ValApp g g.cgh_entryPointStaticId_vref (_, [e], m) -> Some (e, m)
     | _ -> None
 
 let (|JumpTableExpr|_|) g expr =
@@ -896,9 +896,9 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 //
 // GIVEN:
 //   member inline __.Run(code : unit -> TaskStep<'T>) = 
-//       (__stateMachine
+//       (__stateMachineSMH
 //           { new TaskStateMachine<'T>() with 
-//               member __.Step(pc) = __jumptable pc code }).Start()
+//               member __.Step(pc) = __jumptableSMH pc code }).Start()
 //
 // THEN
 //    task { ... }
@@ -909,12 +909,12 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 //    let code = 
 //        let builder@ = task
 //        (fun ....)
-//    (__stateMachine code).Start()
+//    (__stateMachineSMH code).Start()
 //
 // IN RELEASE:
 //
 //    let code = (fun ...)
-//    (__stateMachine code).Start()
+//    (__stateMachineSMH code).Start()
 
 // TODO: this is too adhoc
 let isMustExpandVar (v: Val) = 
@@ -928,10 +928,15 @@ let isExpandVar (v: Val) =
     || (v.BaseOrThisInfo = MemberThisVal)
 
 type env = 
-    { Macros: ValMap<Expr>
-      MachineAddrExpr: Expr option }
+    { 
+      Macros: ValMap<Expr>
+      //MachineAddrExpr: Expr option 
+    }
 
-    static member Empty = { Macros = ValMap.Empty; MachineAddrExpr = None }
+    static member Empty = 
+        { Macros = ValMap.Empty
+          //MachineAddrExpr = None 
+        }
 
 let ConvertStateMachineExprToObject g overallExpr =
 
@@ -950,9 +955,11 @@ let ConvertStateMachineExprToObject g overallExpr =
             let envR = { env with Macros = env.Macros.Add bind.Var bind.Expr }
             BindExpansions g envR bodyExpr
 
-        // Bind 'let CODE = __newEntryPoint() in bodyExpr'
-        | Expr.Let (TBind(v, NewEntryPointExpr g (), _sp), bodyExpr, m, _) ->
-            if sm_verbose then printfn "found __newEntryPoint()"
+
+        // Bind 'let CODE = __entryPoint(code) in bodyExpr'
+        | Expr.Let (TBind(v, EntryPointExpr g _code, _sp), bodyExpr, m, _) ->
+            if sm_verbose then printfn "found __entryPoint()"
+            // Fix this
             let envR = { env with Macros = env.Macros.Add v (mkInt g m (genPC())) }
             BindExpansions g envR bodyExpr
 
@@ -977,6 +984,7 @@ let ConvertStateMachineExprToObject g overallExpr =
     // Apply a single expansion of __expand_ABC and __newEntryPoint in an arbitrary expression
     let TryApplyExpansions g (env: env) expr = 
         match expr with
+(*
         // __machine --> ldarg.0
         | MachineExpr g (ty, m) -> 
             Some (mkGetArg0 m ty)
@@ -985,6 +993,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             match env.MachineAddrExpr with 
             | None -> Some (mkGetArg0 m (mkByrefTy g ty))
             | Some e -> Some e
+*)
 
         // __expand_code --> [expand_code]
         | Expr.Val (vref, _, _) when env.Macros.ContainsVal vref.Deref ->
@@ -1091,8 +1100,9 @@ let ConvertStateMachineExprToObject g overallExpr =
                     | Expr.Lambda (_, _, _, [_dummyv], codeExpr, m, _) ->
                         if sm_verbose then printfn "Found code lambda..."
                         let meth2ExprR = ConvertStateMachineLeafExpression env meth2Expr
-                        let machineAddrVar, machineAddrExpr = mkCompGenLocal m "machineAddr" (mkByrefTy g templateStructTy)
-                        let startExprR = ConvertStateMachineLeafExpression { env with MachineAddrExpr = Some machineAddrExpr } startExpr
+                        let machineAddrVar, _machineAddrExpr = mkCompGenLocal m "machineAddr" (mkByrefTy g templateStructTy)
+                        let startExprR = ConvertStateMachineLeafExpression env startExpr
+                        //let startExprR = ConvertStateMachineLeafExpression { env with MachineAddrExpr = Some machineAddrExpr } startExpr
                         let remake2 (methodBodyExprWithJumpTable, stateVars) = 
                             if sm_verbose then 
                                 printfn "----------- AFTER REWRITE methodBodyExprWithJumpTable ----------------------"
@@ -1147,13 +1157,14 @@ let ConvertStateMachineExprToObject g overallExpr =
             match expr with 
         
             // The expanded code for state machines may use __entryPoint.  This indicates a resumption point.
-            | EntryPointExpr g (ExpandsTo g env (Int32Expr pc), m) ->
+            | EntryPointStaticIdExpr g (ExpandsTo g env (Int32Expr pc), m) ->
                 { phase1 = expr
                   phase2 = (fun pc2lab -> Expr.Op (TOp.Label pc2lab.[pc], [], [], m))
                   entryPoints=[pc]
                   stateVars = []
                   asyncVars = emptyFreeVars }
 
+(*
             // The expanded code for state machines may use __return.  This construct returns from the
             // overall method of the state machine.
             //
@@ -1169,6 +1180,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                   entryPoints = []
                   stateVars = []
                   asyncVars = emptyFreeVars }
+*)
 
             // The expanded code for state machines may use sequential binding and sequential execution.
             //
