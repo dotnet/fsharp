@@ -35,9 +35,7 @@ type IStream = System.Runtime.InteropServices.ComTypes.IStream
 /// The function may be called twice, once with a zero-RVA and
 /// arbitrary buffer, and once with the real buffer.  The size of the
 /// required buffer is returned.
-type PEFileType = X86 | X64
-
-val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileType -> tempFilePath:string -> byte[]
+val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> byte[]
 val unlinkResource: int32 -> byte[] -> byte[]
 
 #if !FX_NO_PDB_WRITER
