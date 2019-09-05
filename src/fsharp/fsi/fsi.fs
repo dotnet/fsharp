@@ -1338,12 +1338,7 @@ type internal FsiDynamicCompiler
 // ctrl-c handling
 //----------------------------------------------------------------------------
 
-module internal NativeMethods = 
-
-    type ControlEventHandler = delegate of int -> bool
-
-    [<DllImport("kernel32.dll")>]
-    extern bool SetConsoleCtrlHandler(ControlEventHandler _callback,bool _add)
+type ControlEventHandler = delegate of int -> bool
 
 
 // One strange case: when a TAE happens a strange thing 
@@ -1372,8 +1367,8 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
     let mutable interruptAllowed = InterruptIgnored
     let mutable killThreadRequest = NoRequest
 
-    let mutable ctrlEventHandlers = [] : NativeMethods.ControlEventHandler list
-    let mutable ctrlEventActions  = [] : (unit -> unit) list 
+    let mutable ctrlEventHandlers = []: ControlEventHandler list
+    let mutable ctrlEventActions  = []: (unit -> unit) list
     let mutable exitViaKillThread = false
 
     let mutable posixReinstate = (fun () -> ())
@@ -1429,10 +1424,9 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
 
         // WINDOWS TECHNIQUE: .NET has more safe points, and you can do more when a safe point. 
         // Hence we actually start up the killer thread within the handler.
-        let ctrlEventHandler = new NativeMethods.ControlEventHandler(fun i ->  if i = CTRL_C then (raiseCtrlC(); true) else false ) 
+        let ctrlEventHandler = new ControlEventHandler(fun i ->  if i = CTRL_C then (raiseCtrlC(); true) else false ) 
         ctrlEventHandlers <- ctrlEventHandler :: ctrlEventHandlers
         ctrlEventActions  <- raiseCtrlC       :: ctrlEventActions
-        let _resultOK = NativeMethods.SetConsoleCtrlHandler(ctrlEventHandler,true)
         exitViaKillThread <- false // don't exit via kill thread
 
     member x.PosixInvoke(n:int) = 
