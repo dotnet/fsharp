@@ -143,4 +143,3 @@ module SurfaceArea =
             sb.ToString ()
 
         Assert.Fail msg
-#endif
