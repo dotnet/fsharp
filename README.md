@@ -8,7 +8,7 @@ You're invited to contribute to future releases of the F# compiler, core library
 
 Build from the command line:
 
-```bash
+```
 build.cmd
 ```
 
@@ -18,8 +18,8 @@ After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your edit
 
 Build from the command line:
 
-```bash
-sh ./build.sh
+```
+./build.sh
 ```
 
 After it's finished, open `FSharp.sln` in your editor of choice.

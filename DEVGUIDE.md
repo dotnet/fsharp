@@ -138,7 +138,7 @@ VSIXInstaller.exe /u:"VisualFSharp"
 VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpFull.vsix
 ```
 
-It's important to use `Release` if you want to see if your changes have had a noticable performance impact.
+It's important to use `Release` if you want to see if your changes have had a noticeable performance impact.
 
 ### Performance and debugging
 
