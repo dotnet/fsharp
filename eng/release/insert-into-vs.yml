@@ -51,4 +51,4 @@ stages:
       displayName: 'Insert VS Payload'
       inputs:
         LinkWorkItemsToPR: false
-      condition: and(succeeded(), eq(variables['Build.SourceBranch'], ${{ parameters.componentBranchName }}))
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'))
