@@ -2304,3 +2304,5 @@ val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
+val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Val list list * Expr * range) option
+

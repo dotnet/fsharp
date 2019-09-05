@@ -100,7 +100,7 @@ module Utils2 =
 /// Acts as a template for struct state machines introduced by __compiledStateMachineStruct, and also as a reflective implementation
 type TaskStateMachine<'TOverall> =
 
-    /// Holds the final result of the state machine
+    /// Holds the final result of the state machine (between the 'return' and the execution of the finally clauses, after which we we eventually call SetResult)
     [<DefaultValue(false)>]
     val mutable Result : 'TOverall
 
@@ -196,8 +196,8 @@ type TaskBuilder() =
         else
             let mutable sm = TaskStateMachine<'TOverall>()
             sm.ResumptionFunc <- MachineFunc<_>(fun sm -> __expand_code.Invoke(&sm)) 
-            //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
             sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
+            //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
             sm.MethodBuilder.Start(&sm)
             //Console.WriteLine("[{0}] unwrap", sm.MethodBuilder.Task.Id)
             sm.MethodBuilder.Task        
@@ -227,16 +227,14 @@ type TaskBuilder() =
                 else
                     false
             else
-                let step0 = __expand_task1.Invoke(&sm)
-                if step0 then 
+                if __expand_task1.Invoke(&sm) then 
                     __expand_task2.Invoke(&sm)
                 else
                     // If state machines are not supported, then we must adjust the resumption to also run __expand_task2
                     let rec resume (mf: MachineFunc<_>) =
                         MachineFunc<TaskStateMachine<_>>(fun sm -> 
                             //Console.WriteLine("[{0}] resuming Combine", sm.MethodBuilder.Task.Id)
-                            let step = mf.Invoke(&sm)
-                            if step then 
+                            if mf.Invoke(&sm) then 
                                 __expand_task2.Invoke(&sm)
                             else
                                 //Console.WriteLine("[{0}] rebinding ResumptionFunc for Combine (2)", sm.MethodBuilder.Task.Id)
@@ -264,8 +262,7 @@ type TaskBuilder() =
                     MachineFunc<TaskStateMachine<_>>(fun sm -> 
                         //Console.WriteLine("[{0}] repeat WhileLoop", sm.MethodBuilder.Task.Id)
                         if __expand_condition() then 
-                            let step = __expand_body.Invoke (&sm)
-                            if step then
+                            if __expand_body.Invoke (&sm) then
                                 repeat().Invoke(&sm)
                             else
                                 //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
@@ -284,8 +281,7 @@ type TaskBuilder() =
                             sm.ResumptionFunc <- resume sm.ResumptionFunc
                             false)
 
-                let step = repeat().Invoke(&sm)
-                step)
+                repeat().Invoke(&sm))
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -315,8 +311,7 @@ type TaskBuilder() =
                     MachineFunc<TaskStateMachine<_>>(fun sm -> 
                         try
                             //Console.WriteLine("[{0}] resuming TryWith", sm.MethodBuilder.Task.Id)
-                            let step = mf.Invoke (&sm)
-                            if step then 
+                            if mf.Invoke (&sm) then 
                                 //Console.WriteLine("[{0}] resumed TryWith completed", sm.MethodBuilder.Task.Id)
                                 true
                             else
@@ -329,9 +324,8 @@ type TaskBuilder() =
                 try
                     let step = __expand_body.Invoke (&sm)
                     if not step then 
-                        let rf2 = resume sm.ResumptionFunc
                         //Console.WriteLine("[{0}] rebinding ResumptionFunc {1} to {2} for TryWith, sm.addr = {3}", sm.MethodBuilder.Task.Id, hashq sm.ResumptionFunc, hashq rf2, sm.Address)
-                        sm.ResumptionFunc <- rf2
+                        sm.ResumptionFunc <- sm.ResumptionFunc
                     step
                         
                 with exn -> 
@@ -410,15 +404,13 @@ type TaskBuilder() =
                 let CONT =
                     __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine<'T>>(fun sm -> 
                         //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
-                        let result = awaiter.GetResult()
-                        sm.Result <- result
+                        sm.Result <- awaiter.GetResult()
                         true))
 
                 // shortcut to continue immediately
                 if task.IsCompleted then
                     CONT.Invoke(&sm)
                 else
-                    // If the task definition has been converted to a state machine then a continuation label is used
                     sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
                     sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                     false
@@ -428,8 +420,7 @@ type TaskBuilder() =
                 let cont =
                     MachineFunc<TaskStateMachine<'T>>(fun sm -> 
                         //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
-                        let result = awaiter.GetResult()
-                        sm.Result <- result
+                        sm.Result <- awaiter.GetResult()
                         true)
 
                 // shortcut to continue immediately
@@ -464,8 +455,7 @@ and [<Sealed>] Witnesses() =
                     __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine<'TOverall>>( fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanBind(TaskLike)", sm.MethodBuilder.Task.Id)
                         let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                        let ``__machine_step$cont`` = (__expand_continuation result).Invoke(&sm)
-                        ``__machine_step$cont``))
+                        (__expand_continuation result).Invoke(&sm)))
 
                 // shortcut to continue immediately
                 if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
@@ -503,19 +493,16 @@ and [<Sealed>] Witnesses() =
                     __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine<'TOverall>>(fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanBind(Task)", sm.MethodBuilder.Task.Id)
                         let result = awaiter.GetResult()
-                        let ``__machine_step$cont`` = (__expand_continuation result).Invoke(&sm)
-                        ``__machine_step$cont``))
+                        (__expand_continuation result).Invoke(&sm)))
 
                 // shortcut to continue immediately
                 if awaiter.IsCompleted then 
-                    let __stack_completed = CONT.Invoke(&sm)
-                    __stack_completed
+                    CONT.Invoke(&sm)
                 else
                     sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
                     sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                     false
             else
-                // Get an awaiter from the task
                 let mutable awaiter = task.GetAwaiter()
 
                 let cont = 
@@ -551,27 +538,23 @@ and [<Sealed>] Witnesses() =
                 let CONT =
                     __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine< ^T >>(fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanReturnFrom(TaskLike)", sm.MethodBuilder.Task.Id)
-                        let result = (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
-                        sm.Result <- result
+                        sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
                         true))
 
                 // shortcut to continue immediately
                 if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                    let __stack_completed = CONT.Invoke(&sm)
-                    __stack_completed
+                    CONT.Invoke(&sm)
                 else
                     sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
                     sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                     false
             else
-                // Get an awaiter from the awaitable
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
                 let cont =
                     (MachineFunc<TaskStateMachine< ^T >>(fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanReturnFrom(TaskLike)", sm.MethodBuilder.Task.Id)
-                        let result = (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
-                        sm.Result <- result
+                        sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
                         true))
 
                 // shortcut to continue immediately
@@ -598,7 +581,6 @@ and [<Sealed>] Witnesses() =
                 if task.IsCompleted then
                     CONT.Invoke(&sm)
                 else
-                    // If the task definition has been converted to a state machine then a continuation label is used
                     sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
                     sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                     false

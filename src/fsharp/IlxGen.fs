@@ -2253,8 +2253,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | Some res ->
       match res with 
       | Choice1Of2 objExpr -> GenExpr cenv cgbuf eenv sp objExpr sequel
-      | Choice2Of2 (structTy, stateVars, methodBodyExprWithJumpTable, meth2Expr, machineAddrVar, startExpr) -> 
-           GenStructStateMachine cenv cgbuf eenv (structTy, methodBodyExprWithJumpTable, stateVars, meth2Expr, machineAddrVar, startExpr) sequel
+      | Choice2Of2 (structTy, stateVars, methodBodyExprWithJumpTable, setMachineStateBodyExpr, machineAddrVar, afterMethodBodyExpr) -> 
+           GenStructStateMachine cenv cgbuf eenv (structTy, methodBodyExprWithJumpTable, stateVars, setMachineStateBodyExpr, machineAddrVar, afterMethodBodyExpr) sequel
   | None ->
 
   match expr with
@@ -3099,10 +3099,10 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel =
       GenSequel cenv eenv.cloc cgbuf sequel
 
   | Expr.Val (v, _, m), _, _ 
-      when valRefEq g v g.cgh_entryPointStaticId_vref || 
-           valRefEq g v g.cgh_jumptable_vref || 
-           valRefEq g v g.cgh_stateMachineStruct_vref|| 
-           valRefEq g v g.cgh_stateMachine_vref 
+      when valRefEq g v g.cgh_entryPointID_vref || 
+           valRefEq g v g.cgh_compiledStateMachineCode_vref || 
+           valRefEq g v g.cgh_compiledStateMachineStruct_vref|| 
+           valRefEq g v g.cgh_compiledStateMachine_vref 
            ->
                 errorR(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(), m))
 
@@ -4202,9 +4202,9 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
-and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, stateVars, setStateMachineExpr, machineAddrVar, startExpr) sequel =
+and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, stateVars, setMachineStateBodyExpr, machineAddrVar, afterMethodBodyExpr) sequel =
 
-    let m = startExpr.Range
+    let m = afterMethodBodyExpr.Range
     let g = cenv.g
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
@@ -4259,7 +4259,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, 
         mkILNonGenericVirtualMethod("MoveNext", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL ilCode)
 
     let setStateMachineMethod =
-        let v, e = match setStateMachineExpr with  Expr.Lambda (_, _, _, [v], e, _, _) -> v,e | _ -> failwith "invalid setStateMachineExpr, expected a lambda of one var"
+        let v, e = match setMachineStateBodyExpr with NewDelegateExpr g ([_; [v]], e, _) -> v,e | _ -> failwith "invalid setStateMachineExpr, expected a new delegate of two vars"
         let meth = 
             InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere "SetStateMachine" interfaceTy
             |> List.head
@@ -4366,7 +4366,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, 
                 CG.EmitInstr cgbuf (pop 2) (Push [ ]) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
         // Generate the start expression - eenvinner is used as it contains the binding for machineAddrVar
-        GenExpr cenv cgbuf eenvinner SPSuppress startExpr sequel
+        GenExpr cenv cgbuf eenvinner SPSuppress afterMethodBodyExpr sequel
    
     )
 

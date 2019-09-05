@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="cs" original="../FSComp.resx">
     <body>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
-        <source>State machine constructs may only be used inlined code whose composition forms a valid state machine.</source>
-        <target state="new">State machine constructs may only be used inlined code whose composition forms a valid state machine.</target>
+        <source>State machine constructs may only be used in inlined code protected by 'if __generateCompiledStateMachines then ...' and whose composition forms valid state machine code.</source>
+        <target state="new">State machine constructs may only be used in inlined code protected by 'if __generateCompiledStateMachines then ...' and whose composition forms valid state machine code.</target>
         <note />
       </trans-unit>
       <trans-unit id="fSharpBannerVersion">

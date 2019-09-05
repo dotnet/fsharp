@@ -8939,3 +8939,10 @@ let isThreadOrContextStatic g attrs =
 let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
+
+let (|NewDelegateExpr|_|) g expr =
+    match expr with
+    | Expr.Obj (_, ty, _, _, [TObjExprMethod(_, _attribs, _, tmvs, body, _)], [], [], m) when isDelegateTy g ty ->
+        Some (tmvs, body, m)
+    | _ -> None
+
