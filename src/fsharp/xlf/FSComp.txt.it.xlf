@@ -47,6 +47,11 @@
         <target state="translated">L'algoritmo '{0}' non è supportato</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">Lo spazio dei nomi '{0}' non è definito.</target>

@@ -47,6 +47,11 @@
         <target state="translated">{0}' 알고리즘은 지원되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">'{0}' 네임스페이스가 정의되지 않았습니다.</target>
