@@ -77,8 +77,15 @@ type TaskStateMachine<'T> =
     [<DefaultValue(false)>]
     val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'T>>
 
+    /// When interpreted, holds the awaiter used to suspend of the state machine
+    [<DefaultValue(false)>]
+    val mutable Awaiter : ICriticalNotifyCompletion
+
     [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
+
+    // For debugging
+    member Address: nativeint
 
     interface IAsyncStateMachine
 

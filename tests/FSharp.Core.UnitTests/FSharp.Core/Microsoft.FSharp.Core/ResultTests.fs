@@ -3,7 +3,7 @@
 // Various tests for:
 // Microsoft.FSharp.Core.Result
 
-namespace FSharp.Core.UnitTests.Core
+namespace FSharp.Core.UnitTests
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx

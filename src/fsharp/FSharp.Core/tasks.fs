@@ -12,6 +12,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #if FSHARP_CORE
+
+#nowarn "9"
+#nowarn "51"
 namespace Microsoft.FSharp.Core.CompilerServices
 
     open System.Runtime.CompilerServices
@@ -83,6 +86,11 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
+[<AutoOpen>]
+module Utils2 = 
+
+    let inline hashq x = Microsoft.FSharp.Core.LanguagePrimitives.PhysicalHash x
+
 /// Represents the state of a computation: either awaiting something with a
 /// continuation, or completed with a return value.
 //
@@ -113,21 +121,31 @@ type TaskStateMachine<'TOverall> =
     [<DefaultValue(false)>]
     val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'TOverall>>
 
+    /// When interpreted, holds the awaiter 
+    [<DefaultValue(false)>]
+    val mutable Awaiter : ICriticalNotifyCompletion
+
     [<DefaultValue(false)>]
     val mutable MethodBuilder : AsyncTaskMethodBuilder<'TOverall>
+
+    member sm.Address = 0n
+        //let addr = &&sm.ResumptionPoint
+        //Microsoft.FSharp.NativeInterop.NativePtr.toNativeInt addr
 
     interface IAsyncStateMachine with 
         
         // Used when interpreted.  For "__stateMachineStructSMH" it is replaced.
         member sm.MoveNext() = 
             try
-                //Console.WriteLine("unconverted [{0}] step from {1}", sm.GetHashCode(), resumptionPoint)
+                //Console.WriteLine("[{0}] resuming by invoking {1}....", sm.MethodBuilder.Task.Id, hashq sm.ResumptionFunc )
                 let step = sm.ResumptionFunc.Invoke(&sm) 
                 if step then 
-                    //Console.WriteLine("unconverted [{0}] SetResult {1}", sm.GetHashCode(), res)
+                    //Console.WriteLine("[{0}] SetResult {1}", sm.MethodBuilder.Task.Id, sm.Result)
                     sm.MethodBuilder.SetResult(sm.Result)
+                else
+                    sm.MethodBuilder.AwaitUnsafeOnCompleted(&sm.Awaiter, &sm)
             with exn ->
-                //Console.WriteLine("unconverted [{0}] exception {1}", sm.GetHashCode(), exn)
+                //Console.WriteLine("[{0}] SetException {1}", sm.MethodBuilder.Task.Id, exn)
                 sm.MethodBuilder.SetException exn
 
         // Used when interpreted.  For "__stateMachineStructSMH" it is replaced.
@@ -165,13 +183,13 @@ type TaskBuilder() =
                     __jumptableSMH 
                         sm.ResumptionPoint 
                         (   try
-                                //Console.WriteLine("[{0}] step from {1}", sm.GetHashCode(), resumptionPoint)
+                                //Console.WriteLine("[{0}] step from {1}", sm.MethodBuilder.Task.Id, resumptionPoint)
                                 let ``__machine_step$cont`` = __expand_code.Invoke(&sm)
                                 if ``__machine_step$cont``.IsCompleted then 
-                                    //Console.WriteLine("[{0}] SetResult {1}", sm.GetHashCode(), res)
+                                    //Console.WriteLine("[{0}] SetResult {1}", sm.MethodBuilder.Task.Id, res)
                                     sm.MethodBuilder.SetResult(sm.Result)
                             with exn ->
-                                //Console.WriteLine("[{0}] exception {1}", sm.GetHashCode(), exn)
+                                //Console.WriteLine("[{0}] exception {1}", sm.MethodBuilder.Task.Id, exn)
                                 sm.MethodBuilder.SetException exn)))
 
                 // SetStateMachine
@@ -180,19 +198,19 @@ type TaskBuilder() =
 
                 // Start
                 (MachineFunc<_,_>(fun sm -> 
-                    //Console.WriteLine("[{0}] start", sm.GetHashCode())
+                    //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
                     sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
                     sm.MethodBuilder.Start(&sm)
-                    //Console.WriteLine("[{0}] unwrap", sm.GetHashCode())
+                    //Console.WriteLine("[{0}] unwrap", sm.MethodBuilder.Task.Id)
                     sm.MethodBuilder.Task))
         else
 #endif
             let mutable sm = TaskStateMachine<'TOverall>()
             sm.ResumptionFunc <- MachineFunc<_>(fun sm -> __expand_code.Invoke(&sm).IsCompleted) 
-            //Console.WriteLine("[{0}] start", sm.GetHashCode())
+            //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
             sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
             sm.MethodBuilder.Start(&sm)
-            //Console.WriteLine("[{0}] unwrap", sm.GetHashCode())
+            //Console.WriteLine("[{0}] unwrap", sm.MethodBuilder.Task.Id)
             sm.MethodBuilder.Task        
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
@@ -225,16 +243,19 @@ type TaskBuilder() =
                     __expand_task2.Invoke(&sm)
                 else
                     // If state machines are not supported, then we must adjust the resumption to also run __expand_task2
-                    let rec combine () =
+                    let rec resume (mf: MachineFunc<_>) =
                         MachineFunc<TaskStateMachine<_>>(fun sm -> 
-                            let step = sm.ResumptionFunc.Invoke(&sm)
+                            //Console.WriteLine("[{0}] resuming Combine", sm.MethodBuilder.Task.Id)
+                            let step = mf.Invoke(&sm)
                             if step then 
                                 __expand_task2.Invoke(&sm).IsCompleted
                             else
-                                sm.ResumptionFunc <- combine ()
+                                //Console.WriteLine("[{0}] rebinding ResumptionFunc for Combine (2)", sm.MethodBuilder.Task.Id)
+                                sm.ResumptionFunc <- resume sm.ResumptionFunc
                                 false)
 
-                    sm.ResumptionFunc <- combine ()
+                    //Console.WriteLine("[{0}] rebinding ResumptionFunc for Combine (1)", sm.MethodBuilder.Task.Id)
+                    sm.ResumptionFunc <- resume sm.ResumptionFunc
                     TaskStep<'T>(false))
 
     /// Builds a step that executes the body while the condition predicate is true.
@@ -253,21 +274,25 @@ type TaskBuilder() =
             else
                 let rec repeat() = 
                     MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                        //Console.WriteLine("[{0}] repeat WhileLoop", sm.MethodBuilder.Task.Id)
                         if __expand_condition() then 
                             let step = __expand_body.Invoke (&sm)
                             if step.IsCompleted then
                                 repeat().Invoke(&sm)
                             else
+                                //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
                                 sm.ResumptionFunc <- resume sm.ResumptionFunc
                                 false
                         else
                             true)
                 and resume (mf: MachineFunc<_>) =
                     MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                        //Console.WriteLine("[{0}] resume WhileLoop body", sm.MethodBuilder.Task.Id)
                         let step = mf.Invoke(&sm)
                         if step then 
                             repeat().Invoke(&sm)
                         else
+                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
                             sm.ResumptionFunc <- resume sm.ResumptionFunc
                             false)
 
@@ -302,21 +327,28 @@ type TaskBuilder() =
                 let rec resume (mf: MachineFunc<_>) =
                     MachineFunc<TaskStateMachine<_>>(fun sm -> 
                         try
+                            //Console.WriteLine("[{0}] resuming TryWith", sm.MethodBuilder.Task.Id)
                             let step = mf.Invoke (&sm)
                             if step then 
+                                //Console.WriteLine("[{0}] resumed TryWith completed", sm.MethodBuilder.Task.Id)
                                 true
                             else
+                                //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryWith (2)", sm.MethodBuilder.Task.Id)
                                 sm.ResumptionFunc <- resume sm.ResumptionFunc
                                 false
                         with exn -> 
+                            //Console.WriteLine("[{0}] catch block of resumed TryWith", sm.MethodBuilder.Task.Id)
                             (__expand_catch exn).Invoke(&sm).IsCompleted)
                 try
                     let step = __expand_body.Invoke (&sm)
                     if not step.IsCompleted then 
-                        sm.ResumptionFunc <- resume sm.ResumptionFunc
+                        let rf2 = resume sm.ResumptionFunc
+                        //Console.WriteLine("[{0}] rebinding ResumptionFunc {1} to {2} for TryWith, sm.addr = {3}", sm.MethodBuilder.Task.Id, hashq sm.ResumptionFunc, hashq rf2, sm.Address)
+                        sm.ResumptionFunc <- rf2
                     step
                         
                 with exn -> 
+                    //Console.WriteLine("[{0}] catch block of TryWith", sm.MethodBuilder.Task.Id)
                     (__expand_catch exn).Invoke(&sm))
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
@@ -340,23 +372,36 @@ type TaskBuilder() =
             else
                 let rec resume (mf: MachineFunc<_>) =
                     MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                        let mutable completed = false
                         try
-                            let step = mf.Invoke (&sm)
-                            if not step then 
+                            //Console.WriteLine("[{0}] resumed TryFinally", sm.MethodBuilder.Task.Id)
+                            completed <- mf.Invoke (&sm)
+                            if not completed then 
+                                //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryFinally (2)", sm.MethodBuilder.Task.Id)
                                 sm.ResumptionFunc <- resume sm.ResumptionFunc
-                            step
                         with _ ->
                             compensation()
-                            reraise())
+                            reraise()
+                        if completed then 
+                            compensation()
+                        completed)
+
+                let mutable completed = false
                 try
                     let step = __expand_body.Invoke (&sm)
-                    if not step.IsCompleted then 
+                    completed <- step.IsCompleted
+                    if not completed then 
+                        //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryFinally (1)", sm.MethodBuilder.Task.Id)
                         sm.ResumptionFunc <- resume sm.ResumptionFunc
-                    step
-                        
+                       
                 with _ ->
                     compensation()
-                    reraise())
+                    reraise()
+
+                if completed then 
+                    compensation()
+
+                TaskStep(completed))
 
     member inline builder.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (disp : 'Resource, __expand_body : 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
@@ -377,6 +422,7 @@ type TaskBuilder() =
 
             let CONT =
                 __entryPoint (MachineFunc<TaskStateMachine<'T>>(fun sm -> 
+                    //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
                     let result = awaiter.GetResult()
                     sm.Result <- result
                     true))
@@ -393,10 +439,12 @@ type TaskBuilder() =
                 else
                     // If the task definition has not been converted to a state machine then a continuation function is used
                     sm.ResumptionFunc <- CONT
+                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 #else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for ReturnFrom", sm.MethodBuilder.Task.Id)
+                sm.Awaiter <- awaiter
                 sm.ResumptionFunc <- CONT
 #endif
-                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'T>(false))
 
 and [<Sealed>] Witnesses() =
@@ -418,6 +466,7 @@ and [<Sealed>] Witnesses() =
 
             let CONT = 
                 __entryPoint (MachineFunc<TaskStateMachine<'TOverall>>( fun sm -> 
+                    //Console.WriteLine("[{0}] resumed CanBind(TaskLike)", sm.MethodBuilder.Task.Id)
                     let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
                     let ``__machine_step$cont`` = (__expand_continuation result).Invoke(&sm)
                     ``__machine_step$cont``.IsCompleted))
@@ -432,11 +481,12 @@ and [<Sealed>] Witnesses() =
                     sm.ResumptionPoint <- __entryPointIdSMH CONT
                 else
                     sm.ResumptionFunc <- CONT
-#else
-                ignore sm.ResumptionFunc
-                //sm.ResumptionFunc <- CONT
-#endif
                 sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+#else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for CanBind TaskLike to {1}, sm.addr = {2}", sm.MethodBuilder.Task.Id, hashq CONT, sm.Address)
+                sm.Awaiter <- awaiter
+                sm.ResumptionFunc <- CONT
+#endif
                 TaskStep<'TResult2>(false))
 
     static member inline CanBind (_priority: IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
@@ -447,6 +497,7 @@ and [<Sealed>] Witnesses() =
 
             let CONT = 
                 __entryPoint (MachineFunc<TaskStateMachine<'TOverall>>(fun sm -> 
+                    //Console.WriteLine("[{0}] resumed CanBind(Task)", sm.MethodBuilder.Task.Id)
                     let result = awaiter.GetResult()
                     let ``__machine_step$cont`` = (__expand_continuation result).Invoke(&sm)
                     ``__machine_step$cont``.IsCompleted))
@@ -461,10 +512,12 @@ and [<Sealed>] Witnesses() =
                     sm.ResumptionPoint <- __entryPointIdSMH CONT
                 else
                     sm.ResumptionFunc <- CONT
+                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 #else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for CanBind Task", sm.MethodBuilder.Task.Id)
+                sm.Awaiter <- awaiter
                 sm.ResumptionFunc <- CONT
 #endif
-                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'TResult2>(false))
 
     static member inline CanBind (_priority: IPriority1, computation: Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
@@ -483,6 +536,7 @@ and [<Sealed>] Witnesses() =
 
             let CONT =
                 __entryPoint (MachineFunc<TaskStateMachine< ^T >>(fun sm -> 
+                    //Console.WriteLine("[{0}] resumed CanReturnFrom(TaskLike)", sm.MethodBuilder.Task.Id)
                     let result = (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
                     sm.Result <- result
                     true))
@@ -497,10 +551,12 @@ and [<Sealed>] Witnesses() =
                     sm.ResumptionPoint <- __entryPointIdSMH CONT
                 else
                     sm.ResumptionFunc <- CONT
+                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 #else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for CanReturnFrom TaskLike", sm.MethodBuilder.Task.Id)
+                sm.Awaiter <- awaiter
                 sm.ResumptionFunc <- CONT
 #endif
-                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'T>(false))
 
     static member inline CanReturnFrom (_priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
@@ -510,6 +566,7 @@ and [<Sealed>] Witnesses() =
 
             let CONT =
                 __entryPoint (MachineFunc<TaskStateMachine<'T>>(fun sm -> 
+                    //Console.WriteLine("[{0}] resumed CanReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
                     let result = awaiter.GetResult()
                     sm.Result <- result
                     true))
@@ -526,10 +583,12 @@ and [<Sealed>] Witnesses() =
                 else
                     // If the task definition has not been converted to a state machine then a continuation function is used
                     sm.ResumptionFunc <- CONT
+                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
 #else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for CanReturnFrom Task", sm.MethodBuilder.Task.Id)
+                sm.Awaiter <- awaiter
                 sm.ResumptionFunc <- CONT
 #endif
-                sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                 TaskStep<'T>(false))
 
     static member inline CanReturnFrom (_priority: IPriority1, computation: Async<'T>) : TaskCode<'T, 'T> =

@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Core.LanguagePrimitives module
 
-namespace FSharp.Core.UnitTests.Core
+namespace FSharp.Core.UnitTests
 
 open System
 open System.Numerics 

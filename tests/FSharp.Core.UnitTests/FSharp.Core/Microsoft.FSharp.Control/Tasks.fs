@@ -910,7 +910,7 @@ let main argv =
         testNoStackOverflowWithYieldResult()
         //// we don't support TCO, so large tail recursions will stack overflow
         //// or at least use O(n) heap. but small ones should at least function OK.
-        //testSmallTailRecursion()
+        testSmallTailRecursion()
         testTryOverReturnFrom()
         testTryFinallyOverReturnFromWithException()
         testTryFinallyOverReturnFromWithoutException()
