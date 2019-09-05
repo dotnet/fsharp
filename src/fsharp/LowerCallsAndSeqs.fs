@@ -896,9 +896,9 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 //
 // GIVEN:
 //   member inline __.Run(code : unit -> TaskStep<'T>) = 
-//       (__stateMachineSMH
+//       (__compiledStateMachine
 //           { new TaskStateMachine<'T>() with 
-//               member __.Step(pc) = __jumptableSMH pc code }).Start()
+//               member __.Step(pc) = __compiledStateMachineCode pc code }).Start()
 //
 // THEN
 //    task { ... }
@@ -909,12 +909,12 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 //    let code = 
 //        let builder@ = task
 //        (fun ....)
-//    (__stateMachineSMH code).Start()
+//    (__compiledStateMachine code).Start()
 //
 // IN RELEASE:
 //
 //    let code = (fun ...)
-//    (__stateMachineSMH code).Start()
+//    (__compiledStateMachine code).Start()
 
 // TODO: this is too adhoc
 let isMustExpandVar (v: Val) = 
@@ -956,9 +956,9 @@ let ConvertStateMachineExprToObject g overallExpr =
             BindExpansions g envR bodyExpr
 
 
-        // Bind 'let CODE = __entryPoint(code) in bodyExpr'
+        // Bind 'let CODE = __compiledStateMachineEntryPoint(code) in bodyExpr'
         | Expr.Let (TBind(v, EntryPointExpr g _code, _sp), bodyExpr, m, _) ->
-            if sm_verbose then printfn "found __entryPoint()"
+            if sm_verbose then printfn "found __compiledStateMachineEntryPoint()"
             // Fix this
             let envR = { env with Macros = env.Macros.Add v (mkInt g m (genPC())) }
             BindExpansions g envR bodyExpr
@@ -1156,7 +1156,7 @@ let ConvertStateMachineExprToObject g overallExpr =
         let res = 
             match expr with 
         
-            // The expanded code for state machines may use __entryPoint.  This indicates a resumption point.
+            // The expanded code for state machines may use __compiledStateMachineEntryPoint.  This indicates a resumption point.
             | EntryPointStaticIdExpr g (ExpandsTo g env (Int32Expr pc), m) ->
                 { phase1 = expr
                   phase2 = (fun pc2lab -> Expr.Op (TOp.Label pc2lab.[pc], [], [], m))

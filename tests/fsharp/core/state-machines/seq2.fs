@@ -13,16 +13,14 @@ open FSharp.Core.CompilerServices.StateMachineHelpers
 type SeqStateMachine<'T>() =
     let disposalStack = ResizeArray<(unit -> unit)>()
 
-    /// Proceed to the next state or raise an exception
+    /// Proceed to the next state or raise an exception. Returns true if completed
     abstract Step : unit -> bool
 
-    member val Current : 'T = Unchecked.defaultof<'T> with get, set
+    member val Current : 'T voption = ValueNone with get, set
 
-#if ENABLED
-    member val ResumptionPoint : int = 0 with get, set
-#endif
+    member val ResumptionPoint: int = 0 with get, set
 
-    member val ResumptionFunc : MachineFunc<SeqStateMachine<'T>> = Unchecked.defaultof<_> with get, set
+    member val ResumptionFunc: (SeqStateMachine<'T> -> bool) = Unchecked.defaultof<_> with get, set
 
     interface IEnumerable with
         member this.GetEnumerator() = 
@@ -53,7 +51,7 @@ type SeqStateMachine<'T>() =
         member sm.MoveNext() = sm.Step()
         
     interface IEnumerator<'T> with
-        member sm.Current = sm.Current
+        member sm.Current = match sm.Current with ValueNone -> failwith "no value available yet" | ValueSome x -> x
 
     member __.PushDispose (f: unit -> unit) = disposalStack.Add(f)
 
@@ -71,78 +69,127 @@ type SeqBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : SeqCode<'T>) : IEnumerable<'T> = 
-#if ENABLED
-        (__stateMachine
-            { new SeqStateMachine<'T>() with 
-                member sm.Step () = __jumptableSMH sm.ResumptionPoint (__expand_code sm) }).Start()
-#else
+        if __generateCompiledStateMachines then
+            (__compiledStateMachine
+                { new SeqStateMachine<'T>() with 
+                    member sm.Step () = __compiledStateMachineCode sm.ResumptionPoint (__expand_code sm) }).Start()
+        else
             let sm = 
                 { new SeqStateMachine<'T>() with 
                     member sm.Step () = 
-                        let mutable sm = sm
-                        sm.ResumptionFunc.Invoke(&sm) }
-            sm.ResumptionFunc <- MachineFunc<_>(fun sm -> __expand_code sm)
+                       sm.Current <- ValueNone
+                       sm.ResumptionFunc sm }
+            sm.ResumptionFunc <- __expand_code
             sm.Start()
-#endif
 
     [<NoDynamicInvocation>]
     member inline __.Zero() : SeqCode<'T> =
-        (fun _sm -> false)
+        (fun _sm -> true)
 
     [<NoDynamicInvocation>]
     member inline __.Combine(__expand_task1: SeqCode<'T>, __expand_task2: SeqCode<'T>) : SeqCode<'T> =
         (fun sm -> 
-            let ``__machine_step$cont`` = __expand_task1 sm
-            if ``__machine_step$cont`` then 
-                true
+            if __generateCompiledStateMachines then
+                let ``__machine_step$cont`` = __expand_task1 sm
+                if ``__machine_step$cont`` then 
+                    __expand_task2 sm
+                else
+                    false
             else
-                __expand_task2 sm)
+                let completed = __expand_task1 sm
+                if completed then
+                    __expand_task2 sm
+                else 
+                    // If state machines are not supported, then we must adjust the resumption to also run __expand_task2 on completion
+                    let rec resume rf =
+                        (fun (sm: SeqStateMachine<_>) -> 
+                            let completed = rf sm
+                            if completed then 
+                                __expand_task2 sm
+                            else
+                                sm.ResumptionFunc <- resume sm.ResumptionFunc
+                                false)
+
+                    sm.ResumptionFunc <- resume sm.ResumptionFunc
+                    false)
             
     [<NoDynamicInvocation>]
     member inline __.While(__expand_condition : unit -> bool, __expand_body : SeqCode<'T>) : SeqCode<'T> =
         (fun sm -> 
-            let mutable step = false 
-            while step && __expand_condition() do
-                let ``__machine_step$cont`` = __expand_body sm
-                step <- ``__machine_step$cont``
-            step)
+            if __generateCompiledStateMachines then
+                let mutable __stack_completed = false 
+                while __stack_completed && __expand_condition() do
+                    // NOTE: The body of the 'while' may contain await points, resuming may branch directly into the while loop
+                    let ``__machine_step$cont`` = __expand_body sm
+                    // If we make it to the assignment we prove we've made a step 
+                    __stack_completed <- ``__machine_step$cont``
+                __stack_completed
+            else
+                let rec repeat sm = 
+                    if __expand_condition() then 
+                        let step = __expand_body sm
+                        if step then
+                            repeat sm
+                        else
+                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
+                            sm.ResumptionFunc <- resume sm.ResumptionFunc
+                            false
+                    else
+                        true
+                and resume mf sm =
+                    //Console.WriteLine("[{0}] resume WhileLoop body", sm.MethodBuilder.Task.Id)
+                    let step = mf sm
+                    if step then 
+                        repeat sm
+                    else
+                        //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
+                        sm.ResumptionFunc <- resume sm.ResumptionFunc
+                        false
+
+                repeat sm)
 
     [<NoDynamicInvocation>]
     member inline __.TryWith(__expand_body : SeqCode<'T>, __expand_catch : exn -> SeqCode<'T>) : SeqCode<'T> =
         (fun sm -> 
-            let mutable step = false
-            let mutable caught = false
-            let mutable savedExn = Unchecked.defaultof<_>
-            try
-                let ``__machine_step$cont`` = __expand_body sm
-                step <- ``__machine_step$cont``
-            with exn -> 
-                caught <- true
-                savedExn <- exn
+            if __generateCompiledStateMachines then 
+                let mutable __stack_completed = false
+                let mutable __stack_caught = false
+                let mutable __stack_savedExn = Unchecked.defaultof<_>
+                try
+                    // The try block may contain await points.
+                    let ``__machine_step$cont`` = __expand_body sm
+                    // If we make it to the assignment we prove we've made a step
+                    __stack_completed <- ``__machine_step$cont``
+                with exn -> 
+                    __stack_caught <- true
+                    __stack_savedExn <- exn
 
-            if caught then 
-                __expand_catch savedExn sm
+                if __stack_caught then 
+                    // Place the catch code outside the catch block 
+                    __expand_catch __stack_savedExn sm
+                else
+                    __stack_completed
             else
-                step)
+                failwith "tbd")
 
     [<NoDynamicInvocation>]
     member inline __.TryFinally(__expand_body: SeqCode<'T>, compensation : unit -> unit) : SeqCode<'T> =
         (fun sm -> 
-            let mutable step = false
+            let mutable completed = false
             sm.PushDispose compensation
             try
                 let ``__machine_step$cont`` = __expand_body sm
                 // If we make it to the assignment we prove we've made a step without an exception
-                step <- ``__machine_step$cont``
+                completed <- ``__machine_step$cont``
             with _ ->
                 sm.PopDispose()
                 compensation()
                 reraise()
 
-            if step then 
+            if completed then 
                 sm.PopDispose()
                 compensation()
-            step)
+            completed)
 
     [<NoDynamicInvocation>]
     member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> SeqCode<'T>) = 
@@ -161,17 +208,16 @@ type SeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Yield (v: 'T) : SeqCode<'T> =
         (fun sm ->
-            let CONT = __entryPoint (MachineFunc<_>(fun sm -> false))
-#if ENABLED
-            if __stateMachinesSupported then 
-                sm.ResumptionPoint <- __entryPointIdSMH CONT
-            else 
-                sm.ResumptionFunc <- CONT
-#else
-            sm.ResumptionFunc <- CONT
-#endif
-            sm.Current <- v
-            true)
+            if __generateCompiledStateMachines then 
+                let CONT = __compiledStateMachineEntryPoint (MachineFunc<_>(fun sm -> true))
+                sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
+                sm.Current <- ValueSome v
+                false
+            else
+                let cont = (fun sm -> true)
+                sm.ResumptionFunc <- cont
+                sm.Current <- ValueSome v
+                false)
 
     [<NoDynamicInvocation>]
     member inline this.YieldFrom (source: IEnumerable<'T>) : SeqCode<'T> =

@@ -4209,7 +4209,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, 
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects made via `__stateMachineSMH` and LowerCallsAndSeqs.
+    // State vars are only populated for state machine objects made via `__compiledStateMachine` and LowerCallsAndSeqs.
     //
     // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.
@@ -4375,7 +4375,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects made via `__stateMachineSMH` and LowerCallsAndSeqs.
+    // State vars are only populated for state machine objects made via `__compiledStateMachine` and LowerCallsAndSeqs.
     //
     // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.

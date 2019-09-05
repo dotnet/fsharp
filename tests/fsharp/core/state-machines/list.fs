@@ -8,7 +8,7 @@ open System.Runtime.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 
 [<AbstractClass>]
-type ListStateMachine<'T>() =
+type YieldStateMachine<'T>() =
     let res = ResizeArray<'T>()
 
     abstract Populate : unit -> unit
@@ -30,31 +30,31 @@ type ListStateMachine<'T>() =
         this.Populate() |> ignore
         res.ToArray()
 
-type ListCode<'T> = ListStateMachine<'T> -> unit
+type YieldCode<'T> = YieldStateMachine<'T> -> unit
 
 type ResizeArrayBuilderBase() =
     
     [<NoDynamicInvocation>]
-    member inline __.Delay(__expand_f : unit -> ListCode<'T>) : ListCode<'T> = (fun sm -> (__expand_f()) sm)
+    member inline __.Delay(__expand_f : unit -> YieldCode<'T>) : YieldCode<'T> = (fun sm -> (__expand_f()) sm)
 
     [<NoDynamicInvocation>]
-    member inline __.Zero() : ListCode<'T> =
+    member inline __.Zero() : YieldCode<'T> =
         (fun _sm -> ())
 
     [<NoDynamicInvocation>]
-    member inline __.Combine(__expand_task1: ListCode<'T>, __expand_task2: ListCode<'T>) : ListCode<'T> =
+    member inline __.Combine(__expand_task1: YieldCode<'T>, __expand_task2: YieldCode<'T>) : YieldCode<'T> =
         (fun sm -> 
             __expand_task1 sm
             __expand_task2 sm)
             
     [<NoDynamicInvocation>]
-    member inline __.While(__expand_condition : unit -> bool, __expand_body : ListCode<'T>) : ListCode<'T> =
+    member inline __.While(__expand_condition : unit -> bool, __expand_body : YieldCode<'T>) : YieldCode<'T> =
         (fun sm -> 
             while __expand_condition() do
                 __expand_body sm)
 
     [<NoDynamicInvocation>]
-    member inline __.TryWith(__expand_body : ListCode<'T>, __expand_catch : exn -> ListCode<'T>) : ListCode<'T> =
+    member inline __.TryWith(__expand_body : YieldCode<'T>, __expand_catch : exn -> YieldCode<'T>) : YieldCode<'T> =
         (fun sm -> 
             try
                 __expand_body sm
@@ -62,7 +62,7 @@ type ResizeArrayBuilderBase() =
                 __expand_catch exn sm)
 
     [<NoDynamicInvocation>]
-    member inline __.TryFinally(__expand_body: ListCode<'T>, compensation : unit -> unit) : ListCode<'T> =
+    member inline __.TryFinally(__expand_body: YieldCode<'T>, compensation : unit -> unit) : YieldCode<'T> =
         (fun sm -> 
             try
                 __expand_body sm
@@ -73,68 +73,65 @@ type ResizeArrayBuilderBase() =
             compensation())
 
     [<NoDynamicInvocation>]
-    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> ListCode<'T>) = 
+    member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> YieldCode<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
             (fun sm -> __expand_body disp sm),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
     [<NoDynamicInvocation>]
-    member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> ListCode<'T>) : ListCode<'T> =
+    member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> YieldCode<'T>) : YieldCode<'T> =
         this.Using (sequence.GetEnumerator(), 
             (fun e -> this.While((fun () -> e.MoveNext()), (fun sm -> __expand_body e.Current sm))))
 
     [<NoDynamicInvocation>]
-    member inline __.Yield (v: 'T) : ListCode<'T> =
+    member inline __.Yield (v: 'T) : YieldCode<'T> =
         (fun sm ->
             sm.Yield v)
 
     [<NoDynamicInvocation>]
-    member inline this.YieldFrom (source: IEnumerable<'T>) : ListCode<'T> =
+    member inline this.YieldFrom (source: IEnumerable<'T>) : YieldCode<'T> =
         this.For(source, (fun ``__machine_step$cont`` -> this.Yield(``__machine_step$cont``)))
 
 type ResizeArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
-    member inline __.Run(__expand_code : ListCode<'T>) : ResizeArray<'T> = 
-#if ENABLED
-        (__stateMachine
-            { new ListStateMachine<'T>() with 
-                member sm.Populate () = __jumptableSMH 0 (__expand_code sm) }).ToResizeArray()
-#else
-            { new ListStateMachine<'T>() with 
+    member inline __.Run(__expand_code : YieldCode<'T>) : ResizeArray<'T> = 
+        if __generateCompiledStateMachines then
+            (__compiledStateMachine
+                { new YieldStateMachine<'T>() with 
+                    member sm.Populate () = __compiledStateMachineCode 0 (__expand_code sm) }).ToResizeArray()
+        else
+            { new YieldStateMachine<'T>() with 
                 member sm.Populate () = __expand_code sm }.ToResizeArray()
-#endif
 
 let rsarray = ResizeArrayBuilder()
 
 type ListBuilder() =     
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
-    member inline __.Run(__expand_code : ListCode<'T>) : 'T list = 
-#if ENABLED
-        (__stateMachine
-            { new ListStateMachine<'T>() with 
-                member sm.Populate () = __jumptableSMH 0 (__expand_code sm) }).ToList()
-#else
-        { new ListStateMachine<'T>() with 
-            member sm.Populate () = __expand_code sm }.ToList()
-#endif
+    member inline __.Run(__expand_code : YieldCode<'T>) : 'T list = 
+        if __generateCompiledStateMachines then
+            (__compiledStateMachine
+                { new YieldStateMachine<'T>() with 
+                    member sm.Populate () = __compiledStateMachineCode 0 (__expand_code sm) }).ToList()
+        else
+            { new YieldStateMachine<'T>() with 
+                member sm.Populate () = __expand_code sm }.ToList()
 
 let list = ListBuilder()
 
 type ArrayBuilder() =     
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
-    member inline __.Run(__expand_code : ListCode<'T>) : 'T[] = 
-#if ENABLED
-        (__stateMachine
-            { new ListStateMachine<'T>() with 
-                member sm.Populate () = __jumptableSMH 0 (__expand_code sm) }).ToArray()
-#else
-        { new ListStateMachine<'T>() with 
-            member sm.Populate () = __expand_code sm }.ToArray()
-#endif
+    member inline __.Run(__expand_code : YieldCode<'T>) : 'T[] = 
+        if __generateCompiledStateMachines then
+            (__compiledStateMachine
+                { new YieldStateMachine<'T>() with 
+                    member sm.Populate () = __compiledStateMachineCode 0 (__expand_code sm) }).ToArray()
+        else
+            { new YieldStateMachine<'T>() with 
+                member sm.Populate () = __expand_code sm }.ToArray()
         
 let array = ArrayBuilder()
 

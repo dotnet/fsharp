@@ -28,7 +28,8 @@ type TaskSeqStateMachine<'T>() =
 
     member val Current : ValueOption<'T> = Unchecked.defaultof<_> with get, set
     member val ResumptionPoint : int = 0 with get, set
-    member val ResumptionFunc : MachineFunc<TaskSeqStateMachine<'T>> = Unchecked.defaultof<_> with get, set
+    member val ResumptionFunc : (TaskSeqStateMachine<'T> -> bool) = Unchecked.defaultof<_> with get, set
+    member val Awaiter : ICriticalNotifyCompletion = Unchecked.defaultof<_> with get, set
 
     /// Proceed to the next state or raise an exception
     abstract Step : unit -> bool
@@ -71,6 +72,7 @@ type TaskSeqStateMachine<'T>() =
     member sm.MoveNextAsync() : unit =
         try
             Console.WriteLine("[{0}] step from {1}", sm.GetHashCode(), sm.ResumptionPoint)
+            sm.Current <- ValueNone
             let completed = sm.Step ()
             if completed then 
                 tcs.SetResult sm.Current.IsSome
@@ -81,66 +83,71 @@ type TaskSeqStateMachine<'T>() =
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     member this.Start() = (this :> IAsyncEnumerable<'T>)
 
-type TaskSeqCode<'T> = delegate of byref<TaskSeqStateMachine<'T>> -> bool    
+type TaskSeqCode<'T> = TaskSeqStateMachine<'T> -> bool    
 
 type TaskSeqBuilder() =
     
     [<NoDynamicInvocation>]
     member inline __.Delay(__expand_f : unit -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
-        TaskSeqCode(fun sm -> (__expand_f ()).Invoke &sm)
+        (fun sm -> __expand_f () sm)
 
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : TaskSeqCode<'T>) : IAsyncEnumerable<'T> = 
-#if ENABLED
-        (__stateMachine
-            { new TaskSeqStateMachine<'T>() with 
-                member sm.Step () = __jumptableSMH sm.ResumptionPoint (__expand_code sm) }).Start()
-#else
+        if __generateCompiledStateMachines then
+            (__compiledStateMachine
+                { new TaskSeqStateMachine<'T>() with 
+                    member sm.Step () = __compiledStateMachineCode sm.ResumptionPoint (__expand_code sm) }).Start()
+        else
             let sm = 
                 { new TaskSeqStateMachine<'T>() with 
                     member sm.Step () = 
-                        let mutable sm = sm
-                        sm.ResumptionFunc.Invoke &sm }
-            sm.ResumptionFunc <- MachineFunc<_>(fun sm -> __expand_code.Invoke &sm)
+                        let completed = sm.ResumptionFunc sm
+                        if not completed then 
+                            sm.Awaiter.UnsafeOnCompleted(Action(fun () -> sm.MoveNextAsync()))
+                        completed }
+            sm.ResumptionFunc <- __expand_code
             sm.Start()
-#endif
 
     [<NoDynamicInvocation>]
     member inline __.Zero() : TaskSeqCode<'T> =
-        TaskSeqCode(fun _sm -> true)
+        (fun _sm -> true)
 
     [<NoDynamicInvocation>]
-    member inline __.Combine(step1: TaskSeqCode<'T>, __expand_task2: TaskSeqCode<'T>) : TaskSeqCode<'T> =
-        TaskSeqCode(fun sm -> 
-            let ``__machine_step$cont`` = step1.Invoke &sm
-            if ``__machine_step$cont`` then
-                __expand_task2.Invoke &sm
-            else 
-                if __stateMachinesSupported then
+    member inline __.Combine(__expand_task1: TaskSeqCode<'T>, __expand_task2: TaskSeqCode<'T>) : TaskSeqCode<'T> =
+        (fun sm -> 
+            if __generateCompiledStateMachines then
+                let ``__machine_step$cont`` = __expand_task1 sm
+                if ``__machine_step$cont`` then
                     // If state machines are supported, then the resumption jumps directly into the code for __expand_task1
                     // at the point where computation was suspended.  This code includes the subsequent invoke of
-                    // __expand_task2
-                    ()
+                    __expand_task2 sm
                 else
-                    // If state machines are not supported, then we must adjust the resumption to also run __expand_task2
-                    let rec combine () =
-                        MachineFunc<TaskSeqStateMachine<_>>(fun sm -> 
-                            let ``__machine_step$cont`` = sm.ResumptionFunc.Invoke(&sm)
-                            if ``__machine_step$cont`` then 
-                                __expand_task2.Invoke(&sm)
+                    false
+            else
+
+                let completed = __expand_task1 sm
+                if completed then
+                    __expand_task2 sm
+                else 
+                    // If state machines are not supported, then we must adjust the resumption to also run __expand_task2 on completion
+                    let rec resume rf =
+                        (fun (sm :TaskSeqStateMachine<_>) -> 
+                            let completed = rf sm
+                            if completed then 
+                                __expand_task2 sm
                             else
-                                sm.ResumptionFunc <- combine ()
+                                sm.ResumptionFunc <- resume sm.ResumptionFunc
                                 false)
 
-                    sm.ResumptionFunc <- combine ()
-                false)
+                    sm.ResumptionFunc <- resume sm.ResumptionFunc
+                    false)
             
     [<NoDynamicInvocation>]
     member inline __.While(__expand_condition : unit -> bool, __expand_body : TaskSeqCode<'T>) : TaskSeqCode<'T> =
-        TaskSeqCode(fun sm -> 
+        (fun sm -> 
             let mutable step = true
-            while (step = true) && __expand_condition() do
-                let ``__machine_step$cont`` = __expand_body.Invoke &sm
+            while step && __expand_condition() do
+                let ``__machine_step$cont`` = __expand_body sm
                 match ``__machine_step$cont`` with 
                 | true  -> ()
                 | v -> step <- v
@@ -156,12 +163,12 @@ type TaskSeqBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.TryWith(__expand_body : TaskSeqCode<'T>, __expand_catch : exn -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
-        TaskSeqCode(fun sm -> 
+        (fun sm -> 
             let mutable step = true
             let mutable caught = false
             let mutable savedExn = Unchecked.defaultof<_>
             try
-                let ``__machine_step$cont`` = __expand_body.Invoke &sm
+                let ``__machine_step$cont`` = __expand_body sm
                 step <- ``__machine_step$cont``
                 // TODO: If we are not doing state machine compilation, then if "``__machine_step$cont``" is false we must adjust the 
                 // ResumptionFunc to re-enter the try/with
@@ -170,17 +177,19 @@ type TaskSeqBuilder() =
                 savedExn <- exn
 
             if caught then 
-                (__expand_catch savedExn).Invoke &sm
+                __expand_catch savedExn sm
             else
                 step)
 
     [<NoDynamicInvocation>]
     member inline __.TryFinallyAsync(__expand_body: TaskSeqCode<'T>, compensation : unit -> Task<unit>) : TaskSeqCode<'T> =
-        TaskSeqCode(fun sm -> 
+        (fun sm -> 
             let mutable step = true
             sm.PushDispose compensation
             try
-                let ``__machine_step$cont`` = __expand_body.Invoke &sm
+                let ``__machine_step$cont`` = __expand_body sm
+                // TODO: If we are not doing state machine compilation, then if "``__machine_step$cont``" is false we must adjust the 
+                // ResumptionFunc to re-enter the try/with
                 // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
                 // may skip this step.
                 step <- ``__machine_step$cont``
@@ -189,7 +198,7 @@ type TaskSeqBuilder() =
                 compensation().Result // TODO: async execution of this
                 reraise()
 
-            if (step = true) then 
+            if step then 
                 sm.PopDispose()
                 compensation().Result // TODO: async execution of this
             step)
@@ -202,14 +211,14 @@ type TaskSeqBuilder() =
     member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> TaskSeqCode<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinally(
-            (fun sm -> (__expand_body disp).Invoke &sm),
+            (fun sm -> __expand_body disp sm),
             (fun () -> if not (isNull (box disp)) then disp.Dispose()))
 
     [<NoDynamicInvocation>]
     member inline this.UsingAsync(disp : #IAsyncDisposable, __expand_body : #IAsyncDisposable -> TaskSeqCode<'T>) = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinallyAsync(
-            (fun sm -> (__expand_body disp).Invoke &sm),
+            (fun sm -> __expand_body disp sm),
             (fun () -> if not (isNull (box disp)) then disp.DisposeAsync() else Task.FromResult()))
 
     [<NoDynamicInvocation>]
@@ -217,29 +226,27 @@ type TaskSeqBuilder() =
         // A for loop is just a using statement on the sequence's enumerator...
         this.Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
-            (fun e -> this.While((fun () -> e.MoveNext()), (fun sm -> (__expand_body e.Current).Invoke &sm))))
+            (fun e -> this.While((fun () -> e.MoveNext()), (fun sm -> __expand_body e.Current sm))))
 
     [<NoDynamicInvocation>]
     member inline this.For(source : IAsyncEnumerable<'TElement>, __expand_body : 'TElement -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
-        TaskSeqCode(fun sm -> 
+        (fun sm -> 
             this.UsingAsync(source.GetAsyncEnumerator(sm.CancellationToken), 
                 // TODO: This should call WhileAsync
-                (fun e -> this.While((fun () -> e.MoveNextAsync().Result), (fun sm -> (__expand_body e.Current).Invoke &sm)))).Invoke(&sm))
+                (fun e -> this.While((fun () -> e.MoveNextAsync().Result), (fun sm -> __expand_body e.Current sm)))) sm)
 
     [<NoDynamicInvocation>]
     member inline __.Yield (v: 'T) : TaskSeqCode<'T> =
-        TaskSeqCode(fun sm -> 
-            let CONT = __entryPoint (MachineFunc<_>(fun sm -> true))
-#if ENABLED
-            if __stateMachinesSupported then 
-                sm.ResumptionPoint <- __entryPointIdSMH CONT
-            else 
-                sm.ResumptionFunc <- CONT
-#else
-            sm.ResumptionFunc <- CONT
-#endif
-            sm.Current <- ValueSome v
-            true)
+        (fun sm -> 
+            if __generateCompiledStateMachines then 
+                let CONT = __compiledStateMachineEntryPoint (MachineFunc<_>(fun sm -> true))
+                sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
+                sm.Current <- ValueSome v
+                true
+            else
+                sm.ResumptionFunc <- (fun sm -> true)
+                sm.Current <- ValueSome v
+                true)
 
     [<NoDynamicInvocation>]
     member inline this.YieldFrom (source: IAsyncEnumerable<'T>) : TaskSeqCode<'T> =
@@ -247,25 +254,28 @@ type TaskSeqBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.Bind (task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskSeqCode<'T>)) : TaskSeqCode<'T> =
-        TaskSeqCode(fun sm -> 
-            let mutable awaiter = task.GetAwaiter()
-            let CONT = __entryPoint (MachineFunc<_>(fun sm -> (__expand_continuation (awaiter.GetResult())).Invoke &sm))
-            if awaiter.IsCompleted then 
-                CONT.Invoke &sm
+        (fun sm -> 
+            if __generateCompiledStateMachines then 
+                let mutable awaiter = task.GetAwaiter()
+                let CONT = __compiledStateMachineEntryPoint (MachineFunc<_>(fun sm -> (__expand_continuation (awaiter.GetResult())) sm))
+                if awaiter.IsCompleted then 
+                    let mutable sm = sm
+                    CONT.Invoke &sm
+                else
+                    sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
+                    // Tell the builder to call us again when done.
+                    awaiter.UnsafeOnCompleted(Action(fun () -> sm.MoveNextAsync()))
+                    false
+
             else
-#if ENABLED
-                if __stateMachinesSupported then 
-                    sm.ResumptionPoint <- __entryPointIdSMH CONT
-                else 
-                    sm.ResumptionFunc <- CONT
-#else
-                sm.ResumptionFunc <- CONT
-#endif
-                // Tell the builder to call us again when done.
-                Console.WriteLine("[{0}] UnsafeOnCompleted", sm.GetHashCode())
-                let sm = sm
-                awaiter.UnsafeOnCompleted(Action(fun () -> sm.MoveNextAsync()))
-                false)
+                let mutable awaiter = task.GetAwaiter()
+                let cont sm = __expand_continuation (awaiter.GetResult()) sm
+                if awaiter.IsCompleted then 
+                    cont sm
+                else
+                    sm.ResumptionFunc <- cont
+                    sm.Awaiter <- awaiter
+                    false)
 
 let taskSeq = TaskSeqBuilder()
 

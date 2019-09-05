@@ -26,22 +26,28 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     module StateMachineHelpers = 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __entryPoint: MachineFunc<'Machine> -> MachineFunc<'Machine>
+        /// Code blocks guarded by this conditional are eligible to be compiled in a special manner by the F# compiler
+        val __generateCompiledStateMachines<'T> : bool 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __stateMachinesSupported<'T> : bool 
+        /// Within a compiled state machine, indicates the identifying integer for an entry point of the state machine
+        val __compiledStateMachineEntryPoint: MachineFunc<'Machine> -> MachineFunc<'Machine>
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __jumptableSMH : pc: int -> code: 'T -> 'T
+        /// Within a compiled state machine, represents a re-entry to the given entry point of the state machine code 
+        val __compiledStateMachineCode : pc: int -> code: 'T -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __stateMachineSMH<'T> : _obj: 'T -> 'T
+        /// Within a compiled state machine, indicates an object expression is a state machine
+        val __compiledStateMachine<'T> : _obj: 'T -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __stateMachineStructSMH<'Template, 'Result> : moveNext: MoveNextMethod<'Template> -> _setMachineState: MoveNextMethod<'Template> -> after: AfterMethod<'Template, 'Result> -> 'Result
+        /// Within a compiled state machine, indicates the given methods provide implementations of the IAsyncStateMachine functionality for a struct state machine
+        val __compiledStateMachineStruct<'Template, 'Result> : moveNext: MoveNextMethod<'Template> -> _setMachineState: SetMachineStateMethod<'Template> -> after: AfterMethod<'Template, 'Result> -> 'Result
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        val __entryPointIdSMH: MachineFunc<'Machine> -> int
+        /// Within a compiled state machine, indicates the identifying integer for an entry point of the state machine
+        val __compiledStateMachineEntryPointID: MachineFunc<'Machine> -> int
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
@@ -54,12 +60,6 @@ open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
-
-/// Represents the result of a computation, a value of true indicates completion
-[<Struct; NoComparison; NoEquality>]
-type TaskStep<'T> =
-    new : completed: bool -> TaskStep<'T>
-    member IsCompleted: bool
 
 [<Struct; NoComparison; NoEquality>]
 /// This is used by the compiler as a template for creating state machine structs
@@ -89,7 +89,7 @@ type TaskStateMachine<'T> =
 
     interface IAsyncStateMachine
 
-type TaskCode<'TOverall, 'T> = delegate of byref<TaskStateMachine<'TOverall>> -> TaskStep<'T>
+type TaskCode<'TOverall, 'T> = delegate of byref<TaskStateMachine<'TOverall>> -> bool 
 
 [<Class>]
 type TaskBuilder =
