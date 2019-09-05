@@ -22,6 +22,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Features
 
 open Internal.Utilities
 
@@ -180,8 +181,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, noDebugData: bool,
-                      pathMap: PathMap) =
-      
+                      pathMap: PathMap, langVersion: LanguageVersion) =
+
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
   let varc = NewRigidTypar "c" envRange
@@ -239,7 +240,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   // Search for a type. If it is not found, leave a dangling CCU reference with some useful diagnostic information should
   // the type actually be dereferenced
   let findSysTypeCcu path typeName =
-      match tryFindSysTypeCcu path typeName with 
+      match tryFindSysTypeCcu path typeName with
       | None -> CcuThunk.CreateDelayed(dummyAssemblyNameCarryingUsefulErrorInformation path typeName)
       | Some ccu -> ccu
 
@@ -664,6 +665,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_ty))  
   let v_methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       , None                 , Some "MethodHandleOf", [vara;varb], ([[varaTy --> varbTy]], v_system_RuntimeMethodHandle_ty))
   let v_sizeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sizeof"                               , None                 , Some "SizeOf" , [vara],     ([], v_int_ty))  
+  let v_nameof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nameof"                               , None                 , Some "NameOf" , [vara],     ([[varaTy]], v_string_ty))
+
   let v_unchecked_defaultof_info   = makeIntrinsicValRef(fslib_MFOperatorsUnchecked_nleref,                    "defaultof"                            , None                 , Some "DefaultOf", [vara],     ([], varaTy))  
   let v_typedefof_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typedefof"                            , None                 , Some "TypeDefOf", [vara],     ([], v_system_Type_ty))  
   let v_range_op_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Range"                             , None                 , None          , [vara],     ([[varaTy];[varaTy]], mkSeqTy varaTy))
@@ -902,6 +905,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
   member __.pathMap = pathMap
+  member __.langVersion = langVersion
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu
@@ -1331,6 +1335,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val methodhandleof_vref        = ValRefForIntrinsic v_methodhandleof_info
   member val typeof_vref                = ValRefForIntrinsic v_typeof_info
   member val sizeof_vref                = ValRefForIntrinsic v_sizeof_info
+  member val nameof_vref                = ValRefForIntrinsic v_nameof_info
   member val typedefof_vref             = ValRefForIntrinsic v_typedefof_info
   member val enum_vref                  = ValRefForIntrinsic v_enum_operator_info
   member val enumOfValue_vref           = ValRefForIntrinsic v_enumOfValue_info
@@ -1358,15 +1363,15 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val unbox_fast_vref            = ValRefForIntrinsic v_unbox_fast_info
   member val istype_vref                = ValRefForIntrinsic v_istype_info
   member val istype_fast_vref           = ValRefForIntrinsic v_istype_fast_info
-  member val query_source_vref            = ValRefForIntrinsic v_query_source_info
-  member val query_value_vref            = ValRefForIntrinsic v_query_value_info
-  member val query_run_value_vref            = ValRefForIntrinsic v_query_run_value_info
-  member val query_run_enumerable_vref            = ValRefForIntrinsic v_query_run_enumerable_info
-  member val query_for_vref            = ValRefForIntrinsic v_query_for_value_info
-  member val query_yield_vref            = ValRefForIntrinsic v_query_yield_value_info
-  member val query_yield_from_vref        = ValRefForIntrinsic v_query_yield_from_value_info
-  member val query_select_vref            = ValRefForIntrinsic v_query_select_value_info
-  member val query_where_vref            = ValRefForIntrinsic v_query_where_value_info
+  member val query_source_vref          = ValRefForIntrinsic v_query_source_info
+  member val query_value_vref           = ValRefForIntrinsic v_query_value_info
+  member val query_run_value_vref       = ValRefForIntrinsic v_query_run_value_info
+  member val query_run_enumerable_vref  = ValRefForIntrinsic v_query_run_enumerable_info
+  member val query_for_vref             = ValRefForIntrinsic v_query_for_value_info
+  member val query_yield_vref           = ValRefForIntrinsic v_query_yield_value_info
+  member val query_yield_from_vref      = ValRefForIntrinsic v_query_yield_from_value_info
+  member val query_select_vref          = ValRefForIntrinsic v_query_select_value_info
+  member val query_where_vref           = ValRefForIntrinsic v_query_where_value_info
   member val query_zero_vref            = ValRefForIntrinsic v_query_zero_value_info
 
   member __.seq_collect_info           = v_seq_collect_info

@@ -14,27 +14,27 @@
       </trans-unit>
       <trans-unit id="fsiInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="translated">- EINGABEDATEIEN -</target>
+        <target state="translated">– EINGABEDATEIEN –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCodeGeneration">
         <source>- CODE GENERATION -</source>
-        <target state="translated">- CODEGENERIERUNG -</target>
+        <target state="translated">– CODEGENERIERUNG –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiErrorsAndWarnings">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="translated">- FEHLER UND WARNUNGEN -</target>
+        <target state="translated">– FEHLER UND WARNUNGEN –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLanguage">
         <source>- LANGUAGE -</source>
-        <target state="translated">- SPRACHE -</target>
+        <target state="translated">– SPRACHE –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMiscellaneous">
         <source>- MISCELLANEOUS -</source>
-        <target state="translated">- VERSCHIEDENES -</target>
+        <target state="translated">– VERSCHIEDENES –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAdvanced">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="fsiAbortingMainThread">
         <source>- Aborting main thread...</source>
-        <target state="translated">- Hauptthread wird abgebrochen...</target>
+        <target state="translated">– Hauptthread wird abgebrochen...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCouldNotInstallCtrlCHandler">

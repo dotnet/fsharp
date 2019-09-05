@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
         <source>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</source>
-        <target state="translated">Odkazování na tuto verzi oboru názvů FSharp.Core zapříčíní nekompatibilitu projektu se staršími verzemi Visual Studia. Chcete pokračovat?</target>
+        <target state="translated">Odkazování na tuto verzi oboru názvů FSharp.Core zapříčiní nekompatibilitu projektu se staršími verzemi sady Visual Studio. Chcete pokračovat?</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputingSourcesAndFlags">
