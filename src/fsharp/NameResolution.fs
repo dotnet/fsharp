@@ -2112,6 +2112,7 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
         else
             raze (namespaceNotFound.Force())
 
+// Note - 'rest' is annotated due to a bug currently in Unity (see: https://github.com/dotnet/fsharp/pull/7427)
 let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id rest isOpenDecl f =
     match ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink ResultCollectionSettings.AllResults amap m false true fullyQualified nenv ad id [] isOpenDecl with
     | Result modrefs ->

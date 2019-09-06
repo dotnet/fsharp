@@ -380,6 +380,8 @@ type cenv =
       casApplied : Dictionary<Stamp, bool>
     }
 
+    override x.ToString() = "<cenv>"
+
 type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
       latestBoundId: Ident option
@@ -414,6 +416,8 @@ type IncrementalOptimizationEnv =
           inLoop = false
           localExternalVals = LayeredMap.Empty 
           globalModuleInfos = LayeredMap.Empty }
+
+    override x.ToString() = "<IncrementalOptimizationEnv>"
 
 //-------------------------------------------------------------------------
 // IsPartialExprVal - is the expr fully known?

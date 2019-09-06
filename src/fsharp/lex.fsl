@@ -67,13 +67,11 @@ let get0OXB (s:string) (p:byref<int>)  l =
 
 let formatError() = raise (new System.FormatException(SR.GetString("bad format string")))
 
-let parseBinaryUInt64 (s:string) p l = 
-    let rec parse n acc = if n < l then parse (n+1) (acc * 2UL + (match s.[n] with '0' -> 0UL | '1' -> 1UL | _ -> formatError())) else acc 
-    parse p 0UL
+let parseBinaryUInt64 (s:string) = 
+    Convert.ToUInt64(s, 2)
 
-let parseOctalUInt64 (s:string) p l = 
-    let rec parse n acc = if n < l then parse (n+1) (acc * 8UL + (let c = s.[n] in if c >= '0' && c <= '7' then Convert.ToUInt64 c - Convert.ToUInt64 '0' else formatError())) else acc 
-    parse p 0UL
+let parseOctalUInt64 (s:string) =
+    Convert.ToUInt64(s, 8)
 
 let removeUnderscores (s:string) =
     match s with
@@ -88,8 +86,8 @@ let parseInt32 (s:string) =
     let specifier = get0OXB s &p l 
     match Char.ToLower(specifier,CultureInfo.InvariantCulture) with 
     | 'x' -> sign * (int32 (Convert.ToUInt32(UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture))))
-    | 'b' -> sign * (int32 (Convert.ToUInt32(parseBinaryUInt64 s p l)))
-    | 'o' -> sign * (int32 (Convert.ToUInt32(parseOctalUInt64 s p l)))
+    | 'b' -> sign * (int32 (Convert.ToUInt32(parseBinaryUInt64 (s.Substring(p)))))
+    | 'o' -> sign * (int32 (Convert.ToUInt32(parseOctalUInt64  (s.Substring(p)))))
     | _ -> Int32.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
      
 let lexemeTrimRightToInt32 args lexbuf n = 

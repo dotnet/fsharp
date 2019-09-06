@@ -2685,9 +2685,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger) 
+        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger)
         |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
-        |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
     member x.EvalScript(scriptPath) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 

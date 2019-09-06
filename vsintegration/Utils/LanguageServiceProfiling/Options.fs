@@ -76,6 +76,8 @@ let FCS (repositoryDir: string) : Options =
              @"src\absil\ilprint.fs"
              @"src\absil\ilmorph.fsi"
              @"src\absil\ilmorph.fs"
+             @"src\absil\ilwritenativeres.fsi"
+             @"src\absil\ilwritenativeres.fs"
              @"src\absil\ilsupp.fsi"
              @"src\absil\ilsupp.fs"
              @"src\fsharp\FSharp.Compiler.Service\ilpars.fs"
