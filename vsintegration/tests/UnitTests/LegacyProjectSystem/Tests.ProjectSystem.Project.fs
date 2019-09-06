@@ -232,26 +232,26 @@ type Project() =
             AssertEqualMsg false (fsprojFileText.Contains(toVerify)) "it was not removed from the .fsproj on disk"
         ))
 
-    [<Test>]
-    member public this.``Removal.RemoveReferenceShouldDirtyProjectFileAndBeSeenOnDiskAfterSave``() =
-        let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
-        this.MakeProjectAndDoWithProjectFile([], ["System"], items.ToString(), (fun project fileName ->
-            let toVerify = @"<Reference Include=""System"""
-            // ensure is there to start
-            SaveProject(project)
-            let fsprojFileText = File.ReadAllText(fileName)
-            printfn "%s" fsprojFileText
-            AssertEqualMsg true (fsprojFileText.Contains(toVerify))  "original assumption of this test was invalid"
-            // remove it
-            let refSystem = TheTests.FindNodeWithCaption(project, "System")
-            refSystem.Remove(false)
-            // ensure things are right
-            AssertEqualMsg true project.IsProjectFileDirty "the project file was not dirtied"
-            SaveProject(project)
-            let fsprojFileText = File.ReadAllText(fileName)
-            printfn "%s" fsprojFileText
-            AssertEqualMsg false (fsprojFileText.Contains(toVerify)) "it was not removed from the .fsproj on disk"
-        ))
+    //[<Test>]
+    //member public this.``Removal.RemoveReferenceShouldDirtyProjectFileAndBeSeenOnDiskAfterSave``() =
+    //    let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
+    //    this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
+    //        let toVerify = @"<Reference Include=""System.Numerics"""
+    //        // ensure is there to start
+    //        SaveProject(project)
+    //        let fsprojFileText = File.ReadAllText(fileName)
+    //        printfn "%s" fsprojFileText
+    //        AssertEqualMsg true (fsprojFileText.Contains(toVerify))  "original assumption of this test was invalid"
+    //        // remove it
+    //        let refSystem = TheTests.FindNodeWithCaption(project, "System")
+    //        refSystem.Remove(false)
+    //        // ensure things are right
+    //        AssertEqualMsg true project.IsProjectFileDirty "the project file was not dirtied"
+    //        SaveProject(project)
+    //        let fsprojFileText = File.ReadAllText(fileName)
+    //        printfn "%s" fsprojFileText
+    //        AssertEqualMsg false (fsprojFileText.Contains(toVerify)) "it was not removed from the .fsproj on disk"
+    //    ))
 
     [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.MoveUpShouldDirtyProject``() =

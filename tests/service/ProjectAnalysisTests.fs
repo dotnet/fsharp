@@ -3647,7 +3647,6 @@ let ``Test symbol uses of properties with both getters and setters`` () =
 // Misc - type provider symbols
 module internal Project25 = 
     open System.IO
-    System.Diagnostics.Debugger.Break()
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
@@ -3669,11 +3668,11 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let fileNames = [fileName1]
     let args = 
         [|  yield! mkProjectCommandLineArgs (dllName, fileNames) 
-            yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "FSharp.Data.dll"))
-            yield @"-r:" + sysLib "System.Xml.Linq.dll"
-            yield @"-r:" + sysLib "System.dll"
-            yield @"-r:" + sysLib "System.Numerics.dll"
-            yield @"-r:" + sysLib @"Facades/netstandard.dll"
+            yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "FSharp.Data"))
+            yield @"-r:" + sysLib "System.Xml.Linq"
+            yield @"-r:" + sysLib "System"
+            yield @"-r:" + sysLib "System.Numerics"
+            yield @"-r:" + sysLib @"Facades/netstandard"
            |]
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 

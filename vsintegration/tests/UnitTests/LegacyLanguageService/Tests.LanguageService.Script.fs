@@ -912,10 +912,10 @@ type UsingMSBuild() as this =
         AssertContains(tooltip, @"mscorlib.dll]") // The assembly we expect the documentation to get taken from     
         
         MoveCursorToEndOfMarker(file, "(3).ToString().Len")
-        let tooltip = GetQuickInfoAtCursor file
-        AssertContains(tooltip, @"[Signature:P:System.String.Length]") // A message from the mock IDocumentationBuilder
-        AssertContains(tooltip, @"[Filename:") 
-        AssertContains(tooltip, @"mscorlib.dll]") // The assembly we expect the documentation to get taken from  
+        let tooltip2 = GetQuickInfoAtCursor file
+        AssertContains(tooltip2, @"[Signature:P:System.String.Length]") // A message from the mock IDocumentationBuilder
+        AssertContains(tooltip2, @"[Filename:") 
+        AssertContains(tooltip2, @"netstandard.dll]") // The assembly we expect the documentation to get taken from  
 
     // Especially under 4.0 we need #r of .NET framework assemblies to resolve from like,
     //

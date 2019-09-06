@@ -106,115 +106,115 @@ type Config() =
         finally
             File.Delete tmpTargets
     
-    [<Test>]
-    member this.``Configs.Renaming`` () =
-        this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
-            this.MSBuildProjectMultiConfigBoilerplate ["Debug",""; "Release",""],
-            (fun project projFileName ->
-                this.CheckConfigNames(project, [|"Debug"; "Release"|])
-                project.ConfigProvider.RenameCfgsOfCfgName("Debug", "Buggy") |> AssertEqual VSConstants.S_OK
-                this.CheckConfigNames(project, [|"Buggy";"Release"|])
-                SaveProject(project)
-                let fsprojFileText = File.ReadAllText(projFileName)
-                let xDoc = XDocument.Load(new StringReader(fsprojFileText))
-                let expected = this.MSBuildProjectMultiConfigBoilerplate ["Buggy",""; "Release",""]
-                let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
-            ))
+    //[<Test>]
+    //member this.``Configs.Renaming`` () =
+    //    this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
+    //        this.MSBuildProjectMultiConfigBoilerplate ["Debug",""; "Release",""],
+    //        (fun project projFileName ->
+    //            this.CheckConfigNames(project, [|"Debug"; "Release"|])
+    //            project.ConfigProvider.RenameCfgsOfCfgName("Debug", "Buggy") |> AssertEqual VSConstants.S_OK
+    //            this.CheckConfigNames(project, [|"Buggy";"Release"|])
+    //            SaveProject(project)
+    //            let fsprojFileText = File.ReadAllText(projFileName)
+    //            let xDoc = XDocument.Load(new StringReader(fsprojFileText))
+    //            let expected = this.MSBuildProjectMultiConfigBoilerplate ["Buggy",""; "Release",""]
+    //            let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
+    //            TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+    //        ))
             
-    [<Test>]
-    member this.``Configs.Deleting`` () =
-        this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
-            this.MSBuildProjectMultiConfigBoilerplate ["Debug",""; "Release",""],
-            (fun project projFileName ->
-                this.CheckConfigNames(project, [|"Debug";"Release"|])
-                project.ConfigProvider.DeleteCfgsOfCfgName("Debug") |> AssertEqual VSConstants.S_OK
-                this.CheckConfigNames(project, [|"Release"|])
-                SaveProject(project)
-                let fsprojFileText = File.ReadAllText(projFileName)
-                let xDoc = XDocument.Load(new StringReader(fsprojFileText))
-                let expected = this.MSBuildProjectMultiConfigBoilerplate ["Release",""]
-                let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
-            ))
-    [<Test>]
-    member this.``Configs.Adding`` () =
-        this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
-            this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
-            (fun project projFileName ->    
-                this.CheckConfigNames(project, [|"Debug";"Release"|])
-                project.ConfigProvider.AddCfgsOfCfgName("Buzz", "Debug", 0) |> AssertEqual VSConstants.S_OK
-                this.CheckConfigNames(project, [|"Debug";"Release";"Buzz"|])
-                SaveProject(project)
-                let fsprojFileText = File.ReadAllText(projFileName)
-                let xDoc = XDocument.Load(new StringReader(fsprojFileText))
-                let expected = this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""; "Buzz","<Foo/>"]
-                let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
-            ))
-    [<Test>]
-    member this.``Configs.AddingBaseless`` () =
-        this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
-            this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
-            (fun project projFileName ->
-                this.CheckConfigNames(project, [|"Debug";"Release"|])
-                project.ConfigProvider.AddCfgsOfCfgName("Buzz", null, 0) |> AssertEqual VSConstants.S_OK
-                this.CheckConfigNames(project, [|"Debug";"Release";"Buzz"|])
-                SaveProject(project)
-                let fsprojFileText = File.ReadAllText(projFileName)
-                let xDoc = XDocument.Load(new StringReader(fsprojFileText))
-                let expected = this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""; "Buzz",""]
-                let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
-            ))
+    //[<Test>]
+    //member this.``Configs.Deleting`` () =
+    //    this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
+    //        this.MSBuildProjectMultiConfigBoilerplate ["Debug",""; "Release",""],
+    //        (fun project projFileName ->
+    //            this.CheckConfigNames(project, [|"Debug";"Release"|])
+    //            project.ConfigProvider.DeleteCfgsOfCfgName("Debug") |> AssertEqual VSConstants.S_OK
+    //            this.CheckConfigNames(project, [|"Release"|])
+    //            SaveProject(project)
+    //            let fsprojFileText = File.ReadAllText(projFileName)
+    //            let xDoc = XDocument.Load(new StringReader(fsprojFileText))
+    //            let expected = this.MSBuildProjectMultiConfigBoilerplate ["Release",""]
+    //            let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
+    //            TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+    //        ))
+    //[<Test>]
+    //member this.``Configs.Adding`` () =
+    //    this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
+    //        this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
+    //        (fun project projFileName ->    
+    //            this.CheckConfigNames(project, [|"Debug";"Release"|])
+    //            project.ConfigProvider.AddCfgsOfCfgName("Buzz", "Debug", 0) |> AssertEqual VSConstants.S_OK
+    //            this.CheckConfigNames(project, [|"Debug";"Release";"Buzz"|])
+    //            SaveProject(project)
+    //            let fsprojFileText = File.ReadAllText(projFileName)
+    //            let xDoc = XDocument.Load(new StringReader(fsprojFileText))
+    //            let expected = this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""; "Buzz","<Foo/>"]
+    //            let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
+    //            TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+    //        ))
+    //[<Test>]
+    //member this.``Configs.AddingBaseless`` () =
+    //    this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
+    //        this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
+    //        (fun project projFileName ->
+    //            this.CheckConfigNames(project, [|"Debug";"Release"|])
+    //            project.ConfigProvider.AddCfgsOfCfgName("Buzz", null, 0) |> AssertEqual VSConstants.S_OK
+    //            this.CheckConfigNames(project, [|"Debug";"Release";"Buzz"|])
+    //            SaveProject(project)
+    //            let fsprojFileText = File.ReadAllText(projFileName)
+    //            let xDoc = XDocument.Load(new StringReader(fsprojFileText))
+    //            let expected = this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""; "Buzz",""]
+    //            let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
+    //            TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+    //        ))
 
-    [<Test>]
-    member this.``Configs.Platforms.Deleting`` () =
-        this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
-            this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""],
-            (fun project projFileName ->
-                this.CheckPlatformNames(project, [|"Any CPU";"x86"|])
-                project.ConfigProvider.DeleteCfgsOfPlatformName("Any CPU") |> AssertEqual VSConstants.S_OK
-                this.CheckPlatformNames(project, [|"x86"|])
-                SaveProject(project)
-                let fsprojFileText = File.ReadAllText(projFileName)
-                let xDoc = XDocument.Load(new StringReader(fsprojFileText))
-                let expected = this.MSBuildProjectMultiPlatform ["x86",""]
-                let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+    //[<Test>]
+    //member this.``Configs.Platforms.Deleting`` () =
+    //    this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
+    //        this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""],
+    //        (fun project projFileName ->
+    //            this.CheckPlatformNames(project, [|"Any CPU";"x86"|])
+    //            project.ConfigProvider.DeleteCfgsOfPlatformName("Any CPU") |> AssertEqual VSConstants.S_OK
+    //            this.CheckPlatformNames(project, [|"x86"|])
+    //            SaveProject(project)
+    //            let fsprojFileText = File.ReadAllText(projFileName)
+    //            let xDoc = XDocument.Load(new StringReader(fsprojFileText))
+    //            let expected = this.MSBuildProjectMultiPlatform ["x86",""]
+    //            let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
+    //            TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
 
-        ))
+    //    ))
         
-    [<Test>]
-    member this.``Configs.Platforms.Adding`` () =
-        this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
-            this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86","<Custom/>"],
-            (fun project projFileName ->
-                this.CheckPlatformNames(project, [|"Any CPU";"x86"|])
-                project.ConfigProvider.AddCfgsOfPlatformName("x64", "x86") |> AssertEqual VSConstants.S_OK
-                this.CheckPlatformNames(project, [|"Any CPU";"x86";"x64"|])
-                SaveProject(project)
-                let fsprojFileText = File.ReadAllText(projFileName)
-                let xDoc = XDocument.Load(new StringReader(fsprojFileText))
-                let expected = this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86","<Custom/>"; "x64","<Custom/>"]
-                let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+    //[<Test>]
+    //member this.``Configs.Platforms.Adding`` () =
+    //    this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
+    //        this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86","<Custom/>"],
+    //        (fun project projFileName ->
+    //            this.CheckPlatformNames(project, [|"Any CPU";"x86"|])
+    //            project.ConfigProvider.AddCfgsOfPlatformName("x64", "x86") |> AssertEqual VSConstants.S_OK
+    //            this.CheckPlatformNames(project, [|"Any CPU";"x86";"x64"|])
+    //            SaveProject(project)
+    //            let fsprojFileText = File.ReadAllText(projFileName)
+    //            let xDoc = XDocument.Load(new StringReader(fsprojFileText))
+    //            let expected = this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86","<Custom/>"; "x64","<Custom/>"]
+    //            let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
+    //            TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
 
-        ))
+    //    ))
 
-    [<Test>]
-    member this.``Configs.Platforms.AddingBaseless`` () =
-        this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
-            this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""],
-            (fun project projFileName ->
-                this.CheckPlatformNames(project, [|"Any CPU";"x86"|])
-                project.ConfigProvider.AddCfgsOfPlatformName("x64", null) |> AssertEqual VSConstants.S_OK
-                this.CheckPlatformNames(project, [|"Any CPU";"x86";"x64"|])
-                SaveProject(project)
-                let fsprojFileText = File.ReadAllText(projFileName)
-                let xDoc = XDocument.Load(new StringReader(fsprojFileText))
-                let expected = this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""; "x64",""]
-                let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+    //[<Test>]
+    //member this.``Configs.Platforms.AddingBaseless`` () =
+    //    this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
+    //        this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""],
+    //        (fun project projFileName ->
+    //            this.CheckPlatformNames(project, [|"Any CPU";"x86"|])
+    //            project.ConfigProvider.AddCfgsOfPlatformName("x64", null) |> AssertEqual VSConstants.S_OK
+    //            this.CheckPlatformNames(project, [|"Any CPU";"x86";"x64"|])
+    //            SaveProject(project)
+    //            let fsprojFileText = File.ReadAllText(projFileName)
+    //            let xDoc = XDocument.Load(new StringReader(fsprojFileText))
+    //            let expected = this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""; "x64",""]
+    //            let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
+    //            TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
 
-        ))
+    //    ))

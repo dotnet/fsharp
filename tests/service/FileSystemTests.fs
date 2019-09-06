@@ -96,7 +96,7 @@ let ``FileSystem compilation test``() =
                yield "--fullpaths"; 
                yield "--flaterrors"; 
                yield "--target:library"; 
-               for r in [ sysLib "mscorlib"; sysLib "System"; sysLib "System.Core"; fsCoreDefaultReference() ] do 
+               for r in [ sysLib "mscorlib"; sysLib "System"; sysLib "System.Core"; sysLib "System.Numerics"; sysLib "Facades\\netstandard"; fsCoreDefaultReference() ] do 
                    yield "-r:" + r |]
  
         { ProjectFileName = @"c:\mycode\compilation.fsproj" // Make a name that is unique in this directory.

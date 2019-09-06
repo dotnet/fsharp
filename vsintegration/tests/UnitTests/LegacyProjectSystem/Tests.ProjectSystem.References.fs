@@ -76,8 +76,11 @@ type References() =
             refContainer.AddReferenceFromSelectorData(selectorData) |> Assert.IsNotNull
             let l = new List<AssemblyReferenceNode>()
             project.FindNodesOfType(l)
-            Assert.AreEqual(1, l.Count)
-            Assert.AreEqual("System.Windows.Forms", l.[0].Caption)            
+            Assert.AreEqual(4, l.Count)
+            Assert.AreEqual("netstandard", l.[0].Caption)
+            Assert.AreEqual("System", l.[1].Caption)
+            Assert.AreEqual("System.Numerics", l.[2].Caption)
+            Assert.AreEqual("System.Windows.Forms", l.[3].Caption)
             SaveProject(project)
             let fsprojFileText = File.ReadAllText(project.FileName)
             printfn "%s" fsprojFileText
@@ -126,9 +129,14 @@ type References() =
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.Works``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"; "netstandard"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "mscorlib", true
+                                    "netstandard", true
+                                    "netstandard", true
+                                    "System", true
                                     "System", true
                                     "System.Core", true
-                                    "System.Net", true ]
+                                    "System.Net", true
+                                    "System.Numerics", true]
+
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
                 let r = ref(refContainer.FirstChild :?> ReferenceNode)
@@ -139,12 +147,15 @@ type References() =
             AssertEqual expectedRefInfo actualRefInfo
             ))
 
-
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WithExactDuplicates``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["System"; "System"], "", "v4.0", (fun project ->
-            let expectedRefInfo = [ "System", true  // In C#, one will be banged out, whereas
-                                    "System", true] // one will be ok, but in F# both show up as ok.  Bug?  Not worth the effort to fix.
+            let expectedRefInfo = [ "netstandard", true
+                                    "System", true  // In C#, one will be banged out, whereas
+                                    "System", true  // one will be ok, but in F# both show up as ok.  Bug?  Not worth the effort to fix.
+                                    "System", true
+                                    "System.Numerics", true ]
+
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
                 let r = ref(refContainer.FirstChild :?> ReferenceNode)
@@ -158,8 +169,12 @@ type References() =
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WithBadDuplicates``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["System"; "System.dll"], "", "v4.0", (fun project ->
-            let expectedRefInfo = [ "System", false     // one will be banged out
-                                    "System.dll", true] // one will be ok
+            let expectedRefInfo = [ "netstandard", true
+                                    "System", true
+                                    "System", true
+                                    "System.dll", false
+                                    "System.Numerics", true]
+
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
                 let r = ref(refContainer.FirstChild :?> ReferenceNode)
@@ -175,7 +190,11 @@ type References() =
             let netDir = currentFrameworkDirectory
             let ssmw = Path.Combine(netDir, "System.ServiceModel.Web.dll")
             this.MakeProjectAndDo(["doesNotMatter.fs"], [ssmw], "", "v4.0", (fun project ->
-            let expectedRefInfo = [ ssmw, true ]
+            let expectedRefInfo = [ ssmw, true
+                                    "netstandard", true
+                                    "System", true
+                                    "System.Numerics", true]
+
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
               let r = ref(refContainer.FirstChild :?> ReferenceNode)
@@ -188,11 +207,16 @@ type References() =
 
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WeirdCases``() =
-        this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib, Version=4.0.0.0"; "System, Version=4.0.0.0"; "System.Core, Version=4.0.0.0"; "System.Net, Version=4.0.0.0"; "netstandard"], "", "v4.0", (fun project ->
+        this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib, Version=4.0.0.0"; "System, Version=4.0.0.0"; "System.Core, Version=4.0.0.0"; "System.Net, Version=4.0.0.0"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "mscorlib", true
+                                    "netstandard", true;
                                     "System", true
+                                    "System, Version=4.0.0.0", false
                                     "System.Core, Version=4.0.0.0", false // msbuild does funny things for System.Core (TODO bug number)
-                                    "System.Net", true ]
+                                    "System.Net", true 
+                                    "System.Numerics", true           
+                                  ]
+
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
                 let r = ref(refContainer.FirstChild :?> ReferenceNode)
@@ -423,10 +447,16 @@ type References() =
             use project = TheTests.CreateProject(projFile) 
             let l = new List<AssemblyReferenceNode>()
             project.FindNodesOfType(l)
-            AssertEqual 1 l.Count
+            AssertEqual 4 l.Count
             AssertEqual refLibPath l.[0].Url
             AssertEqual refLibPath l.[0].Caption  // when Include is a filename, entirety is caption
             Assert.IsNotNull(l.[0].ResolvedAssembly)
+            AssertEqual "netstandard" l.[1].Caption
+            Assert.IsNotNull(l.[1].ResolvedAssembly)
+            AssertEqual "System" l.[2].Caption
+            Assert.IsNotNull(l.[2].ResolvedAssembly)
+            AssertEqual "System.Numerics" l.[3].Caption
+            Assert.IsNotNull(l.[3].ResolvedAssembly)
             let refContainer =
                 let l = new List<ReferenceContainerNode>()
                 project.FindNodesOfType(l)
@@ -434,12 +464,19 @@ type References() =
             let mscorlibPath = (new Uri("".GetType().Assembly.EscapedCodeBase)).LocalPath
             let selectorData = new VSCOMPONENTSELECTORDATA(``type`` = VSCOMPONENTTYPE.VSCOMPONENTTYPE_ComPlus, bstrFile = mscorlibPath)
             refContainer.AddReferenceFromSelectorData(selectorData) |> Assert.IsNotNull
-            let l = new List<AssemblyReferenceNode>()
-            project.FindNodesOfType(l)
-            AssertEqual 2 l.Count
-            AssertEqual refLibPath l.[0].Url
-            AssertEqual refLibPath l.[0].Caption
-            AssertEqual "mscorlib" l.[1].Caption
+            let l2 = new List<AssemblyReferenceNode>()
+            project.FindNodesOfType(l2)
+            AssertEqual 5 l2.Count
+            AssertEqual refLibPath l2.[0].Url
+            AssertEqual refLibPath l2.[0].Caption
+            AssertEqual "mscorlib" l2.[1].Caption
+            Assert.IsNotNull(l2.[1].ResolvedAssembly)
+            AssertEqual "netstandard" l2.[2].Caption
+            Assert.IsNotNull(l2.[2].ResolvedAssembly)
+            AssertEqual "System" l2.[3].Caption
+            Assert.IsNotNull(l2.[3].ResolvedAssembly)
+            AssertEqual "System.Numerics" l2.[4].Caption
+            Assert.IsNotNull(l2.[4].ResolvedAssembly)
         )
 
     [<Test>]
@@ -453,11 +490,16 @@ type References() =
             use project = TheTests.CreateProject(projFile) 
             let l = new List<AssemblyReferenceNode>()
             project.FindNodesOfType(l)
-            AssertEqual 2 l.Count
-            AssertEqual "System.dll" l.[0].Caption
+            AssertEqual 5 l.Count
+            AssertEqual "netstandard" l.[0].Caption
             Assert.IsNotNull(l.[0].ResolvedAssembly)
-            AssertEqual "System.Net.dll" l.[1].Caption
+            AssertEqual "System" l.[1].Caption
             Assert.IsNotNull(l.[1].ResolvedAssembly)
+            AssertEqual "System.dll" l.[2].Caption
+            AssertEqual "System.Net.dll" l.[3].Caption
+            Assert.IsNotNull(l.[3].ResolvedAssembly)
+            AssertEqual "System.Numerics" l.[4].Caption
+            Assert.IsNotNull(l.[4].ResolvedAssembly)
         )
         
     [<Test>]
@@ -468,7 +510,7 @@ type References() =
             use project = TheTests.CreateProject(projFile) 
             let l = new List<AssemblyReferenceNode>()
             project.FindNodesOfType(l)
-            AssertEqual 1 l.Count
+            AssertEqual 4 l.Count
             AssertEqual refLibPath l.[0].Caption
             Assert.IsNull(l.[0].ResolvedAssembly)
         )

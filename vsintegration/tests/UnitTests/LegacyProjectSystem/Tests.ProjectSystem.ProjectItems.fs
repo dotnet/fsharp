@@ -40,7 +40,6 @@ type ProjectItems() =
             )
 
             Assert.IsFalse(!wasCalled, "No events from IVsTrackProjectDocuments2 are expected")
-            Assert.IsFalse(containsSystemNumerics(), "Project should not contains reference to System.Numerics")            
             ))
 
     [<Test>]

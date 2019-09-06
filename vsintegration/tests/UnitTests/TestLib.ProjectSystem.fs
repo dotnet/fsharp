@@ -384,7 +384,7 @@ type TheTests() =
     <OutputType>{0}</OutputType>
     <RootNamespace>Blah</RootNamespace>
     <AssemblyName>Blah</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Name>Blah</Name>
   </PropertyGroup>
@@ -408,7 +408,7 @@ type TheTests() =
     <OutputType>{0}</OutputType>
     <RootNamespace>Blah</RootNamespace>
     <AssemblyName>Blah</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Name>Blah</Name>
   </PropertyGroup>
@@ -471,7 +471,7 @@ type TheTests() =
                 <OutputType>Library</OutputType>
                 <RootNamespace>Blah</RootNamespace>
                 <AssemblyName>Blah</AssemblyName>
-                <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+                <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
                 <FileAlignment>512</FileAlignment>
                 <Name>Blah</Name>
               </PropertyGroup>"

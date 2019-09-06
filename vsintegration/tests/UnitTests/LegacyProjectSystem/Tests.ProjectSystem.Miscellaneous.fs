@@ -257,7 +257,7 @@ type Miscellaneous() =
                     l.[0]
                 let l = new List<AssemblyReferenceNode>()
                 refContainer.FindNodesOfType<AssemblyReferenceNode>(l)
-                AssertEqual 1 l.Count
+                AssertEqual 4 l.Count
         ))
 
     [<Test>]
