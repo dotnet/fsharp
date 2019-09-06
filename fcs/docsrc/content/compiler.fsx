@@ -85,14 +85,14 @@ is not really an option.
 
 You still have to pass the "-o" option to name the output file, but the output file is not actually written to disk.
 
-The 'None' option indicates that the initiatlization code for the assembly is not executed. 
+The 'None' option indicates that the initialization code for the assembly is not executed. 
 *)
 let errors2, exitCode2, dynAssembly2 = 
     checker.CompileToDynamicAssembly([| "-o"; fn3; "-a"; fn2 |], execute=None)
      |> Async.RunSynchronously
 
 (*
-Passing 'Some' for the 'execute' parameter executes  the initiatlization code for the assembly.
+Passing 'Some' for the 'execute' parameter executes  the initialization code for the assembly.
 *)
 let errors3, exitCode3, dynAssembly3 = 
     checker.CompileToDynamicAssembly([| "-o"; fn3; "-a"; fn2 |], Some(stdout,stderr))
