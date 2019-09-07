@@ -64,7 +64,6 @@ module SurfaceArea =
 
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
-
         // get current FSharp.Core
         let asm = typeof<int list>.GetTypeInfo().Assembly
         let fsCoreFullName = asm.FullName
@@ -97,7 +96,7 @@ module SurfaceArea =
             types |> Array.collect getTypeMemberStrings
 
         asm,actual
-
+    
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
         let normalize (s:string) =
@@ -105,7 +104,7 @@ module SurfaceArea =
 
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-
+        
         let expected =
             // Split the "expected" string into individual lines, then normalize it.
             (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
@@ -156,4 +155,4 @@ module SurfaceArea =
             newLine sb
             sb.ToString ()
 
-        raise <| Exception(msg)
+        Assert.Fail msg

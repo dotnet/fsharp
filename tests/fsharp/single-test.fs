@@ -306,7 +306,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     match p with
     | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "netcoreapp3.0" true false
-    | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "netcoreapp2.0" true true
+    | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "netcoreapp3.0" true true
     | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "netcoreapp3.0" true false
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
