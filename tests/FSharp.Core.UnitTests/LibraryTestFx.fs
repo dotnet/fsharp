@@ -96,15 +96,16 @@ module SurfaceArea =
             types |> Array.collect getTypeMemberStrings
 
         asm,actual
-    
+
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
+        printfn "Verify"
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
 
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-        
+
         let expected =
             // Split the "expected" string into individual lines, then normalize it.
             (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
@@ -128,6 +129,7 @@ module SurfaceArea =
         let logFile =
             let workDir = TestContext.CurrentContext.WorkDirectory
             sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
+        printfn "logFile: %s" logFile
         System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
         // The surface areas don't match; prepare an easily-readable output message.
