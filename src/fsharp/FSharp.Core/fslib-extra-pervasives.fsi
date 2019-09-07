@@ -11,7 +11,6 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Text
-    open Microsoft.FSharp.Math
 
 #if !FX_NO_SYSTEM_CONSOLE
     /// <summary>Print to <c>stdout</c> using the given format.</summary>

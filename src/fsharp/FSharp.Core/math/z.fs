@@ -2,8 +2,10 @@
 
 #nowarn "44" // This construct is deprecated. This function is for use by compiled F# code and should not be used directly
 
-namespace Microsoft.FSharp.Core
+namespace Microsoft.FSharp.Math
+// Empty namespace
 
+namespace Microsoft.FSharp.Core
 
     type bigint = System.Numerics.BigInteger
 

@@ -1,5 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+namespace Microsoft.FSharp.Math
+// Empty namespace
+
 namespace Microsoft.FSharp.Core
 
     type bigint = System.Numerics.BigInteger
