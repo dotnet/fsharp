@@ -1320,28 +1320,7 @@ module CoreTests =
 
     [<Test>]
     let ``pinvoke-FSI_BASIC`` () =
-        // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-        // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
-        let definePInvokeMethod =
-            typeof<System.Reflection.Emit.TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
-                typeof<string>
-                typeof<string>
-                typeof<string>
-                typeof<System.Reflection.MethodAttributes>
-                typeof<System.Reflection.CallingConventions>
-                typeof<Type>
-                typeof<Type[]>
-                typeof<Type[]>
-                typeof<Type[]>
-                typeof<Type[][]>
-                typeof<Type[][]>
-                typeof<System.Runtime.InteropServices.CallingConvention>
-                typeof<System.Runtime.InteropServices.CharSet> |])
-
-        let enablePInvokeOnCoreClr = definePInvokeMethod <> null
-
-        if enablePInvokeOnCoreClr then
-            singleTestBuildAndRun "core/pinvoke" FSI_BASIC
+        singleTestBuildAndRun "core/pinvoke" FSI_BASIC
 
     [<Test>]
     let ``fsi_load-FSC_BASIC`` () = singleTestBuildAndRun "core/fsi-load" FSC_BASIC
