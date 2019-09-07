@@ -64,7 +64,6 @@ module SurfaceArea =
 
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
-
         // get current FSharp.Core
         let asm = typeof<int list>.GetTypeInfo().Assembly
         let fsCoreFullName = asm.FullName
@@ -100,6 +99,7 @@ module SurfaceArea =
 
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
+        printfn "Verify"
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
 
@@ -129,6 +129,7 @@ module SurfaceArea =
         let logFile =
             let workDir = TestContext.CurrentContext.WorkDirectory
             sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
+        printfn "logFile: %s" logFile
         System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
         // The surface areas don't match; prepare an easily-readable output message.
@@ -156,4 +157,4 @@ module SurfaceArea =
             newLine sb
             sb.ToString ()
 
-        raise <| Exception(msg)
+        Assert.Fail msg
