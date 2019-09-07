@@ -2311,7 +2311,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
     // Many methods of different arities, all incorrect
     | _, _, ([], (cmeth :: _)), _, _ ->
         let minfo = cmeth.Method
-        Error (FSComp.SR.csMemberOverloadArityMismatch(methodName, cmeth.TotalNumUnnamedCallerArgs + cmeth.TotalNumNamedCallerArgs, (List.sum minfo.NumArgs)), m)
+        Error (FSComp.SR.csMemberOverloadArityMismatch(methodName, cmeth.TotalNumUnnamedCallerArgs + cmeth.TotalNumAssignedNamedArgs, (List.sum minfo.NumArgs)), m)
     | _ ->
         let msg =
             if nNamedCallerArgs = 0 then
