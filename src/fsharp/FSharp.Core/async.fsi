@@ -444,8 +444,8 @@ namespace Microsoft.FSharp.Control
         static member StartImmediate: 
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
-        /// <summary>Runs an asynchronous computation, starting immediately on the current operating system, 
-        /// but also returns the execution as <c>System.Threading.Tasks.Task</c> 
+        /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
+        /// thread, but also returns the execution as <c>System.Threading.Tasks.Task</c>
         /// </summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.
         /// You may prefer using this method if you want to achive a similar behviour to async await in C# as 
