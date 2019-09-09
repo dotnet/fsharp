@@ -1,7 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Math
-// Empty namespace
+
+// Deliberately left empty
+//
+//  FSharp.Core previously exposed the namespace Microsoft.FSharp.Math even though there were no types in it.
+//  This retains that.
+//  Existing programs could, and did contain the line:
+//  open FSharp.Math
+//
 
 namespace Microsoft.FSharp.Core
 

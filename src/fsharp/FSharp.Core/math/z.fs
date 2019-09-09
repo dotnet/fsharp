@@ -3,7 +3,14 @@
 #nowarn "44" // This construct is deprecated. This function is for use by compiled F# code and should not be used directly
 
 namespace Microsoft.FSharp.Math
-// Empty namespace
+
+// Deliberately left empty
+//
+//  FSharp.Core previously exposed the namespace Microsoft.FSharp.Math even though there were no types in it.
+//  This retains that.
+//  Existing programs could, and did contain the line:
+//  open FSharp.Math
+//
 
 namespace Microsoft.FSharp.Core
 
