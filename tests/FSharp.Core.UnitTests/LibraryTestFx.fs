@@ -64,12 +64,14 @@ module SurfaceArea =
 
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
+
         // get current FSharp.Core
-        let asm = typeof<int list>.GetTypeInfo().Assembly
+        let asm = typeof<int list>.Assembly
         let fsCoreFullName = asm.FullName
 
         // public types only
         let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
+        let typenames = new System.Collections.Generic.List<string>()
 
         let typenames = new System.Collections.Generic.List<string>()
         // extract canonical string form for every public member of every type
@@ -95,7 +97,7 @@ module SurfaceArea =
         let actual =
             types |> Array.collect getTypeMemberStrings
 
-        asm,actual
+        asm, actual
 
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
