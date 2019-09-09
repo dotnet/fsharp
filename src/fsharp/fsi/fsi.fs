@@ -1137,6 +1137,7 @@ type internal FsiDynamicCompiler
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
 
         // Find all new declarations the EvaluationListener
+        let mutable lastValue = None
         try
             let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports, declaredImpls)
             let contentFile = contents.ImplementationFiles.[0]
@@ -1161,30 +1162,21 @@ type internal FsiDynamicCompiler
                         let symbol = FSharpSymbol.Create(cenv, v.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
                         fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
+                        lastValue <- fsiValueOpt
                     | FSharpImplementationFileDeclaration.Entity (e,_) ->
                         // Report a top-level module or namespace definition
                         let symbol = FSharpSymbol.Create(cenv, e.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
                         fsi.TriggerEvaluation (None, symbolUse, decl)
+                        lastValue <- None
                     | FSharpImplementationFileDeclaration.InitAction _ ->
                         // Top level 'do' bindings are not reported as incremental declarations
                         ()
             | _ -> ()
         with _ -> ()
 
-        // find 'it' value
-        let it =
-            match newState.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem "it" with
-            | NameResolution.Item.Value vref ->
-                let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
-                match optValue with
-                | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(tcGlobals, newState.tcState.Ccu, newState.tcState.CcuSig, newState.tcImports, vref.Type)))
-                | _ -> None
-            | _ -> None
+        newState, Completed lastValue
 
-        newState, Completed it
-      
-     
     /// Evaluate the given expression and produce a new interactive state.
     member fsiDynamicCompiler.EvalParsedExpression (ctok, errorLogger: ErrorLogger, istate, expr: SynExpr) =
         let tcConfig = TcConfig.Create (tcConfigB, validate=false)
