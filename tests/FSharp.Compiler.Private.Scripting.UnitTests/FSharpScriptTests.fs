@@ -30,6 +30,14 @@ type InteractiveTests() =
         Assert.AreEqual(2, value.ReflectionValue :?> int)
 
     [<Test>]
+    member __.``Declare and eval object value``() =
+        use script = new FSharpScript()
+        let opt = script.Eval("let x = 1 + 2\r\nx") |> getValue
+        let value = opt.Value
+        Assert.AreEqual(typeof<int>, value.ReflectionType)
+        Assert.AreEqual(3, value.ReflectionValue :?> int)
+
+    [<Test>]
     member __.``Capture console input``() =
         use script = new FSharpScript(captureInput=true)
         script.ProvideInput "stdin:1234\r\n"

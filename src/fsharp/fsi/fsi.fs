@@ -1172,7 +1172,17 @@ type internal FsiDynamicCompiler
             | _ -> ()
         with _ -> ()
 
-        newState
+        // find 'it' value
+        let it =
+            match newState.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem "it" with
+            | NameResolution.Item.Value vref ->
+                let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
+                match optValue with
+                | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(tcGlobals, newState.tcState.Ccu, newState.tcState.CcuSig, newState.tcImports, vref.Type)))
+                | _ -> None
+            | _ -> None
+
+        newState, Completed it
       
      
     /// Evaluate the given expression and produce a new interactive state.
@@ -1184,7 +1194,7 @@ type internal FsiDynamicCompiler
         let defs = fsiDynamicCompiler.BuildItBinding expr
 
         // Evaluate the overall definitions.
-        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs)
+        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs) |> fst
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with 
         | NameResolution.Item.Value vref -> 
@@ -1791,7 +1801,7 @@ type internal FsiInteractionProcessor
             | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],_) ->
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
             | IDefns (defs,_) -> 
-                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
+                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
@@ -2089,7 +2099,7 @@ type internal FsiInteractionProcessor
     /// Send a dummy interaction through F# Interactive, to ensure all the most common code generation paths are 
     /// JIT'ed and ready for use.
     member __.LoadDummyInteraction(ctok, errorLogger) =
-        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []), Completed None) |> fst)
+        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []) |> fst, Completed None) |> fst)
         
     member __.EvalInteraction(ctok, sourceText, scriptFileName, errorLogger) =
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
