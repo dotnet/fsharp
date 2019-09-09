@@ -29,8 +29,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// A marker interface to give priority to different available overloads
     type IPriority1 = interface inherit IPriority2 end
 
-    type MachineFunc<'Machine> = delegate of byref<'Machine> -> bool
-
     type MoveNextMethod<'Template> = delegate of byref<'Template> -> unit
 
     type SetMachineStateMethod<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
@@ -45,12 +43,12 @@ namespace Microsoft.FSharp.Core.CompilerServices
         
         /// Indicates that the given closure can be used as an entry point in a state machine
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __compiledStateMachineEntryPoint(code: MachineFunc<'Machine>) : MachineFunc<'Machine> = code
+        let __compiledStateMachineReentry() : int option = None
 
-        /// In converted code, fetches the jumptable ID of the given entry point
+        /// Indicates that the given closure can be used as an entry point in a state machine
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __compiledStateMachineEntryPointID(_ep: MachineFunc<'Machine>) : int =
-            failwith "__compiledStateMachineEntryPointID should always be guarded by __generateCompiledStateMachines and only used in valid state machine implementations"
+        let __compiledStateMachineDirectInvoke<'T> (_pc: int) : 'T = 
+            failwith "__compiledStateMachineDirectInvoke should always be guarded by __generateCompiledStateMachines and only used in valid state machine implementations"
 
         /// If a computation description has been converted, inserts a jump table between different entry points
         [<MethodImpl(MethodImplOptions.NoInlining)>]
@@ -110,7 +108,7 @@ type TaskStateMachine<'TOverall> =
 
     /// When interpreted, holds the continuation for the further execution of the state machine
     [<DefaultValue(false)>]
-    val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'TOverall>>
+    val mutable ResumptionFunc : TaskMachineFunc<'TOverall>
 
     /// When interpreted, holds the awaiter 
     [<DefaultValue(false)>]
@@ -142,6 +140,8 @@ type TaskStateMachine<'TOverall> =
         // Used when interpreted.  For "__compiledStateMachineStruct" it is replaced.
         member sm.SetStateMachine(state) = 
             sm.MethodBuilder.SetStateMachine(state)
+
+and TaskMachineFunc<'TOverall> = delegate of byref<TaskStateMachine<'TOverall>> -> bool
 
 /// Represents a code fragment of a task.  When statically compiled, TaskCode is always removed and the body of the code inlined
 /// into an invocation.
@@ -195,7 +195,7 @@ type TaskBuilder() =
                     sm.MethodBuilder.Task))
         else
             let mutable sm = TaskStateMachine<'TOverall>()
-            sm.ResumptionFunc <- MachineFunc<_>(fun sm -> __expand_code.Invoke(&sm)) 
+            sm.ResumptionFunc <- TaskMachineFunc<_>(fun sm -> __expand_code.Invoke(&sm)) 
             sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
             //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
             sm.MethodBuilder.Start(&sm)
@@ -231,8 +231,8 @@ type TaskBuilder() =
                     __expand_task2.Invoke(&sm)
                 else
                     // If state machines are not supported, then we must adjust the resumption to also run __expand_task2
-                    let rec resume (mf: MachineFunc<_>) =
-                        MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                    let rec resume (mf: TaskMachineFunc<_>) =
+                        TaskMachineFunc<_>(fun sm -> 
                             //Console.WriteLine("[{0}] resuming Combine", sm.MethodBuilder.Task.Id)
                             if mf.Invoke(&sm) then 
                                 __expand_task2.Invoke(&sm)
@@ -259,7 +259,7 @@ type TaskBuilder() =
                 __stack_completed
             else
                 let rec repeat() = 
-                    MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                    TaskMachineFunc<_>(fun sm -> 
                         //Console.WriteLine("[{0}] repeat WhileLoop", sm.MethodBuilder.Task.Id)
                         if __expand_condition() then 
                             if __expand_body.Invoke (&sm) then
@@ -270,8 +270,8 @@ type TaskBuilder() =
                                 false
                         else
                             true)
-                and resume (mf: MachineFunc<_>) =
-                    MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                and resume (mf: TaskMachineFunc<_>) =
+                    TaskMachineFunc<_>(fun sm -> 
                         //Console.WriteLine("[{0}] resume WhileLoop body", sm.MethodBuilder.Task.Id)
                         let step = mf.Invoke(&sm)
                         if step then 
@@ -307,8 +307,8 @@ type TaskBuilder() =
                 else
                     __stack_completed
             else
-                let rec resume (mf: MachineFunc<_>) =
-                    MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                let rec resume (mf: TaskMachineFunc<_>) =
+                    TaskMachineFunc<_>(fun sm -> 
                         try
                             //Console.WriteLine("[{0}] resuming TryWith", sm.MethodBuilder.Task.Id)
                             if mf.Invoke (&sm) then 
@@ -351,8 +351,8 @@ type TaskBuilder() =
                     compensation()
                 __stack_completed
             else
-                let rec resume (mf: MachineFunc<_>) =
-                    MachineFunc<TaskStateMachine<_>>(fun sm -> 
+                let rec resume (mf: TaskMachineFunc<_>) =
+                    TaskMachineFunc<_>(fun sm -> 
                         let mutable completed = false
                         try
                             //Console.WriteLine("[{0}] resumed TryFinally", sm.MethodBuilder.Task.Id)
@@ -399,26 +399,29 @@ type TaskBuilder() =
     member inline __.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> = 
         TaskCode<_, _>(fun sm -> 
             if __generateCompiledStateMachines then 
+                // This becomes a state machine variable
                 let mutable awaiter = task.GetAwaiter()
 
-                let CONT =
-                    __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine<'T>>(fun sm -> 
-                        //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
-                        sm.Result <- awaiter.GetResult()
-                        true))
+                match __compiledStateMachineReentry () with 
+                | None ->
+                    // Label contID: 
+                    //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
+                    sm.Result <- awaiter.GetResult()
+                    true
+                | Some contID ->
 
-                // shortcut to continue immediately
-                if task.IsCompleted then
-                    CONT.Invoke(&sm)
-                else
-                    sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
-                    sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
+                    // shortcut to continue immediately
+                    if task.IsCompleted then
+                        __compiledStateMachineDirectInvoke contID
+                    else
+                        sm.ResumptionPoint <- contID
+                        sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                        false
             else
                 let mutable awaiter = task.GetAwaiter()
 
                 let cont =
-                    MachineFunc<TaskStateMachine<'T>>(fun sm -> 
+                    TaskMachineFunc<'T>(fun sm -> 
                         //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
                         sm.Result <- awaiter.GetResult()
                         true)
@@ -451,24 +454,24 @@ and [<Sealed>] Witnesses() =
                 // Get an awaiter from the awaitable
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
-                let CONT = 
-                    __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine<'TOverall>>( fun sm -> 
-                        //Console.WriteLine("[{0}] resumed CanBind(TaskLike)", sm.MethodBuilder.Task.Id)
-                        let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                        (__expand_continuation result).Invoke(&sm)))
-
-                // shortcut to continue immediately
-                if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                    CONT.Invoke(&sm)
-                else
-                    sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
-                    sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
+                match __compiledStateMachineReentry () with 
+                | None ->
+                    // Label contID: 
+                    let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
+                    (__expand_continuation result).Invoke(&sm)
+                | Some contID ->
+                    // shortcut to continue immediately
+                    if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
+                        __compiledStateMachineDirectInvoke contID
+                    else
+                        sm.ResumptionPoint <- contID
+                        sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                        false
             else
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
                 let cont = 
-                    (MachineFunc<TaskStateMachine<'TOverall>>( fun sm -> 
+                    (TaskMachineFunc<'TOverall>( fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanBind(TaskLike)", sm.MethodBuilder.Task.Id)
                         let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
                         (__expand_continuation result).Invoke(&sm)))
@@ -489,24 +492,25 @@ and [<Sealed>] Witnesses() =
                 // Get an awaiter from the task
                 let mutable awaiter = task.GetAwaiter()
 
-                let CONT = 
-                    __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine<'TOverall>>(fun sm -> 
-                        //Console.WriteLine("[{0}] resumed CanBind(Task)", sm.MethodBuilder.Task.Id)
-                        let result = awaiter.GetResult()
-                        (__expand_continuation result).Invoke(&sm)))
+                match __compiledStateMachineReentry () with 
+                | None ->
+                    // Label contID: 
+                    let result = awaiter.GetResult()
+                    (__expand_continuation result).Invoke(&sm)
+                | Some contID ->
 
-                // shortcut to continue immediately
-                if awaiter.IsCompleted then 
-                    CONT.Invoke(&sm)
-                else
-                    sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
-                    sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
+                    // shortcut to continue immediately
+                    if awaiter.IsCompleted then 
+                        __compiledStateMachineDirectInvoke contID
+                    else
+                        sm.ResumptionPoint <- contID
+                        sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                        false
             else
                 let mutable awaiter = task.GetAwaiter()
 
                 let cont = 
-                    (MachineFunc<TaskStateMachine<'TOverall>>(fun sm -> 
+                    (TaskMachineFunc<'TOverall>(fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanBind(Task)", sm.MethodBuilder.Task.Id)
                         let result = awaiter.GetResult()
                         (__expand_continuation result).Invoke(&sm)))
@@ -535,24 +539,25 @@ and [<Sealed>] Witnesses() =
                 // Get an awaiter from the awaitable
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
-                let CONT =
-                    __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine< ^T >>(fun sm -> 
-                        //Console.WriteLine("[{0}] resumed CanReturnFrom(TaskLike)", sm.MethodBuilder.Task.Id)
-                        sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
-                        true))
+                match __compiledStateMachineReentry () with 
+                | None ->
+                    // Label contID: 
+                    sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
+                    true
+                | Some contID ->
 
-                // shortcut to continue immediately
-                if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                    CONT.Invoke(&sm)
-                else
-                    sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
-                    sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
+                    // shortcut to continue immediately
+                    if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
+                        __compiledStateMachineDirectInvoke contID
+                    else
+                        sm.ResumptionPoint <- contID
+                        sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                        false
             else
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
                 let cont =
-                    (MachineFunc<TaskStateMachine< ^T >>(fun sm -> 
+                    (TaskMachineFunc< ^T >(fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanReturnFrom(TaskLike)", sm.MethodBuilder.Task.Id)
                         sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
                         true))
@@ -572,23 +577,23 @@ and [<Sealed>] Witnesses() =
             if __generateCompiledStateMachines then 
                 let mutable awaiter = task.GetAwaiter()
 
-                let CONT =
-                    __compiledStateMachineEntryPoint (MachineFunc<TaskStateMachine<'T>>(fun sm -> 
-                        sm.Result <- awaiter.GetResult()
-                        true))
-
-                // shortcut to continue immediately
-                if task.IsCompleted then
-                    CONT.Invoke(&sm)
-                else
-                    sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
-                    sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                    false
+                match __compiledStateMachineReentry() with 
+                | None -> 
+                    sm.Result <- awaiter.GetResult()
+                    true
+                | Some contID -> 
+                    // shortcut to continue immediately
+                    if task.IsCompleted then
+                        __compiledStateMachineDirectInvoke contID
+                    else
+                        sm.ResumptionPoint <- contID
+                        sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                        false
             else
                 let mutable awaiter = task.GetAwaiter()
 
                 let cont =
-                    (MachineFunc<TaskStateMachine<'T>>(fun sm -> 
+                    (TaskMachineFunc<'T>(fun sm -> 
                         //Console.WriteLine("[{0}] resumed CanReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
                         sm.Result <- awaiter.GetResult()
                         true))
@@ -646,7 +651,7 @@ module ContextInsensitiveTasks =
 
             // get an awaiter from the task
             let mutable awaiter = (^TaskLike : (member GetAwaiter : unit -> ^Awaiter)(task))
-            let CONT = __compiledStateMachineEntryPoint (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
+            let CONT = __compiledStateMachineReentry (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
                 CONT.Invoke(&sm)
@@ -666,7 +671,7 @@ module ContextInsensitiveTasks =
             let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
-            let CONT = __compiledStateMachineEntryPoint (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
+            let CONT = __compiledStateMachineReentry (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
                 CONT.Invoke(&sm)
@@ -677,7 +682,7 @@ module ContextInsensitiveTasks =
         [<NoDynamicInvocation>]
         static member inline CanBind (_priority :IPriority1, sm: TaskStateMachine<'TOverall>, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
             let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
-            let CONT = __compiledStateMachineEntryPoint (fun () -> __expand_continuation (awaiter.GetResult()))
+            let CONT = __compiledStateMachineReentry (fun () -> __expand_continuation (awaiter.GetResult()))
             if awaiter.IsCompleted then
                 CONT.Invoke(&sm)
             else
@@ -698,7 +703,7 @@ module ContextInsensitiveTasks =
 
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(task))
-            let CONT = __compiledStateMachineEntryPoint (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
+            let CONT = __compiledStateMachineReentry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
@@ -718,7 +723,7 @@ module ContextInsensitiveTasks =
             let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
-            let CONT = __compiledStateMachineEntryPoint (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
+            let CONT = __compiledStateMachineReentry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
@@ -730,7 +735,7 @@ module ContextInsensitiveTasks =
         [<NoDynamicInvocation>]
         static member inline CanReturnFrom (_priority: IPriority1, sm: TaskStateMachine<'T>, task: Task<'T>) : TaskStep<'T> =
             let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
-            let CONT = __compiledStateMachineEntryPoint (fun () -> sm.SetResult (awaiter.GetResult()); TaskStep<'T>(true))
+            let CONT = __compiledStateMachineReentry (fun () -> sm.SetResult (awaiter.GetResult()); TaskStep<'T>(true))
             if task.IsCompleted then
                 CONT.Invoke(&sm)
             else

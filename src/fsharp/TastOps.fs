@@ -8234,7 +8234,7 @@ and preRewriteExpr env expr =
 and postRewriteExpr env expr = 
      match env.PostTransform expr with 
      | None -> expr 
-     | Some expr -> expr 
+     | Some expr2 -> expr2
 
 and rewriteExprStructure env expr =  
   match expr with
@@ -8762,6 +8762,7 @@ let mkGetTupleItemN g m n (ty: ILType) isStruct te retty =
         mkAsmExpr ([mkNormalLdfld (mkILFieldSpecForTupleItem ty n) ], [], [te], [retty], m)
     else
         mkAsmExpr ([IL.mkNormalCall(mkILMethodSpecForTupleItem g ty n)], [], [te], [retty], m)
+
 /// Match an Int32 constant expression
 let (|Int32Expr|_|) expr = 
     match expr with 

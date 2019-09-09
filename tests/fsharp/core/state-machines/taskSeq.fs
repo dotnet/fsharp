@@ -239,10 +239,13 @@ type TaskSeqBuilder() =
     member inline __.Yield (v: 'T) : TaskSeqCode<'T> =
         (fun sm -> 
             if __generateCompiledStateMachines then 
-                let CONT = __compiledStateMachineEntryPoint (MachineFunc<_>(fun sm -> true))
-                sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
-                sm.Current <- ValueSome v
-                true
+                match __compiledStateMachineReentry() with 
+                | None ->
+                    true
+                | Some contID -> 
+                    sm.ResumptionPoint <- contID
+                    sm.Current <- ValueSome v
+                    true
             else
                 sm.ResumptionFunc <- (fun sm -> true)
                 sm.Current <- ValueSome v
@@ -257,15 +260,17 @@ type TaskSeqBuilder() =
         (fun sm -> 
             if __generateCompiledStateMachines then 
                 let mutable awaiter = task.GetAwaiter()
-                let CONT = __compiledStateMachineEntryPoint (MachineFunc<_>(fun sm -> (__expand_continuation (awaiter.GetResult())) sm))
-                if awaiter.IsCompleted then 
-                    let mutable sm = sm
-                    CONT.Invoke &sm
-                else
-                    sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
-                    // Tell the builder to call us again when done.
-                    awaiter.UnsafeOnCompleted(Action(fun () -> sm.MoveNextAsync()))
-                    false
+                match __compiledStateMachineReentry() with 
+                | None ->
+                    __expand_continuation (awaiter.GetResult()) sm
+                | Some contID -> 
+                    if awaiter.IsCompleted then 
+                        __compiledStateMachineDirectInvoke contID
+                    else
+                        sm.ResumptionPoint <- contID
+                        // Tell the builder to call us again when done.
+                        awaiter.UnsafeOnCompleted(Action(fun () -> sm.MoveNextAsync()))
+                        false
 
             else
                 let mutable awaiter = task.GetAwaiter()

@@ -16,8 +16,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// A marker interface to give priority to different available overloads
     type IPriority1 = interface inherit IPriority2 end
 
-    type MachineFunc<'Machine> = delegate of byref<'Machine> -> bool
-
     type MoveNextMethod<'Template> = delegate of byref<'Template> -> unit
 
     type SetMachineStateMethod<'Template> = delegate of byref<'Template> * IAsyncStateMachine -> unit
@@ -30,8 +28,14 @@ namespace Microsoft.FSharp.Core.CompilerServices
         val __generateCompiledStateMachines<'T> : bool 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        /// Within a compiled state machine, indicates the identifying integer for an entry point of the state machine
-        val __compiledStateMachineEntryPoint: MachineFunc<'Machine> -> MachineFunc<'Machine>
+        /// Within a compiled state machine, 'Some pc' notionally indicates the identifying integer for an entry point of the state machine on
+        /// the synhronous path, and None indicates an asynchronous (re-entry) path
+        val __compiledStateMachineReentry: unit -> int option 
+
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        /// Within a compiled state machine, 'Some pc' notionally indicates the identifying integer for an entry point of the state machine on
+        /// the synhronous path, and None indicates an asynchronous (re-entry) path
+        val __compiledStateMachineDirectInvoke: int -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         /// Within a compiled state machine, represents a re-entry to the given entry point of the state machine code 
@@ -44,10 +48,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         /// Within a compiled state machine, indicates the given methods provide implementations of the IAsyncStateMachine functionality for a struct state machine
         val __compiledStateMachineStruct<'Template, 'Result> : moveNext: MoveNextMethod<'Template> -> _setMachineState: SetMachineStateMethod<'Template> -> after: AfterMethod<'Template, 'Result> -> 'Result
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        /// Within a compiled state machine, indicates the identifying integer for an entry point of the state machine
-        val __compiledStateMachineEntryPointID: MachineFunc<'Machine> -> int
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control
@@ -75,7 +75,7 @@ type TaskStateMachine<'T> =
 
     /// When interpreted, holds the continuation for the further execution of the state machine
     [<DefaultValue(false)>]
-    val mutable ResumptionFunc : MachineFunc<TaskStateMachine<'T>>
+    val mutable ResumptionFunc : TaskMachineFunc<'T>
 
     /// When interpreted, holds the awaiter used to suspend of the state machine
     [<DefaultValue(false)>]
@@ -88,6 +88,8 @@ type TaskStateMachine<'T> =
     member Address: nativeint
 
     interface IAsyncStateMachine
+
+and TaskMachineFunc<'TOverall> = delegate of byref<TaskStateMachine<'TOverall>> -> bool
 
 type TaskCode<'TOverall, 'T> = delegate of byref<TaskStateMachine<'TOverall>> -> bool 
 

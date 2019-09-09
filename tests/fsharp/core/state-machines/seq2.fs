@@ -209,10 +209,13 @@ type SeqBuilder() =
     member inline __.Yield (v: 'T) : SeqCode<'T> =
         (fun sm ->
             if __generateCompiledStateMachines then 
-                let CONT = __compiledStateMachineEntryPoint (MachineFunc<_>(fun sm -> true))
-                sm.ResumptionPoint <- __compiledStateMachineEntryPointID CONT
-                sm.Current <- ValueSome v
-                false
+                match __compiledStateMachineReentry() with 
+                | None ->
+                    true
+                | Some contID -> 
+                    sm.ResumptionPoint <- contID
+                    sm.Current <- ValueSome v
+                    false
             else
                 let cont = (fun sm -> true)
                 sm.ResumptionFunc <- cont

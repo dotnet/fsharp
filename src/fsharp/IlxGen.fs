@@ -3099,7 +3099,7 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel =
       GenSequel cenv eenv.cloc cgbuf sequel
 
   | Expr.Val (v, _, m), _, _ 
-      when valRefEq g v g.cgh_entryPointID_vref || 
+      when valRefEq g v g.cgh_compiledStateMachineDirectInvoke_vref || 
            valRefEq g v g.cgh_compiledStateMachineCode_vref || 
            valRefEq g v g.cgh_compiledStateMachineStruct_vref|| 
            valRefEq g v g.cgh_compiledStateMachine_vref 
