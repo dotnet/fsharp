@@ -1171,7 +1171,7 @@ type internal FsiDynamicCompiler
                         lastValue <- None
                     | FSharpImplementationFileDeclaration.InitAction _ ->
                         // Top level 'do' bindings are not reported as incremental declarations
-                        ()
+                        lastValue <- None
             | _ -> ()
         with _ -> ()
 
