@@ -2253,8 +2253,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | Some res ->
       match res with 
       | Choice1Of2 objExpr -> GenExpr cenv cgbuf eenv sp objExpr sequel
-      | Choice2Of2 (structTy, stateVars, moveNextMethodStateMachineVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodStateMachineVar, afterMethodBodyExpr) -> 
-           GenStructStateMachine cenv cgbuf eenv (structTy, moveNextMethodStateMachineVar, moveNextExprWithJumpTable, stateVars, setMachineStateBodyExpr, afterMethodStateMachineVar, afterMethodBodyExpr) sequel
+      | Choice2Of2 (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodThisVar, afterMethodBodyExpr) -> 
+           GenStructStateMachine cenv cgbuf eenv (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodThisVar, afterMethodBodyExpr) sequel
   | None ->
 
   // Eliminate 'if generateCompiledStateMachines ...'
@@ -4208,7 +4208,7 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
-and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextMethodStateMachineVar, moveNextExpr, stateVars, setMachineStateBodyExpr, afterMethodStateMachineVar, afterMethodBodyExpr) sequel =
+and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExpr, setMachineStateBodyExpr, afterMethodThisVar, afterMethodBodyExpr) sequel =
 
     let m = afterMethodBodyExpr.Range
     let g = cenv.g
@@ -4217,15 +4217,17 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextMethod
 
     // State vars are only populated for state machine objects made via `__compiledStateMachine` and LowerCallsAndSeqs.
     //
-    // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
+    // Like in GenSequenceExpression we pretend any stateVars and the stateMachineVar are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.
     let eenvouter = eenvouter |> AddStorageForLocalVals g (stateVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
+    let eenvouter = eenvouter |> AddStorageForLocalVals g (thisVars |> List.map (fun v -> v.Deref, Local(0, false, None)))
+    let eenvouter = eenvouter |> AddStorageForLocalVals g [ (moveNextMethodThisVar, Local(0, false, None)) ]
     
     // Find the free variables of the closure, to make them further fields of the object.
     //
     // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
     // free variables of the expression.
-    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false (Some (mkLocalValRef moveNextMethodStateMachineVar)) eenvouter moveNextExpr
+    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false (Some (mkLocalValRef moveNextMethodThisVar)) eenvouter moveNextExpr
 
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
@@ -4256,7 +4258,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextMethod
 
     let infoReader = InfoReader.InfoReader(g, cenv.amap)
     let moveNextMethod =
-        let eenvinner = eenvinner |> AddStorageForLocalVals g [(moveNextMethodStateMachineVar, Arg 0) ] 
+        let eenvinner = eenvinner |> AddStorageForLocalVals g [(moveNextMethodThisVar, Arg 0) ] 
+        let eenvinner = eenvinner |> AddStorageForLocalVals g (thisVars |> List.map (fun v -> (v.Deref, Arg 0)))
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "MoveNext", eenvinner, 1, moveNextExpr, discardAndReturnVoid)
         mkILNonGenericVirtualMethod("MoveNext", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL ilCode)
 
@@ -4341,7 +4344,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextMethod
         let locIdx, realloc, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("machine", m), ilCloTy, false) scopeMarks
 
         // The local for the state machine address
-        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (moveNextMethodStateMachineVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
+        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (afterMethodThisVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
 
         // Zero-initialize the machine if necessary
         if realloc then 
@@ -4351,7 +4354,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextMethod
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca (uint16 locIdx) )
         CG.EmitInstr cgbuf (pop 1) (Push [ ]) (I_stloc (uint16 locIdx2) )
 
-        let eenvinner = AddStorageForLocalVals g [(afterMethodStateMachineVar, Local (locIdx2, realloc, None)) ] eenvinner
+        let eenvinner = eenvinner |> AddStorageForLocalVals g [(afterMethodThisVar, Local (locIdx2, realloc, None)) ] 
 
         // Initialize the closure variables
         for (fv, ilv) in Seq.zip cloFreeVars cloinfo.cloILFreeVars do

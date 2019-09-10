@@ -88,6 +88,8 @@ let (|TryCatchExpr|_|) expr =
 let mkCompGenSequentials m exprs = 
      List.reduceBack (mkCompGenSequential m) exprs
 
+let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
+
 let mkLambdaNoType g m uv e =
     mkLambda m uv (e, tyOfExpr g e)
 
@@ -288,12 +290,10 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
                                         (Expr.Op (TOp.Label label, [], [], m))))
                         let dispose =
-                            mkCompGenSequential m
-                                (Expr.Op (TOp.Label label, [], [], m))
+                            mkLabelled m label 
                                 (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
                         let checkDispose =
-                            mkCompGenSequential m
-                                (Expr.Op (TOp.Label label, [], [], m))
+                            mkLabelled m label 
                                 (Expr.Op (TOp.Return, [], [mkBool g m (not (noDisposeContinuationLabel = currentDisposeContinuationLabel))], m))
                         generate, dispose, checkDispose)
                    entryPoints=[label]
@@ -405,8 +405,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                         (mkValSet m pcVar (mkInt32 g m pcMap.[innerDisposeContinuationLabel]))
                                         generate1 )
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
-                                    (mkCompGenSequential m
-                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
+                                    (mkLabelled m innerDisposeContinuationLabel
                                         (mkCompGenSequential m
                                             (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
                                             compensation))
@@ -415,8 +414,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                 mkCompGenSequential m
                                     dispose1
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
-                                    (mkCompGenSequential m
-                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
+                                    (mkLabelled m innerDisposeContinuationLabel
                                         (mkCompGenSequential m
                                             (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
                                             (mkCompGenSequential m
@@ -425,8 +423,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                             let checkDispose =
                                 mkCompGenSequential m
                                     checkDispose1
-                                    (mkCompGenSequential m
-                                        (Expr.Op (TOp.Label innerDisposeContinuationLabel, [], [], m))
+                                    (mkLabelled m innerDisposeContinuationLabel
                                         (Expr.Op (TOp.Return, [], [mkTrue g m (* yes, we must dispose!!! *) ], m)))
 
                             generate, dispose, checkDispose)
@@ -599,12 +596,10 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                                     (Expr.Op (TOp.Return, [], [mkTwo g m], m))
                                                     (Expr.Op (TOp.Label label, [], [], m))))
                                     let dispose =
-                                        mkCompGenSequential m
-                                            (Expr.Op (TOp.Label label, [], [], m))
+                                        mkLabelled m label
                                             (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
                                     let checkDispose =
-                                        mkCompGenSequential m
-                                            (Expr.Op (TOp.Label label, [], [], m))
+                                        mkLabelled m label
                                             (Expr.Op (TOp.Return, [], [mkFalse g m], m))
                                     generate, dispose, checkDispose)
                                entryPoints=[label]
@@ -659,8 +654,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                     (mkCompGenSequential m
                         // set the pc to "finished"
                         (mkValSet m pcVarRef (mkInt32 g m pcDone))
-                        (mkCompGenSequential m
-                            (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
+                        (mkLabelled m noDisposeContinuationLabel
                             (mkCompGenSequential m
                                 // zero out the current value to free up its memory
                                 (mkValSet m currVarRef (mkDefault (m, currVarRef.Type)))
@@ -673,8 +667,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let checkDisposeExprWithCleanup =
                 mkCompGenSequential m
                     checkDisposeExprCore
-                    (mkCompGenSequential m
-                        (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
+                    (mkLabelled m noDisposeContinuationLabel
                         (Expr.Op (TOp.Return, [], [mkFalse g m], m)))
 
             // A utility to add a jump table to the three generated methods
@@ -698,7 +691,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                            m)
 
                 let table = mbuilder.Close(dtree, m, g.int_ty)
-                mkCompGenSequential m table (mkCompGenSequential m (Expr.Op (TOp.Label initLabel, [], [], m)) expr)
+                mkCompGenSequential m table (mkLabelled m initLabel expr)
 
             // A utility to handle the cases where exceptions are raised by the disposal logic.  
             // We wrap the disposal state machine in a loop that repeatedly drives the disposal logic of the
@@ -754,8 +747,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                     Some (addResultTarget (mkUnit g m)),
                                     m)
                     let pcIsEndStateComparison = mbuilder.Close(dtree, m, g.unit_ty)
-                    mkCompGenSequential m
-                        (Expr.Op ((TOp.Label startLabel), [], [], m))
+                    mkLabelled m startLabel
                         (mkCompGenSequential m
                             pcIsEndStateComparison
                             (mkCompGenSequential m
@@ -787,8 +779,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                     let disposalExpr =
                         mkCompGenSequential m
                             disposalExprCore
-                            (mkCompGenSequential m
-                                (Expr.Op (TOp.Label noDisposeContinuationLabel, [], [], m))
+                            (mkLabelled m noDisposeContinuationLabel
                                 (mkCompGenSequential m
                                     // set the pc to "finished"
                                     (mkValSet m pcVarRef (mkInt32 g m pcDone))
@@ -832,6 +823,9 @@ type StateMachineConversionFirstPhaseResult =
      /// The state variables allocated for one portion of the sequence expression (i.e. the local let-bound variables which become state variables)
      stateVars: ValRef list
 
+     /// All this values get represented via the 'this' pointer
+     thisVars: ValRef list
+
      /// The vars captured by the non-synchronous path
      asyncVars: FreeVars
    }
@@ -857,22 +851,41 @@ let (|EntryPointExpr|_|) g expr =
     | ValApp g g.cgh_compiledStateMachineReentry_vref (_, [e], _m) -> Some (e)
     | _ -> None
 
+let (|MatchTwoCasesExpr|_|) expr =
+    match expr with 
+    | Expr.Match (_spBind, _exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, _), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), _), tgs, _m, _ty) -> 
+        Some (cond, ucref, tg1, tg2, tgs)
+    | _ -> None
+
+/// match e with None -> ... | Some v -> ... or other variations of the same
+let (|MatchOptionExpr|_|) expr =
+    match expr with
+    | MatchTwoCasesExpr(cond, ucref, tg1, tg2, tgs) -> 
+        let tgNone, tgSome = if ucref.CaseName = "None" then tg1, tg2 else tg2, tg1
+        match tgs.[tgNone], tgs.[tgSome] with 
+        | TTarget([], noneBranchExpr, _, _), 
+          TTarget([], Expr.Let(TBind(unionCaseVar, Expr.Op(TOp.UnionCaseProof _, _, _, _), _), 
+                               Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet _, _, _, _), _), someBranchExpr, _, _), _, _), _, _) 
+              when unionCaseVar.LogicalName = "unionCase" -> 
+            Some (cond, noneBranchExpr, someVar, someBranchExpr)
+        | _ -> None
+    | _ -> None
+
 let (|ReentryAppExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh_compiledStateMachineReentry_vref (_, _, _m) -> Some ()
     | _ -> None
 
-/// match e with None -> ... | Some v -> ...
-let (|MatchOptionExpr|_|) expr =
+/// Match a use of compiledStateMachineReentry within a 'match' construct
+let (|ReentryMatchExpr|_|) g expr =
     match expr with
-    | Expr.Match (_spBind, _exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, _), TDSuccess ([], 0) )], Some (TDSuccess ([someExpr], 1)), _),
-                  [| TTarget([], noneBranchExpr, _, _); TTarget([someVar], someBranchExpr, _, _) |], _m, _ty) when ucref.CaseName = "None" -> 
-        Some (cond, noneBranchExpr,  someVar, someExpr, someBranchExpr)
-    | _ -> None
-
-let (|ReentryExpr|_|) g expr =
-    match expr with
-    | MatchOptionExpr (ReentryAppExpr g (), noneBranchExpr, someVar, someExpr, someBranchExpr) -> Some (noneBranchExpr, someVar, someExpr, someBranchExpr)
+    | Expr.Let(TBind(matchVar, matchExpr, _), MatchOptionExpr (Expr.Val(matchVar2, _, _), noneBranchExpr, someVar, someBranchExpr), _, _) ->
+        match matchExpr with 
+        | ReentryAppExpr g () -> 
+            if valRefEq g (mkLocalValRef matchVar) matchVar2 then 
+                Some (noneBranchExpr, someVar, someBranchExpr)
+            else None
+        | _ -> None
     | _ -> None
 
 let (|DirectInvokeExpr|_|) g expr =
@@ -891,6 +904,16 @@ let RepresentBindingAsLiftedOrLocal (bind: Binding) (res2: StateMachineConversio
         printfn "LowerStateMachine: found local variable %s" bind.Var.DisplayName
 
     { res2 with
+        phase1 = mkLetBind m bind res2.phase1 
+        phase2 = (fun ctxt -> mkLetBind m bind (res2.phase2 ctxt)) }
+
+/// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
+let RepresentBindingAsThis (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) m =
+    if sm_verbose then 
+        printfn "LowerStateMachine: found local variable %s" bind.Var.DisplayName
+
+    { res2 with
+        thisVars = mkLocalValRef bind.Var :: res2.thisVars
         phase1 = mkLetBind m bind res2.phase1 
         phase2 = (fun ctxt -> mkLetBind m bind (res2.phase2 ctxt)) }
 
@@ -1115,7 +1138,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         let env, codeExprR = RepeatBindAndApplyOuterMacros env codeExpr
                         if sm_verbose then printfn "Found ref state machine jump table code lambda..."
 
-                        let remake2 (moveNextExprWithJumpTable, furtherStateVars) = 
+                        let remake2 (moveNextExprWithJumpTable, furtherStateVars, _thisVars) = 
                             let overrideR = TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, moveNextExprWithJumpTable, m) 
                             let objExprR = Expr.Obj (objExprStamp, ty, basev, basecall, [overrideR], iimpls, stateVars @ furtherStateVars, objExprRange)
                             let overallExprR = remake objExprR
@@ -1136,7 +1159,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             | StructStateMachineInContext env (env, templateStructTy, moveNextExpr, setMachineStateExpr, afterMethodExpr) ->
                 if sm_verbose then printfn "Found struct machine call..."
                 match moveNextExpr, setMachineStateExpr, afterMethodExpr with 
-                | NewDelegateExpr g ([[moveNextMethodStateMachineVar]], moveNextMethodBodyExpr, m), setMachineStateExpr, NewDelegateExpr g ([[afterMethodStateMachineVar]], afterMethodBodyExpr, _) ->
+                | NewDelegateExpr g ([[moveNextMethodThisVar]], moveNextMethodBodyExpr, m), setMachineStateExpr, NewDelegateExpr g ([[afterMethodThisVar]], afterMethodBodyExpr, _) ->
                     if sm_verbose then printfn "Found struct machine lambdas..."
                     match moveNextMethodBodyExpr with 
                     | JumpTableExpr g (pcExpr, codeExpr) ->
@@ -1145,7 +1168,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         let setMachineStateExprR = ConvertStateMachineLeafExpression env setMachineStateExpr
                         let afterMethodBodyExprR = ConvertStateMachineLeafExpression env afterMethodBodyExpr
                         //let afterMethodBodyExprR = ConvertStateMachineLeafExpression { env with MachineAddrExpr = Some machineAddrExpr } startExpr
-                        let remake2 (moveNextExprWithJumpTable, stateVars) = 
+                        let remake2 (moveNextExprWithJumpTable, stateVars, thisVars) = 
                             if sm_verbose then 
                                 printfn "----------- AFTER REWRITE moveNextExprWithJumpTable ----------------------"
                                 printfn "%s" (DebugPrint.showExpr g moveNextExprWithJumpTable)
@@ -1153,7 +1176,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                                 printfn "%s" (DebugPrint.showExpr g setMachineStateExprR)
                                 printfn "----------- AFTER REWRITE afterMethodBodyExprR ----------------------"
                                 printfn "%s" (DebugPrint.showExpr g afterMethodBodyExprR)
-                            Choice2Of2 (templateStructTy, stateVars, moveNextMethodStateMachineVar, moveNextExprWithJumpTable, setMachineStateExprR, afterMethodStateMachineVar, afterMethodBodyExprR)
+                            Choice2Of2 (templateStructTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateExprR, afterMethodThisVar, afterMethodBodyExprR)
                         Some (env, remake2, pcExpr, codeExprR, m)
                     | _ -> 
                         if sm_verbose then printfn "CONVERSION FAILURE: Didn't find struct machine jump table call..."
@@ -1185,7 +1208,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         m)
 
             let table = mbuilder.Close(dtree, m, g.int_ty)
-            mkCompGenSequential m table (mkCompGenSequential m (Expr.Op (TOp.Label initLabel, [], [], m)) expr)
+            mkCompGenSequential m table (mkLabelled m initLabel expr)
 
     /// Detect constructs allowed in state machines
     let rec ConvertStateMachineCode env pcExpr expr = 
@@ -1203,32 +1226,28 @@ let ConvertStateMachineExprToObject g overallExpr =
         // Detect the different permitted constructs in the expanded state machine
         let res = 
             match expr with 
-            | ReentryExpr g (noneBranchExpr, someVar, someExpr, someBranchExpr) ->
-                printfn "ReentryExpr" 
+            | ReentryMatchExpr g (noneBranchExpr, someVar, someBranchExpr) ->
+                printfn "ReentryMatchExpr" 
                 // printfn "found sequential"
                 let reenterPC = genPC()
-                let doneLabel = IL.generateCodeLabel()
-                let envSome = { env with Macros = env.Macros.Add someVar (mkInt g someExpr.Range reenterPC) }
-                let res1 = ConvertStateMachineCode env pcExpr noneBranchExpr
-                let res2 = ConvertStateMachineCode envSome pcExpr someBranchExpr
-                let asyncVars = unionFreeVars (freeInExpr CollectLocals res1.phase1) res2.asyncVars 
+                let envSome = { env with Macros = env.Macros.Add someVar (mkInt g someVar.Range reenterPC) }
+                let resNone = ConvertStateMachineCode env pcExpr noneBranchExpr
+                let resSome = ConvertStateMachineCode envSome pcExpr someBranchExpr
+                let asyncVars = unionFreeVars (freeInExpr CollectLocals resNone.phase1) resSome.asyncVars 
                 let m = someBranchExpr.Range
                 let recreate reenterLabOpt e1 e2 = 
-                    mkCompGenSequentials m
-                        [ e2
-                          Expr.Op (TOp.Goto doneLabel, [], [], m)
-                          Expr.Op (TOp.Label (match reenterLabOpt with Some l -> l | _ -> IL.generateCodeLabel()), [], [], m)
-                          e1
-                          Expr.Op (TOp.Label doneLabel, [], [], m) ]
+                    let lab = (match reenterLabOpt with Some l -> l | _ -> IL.generateCodeLabel())
+                    mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
 
-                { phase1 = recreate None res1.phase1 res2.phase1
+                { phase1 = recreate None resNone.phase1 resSome.phase1
                   phase2 = (fun ctxt ->
-                    let generate2 = res2.phase2 ctxt
-                    let generate1 = res1.phase2 ctxt
+                    let generate2 = resSome.phase2 ctxt
+                    let generate1 = resNone.phase2 ctxt
                     let generate = recreate (Some ctxt.[reenterPC]) generate1 generate2
                     generate)
-                  entryPoints= res2.entryPoints @ [reenterPC] @ res1.entryPoints
-                  stateVars = res2.stateVars @ res1.stateVars 
+                  entryPoints= resSome.entryPoints @ [reenterPC] @ resNone.entryPoints
+                  stateVars = resSome.stateVars @ resNone.stateVars 
+                  thisVars = resSome.thisVars @ resNone.thisVars
                   asyncVars = asyncVars }
 
             | DirectInvokeExpr g (pcExpr, m) ->
@@ -1246,6 +1265,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         generate)
                       entryPoints = []
                       stateVars = []
+                      thisVars = []
                       asyncVars = emptyFreeVars }
                 | _ -> failwith "compiledStateMachineDirectInvoke argument was nont statically known"
 
@@ -1278,6 +1298,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                     generate)
                   entryPoints= res1.entryPoints @ res2.entryPoints
                   stateVars = res1.stateVars @ res2.stateVars
+                  thisVars = res1.thisVars @ res2.thisVars
                   asyncVars = asyncVars }
 
             // The expanded code for state machines may use while loops...
@@ -1296,6 +1317,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         mkWhile g (sp1, sp2, egR, ebR, m))
                   entryPoints= eps
                   stateVars = resg.stateVars @ resb.stateVars 
+                  thisVars = resg.thisVars @ resb.thisVars
                   asyncVars = asyncVars }
 
             // The expanded code for state machines should not normally contain try/finally as any resumptions will repeatedly execute the finally.
@@ -1314,6 +1336,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         mkTryFinally g (egR, ebR, m, ty, sp1, sp2))
                   entryPoints= eps
                   stateVars = res1.stateVars @ res2.stateVars 
+                  thisVars = res1.thisVars @ res2.thisVars
                   asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *)  }
 
             // The expanded code for state machines may use for loops....
@@ -1333,6 +1356,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                         mkFor g (sp1, v, e1R, sp2, e2R, e3R, m))
                   entryPoints= eps
                   stateVars = res1.stateVars @ res2.stateVars @ res3.stateVars
+                  thisVars = res1.thisVars @ res2.thisVars @ res3.thisVars
                   asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *) }
 
             // The expanded code for state machines may use try/with....
@@ -1366,11 +1390,12 @@ let ConvertStateMachineExprToObject g overallExpr =
                         let vBodyRWithJumpTable = addPcJumpTable m innerPcs innerPc2Lab pcExpr vBodyR
                         let coreExpr = mkTryWith g (vBodyRWithJumpTable, filterVar, filterExprR, handlerVar, handlerExprR, m, resTy, spTry, spWith)
                         // Place all the outer labels just before the try
-                        let labelledExpr = (coreExpr, outerLabsForInnerPcs) ||> List.fold (fun e l -> mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e)                
+                        let labelledExpr = (coreExpr, outerLabsForInnerPcs) ||> List.fold (fun e l -> mkLabelled m l e)                
 
                         labelledExpr)
                   entryPoints= resBody.entryPoints @ resFilter.entryPoints @ resHandler.entryPoints 
                   stateVars = resBody.stateVars @ resFilter.stateVars @ resHandler.stateVars
+                  thisVars = resBody.thisVars @ resFilter.thisVars @ resHandler.thisVars
                   asyncVars = unionFreeVars resBody.asyncVars (unionFreeVars(freeInExpr CollectLocals resFilter.phase1) (freeInExpr CollectLocals resHandler.phase1)) }
 
             // control-flow match
@@ -1391,6 +1416,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                     (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
                         let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
                         stateVars @ res.stateVars)
+                let thisVars = tglArray |> Array.toList |> List.collect (fun res -> res.thisVars) 
                 { phase1 = 
                     let gtgs =
                         (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res -> 
@@ -1408,7 +1434,8 @@ let ConvertStateMachineExprToObject g overallExpr =
 
                   entryPoints = entryPoints
                   stateVars = stateVars
-                  asyncVars = asyncVars }
+                  asyncVars = asyncVars 
+                  thisVars = thisVars }
 
             // Non-control-flow let binding can appear as part of state machine. The body is considered state-machine code,
             // the expression being bound is not.
@@ -1423,8 +1450,18 @@ let ConvertStateMachineExprToObject g overallExpr =
                 printfn "LetExpr (non-control-flow, body)" 
 
                 let resBody = ConvertStateMachineCode env pcExpr bodyExpr
+
+                // The isByrefTy check is an adhoc check to avoid capturing the 'this' parameter of a struct state machine 
+                //    let sm = sm 
+                //    ... await point ...
+                //    ... sm ....
+                // However the 'sm' won't be set on that path :-( 
+                //
+                // TODO: assess whethr we are avoiding capturing the 'this' of reference-type state machines too
                 if bind.Var.IsCompiledAsTopLevel || not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) || bind.Var.LogicalName.StartsWith "__stack_" then
                     (RepresentBindingAsLiftedOrLocal bind resBody m)
+                elif isByrefTy g bind.Var.Type then
+                    (RepresentBindingAsThis bind resBody m)
                 else
                     // printfn "found state variable %s" bind.Var.DisplayName
                     (RepresentBindingAsStateVar bind resBody m)
@@ -1438,14 +1475,17 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let exprR = ConvertStateMachineLeafExpression env expr
                 { phase1 = exprR
                   phase2 = (fun _ctxt -> exprR)
-                  entryPoints=[]
+                  entryPoints = []
                   stateVars = []
+                  thisVars = []
                   asyncVars = emptyFreeVars }
 
         if sm_verbose then 
             printfn "-------------------"
             printfn "Phase 1 Done for %s" (DebugPrint.showExpr g res.phase1)
             printfn "Phase 1 Done, asyncVars = %A" (res.asyncVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
+            printfn "Phase 1 Done, stateVars = %A" (res.stateVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
+            printfn "Phase 1 Done, thisVars = %A" (res.thisVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
             printfn "-------------------"
         res
 
@@ -1467,7 +1507,6 @@ let ConvertStateMachineExprToObject g overallExpr =
 
         // Work out the initial mapping of pcs to labels
         let pcs = [ 1 .. pcCount ]
-        let furtherStateVars = phase1.stateVars
         let labs = pcs |> List.map (fun _ -> IL.generateCodeLabel())
         let pc2lab  = Map.ofList (List.zip pcs labs)
 
@@ -1485,7 +1524,7 @@ let ConvertStateMachineExprToObject g overallExpr =
         if sm_verbose then printfn "----------- REMAKE ----------------------"
 
         // Build the result
-        Some (remake (moveNextExprWithJumpTable, furtherStateVars))
+        Some (remake (moveNextExprWithJumpTable, phase1.stateVars, phase1.thisVars))
 
         //printfn "----------- CHECKING ----------------------"
         //let mutable failed = false

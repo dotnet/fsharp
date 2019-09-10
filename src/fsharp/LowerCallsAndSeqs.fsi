@@ -23,5 +23,5 @@ val ConvertSequenceExprToObject: g: TcGlobals -> amap: ImportMap -> overallExpr:
 
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind
 /// of object expression that uses special code generation constructs.
-val ConvertStateMachineExprToObject: g: TcGlobals -> overallExpr: Expr -> (Choice<Expr, ( (* templateStructTy *) TType * (* stateVars *) ValRef list * (* moveNextMethodStateMachineVar: *) Val * (* moveNextExprWithJumpTable *) Expr * (* setMachineStateExprR *) Expr * (* afterMethodStateMachineVar: *) Val * (* startExprR *) Expr)>) option
+val ConvertStateMachineExprToObject: g: TcGlobals -> overallExpr: Expr -> (Choice<Expr, ( (* templateStructTy *) TType * (* stateVars *) ValRef list * (* thisVars *) ValRef list * (* moveNextMethodThisVar: *) Val * (* moveNextExprWithJumpTable *) Expr * (* setMachineStateExprR *) Expr * (* afterMethodThisVar: *) Val * (* startExprR *) Expr)>) option
 

@@ -499,7 +499,6 @@ and [<Sealed>] Witnesses() =
                     (__expand_continuation result).Invoke(&sm)
                 | Some contID ->
 
-                    // shortcut to continue immediately
                     if awaiter.IsCompleted then 
                         __compiledStateMachineDirectInvoke contID
                     else
