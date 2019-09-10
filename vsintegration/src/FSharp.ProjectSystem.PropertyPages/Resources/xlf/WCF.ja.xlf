@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="ConfigurationFileOpenedInIncompatibleEditor">
         <source>The file is already opened in an incompatible editor.</source>
-        <target state="translated">ファイルは、互換性のないエディターで既に開かれています。</target>
+        <target state="translated">ファイルが、互換性のないエディターで既に開かれています。</target>
         <note />
       </trans-unit>
       <trans-unit id="Status_DownloadingMetadata">

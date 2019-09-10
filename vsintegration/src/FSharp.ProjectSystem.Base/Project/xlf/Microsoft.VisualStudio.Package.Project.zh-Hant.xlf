@@ -627,7 +627,7 @@
       </trans-unit>
       <trans-unit id="ProjectLocationNotTrusted">
         <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
-        <target state="translated">專案位置不受信任:{0}{0}{1}{0}{0}執行應用程式時若嘗試執行需要完全信任的動作，可能會產生安全性例外狀況。{0}{0}按一下 [確定]5D; 以忽略並繼續。</target>
+        <target state="translated">專案位置不受信任:{0}{0}{1}{0}{0}執行應用程式時若嘗試執行需要完全信任的動作，可能會產生安全性例外狀況。{0}{0}按一下 [確定] 以忽略並繼續。</target>
         <note />
       </trans-unit>
       <trans-unit id="BuildEventError">

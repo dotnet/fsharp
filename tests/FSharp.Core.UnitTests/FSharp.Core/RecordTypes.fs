@@ -11,16 +11,6 @@ open NUnit.Framework
 open FsCheck
 open FsCheck.PropOperators
 
-#if FX_RESHAPED_REFLECTION
-open FSharp.Reflection.FSharpReflectionExtensions
-
-[<AutoOpen>]
-module PrimReflectionAdapters =
-    
-    type System.Type with
-        member this.IsValueType = this.GetTypeInfo().IsValueType
-#endif
-
 type Record =
     {   A: int
         B: int

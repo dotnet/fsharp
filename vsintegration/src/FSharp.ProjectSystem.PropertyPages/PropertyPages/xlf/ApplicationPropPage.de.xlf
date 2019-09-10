@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="TargetFSharpCoreVersionLabel.Text">
         <source>Target F# runtime:</source>
-        <target state="translated">F#-Ziellaufzeit:</target>
+        <target state="translated">F#-Zielruntime:</target>
         <note />
       </trans-unit>
     </body>

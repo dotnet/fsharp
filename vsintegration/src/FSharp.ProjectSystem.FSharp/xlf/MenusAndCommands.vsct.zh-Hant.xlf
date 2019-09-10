@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="cmdidFsiToolWindow|ButtonText">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidAttachDebugger|CommandName">
@@ -84,12 +84,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|ButtonText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">傳送到 F# Interactive(&amp;S)</target>
+        <target state="translated">傳送到 F# 互動(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|MenuText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">傳送到 F# Interactive(&amp;S)</target>
+        <target state="translated">傳送到 F# 互動(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|CommandName">
@@ -114,12 +114,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|ButtonText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">傳送專案輸出到 F# Interactive(&amp;S)</target>
+        <target state="translated">傳送專案輸出到 F# 互動(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|MenuText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">傳送專案輸出到 F# Interactive(&amp;S)</target>
+        <target state="translated">傳送專案輸出到 F# 互動(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|CommandName">
