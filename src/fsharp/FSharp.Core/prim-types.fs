@@ -4870,12 +4870,16 @@ namespace Microsoft.FSharp.Core
             let PowGeneric (one, mul, value: 'T, exponent) = ComputePowerGenericInlined  one mul value exponent 
 
             let inline ComputeSlice bound start finish length =
-                match start, finish with
-                | None, None -> bound, bound + length - 1
-                | None, Some n when n >= bound  -> bound, n
-                | Some m, None when m <= bound + length -> m, bound + length - 1
-                | Some m, Some n -> m, n
-                | _ -> raise (System.IndexOutOfRangeException())
+                let low = 
+                    match start with
+                    | Some n when n >= bound -> n
+                    | _ -> bound
+                let high = 
+                    match finish with 
+                    | Some m when m < bound + length -> m
+                    | _ -> bound + length - 1
+
+                low, high
 
             let inline GetArraySlice (source: _[]) start finish =
                 let start, finish = ComputeSlice 0 start finish source.Length
