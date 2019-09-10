@@ -2253,9 +2253,15 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | Some res ->
       match res with 
       | Choice1Of2 objExpr -> GenExpr cenv cgbuf eenv sp objExpr sequel
-      | Choice2Of2 (structTy, stateVars, methodBodyExprWithJumpTable, setMachineStateBodyExpr, machineAddrVar, afterMethodBodyExpr) -> 
-           GenStructStateMachine cenv cgbuf eenv (structTy, methodBodyExprWithJumpTable, stateVars, setMachineStateBodyExpr, machineAddrVar, afterMethodBodyExpr) sequel
+      | Choice2Of2 (structTy, stateVars, moveNextMethodStateMachineVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodStateMachineVar, afterMethodBodyExpr) -> 
+           GenStructStateMachine cenv cgbuf eenv (structTy, moveNextMethodStateMachineVar, moveNextExprWithJumpTable, stateVars, setMachineStateBodyExpr, afterMethodStateMachineVar, afterMethodBodyExpr) sequel
   | None ->
+
+  // Eliminate 'if generateCompiledStateMachines ...'
+  match expr with
+  | IfGenerateCompiledStateMachinesExpr g (_, elseExpr) -> 
+      GenExprAux cenv cgbuf eenv sp elseExpr sequel
+  | _ ->
 
   match expr with
   | Expr.Const (c, m, ty) ->
@@ -4168,7 +4174,7 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
     let g = cenv.g
 
     // Check if we're compiling the property as a .NET event
-    let (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, methodBodyExpr, m)) = tmethod
+    let (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methodParams, moveNextExpr, m)) = tmethod
     let (TSlotSig(nameOfOverridenMethod, _, _, _, _, _)) = slotsig
     if CompileAsEvent g attribs then
         []
@@ -4184,9 +4190,9 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         // Args are stored starting at #1
         let eenvForMeth = AddStorageForLocalVals g (methodParams |> List.mapi (fun i v -> (v, Arg i))) eenvUnderTypars
         let sequel = (if slotSigHasVoidReturnTy slotsig then discardAndReturnVoid else Return)
-        let ilMethodBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, [], nameOfOverridenMethod, eenvForMeth, 0, methodBodyExpr, sequel)
+        let ilMethodBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, [], nameOfOverridenMethod, eenvForMeth, 0, moveNextExpr, sequel)
 
-        let nameOfOverridingMethod, methodImplGenerator = GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methodBodyExpr.Range
+        let nameOfOverridingMethod, methodImplGenerator = GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) moveNextExpr.Range
 
         let mdef =
             mkILGenericVirtualMethod
@@ -4202,7 +4208,7 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [(useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef]
 
-and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, stateVars, setMachineStateBodyExpr, machineAddrVar, afterMethodBodyExpr) sequel =
+and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextMethodStateMachineVar, moveNextExpr, stateVars, setMachineStateBodyExpr, afterMethodStateMachineVar, afterMethodBodyExpr) sequel =
 
     let m = afterMethodBodyExpr.Range
     let g = cenv.g
@@ -4219,25 +4225,20 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, 
     //
     // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
     // free variables of the expression.
-    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false None eenvouter moveNextExpr
+    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false (Some (mkLocalValRef moveNextMethodStateMachineVar)) eenvouter moveNextExpr
 
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
-    //let ilCloLambdas = cloinfo.ilCloLambdas
-    //let cloName = cloinfo.cloName
 
-    //let ilxCloSpec = cloinfo.cloSpec
     let ilCloFreeVars = cloinfo.cloILFreeVars
     let ilCloGenericFormals = cloinfo.cloILGenericParams
     assert (isNil cloinfo.localTypeFuncDirectILGenericParams)
     let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
-    //let ilCloRetTy = cloinfo.cloILFormalRetTy
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
     let ilCloTy = mkILValueTy ilCloTypeRef ilCloGenericActuals
 
     // The closure implements what ever interfaces the template implements. TODO: currently limiting to precisely 1 for tasks
     let interfaceTy = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy |> List.head
-    // genMethodAndOptionalMethodImpl tmethod true 
 
     let ilInterfaceTy = GenType cenv.amap m eenvinner.tyenv interfaceTy
     let attrs = GenAttrs cenv eenvinner cloAttribs
@@ -4255,18 +4256,19 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, 
 
     let infoReader = InfoReader.InfoReader(g, cenv.amap)
     let moveNextMethod =
+        let eenvinner = eenvinner |> AddStorageForLocalVals g [(moveNextMethodStateMachineVar, Arg 0) ] 
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "MoveNext", eenvinner, 1, moveNextExpr, discardAndReturnVoid)
         mkILNonGenericVirtualMethod("MoveNext", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL ilCode)
 
     let setStateMachineMethod =
-        let v, e = match setMachineStateBodyExpr with NewDelegateExpr g ([_; [v]], e, _) -> v,e | _ -> failwith "invalid setStateMachineExpr, expected a new delegate of two vars"
+        let v0, v1, bodyExpr = match setMachineStateBodyExpr with NewDelegateExpr g ([[v0; v1]], e, _) -> v0, v1, e | _ -> failwith "invalid setStateMachineExpr, expected a new delegate of two vars"
         let meth = 
             InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere "SetStateMachine" interfaceTy
             |> List.head
         let argTys = meth.GetParamTypes(cenv.amap, m, [])
         let ilArgTys = argTys |> List.concat |> GenTypes cenv.amap m eenvinner.tyenv
-        let eenvinner = AddStorageForLocalVals g [(v, Arg 1)] eenvinner
-        let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "SetStateMachine", eenvinner, 1, e, discardAndReturnVoid)
+        let eenvinner = eenvinner |> AddStorageForLocalVals g [(v0, Arg 0); (v1, Arg 1)] 
+        let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], "SetStateMachine", eenvinner, 2, bodyExpr, discardAndReturnVoid)
         let ilParams = ilArgTys |> List.map (fun ty -> mkILParamNamed("machine", ty))
         mkILNonGenericVirtualMethod("SetStateMachine", ILMemberAccess.Public, ilParams, mkILReturn ILType.Void, MethodBody.IL ilCode)
 
@@ -4339,7 +4341,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, 
         let locIdx, realloc, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("machine", m), ilCloTy, false) scopeMarks
 
         // The local for the state machine address
-        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (machineAddrVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
+        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (moveNextMethodStateMachineVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
 
         // Zero-initialize the machine if necessary
         if realloc then 
@@ -4349,7 +4351,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, moveNextExpr, 
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca (uint16 locIdx) )
         CG.EmitInstr cgbuf (pop 1) (Push [ ]) (I_stloc (uint16 locIdx2) )
 
-        let eenvinner = AddStorageForLocalVals g [(machineAddrVar, Local (locIdx2, realloc, None)) ] eenvinner
+        let eenvinner = AddStorageForLocalVals g [(afterMethodStateMachineVar, Local (locIdx2, realloc, None)) ] eenvinner
 
         // Initialize the closure variables
         for (fv, ilv) in Seq.zip cloFreeVars cloinfo.cloILFreeVars do
@@ -4716,11 +4718,11 @@ and GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr =
         cloFreeVarResults.FreeLocals
         |> Zset.elements
         |> List.filter (fun fv ->
-            match StorageForVal cenv.g m fv eenvouter with
-            | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
-            | _ ->
-                match selfv with
-                | Some v -> not (valRefEq g (mkLocalValRef fv) v)
+            match selfv with
+            | Some v -> not (valRefEq g (mkLocalValRef fv) v)
+            | _ ->  
+                match StorageForVal cenv.g m fv eenvouter with
+                | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
                 | _ -> true)
 
     // The general shape is:
@@ -4802,7 +4804,8 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc selfv eenvouter expr =
     let takenNames = vs |> List.map (fun v -> v.CompiledName g.CompilerGlobalState)
 
     // Get the free variables and the information about the closure, add the free variables to the environment
-    let (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, _, cloFreeVars, ilCloTypeRef, ilCloFreeVars, eenvinner) = GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr
+    let (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, _, cloFreeVars, ilCloTypeRef, ilCloFreeVars, eenvinner) =
+        GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr
 
     // Put the type and value arguments into the environment
     let rec getClosureArgs eenv ntmargs tvsl (vs: Val list) =
@@ -4959,7 +4962,8 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     
     // Work out the free type variables for the morphing thunk
     let takenNames = List.map nameOfVal tmvs
-    let (cloAttribs, _, _, cloFreeTyvars, cloFreeVars, ilDelegeeTypeRef, ilCloFreeVars, eenvinner) = GetIlxClosureFreeVars cenv m None ILBoxity.AsObject eenvouter takenNames expr
+    let (cloAttribs, _, _, cloFreeTyvars, cloFreeVars, ilDelegeeTypeRef, ilCloFreeVars, eenvinner) =
+        GetIlxClosureFreeVars cenv m None ILBoxity.AsObject eenvouter takenNames expr
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
     let ilDelegeeGenericActualsInner = mkILFormalGenericArgs 0 ilDelegeeGenericParams
 

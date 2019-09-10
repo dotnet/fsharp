@@ -8947,3 +8947,27 @@ let (|NewDelegateExpr|_|) g expr =
         Some (tmvs, body, m)
     | _ -> None
 
+let (|ValApp|_|) g vref expr =
+    match expr with
+    // use 'seq { ... }' as an indicator
+    | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
+    | _ -> None
+
+let (|GenerateCompiledStateMachinesExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh_generateCompiledStateMachines_vref (_, _, _m) -> Some ()
+    | _ -> None
+
+/// Match 
+let (|IsThenElseExpr|_|) expr =
+    match expr with
+    | Expr.Match (_spBind, _exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.Const (Const.Bool true), TDSuccess ([], 0) )], Some (TDSuccess ([], 1)), _),
+                  [| TTarget([], thenExpr, _, _); TTarget([], elseExpr, _, _) |], _m, _ty) -> 
+        Some (cond, thenExpr,  elseExpr)
+    | _ -> None
+
+/// if __generateCompiledStateMachines then ... else ...
+let (|IfGenerateCompiledStateMachinesExpr|_|) g expr =
+    match expr with
+    | IsThenElseExpr(GenerateCompiledStateMachinesExpr g (), thenExpr, elseExpr) -> Some (thenExpr, elseExpr)
+    | _ -> None

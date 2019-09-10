@@ -2304,5 +2304,11 @@ val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
+/// Match expressions that are an application of a particular F# function value
+val (|ValApp|_|) : TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
+
+/// Match expressions that represent the creation of an instance of an F# delegate value
 val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Val list list * Expr * range) option
 
+/// Match 'if __generateCompiledStateMachines then ... else ...' expressions
+val (|IfGenerateCompiledStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
