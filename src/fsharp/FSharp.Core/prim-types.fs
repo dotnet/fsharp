@@ -3111,12 +3111,13 @@ namespace Microsoft.FSharp.Collections
 
         // similar to 'skip' but with exceptions same as array slicing
         let sliceSkip n l =
+            let n2 = if n < 0 then 0 else n
             let rec loop i lst =
                 match lst with
                 | _ when i = 0 -> lst
                 | _ :: t -> loop (i-1) t
                 | [] -> []
-            loop n l
+            loop n2 l
 
     type List<'T> with
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
