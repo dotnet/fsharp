@@ -3027,7 +3027,7 @@ namespace Microsoft.FSharp.Collections
 
         let nonempty x = match x with [] -> false | _ -> true
         // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
-        // tail cons cells is permitted in carefully written library code.
+        // tail cons cells is permitted in carefully written library code. l
         let inline setFreshConsTail cons t = cons.( :: ).1 <- t
         let inline freshConsNoTail h = h :: (# "ldnull" : 'T list #)
 
@@ -3092,7 +3092,7 @@ namespace Microsoft.FSharp.Collections
         let rec sliceFreshConsTail cons n l =
             if n = 0 then setFreshConsTail cons [] else
             match l with
-            | [] -> outOfRange()
+            | [] -> setFreshConsTail cons []
             | x :: xs ->
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
@@ -3103,7 +3103,7 @@ namespace Microsoft.FSharp.Collections
         let sliceTake n l =
             if n < 0 then [] else
             match l with
-            | [] -> outOfRange()
+            | [] -> []
             | x :: xs ->
                 let cons = freshConsNoTail x
                 sliceFreshConsTail cons n xs
@@ -3111,12 +3111,11 @@ namespace Microsoft.FSharp.Collections
 
         // similar to 'skip' but with exceptions same as array slicing
         let sliceSkip n l =
-            if n < 0 then outOfRange()
             let rec loop i lst =
                 match lst with
                 | _ when i = 0 -> lst
                 | _ :: t -> loop (i-1) t
-                | [] -> outOfRange()
+                | [] -> []
             loop n l
 
     type List<'T> with
@@ -3157,7 +3156,8 @@ namespace Microsoft.FSharp.Collections
             | None, Some(j) -> PrivateListHelpers.sliceTake j l
             | Some(i), Some(j) ->
                 if i > j then [] else
-                PrivateListHelpers.sliceTake (j-i) (PrivateListHelpers.sliceSkip i l)
+                let start = if i < 0 then 0 else i
+                PrivateListHelpers.sliceTake (j-start) (PrivateListHelpers.sliceSkip start l)
 
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
