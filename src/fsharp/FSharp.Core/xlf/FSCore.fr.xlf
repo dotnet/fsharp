@@ -707,6 +707,11 @@
         <target state="translated">Cette expression de requête n'est pas valide. La construction '{0}' a été utilisée dans une requête, mais n'est pas reconnue par le traducteur de requête F#-to-LINQ. Vérifiez la spécification des requêtes autorisées et envisagez de retirer certaines opérations de l'expression de requête.</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism doit être positif, était {0}</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

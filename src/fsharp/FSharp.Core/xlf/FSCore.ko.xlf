@@ -707,6 +707,11 @@
         <target state="translated">올바른 쿼리 식이 아닙니다. '{0}' 구문이 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다. 허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism은 양수여야 하는데 {0}였습니다.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

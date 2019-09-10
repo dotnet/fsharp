@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="Build">
         <source>Build</source>
-        <target state="translated">Kompiluj</target>
+        <target state="translated">Kompilacja</target>
         <note />
       </trans-unit>
       <trans-unit id="5001">

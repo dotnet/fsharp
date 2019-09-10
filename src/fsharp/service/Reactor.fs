@@ -64,11 +64,7 @@ type Reactor() =
                                             Trace.TraceInformation("Reactor: {0:n3} pausing {1} milliseconds", DateTime.Now.TimeOfDay.TotalSeconds, pauseBeforeBackgroundWork)
                                             pauseBeforeBackgroundWork
                                     return! inbox.TryReceive(timeout) }
-#if FX_RESHAPED_GLOBALIZATION
-                    CultureInfo.CurrentUICulture <- culture
-#else
                     Thread.CurrentThread.CurrentUICulture <- culture
-#endif
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
                         //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)

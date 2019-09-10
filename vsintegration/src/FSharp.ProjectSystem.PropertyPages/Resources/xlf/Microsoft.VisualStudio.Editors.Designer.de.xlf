@@ -355,7 +355,7 @@ Wählen Sie einen gültigen Ordnerpfad aus.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">NONE</target>
+        <target state="translated">Keine</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -2148,12 +2148,12 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Dlg_ReplaceExistingFile">
         <source>The file '{0}' already exists.  Do you want to replace it?</source>
-        <target state="translated">Die Datei "{0}" ist bereits vorhanden.  Möchten Sie sie ersetzen?</target>
+        <target state="translated">Die Datei "{0}" ist bereits vorhanden. Möchten Sie sie ersetzen?</target>
         <note>{0} = full file path and name</note>
       </trans-unit>
       <trans-unit id="RSE_Dlg_ReplaceExistingFiles">
         <source>The following files already exist.  Do you want to replace them?</source>
-        <target state="translated">Die folgenden Dateien sind bereits vorhanden.  Möchten Sie sie ersetzen?</target>
+        <target state="translated">Die folgenden Dateien sind bereits vorhanden. Möchten Sie sie ersetzen?</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Dlg_ExportMultiple">

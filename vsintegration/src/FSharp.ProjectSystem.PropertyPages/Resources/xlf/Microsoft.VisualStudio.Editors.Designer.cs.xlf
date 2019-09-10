@@ -295,7 +295,7 @@ Vyberte prosím platnou cestu ke složce.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_MyAppCommentLine4">
         <source> Solution Explorer), and make changes on the Application tab.</source>
-        <target state="translated"> průzkumníku řešení), a proveďte změny v kartě Aplikace.</target>
+        <target state="translated">Průzkumníku řešení), a proveďte změny v kartě Aplikace.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_InvalidIdentifierStartupForm_1Arg">
