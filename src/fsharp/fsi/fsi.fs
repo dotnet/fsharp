@@ -1762,6 +1762,8 @@ type internal FsiInteractionProcessor
 
     let referencedAssemblies = Dictionary<string, DateTime>()
 
+    let assemblyReferencedEvent = Control.Event<string>()
+
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
@@ -1884,6 +1886,7 @@ type internal FsiInteractionProcessor
                                     FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
                             else
                                 FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
+                        assemblyReferencedEvent.Trigger(ar.resolvedPath)
                         fsiConsoleOutput.uprintnfnn "%s" format)
                     istate,Completed None
 
@@ -2299,6 +2302,8 @@ type internal FsiInteractionProcessor
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
+    member __.AssemblyReferenceAdded = assemblyReferencedEvent.Publish
+
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -2697,6 +2702,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.EvalScript(ctok, scriptPath, errorLogger)
         |> commitResultNonThrowing errorOptions scriptPath errorLogger
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
+
+    /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
+    member __.AssemblyReferenceAdded = fsiInteractionProcessor.AssemblyReferenceAdded
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any
