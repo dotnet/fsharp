@@ -4721,12 +4721,12 @@ and GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr =
         cloFreeVarResults.FreeLocals
         |> Zset.elements
         |> List.filter (fun fv ->
-            match selfv with
-            | Some v -> not (valRefEq g (mkLocalValRef fv) v)
-            | _ ->  
-                match StorageForVal cenv.g m fv eenvouter with
-                | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
-                | _ -> true)
+            (match selfv with
+             | Some v -> not (valRefEq g (mkLocalValRef fv) v)
+             | _ -> true) && 
+            (match StorageForVal cenv.g m fv eenvouter with
+             | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
+             | _ -> true))
 
     // The general shape is:
     //    {LAM <tyfunc-typars>. expr }[free-typars]: overall-type[contract-typars]

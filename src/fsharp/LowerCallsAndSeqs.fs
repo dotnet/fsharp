@@ -1028,63 +1028,107 @@ let ConvertStateMachineExprToObject g overallExpr =
 
         | _ -> None
 
-    let (|FSharpDelegateInvoke|_|) expr = 
-        match expr with 
-        | Expr.App (Expr.Val (invokeRef, _, _), _, _, (f :: args2), _m) 
-                when invokeRef.LogicalName = "Invoke" &&
-                     isDelegateTy g (tyOfExpr g f) -> Some (f, args2)
-        | _ -> None
-
-    let rec GetMacroBody (env: env) binds expr = 
+    let rec TryApplyMacroDef (env: env) expr (args: Expr list) = 
+        if isNil args then Some expr else
         match expr with 
         | Expr.Lambda _ -> 
-            let macroTypars, macroParams, macroBody, _rty = stripTopLambda (expr, tyOfExpr g expr)
-            let macroTypars2, macroParams2, macroBody2 = GetMacroBody env binds macroBody 
-            (macroTypars @ macroTypars2), (macroParams @ macroParams2), macroBody2
+            let m = expr.Range
+            let macroTypars, macroParamsCurried, macroBody, _rty = stripTopLambda (expr, tyOfExpr g expr)
+            if not (isNil macroTypars) then 
+                error(InternalError(sprintf "macro has typars %A" expr, m))
+            let macroParams = List.concat macroParamsCurried
+            let macroVal2 = mkLambdas m macroTypars macroParams (macroBody, tyOfExpr g macroBody)
+            if args.Length < macroParams.Length then 
+                error(InternalError(sprintf "under applied macro %A, args = %A " expr args, m))
+            let nowArgs, laterArgs = List.splitAt macroParams.Length args
+            let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
+            TryApplyMacroDef env expandedExpr laterArgs
 
-        | NewDelegateExpr g (macroParams, macroBody, _) -> 
-            let macroTypars2, macroParams2, macroBody2 = GetMacroBody env binds macroBody 
-            macroTypars2, (macroParams @ macroParams2), macroBody2
+        | NewDelegateExpr g (macroParamsCurried, macroBody, _) -> 
+            let m = expr.Range
+            let macroParams = List.concat macroParamsCurried
+            let macroVal2 = mkLambdas m [] macroParams (macroBody, tyOfExpr g macroBody)
+            if args.Length < macroParams.Length then 
+                error(InternalError(sprintf "under applied macro %A, args = %A " expr args, m))
+            let nowArgs, laterArgs = List.splitAt macroParams.Length args
+            let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
+            TryApplyMacroDef env expandedExpr laterArgs
 
-        | Expr.Let (bind, bodyExpr, _, _) -> 
-            GetMacroBody env (binds @ [bind]) bodyExpr
+        | Expr.Let (bind, bodyExpr, m, _) -> 
+            match TryApplyMacroDef env bodyExpr args with 
+            | Some bodyExpr2 -> Some (mkLetBind m bind bodyExpr2)
+            | None -> None
+
+        | Expr.Sequential (x1, bodyExpr, sp, ty, m) -> 
+            match TryApplyMacroDef env bodyExpr args with 
+            | Some bodyExpr2 -> Some (Expr.Sequential (x1, bodyExpr2, sp, ty, m))
+            | None -> None
+
+        | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
+            let targets2 = 
+                targets |> Array.choose (fun (TTarget(vs, targetExpr, spTarget, m)) -> 
+                    match TryApplyMacroDef env targetExpr args with 
+                    | Some targetExpr2 -> Some (TTarget(vs, targetExpr2, spTarget, m))
+                    | None -> None)
+            if targets2.Length = targets.Length then 
+                Some (Expr.Match (spBind, exprm, dtree, targets2, m, ty))
+            else
+                None
+
+        | TryFinallyExpr (sp1, sp2, ty, bodyExpr, compensation, m) ->
+            match TryApplyMacroDef env bodyExpr args with
+            | Some bodyExpr2 -> Some (mkTryFinally g (bodyExpr2, compensation, m, ty, sp1, sp2))
+            | None -> None
+
+        | WhileExpr (sp1, sp2, guardExpr, bodyExpr, m) ->
+            match TryApplyMacroDef env bodyExpr args with
+            | Some bodyExpr2 -> Some (mkWhile g (sp1, sp2, guardExpr, bodyExpr2, m))
+            | None -> None
+
+        | TryCatchExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
+            match TryApplyMacroDef env bodyExpr args with
+            | Some bodyExpr2 -> Some (mkTryWith g (bodyExpr2, filterVar, filterExpr, handlerVar, handlerExpr, m, resTy, spTry, spWith))
+            | None -> None
 
         | _ -> 
-            let expr2 = List.foldBack (mkLetBind expr.Range) binds expr
-            [], [], expr2
+            None
 
     // Apply a single expansion of __expand_ABC and __newEntryPoint in an arbitrary expression
-    let rec TryExpandMacro (env: env) expr args = 
+    let rec TryExpandMacro (env: env) expr args remake = 
         if sm_verbose then printfn "checking %A for possible macro application..." expr
         match expr with
         // __expand_code --> [expand_code]
         | Expr.Val (macroRef, _, _) when env.Macros.ContainsVal macroRef.Deref ->
-            let m = expr.Range
             let macroDef = env.Macros.[macroRef.Deref]
             if sm_verbose then printfn "found macro %A --> %A" macroRef macroDef 
-            // Macro-evaluate the macro definition until it is a lambda
-            let macroTypars, macroParams, macroBody = GetMacroBody env [] macroDef
-            if sm_verbose then printfn "found a macro body %A" macroBody
-            let macroVal2 = mkLambdas m macroTypars (List.concat macroParams) (macroBody, tyOfExpr g macroBody)
-            let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], args, m)
-            if sm_verbose then printfn "expanded macro %A --> %A..." macroRef expandedExpr
-            Some expandedExpr
+            // Expand the macro definition
+            match TryApplyMacroDef env macroDef args with 
+            | Some expandedExpr -> 
+                if sm_verbose then printfn "expanded macro %A --> %A..." macroRef expandedExpr
+                Some expandedExpr
+            | None -> 
+                // If the arity wasn't right and the macro is simply 'a = b' then substitute the r.h.s.
+                match macroDef with 
+                | Expr.Val _ -> Some (remake macroDef)
+                | _ -> 
+                    error(InternalError(sprintf "invalid macro expansion %A = %A" expr macroDef, expr.Range))
 
         // __expand_code.Invoke x --> let arg = x in [expand_code][arg/x]
-        | FSharpDelegateInvoke (f, args2) -> 
+        | Expr.App ((Expr.Val (invokeRef, _, _) as iref), a, b, (f :: args2), m) 
+                when invokeRef.LogicalName = "Invoke" && isDelegateTy g (tyOfExpr g f) -> 
             if sm_verbose then printfn "found delegate invoke in possible macro application..." 
-            TryExpandMacro env f (args2 @ args)
+            TryExpandMacro env f (args2 @ args) (fun f2 -> remake (Expr.App ((iref, a, b, (f2 :: args2), m))))
 
         // __expand_code x --> let arg = x in [__expand_code][arg/x] 
         | Expr.App (f, _fty, _tyargs, args2, _m) ->
             if sm_verbose then printfn "found app in possible macro application..." 
-            TryExpandMacro env f (args2 @ args)
+            TryExpandMacro env f (args2 @ args) (fun f2 -> remake (Expr.App (f2, _fty, _tyargs, args2, _m)))
 
         | _ -> None
 
     // Repeated top-down rewrite
     let makeRewriteEnv (env: env) = 
-        { PreIntercept = Some (fun cont e -> match TryExpandMacro env e [] with Some e2 -> Some (cont e2) | None -> None)
+        { PreIntercept = Some (fun cont e -> match TryExpandMacro env e [] id with Some e2 -> Some (cont e2) | None -> None)
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           IsUnderQuotations=true } 
@@ -1098,7 +1142,7 @@ let ConvertStateMachineExprToObject g overallExpr =
     /// Repeatedly find outermost expansion definitions and apply outermost expansions 
     let rec RepeatBindAndApplyOuterMacros (env: env) expr = 
         let env, expr2 = BindMacros env expr
-        match TryExpandMacro env expr2 [] with 
+        match TryExpandMacro env expr2 [] id with 
         | Some res -> RepeatBindAndApplyOuterMacros env res
         | None -> env, expr2
 
@@ -1267,7 +1311,8 @@ let ConvertStateMachineExprToObject g overallExpr =
                       stateVars = []
                       thisVars = []
                       asyncVars = emptyFreeVars }
-                | _ -> failwith "compiledStateMachineDirectInvoke argument was nont statically known"
+                | _ -> 
+                    error(InternalError(sprintf "compiledStateMachineDirectInvoke argument was not statically known", expr.Range))
 
             // The expanded code for state machines may use sequential binding and sequential execution.
             //
@@ -1328,7 +1373,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let res2 = ConvertStateMachineCode env pcExpr e2
                 let eps = res1.entryPoints @ res2.entryPoints
                 if eps.Length > 0 then 
-                    failwith "invalid state machine - try/finally may not contain resumption points"
+                    error(InternalError(sprintf "invalid state machine - try/finally may not contain resumption points", expr.Range))
                 { phase1 = mkTryFinally g (res1.phase1, res2.phase1, m, ty, sp1, sp2)
                   phase2 = (fun ctxt -> 
                         let egR = res1.phase2 ctxt
@@ -1347,7 +1392,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let res3 = ConvertStateMachineCode env pcExpr e3
                 let eps = res1.entryPoints @ res2.entryPoints @ res3.entryPoints
                 if eps.Length > 0 then 
-                    failwith "invalid state machine - try/finally may not contain asynchronous fast integer for loops"
+                    error(InternalError(sprintf "invalid state machine - state machine code may not contain asynchronous fast integer for loops", expr.Range))
                 { phase1 = mkFor g (sp1, v, res1.phase1, sp2, res2.phase1, res3.phase1, m)
                   phase2 = (fun ctxt -> 
                         let e1R = res1.phase2 ctxt
@@ -1468,7 +1513,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
             // LetRec bindings may not appear as part of state machine.
             | Expr.LetRec _ -> 
-                  failwith "recursive bindings not allowed in state machine, please lift it out"
+                  error(InternalError(sprintf "recursive bindings not allowed in state machine, please lift it out", expr.Range))
 
             // Arbitrary expression
             | _ -> 

@@ -119,6 +119,24 @@ type TaskBuilder =
 
     member inline ReturnFrom: task: Task<'T> -> TaskCode<'T, 'T>
 
+    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+    static member RunDynamic: code: TaskCode<'T, 'T> -> Task<'T>
+    
+    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+    static member CombineDynamic: task1: TaskCode<'TOverall, unit> * task2: TaskCode<'TOverall, 'T> -> TaskCode<'TOverall, 'T>
+    
+    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+    static member WhileDynamic: condition: (unit -> bool) * body: TaskCode<'TOverall, unit> -> TaskCode<'TOverall, unit>
+    
+    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+    static member TryFinallyDynamic: body: TaskCode<'TOverall, 'T> * fin: (unit -> unit) -> TaskCode<'TOverall, 'T>
+    
+    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+    static member TryWithDynamic: body: TaskCode<'TOverall, 'T> * catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
+    
+    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+    static member ReturnFromDynamic: task: Task<'T> -> TaskCode<'T, 'T>
+
 and 
 
     /// Provides evidence that various types can be used in bind and return constructs in task computation expressions
@@ -138,11 +156,9 @@ and
                                             and ^Awaiter: (member GetResult:  unit ->  ^TResult1) 
 
         /// Provides evidence that tasks can be used in 'bind' in a task computation expression
-        [<NoDynamicInvocation>]
         static member inline CanBind: priority: IPriority1 * task: Task<'TResult1> * k: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
 
         /// Provides evidence that F# Async computations can be used in 'bind' in a task computation expression
-        [<NoDynamicInvocation>]
         static member inline CanBind: priority: IPriority1 * computation: Async<'TResult1> * k: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
 
         /// Provides evidence that task-like types can be used in 'return' in a task workflow
@@ -154,12 +170,35 @@ and
                                             and ^Awaiter: (member GetResult: unit ->  ^T)
 
         /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
-        [<NoDynamicInvocation>]
         static member inline CanReturnFrom: IPriority1 * computation: Task<'T> -> TaskCode<'T, 'T>
 
         /// Provides evidence that F# Async computations can be used in 'return' in a task computation expression
-        [<NoDynamicInvocation>]
         static member inline CanReturnFrom: IPriority1 * computation: Async<'T> -> TaskCode<'T, 'T>
+
+
+
+
+
+        /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+        static member inline CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter, 'TOverall >
+                : priority: IPriority2 * taskLike: ^TaskLike * k: ( ^TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
+                                            when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+                                            and ^Awaiter :> ICriticalNotifyCompletion
+                                            and ^Awaiter: (member get_IsCompleted:  unit -> bool)
+                                            and ^Awaiter: (member GetResult:  unit ->  ^TResult1) 
+
+        /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+        static member inline CanBindDynamic: priority: IPriority1 * task: Task<'TResult1> * k: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) -> TaskCode<'TOverall, 'TResult2>
+
+        /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+        static member inline CanReturnFromDynamic< ^TaskLike, ^Awaiter, ^T> : priority: IPriority2 * taskLike: ^TaskLike -> TaskCode< ^T, ^T > 
+                                            when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+                                            and ^Awaiter :> ICriticalNotifyCompletion
+                                            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+                                            and ^Awaiter: (member GetResult: unit ->  ^T)
+
+        /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
+        static member CanReturnFromDynamic: IPriority1 * computation: Task<'T> -> TaskCode<'T, 'T>
 
 [<AutoOpen>]
 module TaskHelpers = 

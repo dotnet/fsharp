@@ -194,13 +194,16 @@ type TaskBuilder() =
                     //Console.WriteLine("[{0}] unwrap", sm.MethodBuilder.Task.Id)
                     sm.MethodBuilder.Task))
         else
-            let mutable sm = TaskStateMachine<'TOverall>()
-            sm.ResumptionFunc <- TaskMachineFunc<_>(fun sm -> __expand_code.Invoke(&sm)) 
-            sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
-            //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
-            sm.MethodBuilder.Start(&sm)
-            //Console.WriteLine("[{0}] unwrap", sm.MethodBuilder.Task.Id)
-            sm.MethodBuilder.Task        
+            TaskBuilder.RunDynamic(__expand_code)
+
+    static member RunDynamic(task : TaskCode<'TOverall, 'TOverall>) : Task<'TOverall> = 
+        let mutable sm = TaskStateMachine<'TOverall>()
+        sm.ResumptionFunc <- TaskMachineFunc<_>(fun sm -> task.Invoke(&sm)) 
+        sm.MethodBuilder <- AsyncTaskMethodBuilder<'TOverall>.Create()
+        //Console.WriteLine("[{0}] start", sm.MethodBuilder.Task.Id)
+        sm.MethodBuilder.Start(&sm)
+        //Console.WriteLine("[{0}] unwrap", sm.MethodBuilder.Task.Id)
+        sm.MethodBuilder.Task        
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     //[<DefaultValue>]
@@ -227,61 +230,72 @@ type TaskBuilder() =
                 else
                     false
             else
-                if __expand_task1.Invoke(&sm) then 
-                    __expand_task2.Invoke(&sm)
-                else
-                    // If state machines are not supported, then we must adjust the resumption to also run __expand_task2
-                    let rec resume (mf: TaskMachineFunc<_>) =
-                        TaskMachineFunc<_>(fun sm -> 
-                            //Console.WriteLine("[{0}] resuming Combine", sm.MethodBuilder.Task.Id)
-                            if mf.Invoke(&sm) then 
-                                __expand_task2.Invoke(&sm)
-                            else
-                                //Console.WriteLine("[{0}] rebinding ResumptionFunc for Combine (2)", sm.MethodBuilder.Task.Id)
-                                sm.ResumptionFunc <- resume sm.ResumptionFunc
-                                false)
+                TaskBuilder.CombineDynamic(__expand_task1, __expand_task2).Invoke(&sm))
 
-                    //Console.WriteLine("[{0}] rebinding ResumptionFunc for Combine (1)", sm.MethodBuilder.Task.Id)
-                    sm.ResumptionFunc <- resume sm.ResumptionFunc
-                    false)
+    /// Chains together a step with its following step.
+    /// Note that this requires that the first step has no result.
+    /// This prevents constructs like `task { return 1; return 2; }`.
+    static member CombineDynamic(task1: TaskCode<'TOverall, unit>, task2: TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+        TaskCode<_, _>(fun sm ->
+            if task1.Invoke(&sm) then 
+                task2.Invoke(&sm)
+            else
+                let rec resume (mf: TaskMachineFunc<_>) =
+                    TaskMachineFunc<_>(fun sm -> 
+                        //Console.WriteLine("[{0}] resuming Combine", sm.MethodBuilder.Task.Id)
+                        if mf.Invoke(&sm) then 
+                            task2.Invoke(&sm)
+                        else
+                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for Combine (2)", sm.MethodBuilder.Task.Id)
+                            sm.ResumptionFunc <- resume sm.ResumptionFunc
+                            false)
+
+                //Console.WriteLine("[{0}] rebinding ResumptionFunc for Combine (1)", sm.MethodBuilder.Task.Id)
+                sm.ResumptionFunc <- resume sm.ResumptionFunc
+                false)
 
     /// Builds a step that executes the body while the condition predicate is true.
-    member inline __.While (__expand_condition : unit -> bool, __expand_body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
+    member inline __.While (condition : unit -> bool, __expand_body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         TaskCode<_, _>(fun sm ->
             if __generateCompiledStateMachines then 
                 let mutable __stack_completed = true 
-                while __stack_completed && __expand_condition() do
+                while __stack_completed && condition() do
                     __stack_completed <- false 
-                    // NOTE: The body of the 'while' may contain await points, resuming may branch directly into the while loop
+                    // NOTE: The body of the state machine code for 'while' may contain await points, so resuming
+                    // the code will branch directly into the expanded '__expand_body', branching directly into the while loop
                     let ``__machine_step$cont`` = __expand_body.Invoke (&sm)
                     // If we make it to the assignment we prove we've made a step 
                     __stack_completed <- ``__machine_step$cont``
                 __stack_completed
             else
-                let rec repeat() = 
-                    TaskMachineFunc<_>(fun sm -> 
-                        //Console.WriteLine("[{0}] repeat WhileLoop", sm.MethodBuilder.Task.Id)
-                        if __expand_condition() then 
-                            if __expand_body.Invoke (&sm) then
-                                repeat().Invoke(&sm)
-                            else
-                                //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
-                                sm.ResumptionFunc <- resume sm.ResumptionFunc
-                                false
-                        else
-                            true)
-                and resume (mf: TaskMachineFunc<_>) =
-                    TaskMachineFunc<_>(fun sm -> 
-                        //Console.WriteLine("[{0}] resume WhileLoop body", sm.MethodBuilder.Task.Id)
-                        let step = mf.Invoke(&sm)
-                        if step then 
+                TaskBuilder.WhileDynamic(condition, __expand_body).Invoke(&sm))
+
+    static member WhileDynamic (condition: unit -> bool, body: TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
+        TaskCode<_, _>(fun sm ->
+            let rec repeat() = 
+                TaskMachineFunc<_>(fun sm -> 
+                    //Console.WriteLine("[{0}] repeat WhileLoop", sm.MethodBuilder.Task.Id)
+                    if condition() then 
+                        if body.Invoke (&sm) then
                             repeat().Invoke(&sm)
                         else
                             //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
                             sm.ResumptionFunc <- resume sm.ResumptionFunc
-                            false)
+                            false
+                    else
+                        true)
+            and resume (mf: TaskMachineFunc<_>) =
+                TaskMachineFunc<_>(fun sm -> 
+                    //Console.WriteLine("[{0}] resume WhileLoop body", sm.MethodBuilder.Task.Id)
+                    let step = mf.Invoke(&sm)
+                    if step then 
+                        repeat().Invoke(&sm)
+                    else
+                        //Console.WriteLine("[{0}] rebinding ResumptionFunc for While", sm.MethodBuilder.Task.Id)
+                        sm.ResumptionFunc <- resume sm.ResumptionFunc
+                        false)
 
-                repeat().Invoke(&sm))
+            repeat().Invoke(&sm))
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -307,30 +321,34 @@ type TaskBuilder() =
                 else
                     __stack_completed
             else
-                let rec resume (mf: TaskMachineFunc<_>) =
-                    TaskMachineFunc<_>(fun sm -> 
-                        try
-                            //Console.WriteLine("[{0}] resuming TryWith", sm.MethodBuilder.Task.Id)
-                            if mf.Invoke (&sm) then 
-                                //Console.WriteLine("[{0}] resumed TryWith completed", sm.MethodBuilder.Task.Id)
-                                true
-                            else
-                                //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryWith (2)", sm.MethodBuilder.Task.Id)
-                                sm.ResumptionFunc <- resume sm.ResumptionFunc
-                                false
-                        with exn -> 
-                            //Console.WriteLine("[{0}] catch block of resumed TryWith", sm.MethodBuilder.Task.Id)
-                            (__expand_catch exn).Invoke(&sm))
-                try
-                    let step = __expand_body.Invoke (&sm)
-                    if not step then 
-                        //Console.WriteLine("[{0}] rebinding ResumptionFunc {1} to {2} for TryWith, sm.addr = {3}", sm.MethodBuilder.Task.Id, hashq sm.ResumptionFunc, hashq rf2, sm.Address)
-                        sm.ResumptionFunc <- sm.ResumptionFunc
-                    step
+                TaskBuilder.TryWithDynamic(__expand_body, __expand_catch).Invoke(&sm))
+
+    static member TryWithDynamic (body: TaskCode<'TOverall, 'T>, handler: exn -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+        TaskCode<_, _>(fun sm ->
+            let rec resume (mf: TaskMachineFunc<_>) =
+                TaskMachineFunc<_>(fun sm -> 
+                    try
+                        //Console.WriteLine("[{0}] resuming TryWith", sm.MethodBuilder.Task.Id)
+                        if mf.Invoke (&sm) then 
+                            //Console.WriteLine("[{0}] resumed TryWith completed", sm.MethodBuilder.Task.Id)
+                            true
+                        else
+                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryWith (2)", sm.MethodBuilder.Task.Id)
+                            sm.ResumptionFunc <- resume sm.ResumptionFunc
+                            false
+                    with exn -> 
+                        //Console.WriteLine("[{0}] catch block of resumed TryWith", sm.MethodBuilder.Task.Id)
+                        (handler exn).Invoke(&sm))
+            try
+                let step = body.Invoke (&sm)
+                if not step then 
+                    //Console.WriteLine("[{0}] rebinding ResumptionFunc {1} to {2} for TryWith, sm.addr = {3}", sm.MethodBuilder.Task.Id, hashq sm.ResumptionFunc, hashq rf2, sm.Address)
+                    sm.ResumptionFunc <- sm.ResumptionFunc
+                step
                         
-                with exn -> 
-                    //Console.WriteLine("[{0}] catch block of TryWith", sm.MethodBuilder.Task.Id)
-                    (__expand_catch exn).Invoke(&sm))
+            with exn -> 
+                //Console.WriteLine("[{0}] catch block of TryWith", sm.MethodBuilder.Task.Id)
+                (handler exn).Invoke(&sm))
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -351,37 +369,41 @@ type TaskBuilder() =
                     compensation()
                 __stack_completed
             else
-                let rec resume (mf: TaskMachineFunc<_>) =
-                    TaskMachineFunc<_>(fun sm -> 
-                        let mutable completed = false
-                        try
-                            //Console.WriteLine("[{0}] resumed TryFinally", sm.MethodBuilder.Task.Id)
-                            completed <- mf.Invoke (&sm)
-                            if not completed then 
-                                //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryFinally (2)", sm.MethodBuilder.Task.Id)
-                                sm.ResumptionFunc <- resume sm.ResumptionFunc
-                        with _ ->
-                            compensation()
-                            reraise()
-                        if completed then 
-                            compensation()
-                        completed)
+                TaskBuilder.TryFinallyDynamic(__expand_body, compensation).Invoke(&sm))
 
-                let mutable completed = false
-                try
-                    completed <- __expand_body.Invoke (&sm)
-                    if not completed then 
-                        //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryFinally (1)", sm.MethodBuilder.Task.Id)
-                        sm.ResumptionFunc <- resume sm.ResumptionFunc
+    static member TryFinallyDynamic (body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
+        TaskCode<_, _>(fun sm ->
+            let rec resume (mf: TaskMachineFunc<_>) =
+                TaskMachineFunc<_>(fun sm -> 
+                    let mutable completed = false
+                    try
+                        //Console.WriteLine("[{0}] resumed TryFinally", sm.MethodBuilder.Task.Id)
+                        completed <- mf.Invoke (&sm)
+                        if not completed then 
+                            //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryFinally (2)", sm.MethodBuilder.Task.Id)
+                            sm.ResumptionFunc <- resume sm.ResumptionFunc
+                    with _ ->
+                        compensation()
+                        reraise()
+                    if completed then 
+                        compensation()
+                    completed)
+
+            let mutable completed = false
+            try
+                completed <- body.Invoke (&sm)
+                if not completed then 
+                    //Console.WriteLine("[{0}] rebinding ResumptionFunc for TryFinally (1)", sm.MethodBuilder.Task.Id)
+                    sm.ResumptionFunc <- resume sm.ResumptionFunc
                        
-                with _ ->
-                    compensation()
-                    reraise()
+            with _ ->
+                compensation()
+                reraise()
 
-                if completed then 
-                    compensation()
+            if completed then 
+                compensation()
 
-                completed)
+            completed)
 
     member inline builder.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (disp : 'Resource, __expand_body : 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
@@ -395,7 +417,6 @@ type TaskBuilder() =
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
             (fun e -> builder.While((fun () -> e.MoveNext()), TaskCode<_, _>(fun sm -> (__expand_body e.Current).Invoke(&sm)))))
 
-    [<NoDynamicInvocation>]
     member inline __.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> = 
         TaskCode<_, _>(fun sm -> 
             if __generateCompiledStateMachines then 
@@ -418,29 +439,58 @@ type TaskBuilder() =
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
             else
-                let mutable awaiter = task.GetAwaiter()
+                TaskBuilder.ReturnFromDynamic(task).Invoke(&sm))
 
-                let cont =
-                    TaskMachineFunc<'T>(fun sm -> 
-                        //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
-                        sm.Result <- awaiter.GetResult()
-                        true)
+    static member ReturnFromDynamic (task: Task<'T>) : TaskCode<'T, 'T> = 
+        TaskCode<_, _>(fun sm -> 
+            let mutable awaiter = task.GetAwaiter()
 
-                // shortcut to continue immediately
-                if task.IsCompleted then
-                    cont.Invoke(&sm)
-                else
-                    //Console.WriteLine("[{0}] setting ResumptionFunc for ReturnFrom", sm.MethodBuilder.Task.Id)
-                    // If the task definition has not been converted to a state machine then a continuation function is used
-                    sm.ResumptionFunc <- cont
-                    sm.Awaiter <- awaiter
-                    false)
+            let cont =
+                TaskMachineFunc<'T>(fun sm -> 
+                    //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
+                    sm.Result <- awaiter.GetResult()
+                    true)
+
+            // shortcut to continue immediately
+            if task.IsCompleted then
+                cont.Invoke(&sm)
+            else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for ReturnFrom", sm.MethodBuilder.Task.Id)
+                // If the task definition has not been converted to a state machine then a continuation function is used
+                sm.ResumptionFunc <- cont
+                sm.Awaiter <- awaiter
+                false)
 
 and [<Sealed>] Witnesses() =
 
     interface IPriority1
     interface IPriority2
     interface IPriority3
+
+    static member inline CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
+                                        when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+                                        and ^Awaiter :> ICriticalNotifyCompletion
+                                        and ^Awaiter: (member get_IsCompleted:  unit -> bool)
+                                        and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
+              (_priority: IPriority2, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+
+        TaskCode<_, _>(fun sm -> 
+            let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
+
+            let cont = 
+                (TaskMachineFunc<'TOverall>( fun sm -> 
+                    //Console.WriteLine("[{0}] resumed CanBind(TaskLike)", sm.MethodBuilder.Task.Id)
+                    let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
+                    (__expand_continuation result).Invoke(&sm)))
+
+            // shortcut to continue immediately
+            if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
+                cont.Invoke(&sm)
+            else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for CanBind TaskLike to {1}, sm.addr = {2}", sm.MethodBuilder.Task.Id, hashq CONT, sm.Address)
+                sm.Awaiter <- awaiter
+                sm.ResumptionFunc <- cont
+                false)
 
     static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
                                         when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
@@ -468,22 +518,26 @@ and [<Sealed>] Witnesses() =
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
             else
-                let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
+                Witnesses.CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall>(_priority, task, __expand_continuation).Invoke(&sm))
 
-                let cont = 
-                    (TaskMachineFunc<'TOverall>( fun sm -> 
-                        //Console.WriteLine("[{0}] resumed CanBind(TaskLike)", sm.MethodBuilder.Task.Id)
-                        let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                        (__expand_continuation result).Invoke(&sm)))
+    static member inline CanBindDynamic (_priority: IPriority1, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+        TaskCode<_, _>(fun sm -> 
+            let mutable awaiter = task.GetAwaiter()
 
-                // shortcut to continue immediately
-                if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                    cont.Invoke(&sm)
-                else
-                    //Console.WriteLine("[{0}] setting ResumptionFunc for CanBind TaskLike to {1}, sm.addr = {2}", sm.MethodBuilder.Task.Id, hashq CONT, sm.Address)
-                    sm.Awaiter <- awaiter
-                    sm.ResumptionFunc <- cont
-                    false)
+            let cont = 
+                (TaskMachineFunc<'TOverall>(fun sm -> 
+                    //Console.WriteLine("[{0}] resumed CanBind(Task)", sm.MethodBuilder.Task.Id)
+                    let result = awaiter.GetResult()
+                    (continuation result).Invoke(&sm)))
+
+            // shortcut to continue immediately
+            if awaiter.IsCompleted then 
+                cont.Invoke(&sm)
+            else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for CanBind Task", sm.MethodBuilder.Task.Id)
+                sm.Awaiter <- awaiter
+                sm.ResumptionFunc <- cont
+                false)
 
     static member inline CanBind (_priority: IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
 
@@ -506,25 +560,35 @@ and [<Sealed>] Witnesses() =
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
             else
-                let mutable awaiter = task.GetAwaiter()
-
-                let cont = 
-                    (TaskMachineFunc<'TOverall>(fun sm -> 
-                        //Console.WriteLine("[{0}] resumed CanBind(Task)", sm.MethodBuilder.Task.Id)
-                        let result = awaiter.GetResult()
-                        (__expand_continuation result).Invoke(&sm)))
-
-                // shortcut to continue immediately
-                if awaiter.IsCompleted then 
-                    cont.Invoke(&sm)
-                else
-                    //Console.WriteLine("[{0}] setting ResumptionFunc for CanBind Task", sm.MethodBuilder.Task.Id)
-                    sm.Awaiter <- awaiter
-                    sm.ResumptionFunc <- cont
-                    false)
+                Witnesses.CanBindDynamic(_priority, task, __expand_continuation).Invoke(&sm))
 
     static member inline CanBind (_priority: IPriority1, computation: Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
         Witnesses.CanBind (_priority, Async.StartAsTask computation, __expand_continuation)
+
+    static member inline CanReturnFromDynamic< ^TaskLike, ^Awaiter, ^T
+                                       when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+                                       and ^Awaiter :> ICriticalNotifyCompletion
+                                       and ^Awaiter: (member get_IsCompleted: unit -> bool)
+                                       and ^Awaiter: (member GetResult: unit ->  ^T)>
+          (_priority: IPriority2, task: ^TaskLike) : TaskCode< ^T, ^T > =
+
+        TaskCode<_, _>(fun sm -> 
+            let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
+
+            let cont =
+                (TaskMachineFunc< ^T >(fun sm -> 
+                    //Console.WriteLine("[{0}] resumed CanReturnFrom(TaskLike)", sm.MethodBuilder.Task.Id)
+                    sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
+                    true))
+
+            // shortcut to continue immediately
+            if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
+                cont.Invoke(&sm)
+            else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for CanReturnFrom TaskLike", sm.MethodBuilder.Task.Id)
+                sm.Awaiter <- awaiter
+                sm.ResumptionFunc <- cont
+                false)
 
     static member inline CanReturnFrom< ^TaskLike, ^Awaiter, ^T
                                        when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
@@ -553,22 +617,7 @@ and [<Sealed>] Witnesses() =
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
             else
-                let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
-
-                let cont =
-                    (TaskMachineFunc< ^T >(fun sm -> 
-                        //Console.WriteLine("[{0}] resumed CanReturnFrom(TaskLike)", sm.MethodBuilder.Task.Id)
-                        sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
-                        true))
-
-                // shortcut to continue immediately
-                if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                    cont.Invoke(&sm)
-                else
-                    //Console.WriteLine("[{0}] setting ResumptionFunc for CanReturnFrom TaskLike", sm.MethodBuilder.Task.Id)
-                    sm.Awaiter <- awaiter
-                    sm.ResumptionFunc <- cont
-                    false)
+                Witnesses.CanReturnFromDynamic(_priority, task).Invoke(&sm))
 
     static member inline CanReturnFrom (_priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
 
@@ -589,23 +638,28 @@ and [<Sealed>] Witnesses() =
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
             else
-                let mutable awaiter = task.GetAwaiter()
+                Witnesses.CanReturnFromDynamic(_priority, task).Invoke(&sm))
 
-                let cont =
-                    (TaskMachineFunc<'T>(fun sm -> 
-                        //Console.WriteLine("[{0}] resumed CanReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
-                        sm.Result <- awaiter.GetResult()
-                        true))
+    static member CanReturnFromDynamic (_priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
 
-                // shortcut to continue immediately
-                if task.IsCompleted then
-                    cont.Invoke(&sm)
-                else
-                    //Console.WriteLine("[{0}] setting ResumptionFunc for CanReturnFrom Task", sm.MethodBuilder.Task.Id)
-                    // If the task definition has not been converted to a state machine then a continuation function is used
-                    sm.Awaiter <- awaiter
-                    sm.ResumptionFunc <- cont
-                    false)
+        TaskCode<_, _>(fun sm -> 
+            let mutable awaiter = task.GetAwaiter()
+
+            let cont =
+                (TaskMachineFunc<'T>(fun sm -> 
+                    //Console.WriteLine("[{0}] resumed CanReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
+                    sm.Result <- awaiter.GetResult()
+                    true))
+
+            // shortcut to continue immediately
+            if task.IsCompleted then
+                cont.Invoke(&sm)
+            else
+                //Console.WriteLine("[{0}] setting ResumptionFunc for CanReturnFrom Task", sm.MethodBuilder.Task.Id)
+                // If the task definition has not been converted to a state machine then a continuation function is used
+                sm.Awaiter <- awaiter
+                sm.ResumptionFunc <- cont
+                false)
 
     static member inline CanReturnFrom (_priority: IPriority1, computation: Async<'T>) : TaskCode<'T, 'T> =
         Witnesses.CanReturnFrom (_priority, Async.StartAsTask computation)
