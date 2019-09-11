@@ -2015,9 +2015,6 @@ type TcConfigBuilder =
       mutable openDebugInformationForLaterStaticLinking: bool (* only for --standalone *)
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
-      mutable compilingFslib20: string option
-      mutable compilingFslib40: bool
-      mutable compilingFslibNoBigInt: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
@@ -2185,9 +2182,6 @@ type TcConfigBuilder =
           openDebugInformationForLaterStaticLinking = false
           defaultFSharpBinariesDir = String.Empty
           compilingFslib = false
-          compilingFslib20 = None
-          compilingFslib40 = false
-          compilingFslibNoBigInt = false
           useIncrementalBuilder = false
           useFsiAuxLib = false
           implicitOpens = []
@@ -2688,9 +2682,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
     member x.fsharpBinariesDir = fsharpBinariesDirValue
     member x.compilingFslib = data.compilingFslib
-    member x.compilingFslib20 = data.compilingFslib20
-    member x.compilingFslib40 = data.compilingFslib40
-    member x.compilingFslibNoBigInt = data.compilingFslibNoBigInt
     member x.useIncrementalBuilder = data.useIncrementalBuilder
     member x.includes = data.includes
     member x.implicitOpens = data.implicitOpens

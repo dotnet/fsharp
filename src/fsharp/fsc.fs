@@ -869,11 +869,9 @@ module MainModuleBuilder =
               error(Error(FSComp.SR.fscAssemblyCultureAttributeError(), rangeCmdArgs))
 
             // Add the type forwarders to any .NET DLL post-.NET-2.0, to give binary compatibility
-            let exportedTypesList = 
-                if (tcConfig.compilingFslib && tcConfig.compilingFslib40) then 
-                   (List.append (createMscorlibExportList tcGlobals)
-                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcConfig tcImports))
-                   )
+            let exportedTypesList =
+                if tcConfig.compilingFslib then
+                   List.append (createMscorlibExportList tcGlobals) (createSystemNumericsExportList tcConfig tcImports)
                 else
                     []
 
@@ -1276,64 +1274,6 @@ module StaticLinker =
 
             ilxMainModule, rewriteExternalRefsToLocalRefs
 
-
-    // LEGACY: This is only used when compiling an FSharp.Core for .NET 2.0 (FSharp.Core 2.3.0.0). We no longer
-    // build new FSharp.Core for that configuration.
-    //
-    // Find all IL modules that are to be statically linked given the static linking roots.
-    let LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig: TcConfig, ilGlobals: ILGlobals, ilxMainModule) = 
-        let mscorlib40 = tcConfig.compilingFslib20.Value 
-              
-        let ilBinaryReader = 
-            let ilGlobals = mkILGlobals ILScopeRef.Local
-            let opts : ILReaderOptions = 
-                { ilGlobals = ilGlobals
-                  reduceMemoryUsage = tcConfig.reduceMemoryUsage
-                  metadataOnly = MetadataOnlyFlag.No
-                  tryGetMetadataSnapshot = (fun _ -> None)
-                  pdbDirPath = None  } 
-            ILBinaryReader.OpenILModuleReader mscorlib40 opts
-              
-        let tdefs1 = ilxMainModule.TypeDefs.AsList  |> List.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
-        let tdefs2 = ilBinaryReader.ILModuleDef.TypeDefs.AsList |> List.filter (fun td -> MainModuleBuilder.injectedCompatTypes.Contains(td.Name))
-        //printfn "tdefs2 = %A" (tdefs2 |> List.map (fun tdef -> tdef.Name))
-
-        // rewrite the mscorlib references 
-        let tdefs2 = 
-            let fakeModule = mkILSimpleModule "" "" true (4, 0) false (mkILTypeDefs tdefs2) None None 0 (mkILExportedTypes []) ""
-            let fakeModule = 
-                  fakeModule |> Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (fun tref -> 
-                      if MainModuleBuilder.injectedCompatTypes.Contains(tref.Name)  || (tref.Enclosing  |> List.exists (fun x -> MainModuleBuilder.injectedCompatTypes.Contains x)) then 
-                          tref
-                          //|> Morphs.morphILScopeRefsInILTypeRef (function ILScopeRef.Local -> ilGlobals.mscorlibScopeRef | x -> x) 
-                      // The implementations of Tuple use two private methods from System.Environment to get a resource string. Remap it
-                      elif tref.Name = "System.Environment" then 
-                          ILTypeRef.Create(ILScopeRef.Local, [], "Microsoft.FSharp.Core.PrivateEnvironment")  //|> Morphs.morphILScopeRefsInILTypeRef (function ILScopeRef.Local -> ilGlobals.mscorlibScopeRef | x -> x) 
-                      else 
-                          tref |> Morphs.morphILScopeRefsInILTypeRef (fun _ -> ilGlobals.primaryAssemblyScopeRef) )
-                  
-            // strip out System.Runtime.TargetedPatchingOptOutAttribute, which doesn't exist for 2.0
-            let fakeModule = 
-              {fakeModule with 
-                TypeDefs = 
-                  mkILTypeDefs 
-                      ([ for td in fakeModule.TypeDefs do 
-                             let meths = td.Methods.AsList
-                                            |> List.map (fun md ->
-                                                md.With(customAttrs = 
-                                                              mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                                ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")))) 
-                                            |> mkILMethods
-                             let td = td.With(methods=meths)
-                             yield td.With(methods=meths) ])}
-            //ILAsciiWriter.output_module stdout fakeModule
-            fakeModule.TypeDefs.AsList
-
-        let ilxMainModule = 
-            { ilxMainModule with 
-                TypeDefs = mkILTypeDefs (tdefs1 @ tdefs2) }
-        ilxMainModule
-
     [<NoEquality; NoComparison>]
     type Node = 
         { name: string
@@ -1478,7 +1418,7 @@ module StaticLinker =
     let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals) = 
 
 #if !NO_EXTENSIONTYPING
-        let providerGeneratedAssemblies = 
+        let providerGeneratedAssemblies =
 
             [ // Add all EST-generated assemblies into the static linking set
                 for KeyValue(_, importedBinary: ImportedBinary) in tcImports.DllTable do
@@ -1487,10 +1427,7 @@ module StaticLinker =
                         | None -> ()
                         | Some provAssemStaticLinkInfo -> yield (importedBinary, provAssemStaticLinkInfo) ]
 #endif
-        if tcConfig.compilingFslib && tcConfig.compilingFslib20.IsSome then 
-            (fun ilxMainModule -> LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig, ilGlobals, ilxMainModule))
-          
-        elif not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
+        if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
 #if !NO_EXTENSIONTYPING
              && providerGeneratedAssemblies.IsEmpty 
 #endif
@@ -1771,15 +1708,13 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
           exiter: Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
 
     // See Bug 735819 
-    let lcidFromCodePage = 
-#if FX_LCIDFROMCODEPAGE
+    let lcidFromCodePage =
         if (Console.OutputEncoding.CodePage <> 65001) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
                 Thread.CurrentThread.CurrentUICulture <- new CultureInfo("en-US")
                 Some 1033
         else
-#endif
             None
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()

@@ -119,12 +119,6 @@
     <Compile Include="reflect.fs">
       <Link>Reflection/reflect.fs</Link>
     </Compile>
-    <Compile Include="math\n.fsi">
-      <Link>Numerics/n.fsi</Link>
-    </Compile>
-    <Compile Include="math\n.fs">
-      <Link>Numerics/n.fs</Link>
-    </Compile>
     <Compile Include="math\z.fsi">
       <Link>Numerics/z.fsi</Link>
     </Compile>
