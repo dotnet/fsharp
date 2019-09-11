@@ -32,6 +32,8 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool) as this =
     let argv = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:netcore"; "--quiet" |]
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
 
+    member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
+
     member __.ProvideInput = stdin.ProvideInput
 
     member __.OutputProduced = outputProduced.Publish
