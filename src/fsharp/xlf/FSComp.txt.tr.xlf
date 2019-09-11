@@ -12,6 +12,16 @@
         <target state="translated">F# {1} için {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
         <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
@@ -20,6 +30,11 @@
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
         <target state="new">Algorithm '{0}' is not supported</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">

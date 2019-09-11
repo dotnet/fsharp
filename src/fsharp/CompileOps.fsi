@@ -256,9 +256,6 @@ type TcConfigBuilder =
       mutable openDebugInformationForLaterStaticLinking: bool
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
-      mutable compilingFslib20: string option
-      mutable compilingFslib40: bool
-      mutable compilingFslibNoBigInt: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
@@ -424,9 +421,6 @@ type TcConfig =
     member openDebugInformationForLaterStaticLinking: bool
     member fsharpBinariesDir: string
     member compilingFslib: bool
-    member compilingFslib20: string option
-    member compilingFslib40: bool
-    member compilingFslibNoBigInt: bool
     member useIncrementalBuilder: bool
     member includes: string list
     member implicitOpens: string list

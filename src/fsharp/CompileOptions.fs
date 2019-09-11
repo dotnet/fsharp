@@ -1217,10 +1217,9 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
         Some(InternalCommandLineOption("metadataversion", rangeCmdArgs)), None)
   ]
 
-  
 // OptionBlock: Deprecated flags (fsc, service only)
 //--------------------------------------------------
-    
+
 let compilingFsLibFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
         ("compiling-fslib", tagNone,
@@ -1231,23 +1230,14 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
             IlxSettings.ilxCompilingFSharpCoreLib := true),
          Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 
-let compilingFsLib20Flag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-20", tagNone,
-         OptionString (fun s -> tcConfigB.compilingFslib20 <- Some s ),
-         Some(InternalCommandLineOption("--compiling-fslib-20", rangeCmdArgs)), None)
+let compilingFsLib20Flag =
+    CompilerOption ("compiling-fslib-20", tagNone, OptionString (fun _ -> () ), None, None)
 
-let compilingFsLib40Flag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-40", tagNone,
-         OptionUnit (fun () -> tcConfigB.compilingFslib40 <- true ),
-         Some(InternalCommandLineOption("--compiling-fslib-40", rangeCmdArgs)), None)
+let compilingFsLib40Flag =
+    CompilerOption ("compiling-fslib-40", tagNone, OptionUnit (fun () -> ()), None, None)
 
-let compilingFsLibNoBigIntFlag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-nobigint", tagNone,
-         OptionUnit (fun () -> tcConfigB.compilingFslibNoBigInt <- true ),
-         Some(InternalCommandLineOption("--compiling-fslib-nobigint", rangeCmdArgs)), None)
+let compilingFsLibNoBigIntFlag =
+    CompilerOption ("compiling-fslib-nobigint", tagNone, OptionUnit (fun () -> () ), None, None)
 
 let mlKeywordsFlag = 
     CompilerOption
@@ -1262,7 +1252,7 @@ let gnuStyleErrorsFlag tcConfigB =
          Some(DeprecatedCommandLineOptionNoDescription("--gnu-style-errors", rangeCmdArgs)), None)
 
 let deprecatedFlagsBoth tcConfigB =
-    [ 
+    [
       CompilerOption
          ("light", tagNone,
           OptionUnit (fun () -> tcConfigB.light <- Some true),
@@ -1278,7 +1268,7 @@ let deprecatedFlagsBoth tcConfigB =
           OptionUnit (fun () -> tcConfigB.light <- Some false),
           Some(DeprecatedCommandLineOptionNoDescription("--no-indentation-syntax", rangeCmdArgs)), None) 
     ]
-          
+
 let deprecatedFlagsFsi tcConfigB = deprecatedFlagsBoth tcConfigB
 
 let deprecatedFlagsFsc tcConfigB =
@@ -1311,9 +1301,9 @@ let deprecatedFlagsFsc tcConfigB =
         Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None)
 
     compilingFsLibFlag tcConfigB
-    compilingFsLib20Flag tcConfigB 
-    compilingFsLib40Flag tcConfigB
-    compilingFsLibNoBigIntFlag tcConfigB
+    compilingFsLib20Flag
+    compilingFsLib40Flag
+    compilingFsLibNoBigIntFlag
 
     CompilerOption
        ("version", tagString,

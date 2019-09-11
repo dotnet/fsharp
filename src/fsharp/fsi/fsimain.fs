@@ -40,14 +40,12 @@ do()
 
 
 /// Set the current ui culture for the current thread.
-#if FX_LCIDFROMCODEPAGE
 let internal SetCurrentUICultureForThread (lcid : int option) =
     let culture = Thread.CurrentThread.CurrentUICulture
     match lcid with
     | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
     | None -> ()
     { new IDisposable with member x.Dispose() = Thread.CurrentThread.CurrentUICulture <- culture }
-#endif
 
 let callStaticMethod (ty:Type) name args =
     ty.InvokeMember(name, (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, null, Array.ofList args,Globalization.CultureInfo.InvariantCulture)
@@ -95,11 +93,7 @@ type WinFormsEventLoop() =
                                            try 
                                               // When we get called back, someone may jack our culture
                                               // So we must reset our UI culture every time
-#if FX_LCIDFROMCODEPAGE
                                               use _scope = SetCurrentUICultureForThread lcid
-#else
-                                              ignore lcid
-#endif
                                               mainFormInvokeResultHolder := Some(f ())
                                            finally 
                                               doneSignal.Set() |> ignore)) |> ignore
