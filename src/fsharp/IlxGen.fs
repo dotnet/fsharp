@@ -2293,7 +2293,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
      GenExpr cenv cgbuf eenv spBody body (EndLocalScope(sequel, endScope))
 
   | Expr.Lambda _ | Expr.TyLambda _ ->
-      GenLambda cenv cgbuf eenv false None expr sequel
+      GenLambda cenv cgbuf eenv false [] expr sequel
 
   | Expr.App (Expr.Val (vref, _, m) as v, _, tyargs, [], _) when
         List.forall (isMeasureTy g) tyargs &&
@@ -4227,7 +4227,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
     //
     // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
     // free variables of the expression.
-    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false (Some (mkLocalValRef moveNextMethodThisVar)) eenvouter moveNextExpr
+    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false (mkLocalValRef moveNextMethodThisVar :: thisVars) eenvouter moveNextExpr
 
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
@@ -4390,7 +4390,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     //
     // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
     // free variables of the expression.
-    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject false None eenvouter objExpr
+    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject false [] eenvouter objExpr
 
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
@@ -4461,7 +4461,7 @@ and GenSequenceExpr
 
     // Get the free variables. Make a lambda to pretend that the 'nextEnumeratorValRef' is bound (it is an argument to GenerateNext)
     let (cloAttribs, _, _, cloFreeTyvars, cloFreeVars, ilCloTypeRef: ILTypeRef, ilCloFreeVars, eenvinner) =
-         GetIlxClosureFreeVars cenv m None ILBoxity.AsObject eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, g.int32_ty))
+         GetIlxClosureFreeVars cenv m [] ILBoxity.AsObject eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, g.int32_ty))
 
     let ilCloSeqElemTy = GenType cenv.amap m eenvinner.tyenv seqElemTy
     let cloRetTy = mkSeqTy g seqElemTy
@@ -4587,18 +4587,15 @@ and GenGenericArgs m (tyenv: TypeReprEnv) tps =
     tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv.[c, m]))
 
 /// Generate the closure class for a function
-and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr =
+and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars expr =
     let g = cenv.g
     match expr with
     | Expr.Lambda (_, _, _, _, _, m, _)
     | Expr.TyLambda (_, _, _, m, _) ->
       
-        let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc selfv eenv expr
+        let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc thisVars eenv expr
       
-        let entryPointInfo =
-          match selfv with
-          | Some v -> [(v, BranchCallClosure (cloinfo.cloArityInfo))]
-          | _ -> []
+        let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure (cloinfo.cloArityInfo)))
 
         let ilCloBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
         let ilCloTypeRef = cloinfo.cloSpec.TypeRef
@@ -4663,8 +4660,8 @@ and GenLambdaVal cenv (cgbuf: CodeGenBuffer) eenv (cloinfo, m) =
         (Push [EraseClosures.mkTyOfLambdas g.ilxPubCloEnv cloinfo.ilCloLambdas])
         (I_newobj (cloinfo.cloSpec.Constructor, None))
 
-and GenLambda cenv cgbuf eenv isLocalTypeFunc selfv expr sequel =
-    let cloinfo, m = GenLambdaClosure cenv cgbuf eenv isLocalTypeFunc selfv expr
+and GenLambda cenv cgbuf eenv isLocalTypeFunc thisVars expr sequel =
+    let cloinfo, m = GenLambdaClosure cenv cgbuf eenv isLocalTypeFunc thisVars expr
     GenLambdaVal cenv cgbuf eenv (cloinfo, m)
     GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -4682,7 +4679,7 @@ and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
 #endif
     | _ -> GenType cenv.amap m tyenvinner fv.Type
 
-and GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr =
+and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenNames expr =
     let g = cenv.g
 
     // Choose a base name for the closure
@@ -4721,9 +4718,7 @@ and GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr =
         cloFreeVarResults.FreeLocals
         |> Zset.elements
         |> List.filter (fun fv ->
-            (match selfv with
-             | Some v -> not (valRefEq g (mkLocalValRef fv) v)
-             | _ -> true) && 
+            (thisVars |> List.forall (fun v -> not (valRefEq g (mkLocalValRef fv) v))) && 
             (match StorageForVal cenv.g m fv eenvouter with
              | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
              | _ -> true))
@@ -4756,7 +4751,7 @@ and GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr =
     // If generating a named closure, add the closure itself as a var, available via "arg0" .
     // The latter doesn't apply for the delegate implementation of closures.
     // Build the environment that is active inside the closure itself
-    let eenvinner = eenvinner |> AddStorageForLocalVals g (match selfv with | Some v -> [(v.Deref, Arg 0)] | _ -> [])
+    let eenvinner = eenvinner |> AddStorageForLocalVals g (thisVars |> List.map (fun v -> (v.Deref, Arg 0)))
 
     let ilCloFreeVars =
         let ilCloFreeVarNames = ChooseFreeVarNames takenNames (List.map nameOfVal cloFreeVars)
@@ -4780,7 +4775,7 @@ and GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr =
     (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, cloFreeTyvars, cloFreeVars, ilCloTypeRef, Array.ofList ilCloFreeVars, eenvinner)
 
 
-and GetIlxClosureInfo cenv m boxity isLocalTypeFunc selfv eenvouter expr =
+and GetIlxClosureInfo cenv m boxity isLocalTypeFunc thisVars eenvouter expr =
     let g = cenv.g
     let returnTy =
       match expr with
@@ -4808,7 +4803,7 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc selfv eenvouter expr =
 
     // Get the free variables and the information about the closure, add the free variables to the environment
     let (cloAttribs, cloInternalFreeTyvars, cloContractFreeTyvars, _, cloFreeVars, ilCloTypeRef, ilCloFreeVars, eenvinner) =
-        GetIlxClosureFreeVars cenv m selfv boxity eenvouter takenNames expr
+        GetIlxClosureFreeVars cenv m thisVars boxity eenvouter takenNames expr
 
     // Put the type and value arguments into the environment
     let rec getClosureArgs eenv ntmargs tvsl (vs: Val list) =
@@ -4966,7 +4961,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     // Work out the free type variables for the morphing thunk
     let takenNames = List.map nameOfVal tmvs
     let (cloAttribs, _, _, cloFreeTyvars, cloFreeVars, ilDelegeeTypeRef, ilCloFreeVars, eenvinner) =
-        GetIlxClosureFreeVars cenv m None ILBoxity.AsObject eenvouter takenNames expr
+        GetIlxClosureFreeVars cenv m [] ILBoxity.AsObject eenvouter takenNames expr
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
     let ilDelegeeGenericActualsInner = mkILFormalGenericArgs 0 ilDelegeeGenericParams
 
@@ -5459,12 +5454,12 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             | Null -> false
             | _ -> true)
 
-    let computeFixupsForOneRecursiveVar boundv forwardReferenceSet fixups selfv access set e =
+    let computeFixupsForOneRecursiveVar boundv forwardReferenceSet fixups thisVars access set e =
         match e with
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ ->
-            let isLocalTypeFunc = Option.isSome selfv && (IsNamedLocalTypeFuncVal cenv.g (Option.get selfv) e)
-            let selfv = (match e with Expr.Obj _ -> None | _ when isLocalTypeFunc -> None | _ -> Option.map mkLocalValRef selfv)
-            let clo, _, eenvclo = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc selfv {eenv with letBoundVars=(mkLocalValRef boundv) :: eenv.letBoundVars} e
+            let isLocalTypeFunc = Option.isSome thisVars && (IsNamedLocalTypeFuncVal cenv.g (Option.get thisVars) e)
+            let thisVars = (match e with Expr.Obj _ -> [] | _ when isLocalTypeFunc -> [] | _ -> Option.map mkLocalValRef thisVars |> Option.toList)
+            let clo, _, eenvclo = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc thisVars {eenv with letBoundVars=(mkLocalValRef boundv) :: eenv.letBoundVars} e
             clo.cloFreeVars |> List.iter (fun fv ->
                 if Zset.contains fv forwardReferenceSet then
                     match StorageForVal cenv.g m fv eenvclo with
@@ -6330,8 +6325,8 @@ and GenBindingRhs cenv cgbuf eenv sp (vspec: Val) e =
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
             GenExpr cenv cgbuf eenv sp body Continue
         | _ ->
-            let selfv = if isLocalTypeFunc then None else Some (mkLocalValRef vspec)
-            GenLambda cenv cgbuf eenv isLocalTypeFunc selfv e Continue
+            let thisVars = if isLocalTypeFunc then [] else [ mkLocalValRef vspec ]
+            GenLambda cenv cgbuf eenv isLocalTypeFunc thisVars e Continue
     | _ ->
         GenExpr cenv cgbuf eenv sp e Continue
 
@@ -6421,7 +6416,7 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (ty, ilTy) storage storeSequel =
         // Then reduce out any arguments (i.e. apply the sequel immediately if we can...)
         match storeSequel with
         | None ->
-            GenLambda cenv cgbuf eenv false None expr Continue
+            GenLambda cenv cgbuf eenv false [] expr Continue
         | Some (tyargs', args, m, sequel) ->
             let specializedExpr =
                 if isNil args && isNil tyargs' then failwith ("non-lambda at use of method " + mspec.Name)
@@ -6479,7 +6474,7 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
                     let eenvinner =
                         {eenv with
                              letBoundVars=(mkLocalValRef v) :: eenv.letBoundVars}
-                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range ILBoxity.AsObject true None eenvinner (Option.get repr)
+                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range ILBoxity.AsObject true [] eenvinner (Option.get repr)
                     cloinfo
         
                 let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName g.CompilerGlobalState, g.ilg.typ_Object, false) scopeMarks

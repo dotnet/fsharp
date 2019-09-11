@@ -899,7 +899,7 @@ let (|JumpTableExpr|_|) g expr =
     | _ -> None
 
 /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
-let RepresentBindingAsLiftedOrLocal (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) m =
+let RepresentBindingAsTopLevelOrLocal (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) m =
     if sm_verbose then 
         printfn "LowerStateMachine: found local variable %s" bind.Var.DisplayName
 
@@ -908,14 +908,15 @@ let RepresentBindingAsLiftedOrLocal (bind: Binding) (res2: StateMachineConversio
         phase2 = (fun ctxt -> mkLetBind m bind (res2.phase2 ctxt)) }
 
 /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
-let RepresentBindingAsThis (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) m =
+let RepresentBindingAsThis (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) _m =
     if sm_verbose then 
         printfn "LowerStateMachine: found local variable %s" bind.Var.DisplayName
 
     { res2 with
         thisVars = mkLocalValRef bind.Var :: res2.thisVars
-        phase1 = mkLetBind m bind res2.phase1 
-        phase2 = (fun ctxt -> mkLetBind m bind (res2.phase2 ctxt)) }
+        // Drop the let binding on the floor as it is only rebinding the 'this' variable
+        phase1 = res2.phase1 
+        phase2 = res2.phase2 }
 
 /// Implement a decision to represent a 'let' binding as a state machine variable
 let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirstPhaseResult) m =
@@ -1066,9 +1067,16 @@ let ConvertStateMachineExprToObject g overallExpr =
 
         | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
             let targets2 = 
-                targets |> Array.choose (fun (TTarget(vs, targetExpr, spTarget, m)) -> 
+                targets |> Array.choose (fun (TTarget(vs, targetExpr, spTarget, flags)) -> 
+                    // Incomplete excption matching expressions give rise to targets with I_throw. Keep these in the residue with
+                    // the type of the expression adjusted
+                    match targetExpr with 
+                    | Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [_]), tyargs, args, m) -> 
+                        Some (TTarget(vs, Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [tyOfExpr g expr]), tyargs, args, m), spTarget, flags))
+                    | _ ->
+
                     match TryApplyMacroDef env targetExpr args with 
-                    | Some targetExpr2 -> Some (TTarget(vs, targetExpr2, spTarget, m))
+                    | Some targetExpr2 -> Some (TTarget(vs, targetExpr2, spTarget, flags))
                     | None -> None)
             if targets2.Length = targets.Length then 
                 Some (Expr.Match (spBind, exprm, dtree, targets2, m, ty))
@@ -1108,6 +1116,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 Some expandedExpr
             | None -> 
                 // If the arity wasn't right and the macro is simply 'a = b' then substitute the r.h.s.
+                // e.g. passing __expand_code to __expand_code parameter
                 match macroDef with 
                 | Expr.Val _ -> Some (remake macroDef)
                 | _ -> 
@@ -1271,7 +1280,7 @@ let ConvertStateMachineExprToObject g overallExpr =
         let res = 
             match expr with 
             | ReentryMatchExpr g (noneBranchExpr, someVar, someBranchExpr) ->
-                printfn "ReentryMatchExpr" 
+                if sm_verbose then printfn "ReentryMatchExpr" 
                 // printfn "found sequential"
                 let reenterPC = genPC()
                 let envSome = { env with Macros = env.Macros.Add someVar (mkInt g someVar.Range reenterPC) }
@@ -1295,7 +1304,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                   asyncVars = asyncVars }
 
             | DirectInvokeExpr g (pcExpr, m) ->
-                printfn "DirectInvokeExpr" 
+                if sm_verbose then printfn "DirectInvokeExpr" 
                 // Macro-evaluate the pcExpr
                 let pcExprVal = ConvertStateMachineLeafExpression env pcExpr
                 match pcExprVal with
@@ -1323,7 +1332,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             // if it uses a binding variable name of precisely '__machine_step$cont'.
             // If this case 'e1' becomes part of the state machine too.
             | SequentialStateMachineCode g (e1, e2, _m, recreate) ->
-                printfn "SequentialStateMachineCode" 
+                if sm_verbose then printfn "SequentialStateMachineCode" 
                 // printfn "found sequential"
                 let res1 = ConvertStateMachineCode env pcExpr e1
                 let res2 = ConvertStateMachineCode env pcExpr e2
@@ -1348,7 +1357,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
             // The expanded code for state machines may use while loops...
             | WhileExpr (sp1, sp2, guardExpr, bodyExpr, m) ->
-                printfn "WhileExpr" 
+                if sm_verbose then printfn "WhileExpr" 
 
                 let resg = ConvertStateMachineCode env pcExpr guardExpr
                 let resb = ConvertStateMachineCode env pcExpr bodyExpr
@@ -1368,7 +1377,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             // The expanded code for state machines should not normally contain try/finally as any resumptions will repeatedly execute the finally.
             // Hoever we include the synchronous version of the construct here for completeness.
             | TryFinallyExpr (sp1, sp2, ty, e1, e2, m) ->
-                printfn "TryFinallyExpr" 
+                if sm_verbose then printfn "TryFinallyExpr" 
                 let res1 = ConvertStateMachineCode env pcExpr e1
                 let res2 = ConvertStateMachineCode env pcExpr e2
                 let eps = res1.entryPoints @ res2.entryPoints
@@ -1386,7 +1395,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
             // The expanded code for state machines may use for loops....
             | ForLoopExpr (sp1, sp2, e1, e2, v, e3, m) ->
-                printfn "ForLoopExpr" 
+                if sm_verbose then printfn "ForLoopExpr" 
                 let res1 = ConvertStateMachineCode env pcExpr e1
                 let res2 = ConvertStateMachineCode env pcExpr e2
                 let res3 = ConvertStateMachineCode env pcExpr e3
@@ -1406,7 +1415,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
             // The expanded code for state machines may use try/with....
             | TryCatchExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
-                printfn "TryCatchExpr" 
+                if sm_verbose then printfn "TryCatchExpr" 
                 let resBody = ConvertStateMachineCode env pcExpr bodyExpr
                 let resFilter = ConvertStateMachineCode env pcExpr filterExpr
                 let resHandler = ConvertStateMachineCode env pcExpr handlerExpr
@@ -1445,7 +1454,7 @@ let ConvertStateMachineExprToObject g overallExpr =
 
             // control-flow match
             | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
-                printfn "MatchExpr" 
+                if sm_verbose then printfn "MatchExpr" 
                 // lower all the targets. 
                 let dtreeR = ConvertStateMachineLeafDecisionTree env dtree 
                 let tglArray = 
@@ -1487,12 +1496,12 @@ let ConvertStateMachineExprToObject g overallExpr =
             | Expr.Let (bind, bodyExpr, m, _)
                   // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
                   when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) ->
-                printfn "LetExpr (non-control-flow, rewrite rhs)" 
+                if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs)" 
 
                 // Rewrite the expression on the r.h.s. of the binding
                 let bindExpr = ConvertStateMachineLeafExpression env bind.Expr
                 let bind = mkBind bind.SequencePointInfo bind.Var bindExpr
-                printfn "LetExpr (non-control-flow, body)" 
+                if sm_verbose then printfn "LetExpr (non-control-flow, body)" 
 
                 let resBody = ConvertStateMachineCode env pcExpr bodyExpr
 
@@ -1504,12 +1513,12 @@ let ConvertStateMachineExprToObject g overallExpr =
                 //
                 // TODO: assess whethr we are avoiding capturing the 'this' of reference-type state machines too
                 if bind.Var.IsCompiledAsTopLevel || not (resBody.asyncVars.FreeLocals.Contains(bind.Var)) || bind.Var.LogicalName.StartsWith "__stack_" then
-                    (RepresentBindingAsLiftedOrLocal bind resBody m)
+                    RepresentBindingAsTopLevelOrLocal bind resBody m
                 elif isByrefTy g bind.Var.Type then
-                    (RepresentBindingAsThis bind resBody m)
+                    RepresentBindingAsThis bind resBody m
                 else
                     // printfn "found state variable %s" bind.Var.DisplayName
-                    (RepresentBindingAsStateVar bind resBody m)
+                    RepresentBindingAsStateVar bind resBody m
 
             // LetRec bindings may not appear as part of state machine.
             | Expr.LetRec _ -> 

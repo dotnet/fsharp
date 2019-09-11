@@ -25,86 +25,117 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Control
 
+
+module SmokeTestsForCompilation =
+
+    let t() =
+        task {
+            return 1
+        }
+
+    let tbind() =
+        task {
+            let! x = Task.FromResult(1)
+            return 1 + x
+        }
+    
+
+    let tnested() =
+        task {
+            let! x = task { return 1 }
+            return x
+        }
+
+    let tcatch0() =
+        task {
+            try 
+               return 1
+            with e -> 
+               return 2
+        }
+
+    let tcatch1() =
+        task {
+            try 
+               let! x = Task.FromResult 1
+               return x
+            with e -> 
+               return 2
+        }
+    
+    let t2() =
+        task {
+            System.Console.WriteLine("hello")
+            return 1
+        }
+
+    let t3() =
+        task {
+            System.Console.WriteLine("hello")
+            let! x = t2()
+            System.Console.WriteLine("world")
+            return 1 + x
+        }
+
+    //printfn "t3a().Result = %A" (t3a().Result)
+
+    let t3b() =
+        task {
+            System.Console.WriteLine("hello")
+            let! x = Task.FromResult(1)
+            System.Console.WriteLine("world")
+            return 1 + x
+        }
+
+    //printfn "t3b().Result = %A" (t3b().Result)
+
+    let t3c() =
+        task {
+            System.Console.WriteLine("hello")
+            do! Task.Delay(100)
+            System.Console.WriteLine("world")
+            return 1 
+        }
+
+    //printfn "t3c().Result = %A" (t3c().Result)
+
+
+    // This tests an exception match
+    let t67() =
+        task {
+            try
+                do! Task.Delay(0)
+            with
+            | :? ArgumentException -> 
+                ()
+            | _ -> 
+                ()
+        }
+
+    // This tests compiling an incomplete exception match
+    let t68() =
+        task {
+            try
+                do! Task.Delay(0)
+            with
+            | :? ArgumentException -> 
+                ()
+        }
+    let testCompileAsyncWhileLoop() =
+        task {
+            let mutable i = 0
+            while i < 1 do
+                i <- i + 1
+                do! Task.Yield()
+            return i
+        }
+
 exception TestException of string
 
 let BIG = 10
 // TODO let BIG = 10000
 let require x msg = if not x then failwith msg
 let failtest str = raise (TestException str)
-
-let tnested() =
-    task {
-        let! x = task { return 1 }
-        return x
-    }
-
-let tcatch0() =
-    task {
-        try 
-           return 1
-        with e -> 
-           return 2
-    }
-
-let tcatch1() =
-    task {
-        try 
-           let! x = Task.FromResult 1
-           return x
-        with e -> 
-           return 2
-    }
-
-let t() =
-    task {
-        return 1
-    }
-
-let t2() =
-    task {
-        System.Console.WriteLine("hello")
-        return 1
-    }
-
-let t3() =
-    task {
-        System.Console.WriteLine("hello")
-        let! x = t2()
-        System.Console.WriteLine("world")
-        return 1 + x
-    }
-
-
-let t3a() =
-    task {
-        //System.Console.WriteLine("hello")
-        let! x = Task.FromResult(1)
-        //System.Console.WriteLine("world")
-        return 1 + x
-    }
-
-//printfn "t3a().Result = %A" (t3a().Result)
-
-let t3b() =
-    task {
-        System.Console.WriteLine("hello")
-        let! x = Task.FromResult(1)
-        System.Console.WriteLine("world")
-        return 1 + x
-    }
-
-//printfn "t3b().Result = %A" (t3b().Result)
-
-let t3c() =
-    task {
-        System.Console.WriteLine("hello")
-        do! Task.Delay(100)
-        System.Console.WriteLine("world")
-        return 1 
-    }
-
-//printfn "t3c().Result = %A" (t3c().Result)
-
 
 let testShortCircuitResult() =
     printfn "Running testShortCircuitResult..."
@@ -156,7 +187,6 @@ let testNonBlocking() =
     require (sw.ElapsedMilliseconds < 50L) "sleep blocked caller"
     t.Wait()
 
-
 let testCatching1() =
     printfn "Running testCatching1..."
     let mutable x = 0
@@ -202,7 +232,6 @@ let testCatching2() =
     require (y = 1) "bailed after exn"
     require (x = 0) "ran past failure"
 
-
 let testNestedCatching() =
     printfn "Running testNestedCatching..."
     let mutable counter = 1
@@ -239,6 +268,58 @@ let testNestedCatching() =
     require (caughtInner = 1) "didn't catch inner"
     require (caughtOuter = 2) "didn't catch outer"
 
+
+let testWhileLoopSync() =
+    printfn "Running testWhileLoopSync..."
+    let t =
+        task {
+            let mutable i = 0
+            while i < 10 do
+                i <- i + 1
+            return i
+        }
+    //t.Wait() no wait required for sync loop
+    require (t.IsCompleted) "didn't do sync while loop properly - not completed"
+    require (t.Result = 10) "didn't do sync while loop properly - wrong result"
+
+let testWhileLoopAsyncZeroIteration() =
+    printfn "Running testWhileLoopAsyncZeroIteration..."
+    let t =
+        task {
+            let mutable i = 0
+            while i < 0 do
+                i <- i + 1
+                do! Task.Yield()
+            return i
+        }
+    t.Wait()
+    require (t.Result = 0) "didn't do while loop properly"
+
+let testWhileLoopAsyncOneIteration() =
+    printfn "Running testWhileLoopAsyncOneIteration..."
+    let t =
+        task {
+            let mutable i = 0
+            while i < 1 do
+                i <- i + 1
+                do! Task.Yield()
+            return i
+        }
+    t.Wait()
+    require (t.Result = 1) "didn't do while loop properly"
+
+let testWhileLoopAsync() =
+    printfn "Running testWhileLoopAsync..."
+    let t =
+        task {
+            let mutable i = 0
+            while i < 10 do
+                i <- i + 1
+                do! Task.Yield()
+            return i
+        }
+    t.Wait()
+    require (t.Result = 10) "didn't do while loop properly"
 
 let testTryFinallyHappyPath() =
     printfn "Running testTryFinallyHappyPath..."
@@ -358,32 +439,6 @@ let testUsingSadPath() =
         }
     t.Wait()
     require (not disposed) "disposed thing that never should've existed"
-
-let testWhileLoopAsync() =
-    printfn "Running testWhileLoopAsync..."
-    let t =
-        task {
-            let mutable i = 0
-            while i < 10 do
-                i <- i + 1
-                do! Task.Yield()
-            return i
-        }
-    t.Wait()
-    require (t.Result = 10) "didn't do while loop properly"
-
-let testWhileLoopSync() =
-    printfn "Running testWhileLoopSync..."
-    let t =
-        task {
-            let mutable i = 0
-            while i < 10 do
-                i <- i + 1
-            return i
-        }
-    //t.Wait() no wait required for sync loop
-    require (t.IsCompleted) "didn't do sync while loop properly - not completed"
-    require (t.Result = 10) "didn't do sync while loop properly - wrong result"
 
 let testForLoopA() =
     printfn "Running testForLoopA..."
@@ -681,7 +736,7 @@ let testFixedStackForLoop() =
         }
     t.Wait()
     require ran "didn't run all"
-    
+
 let testTypeInference() =
     let t1 : string Task =
         task {
@@ -725,8 +780,7 @@ let testSmallTailRecursion() =
     printfn "running testSmallTailRecursion"
     let rec loop n =
         task {
-            // larger N would stack overflow on Mono, eat heap mem on MS .NET
-            if n < 1000 then
+            if n < 100 then
                 do! Task.Yield()
                 let! _ = Task.FromResult(0)
                 return! loop (n + 1)
@@ -859,21 +913,24 @@ let testCompilerInfersArgumentOfReturnFrom() =
         if true then return 1
         else return! failwith ""
     }
-    
 
 [<EntryPoint>]
 let main argv =
     printfn "Running tests..."
     try
+        ()
         testShortCircuitResult()
         testDelay()
         testNoDelay()
         testNonBlocking()
+        
         testCatching1()
         testCatching2()
         testNestedCatching()
         testWhileLoopSync()
-        for i in 1 .. 100 do 
+        testWhileLoopAsyncZeroIteration()
+        testWhileLoopAsyncOneIteration()
+        for i in 1 .. 10 do 
             testWhileLoopAsync()
         for i in 1 .. 5 do 
             testTryFinallyHappyPath()
@@ -908,9 +965,9 @@ let main argv =
         testTypeInference()
         testNoStackOverflowWithImmediateResult()
         testNoStackOverflowWithYieldResult()
-        //// we don't support TCO, so large tail recursions will stack overflow
-        //// or at least use O(n) heap. but small ones should at least function OK.
-        testSmallTailRecursion()
+        ////// we don't support TCO, so large tail recursions will stack overflow
+        ////// or at least use O(n) heap. but small ones should at least function OK.
+        //testSmallTailRecursion()
         testTryOverReturnFrom()
         testTryFinallyOverReturnFromWithException()
         testTryFinallyOverReturnFromWithoutException()
@@ -928,4 +985,3 @@ let main argv =
     printfn "Exiting..."
     //System.Console.ReadLine()
     0
-
