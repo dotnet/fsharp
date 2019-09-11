@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Scripting.UnitTests
 
 open System
+open System.IO
 open System.Threading
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
@@ -65,3 +66,12 @@ type InteractiveTests() =
         let value = opt.Value
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(5, value.ReflectionValue :?> int)
+
+    [<Test>]
+    member __.``Assembly reference events``() =
+        use script = new FSharpScript()
+        let testAssembly = "System.dll"
+        let mutable foundAssemblyReference = false
+        Event.add (fun (assembly: string) -> foundAssemblyReference <- String.Compare(testAssembly, Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0) script.AssemblyReferenceAdded
+        script.Eval(sprintf "#r \"%s\"" testAssembly) |> ignoreValue
+        Assert.True(foundAssemblyReference)
