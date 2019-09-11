@@ -17,6 +17,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     let frameworkDir = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
     let getDefaultFSharpCoreReference = typeof<Microsoft.FSharp.Core.Unit>.Assembly.Location
     let getFSharpCompilerLocation = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
+    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName = "System.Private.CoreLib"
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
@@ -107,8 +108,16 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             else -1
         match startPos, length with
         | -1, _
-        | _, -1 -> None
-        | pos, length -> Some ("netcoreapp" + file.Substring(pos, length))
+        | _, -1 ->
+            if isRunningOnCoreClr then
+                // Running on coreclr but no deps.json was deployed with the host so default to 3.0
+                Some "netcoreapp3.0"
+            else
+                // Running on desktop
+                None
+        | pos, length ->
+            // use value from the deps.json file
+            Some ("netcoreapp" + file.Substring(pos, length))
 
     // Tries to figure out the tfm for the compiler instance on the Windows desktop.
     // On full clr it uses the mscorlib version number
