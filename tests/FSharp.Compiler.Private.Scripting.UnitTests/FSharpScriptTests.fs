@@ -68,10 +68,20 @@ type InteractiveTests() =
         Assert.AreEqual(5, value.ReflectionValue :?> int)
 
     [<Test>]
-    member __.``Assembly reference events``() =
+    member __.``Assembly reference event successful``() =
         use script = new FSharpScript()
         let testAssembly = "System.dll"
         let mutable foundAssemblyReference = false
         Event.add (fun (assembly: string) -> foundAssemblyReference <- String.Compare(testAssembly, Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0) script.AssemblyReferenceAdded
         script.Eval(sprintf "#r \"%s\"" testAssembly) |> ignoreValue
         Assert.True(foundAssemblyReference)
+
+    [<Test>]
+    member __.``Assembly reference event unsuccessful``() =
+        use script = new FSharpScript()
+        let testAssembly = "not-an-assembly-that-can-be-found.dll"
+        let mutable foundAssemblyReference = false
+        Event.add (fun (assembly: string) -> foundAssemblyReference <- String.Compare(testAssembly, Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0) script.AssemblyReferenceAdded
+        let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
+        Assert.AreEqual(1, errors.Length)
+        Assert.False(foundAssemblyReference)
