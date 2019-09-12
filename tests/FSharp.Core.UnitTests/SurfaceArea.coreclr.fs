@@ -2705,3 +2705,4 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
         SurfaceArea.verify expected "coreclr" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
+        ()

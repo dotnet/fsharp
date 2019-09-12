@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Scripting.UnitTests
 
 open System
+open System.IO
 open System.Threading
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
@@ -28,6 +29,14 @@ type InteractiveTests() =
         let value = opt.Value
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(2, value.ReflectionValue :?> int)
+
+    [<Test>]
+    member __.``Declare and eval object value``() =
+        use script = new FSharpScript()
+        let opt = script.Eval("let x = 1 + 2\r\nx") |> getValue
+        let value = opt.Value
+        Assert.AreEqual(typeof<int>, value.ReflectionType)
+        Assert.AreEqual(3, value.ReflectionValue :?> int)
 
     [<Test>]
     member __.``Capture console input``() =
@@ -57,3 +66,27 @@ type InteractiveTests() =
         let value = opt.Value
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(5, value.ReflectionValue :?> int)
+
+    [<Test>]
+    member __.``Assembly reference event successful``() =
+        use script = new FSharpScript()
+        let testAssembly = "System.dll"
+        let mutable assemblyResolveEventCount = 0
+        let mutable foundAssemblyReference = false
+        Event.add (fun (assembly: string) ->
+            assemblyResolveEventCount <- assemblyResolveEventCount + 1
+            foundAssemblyReference <- String.Compare(testAssembly, Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0)
+            script.AssemblyReferenceAdded
+        script.Eval(sprintf "#r \"%s\"" testAssembly) |> ignoreValue
+        Assert.AreEqual(1, assemblyResolveEventCount)
+        Assert.True(foundAssemblyReference)
+
+    [<Test>]
+    member __.``Assembly reference event unsuccessful``() =
+        use script = new FSharpScript()
+        let testAssembly = "not-an-assembly-that-can-be-found.dll"
+        let mutable foundAssemblyReference = false
+        Event.add (fun _ -> foundAssemblyReference <- true) script.AssemblyReferenceAdded
+        let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
+        Assert.AreEqual(1, errors.Length)
+        Assert.False(foundAssemblyReference)

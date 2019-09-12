@@ -1466,6 +1466,8 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3250,expressionHasNoName,"Expression does not have a name."
 3251,chkNoFirstClassNameOf,"Using the 'nameof' operator as a first-class function value is not permitted."
 3246,tcAugmentationsCannotHaveAttributes,"Attributes cannot be applied to type extensions."
+3250,expressionHasNoName,"Expression does not have a name."
+3251,chkNoFirstClassNameOf,"Using the 'nameof' operator as a first-class function value is not permitted."
 3300,chkInvalidFunctionParameterType,"The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL."
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
