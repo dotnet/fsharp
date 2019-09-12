@@ -13,12 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:8:0:0
-}
-.assembly extern netstandard
-{
-  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
-  .ver 2:0:0:0
+  .ver 5:0:0:0
 }
 .assembly TestFunction23
 {
@@ -41,13 +36,13 @@
   // Offset: 0x00000340 Length: 0x000000E3
 }
 .module TestFunction23.exe
-// MVID: {5D4DD397-A643-451C-A745-038397D34D5D}
+// MVID: {5D79F0D6-A643-451C-A745-0383D6F0795D}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06650000
+// Image base: 0x052D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -95,8 +90,8 @@
       IL_0001:  ldfld      string TestFunction23/C::x@8
       IL_0006:  ldarg.0
       IL_0007:  callvirt   instance string TestFunction23/C::g()
-      IL_000c:  call       string [netstandard]System.String::Concat(string,
-                                                                     string)
+      IL_000c:  call       string [mscorlib]System.String::Concat(string,
+                                                                  string)
       IL_0011:  ret
     } // end of method C::M
 
