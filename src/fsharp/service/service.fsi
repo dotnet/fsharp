@@ -54,7 +54,7 @@ type public FSharpProjectOptions =
       UnresolvedReferences : UnresolvedReferencesSet option
 
       /// Unused in this API and should be '[]' when used as user-specified input
-      OriginalLoadReferences: (range * string) list
+      OriginalLoadReferences: (range * string * string) list
 
       /// Extra information passed back on event trigger
       ExtraProjectInfo : obj option
