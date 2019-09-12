@@ -31,6 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="..\FSharp.DependencyManager\FSharp.DependencyManager.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
   </ItemGroup>
