@@ -3027,7 +3027,7 @@ namespace Microsoft.FSharp.Collections
 
         let nonempty x = match x with [] -> false | _ -> true
         // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
-        // tail cons cells is permitted in carefully written library code. l
+        // tail cons cells is permitted in carefully written library code.
         let inline setFreshConsTail cons t = cons.( :: ).1 <- t
         let inline freshConsNoTail h = h :: (# "ldnull" : 'T list #)
 
@@ -4890,49 +4890,29 @@ namespace Microsoft.FSharp.Core
                 let finish = (match finish with None -> target.Length - 1 | Some n -> n) 
                 SetArraySub target start (finish - start + 1) source
 
-            let GetArraySlice2D (source: _[,]) (start1: int option) (finish1: int option) (start2: int option) (finish2: int option) =
-                Console.WriteLine("Write2D")
-                Console.WriteLine(match start1 with | Some(x) -> x | _ -> -2999)
-                Console.WriteLine(match start2 with | Some(x) -> x | _ -> -2998)
-                Console.WriteLine(match finish1 with | Some(x) -> x | _ -> -98)
-                Console.WriteLine(match finish2 with | Some(x) -> x | _ -> -98)
+            let GetArraySlice2D (source: _[,]) start1 finish1 start2 finish2 =
                 let bound1 = source.GetLowerBound(0)
                 let bound2 = source.GetLowerBound(1)
                 let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 source)
                 let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 source)
-                Console.WriteLine(GetArray2DLength1 source)
-                Console.WriteLine(start1)
-                Console.WriteLine(start2)
-                Console.WriteLine(finish1)
-                Console.WriteLine(finish2)
                 let len1 = (finish1 - start1 + 1)
                 let len2 = (finish2 - start2 + 1)
                 GetArray2DSub source start1 start2 len1 len2
 
             let inline GetArraySlice2DFixed1 (source: _[,]) index1 start2 finish2 = 
-                Console.WriteLine("Write2DFixed1")
                 let bound2 = source.GetLowerBound(1)
                 let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 source)
                 let len2 = (finish2 - start2 + 1)
                 let dst = zeroCreate (if len2 < 0 then 0 else len2)
-                Console.WriteLine(index1: int)
-                Console.WriteLine(start2)
-                Console.WriteLine(finish2)
-                Console.WriteLine(len2)
                 for j = 0 to len2 - 1 do 
                     SetArray dst j (GetArray2D source index1 (start2+j))
                 dst
 
             let inline GetArraySlice2DFixed2 (source: _[,]) start1 finish1 index2 =
-                Console.WriteLine("Write2DFixed2")
                 let bound1 = source.GetLowerBound(0)
                 let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 source) 
                 let len1 = (finish1 - start1 + 1)
                 let dst = zeroCreate (if len1 < 0 then 0 else len1)
-                Console.WriteLine(index2: int)
-                Console.WriteLine(start1)
-                Console.WriteLine(finish1)
-                Console.WriteLine(len1)
                 for i = 0 to len1 - 1 do 
                     SetArray dst i (GetArray2D source (start1+i) index2)
                 dst
