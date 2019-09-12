@@ -1850,7 +1850,7 @@ type internal FsiInteractionProcessor
 
             | IDefns (defs,_) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
-                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
+                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
@@ -1887,8 +1887,8 @@ type internal FsiInteractionProcessor
                                     FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
                             else
                                 FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
-                       assemblyReferencedEvent.Trigger(ar.resolvedPath)
-                       fsiConsoleOutput.uprintnfnn "%s" format)
+                        assemblyReferencedEvent.Trigger(ar.resolvedPath)
+                        fsiConsoleOutput.uprintnfnn "%s" format)
                     istate,Completed None
 
             | IHash (ParsedHashDirective("I",[path],m),_) -> 
