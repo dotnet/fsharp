@@ -224,6 +224,12 @@
     <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith(netstandard))">
       <Link>AbsIL\ilsign.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ilnativeres.fsi">
+      <Link>AbsIL\ilnativeres.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilnativeres.fs">
+      <Link>AbsIL\ilnativeres.fs</Link>
+    </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
       <Link>AbsIL\ilsupp.fsi</Link>
     </Compile>
