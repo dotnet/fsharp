@@ -20,6 +20,10 @@ Make sure each method works on:
 
 [<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array2Module() =
+    let empty = Array2D.create 0 0 0
+
+    let shouldEqual arr1 arr2 = if arr1 <> arr2 then Assert.Fail()
+
     [<Test>]
     member this.Base1() =
         // integer array  
@@ -573,3 +577,46 @@ type Array2Module() =
         if m16.[0,0] <> null then Assert.Fail()
 
 
+    [<Test>]
+    member this.SlicingBoundedStartEnd() =
+        let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
+        shouldEqual arr.[0..0, *] (array2D [ [1;2;3;4;5;6] ])
+
+
+    [<Test>]
+    member this.SlicingUnboundedEnd() = 
+        let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
+
+        shouldEqual arr.[(-1).., *] arr
+        shouldEqual arr.[0.., 1..] (array2D [ [2;3;4;5;6]; [5;4;3;2;1] ])
+        shouldEqual arr.[1.., ..3] (array2D [ [6;5;4;3] ])
+        shouldEqual arr.[2.., 6..] empty
+
+
+    [<Test>]
+    member this.SlicingUnboundedStart() = 
+        let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
+
+        shouldEqual arr.[..(-1), *] empty
+        shouldEqual arr.[..0, ..4] (array2D [ [1;2;3;4;5] ])
+        shouldEqual arr.[..1, ..3] (array2D [ [1;2;3;4]; [6;5;4;3] ])
+        shouldEqual arr.[..2, ..6] arr
+
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
+       
+        shouldEqual arr.[*, ..6] arr
+        shouldEqual arr.[*, 6..] empty
+        shouldEqual arr.[..2, *] arr
+        shouldEqual arr.[2.., *] empty
+
+        shouldEqual arr.[1..0, *] empty
+        shouldEqual arr.[1..0, (-1)..0] empty
+
+        shouldEqual arr.[0..(-1), *] empty
+        shouldEqual arr.[1..(-1), *] empty
+        shouldEqual arr.[1..0, *] empty
+        shouldEqual arr.[0..6, (-1)..9] arr
+        shouldEqual arr.[*, 1..6] (array2D [ [2;3;4;5;6]; [5;4;3;2;1] ])
