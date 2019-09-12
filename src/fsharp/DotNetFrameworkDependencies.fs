@@ -17,7 +17,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     let frameworkDir = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
     let getDefaultFSharpCoreReference = typeof<Microsoft.FSharp.Core.Unit>.Assembly.Location
     let getFSharpCompilerLocation = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
-    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName = "System.Private.CoreLib"
+    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
