@@ -1,4 +1,4 @@
-Microsoft (R) F# Compiler version 10.2.3 for F# 4.5
+Microsoft (R) F# Compiler version 10.6.0.0 for F# 4.7
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
@@ -42,6 +42,9 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 		- INPUT FILES -
 --reference:<file>                       Reference an assembly (Short form:
                                          -r)
+--compilertool:<file>                    Reference an assembly or directory
+                                         containing a design time tool (Short
+                                         form: -t)
 
 
 		- RESOURCES -
