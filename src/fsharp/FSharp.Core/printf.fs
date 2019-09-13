@@ -1636,20 +1636,6 @@ module Printf =
     [<CompiledName("PrintFormatToStringThenFail")>]
     let failwithf format = ksprintf failwith format
 
-#if !FX_NO_SYSTEM_CONSOLE
-#if EXTRAS_FOR_SILVERLIGHT_COMPILER
-    [<CompiledName("PrintFormat")>]
-    let printf format = fprintf (!outWriter) format
-
-    [<CompiledName("PrintFormatToError")>]
-    let eprintf format = fprintf (!errorWriter) format
-
-    [<CompiledName("PrintFormatLine")>]
-    let printfn format = fprintfn (!outWriter) format
-
-    [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn format = fprintfn (!errorWriter) format
-#else
     [<CompiledName("PrintFormat")>]
     let printf format = fprintf Console.Out format
 
@@ -1661,5 +1647,3 @@ module Printf =
 
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format = fprintfn Console.Error format
-#endif
-#endif 
