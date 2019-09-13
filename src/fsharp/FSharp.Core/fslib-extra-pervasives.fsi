@@ -12,7 +12,6 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Text
 
-#if !FX_NO_SYSTEM_CONSOLE
     /// <summary>Print to <c>stdout</c> using the given format.</summary>
     /// <param name="format">The formatter.</param>
     /// <returns>The formatted result.</returns>
@@ -36,7 +35,6 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     [<CompiledName("PrintFormatLineToError")>]
     val eprintfn  :               format:Printf.TextWriterFormat<'T> -> 'T
-#endif
 
     /// <summary>Print to a string using the given format.</summary>
     /// <param name="format">The formatter.</param>
