@@ -959,6 +959,8 @@ type internal FsiDynamicCompiler
     let outfile = "TMPFSCI.exe"
     let assemblyName = "FSI-ASSEMBLY"
 
+    let assemblyReferenceAddedEvent = Control.Event<string>()
+
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
 
@@ -1244,7 +1246,7 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState 
         let tcEnv,(_dllinfos,ccuinfos) = 
             try
-                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path)
+                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path, assemblyReferenceAddedEvent.Trigger)
             with e ->
                 tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
@@ -1380,6 +1382,8 @@ type internal FsiDynamicCompiler
 
     member __.FormatValue(obj:obj, objTy) = 
         valuePrinter.FormatValue(obj, objTy)
+
+    member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
 
 //----------------------------------------------------------------------------
 // ctrl-c handling
@@ -1762,8 +1766,6 @@ type internal FsiInteractionProcessor
 
     let referencedAssemblies = Dictionary<string, DateTime>()
 
-    let assemblyReferencedEvent = Control.Event<string>()
-
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
@@ -1886,7 +1888,6 @@ type internal FsiInteractionProcessor
                                     FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
                             else
                                 FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
-                        assemblyReferencedEvent.Trigger(ar.resolvedPath)
                         fsiConsoleOutput.uprintnfnn "%s" format)
                     istate,Completed None
 
@@ -2302,8 +2303,6 @@ type internal FsiInteractionProcessor
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
-    member __.AssemblyReferenceAdded = assemblyReferencedEvent.Publish
-
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -2704,7 +2703,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
     /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
-    member __.AssemblyReferenceAdded = fsiInteractionProcessor.AssemblyReferenceAdded
+    member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any
