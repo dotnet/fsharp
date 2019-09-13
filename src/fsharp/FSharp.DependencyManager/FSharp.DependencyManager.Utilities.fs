@@ -73,10 +73,7 @@ module Utilities =
     // Path to the directory containing the fsharp compilers
     let fsharpCompilerPath = Path.GetDirectoryName(typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location)
 
-    let isRunningOnCoreClr =
-        // We are running on dotnet core if the executing application has .runtimeconfig.json
-        let depsJsonPath = Path.ChangeExtension(Assembly.GetEntryAssembly().Location, "deps.json")
-        File.Exists(depsJsonPath)
+    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
     let isWindows = 
         match Environment.OSVersion.Platform with
