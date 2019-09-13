@@ -4335,7 +4335,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Identity")>]
         let id x = x
 
-#if !FX_NO_SYSTEM_CONSOLE
         // std* are TypeFunctions with the effect of reading the property on instantiation.
         // So, direct uses of stdout should capture the current System.Console.Out at that point.
         [<CompiledName("ConsoleIn")>]
@@ -4346,10 +4345,8 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("ConsoleError")>]
         let stderr<'T> = System.Console.Error
-#endif
-            
 
-        module Unchecked = 
+        module Unchecked =
 
             [<CompiledName("Unbox")>]
             let inline unbox<'T> (v:obj) = unboxPrim<'T> v
