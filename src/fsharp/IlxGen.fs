@@ -2257,7 +2257,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
            GenStructStateMachine cenv cgbuf eenv (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodThisVar, afterMethodBodyExpr) sequel
   | None ->
 
-  // Eliminate 'if generateCompiledStateMachines ...'
+  // Eliminate 'if useResumableCode ...'
   match expr with
   | IfGenerateCompiledStateMachinesExpr g (_, elseExpr) -> 
       GenExprAux cenv cgbuf eenv sp elseExpr sequel
@@ -3105,10 +3105,10 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel =
       GenSequel cenv eenv.cloc cgbuf sequel
 
   | Expr.Val (v, _, m), _, _ 
-      when valRefEq g v g.cgh_compiledStateMachineDirectInvoke_vref || 
-           valRefEq g v g.cgh_compiledStateMachineCode_vref || 
-           valRefEq g v g.cgh_compiledStateMachineStruct_vref|| 
-           valRefEq g v g.cgh_compiledStateMachine_vref 
+      when valRefEq g v g.cgh__resumeAt_vref || 
+           valRefEq g v g.cgh__resumableEntry_vref || 
+           valRefEq g v g.cgh__resumableStruct_vref|| 
+           valRefEq g v g.cgh__resumableObject_vref 
            ->
                 errorR(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(), m))
 
@@ -4215,7 +4215,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects made via `__compiledStateMachine` and LowerCallsAndSeqs.
+    // State vars are only populated for state machine objects made via `__resumableObject` and LowerCallsAndSeqs.
     //
     // Like in GenSequenceExpression we pretend any stateVars and the stateMachineVar are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.
@@ -4380,7 +4380,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
 
     let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
-    // State vars are only populated for state machine objects made via `__compiledStateMachine` and LowerCallsAndSeqs.
+    // State vars are only populated for state machine objects made via `__resumableObject` and LowerCallsAndSeqs.
     //
     // Like in GenSequenceExpression we pretend any stateVars are bound in the outer environment. This prevents the being
     // considered true free variables that need to be passed to the constructor.

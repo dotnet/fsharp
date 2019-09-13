@@ -97,10 +97,10 @@ type ResizeArrayBuilder() =
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : YieldCode<'T>) : ResizeArray<'T> = 
-        if __generateCompiledStateMachines then
-            (__compiledStateMachine
+        if __useResumableCode then
+            (__resumableObject
                 { new YieldStateMachine<'T>() with 
-                    member sm.Populate () = __compiledStateMachineCode 0 (__expand_code sm) }).ToResizeArray()
+                    member sm.Populate () = __expand_code sm }).ToResizeArray()
         else
             { new YieldStateMachine<'T>() with 
                 member sm.Populate () = __expand_code sm }.ToResizeArray()
@@ -111,10 +111,10 @@ type ListBuilder() =
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : YieldCode<'T>) : 'T list = 
-        if __generateCompiledStateMachines then
-            (__compiledStateMachine
+        if __useResumableCode then
+            (__resumableObject
                 { new YieldStateMachine<'T>() with 
-                    member sm.Populate () = __compiledStateMachineCode 0 (__expand_code sm) }).ToList()
+                    member sm.Populate () = __expand_code sm }).ToList()
         else
             { new YieldStateMachine<'T>() with 
                 member sm.Populate () = __expand_code sm }.ToList()
@@ -125,10 +125,10 @@ type ArrayBuilder() =
     inherit ResizeArrayBuilderBase()
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : YieldCode<'T>) : 'T[] = 
-        if __generateCompiledStateMachines then
-            (__compiledStateMachine
+        if __useResumableCode then
+            (__resumableObject
                 { new YieldStateMachine<'T>() with 
-                    member sm.Populate () = __compiledStateMachineCode 0 (__expand_code sm) }).ToArray()
+                    member sm.Populate () = __expand_code sm }).ToArray()
         else
             { new YieldStateMachine<'T>() with 
                 member sm.Populate () = __expand_code sm }.ToArray()

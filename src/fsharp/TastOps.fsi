@@ -2310,5 +2310,5 @@ val (|ValApp|_|) : TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) opt
 /// Match expressions that represent the creation of an instance of an F# delegate value
 val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Val list list * Expr * range) option
 
-/// Match 'if __generateCompiledStateMachines then ... else ...' expressions
+/// Match 'if __useResumableCode then ... else ...' expressions
 val (|IfGenerateCompiledStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option

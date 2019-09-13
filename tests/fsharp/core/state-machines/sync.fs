@@ -20,10 +20,10 @@ type SyncBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : SyncCode<'T>) : 'T = 
-        if __generateCompiledStateMachines then
-            (__compiledStateMachine
+        if __useResumableCode then
+            (__resumableObject
                 { new SyncMachine<'T>() with 
-                    member __.Step ()  = __compiledStateMachineCode 0 (__expand_code ()) }).Start()
+                    member __.Step ()  = __expand_code () }).Start()
         else
             let sm = 
                 { new SyncMachine<'T>() with 

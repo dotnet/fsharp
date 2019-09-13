@@ -93,10 +93,12 @@ type TaskSeqBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : TaskSeqCode<'T>) : IAsyncEnumerable<'T> = 
-        if __generateCompiledStateMachines then
-            (__compiledStateMachine
+        if __useResumableCode then
+            (__resumableObject
                 { new TaskSeqStateMachine<'T>() with 
-                    member sm.Step () = __compiledStateMachineCode sm.ResumptionPoint (__expand_code sm) }).Start()
+                    member sm.Step () = 
+                        __resumeAt sm.ResumptionPoint
+                        __expand_code sm }).Start()
         else
             let sm = 
                 { new TaskSeqStateMachine<'T>() with 
@@ -115,7 +117,7 @@ type TaskSeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Combine(__expand_task1: TaskSeqCode<'T>, __expand_task2: TaskSeqCode<'T>) : TaskSeqCode<'T> =
         (fun sm -> 
-            if __generateCompiledStateMachines then
+            if __useResumableCode then
                 let ``__machine_step$cont`` = __expand_task1 sm
                 if ``__machine_step$cont`` then
                     // If state machines are supported, then the resumption jumps directly into the code for __expand_task1
@@ -238,13 +240,13 @@ type TaskSeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Yield (v: 'T) : TaskSeqCode<'T> =
         (fun sm -> 
-            if __generateCompiledStateMachines then 
-                match __compiledStateMachineReentry() with 
-                | None ->
-                    true
-                | Some contID -> 
+            if __useResumableCode then 
+                match __resumableEntry() with
+                | Some contID ->
                     sm.ResumptionPoint <- contID
                     sm.Current <- ValueSome v
+                    true
+                | None -> 
                     true
             else
                 sm.ResumptionFunc <- (fun sm -> true)
@@ -258,19 +260,19 @@ type TaskSeqBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Bind (task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskSeqCode<'T>)) : TaskSeqCode<'T> =
         (fun sm -> 
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 let mutable awaiter = task.GetAwaiter()
-                match __compiledStateMachineReentry() with 
-                | None ->
-                    __expand_continuation (awaiter.GetResult()) sm
-                | Some contID -> 
+                match __resumableEntry() with 
+                | Some contID ->
                     if awaiter.IsCompleted then 
-                        __compiledStateMachineDirectInvoke contID
+                        __resumeAt contID
                     else
                         sm.ResumptionPoint <- contID
                         // Tell the builder to call us again when done.
                         awaiter.UnsafeOnCompleted(Action(fun () -> sm.MoveNextAsync()))
                         false
+                | None ->
+                    __expand_continuation (awaiter.GetResult()) sm
 
             else
                 let mutable awaiter = task.GetAwaiter()

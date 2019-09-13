@@ -24,30 +24,29 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     module StateMachineHelpers = 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        /// Code blocks guarded by this conditional are eligible to be compiled in a special manner by the F# compiler
-        val __generateCompiledStateMachines<'T> : bool 
+        /// Statically determines whether resumable code is being used
+        val __useResumableCode<'T> : bool 
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        /// Within a compiled state machine, 'Some pc' notionally indicates the identifying integer for an entry point of the state machine on
-        /// the synhronous path, and None indicates an asynchronous (re-entry) path
-        val __compiledStateMachineReentry: unit -> int option 
+        /// Indicates a resumption point within resumable code
+        val __resumableEntry: unit -> int option
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        /// Within a compiled state machine, 'Some pc' notionally indicates the identifying integer for an entry point of the state machine on
-        /// the synhronous path, and None indicates an asynchronous (re-entry) path
-        val __compiledStateMachineDirectInvoke: int -> 'T
+        /// Indicates to jump to a resumption point within resumable code.
+        /// If the 'pc' is statically known then this is a 'goto' into resumable code.  If the 'pc' is not statically
+        /// known it must be a valid resumption point within this block of resumable code.
+        val __resumeAt : pc: int -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        /// Within a compiled state machine, represents a re-entry to the given entry point of the state machine code 
-        val __compiledStateMachineCode : pc: int -> code: 'T -> 'T
-
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        /// Within a compiled state machine, indicates an object expression is a state machine
-        val __compiledStateMachine<'T> : _obj: 'T -> 'T
+        /// Attempts to convert a computation description to a state machine with resumable code 
+        val __resumableObject<'T> : _obj: 'T -> 'T
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         /// Within a compiled state machine, indicates the given methods provide implementations of the IAsyncStateMachine functionality for a struct state machine
-        val __compiledStateMachineStruct<'Template, 'Result> : moveNext: MoveNextMethod<'Template> -> _setMachineState: SetMachineStateMethod<'Template> -> after: AfterMethod<'Template, 'Result> -> 'Result
+        ///
+        /// The template guides the generation of a new struct type.  Any mention of the template in any of the code is rewritten to that
+        /// new struct type.  Meth1 and Meth2 are used to implement the methods on the interface implemented by the struct type.
+        val __resumableStruct<'Template, 'Result> : moveNext: MoveNextMethod<'Template> -> _setMachineState: SetMachineStateMethod<'Template> -> after: AfterMethod<'Template, 'Result> -> 'Result
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control

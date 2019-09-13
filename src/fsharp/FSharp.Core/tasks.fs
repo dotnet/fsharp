@@ -37,36 +37,25 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     module StateMachineHelpers = 
 
-        /// Statically determines whether a computation description is converted or not
+        /// Statically determines whether resumable code is being used
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __generateCompiledStateMachines<'T> : bool = false
+        let __useResumableCode<'T> : bool = false
         
-        /// Indicates that the given closure can be used as an entry point in a state machine
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __compiledStateMachineReentry() : int option = None
+        let __resumableEntry () : int option = 
+            failwith "__resumableEntry should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
-        /// Indicates that the given closure can be used as an entry point in a state machine
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __compiledStateMachineDirectInvoke<'T> (_pc: int) : 'T = 
-            failwith "__compiledStateMachineDirectInvoke should always be guarded by __generateCompiledStateMachines and only used in valid state machine implementations"
+        let __resumeAt<'T> (_pc: int) : 'T = 
+            failwith "__resumeAt should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
-        /// If a computation description has been converted, inserts a jump table between different entry points
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __compiledStateMachineCode<'T> (_x:int) (_code: 'T)  : 'T =
-            failwith "__compiledStateMachineCode should always be guarded by __generateCompiledStateMachines and only used in valid state machine implementations"
+        let __resumableObject<'T> (_x: 'T) : 'T =
+            failwith "__resumableObject should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
-        /// Attempts to convert a computation description to a reference state machine
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __compiledStateMachine<'T> (_x: 'T) : 'T =
-            failwith "__compiledStateMachine should always be guarded by __generateCompiledStateMachines and only used in valid state machine implementations"
-
-        /// Describes a value-type (struct) state machine based on the given template.
-        ///
-        /// The template guides the generation of a new struct type.  Any mention of the template in any of the code is rewritten to that
-        /// new struct type.  Meth1 and Meth2 are used to implement the methods on the interface implemented by the struct type.
-        [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __compiledStateMachineStruct<'Template, 'Result> (_moveNext: MoveNextMethod<'Template>) (_setMachineState: SetMachineStateMethod<'Template>) (_after: AfterMethod<'Template, 'Result>): 'Result =
-            failwith "__compiledStateMachineStruct should always be guarded by __generateCompiledStateMachines and only used in valid state machine implementations"
+        let __resumableStruct<'Template, 'Result> (_moveNext: MoveNextMethod<'Template>) (_setMachineState: SetMachineStateMethod<'Template>) (_after: AfterMethod<'Template, 'Result>): 'Result =
+            failwith "__resumableStruct should always be guarded by __useResumableCode and only used in valid state machine implementations"
         
 #endif
 
@@ -95,7 +84,7 @@ module Utils2 =
 //    val mutable State : TaskStateMachine<'T>
 
 [<Struct; NoComparison; NoEquality>]
-/// Acts as a template for struct state machines introduced by __compiledStateMachineStruct, and also as a reflective implementation
+/// Acts as a template for struct state machines introduced by __resumableStruct, and also as a reflective implementation
 type TaskStateMachine<'TOverall> =
 
     /// Holds the final result of the state machine (between the 'return' and the execution of the finally clauses, after which we we eventually call SetResult)
@@ -123,7 +112,7 @@ type TaskStateMachine<'TOverall> =
 
     interface IAsyncStateMachine with 
         
-        // Used when interpreted.  For "__compiledStateMachineStruct" it is replaced.
+        // Used when interpreted.  For "__resumableStruct" it is replaced.
         member sm.MoveNext() = 
             try
                 //Console.WriteLine("[{0}] resuming by invoking {1}....", sm.MethodBuilder.Task.Id, hashq sm.ResumptionFunc )
@@ -137,7 +126,7 @@ type TaskStateMachine<'TOverall> =
                 //Console.WriteLine("[{0}] SetException {1}", sm.MethodBuilder.Task.Id, exn)
                 sm.MethodBuilder.SetException exn
 
-        // Used when interpreted.  For "__compiledStateMachineStruct" it is replaced.
+        // Used when interpreted.  For "__resumableStruct" it is replaced.
         member sm.SetStateMachine(state) = 
             sm.MethodBuilder.SetStateMachine(state)
 
@@ -166,21 +155,20 @@ type TaskBuilder() =
         TaskCode<'TOverall, 'T>(fun sm -> (__expand_f()).Invoke(&sm))
 
     member inline __.Run(__expand_code : TaskCode<'TOverall, 'TOverall>) : Task<'TOverall> = 
-        if __generateCompiledStateMachines then 
-            __compiledStateMachineStruct<TaskStateMachine<'TOverall>, Task<'TOverall>>
+        if __useResumableCode then 
+            __resumableStruct<TaskStateMachine<'TOverall>, Task<'TOverall>>
                 // MoveNext
                 (MoveNextMethod<_>(fun sm -> 
-                    __compiledStateMachineCode 
-                        sm.ResumptionPoint 
-                        (   try
-                                //Console.WriteLine("[{0}] step from {1}", sm.MethodBuilder.Task.Id, resumptionPoint)
-                                let ``__machine_step$cont`` = __expand_code.Invoke(&sm)
-                                if ``__machine_step$cont`` then 
-                                    //Console.WriteLine("[{0}] SetResult {1}", sm.MethodBuilder.Task.Id, res)
-                                    sm.MethodBuilder.SetResult(sm.Result)
-                            with exn ->
-                                //Console.WriteLine("[{0}] exception {1}", sm.MethodBuilder.Task.Id, exn)
-                                sm.MethodBuilder.SetException exn)))
+                    __resumeAt sm.ResumptionPoint 
+                    try
+                        //Console.WriteLine("[{0}] step from {1}", sm.MethodBuilder.Task.Id, resumptionPoint)
+                        let ``__machine_step$cont`` = __expand_code.Invoke(&sm)
+                        if ``__machine_step$cont`` then 
+                            //Console.WriteLine("[{0}] SetResult {1}", sm.MethodBuilder.Task.Id, res)
+                            sm.MethodBuilder.SetResult(sm.Result)
+                    with exn ->
+                        //Console.WriteLine("[{0}] exception {1}", sm.MethodBuilder.Task.Id, exn)
+                        sm.MethodBuilder.SetException exn))
 
                 // SetStateMachine
                 (SetMachineStateMethod<_>(fun sm state -> 
@@ -221,7 +209,7 @@ type TaskBuilder() =
     /// This prevents constructs like `task { return 1; return 2; }`.
     member inline __.Combine(__expand_task1: TaskCode<'TOverall, unit>, __expand_task2: TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
-            if __generateCompiledStateMachines then
+            if __useResumableCode then
                 // NOTE: The code for __expand_task1 may contain await points! Resuming may branch directly
                 // into this code!
                 let ``__machine_step$cont`` = __expand_task1.Invoke(&sm)
@@ -257,7 +245,7 @@ type TaskBuilder() =
     /// Builds a step that executes the body while the condition predicate is true.
     member inline __.While (condition : unit -> bool, __expand_body : TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         TaskCode<_, _>(fun sm ->
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 let mutable __stack_completed = true 
                 while __stack_completed && condition() do
                     __stack_completed <- false 
@@ -301,7 +289,7 @@ type TaskBuilder() =
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryWith (__expand_body : TaskCode<'TOverall, 'T>, __expand_catch : exn -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 let mutable __stack_completed = false
                 let mutable __stack_caught = false
                 let mutable __stack_savedExn = Unchecked.defaultof<_>
@@ -354,7 +342,7 @@ type TaskBuilder() =
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline __.TryFinally (__expand_body: TaskCode<'TOverall, 'T>, compensation : unit -> unit) : TaskCode<'TOverall, 'T> =
         TaskCode<_, _>(fun sm ->
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 let mutable __stack_completed = false
                 try
                     let ``__machine_step$cont`` = __expand_body.Invoke (&sm)
@@ -419,25 +407,24 @@ type TaskBuilder() =
 
     member inline __.ReturnFrom (task: Task<'T>) : TaskCode<'T, 'T> = 
         TaskCode<_, _>(fun sm -> 
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 // This becomes a state machine variable
                 let mutable awaiter = task.GetAwaiter()
 
-                match __compiledStateMachineReentry () with 
+                match __resumableEntry() with 
+                | Some contID ->
+                    // shortcut to continue immediately
+                    if task.IsCompleted then
+                        __resumeAt contID
+                    else
+                        sm.ResumptionPoint <- contID
+                        sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                        false
                 | None ->
                     // Label contID: 
                     //Console.WriteLine("[{0}] resumed ReturnFrom(Task<_>)", sm.MethodBuilder.Task.Id)
                     sm.Result <- awaiter.GetResult()
                     true
-                | Some contID ->
-
-                    // shortcut to continue immediately
-                    if task.IsCompleted then
-                        __compiledStateMachineDirectInvoke contID
-                    else
-                        sm.ResumptionPoint <- contID
-                        sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                        false
             else
                 TaskBuilder.ReturnFromDynamic(task).Invoke(&sm))
 
@@ -500,23 +487,23 @@ and [<Sealed>] Witnesses() =
               (_priority: IPriority2, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
 
         TaskCode<_, _>(fun sm -> 
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 // Get an awaiter from the awaitable
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
-                match __compiledStateMachineReentry () with 
-                | None ->
-                    // Label contID: 
-                    let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
-                    (__expand_continuation result).Invoke(&sm)
+                match __resumableEntry() with
                 | Some contID ->
                     // shortcut to continue immediately
                     if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                        __compiledStateMachineDirectInvoke contID
+                        __resumeAt contID
                     else
                         sm.ResumptionPoint <- contID
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
+                | None -> 
+                    // Label contID: 
+                    let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
+                    (__expand_continuation result).Invoke(&sm)
             else
                 Witnesses.CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall>(_priority, task, __expand_continuation).Invoke(&sm))
 
@@ -542,23 +529,22 @@ and [<Sealed>] Witnesses() =
     static member inline CanBind (_priority: IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
 
         TaskCode<_, _>(fun sm -> 
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 // Get an awaiter from the task
                 let mutable awaiter = task.GetAwaiter()
 
-                match __compiledStateMachineReentry () with 
-                | None ->
-                    // Label contID: 
-                    let result = awaiter.GetResult()
-                    (__expand_continuation result).Invoke(&sm)
+                match __resumableEntry() with
                 | Some contID ->
-
                     if awaiter.IsCompleted then 
-                        __compiledStateMachineDirectInvoke contID
+                        __resumeAt contID
                     else
                         sm.ResumptionPoint <- contID
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
+                | None ->
+                    // Label contID: 
+                    let result = awaiter.GetResult()
+                    (__expand_continuation result).Invoke(&sm)
             else
                 Witnesses.CanBindDynamic(_priority, task, __expand_continuation).Invoke(&sm))
 
@@ -598,45 +584,44 @@ and [<Sealed>] Witnesses() =
           (_priority: IPriority2, task: ^TaskLike) : TaskCode< ^T, ^T > =
 
         TaskCode<_, _>(fun sm -> 
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 // Get an awaiter from the awaitable
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
-                match __compiledStateMachineReentry () with 
-                | None ->
-                    // Label contID: 
-                    sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
-                    true
+                match __resumableEntry() with
                 | Some contID ->
-
                     // shortcut to continue immediately
                     if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then 
-                        __compiledStateMachineDirectInvoke contID
+                        __resumeAt contID
                     else
                         sm.ResumptionPoint <- contID
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
+                | None ->
+                    // Label contID: 
+                    sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
+                    true
             else
                 Witnesses.CanReturnFromDynamic(_priority, task).Invoke(&sm))
 
     static member inline CanReturnFrom (_priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
 
         TaskCode<_, _>(fun sm -> 
-            if __generateCompiledStateMachines then 
+            if __useResumableCode then 
                 let mutable awaiter = task.GetAwaiter()
 
-                match __compiledStateMachineReentry() with 
-                | None -> 
-                    sm.Result <- awaiter.GetResult()
-                    true
+                match __resumableEntry() with
                 | Some contID -> 
                     // shortcut to continue immediately
                     if task.IsCompleted then
-                        __compiledStateMachineDirectInvoke contID
+                        __resumeAt contID
                     else
                         sm.ResumptionPoint <- contID
                         sm.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
+                | None ->
+                    sm.Result <- awaiter.GetResult()
+                    true
             else
                 Witnesses.CanReturnFromDynamic(_priority, task).Invoke(&sm))
 
@@ -704,13 +689,16 @@ module ContextInsensitiveTasks =
 
             // get an awaiter from the task
             let mutable awaiter = (^TaskLike : (member GetAwaiter : unit -> ^Awaiter)(task))
-            let CONT = __compiledStateMachineReentry (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
-            // shortcut to continue immediately
-            if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
-                CONT.Invoke(&sm)
-            else
-                sm.Await (&awaiter, CONT)
-                TaskStep<'TResult2>(false)
+            match __resumableEntry() with 
+            | Some contID -> 
+                // shortcut to continue immediately
+                if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
+                    __resumeAt contID
+                else
+                    sm.Await (&awaiter, contID)
+                    TaskStep<'TResult2>(false)
+            | None ->
+                __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
 
         [<NoDynamicInvocation>]
         static member inline CanBind< ^TaskLike, ^TResult1, 'TResult2, ^Awaitable, ^Awaiter , 'TOverall
@@ -724,7 +712,7 @@ module ContextInsensitiveTasks =
             let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
-            let CONT = __compiledStateMachineReentry (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
+            let CONT = __resumableEntry (fun () -> __expand_continuation (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))) 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
                 CONT.Invoke(&sm)
@@ -735,7 +723,7 @@ module ContextInsensitiveTasks =
         [<NoDynamicInvocation>]
         static member inline CanBind (_priority :IPriority1, sm: TaskStateMachine<'TOverall>, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
             let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
-            let CONT = __compiledStateMachineReentry (fun () -> __expand_continuation (awaiter.GetResult()))
+            let CONT = __resumableEntry (fun () -> __expand_continuation (awaiter.GetResult()))
             if awaiter.IsCompleted then
                 CONT.Invoke(&sm)
             else
@@ -756,7 +744,7 @@ module ContextInsensitiveTasks =
 
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(task))
-            let CONT = __compiledStateMachineReentry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
+            let CONT = __resumableEntry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
@@ -776,7 +764,7 @@ module ContextInsensitiveTasks =
             let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
-            let CONT = __compiledStateMachineReentry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
+            let CONT = __resumableEntry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
 
             // shortcut to continue immediately
             if (^Awaiter : (member get_IsCompleted : unit -> bool)(awaiter)) then
@@ -788,7 +776,7 @@ module ContextInsensitiveTasks =
         [<NoDynamicInvocation>]
         static member inline CanReturnFrom (_priority: IPriority1, sm: TaskStateMachine<'T>, task: Task<'T>) : TaskStep<'T> =
             let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
-            let CONT = __compiledStateMachineReentry (fun () -> sm.SetResult (awaiter.GetResult()); TaskStep<'T>(true))
+            let CONT = __resumableEntry (fun () -> sm.SetResult (awaiter.GetResult()); TaskStep<'T>(true))
             if task.IsCompleted then
                 CONT.Invoke(&sm)
             else

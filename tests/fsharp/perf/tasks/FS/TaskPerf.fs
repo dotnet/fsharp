@@ -99,22 +99,6 @@ module Helpers =
             do! asyncTask()
          }
 
-(*
-     let tenBindAsync_FSharpAsync() =
-        taskBuilder {
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-            do! Async.Sleep(0)
-         }
-*)
-
     let singleTask_Task() =
         task { return 1 }
 
@@ -268,7 +252,7 @@ module Main =
         SingleSyncTask().SingleSyncTask_Task() 
         SingleSyncTask().SingleSyncTask_TaskBuilder() 
         SingleSyncTask().SingleSyncTask_FSharpAsync()
-        printfn "Running becnhmarks..."
+        printfn "Running benchmarks..."
 
         //let manyWriteFileResult = BenchmarkRunner.Run<ManyWriteFile>()
         //let syncBindsResult = BenchmarkRunner.Run<NonAsyncBinds>()
