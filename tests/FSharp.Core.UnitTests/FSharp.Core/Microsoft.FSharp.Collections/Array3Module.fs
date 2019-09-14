@@ -8,6 +8,7 @@ namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
+open Utils
 
 (*
 [Test Strategy]
@@ -21,12 +22,22 @@ Make sure each method works on:
 
 [<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array3Module() =
+    let array3d (arrs: 'a array array array ) = Array3D.init arrs.Length arrs.[0].Length arrs.[0].[0].Length  (fun i j k -> arrs.[i].[j].[k])
+
 
     let VerifyDimensions arr x y z =
         if Array3D.length1 arr <> x then Assert.Fail("Array3D does not have expected dimensions.")
         if Array3D.length2 arr <> y then Assert.Fail("Array3D does not have expected dimensions.")
         if Array3D.length3 arr <> z then Assert.Fail("Array3D does not have expected dimensions.")
         ()
+
+    let empty = Array3D.create 0 0 0 0.0
+
+    let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
 
     [<Test>]
     member this.Create() =
@@ -330,3 +341,67 @@ type Array3Module() =
         CheckThrowsArgumentException(fun () -> Array3D.zeroCreate 1 1 -1 |> ignore)
         
         ()
+
+    [<Test>]
+    member this.SlicingBoundedStartEnd() = 
+        shouldEqual m1.[*,*,*]  m1
+        shouldEqual m1.[0..,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+        shouldEqual m1.[0..0,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |] |])
+        shouldEqual m1.[1..1,*,*]  
+           (array3d [| 
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+
+        shouldEqual m1.[*,1..1,*]  
+           (array3d [| 
+                     [| [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[..1,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[*,0..0,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];  |] |] )
+        shouldEqual m1.[*,0..1,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[*,*,0..0]  
+           (array3d [| 
+                     [| [| 1.0|];
+                        [| 11.0|]  |]
+                     [| [| 10.0|];
+                        [| 100.0 |]  |] |] )
+        shouldEqual m1.[*,*,0..5]  
+           (array3d [|   
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        shouldEqual m1.[*,*,7..]  empty
+        shouldEqual m1.[*,*,.. -1]  empty
+
+        shouldEqual m1.[*,3..,*]  empty
+        shouldEqual m1.[*,.. -1,*]  empty
+
+        shouldEqual m1.[3..,*,*]  empty
+        shouldEqual m1.[.. -1,*,*]  empty
+
+

@@ -1689,6 +1689,7 @@ type ArrayModule() =
         Assert.AreEqual(arr.[2..], [3;4;5;6])
         Assert.AreEqual(arr.[5..], [6])
         Assert.AreEqual(arr.[6..], ([||]: int array))
+        Assert.AreEqual(arr.[7..], ([||]: int array))
 
     
     [<Test>] 
@@ -1702,6 +1703,8 @@ type ArrayModule() =
         Assert.AreEqual(arr.[..3], [|1;2;3;4|])
         Assert.AreEqual(arr.[..4], [|1;2;3;4;5|])
         Assert.AreEqual(arr.[..5], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[..7], [|1;2;3;4;5;6|])
 
 
     [<Test>]

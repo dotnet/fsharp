@@ -2,6 +2,8 @@
 
 module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.Utils
 
+open NUnit.Framework
+
 type Result<'a> = 
 | Success of 'a
 | Error of string
@@ -33,3 +35,5 @@ let haveSameElements (xs:seq<_>) (ys:seq<_>) =
     let xsHashSet = new System.Collections.Generic.HashSet<_>(xs)
     let ysHashSet = new System.Collections.Generic.HashSet<_>(ys)
     xsHashSet.SetEquals(ysHashSet)
+
+let shouldEqual arr1 arr2 = if arr1 <> arr2 then Assert.Fail()

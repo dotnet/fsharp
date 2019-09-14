@@ -194,6 +194,7 @@ type StringModule() =
         Assert.AreEqual(str.[2..], "3456")
         Assert.AreEqual(str.[5..], "6")
         Assert.AreEqual(str.[6..], (""))
+        Assert.AreEqual(str.[7..], (""))
 
     
     [<Test>] 
@@ -207,6 +208,8 @@ type StringModule() =
         Assert.AreEqual(str.[..3], "1234")
         Assert.AreEqual(str.[..4], "12345")
         Assert.AreEqual(str.[..5], "123456")
+        Assert.AreEqual(str.[..6], "123456")
+        Assert.AreEqual(str.[..7], "123456")
 
 
     [<Test>]

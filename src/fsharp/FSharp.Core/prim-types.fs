@@ -654,10 +654,16 @@ namespace Microsoft.FSharp.Core
 
             let inline Array2DZeroCreate (n:int) (m:int) = (# "newarr.multi 2 !0" type ('T) n m : 'T[,] #)
             let GetArray2DSub (src: 'T[,]) src1 src2 len1 len2 =
-                let lenN, lenM = if len1 <= 0 || len2 <= 0 then 0, 0 else len1, len2
-                let dst = Array2DZeroCreate lenN lenM
-                for i = 0 to lenN - 1 do
-                    for j = 0 to lenM - 1 do
+                let mutable len1 = len1
+                let mutable len2 = len2
+
+                if len1 <= 0 || len2 <= 0 then 
+                    len1 <- 0
+                    len2 <- 0
+
+                let dst = Array2DZeroCreate len1 len2
+                for i = 0 to len1 - 1 do
+                    for j = 0 to len2 - 1 do
                         SetArray2D dst i j (GetArray2D src (src1 + i) (src2 + j))
                 dst
 
@@ -682,9 +688,15 @@ namespace Microsoft.FSharp.Core
             let inline Array3DZeroCreate (n1:int) (n2:int) (n3:int) = (# "newarr.multi 3 !0" type ('T) n1 n2 n3 : 'T[,,] #)
 
             let GetArray3DSub (src: 'T[,,]) src1 src2 src3 len1 len2 len3 =
-                let len1 = (if len1 < 0 then 0 else len1)
-                let len2 = (if len2 < 0 then 0 else len2)
-                let len3 = (if len3 < 0 then 0 else len3)
+                let mutable len1 = len1
+                let mutable len2 = len2
+                let mutable len3 = len3
+
+                if len1 <= 0 || len2 <= 0 || len3 <= 0 then
+                    len1 <- 0
+                    len2 <- 0
+                    len3 <- 0
+
                 let dst = Array3DZeroCreate len1 len2 len3
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
@@ -716,10 +728,17 @@ namespace Microsoft.FSharp.Core
             let inline Array4DZeroCreate (n1:int) (n2:int) (n3:int) (n4:int) = (# "newarr.multi 4 !0" type ('T) n1 n2 n3 n4 : 'T[,,,] #)
 
             let GetArray4DSub (src: 'T[,,,]) src1 src2 src3 src4 len1 len2 len3 len4 =
-                let len1 = (if len1 < 0 then 0 else len1)
-                let len2 = (if len2 < 0 then 0 else len2)
-                let len3 = (if len3 < 0 then 0 else len3)
-                let len4 = (if len4 < 0 then 0 else len4)
+                let mutable len1 = len1
+                let mutable len2 = len2
+                let mutable len3 = len3
+                let mutable len4 = len4
+
+                if len1 <= 0 || len2 <= 0 || len3 <= 0 || len4 <= 0 then
+                    len1 <- 0
+                    len2 <- 0
+                    len3 <- 0
+                    len4 <- 0
+
                 let dst = Array4DZeroCreate len1 len2 len3 len4
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
