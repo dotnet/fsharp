@@ -351,7 +351,7 @@ module Keywords =
             | _ -> 
                 IdentifierToken args lexbuf s
 
-    let inline private DoesIdentifierNeedQuotation (s : string) : bool =
+    let DoesIdentifierNeedQuotation (s : string) : bool =
         not (String.forall IsIdentifierPartCharacter s)              // if it has funky chars
         || s.Length > 0 && (not(IsIdentifierFirstCharacter s.[0]))  // or if it starts with a non-(letter-or-underscore)
         || keywordTable.ContainsKey s                               // or if it's a language keyword like "type"

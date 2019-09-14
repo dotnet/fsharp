@@ -31,6 +31,7 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 #r "FSharp.Compiler.Service.dll"
 open System
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 (**
 
 ### Performing untyped parse
@@ -154,7 +155,7 @@ be another source of calls to `visitExpression`.
 ### Walking over declarations
 
 As mentioned earlier, the AST of a file contains a number of module or namespace declarations
-(top-level node) that contain declarations inside a module (let bindings or types) or inisde
+(top-level node) that contain declarations inside a module (let bindings or types) or inside
 a namespace (just types). The following functions walks over declarations - we ignore types,
 nested modules and all other elements and look only at top-level `let` bindings (values and 
 functions):
@@ -201,16 +202,19 @@ with location of the file. The location does not have to exist (it is used only 
 information) and it can be in both Unix and Windows formats:
 *)
 // Sample input for the compiler service
-let input = """
+let input =
+  """
   let foo() = 
     let msg = "Hello world"
     if true then 
-      printfn "%s" msg """
+      printfn "%s" msg
+  """
+
 // File name in Unix format
 let file = "/home/user/Test.fsx"
 
 // Get the AST of sample F# code
-let tree = getUntypedTree(file, input) 
+let tree = getUntypedTree(file, SourceText.ofString input)
 (**
 When you run the code in F# interactive, you can enter `tree;;` in the interactive console and
 see pretty printed representation of the data structure - the tree contains a lot of information,

@@ -2395,13 +2395,11 @@ namespace Microsoft.FSharp.Core
             then p <- p + 1; -1L
             else 1L 
 
-        let parseOctalUInt64 (s:string) p l = 
-            let rec parse n acc = if n < l then parse (n+1) (acc *.. 8UL +.. (let c = s.Chars(n) in if c >=... '0' && c <=... '7' then Convert.ToUInt64(c) -.. Convert.ToUInt64('0') else formatError())) else acc in
-            parse p 0UL
-
-        let parseBinaryUInt64 (s:string) p l = 
-            let rec parse n acc = if n < l then parse (n+1) (acc *.. 2UL +.. (match s.Chars(n) with '0' -> 0UL | '1' -> 1UL | _ -> formatError())) else acc in          
-            parse p 0UL
+        let parseBinaryUInt64 (s:string) = 
+            Convert.ToUInt64(s, 2)
+        
+        let parseOctalUInt64 (s:string) =
+            Convert.ToUInt64(s, 8)
 
         let inline removeUnderscores (s:string) =
             match s with
@@ -2418,8 +2416,8 @@ namespace Microsoft.FSharp.Core
             if p >= l then formatError() else
             match specifier with 
             | 'x' -> UInt32.Parse( s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
-            | 'b' -> Convert.ToUInt32(parseBinaryUInt64 s p l)
-            | 'o' -> Convert.ToUInt32(parseOctalUInt64 s p l)
+            | 'b' -> Convert.ToUInt32(parseBinaryUInt64 (s.Substring(p)))
+            | 'o' -> Convert.ToUInt32(parseOctalUInt64  (s.Substring(p)))
             | _ -> UInt32.Parse(s.Substring(p), NumberStyles.Integer, CultureInfo.InvariantCulture) in
 
         let inline int32OfUInt32 (x:uint32) = (# "" x  : int32 #)
@@ -2436,8 +2434,8 @@ namespace Microsoft.FSharp.Core
             if p >= l then formatError() else
             match Char.ToLowerInvariant(specifier) with 
             | 'x' -> sign * (int32OfUInt32 (Convert.ToUInt32(UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture))))
-            | 'b' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseBinaryUInt64 s p l)))
-            | 'o' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseOctalUInt64 s p l)))
+            | 'b' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseBinaryUInt64 (s.Substring(p)))))
+            | 'o' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseOctalUInt64  (s.Substring(p)))))
             | _ -> Int32.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
 
         let ParseInt64 (s:string) = 
@@ -2451,8 +2449,8 @@ namespace Microsoft.FSharp.Core
             if p >= l then formatError() else
             match Char.ToLowerInvariant(specifier) with 
             | 'x' -> sign *. Int64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
-            | 'b' -> sign *. (int64OfUInt64 (parseBinaryUInt64 s p l))
-            | 'o' -> sign *. (int64OfUInt64 (parseOctalUInt64 s p l))
+            | 'b' -> sign *. (int64OfUInt64 (parseBinaryUInt64 (s.Substring(p))))
+            | 'o' -> sign *. (int64OfUInt64 (parseOctalUInt64  (s.Substring(p))))
             | _ -> Int64.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
 
         let ParseUInt64     (s:string) : uint64 = 
@@ -2465,8 +2463,8 @@ namespace Microsoft.FSharp.Core
             if p >= l then formatError() else
             match specifier with 
             | 'x' -> UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
-            | 'b' -> parseBinaryUInt64 s p l
-            | 'o' -> parseOctalUInt64 s p l
+            | 'b' -> parseBinaryUInt64 (s.Substring(p))
+            | 'o' -> parseOctalUInt64  (s.Substring(p))
             | _ -> UInt64.Parse(s.Substring(p), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture) 
 
 
@@ -4337,7 +4335,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Identity")>]
         let id x = x
 
-#if !FX_NO_SYSTEM_CONSOLE
         // std* are TypeFunctions with the effect of reading the property on instantiation.
         // So, direct uses of stdout should capture the current System.Console.Out at that point.
         [<CompiledName("ConsoleIn")>]
@@ -4348,10 +4345,8 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("ConsoleError")>]
         let stderr<'T> = System.Console.Error
-#endif
-            
 
-        module Unchecked = 
+        module Unchecked =
 
             [<CompiledName("Unbox")>]
             let inline unbox<'T> (v:obj) = unboxPrim<'T> v
