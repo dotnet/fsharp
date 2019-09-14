@@ -90,3 +90,12 @@ type InteractiveTests() =
         let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
         Assert.AreEqual(1, errors.Length)
         Assert.False(foundAssemblyReference)
+
+    [<Test>]
+    member __.``Nuget reference fires multiple events``() =
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable assemblyRefCount = 0;
+        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
+        script.Eval("#r \"nuget:include=NUnitLite, version=3.11.0\"") |> ignoreValue
+        script.Eval("0") |> ignoreValue
+        Assert.GreaterOrEqual(assemblyRefCount, 2)
