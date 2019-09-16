@@ -24,16 +24,21 @@ Make sure each method works on:
 type Array4Module() =
 
     let VerifyDimensions arr x y z u =
-        if Array4D.length1 arr <> x then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array4D.length2 arr <> y then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array4D.length3 arr <> z then Assert.Fail("Array3D does not have expected dimensions.")
+        if Array4D.length1 arr <> x then Assert.Fail("Array4D does not have expected dimensions.")
+        if Array4D.length2 arr <> y then Assert.Fail("Array4D does not have expected dimensions.")
+        if Array4D.length3 arr <> z then Assert.Fail("Array4D does not have expected dimensions.")
         if Array4D.length4 arr <> u then Assert.Fail("Array4D does not have expected dimensions.")
         ()
 
     let array4d (arrs: 'a array array array array) = Array4D.init arrs.Length arrs.[0].Length arrs.[0].[0].Length  arrs.[0].[0].[0].Length  (fun i j k m -> arrs.[i].[j].[k].[m])
     
-    let empty = Array4D.create 0 0 0 0 0.0
-    
+    let shouldBeEmpty arr = 
+        if Array4D.length4 arr <> 0 
+        && Array4D.length3 arr <> 0
+        && Array4D.length2 arr <> 0
+        && Array4D.length1 arr <> 0 then 
+            Assert.Fail("Array3D is not empty.")    
+
     let m1 = array4d 
                [|
                  [| 
@@ -47,6 +52,7 @@ type Array4Module() =
                         [| [| 109.0;209.0;309.0;409.0;509.0;609.0 |];
                            [| 1009.0;2009.0;3009.0;4009.0;5009.0;6009.0 |]  |] |]
                 |]
+
     [<Test>]
     member this.Create() =
         // integer array  
@@ -345,14 +351,14 @@ type Array4Module() =
 
     [<Test>]
     member this.SlicingOutOfBounds() = 
-        shouldEqual m1.[*,*,*,7..]  empty
-        shouldEqual m1.[*,*,*,.. -1]  empty
+        shouldBeEmpty m1.[*,*,*,7..]  
+        shouldBeEmpty m1.[*,*,*,.. -1]  
     
-        shouldEqual m1.[*,*,3..,*]  empty
-        shouldEqual m1.[*,*,.. -1,*]  empty
+        shouldBeEmpty m1.[*,*,3..,*]  
+        shouldBeEmpty m1.[*,*,.. -1,*]  
     
-        shouldEqual m1.[*,3..,*,*]  empty
-        shouldEqual m1.[*,.. -1,*,*]  empty
+        shouldBeEmpty m1.[*,3..,*,*]  
+        shouldBeEmpty m1.[*,.. -1,*,*]  
     
-        shouldEqual m1.[3..,*,*,*]  empty
-        shouldEqual m1.[.. -1,*,*,*]  empty
+        shouldBeEmpty m1.[3..,*,*,*]  
+        shouldBeEmpty m1.[.. -1,*,*,*]  

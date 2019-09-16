@@ -21,8 +21,11 @@ Make sure each method works on:
 
 [<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array2Module() =
-    let empty = Array2D.create 0 0 0
 
+    let shouldBeEmpty arr = 
+        if Array2D.length2 arr <> 0 
+        && Array2D.length1 arr <> 0 then 
+            Assert.Fail("Array2D is not empty.")
 
     [<Test>]
     member this.Base1() =
@@ -620,14 +623,14 @@ type Array2Module() =
         shouldEqual arr.[(-1).., *] arr
         shouldEqual arr.[0.., 1..] (array2D [ [2;3;4;5;6]; [5;4;3;2;1] ])
         shouldEqual arr.[1.., ..3] (array2D [ [6;5;4;3] ])
-        shouldEqual arr.[2.., 6..] empty
+        shouldBeEmpty arr.[2.., 6..] 
 
 
     [<Test>]
     member this.SlicingUnboundedStart() = 
         let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
 
-        shouldEqual arr.[..(-1), *] empty
+        shouldBeEmpty arr.[..(-1), *] 
         shouldEqual arr.[..0, ..4] (array2D [ [1;2;3;4;5] ])
         shouldEqual arr.[..1, ..3] (array2D [ [1;2;3;4]; [6;5;4;3] ])
         shouldEqual arr.[..2, ..6] arr
@@ -638,16 +641,16 @@ type Array2Module() =
         let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
        
         shouldEqual arr.[*, ..6] arr
-        shouldEqual arr.[*, 6..] empty
+        shouldBeEmpty arr.[*, 6..] 
         shouldEqual arr.[..2, *] arr
-        shouldEqual arr.[2.., *] empty
+        shouldBeEmpty arr.[2.., *] 
 
-        shouldEqual arr.[1..0, *] empty
-        shouldEqual arr.[1..0, (-1)..0] empty
+        shouldBeEmpty arr.[1..0, *] 
+        shouldBeEmpty arr.[1..0, (-1)..0] 
 
-        shouldEqual arr.[0..(-1), *] empty
-        shouldEqual arr.[1..(-1), *] empty
-        shouldEqual arr.[1..0, *] empty
+        shouldBeEmpty arr.[0..(-1), *] 
+        shouldBeEmpty arr.[1..(-1), *] 
+        shouldBeEmpty arr.[1..0, *] 
         shouldEqual arr.[0..6, (-1)..9] arr
         shouldEqual arr.[*, 1..6] (array2D [ [2;3;4;5;6]; [5;4;3;2;1] ])
 

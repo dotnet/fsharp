@@ -31,7 +31,11 @@ type Array3Module() =
         if Array3D.length3 arr <> z then Assert.Fail("Array3D does not have expected dimensions.")
         ()
 
-    let empty = Array3D.create 0 0 0 0.0
+    let shouldBeEmpty arr = 
+        if Array3D.length3 arr <> 0 
+        && Array3D.length2 arr <> 0
+        && Array3D.length1 arr <> 0 then 
+            Assert.Fail("Array3D is not empty.")
 
     let m1 = (array3d [| 
                         [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
@@ -395,13 +399,12 @@ type Array3Module() =
 
     [<Test>]
     member this.SlicingOutOfBounds() = 
-        shouldEqual m1.[*,*,7..]  empty
-        shouldEqual m1.[*,*,.. -1]  empty
+        shouldBeEmpty m1.[*,*,7..] 
+        shouldBeEmpty m1.[*,*,.. -1]  
 
-        shouldEqual m1.[*,3..,*]  empty
-        shouldEqual m1.[*,.. -1,*]  empty
+        shouldBeEmpty m1.[*,3..,*]  
+        shouldBeEmpty m1.[*,.. -1,*]
 
-        shouldEqual m1.[3..,*,*]  empty
-        shouldEqual m1.[.. -1,*,*]  empty
-
+        shouldBeEmpty m1.[3..,*,*] 
+        shouldBeEmpty m1.[.. -1,*,*]  
 
