@@ -6,7 +6,17 @@ You're invited to contribute to future releases of the F# compiler, core library
 
 ### Quickstart on Windows
 
-Build from the command line:
+Build from the command line if you want to work on the **F# compiler only**:
+
+```
+build.cmd --noVisualStudio
+```
+
+After it's finished, open `FSharp.sln` in your editor of choice.
+
+----
+
+Build from the command line if you want to work on the **F# tools & F# compiler**:
 
 ```
 build.cmd
