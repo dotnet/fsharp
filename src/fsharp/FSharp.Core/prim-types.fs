@@ -3107,7 +3107,6 @@ namespace Microsoft.FSharp.Collections
                elif n = 0 then h
                else nth t (n - 1)
 
-        // similar to 'takeFreshConsTail' but with exceptions same as array slicing
         let rec sliceFreshConsTail cons n l =
             if n = 0 then setFreshConsTail cons [] else
             match l with
@@ -3117,8 +3116,6 @@ namespace Microsoft.FSharp.Collections
                 setFreshConsTail cons cons2
                 sliceFreshConsTail cons2 (n - 1) xs
 
-        // similar to 'take' but with n representing an index, not a number of elements
-        // and with exceptions matching array slicing
         let sliceTake n l =
             if n < 0 then [] else
             match l with
@@ -3128,7 +3125,6 @@ namespace Microsoft.FSharp.Collections
                 sliceFreshConsTail cons n xs
                 cons
 
-        // similar to 'skip' but with exceptions same as array slicing
         let sliceSkip n l =
             let n2 = if n < 0 then 0 else n
             let rec loop i lst =
@@ -3177,7 +3173,7 @@ namespace Microsoft.FSharp.Collections
             | Some(i), Some(j) ->
                 if i > j then [] else
                 let start = if i < 0 then 0 else i
-                PrivateListHelpers.sliceTake (j-start) (PrivateListHelpers.sliceSkip start l)
+                PrivateListHelpers.sliceTake (j - start) (PrivateListHelpers.sliceSkip start l)
 
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
