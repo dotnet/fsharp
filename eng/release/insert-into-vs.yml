@@ -47,7 +47,7 @@ stages:
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetAssemblyVersions.ps1
         arguments: -assemblyVersionsPath $(Build.ArtifactStagingDirectory)\VSSetup\DevDivPackages\DependentAssemblyVersions.csv
-    - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@2
+    - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@3
       displayName: 'Insert VS Payload'
       inputs:
         LinkWorkItemsToPR: false
