@@ -5,6 +5,8 @@
         <language>en-US</language>
         <dependencies>
             <group targetFramework=".NETCoreApp2.1">
+                <dependency id="Microsoft.Extensions.DependencyModel" version="2.1.0" />
+                <dependency id="Microsoft.DotNet.PlatformAbstractions" version="2.1.0" />
                 <dependency id="Microsoft.NETCore.Platforms" version="2.0.0" />
                 <dependency id="NETStandard.Library" version="2.0.0" />
                 <dependency id="System.Collections.Immutable" version="1.5.0" />
@@ -45,9 +47,10 @@
         <!-- assemblies -->
         <file src="fsc\$Configuration$\netcoreapp2.1\fsc.exe"                                             target="lib\netcoreapp2.1" />
         <file src="fsi\$Configuration$\netcoreapp2.1\fsi.exe"                                             target="lib\netcoreapp2.1" />
-        <file src="FSharp.Core\$Configuration$\netstandard1.6\FSharp.Core.dll"                            target="lib\netcoreapp2.1" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                            target="lib\netcoreapp2.1" />
         <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\FSharp.Compiler.Private.dll"    target="lib\netcoreapp2.1" />
         <file src="FSharp.Build\$Configuration$\netcoreapp2.1\FSharp.Build.dll"                           target="lib\netcoreapp2.1" />
+        <file src="FSharp.DependencyManager\$configuration$\netstandard2.0\FSharp.DependencyManager.dll"  target="lib\netcoreapp2.1" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
                                                                                                           target="lib\netcoreapp2.1" />
         <!-- additional files -->
@@ -59,11 +62,13 @@
         <file src="FSharp.Build\$Configuration$\netcoreapp2.1\Microsoft.FSharp.Overrides.NetSdk.targets"  target="contentFiles\any\any" />
 
         <!-- resources -->
-        <file src="FSharp.Core\$Configuration$\netstandard1.6\**\FSharp.Core.resources.dll"               target="lib\netcoreapp2.1" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll"               target="lib\netcoreapp2.1" />
         <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\**\FSharp.Compiler.Private.resources.dll"
                                                                                                           target="lib\netcoreapp2.1" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\**\FSharp.Compiler.Interactive.Settings.resources.dll"
                                                                                                           target="lib\netcoreapp2.1" />
         <file src="FSharp.Build\$Configuration$\netcoreapp2.1\**\FSharp.Build.resources.dll"              target="lib\netcoreapp2.1" />
+        <file src="FSharp.DependencyManager\$configuration$\netstandard2.0\**\FSharp.DependencyManager.resources.dll"
+                                                                                                          target="lib\netcoreapp2.1" />
     </files>
 </package>

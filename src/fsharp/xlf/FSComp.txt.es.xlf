@@ -7,6 +7,31 @@
         <target state="translated">{0} para F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">Mostrar los valores permitidos para la versión de idioma, especificar la versión de idioma como "latest" "preview"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">Versiones de lenguaje admitidas:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">Valor no reconocido "{0}" para --langversion, use --langversion:? para una lista completa</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">Símbolo inesperado "." en la definición de miembro. Se esperaba "with", "=" u otro token.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
@@ -19,12 +44,12 @@
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">Especifique el algoritmo para calcular la suma de comprobación del archivo de origen almacenada en PDB. Los valores admitidos son SHA1 o SHA256 (predeterminado)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">No se admite el algoritmo '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -4954,7 +4979,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidFloat">
         <source>Invalid floating point number</source>
-        <target state="translated">número de punto flotante no válido.</target>
+        <target state="translated">Número de punto flotante no válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOusideDecimal">
@@ -5189,7 +5214,7 @@
       </trans-unit>
       <trans-unit id="tcParameterInferredByref">
         <source>The parameter '{0}' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref&lt;int&gt;'. When used, a byref parameter is implicitly dereferenced.</source>
-        <target state="translated">Se infirió que el parámetro "{0}" tiene un tipo byref. Los parámetros de tipo byref deben recibir una anotación de tipo explícita, por ejemplo,"'x1: byref&lt;int&gt;". Cuando se usa, la referencia de un parámetro byref se elimina de forma implícita.</target>
+        <target state="translated">Se infirió que el parámetro "{0}" tiene un tipo byref. Los parámetros de tipo byref deben recibir una anotación de tipo explícita, por ejemplo,"x1: byref&lt;int&gt;". Cuando se usa, la referencia de un parámetro byref se elimina de forma implícita.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
@@ -7187,6 +7212,16 @@
         <target state="translated">No se ofreció ninguna implementación para esos miembros (se omitieron algunos resultados): {0} Tenga en cuenta que todos los miembros de la interfaz deben implementarse y enumerarse bajo una declaración de "interface" apropiada; por ejemplo, "interface ... with member ...".</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">La expresión no tiene un nombre.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">No se permite el uso del operador "nameof" como un valor de función de primera clase.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">Asigna rutas físicas de acceso a nombres de ruta de origen resultantes del compilador</target>
@@ -7200,6 +7235,26 @@
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
         <target state="translated">Mapa de ruta no válido. Las asignaciones deben estar separadas por comas y tener el formato "path=rutaOrigen"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCompilerTool">
+        <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
+        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerUnknown">
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="new">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotLoadDependencyManagerExtension">
+        <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
+        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
         <note />
       </trans-unit>
     </body>

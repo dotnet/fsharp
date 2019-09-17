@@ -47,11 +47,6 @@ module internal PrintfImpl =
     open Microsoft.FSharp.Collections
     open LanguagePrimitives.IntrinsicOperators
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
     open System.IO
     
     [<Flags>]
@@ -1070,12 +1065,8 @@ module internal PrintfImpl =
 
         static member GenericToString<'T>(spec: FormatSpecifier) = 
             let bindingFlags = 
-#if FX_RESHAPED_REFLECTION
-                isPlusForPositives spec.Flags // true - show non-public
-#else
                 if isPlusForPositives spec.Flags then BindingFlags.Public ||| BindingFlags.NonPublic
                 else BindingFlags.Public 
-#endif
 
             let useZeroWidth = isPadWithZeros spec.Flags
             let opts = 

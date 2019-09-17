@@ -8,6 +8,9 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 --load:<file>                            #load the given file on startup
 --reference:<file>                       Reference an assembly (Short form:
                                          -r)
+--compilertool:<file>                    Reference an assembly or directory
+                                         containing a design time tool (Short
+                                         form: -t)
 -- ...                                   Treat remaining arguments as command
                                          line arguments, accessed using
                                          fsi.CommandLineArgs
@@ -49,6 +52,10 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 
 
 		- LANGUAGE -
+--langversion:{?|version|latest|preview} Display the allowed values for
+                                         language version, specify language
+                                         version such as 'latest' or
+                                         'preview'
 --checked[+|-]                           Generate overflow checks
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
