@@ -2057,7 +2057,12 @@ Microsoft.FSharp.Core.Operators: System.Exception Failure(System.String)
 Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleError[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
-Microsoft.FSharp.Core.Operators: System.Object Box[T](T)
+Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
+#if DEBUG
+                                                                @"
+Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
+#endif
+                                                                @"
 Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)
@@ -2704,5 +2709,4 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
         // disabled because of slight order and GetMember discrepencies
 #else
         SurfaceArea.verify expected "net40" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
-        ()
 #endif
