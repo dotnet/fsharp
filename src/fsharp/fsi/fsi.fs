@@ -962,6 +962,8 @@ type internal FsiDynamicCompiler
     let outfile = "TMPFSCI.exe"
     let assemblyName = "FSI-ASSEMBLY"
 
+    let assemblyReferenceAddedEvent = Control.Event<string>()
+
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
 
@@ -1245,7 +1247,7 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState 
         let tcEnv,(_dllinfos,ccuinfos) = 
             try
-                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path)
+                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path, assemblyReferenceAddedEvent.Trigger)
             with e ->
                 tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
@@ -1333,6 +1335,8 @@ type internal FsiDynamicCompiler
 
     member __.FormatValue(obj:obj, objTy) = 
         valuePrinter.FormatValue(obj, objTy)
+
+    member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
 
 //----------------------------------------------------------------------------
 // ctrl-c handling
@@ -2640,6 +2644,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.EvalScript(ctok, scriptPath, errorLogger)
         |> commitResultNonThrowing errorOptions scriptPath errorLogger
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
+
+    /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
+    member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any
