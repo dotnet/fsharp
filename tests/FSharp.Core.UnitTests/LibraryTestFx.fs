@@ -100,6 +100,7 @@ module SurfaceArea =
 
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
+        printfn "Verify"
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
 
@@ -129,6 +130,7 @@ module SurfaceArea =
         let logFile =
             let workDir = TestContext.CurrentContext.WorkDirectory
             sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
+        printfn "logFile: %s" logFile
         System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
         // The surface areas don't match; prepare an easily-readable output message.
