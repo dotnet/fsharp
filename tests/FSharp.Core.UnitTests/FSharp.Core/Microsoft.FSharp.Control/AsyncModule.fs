@@ -630,6 +630,7 @@ type AsyncModule() =
     member this.``Parallel with maxDegreeOfParallelism`` () =
         let mutable i = 1
         let action j = async {
+            do! Async.Sleep 1
             Assert.AreEqual(j, i)
             i <- i + 1
         }
