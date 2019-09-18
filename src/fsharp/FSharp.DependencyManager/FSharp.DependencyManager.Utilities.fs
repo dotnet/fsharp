@@ -135,11 +135,12 @@ module Utilities =
             else
                 None
 #endif
-    let executeBuild pathToExe arguments =
+    let executeBuild pathToExe arguments workingDir =
         match pathToExe with
         | Some path ->
             let psi = ProcessStartInfo()
             psi.FileName <- path
+            psi.WorkingDirectory <- workingDir
             psi.RedirectStandardOutput <- false
             psi.RedirectStandardError <- false
             psi.Arguments <- arguments
@@ -158,19 +159,21 @@ module Utilities =
 
         let binLoggingArguments =
             match binLogging with
-            | true -> "-bl"
+            | true -> "/bl"
             | _ -> ""
 
         let arguments prefix =
             sprintf "%s -restore %s %c%s%c /t:FSI-PackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
+        let workingDir = Path.GetDirectoryName projectPath
+
         let succeeded =
 #if !(NETSTANDARD || NETCOREAPP)
             // The Desktop build uses "msbuild" to build
-            executeBuild msbuildExePath (arguments "")
+            executeBuild msbuildExePath (arguments "") workingDir
 #else
             // The coreclr uses "dotnet msbuild" to build
-            executeBuild dotnetHostPath (arguments "msbuild")
+            executeBuild dotnetHostPath (arguments "msbuild") workingDir
 #endif
         let outputFile = projectPath + ".fsx"
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
