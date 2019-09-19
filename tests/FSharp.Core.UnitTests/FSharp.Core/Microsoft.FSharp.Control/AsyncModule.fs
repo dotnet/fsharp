@@ -665,13 +665,13 @@ type AsyncModule() =
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Parallel(maxDegreeOfParallelism)``() =
-        [| for i in 1 .. 1000 -> async { return i } |]
+        [| for i in 1 .. 1000 -> async { failwith "boom" } |]
         |> fun cs -> Async.Parallel(cs, 1)
         |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel(maxDegreeOfParallelism)"
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Parallel``() =
-        [| for i in 1 .. 1000 -> async { return i } |]
+        [| for i in 1 .. 1000 -> async { failwith "boom" } |]
         |> fun cs -> Async.Parallel(cs)
         |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel"
 
