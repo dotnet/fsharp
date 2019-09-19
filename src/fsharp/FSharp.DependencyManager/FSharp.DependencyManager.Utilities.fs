@@ -12,9 +12,6 @@ open System.Runtime.Versioning
 
 open Internal.Utilities.FSharpEnvironment
 
-open Microsoft.DotNet.PlatformAbstractions
-open Microsoft.Extensions.DependencyModel
-
 #if !(NETSTANDARD || NETCOREAPP)
 open Microsoft.Build.Evaluation
 open Microsoft.Build.Framework
@@ -73,6 +70,7 @@ module Utilities =
     // Path to the directory containing the fsharp compilers
     let fsharpCompilerPath = Path.GetDirectoryName(typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location)
 
+    // We are running on dotnet core if the executing mscorlib is System.Private.CoreLib
     let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
     let isWindows = 
@@ -158,11 +156,12 @@ module Utilities =
             None
 #endif
 
-    let executeBuild pathToExe arguments =
+    let executeBuild pathToExe arguments workingDir =
         match pathToExe with
         | Some path ->
             let psi = ProcessStartInfo()
             psi.FileName <- path
+            psi.WorkingDirectory <- workingDir
             psi.RedirectStandardOutput <- false
             psi.RedirectStandardError <- false
             psi.Arguments <- arguments
@@ -179,19 +178,21 @@ module Utilities =
     let buildProject projectPath binLogging =
         let binLoggingArguments =
             match binLogging with
-            | true -> "-bl"
+            | true -> "/bl"
             | _ -> ""
 
         let arguments prefix =
             sprintf "%s -restore %s %c%s%c /t:FSI-PackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
+        let workingDir = Path.GetDirectoryName projectPath
+
         let succeeded =
 #if !(NETSTANDARD || NETCOREAPP)
             // The Desktop build uses "msbuild" to build
-            executeBuild msbuildExePath (arguments "")
+            executeBuild msbuildExePath (arguments "") workingDir
 #else
             // The coreclr uses "dotnet msbuild" to build
-            executeBuild dotnetHostPath (arguments "msbuild")
+            executeBuild dotnetHostPath (arguments "msbuild") workingDir
 #endif
         let outputFile = projectPath + ".fsx"
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
