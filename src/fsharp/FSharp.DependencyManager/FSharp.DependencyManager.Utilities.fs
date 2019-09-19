@@ -12,9 +12,6 @@ open System.Runtime.Versioning
 
 open Internal.Utilities.FSharpEnvironment
 
-open Microsoft.DotNet.PlatformAbstractions
-open Microsoft.Extensions.DependencyModel
-
 #if !(NETSTANDARD || NETCOREAPP)
 open Microsoft.Build.Evaluation
 open Microsoft.Build.Framework
