@@ -153,10 +153,11 @@ module Utilities =
                     if main.ModuleName ="dotnet" then
                         Some main.FileName
                     else
-                        None
-            else
-                None
+                        Some dotnet
+        else
+            None
 #endif
+
     let executeBuild pathToExe arguments =
         match pathToExe with
         | Some path ->
@@ -173,11 +174,9 @@ module Utilities =
             p.Start() |> ignore
             p.WaitForExit()
             p.ExitCode = 0
-
         | None -> false
 
     let buildProject projectPath binLogging =
-
         let binLoggingArguments =
             match binLogging with
             | true -> "-bl"
