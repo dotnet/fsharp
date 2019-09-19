@@ -1250,31 +1250,31 @@ namespace Microsoft.FSharp.Control
                                 |> unfake)
                     | Some maxDegreeOfParallelism ->
                         let mutable i = -1
-                        let worker = MakeAsync (fun _ ->
-                            while i < tasks.Length do
+                        let rec worker (ctxt : AsyncActivation<'T>) =
+                            if i < tasks.Length then
                                 let j = Interlocked.Increment &i
                                 if j < tasks.Length then
-                                    let trampolineHolder = new TrampolineHolder()
-                                    trampolineHolder.ExecuteWithTrampoline (fun () ->
-                                        let ctxt =
+                                    if innerCTS.Token.IsCancellationRequested then
+                                        let cexn = new OperationCanceledException (innerCTS.Token)
+                                        recordFailure (Choice2Of2 cexn) |> unfake
+                                        worker ctxt |> unfake
+                                    else
+                                        let taskCtxt =
                                             AsyncActivation.Create
                                                 innerCTS.Token
-                                                trampolineHolder
-                                                (fun res -> recordSuccess j res)
-                                                (fun edi -> recordFailure (Choice1Of2 edi))
-                                                (fun cexn -> recordFailure (Choice2Of2 cexn))
-                                        tasks.[j].Invoke ctxt
-                                    )
-                                    |> unfake
+                                                ctxt.trampolineHolder
+                                                (fun res -> recordSuccess j res |> unfake; worker ctxt)
+                                                (fun edi -> recordFailure (Choice1Of2 edi) |> unfake; worker ctxt)
+                                                (fun cexn -> recordFailure (Choice2Of2 cexn) |> unfake; worker ctxt)
+                                        tasks.[j].Invoke taskCtxt |> unfake
                             fake()
-                        )
                         for x = 1 to maxDegreeOfParallelism do
                             QueueAsync
-                                innerCTS.Token
+                                (CancellationToken())
                                 (fun _ -> fake())
-                                (fun edi -> recordFailure (Choice1Of2 edi))
-                                (fun cexn -> recordFailure (Choice2Of2 cexn))
-                                worker
+                                (fun _ -> fake())
+                                (fun _ -> fake())
+                                (MakeAsync worker)
                             |> unfake
 
                     fake()))
