@@ -664,9 +664,15 @@ type AsyncModule() =
             Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was -1"))
 
     [<Test>]
-    member this.``RaceBetweenCancellationAndError.Parallel``() =
+    member this.``RaceBetweenCancellationAndError.Parallel(maxDegreeOfParallelism)``() =
         [| for i in 1 .. 1000 -> async { return i } |]
         |> fun cs -> Async.Parallel(cs, 1)
+        |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel(maxDegreeOfParallelism)"
+
+    [<Test>]
+    member this.``RaceBetweenCancellationAndError.Parallel``() =
+        [| for i in 1 .. 1000 -> async { return i } |]
+        |> fun cs -> Async.Parallel(cs)
         |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel"
 
     [<Test>]
