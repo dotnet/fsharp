@@ -1250,31 +1250,28 @@ namespace Microsoft.FSharp.Control
                                 |> unfake)
                     | Some maxDegreeOfParallelism ->
                         let mutable i = -1
-                        let rec worker (ctxt : AsyncActivation<'T>) =
+                        let rec worker (trampolineHolder : TrampolineHolder) =
                             if i < tasks.Length then
                                 let j = Interlocked.Increment &i
                                 if j < tasks.Length then
                                     if innerCTS.Token.IsCancellationRequested then
                                         let cexn = new OperationCanceledException (innerCTS.Token)
                                         recordFailure (Choice2Of2 cexn) |> unfake
-                                        worker ctxt |> unfake
+                                        worker trampolineHolder |> unfake
                                     else
                                         let taskCtxt =
                                             AsyncActivation.Create
                                                 innerCTS.Token
-                                                ctxt.trampolineHolder
-                                                (fun res -> recordSuccess j res |> unfake; worker ctxt)
-                                                (fun edi -> recordFailure (Choice1Of2 edi) |> unfake; worker ctxt)
-                                                (fun cexn -> recordFailure (Choice2Of2 cexn) |> unfake; worker ctxt)
+                                                trampolineHolder
+                                                (fun res -> recordSuccess j res |> unfake; worker trampolineHolder)
+                                                (fun edi -> recordFailure (Choice1Of2 edi) |> unfake; worker trampolineHolder)
+                                                (fun cexn -> recordFailure (Choice2Of2 cexn) |> unfake; worker trampolineHolder)
                                         tasks.[j].Invoke taskCtxt |> unfake
                             fake()
                         for x = 1 to maxDegreeOfParallelism do
-                            QueueAsync
-                                (CancellationToken())
-                                (fun _ -> fake())
-                                (fun _ -> fake())
-                                (fun _ -> fake())
-                                (MakeAsync worker)
+                            let trampolineHolder = new TrampolineHolder()
+                            trampolineHolder.QueueWorkItemWithTrampoline (fun () ->
+                                worker trampolineHolder)
                             |> unfake
 
                     fake()))
