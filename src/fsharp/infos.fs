@@ -577,8 +577,7 @@ type ParamNameAndType =
 [<NoComparison; NoEquality>]
 /// Full information about a parameter returned for use by the type checker and language service.
 type ParamData =
-    /// ParamData(isParamArray, isOut, optArgInfo, callerInfo, nameOpt, reflArgInfo, ttype)
-    ParamData of bool * bool * bool * OptionalArgInfo * CallerInfo * Ident option * ReflectedArgInfo * TType
+    ParamData of isParamArray: bool * isInArg: bool * isOut: bool * optArgInfo: OptionalArgInfo * callerInfo: CallerInfo * nameOpt: Ident option * reflArgInfo: ReflectedArgInfo * ttype: TType
 
 
 //-------------------------------------------------------------------------
