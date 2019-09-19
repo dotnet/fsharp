@@ -36,6 +36,7 @@ type NameResolver(g: TcGlobals,
                   amap: Import.ImportMap,
                   infoReader: InfoReader,
                   instantiationGenerator: (range -> Typars -> TypeInst)) =
+
     /// Used to transform typars into new inference typars
     // instantiationGenerator is a function to help us create the
     // type parameters by copying them from type parameter specifications read
@@ -50,6 +51,7 @@ type NameResolver(g: TcGlobals,
     member nr.g = g
     member nr.amap = amap
     member nr.InfoReader = infoReader
+    member nr.languageSupportsNameOf = g.langVersion.SupportsFeature LanguageFeature.NameOf
 
 //-------------------------------------------------------------------------
 // Helpers for unionconstrs and recdfields
@@ -756,14 +758,14 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs: Un
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
             acc.Add (ucref.CaseName, item))
 
-let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m (nenv: NameResolutionEnv)  (tcref:TyconRef) =
+let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (tcref:TyconRef) =
     // If OpenStaticClasses is not enabled then don't do this
     if amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
         let ty = generalizedTyconRef tcref
         let infoReader = InfoReader(g,amap)
         let items =
             [| let methGroups = 
-                   AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
+                   AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None ad PreferOverrides m ty
                    |> List.groupBy (fun m -> m.LogicalName)
 
                for (methName, methGroup) in methGroups do
@@ -772,20 +774,30 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
                        yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
            
                let propInfos = 
-                   AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None AccessorDomain.AccessibleFromSomeFSharpCode PreferOverrides m ty
+                   AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None ad PreferOverrides m ty
                    |> List.groupBy (fun m -> m.PropertyName)
                
                for (propName, propInfos) in propInfos do
                    let propInfos = propInfos |> List.filter (fun m -> m.IsStatic)
                    for propInfo in propInfos do 
-                       yield KeyValuePair(propName , Item.Property(propName,[propInfo])) |]
+                       yield KeyValuePair(propName , Item.Property(propName,[propInfo]))
+            
+               let fields =
+                  infoReader.GetILFieldInfosOfType(None, ad, m, ty)
+                  |> List.groupBy (fun f -> f.FieldName)
+
+               for (fieldName, fieldInfos) in fields do
+                   let fieldInfos = fieldInfos |> List.filter (fun fi -> fi.IsStatic)
+                   for fieldInfo in fieldInfos do
+                       yield KeyValuePair(fieldName, Item.ILField(fieldInfo))
+             |]
 
         { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
     else
         nenv
     
 /// Add any implied contents of a type definition to the environment.
-let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap m  nenv (tcref: TyconRef) =
+let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
 
     let isIL = tcref.IsILTycon
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
@@ -858,16 +870,16 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
 
     let nenv = 
         if TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true && isStaticClass g tcref then
-           AddStaticContentOfTyconRefToNameEnv g amap m nenv tcref
+           AddStaticContentOfTyconRefToNameEnv g amap ad m nenv tcref
         else
            nenv
 
     nenv
 
 /// Add a set of type definitions to the name resolution environment
-let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
+let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs =
     if isNil tcrefs then nenv else
-    let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
+    let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap ad m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
     let tcrefs = Array.ofList tcrefs
     { env with
@@ -966,7 +978,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
            let tcref = modref.NestedTyconRef tycon
            if IsEntityAccessible amap m ad tcref then Some tcref else None)
 
-    let nenv = (nenv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false
+    let nenv = (nenv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap ad m false
     let vrefs =
         mty.AllValsAndMembers.ToList()
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
@@ -991,7 +1003,7 @@ and AddEntityContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
     if modref.IsModuleOrNamespace then 
         AddModuleOrNamespaceContentsToNameEnv g amap ad m root nenv modref
     else
-        AddStaticContentOfTyconRefToNameEnv g amap m nenv modref
+        AddStaticContentOfTyconRefToNameEnv g amap ad m nenv modref
 
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefToNameEnv g amap m root ad nenv (modref: EntityRef) =
@@ -2496,6 +2508,15 @@ let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameR
 /// that may represent further actions, e.g. further lookups.
 let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified m ad nenv (typeNameResInfo: TypeNameResolutionInfo) (id: Ident) (rest: Ident list) isOpenDecl =
     let resInfo = ResolutionInfo.Empty
+    let canSuggestThisItem (item:Item) =
+        // All items can be suggested except nameof when it comes from FSharp.Core.dll and the nameof feature is not enabled
+        match item with
+        | Item.Value v ->
+            let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref v
+            if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then false
+            else true
+        | _ -> true
+
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
@@ -2534,7 +2555,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match fresh with
                     | Item.Value value ->
                         let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref value
-                        if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then
+                        if isNameOfOperator && not (ncenv.languageSupportsNameOf) then
                             // Do not resolve `nameof` if the feature is unsupported, even if it is FSharp.Core
                             None
                          else
@@ -2570,7 +2591,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                             | _ ->
                                 let suggestNamesAndTypes (addToBuffer: string -> unit) =
                                     for e in nenv.eUnqualifiedItems do
-                                        addToBuffer e.Value.DisplayName
+                                        if canSuggestThisItem e.Value then
+                                            addToBuffer e.Value.DisplayName
 
                                     for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
                                         if IsEntityAccessible ncenv.amap m ad e.Value then
@@ -2666,7 +2688,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                                   addToBuffer e.Value.DisplayName
 
                           for e in nenv.eUnqualifiedItems do
-                              addToBuffer e.Value.DisplayName
+                              if canSuggestThisItem e.Value then
+                                  addToBuffer e.Value.DisplayName
 
                       match innerSearch with
                       | Exception (UndefinedName(0, _, id1, suggestionsF)) when Range.equals id.idRange id1.idRange ->

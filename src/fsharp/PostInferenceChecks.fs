@@ -263,7 +263,8 @@ let GetLimitValByRef cenv env m v =
     { scope = scope; flags = flags }
 
 let LimitVal cenv (v: Val) limit = 
-    cenv.limitVals.[v.Stamp] <- limit
+    if not v.IgnoresByrefScope then
+        cenv.limitVals.[v.Stamp] <- limit
 
 let BindVal cenv env (v: Val) = 
     //printfn "binding %s..." v.DisplayName

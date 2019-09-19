@@ -105,7 +105,7 @@ let changeX() =
             (6, 5, 6, 15)
             "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'."
 
-    // [<Test>]    // Disable this test until we refactor tcImports and tcGlobals
+    [<Test>]
     let ``Warn If Discarded In List``() =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
@@ -127,7 +127,7 @@ let view model dispatch =
                 "This expression returns a value of type 'int' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'."
             |]
 
-    // [<Test>]    // Disable this test until we refactor tcImports and tcGlobals
+    [<Test>]
     let ``Warn If Discarded In List 2``() =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
@@ -154,7 +154,7 @@ let view model dispatch =
                 "This expression returns a value of type 'int list' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'."
             |]
 
-    // [<Test>]    // Disable this test until we refactor tcImports and tcGlobals
+    [<Test>]
     let ``Warn If Discarded In List 3``() =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
