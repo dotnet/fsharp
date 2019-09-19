@@ -2580,23 +2580,20 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             errorR(Error(FSComp.SR.buildMultipleReferencesNotAllowed libraryName, rangeCmdArgs)) 
             nameOfDll r
 
-    // Look for an explicit reference to mscorlib and use that to compute clrRoot and targetFrameworkVersion
+    // Look for an explicit reference to mscorlib/netstandard.dll or System.Runtime.dll and use that to compute clrRoot and targetFrameworkVersion
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.primaryAssembly.Name)
-    let fslibReference, fslibExplicitFilenameOpt = 
-        let (_, fileNameOpt) as res = computeKnownDllReference getFSharpCoreLibraryName
+    let fslibReference =
+        // Look for explict FSharp.Core reference otherwise use version that was referenced by compiler
+        let dllReference, fileNameOpt = computeKnownDllReference getFSharpCoreLibraryName
         match fileNameOpt with
-        | None -> 
-            // if FSharp.Core was not provided explicitly - use version that was referenced by compiler
-            AssemblyReference(range0, getDefaultFSharpCoreReference, None), None
-        | _ -> res
+        | Some _ -> dllReference
+        | None -> AssemblyReference(range0, getDefaultFSharpCoreReference, None)
 
     // If either mscorlib.dll/System.Runtime.dll/netstandard.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
     // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does
     // not have System.Web.dll.
-    do if ((primaryAssemblyExplicitFilenameOpt.IsSome || fslibExplicitFilenameOpt.IsSome) && data.framework) then
+    do if (primaryAssemblyExplicitFilenameOpt.IsSome && data.framework) then
             error(Error(FSComp.SR.buildExplicitCoreLibRequiresNoFramework("--noframework"), rangeStartup))
-
-    let ilGlobals = mkILGlobals ILScopeRef.Local
 
     // clrRoot: the location of the primary assembly (mscorlib.dll or netstandard.dll or System.Runtime.dll)
     //
@@ -2627,37 +2624,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     let systemAssemblies = systemAssemblies
 
-    // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
-    // FUTURE: remove this, we only read the binary for the exception it raises
-    let fsharpBinariesDirValue = 
-// NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
-#if NETSTANDARD
-        ignore ilGlobals
-        data.defaultFSharpBinariesDir
-#else
-        match fslibExplicitFilenameOpt with
-        | Some fslibFilename ->
-            let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
-            if fslibReference.ProjectReference.IsNone then 
-                try 
-                    use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
-                    ()
-                with e -> 
-                    error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
-                
-            let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim filename)
-            fslibRoot
-        | _ ->
-            data.defaultFSharpBinariesDir
-#endif
-
     member x.primaryAssembly = data.primaryAssembly
     member x.autoResolveOpenDirectivesToDlls = data.autoResolveOpenDirectivesToDlls
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir
     member x.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
-    member x.fsharpBinariesDir = fsharpBinariesDirValue
+    member x.fsharpBinariesDir = data.defaultFSharpBinariesDir
     member x.compilingFslib = data.compilingFslib
     member x.useIncrementalBuilder = data.useIncrementalBuilder
     member x.includes = data.includes

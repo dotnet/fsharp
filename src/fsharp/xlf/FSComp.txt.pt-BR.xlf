@@ -5313,8 +5313,8 @@
         <note />
       </trans-unit>
       <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">Enquanto mscorlib.dll ou FSharp.Core.dll é explicitamente referenciado, a opção {0} também deve ser passada</target>
+        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
+        <target state="needs-review-translation">Enquanto mscorlib.dll ou FSharp.Core.dll é explicitamente referenciado, a opção {0} também deve ser passada</target>
         <note />
       </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
