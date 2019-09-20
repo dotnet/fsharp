@@ -82,3 +82,24 @@ type InteractiveTests() =
         let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
         Assert.AreEqual(1, errors.Length)
         Assert.False(foundAssemblyReference)
+
+    [<Test>]
+    member __.``Assembly reference dependent assemblies``() =
+        let fsxText = """
+#r @"DependentAssemblyLocation/DependentAssembly.dll"
+#r @"TopAssemblyLocation/TopAssembly.dll"
+open TopAssembly
+let msg = (new TopAssemblyClass()).GetTheString("from Test-case : 'Assembly reference dependent assemblies'")
+"""
+        use script = new FSharpScript()
+        let mutable assemblyResolveEventCount = 0
+        Event.add (fun (assembly: string) ->
+            assemblyResolveEventCount <- assemblyResolveEventCount + 1)
+            script.AssemblyReferenceAdded
+        script.Eval(fsxText) |> ignore
+        let opt = script.Eval("msg") |> getValue
+        let value = opt.Value.ReflectionValue
+        Assert.AreEqual(2, assemblyResolveEventCount)
+        Assert.AreEqual(value, "Hello from Test-case : 'Assembly reference dependent assemblies'")
+
+

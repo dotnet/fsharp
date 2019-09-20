@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\FSharp.Compiler.Private.Scripting.UnitTests\TestProjects\DependentAssemblies\DependentAssembly\DependentAssembly.csproj"><Private>false</Private></ProjectReference>
+  </ItemGroup>
+
+</Project>
