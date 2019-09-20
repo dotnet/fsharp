@@ -17,8 +17,8 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)TestProjects\DependentAssemblies\TopAssembly\TopAssembly.csproj"><Private>false</Private></ProjectReference>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)TestProjects\DependentAssemblies\DependentAssembly\DependentAssembly.csproj"><Private>false</Private></ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)TestProjects\DependentAssemblies\TopAssembly\TopAssembly.csproj"><Private>false</Private><ReferenceOutputAssembly>false</ReferenceOutputAssembly></ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)TestProjects\DependentAssemblies\DependentAssembly\DependentAssembly.csproj"><Private>false</Private><ReferenceOutputAssembly>false</ReferenceOutputAssembly></ProjectReference>
   </ItemGroup>
 
   <Target Name="MyCopyFilesToOutputDirectory" AfterTargets="Compile">
