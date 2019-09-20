@@ -5,7 +5,7 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
-    <Configuration>Release</Configuration>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
 </Project>

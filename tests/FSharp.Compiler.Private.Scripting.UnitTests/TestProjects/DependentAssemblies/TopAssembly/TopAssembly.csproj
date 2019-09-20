@@ -5,10 +5,11 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\FSharp.Compiler.Private.Scripting.UnitTests\TestProjects\DependentAssemblies\DependentAssembly\DependentAssembly.csproj"><Private>false</Private></ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\..\TestProjects\DependentAssemblies\DependentAssembly\DependentAssembly.csproj"><Private>false</Private></ProjectReference>
   </ItemGroup>
 
 </Project>

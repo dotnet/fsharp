@@ -17,11 +17,11 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\FSharp.Compiler.Private.Scripting.UnitTests\TestProjects\DependentAssemblies\TopAssembly\TopAssembly.csproj"><Private>false</Private></ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\FSharp.Compiler.Private.Scripting.UnitTests\TestProjects\DependentAssemblies\DependentAssembly\DependentAssembly.csproj"><Private>false</Private></ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)TestProjects\DependentAssemblies\TopAssembly\TopAssembly.csproj"><Private>false</Private></ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)TestProjects\DependentAssemblies\DependentAssembly\DependentAssembly.csproj"><Private>false</Private></ProjectReference>
   </ItemGroup>
 
-  <Target Name="MyCopyFilesToOutputDirectory" AfterTargets="CoreBuild">
+  <Target Name="MyCopyFilesToOutputDirectory" AfterTargets="Compile">
     <Copy SourceFiles="$(OutDir)..\..\..\TopAssembly\$(Configuration)\$(TargetFramework)\TopAssembly.dll" DestinationFolder="$(OutDir)TopAssemblyLocation\" />
     <Copy SourceFiles="$(OutDir)..\..\..\DependentAssembly\$(Configuration)\$(TargetFramework)\DependentAssembly.dll" DestinationFolder="$(OutDir)DependentAssemblyLocation\" />
   </Target>
