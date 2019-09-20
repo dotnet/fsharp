@@ -1546,22 +1546,14 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) = 
 
-#if NETSTANDARD
-        ignore tcConfigB
-        ignore tcImports
-        ignore fsiDynamicCompiler
-        ignore fsiConsoleOutput
-        { new System.IDisposable with 
-             member x.Dispose() = () }
-#else
         let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName:string) = 
 
            try 
                // Grab the name of the assembly
                let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-               let simpleAssemName = fullAssemName.Split([| ',' |]).[0]          
+               let simpleAssemName = fullAssemName.Split([| ',' |]).[0]
                if !progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..." 
-               
+
                // Special case: Mono Windows Forms attempts to load an assembly called something like "Windows.Forms.resources"
                // We can't resolve this, so don't try.
                // REVIEW: Suggest 4481, delete this special case.
@@ -1577,7 +1569,7 @@ module internal MagicAssemblyResolution =
                // Otherwise continue
                let assemblyReferenceTextDll = (simpleAssemName + ".dll") 
                let assemblyReferenceTextExe = (simpleAssemName + ".exe") 
-               let overallSearchResult =           
+               let overallSearchResult =
 
                    // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
                    // once an assembly has been referenced.
@@ -1621,15 +1613,15 @@ module internal MagicAssemblyResolution =
                    | Some(assembly) -> OkResult([],Choice2Of2 assembly)
                    | None -> 
 #endif
-                   
+
                    // As a last resort, try to find the reference without an extension
                    match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
                    | Some(resolvedPath) -> 
                        OkResult([],Choice1Of2 resolvedPath)
                    | None -> 
-                   
+
                    ErrorResult([],Failure (FSIstrings.SR.fsiFailedToResolveAssembly(simpleAssemName)))
-                           
+
                match overallSearchResult with 
                | ErrorResult _ -> null
                | OkResult _ -> 
@@ -1640,8 +1632,8 @@ module internal MagicAssemblyResolution =
                        assemblyLoadFrom assemblyName
                    | Choice2Of2 assembly -> 
                        assembly
-                   
-           with e -> 
+
+           with e ->
                stopProcessingRecovery e range0
                null
 
@@ -1652,12 +1644,11 @@ module internal MagicAssemblyResolution =
             // during compilation. So we recover the CompilationThreadToken here.
             let ctok = AssumeCompilationThreadWithoutEvidence ()
             ResolveAssembly (ctok, rangeStdin, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
-        
+
         AppDomain.CurrentDomain.add_AssemblyResolve(handler)
 
         { new System.IDisposable  with 
              member x.Dispose() = AppDomain.CurrentDomain.remove_AssemblyResolve(handler) }
-#endif
 
 //----------------------------------------------------------------------------
 // Reading stdin 
