@@ -5307,11 +5307,6 @@
         <target state="translated">Привязки DLLImport должны быть статическими элементами в определениях класса или функции в модуле</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">При явной ссылке на mscorlib.dll или FSharp.Core.dll также должен передаваться параметр {0}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">Ресурс FSharp.Core.sigdata не найден вместе с FSharp.Core. Файл ожидался в {0}. Рекомендуется обновление до более новой версии FSharp.Core, где этот файл не требуется.</target>

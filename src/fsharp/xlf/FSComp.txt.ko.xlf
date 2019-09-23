@@ -5307,11 +5307,6 @@
         <target state="translated">DLLImport 바인딩은 모듈의 클래스 또는 함수 정의에서 정적 멤버여야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">mscorlib.dll 또는 FSharp.Core.dll이 명시적으로 참조될 경우 {0} 옵션도 전달해야 합니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">FSharp.Core에서 FSharp.Core.sigdata를 찾을 수 없습니다. 파일이 {0}에 있어야 합니다. 이 파일이 더 이상 필요하지 않은 최신 버전의 FSharp.Core로의 업그레이드를 고려해 보세요.</target>
