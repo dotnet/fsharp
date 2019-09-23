@@ -302,11 +302,6 @@ open Microsoft.FSharp.Quotations.DerivedPatterns
 
 open Microsoft.FSharp.Linq.QueryRunExtensions
 
-#if FX_RESHAPED_REFLECTION
-open PrimReflectionAdapters
-open ReflectionAdapters
-#endif
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Query =
 

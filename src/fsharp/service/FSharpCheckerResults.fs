@@ -21,6 +21,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
@@ -849,7 +850,12 @@ type internal TypeCheckInfo
             | Some(CompletionContext.OpenDeclaration) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
-                    items |> List.filter (fun x -> match x.Item with Item.ModuleOrNamespaces _ -> true | _ -> false), denv, m)
+                    items 
+                    |> List.filter (fun x ->
+                        match x.Item with
+                        | Item.ModuleOrNamespaces _ -> true
+                        | Item.Types (_, tcrefs) when tcrefs |> List.exists (fun ty -> isAppTy g ty && isStaticClass g (tcrefOfAppTy g ty)) -> true
+                        | _ -> false), denv, m)
             
             // Completion at '(x: ...)"
             | Some (CompletionContext.PatternType) ->
@@ -1276,9 +1282,8 @@ type internal TypeCheckInfo
                valRefEq g g.reraise_vref vref ||
                valRefEq g g.typeof_vref vref ||
                valRefEq g g.typedefof_vref vref ||
-               valRefEq g g.sizeof_vref vref 
-               // TODO uncomment this after `nameof` operator is implemented
-               // || valRefEq g g.nameof_vref vref
+               valRefEq g g.sizeof_vref vref ||
+               valRefEq g g.nameof_vref vref
             then Some()
             else None
         
@@ -1525,8 +1530,12 @@ module internal ParseAndCheckFile =
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
 
-    let createLexbuf sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(sourceText)
+    // Public callers are unable to answer LanguageVersion feature support questions.
+    // External Tools including the VS IDE will enable the default LanguageVersion 
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+
+    let createLexbuf sourceText isFeatureSupported =
+        UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
@@ -1541,7 +1550,7 @@ module internal ParseAndCheckFile =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         
         let matchingBraces = new ResizeArray<_>()
-        Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+        Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1577,7 +1586,7 @@ module internal ParseAndCheckFile =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+            Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||

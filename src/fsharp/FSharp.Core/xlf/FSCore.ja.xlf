@@ -707,6 +707,11 @@
         <target state="translated">これは有効なクエリ式ではありません。クエリで構造 '{0}' が使用されていますが、F# から LINQ へのクエリ トランスレーターに認識されません。許可されたクエリの仕様を確認し、一部の操作をクエリ式の外に移動することを検討してください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism には正の値を指定する必要がありますが、{0} が指定されました</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
