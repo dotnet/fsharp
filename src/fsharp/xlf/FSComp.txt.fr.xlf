@@ -5322,11 +5322,6 @@
         <target state="translated">Les liaisons DLLImport doivent être des membres statiques dans une classe ou des définitions de fonction dans un module</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">Lorsque mscorlib.dll ou FSharp.Core.dll est explicitement référencé, l'option {0} doit également être passée</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">FSharp.Core.sigdata introuvable avec FSharp.Core. Fichier attendu dans {0}. Effectuez une mise à niveau vers une version plus récente de FSharp.Core, où ce fichier n'est plus nécessaire.</target>

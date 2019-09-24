@@ -5322,11 +5322,6 @@
         <target state="translated">Vazby DLLImport musí být statickými členy v definici třídy nebo funkce v modulu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">Pokud se na knihovnu mscorlib.dll nebo FSharp.Core.dll odkazuje explicitně, musí se předávat taky možnost {0}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">V FSharp.Core se nenašel soubor FSharp.Core.sigdata. Soubor se očekával v {0}. Zvažte upgrade na novější verzi FSharp.Core, kde se tento soubor už nevyžaduje.</target>

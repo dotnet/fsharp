@@ -5322,11 +5322,6 @@
         <target state="translated">DLLImport 繫結必須是類別中的靜態成員或模組中的函式定義</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">如果明確參考了 mscorlib.dll 或 FSharp.Core.dll，就必須同時傳遞 {0} 選項</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">找不到與 FSharp.Core 並存的 FSharp.Core.sigdata。檔案應位於 {0}。請考慮升級至最新版的 FSharp.Core，其中不再需要此檔案。</target>
