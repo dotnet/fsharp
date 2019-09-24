@@ -7,6 +7,16 @@
         <target state="translated">{0} dla języka F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Wyświetl dozwolone wartości dla wersji językowej; określ wersję językową, np. „latest” lub „preview”</target>
@@ -30,16 +40,6 @@
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Nieoczekiwany symbol „.” w definicji składowej. Oczekiwano ciągu „with”, znaku „=” lub innego tokenu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceFormatError">
-        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceHeaderMalformed">
-        <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
