@@ -547,6 +547,8 @@ Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Sys
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[System.Threading.CancellationToken] get_CancellationToken()
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[System.Threading.Tasks.Task`1[T]] StartChildAsTask[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.Tasks.TaskCreationOptions])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Parallel[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]])
+Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Parallel[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Sequential[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] AwaitEvent[TDel,T](Microsoft.FSharp.Control.IEvent`2[TDel,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] AwaitTask[T](System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] FromBeginEnd[TArg1,TArg2,TArg3,T](TArg1, TArg2, TArg3, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`5[TArg1,TArg2,TArg3,System.AsyncCallback,System.Object],System.IAsyncResult], Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
@@ -2056,6 +2058,7 @@ Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleError[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
 Microsoft.FSharp.Core.Operators: System.Object Box[T](T)
+Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)
 Microsoft.FSharp.Core.Operators: System.Tuple`2[TKey,TValue] KeyValuePattern[TKey,TValue](System.Collections.Generic.KeyValuePair`2[TKey,TValue])
@@ -2701,5 +2704,4 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
         ()
 #else
         SurfaceArea.verify expected "net40" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
-        ()
 #endif

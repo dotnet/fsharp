@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">déboguer</target>
+        <target state="translated">Déboguer</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">

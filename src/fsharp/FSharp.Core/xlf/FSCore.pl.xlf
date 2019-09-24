@@ -707,6 +707,11 @@
         <target state="translated">To nie jest prawidłowe wyrażenie zapytania. Konstrukcja „{0}” została użyta w zapytaniu, ale nie rozpoznaje jej translator zapytań z języka F# na język LINQ. Sprawdź specyfikacje dozwolonych zapytań i rozważ przeniesienie niektórych operacji poza wyrażenie zapytania.</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">Wartość maxDegreeOfParallelism musi być dodatnia, a była równa {0}</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

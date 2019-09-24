@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="StillBuildingContentCache">
         <source>(The documentation cache is still being constructed. Please try again in a few seconds.)</source>
-        <target state="translated">(ドキュメント キャッシュの作成中です。何秒か待ってからもう 一度操作を行ってください。</target>
+        <target state="translated">(ドキュメント キャッシュの作成中です。何秒か待ってからもう 一度操作を行ってください。)</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionsHeader">

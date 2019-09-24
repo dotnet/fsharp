@@ -29,7 +29,7 @@ restore:
 
 build: proto restore
 	$(DotNetExe) build-server shutdown
-	$(DotNetExe) build -c $(Configuration) -f netstandard1.6 src/fsharp/FSharp.Core/FSharp.Core.fsproj
+	$(DotNetExe) build -c $(Configuration) -f netstandard2.0 src/fsharp/FSharp.Core/FSharp.Core.fsproj
 	$(DotNetExe) build -c $(Configuration) -f netstandard2.0 src/fsharp/FSharp.Build/FSharp.Build.fsproj
 	$(DotNetExe) build -c $(Configuration) -f netstandard2.0 src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
 	$(DotNetExe) build -c $(Configuration) -f netcoreapp2.1 src/fsharp/fsc/fsc.fsproj

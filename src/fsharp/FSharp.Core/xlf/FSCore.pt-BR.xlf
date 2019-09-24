@@ -707,6 +707,11 @@
         <target state="translated">Expressão de consulta inválida. A construção '{0}' foi usada em uma consulta, mas não é reconhecida pelo conversor de consultas F#-to-LINQ. Verifique a especificação de consultas permitidas e considere remover algumas das operações da expressão de consulta.</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism deve ser positivo, foi {0}</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

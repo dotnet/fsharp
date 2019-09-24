@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PreRelease>true</PreRelease>
-    <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <PackageId>FSharp.Core</PackageId>
     <NuspecFile>FSharp.Core.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
