@@ -267,11 +267,6 @@
         <target state="translated">관리되는 리소스에 대해 인식할 수 없는 개인 정보 보호 설정 '{0}'입니다. 올바른 옵션은 'public' 및 'private'입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">'{0}.dll'에 대한 다중 참조는 허용되지 않습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">'{0}' 어셈블리를 읽을 수 없습니다.</target>

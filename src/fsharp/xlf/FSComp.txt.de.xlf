@@ -267,11 +267,6 @@
         <target state="translated">Unbekannte Datenschutzeinstellung "{0}" für verwaltete Ressource; gültige Optionen sind "public" und "private".</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Mehrere Verweise auf "{0}.dll" sind nicht zulässig</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Assembly "{0}" kann nicht gelesen werden.</target>

@@ -267,11 +267,6 @@
         <target state="translated">Nerozpoznané nastavení ochrany osobních údajů {0} pro spravovaný prostředek. Platné možnosti jsou public a private.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Víc odkazů na knihovnu {0}.dll se nepovoluje.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Sestavení {0} se nedá přečíst.</target>
