@@ -2589,12 +2589,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         | Some _ -> dllReference
         | None -> AssemblyReference(range0, getDefaultFSharpCoreReference, None)
 
-    // If either mscorlib.dll/System.Runtime.dll/netstandard.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
-    // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does
-    // not have System.Web.dll.
-    do if (primaryAssemblyExplicitFilenameOpt.IsSome && data.framework) then
-            error(Error(FSComp.SR.buildExplicitCoreLibRequiresNoFramework("--noframework"), rangeStartup))
-
     // clrRoot: the location of the primary assembly (mscorlib.dll or netstandard.dll or System.Runtime.dll)
     //
     // targetFrameworkVersionValue: Normally just HighestInstalledNetFrameworkVersion()

@@ -5322,11 +5322,6 @@
         <target state="translated">DLLImport 束縛はモジュール内のクラスまたは関数定義の静的メンバーであることが必要です</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">mscorlib.dll または FSharp.Core.dll が明示的に参照される場合は、{0} オプションも渡す必要があります</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">FSharp.Core と同じ場所に FSharp.Core.sigdata が見つかりません。ファイルは {0} にある必要があります。このファイルを必要としない、より新しいバージョンの FSharp.Core にアップグレードすることをご検討ください。</target>
