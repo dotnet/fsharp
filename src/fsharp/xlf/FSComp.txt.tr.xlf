@@ -267,11 +267,6 @@
         <target state="translated">Yönetilen kaynak için tanınmayan gizlilik ayarı '{0}'; geçerli seçenekler: 'public' ve 'private'</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Birden çok '{0}.dll' başvurusuna izin verilmiyor</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">'{0}' bütünleştirilmiş kodu okunamıyor</target>

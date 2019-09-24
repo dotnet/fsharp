@@ -267,11 +267,6 @@
         <target state="translated">Nierozpoznane ustawienie prywatności „{0}” dla zasobu zarządzanego. Prawidłowe opcje to „public” i „private”</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Używanie wielu odwołań do pliku „{0}.dll” jest niedozwolone</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Nie można odczytać zestawu „{0}”</target>

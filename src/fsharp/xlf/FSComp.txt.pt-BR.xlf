@@ -267,11 +267,6 @@
         <target state="translated">A configuração de privacidade '{0}' não foi reconhecida pelo recurso gerenciado, as opções válidas são 'public' e 'private'</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">As referências múltiplas '{0}.dll' não são permitidas</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Não é possível ler o assembly '{0}'</target>

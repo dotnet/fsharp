@@ -267,11 +267,6 @@
         <target state="translated">Paramètre de confidentialité '{0}' non reconnu pour la ressource managée, les options valides sont 'public' et 'private'</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Les références multiples à '{0}.dll' ne sont pas autorisées</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Impossible de lire l'assembly '{0}'</target>

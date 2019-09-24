@@ -267,11 +267,6 @@
         <target state="translated">マネージド リソースの認識されないプライバシー設定 '{0}'。有効なオプションは 'public' および 'private' です。</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">'{0}.dll' に対する複数の参照は許可されていません</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">アセンブリ '{0}' を読み取れません</target>

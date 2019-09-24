@@ -267,11 +267,6 @@
         <target state="translated">Impostazione di privacy '{0}' non riconosciuta per una risorsa gestita. Le opzioni valide sono 'public' e 'private'</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Non sono consentiti più riferimenti a '{0}.dll'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Non è possibile leggere l'assembly '{0}'</target>

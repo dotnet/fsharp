@@ -267,11 +267,6 @@
         <target state="translated">无法识别的受管理资源隐私设置“{0}”，有效的选项为 "public" 和 "private"</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">不允许多次引用“{0}.dll”</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">无法读取程序集“{0}”</target>
