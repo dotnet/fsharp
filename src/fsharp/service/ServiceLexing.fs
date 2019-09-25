@@ -789,6 +789,7 @@ type FSharpSourceTokenizer(defineConstants: string list, filename: string option
 module Keywords =
     open FSharp.Compiler.Lexhelp.Keywords
 
+    let DoesIdentifierNeedQuotation s = DoesIdentifierNeedQuotation s
     let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
     let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
     let KeywordsWithDescription = keywordsWithDescription

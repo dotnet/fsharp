@@ -8,8 +8,14 @@ You're invited to contribute to future releases of the F# compiler, core library
 
 Build from the command line:
 
-```bash
+```
 build.cmd
+```
+
+The build depends on an installation of Visual Studio. To build the compiler without this dependency use:
+
+```
+build.cmd -noVisualStudio
 ```
 
 After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
@@ -18,8 +24,8 @@ After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your edit
 
 Build from the command line:
 
-```bash
-sh ./build.sh
+```
+./build.sh
 ```
 
 After it's finished, open `FSharp.sln` in your editor of choice.

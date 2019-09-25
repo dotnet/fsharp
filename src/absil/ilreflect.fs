@@ -321,6 +321,8 @@ type cenv =
       generatePdb: bool
       resolveAssemblyRef: (ILAssemblyRef -> Choice<string, System.Reflection.Assembly> option) }
 
+    override x.ToString() = "<cenv>"
+
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
 // This ought to be an adequate substitute for this whole function, but it needs 
 // to be thoroughly tested.

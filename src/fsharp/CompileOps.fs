@@ -2016,9 +2016,6 @@ type TcConfigBuilder =
       mutable openDebugInformationForLaterStaticLinking: bool (* only for --standalone *)
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
-      mutable compilingFslib20: string option
-      mutable compilingFslib40: bool
-      mutable compilingFslibNoBigInt: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
@@ -2183,9 +2180,6 @@ type TcConfigBuilder =
           openDebugInformationForLaterStaticLinking = false
           defaultFSharpBinariesDir = String.Empty
           compilingFslib = false
-          compilingFslib20 = None
-          compilingFslib40 = false
-          compilingFslibNoBigInt = false
           useIncrementalBuilder = false
           useFsiAuxLib = false
           implicitOpens = []
@@ -2578,35 +2572,22 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir r.Text
             if FileSystem.SafeExists filename then 
                 r, Some filename
-            else   
+            else
                 // If the file doesn't exist, let reference resolution logic report the error later...
                 defaultCoreLibraryReference, if Range.equals r.Range rangeStartup then Some(filename) else None
         match data.referencedDLLs |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName) with
-        | [r] -> nameOfDll r
-        | [] -> 
-            defaultCoreLibraryReference, None
-        | r :: _ -> 
-            // Recover by picking the first one.
-            errorR(Error(FSComp.SR.buildMultipleReferencesNotAllowed libraryName, rangeCmdArgs)) 
-            nameOfDll r
+        | [] -> defaultCoreLibraryReference, None
+        | [r]
+        | r :: _ -> nameOfDll r
 
-    // Look for an explicit reference to mscorlib and use that to compute clrRoot and targetFrameworkVersion
+    // Look for an explicit reference to mscorlib/netstandard.dll or System.Runtime.dll and use that to compute clrRoot and targetFrameworkVersion
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.primaryAssembly.Name)
-    let fslibReference, fslibExplicitFilenameOpt = 
-        let (_, fileNameOpt) as res = computeKnownDllReference getFSharpCoreLibraryName
+    let fslibReference =
+        // Look for explict FSharp.Core reference otherwise use version that was referenced by compiler
+        let dllReference, fileNameOpt = computeKnownDllReference getFSharpCoreLibraryName
         match fileNameOpt with
-        | None -> 
-            // if FSharp.Core was not provided explicitly - use version that was referenced by compiler
-            AssemblyReference(range0, getDefaultFSharpCoreReference, None), None
-        | _ -> res
-
-    // If either mscorlib.dll/System.Runtime.dll/netstandard.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
-    // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does
-    // not have System.Web.dll.
-    do if ((primaryAssemblyExplicitFilenameOpt.IsSome || fslibExplicitFilenameOpt.IsSome) && data.framework) then
-            error(Error(FSComp.SR.buildExplicitCoreLibRequiresNoFramework("--noframework"), rangeStartup))
-
-    let ilGlobals = mkILGlobals ILScopeRef.Local
+        | Some _ -> dllReference
+        | None -> AssemblyReference(range0, getDefaultFSharpCoreReference, None)
 
     // clrRoot: the location of the primary assembly (mscorlib.dll or netstandard.dll or System.Runtime.dll)
     //
@@ -2637,41 +2618,14 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     let systemAssemblies = systemAssemblies
 
-    // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
-    // FUTURE: remove this, we only read the binary for the exception it raises
-    let fsharpBinariesDirValue = 
-// NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
-#if NETSTANDARD
-        ignore ilGlobals
-        data.defaultFSharpBinariesDir
-#else
-        match fslibExplicitFilenameOpt with
-        | Some fslibFilename ->
-            let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
-            if fslibReference.ProjectReference.IsNone then 
-                try 
-                    use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
-                    ()
-                with e -> 
-                    error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
-                
-            let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim filename)
-            fslibRoot
-        | _ ->
-            data.defaultFSharpBinariesDir
-#endif
-
     member x.primaryAssembly = data.primaryAssembly
     member x.autoResolveOpenDirectivesToDlls = data.autoResolveOpenDirectivesToDlls
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir
     member x.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
-    member x.fsharpBinariesDir = fsharpBinariesDirValue
+    member x.fsharpBinariesDir = data.defaultFSharpBinariesDir
     member x.compilingFslib = data.compilingFslib
-    member x.compilingFslib20 = data.compilingFslib20
-    member x.compilingFslib40 = data.compilingFslib40
-    member x.compilingFslibNoBigInt = data.compilingFslibNoBigInt
     member x.useIncrementalBuilder = data.useIncrementalBuilder
     member x.includes = data.includes
     member x.implicitOpens = data.implicitOpens
@@ -4789,7 +4743,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) = 
+let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file, assemblyReferenceAdded: string -> unit) =
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(m, file, None), ResolveAssemblyReferenceMode.ReportErrors))
     let dllinfos, ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) |> Cancellable.runWithoutCancellation
    
@@ -4800,7 +4754,13 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
-    let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> AddCcuToTcEnv(g, amap, m, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)) 
+    let buildTcEnv tcEnv asm =
+        let tcEnv = AddCcuToTcEnv(g, amap, m, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
+        match asm.FSharpViewOfMetadata.FileName with
+        | Some asmPath -> assemblyReferenceAdded asmPath
+        | None -> ()
+        tcEnv
+    let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
     tcEnv, (dllinfos, asms)
 
        

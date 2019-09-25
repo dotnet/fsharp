@@ -149,7 +149,7 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalInteractionNonThrowing : code: string -> Choice<unit, exn> * FSharpErrorInfo[]
+    member EvalInteractionNonThrowing : code: string -> Choice<FsiValue option, exn> * FSharpErrorInfo[]
 
     /// Execute the given script. Stop on first error, discarding the rest
     /// of the script. Errors are sent to the output writer, a 'true' return value indicates there
@@ -226,6 +226,9 @@ type FsiEvaluationSession =
 
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member ReportUnhandledException : exn: exn -> unit
+
+    /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
+    member AssemblyReferenceAdded : IEvent<string>
 
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.

@@ -2341,10 +2341,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NaNSingle")>]
         val nanf: float32
 
-#if !FX_NO_SYSTEM_CONSOLE
         /// <summary>Reads the value of the property <c>System.Console.In</c>. </summary>
         [<CompiledName("ConsoleIn")>]
-        val stdin<'T> : System.IO.TextReader      
+        val stdin<'T> : System.IO.TextReader
 
         /// <summary>Reads the value of the property <c>System.Console.Error</c>. </summary>
         [<CompiledName("ConsoleError")>]
@@ -2353,7 +2352,6 @@ namespace Microsoft.FSharp.Core
         /// <summary>Reads the value of the property <c>System.Console.Out</c>.</summary>
         [<CompiledName("ConsoleOut")>]
         val stdout<'T> : System.IO.TextWriter
-#endif        
 
         /// <summary>The standard overloaded range operator, e.g. <c>[n..m]</c> for lists, <c>seq {n..m}</c> for sequences</summary>
         /// <param name="start">The start value of the range.</param>

@@ -82,7 +82,10 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         let file =
             try
                 let depsJsonPath = Path.ChangeExtension(Assembly.GetEntryAssembly().Location, "deps.json")
-                File.ReadAllText(depsJsonPath)
+                if File.Exists(depsJsonPath) then
+                    File.ReadAllText(depsJsonPath)
+                else
+                    ""
             with _ -> ""
 
         let tfmPrefix=".NETCoreApp,Version=v"
@@ -179,7 +182,6 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     //    (a) included in the environment used for all .fsx files (see service.fs)
     //    (b) included in environment for files 'orphaned' from a project context
     //            -- for orphaned files (files in VS without a project context)
-    //            -- for files given on a command line without --noframework set
     let getDesktopDefaultReferences useFsiAuxLib = [
         yield "mscorlib"
         yield "System"
