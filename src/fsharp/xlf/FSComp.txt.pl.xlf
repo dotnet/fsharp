@@ -272,11 +272,6 @@
         <target state="translated">Nierozpoznane ustawienie prywatności „{0}” dla zasobu zarządzanego. Prawidłowe opcje to „public” i „private”</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Używanie wielu odwołań do pliku „{0}.dll” jest niedozwolone</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Nie można odczytać zestawu „{0}”</target>
@@ -5330,11 +5325,6 @@
       <trans-unit id="tcDllImportNotAllowed">
         <source>DLLImport bindings must be static members in a class or function definitions in a module</source>
         <target state="translated">Powiązania DLLImport muszą być statycznymi elementami członkowskimi w definicjach klas lub funkcji w module</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">W przypadku jawnego odwołania do pliku mscorlib.dll lub pliku FSharp.Core.dll musi również zostać przekazana opcja {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">

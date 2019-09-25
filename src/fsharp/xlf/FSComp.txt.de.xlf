@@ -272,11 +272,6 @@
         <target state="translated">Unbekannte Datenschutzeinstellung "{0}" für verwaltete Ressource; gültige Optionen sind "public" und "private".</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Mehrere Verweise auf "{0}.dll" sind nicht zulässig</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Assembly "{0}" kann nicht gelesen werden.</target>
@@ -5330,11 +5325,6 @@
       <trans-unit id="tcDllImportNotAllowed">
         <source>DLLImport bindings must be static members in a class or function definitions in a module</source>
         <target state="translated">Bei DLLImport-Bindungen muss es sich um statische Member von Klassen- oder Funktionsdefinitionen eines Moduls handeln.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">Wenn explizit auf "mscorlib.dll" oder "FSharp.Core.dll" verwiesen wird, muss auch die Option "{0}" übergeben werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
