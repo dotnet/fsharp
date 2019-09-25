@@ -1882,7 +1882,6 @@ type internal FsiInteractionProcessor
                                     FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
                             else
                                 FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
-                        assemblyReferencedEvent.Trigger(ar.resolvedPath)
                         fsiConsoleOutput.uprintnfnn "%s" format)
                     istate,Completed None
 
