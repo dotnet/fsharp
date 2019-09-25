@@ -31,6 +31,14 @@ type InteractiveTests() =
         Assert.AreEqual(2, value.ReflectionValue :?> int)
 
     [<Test>]
+    member __.``Declare and eval object value``() =
+        use script = new FSharpScript()
+        let opt = script.Eval("let x = 1 + 2\r\nx") |> getValue
+        let value = opt.Value
+        Assert.AreEqual(typeof<int>, value.ReflectionType)
+        Assert.AreEqual(3, value.ReflectionValue :?> int)
+
+    [<Test>]
     member __.``Capture console input``() =
         use script = new FSharpScript(captureInput=true)
         script.ProvideInput "stdin:1234\r\n"
@@ -82,3 +90,12 @@ type InteractiveTests() =
         let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
         Assert.AreEqual(1, errors.Length)
         Assert.False(foundAssemblyReference)
+
+    [<Test>]
+    member __.``Nuget reference fires multiple events``() =
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable assemblyRefCount = 0;
+        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
+        script.Eval("#r \"nuget:include=NUnitLite, version=3.11.0\"") |> ignoreValue
+        script.Eval("0") |> ignoreValue
+        Assert.GreaterOrEqual(assemblyRefCount, 2)

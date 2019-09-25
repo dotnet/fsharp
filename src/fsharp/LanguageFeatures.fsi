@@ -7,14 +7,16 @@ module internal FSharp.Compiler.Features
 [<RequireQualifiedAccess>]
 type LanguageFeature =
     | PreviewVersion = 0
-    | LanguageVersion46 = 1
-    | LanguageVersion47 = 2
     | SingleUnderscorePattern = 3
     | WildCardInForLoop = 4
     | RelaxWhitespace = 5
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
+    | PackageManagement = 9
+    | LanguageVersion46 = 0x10046
+    | LanguageVersion47 = 0x10047
+    | LanguageVersion50 = 0x10050
 
 
 /// LanguageVersion management
