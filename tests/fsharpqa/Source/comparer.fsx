@@ -17,7 +17,14 @@ let f2 = File2List fn2
 
 let mutable i = 0
 let compare (f1:string[]) (f2:string[]) = 
-    if f1.Length <> f2.Length then failwithf "Help text did not match. f1.Length = %d, f2.Length = %d, Check you have right fsi on path. fsi = %s, PATH=%s" f1.Length f2.Length arg0 path
+    if f1.Length <> f2.Length then
+        printfn "First"
+        f1 |> Array.iter (fun a -> printfn "%s" a)
+        printfn "Second"
+        f2 |> Array.iter (fun a -> printfn "%s" a)
+
+        printfn "Files different lengths"
+        failwithf "Help text did not match.\nf1.Length = %d, f2.Length = %d, Check you have right fsi on path.\nfsi = %s,\nPATH=%s" f1.Length f2.Length arg0 path
     (f1, f2) ||> Array.forall2 (fun (a:string) (b:string) ->
 
         let replace (sourcepattern:string) (replacement:string) (str:string) : string =

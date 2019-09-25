@@ -36,9 +36,15 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager\FSharp.DependencyManager.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Console" Version="$(SystemConsoleVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
     <PackageReference Include="System.Console" Version="$(SystemConsoleVersion)" />
     <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />

@@ -95,7 +95,7 @@ module SurfaceArea =
         let actual =
             types |> Array.collect getTypeMemberStrings
 
-        asm,actual
+        asm, actual
 
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
@@ -104,7 +104,7 @@ module SurfaceArea =
 
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-
+        
         let expected =
             // Split the "expected" string into individual lines, then normalize it.
             (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
