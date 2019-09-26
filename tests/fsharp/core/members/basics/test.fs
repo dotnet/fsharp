@@ -18,6 +18,15 @@ let test (s : string) b =
 let check s b1 b2 = test s (b1 = b2)
 
 //--------------------------------------------------------------
+// Test defining a type using wildcard self identifiers
+
+type ClassType0 () =
+    member _.myNumber () = 0
+    member private _.myPrivateNumber () = 1
+    member inline _.myInlineNumber () = 2
+    member inline private _.myPrivateInlineNumber () = 3
+
+//--------------------------------------------------------------
 // Test defining a record using object-expression syntax
 
 type RecordType = { a: int; mutable b: int }
