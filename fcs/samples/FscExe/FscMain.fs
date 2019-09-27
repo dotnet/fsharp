@@ -7,12 +7,10 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.AbstractIL.IL // runningOnMono 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
 
 #if RESIDENT_COMPILER
 type TypeInThisAssembly() = member x.Dummy = 1
