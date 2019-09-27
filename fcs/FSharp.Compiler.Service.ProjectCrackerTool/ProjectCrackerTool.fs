@@ -8,7 +8,6 @@ open Microsoft.Build.Utilities
 
 module internal ProjectCrackerTool =
   open System.Collections.Generic
-  open Microsoft.Build.Evaluation
 
   let runningOnMono =
 #if NETCOREAPP2_0

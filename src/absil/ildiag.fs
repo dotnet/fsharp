@@ -4,7 +4,6 @@
 
 module internal FSharp.Compiler.AbstractIL.Diagnostics 
 
-open Internal.Utilities
 
 let diagnosticsLog = ref (Some stdout)
 

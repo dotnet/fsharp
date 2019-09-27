@@ -2,11 +2,8 @@
 
 module internal FSharp.Compiler.AbstractIL.Internal.Support
 
-open Internal.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Bytes
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.NativeRes
 #if FX_NO_CORHOST_SIGNER
@@ -15,7 +12,6 @@ open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 open System
 open System.IO
-open System.Text
 open System.Reflection
 
 #if !FX_NO_SYMBOLSTORE

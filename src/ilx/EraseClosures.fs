@@ -2,18 +2,13 @@
 
 module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseClosures
 
-open Internal.Utilities
 
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
-open FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
 open FSharp.Compiler.AbstractIL.Morphs 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.PrettyNaming
-open System.Reflection
 
 // -------------------------------------------------------------------- 
 // Erase closures and function types

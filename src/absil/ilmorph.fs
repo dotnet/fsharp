@@ -3,11 +3,8 @@
 module internal FSharp.Compiler.AbstractIL.Morphs 
 
 open System.Collections.Generic
-open Internal.Utilities
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL 
 
 let mutable morphCustomAttributeData = false

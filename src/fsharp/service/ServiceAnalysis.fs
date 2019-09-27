@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.PrettyNaming
 open System.Collections.Generic

@@ -5,7 +5,6 @@ module internal FSharp.Compiler.QuotationPickler
 open System.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler
 open FSharp.Compiler.Lib
 
 let mkRLinear mk (vs, body) = List.foldBack (fun v acc -> mk (v, acc)) vs body 

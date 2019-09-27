@@ -5,7 +5,6 @@ module internal FSharp.Compiler.Lib
 open System.IO
 open System.Collections.Generic
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 

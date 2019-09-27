@@ -2,13 +2,8 @@
 
 namespace FSharp.Compiler 
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Reflection
-    open System.Globalization
-    open System.IO
-    open System.Text
-    open System.Reflection 
 
     module internal SR =
         let private resources = lazy (new System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly()))
@@ -24,9 +19,6 @@ namespace FSharp.Compiler
     module internal DiagnosticMessage =
 
         open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-        open Microsoft.FSharp.Reflection
-        open System.Reflection
-        open Internal.Utilities.StructuredFormat
 
         let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
             FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)

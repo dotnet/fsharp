@@ -3,9 +3,6 @@
 /// Defines an extension of the IL algebra
 module internal FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 

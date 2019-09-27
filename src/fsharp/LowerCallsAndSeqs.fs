@@ -14,7 +14,6 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.Lib
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
 

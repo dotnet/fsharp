@@ -8,7 +8,6 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
-open System.Collections.Generic
 open System.IO
 
 open Microsoft.FSharp.Core.Printf

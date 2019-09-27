@@ -5,7 +5,6 @@
 namespace FSharp.Compiler
 
 open System.Collections.Generic
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.Range
 open FSharp.Compiler.PrettyNaming
 

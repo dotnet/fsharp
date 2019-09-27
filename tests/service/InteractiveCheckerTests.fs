@@ -12,7 +12,6 @@ open NUnit.Framework
 open FsUnit
 open System
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let internal longIdentToString (longIdent: Ast.LongIdent) =

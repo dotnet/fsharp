@@ -9,9 +9,6 @@ open FSharp.Compiler.Range
 open Microsoft.FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open System.Reflection
-open System.Collections.Generic
-open ErrorLogger
 
 type internal TypeProviderError
     (

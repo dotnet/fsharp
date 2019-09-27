@@ -8,7 +8,6 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic

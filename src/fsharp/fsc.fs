@@ -13,13 +13,11 @@
 module internal FSharp.Compiler.Driver 
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
 open System.IO
 open System.Reflection
-open System.Runtime.CompilerServices
 open System.Text
 open System.Threading
 
@@ -37,7 +35,6 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
@@ -1105,7 +1102,6 @@ module MainModuleBuilder =
 /// Optional static linking of all DLLs that depend on the F# Library, plus other specified DLLs
 module StaticLinker =
 
-    open FSharp.Compiler.AbstractIL
 
     // Handles TypeForwarding for the generated IL model
     type TypeForwarding (tcImports: TcImports) =

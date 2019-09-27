@@ -10,7 +10,6 @@ module FSharp.Compiler.Service.Tests.ProjectOptionsTests
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
-open System
 open System.IO
 open NUnit.Framework
 open FsUnit

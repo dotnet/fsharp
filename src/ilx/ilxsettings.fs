@@ -2,11 +2,9 @@
 
 module internal FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
 
-open Internal.Utilities
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Extensions.ILX
 
 type IlxCallImplementation = 
   | VirtEntriesVirtCode

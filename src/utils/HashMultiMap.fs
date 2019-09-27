@@ -2,7 +2,6 @@
 
 namespace Internal.Utilities.Collections
 
-open System
 open System.Collections.Generic
 open Microsoft.FSharp.Collections
                                  

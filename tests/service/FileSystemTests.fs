@@ -12,9 +12,7 @@ open NUnit.Framework
 open FsUnit
 open System
 open System.IO
-open System.Collections.Generic
 open System.Text
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Service.Tests.Common

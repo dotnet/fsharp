@@ -18,7 +18,6 @@ open System.Runtime.InteropServices
 open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Support
 open FSharp.Compiler.AbstractIL.Diagnostics 
@@ -27,7 +26,6 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
-open Microsoft.FSharp.NativeInterop
 open System.Reflection
 
 let checking = false  
@@ -4128,7 +4126,6 @@ let OpenILModuleReader fileName opts =
 
 [<AutoOpen>]
 module Shim =
-    open FSharp.Compiler.Lib
 
     type IAssemblyReader =
         abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
