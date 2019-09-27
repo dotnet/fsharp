@@ -1322,12 +1322,16 @@ and [<NoComparison; NoEquality>]
 /// The information is enough to perform name resolution for the F# compiler, probe attributes
 /// for ExtensionAttribute  etc.  This is key to the on-demand exploration of .NET metadata.
 /// This information has to be "Goldilocks" - not too much, not too little, just right.
-and [<NoEquality; NoComparison; Sealed>] ILPreTypeDef = 
-    member Namespace: string list
-    member Name: string
-    member MetadataIndex: int32 
+and [<NoEquality; NoComparison>] ILPreTypeDef = 
+    abstract Namespace: string list
+    abstract Name: string
     /// Realise the actual full typedef
-    member GetTypeDef : unit -> ILTypeDef
+    abstract GetTypeDef : unit -> ILTypeDef
+
+
+and [<NoEquality; NoComparison; Sealed>] ILPreTypeDefImpl =
+    interface ILPreTypeDef
+
 
 and [<Sealed>] ILTypeDefStored 
 
