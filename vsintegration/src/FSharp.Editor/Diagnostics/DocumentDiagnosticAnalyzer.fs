@@ -33,7 +33,10 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     let getProjectInfoManager(document: Document) =
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
-    
+
+    let getSettings(document: Document) =
+        document.Project.Solution.Workspace.Services.GetService<EditorOptions>()
+
     static let errorInfoEqualityComparer =
         { new IEqualityComparer<FSharpErrorInfo> with 
             member __.Equals (x, y) =
@@ -110,6 +113,10 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
     interface IFSharpDocumentDiagnosticAnalyzer with
 
         member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            // if using LSP, just bail early
+            let settings = getSettings document
+            if settings.Advanced.UsePreviewDiagnostics then Task.FromResult(ImmutableArray<Diagnostic>.Empty)
+            else
             let projectInfoManager = getProjectInfoManager document
             asyncMaybe {
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
@@ -123,6 +130,10 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            // if using LSP, just bail early
+            let settings = getSettings document
+            if settings.Advanced.UsePreviewDiagnostics then Task.FromResult(ImmutableArray<Diagnostic>.Empty)
+            else
             let projectInfoManager = getProjectInfoManager document
             asyncMaybe {
                 let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken) 
