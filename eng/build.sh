@@ -178,7 +178,7 @@ function TestUsingNUnit() {
   args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
   "$DOTNET_INSTALL_DIR/dotnet" $args || {
     local exit_code=$?
-    echo "dotnet test failed (exit code '$exit_code')." >&2
+    Write-PipelineTelemetryError -category 'Test' "dotnet test failed for $testproject:$targetframework (exit code $exit_code)."
     ExitWithExitCode $exit_code
   }
 }
@@ -228,7 +228,11 @@ function BuildSolution {
     MSBuild "$repo_root/src/buildtools/buildtools.proj" \
       /restore \
       /p:Configuration=$bootstrap_config \
-      /t:Publish
+      /t:Publish || {
+        local exit_code=$?
+        Write-PipelineTelemetryError -category 'Build' "Error building buildtools (exit code '$exit_code')."
+        ExitWithExitCode $exit_code
+      }
 
     mkdir -p "$bootstrap_dir"
     cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fslex
@@ -238,7 +242,11 @@ function BuildSolution {
     MSBuild "$repo_root/proto.proj" \
       /restore \
       /p:Configuration=$bootstrap_config \
-      /t:Publish
+      /t:Publish || {
+        local exit_code=$?
+        Write-PipelineTelemetryError -category 'Build' "Error building bootstrap compiler (exit code '$exit_code')."
+        ExitWithExitCode $exit_code
+      }
 
     cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
   fi
@@ -259,7 +267,11 @@ function BuildSolution {
     /p:ContinuousIntegrationBuild=$ci \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
-    $properties
+    $properties || {
+      local exit_code=$?
+      Write-PipelineTelemetryError -category 'Build' "Error building solution (exit code '$exit_code')."
+      ExitWithExitCode $exit_code
+    }
 }
 
 InitializeDotNetCli $restore
