@@ -89,7 +89,7 @@ type public FSharpParsingOptions =
 
     static member internal FromTcConfig: tcConfig: TcConfig * sourceFiles: string[]  * isInteractive: bool -> FSharpParsingOptions
 
-    static member internal FromTcConfigBuidler: tcConfigB: TcConfigBuilder * sourceFiles: string[] * isInteractive: bool -> FSharpParsingOptions
+    static member internal FromTcConfigBuilder: tcConfigB: TcConfigBuilder * sourceFiles: string[] * isInteractive: bool -> FSharpParsingOptions
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

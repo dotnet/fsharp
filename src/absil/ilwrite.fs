@@ -476,8 +476,8 @@ type MetadataTable<'T> =
         h.Clear()
         t |> Array.iteri (fun i x -> h.[x] <- (i+1))
 
-    member tbl.AddUniqueEntry nm geterr x =
-        if tbl.dict.ContainsKey x then failwith ("duplicate entry '"+geterr x+"' in "+nm+" table")
+    member tbl.AddUniqueEntry nm getter x =
+        if tbl.dict.ContainsKey x then failwith ("duplicate entry '"+getter x+"' in "+nm+" table")
         else tbl.AddSharedEntry x
 
     member tbl.GetTableEntry x = tbl.dict.[x] 
@@ -806,7 +806,7 @@ let getTypeDefOrRefAsUncodedToken (tag, idx) =
         else failwith "getTypeDefOrRefAsUncodedToken"
     getUncodedToken tab idx
 
-// REVIEW: write into an accumuating buffer
+// REVIEW: write into an accumulating buffer
 let EmitArrayShape (bb: ByteBuffer) (ILArrayShape shape) = 
     let sized = List.filter (function (_, Some _) -> true | _ -> false) shape
     let lobounded = List.filter (function (Some _, _) -> true | _ -> false) shape
@@ -834,7 +834,7 @@ let callconvToByte ntypars (Callconv (hasthis, bcc)) =
     | ILArgConvention.VarArg -> e_IMAGE_CEE_CS_CALLCONV_VARARG)
   
 
-// REVIEW: write into an accumuating buffer
+// REVIEW: write into an accumulating buffer
 let rec EmitTypeSpec cenv env (bb: ByteBuffer) (et, tspec: ILTypeSpec) = 
     if isNil tspec.GenericArgs then 
         bb.EmitByte et
@@ -944,7 +944,7 @@ and EmitCallsig cenv env bb (callconv, args: ILTypes, ret, varargs: ILVarArgs, g
 
 and GetCallsigAsBytes cenv env x = emitBytesViaBuffer (fun bb -> EmitCallsig cenv env bb x)
 
-// REVIEW: write into an accumuating buffer
+// REVIEW: write into an accumulating buffer
 and EmitTypes cenv env bb (inst: ILTypes) = 
     inst |> List.iter (EmitType cenv env bb) 
 
@@ -976,7 +976,7 @@ let rec GetNativeTypeAsBlobIdx cenv (ty: ILNativeType) =
 
 and GetNativeTypeAsBytes ty = emitBytesViaBuffer (fun bb -> EmitNativeType bb ty)
 
-// REVIEW: write into an accumuating buffer
+// REVIEW: write into an accumulating buffer
 and EmitNativeType bb ty = 
     if List.memAssoc ty (Lazy.force ILNativeTypeRevMap) then 
         bb.EmitByte (List.assoc ty (Lazy.force ILNativeTypeRevMap))
@@ -1035,7 +1035,7 @@ and EmitNativeType bb ty =
 let rec GetFieldInitAsBlobIdx cenv (x: ILFieldInit) = 
     GetBytesAsBlobIdx cenv (emitBytesViaBuffer (fun bb -> GetFieldInit bb x))
 
-// REVIEW: write into an accumuating buffer
+// REVIEW: write into an accumulating buffer
 and GetFieldInit (bb: ByteBuffer) x = 
     match x with 
     | ILFieldInit.String b -> bb.EmitBytes (System.Text.Encoding.Unicode.GetBytes b)
@@ -1093,7 +1093,7 @@ let GetTypeAccessFlags access =
     | ILTypeDefAccess.Nested ILMemberAccess.Public -> 0x00000002
     | ILTypeDefAccess.Nested ILMemberAccess.Private -> 0x00000003
     | ILTypeDefAccess.Nested ILMemberAccess.Family -> 0x00000004
-    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
+    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type access"
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> 0x00000006
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
@@ -1258,7 +1258,7 @@ and GetFieldDefAsFieldDefIdx cenv tidx fd =
 // -------------------------------------------------------------------- 
 // ILMethodRef --> ILMethodDef.  
 // 
-// Only successfuly converts ILMethodRef's referring to 
+// Only successfully converts ILMethodRef's referring to 
 // methods in the module being emitted.
 // -------------------------------------------------------------------- 
 
@@ -1439,7 +1439,7 @@ and GetFieldSpecAsMemberRefIdx cenv env fspec =
     let fenv = envForFieldSpec fspec
     FindOrAddSharedRow cenv TableNames.MemberRef (GetFieldSpecAsMemberRefRow cenv env fenv fspec)
 
-// REVIEW: write into an accumuating buffer
+// REVIEW: write into an accumulating buffer
 and EmitFieldSpecSig cenv env (bb: ByteBuffer) (fspec: ILFieldSpec) = 
     bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_FIELD
     EmitType cenv env bb fspec.FormalType
@@ -1555,8 +1555,8 @@ type CodeBuffer =
 
     member codebuf.EmitUncodedToken u = codebuf.EmitInt32 u
 
-    member codebuf.RecordReqdStringFixup stringidx = 
-        codebuf.reqdStringFixupsInMethod <- (codebuf.code.Position, stringidx) :: codebuf.reqdStringFixupsInMethod
+    member codebuf.RecordReqdStringFixup stringIdx = 
+        codebuf.reqdStringFixupsInMethod <- (codebuf.code.Position, stringIdx) :: codebuf.reqdStringFixupsInMethod
         // Write a special value in that we check later when applying the fixup 
         codebuf.EmitInt32 0xdeadbeef
 
@@ -1592,7 +1592,7 @@ module Codebuf =
         go 0 (Array.length arr)
 
     let applyBrFixups (origCode : byte[]) origExnClauses origReqdStringFixups (origAvailBrFixups: Dictionary<ILCodeLabel, int>) origReqdBrFixups origSeqPoints origScopes = 
-      let orderedOrigReqdBrFixups = origReqdBrFixups |> List.sortBy (fun (_, fixuploc, _) -> fixuploc)
+      let orderedOrigReqdBrFixups = origReqdBrFixups |> List.sortBy (fun (_, fixupLoc, _) -> fixupLoc)
 
       let newCode = ByteBuffer.Create origCode.Length
 
@@ -1732,7 +1732,7 @@ module Codebuf =
           | true, n ->
               let relOffset = n - endOfInstr
               if small then 
-                  if Bytes.get newCode newFixupLoc <> 0x98 then failwith "br fixupsanity check failed"
+                  if Bytes.get newCode newFixupLoc <> 0x98 then failwith "br fixup sanity check failed"
                   newCode.[newFixupLoc] <- b0 relOffset
               else 
                   checkFixup32 newCode newFixupLoc 0xf00dd00fl
@@ -2820,7 +2820,7 @@ and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) =
 // manifest --> generate Assembly row
 // -------------------------------------------------------------------- 
 
-and GetManifsetAsAssemblyRow cenv m = 
+and GetManifestAsAssemblyRow cenv m = 
     UnsharedRow 
         [|ULong m.AuxModuleHashAlgorithm
           UShort (match m.Version with None -> 0us | Some version -> version.Major)
@@ -2836,7 +2836,7 @@ and GetManifsetAsAssemblyRow cenv m =
               | ILAssemblyLongevity.PlatformSystem -> 0x0008) |||
               (if m.Retargetable then 0x100 else 0x0) |||
               // Setting these causes peverify errors. Hence both ilread and ilwrite ignore them and refuse to set them.
-              // Any debugging customattributes will automatically propagate
+              // Any debugging customAttributes will automatically propagate
               // REVIEW: No longer appears to be the case
               (if m.JitTracking then 0x8000 else 0x0) ||| 
               (match m.PublicKey with None -> 0x0000 | Some _ -> 0x0001) ||| 0x0000)
@@ -2845,7 +2845,7 @@ and GetManifsetAsAssemblyRow cenv m =
           (match m.Locale with None -> StringE 0 | Some x -> StringE (GetStringHeapIdx cenv x)) |]
 
 and GenManifestPass3 cenv m = 
-    let aidx = AddUnsharedRow cenv TableNames.Assembly (GetManifsetAsAssemblyRow cenv m)
+    let aidx = AddUnsharedRow cenv TableNames.Assembly (GetManifestAsAssemblyRow cenv m)
     GenSecurityDeclsPass3 cenv (hds_Assembly, aidx) m.SecurityDecls.AsList
     GenCustomAttrsPass3Or4 cenv (hca_Assembly, aidx) m.CustomAttrs
     GenExportedTypesPass3 cenv m.ExportedTypes
@@ -3033,7 +3033,7 @@ let nochunk next = ({addr= 0x0;size= 0x0; }, next)
 let count f arr = 
     Array.fold (fun x y -> x + f y) 0x0 arr 
 
-module FileSystemUtilites = 
+module FileSystemUtilities = 
     open System
     open System.Reflection
     open System.Globalization
@@ -3630,7 +3630,7 @@ let writeBinaryAndReportMappings (outfile,
                     match aref.Version with
                     | Some version when version.Major = 2us -> parseILVersion "2.0.50727.0"
                     | Some v -> v
-                    | None -> failwith "Expected msorlib to have a version number"
+                    | None -> failwith "Expected mscorlib to have a version number"
 
           let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart =
             writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul next normalizeAssemblyRefs
@@ -3859,7 +3859,7 @@ let writeBinaryAndReportMappings (outfile,
               writeInt32 os timestamp
 
               // Update pdbData with new guid and timestamp. Portable and embedded PDBs don't need the ModuleID
-              // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-determinsitic Windows native code
+              // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-deterministic Windows native code
               { pdbData with ModuleID = final.[0..15] ; Timestamp = timestamp }
             else
               writeInt32 os timestamp   // date since 1970
@@ -4191,7 +4191,7 @@ let writeBinaryAndReportMappings (outfile,
           os.Dispose()
           
           try 
-              FileSystemUtilites.setExecutablePermission outfile
+              FileSystemUtilities.setExecutablePermission outfile
           with _ -> 
               ()
           pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings

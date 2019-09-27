@@ -20,10 +20,10 @@ type PartialLongName =
       /// Position of the last dot.
       LastDotPos: int option }
     
-    /// Empty patial long name.
+    /// Empty partial long name.
     static member Empty(endColumn: int) = { QualifyingIdents = []; PartialIdent = ""; EndColumn = endColumn; LastDotPos = None }
 
-/// Methods for cheaply and innacurately parsing F#.
+/// Methods for cheaply and inaccurately parsing F#.
 ///
 /// These methods are very old and are mostly to do with extracting "long identifier islands" 
 ///     A.B.C
@@ -58,7 +58,7 @@ module QuickParse =
 
     // Utility function that recognizes whether a name is valid active pattern name
     // Extracts the 'core' part without surrounding bars and checks whether it contains some identifier
-    // (Note, this doesn't have to be precise, because this is checked by backround compiler,
+    // (Note, this doesn't have to be precise, because this is checked by background compiler,
     // but it has to be good enough to distinguish operators and active pattern names)
     let private isValidActivePatternName (name: string) = 
 
@@ -152,7 +152,7 @@ module QuickParse =
     /// In general, only identifiers composed from upper/lower letters and '.' are supported, but there
     /// are a couple of explicitly handled exceptions to allow some common scenarios:
     /// - When the name contains only letters and '|' symbol, it may be an active pattern, so we 
-    ///   treat it as a valid identifier - e.g. let ( |Identitiy| ) a = a
+    ///   treat it as a valid identifier - e.g. let ( |Identity| ) a = a
     ///   (but other identifiers that include '|' are not allowed - e.g. '||' operator)
     /// - It searches for double tick (``) to see if the identifier could be something like ``a b``
     ///

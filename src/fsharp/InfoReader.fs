@@ -299,10 +299,10 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
     let GetIntrinsicRecdOrClassFieldInfosUncached ((optFilter, ad), m, ty) =
         FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
     
-    let GetEntireTypeHierachyUncached (allowMultiIntfInst, m, ty) =
+    let GetEntireTypeHierarchyUncached (allowMultiIntfInst, m, ty) =
         FoldEntireHierarchyOfType (fun ty acc -> ty :: acc) g amap m allowMultiIntfInst ty  [] 
 
-    let GetPrimaryTypeHierachyUncached (allowMultiIntfInst, m, ty) =
+    let GetPrimaryTypeHierarchyUncached (allowMultiIntfInst, m, ty) =
         FoldPrimaryHierarchyOfType (fun ty acc -> ty :: acc) g amap m allowMultiIntfInst ty [] 
 
     /// The primitive reader for the named items up a hierarchy
@@ -385,8 +385,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
 
-    let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierachyUncached HashIdentity.Structural
-    let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierachyUncached HashIdentity.Structural
+    let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
+    let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
                                             
     member x.g = g
     member x.amap = amap
@@ -434,11 +434,11 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
         namedItemsCache.Apply(((nm, ad), m, ty))
 
     /// Get the super-types of a type, including interface types.
-    member x.GetEntireTypeHierachy (allowMultiIntfInst, m, ty) =
+    member x.GetEntireTypeHierarchy (allowMultiIntfInst, m, ty) =
         entireTypeHierarchyCache.Apply((allowMultiIntfInst, m, ty))
 
     /// Get the super-types of a type, excluding interface types.
-    member x.GetPrimaryTypeHierachy (allowMultiIntfInst, m, ty) =
+    member x.GetPrimaryTypeHierarchy (allowMultiIntfInst, m, ty) =
         primaryTypeHierarchyCache.Apply((allowMultiIntfInst, m, ty))
 
 

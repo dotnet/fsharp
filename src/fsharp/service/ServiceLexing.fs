@@ -454,7 +454,7 @@ module internal LexerStateEncoding =
 
 
     let decodeLexInt (state: FSharpTokenizerLexState) =
-        let tag, n1, p1, ifd, lightSyntaxStatusInital = decodeLexCont state
+        let tag, n1, p1, ifd, lightSyntaxStatusInitial = decodeLexCont state
         let lexcont =
             match tag with
             |  FSharpTokenizerColorState.Token -> LexCont.Token ifd
@@ -471,7 +471,7 @@ module internal LexerStateEncoding =
             |  FSharpTokenizerColorState.EndLineThenSkip -> LexCont.EndLine(LexerEndlineContinuation.Skip(ifd, n1, mkRange "file" p1 p1))
             |  FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(LexerEndlineContinuation.Token ifd)
             | _ -> LexCont.Token []
-        lightSyntaxStatusInital, lexcont
+        lightSyntaxStatusInitial, lexcont
 
     let callLexCont lexcont args skip lexbuf =
         let argsWithIfDefs ifd =
@@ -500,7 +500,7 @@ module internal LexerStateEncoding =
 //----------------------------------------------------------------------------
 
 // Information beyond just tokens that can be derived by looking at just a single line.
-// For example metacommands like #load.
+// For example meta commands like #load.
 type SingleLineTokenState =
     | BeforeHash = 0
     | NoFurtherMatchPossible = 1
@@ -595,11 +595,11 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
-        let lightSyntaxStatusInital, lexcontInitial = LexerStateEncoding.decodeLexInt lexintInitial
-        let lightSyntaxStatus = LightSyntaxStatus(lightSyntaxStatusInital, false)
+        let lightSyntaxStatusInitial, lexcontInitial = LexerStateEncoding.decodeLexInt lexintInitial
+        let lightSyntaxStatus = LightSyntaxStatus(lightSyntaxStatusInitial, false)
 
         // Build the arguments to the lexer function
-        let lexargs = if lightSyntaxStatusInital then lexArgsLightOn else lexArgsLightOff
+        let lexargs = if lightSyntaxStatusInitial then lexArgsLightOn else lexArgsLightOff
 
         let GetTokenWithPosition lexcontInitial =
             // Column of token
@@ -618,7 +618,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             try
                 if (tokenStack.Count > 0) then true, tokenStack.Pop()
                 else
-                  // Choose which lexer entrypoint to call and call it
+                  // Choose which lexer entry point to call and call it
                   let token = LexerStateEncoding.callLexCont lexcontInitial lexargs skip lexbuf
                   let leftc, rightc = ColumnsOfCurrentToken()
 
@@ -722,8 +722,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                 // Peek at the next token
                 let isCached, (nextToken, _, rightc) = GetTokenWithPosition lexcontInitial
                 match nextToken with
-                | IDENT possibleMetacommand ->
-                    match fsx, possibleMetacommand with
+                | IDENT possibleMetaCommand ->
+                    match fsx, possibleMetaCommand with
                     // These are for script (.fsx and .fsscript) files.
                     | true, "r"
                     | true, "reference"

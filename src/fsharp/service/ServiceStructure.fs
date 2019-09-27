@@ -47,7 +47,7 @@ module Structure =
         | [] -> range0
         | head :: _ -> Range.startToEnd head.idRange (List.last longId).idRange
 
-    /// Caclulate the range of the provided type arguments (<'a, ..., 'z>) 
+    /// Calculate the range of the provided type arguments (<'a, ..., 'z>) 
     /// or return the range `other` when `typeArgs` = []
     let rangeOfTypeArgsElse other (typeArgs:SynTyparDecl list) =
         match typeArgs with
@@ -77,7 +77,7 @@ module Structure =
         | Below
         | Same
 
-    /// Tag to identify the constuct that can be stored alongside its associated ranges
+    /// Tag to identify the construct that can be stored alongside its associated ranges
     [<RequireQualifiedAccess>]
     type Scope =
         | Open
@@ -177,7 +177,7 @@ module Structure =
             | Comment             -> "Comment"
             | XmlDocComment       -> "XmlDocComment"
 
-    /// Stores the range for a construct, the sub-range that should be collapsed for outlinging,
+    /// Stores the range for a construct, the sub-range that should be collapsed for outlining,
     /// a tag for the construct type, and a tag for the collapse style
     [<NoComparison>]
     type ScopeRange = 
@@ -204,7 +204,7 @@ module Structure =
     let getOutliningRanges (sourceLines: string[]) (parsedInput: ParsedInput) =
         let acc = ResizeArray()
 
-        /// Validation function to ensure that ranges yielded for outlinging span 2 or more lines
+        /// Validation function to ensure that ranges yielded for outlining span 2 or more lines
         let inline rcheck scope collapse (fullRange: range) (collapseRange: range) = 
             if fullRange.StartLine <> fullRange.EndLine then 
                 acc.Add { Scope = scope
@@ -281,7 +281,7 @@ module Structure =
                 if ExprAtomicFlag.NonAtomic=atomicFlag && (not isInfix)
                    && (function SynExpr.Ident _    -> true  | _ -> false) funcExpr
                    && (function SynExpr.CompExpr _ -> false | _ -> true ) argExpr then
-                   // if the argExrp is a computation expression another match will handle the outlining
+                   // if the argExpr is a computation expression another match will handle the outlining
                    // these cases must be removed to prevent creating unnecessary tags for the same scope
                     let collapse = Range.endToEnd funcExpr.Range r
                     rcheck Scope.SpecialFunc Collapse.Below r collapse
@@ -624,7 +624,7 @@ module Structure =
             collectOpens decls
             List.iter parseDeclaration decls
 
-        /// Determine if a line is a single line or xml docummentation comment
+        /// Determine if a line is a single line or xml documentation comment
         let (|Comment|_|) (line: string) =
             if line.StartsWithOrdinal("///") then Some XmlDoc
             elif line.StartsWithOrdinal("//") then Some SingleLine

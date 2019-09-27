@@ -15,7 +15,7 @@ module public Structure =
         | Below
         | Same
 
-    /// Tag to identify the constuct that can be stored alongside its associated ranges
+    /// Tag to identify the construct that can be stored alongside its associated ranges
     [<RequireQualifiedAccess>]
     type Scope =
         | Open

@@ -88,10 +88,10 @@ exception Deprecated of string * range
 exception Experimental of string * range
 exception PossibleUnverifiableCode of range
 
-exception UnresolvedReferenceNoRange of (*assemblyname*) string 
-exception UnresolvedReferenceError of (*assemblyname*) string * range
-exception UnresolvedPathReferenceNoRange of (*assemblyname*) string * (*path*) string
-exception UnresolvedPathReference of (*assemblyname*) string * (*path*) string * range
+exception UnresolvedReferenceNoRange of (*assemblyName*) string 
+exception UnresolvedReferenceError of (*assemblyName*) string * range
+exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string
+exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * range
 
 
 
@@ -197,7 +197,7 @@ type PhasedDiagnostic =
 
     /// Construct a phased error
     static member Create(exn:exn, phase:BuildPhase) : PhasedDiagnostic =
-        // FUTURE: renable this assert, which has historically triggered in some compiler service scenarios
+        // FUTURE: reenable this assert, which has historically triggered in some compiler service scenarios
         // System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
         {Exception = exn; Phase=phase}
 
@@ -281,7 +281,7 @@ let DiscardErrorsLogger =
 
 let AssertFalseErrorLogger =
     { new ErrorLogger("AssertFalseErrorLogger") with 
-            // TODO: renable these asserts in the compiler service
+            // TODO: reenable these asserts in the compiler service
             member x.DiagnosticSink(phasedError, isError) = (* assert false; *) ()
             member x.ErrorCount = (* assert false; *) 0 
     }
@@ -313,7 +313,7 @@ type internal CompileThreadStatic =
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
-            // FUTURE: renable these asserts, which have historically fired in some compiler service scernaios
+            // FUTURE: reenable these asserts, which have historically fired in some compiler service scenarios
             | null -> (* assert false; *) BuildPhase.DefaultPhase
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
@@ -606,7 +606,7 @@ let TryD f g =
         }
     | res -> res
 
-let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
+let rec RepeatWhileD nDeep body = body nDeep ++ (fun x -> if x then RepeatWhileD (nDeep+1) body else CompleteD) 
 let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
 
 

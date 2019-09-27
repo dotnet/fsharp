@@ -164,12 +164,12 @@ module Array =
     /// pass an array byref to reverse it in place
     let revInPlace (array: 'T []) =
         if Array.isEmpty array then () else
-        let arrlen, revlen = array.Length-1, array.Length/2 - 1
-        for idx in 0 .. revlen do
+        let arrLen, revLen = array.Length-1, array.Length/2 - 1
+        for idx in 0 .. revLen do
             let t1 = array.[idx] 
-            let t2 = array.[arrlen-idx]
+            let t2 = array.[arrLen-idx]
             array.[idx] <- t2
-            array.[arrlen-idx] <- t1
+            array.[arrLen-idx] <- t1
 
     /// Async implementation of Array.map.
     let mapAsync (mapping : 'T -> Async<'U>) (array : 'T[]) : Async<'U[]> =
@@ -624,7 +624,7 @@ type CompilationThreadToken() = interface ExecutionToken
 let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
 
 /// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
-/// This reprents code that may potentially not need to be executed on the compilation thread.
+/// This represents code that may potentially not need to be executed on the compilation thread.
 let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent (_ctok: CompilationThreadToken) = ()
 
 /// Represents a place in the compiler codebase where we assume we are executing on a compilation thread

@@ -44,7 +44,7 @@ type public AssemblySymbol =
     { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
-      /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFucntion.DisplayName).
+      /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFunction.DisplayName).
       /// Note: *all* parts are cleaned, not the last one. 
       CleanedIdents: Idents
       /// `FSharpEntity.Namespace`.
@@ -87,10 +87,10 @@ type public EntityCache =
     /// Performs an operation on the cache in thread safe manner.
     member Locking : (IAssemblyContentCache -> 'T) -> 'T
 
-/// Lond identifier (i.e. it may contain dots).
+/// Long identifier (i.e. it may contain dots).
 type public StringLongIdent = string
 
-/// Helper data structure representing a symbol, sutable for implementing unresolved identifiers resolution code fixes.
+/// Helper data structure representing a symbol, suitable for implementing unresolved identifiers resolution code fixes.
 type public Entity =
     { /// Full name, relative to the current scope.
       FullRelativeName: StringLongIdent
@@ -149,7 +149,7 @@ module public ParsedInput =
     /// Returns `InsertContext` based on current position and symbol idents.
     val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
 
-    /// Returns lond identifier at position.
+    /// Returns long identifier at position.
     val getLongIdentAt : ast: Ast.ParsedInput -> pos: Range.pos -> Ast.LongIdent option
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.

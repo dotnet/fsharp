@@ -339,11 +339,11 @@ module FSharpExprConvert =
     and ConvExpr cenv env expr = 
         Mk2 cenv expr (ConvExprPrim cenv env expr) 
 
-    and ConvExprLinear cenv env expr contf = 
-        ConvExprPrimLinear cenv env expr (fun exprR -> contf (Mk2 cenv expr exprR))
+    and ConvExprLinear cenv env expr contF = 
+        ConvExprPrimLinear cenv env expr (fun exprR -> contF (Mk2 cenv expr exprR))
 
     // Tail recursive function to process the subset of expressions considered "linear"
-    and ConvExprPrimLinear cenv env expr contf = 
+    and ConvExprPrimLinear cenv env expr contF = 
 
         match expr with 
         // Large lists 
@@ -352,15 +352,15 @@ module FSharpExprConvert =
             let typR = ConvType cenv (mkAppTy ucref.TyconRef tyargs)
             let e1R = ConvExpr cenv env e1
             // tail recursive 
-            ConvExprLinear cenv env e2 (contf << (fun e2R -> E.NewUnionCase(typR, mkR, [e1R; e2R]) ))
+            ConvExprLinear cenv env e2 (contF << (fun e2R -> E.NewUnionCase(typR, mkR, [e1R; e2R]) ))
 
         // Large sequences of let bindings
         | Expr.Let (bind, body, _, _) ->  
             match ConvLetBind cenv env bind with 
-            | None, env -> ConvExprPrimLinear cenv env body contf
+            | None, env -> ConvExprPrimLinear cenv env body contF
             | Some bindR, env -> 
                 // tail recursive 
-                ConvExprLinear cenv env body (contf << (fun bodyR -> E.Let(bindR, bodyR)))
+                ConvExprLinear cenv env body (contF << (fun bodyR -> E.Let(bindR, bodyR)))
 
         // Remove initialization checks
         // Remove static initialization counter updates
@@ -372,23 +372,23 @@ module FSharpExprConvert =
         | Expr.Sequential (ObjectInitializationCheck cenv.g, x1, NormalSeq, _, _) 
         | Expr.Sequential (StaticInitializationCount, x1, NormalSeq, _, _)              
         | Expr.Sequential (StaticInitializationCheck, x1, NormalSeq, _, _) ->
-            ConvExprPrim cenv env x1 |> contf
+            ConvExprPrim cenv env x1 |> contF
 
         // Large sequences of sequential code
         | Expr.Sequential (e1, e2, NormalSeq, _, _)  -> 
             let e1R = ConvExpr cenv env e1
             // tail recursive 
-            ConvExprLinear cenv env e2 (contf << (fun e2R -> E.Sequential(e1R, e2R)))
+            ConvExprLinear cenv env e2 (contF << (fun e2R -> E.Sequential(e1R, e2R)))
 
         | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->  E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) 
 
         | ModuleValueOrMemberUse cenv.g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (nonNil tyargs || nonNil curriedArgs) && vref.IsMemberOrModuleBinding ->
-            ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) contf
+            ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) contF
 
         | Expr.Match (_spBind, m, dtree, tgs, _, retTy) ->
             let dtreeR = ConvDecisionTree cenv env retTy dtree m
             // tailcall 
-            ConvTargetsLinear cenv env (List.ofArray tgs) (contf << fun (targetsR: _ list) -> 
+            ConvTargetsLinear cenv env (List.ofArray tgs) (contF << fun (targetsR: _ list) -> 
                 let (|E|) (x: FSharpExpr) = x.E
 
                 // If the match is really an "if-then-else" then return it as such.
@@ -397,11 +397,11 @@ module FSharpExprConvert =
                 | _ -> E.DecisionTree(dtreeR, targetsR))
 
         | _ -> 
-            ConvExprPrim cenv env expr |> contf
+            ConvExprPrim cenv env expr |> contF
 
     /// A nasty function copied from creflect.fs. Made nastier by taking a continuation to process the 
     /// arguments to the call in a tail-recursive fashion.
-    and ConvModuleValueOrMemberUseLinear (cenv: SymbolEnv) env (expr: Expr, vref, vFlags, tyargs, curriedArgs) contf =
+    and ConvModuleValueOrMemberUseLinear (cenv: SymbolEnv) env (expr: Expr, vref, vFlags, tyargs, curriedArgs) contF =
         let m = expr.Range 
 
         let (numEnclTypeArgs, _, isNewObj, _valUseFlags, _isSelfInit, takesInstanceArg, _isPropGet, _isPropSet) = 
@@ -444,7 +444,7 @@ module FSharpExprConvert =
             let expr, exprty = AdjustValForExpectedArity cenv.g m vref vFlags topValInfo 
             let splitCallExpr = MakeApplicationAndBetaReduce cenv.g (expr, exprty, [tyargs], curriedArgs, m)
             // tailcall
-            ConvExprPrimLinear cenv env splitCallExpr contf
+            ConvExprPrimLinear cenv env splitCallExpr contF
 
         else        
             let curriedArgs, laterArgs = List.splitAt curriedArgInfos.Length curriedArgs 
@@ -459,8 +459,8 @@ module FSharpExprConvert =
 
             let contf2 = 
                 match laterArgs with 
-                | [] -> contf 
-                | _ -> (fun subCallR -> (subCallR, laterArgs) ||> List.fold (fun fR arg -> E.Application (Mk2 cenv arg fR, [], [ConvExpr cenv env arg])) |> contf)
+                | [] -> contF 
+                | _ -> (fun subCallR -> (subCallR, laterArgs) ||> List.fold (fun fR arg -> E.Application (Mk2 cenv arg fR, [], [ConvExpr cenv env arg])) |> contF)
                     
             if isMember then 
                 let callArgs = (objArgs :: untupledCurriedArgs) |> List.concat
@@ -827,7 +827,7 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy tycr tyargs)
                 E.UnionCaseTag(ConvExpr cenv env arg1, typR) 
 
-            | TOp.TraitCall (TTrait(tys, nm, memFlags, argtys, _rty, _colution)), _, _                    -> 
+            | TOp.TraitCall (TTrait(tys, nm, memFlags, argtys, _rty, _solution)), _, _                    -> 
                 let tysR = ConvTypes cenv tys
                 let tyargsR = ConvTypes cenv tyargs
                 let argtysR = ConvTypes cenv argtys
@@ -849,7 +849,7 @@ module FSharpExprConvert =
         //     'let v = isinst e in .... if nonnull v then ...v .... ' 
         // construct arising out the compilation of pattern matching. We decode these back to the form
         //     'if istype e then ...unbox e .... ' 
-        // It's bit annoying that pattern matching does this tranformation. Like all premature optimization we pay a 
+        // It's bit annoying that pattern matching does this transformation. Like all premature optimization we pay a 
         // cost here to undo it.
         | Expr.Op (TOp.ILAsm ([ I_isinst _ ], _), [ty], [e], _) -> 
             None, env.BindIsInstVal bind.Var (ty, e)
@@ -951,7 +951,7 @@ module FSharpExprConvert =
                                 else     
                                     let valR = ConvExpr cenv env callArgs.Head
                                     E.ValueSet (m, valR)
-                            | _ -> failwith "Failed to resolve module value unambigously"
+                            | _ -> failwith "Failed to resolve module value unambiguously"
                         else
                             failwith "Failed to resolve module member" 
                     | _ ->
@@ -1077,7 +1077,7 @@ module FSharpExprConvert =
           with e -> 
             failwithf "An IL call to '%s' could not be resolved: %s" (ilMethRef.ToString()) e.Message
 
-    and ConvObjectModelCallLinear cenv env (isNewObj, v: FSharpMemberOrFunctionOrValue, enclTyArgs, methTyArgs, callArgs) contf =
+    and ConvObjectModelCallLinear cenv env (isNewObj, v: FSharpMemberOrFunctionOrValue, enclTyArgs, methTyArgs, callArgs) contF =
         let enclTyArgsR = ConvTypes cenv enclTyArgs
         let methTyArgsR = ConvTypes cenv methTyArgs
         let obj, callArgs = 
@@ -1089,7 +1089,7 @@ module FSharpExprConvert =
                 None, callArgs
         let objR = Option.map (ConvLValueExpr cenv env) obj
         // tailcall
-        ConvExprsLinear cenv env callArgs (contf << fun callArgsR -> 
+        ConvExprsLinear cenv env callArgs (contF << fun callArgsR -> 
             if isNewObj then 
                 E.NewObject(v, enclTyArgsR, callArgsR) 
             else 
@@ -1098,21 +1098,21 @@ module FSharpExprConvert =
 
     and ConvExprs cenv env args = List.map (ConvExpr cenv env) args 
 
-    // Process a list of expressions in a tail-recursive way. Identical to "ConvExprs" but the result is eventually passed to contf.
-    and ConvExprsLinear cenv env args contf = 
+    // Process a list of expressions in a tail-recursive way. Identical to "ConvExprs" but the result is eventually passed to contF.
+    and ConvExprsLinear cenv env args contF = 
         match args with 
-        | [] -> contf []
-        | [arg] -> ConvExprLinear cenv env arg (fun argR -> contf [argR])
-        | arg :: rest -> ConvExprLinear cenv env arg (fun argR -> ConvExprsLinear cenv env rest (fun restR -> contf (argR :: restR)))
+        | [] -> contF []
+        | [arg] -> ConvExprLinear cenv env arg (fun argR -> contF [argR])
+        | arg :: rest -> ConvExprLinear cenv env arg (fun argR -> ConvExprsLinear cenv env rest (fun restR -> contF (argR :: restR)))
 
-    and ConvTargetsLinear cenv env tgs contf = 
+    and ConvTargetsLinear cenv env tgs contF = 
         match tgs with 
-        | [] -> contf []
+        | [] -> contF []
         | TTarget(vars, rhs, _) :: rest -> 
             let varsR = (List.rev vars) |> List.map (ConvVal cenv)
             ConvExprLinear cenv env rhs (fun targetR -> 
             ConvTargetsLinear cenv env rest (fun restR -> 
-            contf ((varsR, targetR) :: restR)))
+            contF ((varsR, targetR) :: restR)))
 
     and ConvValRef cenv env m (vref: ValRef) =
         let v = vref.Deref

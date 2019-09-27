@@ -19,10 +19,10 @@ type public PartialLongName =
       /// Position of the last dot.
       LastDotPos: int option }
     
-    /// Empty patial long name.
+    /// Empty partial long name.
     static member Empty: endColumn: int -> PartialLongName
 
-/// Methods for cheaply and innacurately parsing F#.
+/// Methods for cheaply and inaccurately parsing F#.
 ///
 /// These methods are very old and are mostly to do with extracting "long identifier islands" 
 ///     A.B.C
@@ -57,7 +57,7 @@ module public QuickParse =
     /// In general, only identifiers composed from upper/lower letters and '.' are supported, but there
     /// are a couple of explicitly handled exceptions to allow some common scenarios:
     /// - When the name contains only letters and '|' symbol, it may be an active pattern, so we 
-    ///   treat it as a valid identifier - e.g. let ( |Identitiy| ) a = a
+    ///   treat it as a valid identifier - e.g. let ( |Identity| ) a = a
     ///   (but other identifiers that include '|' are not allowed - e.g. '||' operator)
     /// - It searches for double tick (``) to see if the identifier could be something like ``a b``
     ///

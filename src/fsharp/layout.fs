@@ -389,7 +389,7 @@ type LayoutRenderer<'a, 'b> =
 let renderL (rr: LayoutRenderer<_, _>) layout =
     let rec addL z pos i layout k = 
       match layout with
-      | ObjLeaf _ -> failwith "ObjLeaf should never apper here"
+      | ObjLeaf _ -> failwith "ObjLeaf should never appear here"
         (* pos is tab level *)
       | Leaf (_, text, _)                 -> 
           k(rr.AddText z text, i + text.Text.Length)

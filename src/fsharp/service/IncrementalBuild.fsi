@@ -60,7 +60,7 @@ type internal PartialCheckResults =
 
       TcDependencyFiles: string list
 
-      /// Represents the collected attributes to apply to the module of assuembly generates
+      /// Represents the collected attributes to apply to the module of assembly generates
       TopAttribs: TypeChecker.TopAttribs option
 
       TimeStamp: DateTime 
@@ -70,7 +70,7 @@ type internal PartialCheckResults =
       LatestImplementationFile: TypedImplFile option 
       
       /// Represents latest inferred signature contents.
-      LastestCcuSigForFile: ModuleOrNamespaceType option}
+      LatestCcuSigForFile: ModuleOrNamespaceType option}
 
     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
 
@@ -163,7 +163,7 @@ type internal IncrementalBuilder =
 
       static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot * suggestNamesForErrors: bool -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 
-/// Generalized Incremental Builder. This is exposed only for unittesting purposes.
+/// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =
     type INode = 
         abstract Name: string
