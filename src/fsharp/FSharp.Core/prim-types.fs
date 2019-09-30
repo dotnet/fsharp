@@ -653,9 +653,9 @@ namespace Microsoft.FSharp.Core
 
             let inline GetArray2DLength (arr: 'T[,]) (dim: int) = 
                 match dim with
-                    | 0 -> GetArray2DLength1 arr
-                    | 1 -> GetArray2DLength2 arr
-                    | _ -> raise (System.IndexOutOfRangeException())
+                | 0 -> GetArray2DLength1 arr
+                | 1 -> GetArray2DLength2 arr
+                | _ -> raise (System.IndexOutOfRangeException())
 
             let inline Array2DZeroCreate (n:int) (m:int) = (# "newarr.multi 2 !0" type ('T) n m : 'T[,] #)
             let GetArray2DSub (src: 'T[,]) src1 src2 len1 len2 =
@@ -687,10 +687,10 @@ namespace Microsoft.FSharp.Core
 
             let inline GetArray3DLength (arr: 'T[,,]) (dim: int) = 
                 match dim with
-                    | 0 -> GetArray3DLength1 arr 
-                    | 1 -> GetArray3DLength2 arr
-                    | 2 -> GetArray3DLength3 arr
-                    | _ -> raise (System.IndexOutOfRangeException())
+                | 0 -> GetArray3DLength1 arr 
+                | 1 -> GetArray3DLength2 arr
+                | 2 -> GetArray3DLength3 arr
+                | _ -> raise (System.IndexOutOfRangeException())
 
             let inline Array3DZeroCreate (n1:int) (n2:int) (n3:int) = (# "newarr.multi 3 !0" type ('T) n1 n2 n3 : 'T[,,] #)
 
@@ -4919,9 +4919,9 @@ namespace Microsoft.FSharp.Core
                 let dst = zeroCreate (if len < 0 then 0 else len)
                 let getArrayElem = 
                     match nonFixedDim with
-                        | 1 -> (fun i -> GetArray2D source index (start+i))
-                        | 0 -> (fun i -> GetArray2D source (start+i) index)
-                        | _ -> raise (System.IndexOutOfRangeException())
+                    | 1 -> (fun i -> GetArray2D source index (start+i))
+                    | 0 -> (fun i -> GetArray2D source (start+i) index)
+                    | _ -> raise (System.IndexOutOfRangeException())
                 for j = 0 to len - 1 do 
                     SetArray dst j (getArrayElem j)
                 dst
@@ -4936,9 +4936,9 @@ namespace Microsoft.FSharp.Core
                 let len = (finish - start + 1)
                 let setArrayElem = 
                     match nonFixedDim with
-                        | 1 -> (fun j -> SetArray2D target index (bound + start + j) (GetArray source j)) 
-                        | 0 -> (fun i -> SetArray2D target (bound + start + i) index (GetArray source i))
-                        | _ -> raise (System.IndexOutOfRangeException())
+                    | 1 -> (fun j -> SetArray2D target index (bound + start + j) (GetArray source j)) 
+                    | 0 -> (fun i -> SetArray2D target (bound + start + i) index (GetArray source i))
+                    | _ -> raise (System.IndexOutOfRangeException())
                 for j = 0 to len - 1 do
                     setArrayElem j
 
@@ -4978,10 +4978,10 @@ namespace Microsoft.FSharp.Core
                 let dst = Array2DZeroCreate (max 0 len1) (max 0 len2)
                 let getArrayElem = 
                     match nonFixedDim1, nonFixedDim2 with
-                        | 1,2 -> (fun i j -> GetArray3D source index (start1 + i) (start2 + j))
-                        | 0,2 -> (fun i j -> GetArray3D source (start1 + i) index (start2 + j))
-                        | 0,1 -> (fun i j -> GetArray3D source (start1 + i) (start2 + j) index)
-                        | _ -> raise (System.IndexOutOfRangeException())
+                    | 1, 2 -> (fun i j -> GetArray3D source index (start1 + i) (start2 + j))
+                    | 0, 2 -> (fun i j -> GetArray3D source (start1 + i) index (start2 + j))
+                    | 0, 1 -> (fun i j -> GetArray3D source (start1 + i) (start2 + j) index)
+                    | _ -> raise (System.IndexOutOfRangeException())
 
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
@@ -5002,10 +5002,10 @@ namespace Microsoft.FSharp.Core
                 let dst = zeroCreate (if len < 0 then 0 else len)
                 let getArrayElem = 
                     match nonFixedDim with
-                        | 2 -> (fun i -> GetArray3D source index1 index2 i)
-                        | 1 -> (fun i -> GetArray3D source index1 (start + i) index2)
-                        | 0 -> (fun i -> GetArray3D source (start+i) index1 index2)
-                        | _ -> raise (System.IndexOutOfRangeException())
+                    | 2 -> (fun i -> GetArray3D source index1 index2 i)
+                    | 1 -> (fun i -> GetArray3D source index1 (start + i) index2)
+                    | 0 -> (fun i -> GetArray3D source (start+i) index1 index2)
+                    | _ -> raise (System.IndexOutOfRangeException())
                 for j = 0 to len - 1 do 
                     SetArray dst j (getArrayElem j)
                 dst
@@ -5037,10 +5037,10 @@ namespace Microsoft.FSharp.Core
                 let len2 = (finish2 - start2 + 1)
                 let setArrayElem = 
                     match nonFixedDim1, nonFixedDim2 with
-                        | 1,2 -> (fun i j -> SetArray3D target index (bound1 + start1 + i) (bound2 + start2 + j) (GetArray2D source i j)) 
-                        | 0,2 -> (fun i j -> SetArray3D target (bound1 + start1 + i) index (bound2+ start2 + j) (GetArray2D source i j))
-                        | 0,1 -> (fun i j -> SetArray3D target (bound1 + start1 + i) (bound2+ start2 + j) index (GetArray2D source i j))
-                        | _ -> raise (System.IndexOutOfRangeException())
+                    | 1, 2 -> (fun i j -> SetArray3D target index (bound1 + start1 + i) (bound2 + start2 + j) (GetArray2D source i j)) 
+                    | 0, 2 -> (fun i j -> SetArray3D target (bound1 + start1 + i) index (bound2+ start2 + j) (GetArray2D source i j))
+                    | 0, 1 -> (fun i j -> SetArray3D target (bound1 + start1 + i) (bound2+ start2 + j) index (GetArray2D source i j))
+                    | _ -> raise (System.IndexOutOfRangeException())
 
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
@@ -5061,10 +5061,10 @@ namespace Microsoft.FSharp.Core
                 let len = (finish - start + 1)
                 let setArrayElem = 
                     match nonFixedDim with
-                        | 2 -> (fun k -> SetArray3D target index1 index2 (bound + start + k) (GetArray source k)) 
-                        | 1 -> (fun j -> SetArray3D target index1 (bound + start + j) index2 (GetArray source j)) 
-                        | 0 -> (fun i -> SetArray3D target (bound + start + i) index1 index2 (GetArray source i))
-                        | _ -> raise (System.IndexOutOfRangeException())
+                    | 2 -> (fun k -> SetArray3D target index1 index2 (bound + start + k) (GetArray source k)) 
+                    | 1 -> (fun j -> SetArray3D target index1 (bound + start + j) index2 (GetArray source j)) 
+                    | 0 -> (fun i -> SetArray3D target (bound + start + i) index1 index2 (GetArray source i))
+                    | _ -> raise (System.IndexOutOfRangeException())
                 for j = 0 to len - 1 do 
                     setArrayElem j
 
