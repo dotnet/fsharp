@@ -4,8 +4,6 @@ open System
 open System.IO
 open System.Collections.Generic
 open FSharp.Compiler
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
 #if NETCOREAPP2_0
@@ -198,6 +196,8 @@ let parseSourceCode (name: string, code: string) =
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
+
+open FSharp.Compiler.Ast
 
 let parseSourceCodeAndGetModule (source: string) =
     match parseSourceCode ("test", source) with
