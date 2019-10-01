@@ -26,12 +26,30 @@ type MyStructWithUnderscoreIdentifier =
     member _.MethodWithUnderscoreSelf() = true
     member __.MethodWithDoubleUnderscoreSelf() = true
     member _E.MethodWithUnderscoreESelf() = true
+    member private _.PrivateMethodWithUnderscoreSelf() = true
+    member private __.PrivateMethodWithDoubleUnderscoreSelf() = true
+    member private _E.PrivateMethodWithUnderscoreESelf() = true
+    member inline _.InlineMethodWithUnderscoreSelf() = true
+    member inline __.InlineMethodWithDoubleUnderscoreSelf() = true
+    member inline _E.InlineMethodWithUnderscoreESelf() = true
+    member inline private _.InlinePrivateMethodWithUnderscoreSelf() = true
+    member inline private __.InlinePrivateMethodWithDoubleUnderscoreSelf() = true
+    member inline private _E.InlinePrivateMethodWithUnderscoreESelf() = true
 
 type MyClassWithUnderscoreIdentifier () =
     class
         member _.MethodWithUnderscoreSelf() = true
         member __.MethodWithDoubleUnderscoreSelf() = true
         member _E.MethodWithUnderscoreESelf() = true
+        member private _.PrivateMethodWithUnderscoreSelf() = true
+        member private __.PrivateMethodWithDoubleUnderscoreSelf() = true
+        member private _E.PrivateMethodWithUnderscoreESelf() = true
+        member inline _.InlineMethodWithUnderscoreSelf() = true
+        member inline __.InlineMethodWithDoubleUnderscoreSelf() = true
+        member inline _E.InlineMethodWithUnderscoreESelf() = true
+        member inline private _.InlinePrivateMethodWithUnderscoreSelf() = true
+        member inline private __.InlinePrivateMethodWithDoubleUnderscoreSelf() = true
+        member inline private _E.InlinePrivateMethodWithUnderscoreESelf() = true
     end
 
 type MyStructTypeWithUnderscoreIdentifier =
@@ -39,6 +57,15 @@ type MyStructTypeWithUnderscoreIdentifier =
         member _.MethodWithUnderscoreSelf() = true
         member __.MethodWithDoubleUnderscoreSelf() = true
         member _E.MethodWithUnderscoreESelf() = true
+        member private _.PrivateMethodWithUnderscoreSelf() = true
+        member private __.PrivateMethodWithDoubleUnderscoreSelf() = true
+        member private _E.PrivateMethodWithUnderscoreESelf() = true
+        member inline _.InlineMethodWithUnderscoreSelf() = true
+        member inline __.InlineMethodWithDoubleUnderscoreSelf() = true
+        member inline _E.InlineMethodWithUnderscoreESelf() = true
+        member inline private _.InlinePrivateMethodWithUnderscoreSelf() = true
+        member inline private __.InlinePrivateMethodWithDoubleUnderscoreSelf() = true
+        member inline private _E.InlinePrivateMethodWithUnderscoreESelf() = true
     end
 
 
