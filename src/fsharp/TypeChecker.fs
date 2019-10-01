@@ -5885,6 +5885,9 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     // its use at method calls from the use of the conflicting 'ref' mechanism for passing byref parameters 
     | SynExpr.AddressOf (byref, synInnerExpr, opm, m) -> 
         TcExpr cenv overallTy env tpenv (mkSynPrefixPrim opm m (if byref then "~&" else "~&&") synInnerExpr) 
+
+    | SynExpr.ReverseIndex (synInnerExpr, opm, m) -> 
+        TcExpr cenv overallTy env tpenv (mkSynPrefixPrim opm m "~^" synInnerExpr)
         
     | SynExpr.Upcast (synInnerExpr, _, m) | SynExpr.InferredUpcast (synInnerExpr, m) -> 
         let innerExpr, srcTy, tpenv = TcExprOfUnknownType cenv env tpenv synInnerExpr 
@@ -9258,6 +9261,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.InferredUpcast (synExpr, _) 
             | SynExpr.InferredDowncast (synExpr, _) 
             | SynExpr.AddressOf (_, synExpr, _, _) 
+            | SynExpr.ReverseIndex(synExpr, _, _)
             | SynExpr.Quote (_, _, synExpr, _, _) -> isSimpleArgument synExpr
 
             | SynExpr.Null _

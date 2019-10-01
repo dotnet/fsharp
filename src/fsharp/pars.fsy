@@ -379,6 +379,7 @@ let rangeOfLongIdent(lid:LongIdent) =
  *  - null
  *  - LBRACK = [
  *  - TRUE,FALSE
+ 
  */
 %nonassoc prec_atompat_pathop
 %nonassoc INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NATIVEINT UNATIVEINT IEEE32 IEEE64 CHAR KEYWORD_STRING STRING BYTEARRAY BIGNUM DECIMAL
@@ -3611,6 +3612,9 @@ minusExpr:
   | DOWNCAST  minusExpr 
       { SynExpr.InferredDowncast ($2,unionRanges (rhs parseState 1) $2.Range)}   
 
+  | INFIX_AT_HAT_OP minusExpr 
+      { SynExpr.ReverseIndex ($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)}
+
   | appExpr 
       { $1 }
 
@@ -3757,6 +3761,7 @@ atomicExprQualification:
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket())
         let mArg = (rhs parseState 1).EndRange 
         (fun e lhsm dotm -> exprFromParseError (mkSynDotBrackGet lhsm dotm e (arbExpr("indexerExpr2",mArg)))) }
+
 
 optRangeSeqExpr: 
   | optRange COMMA optRangeSeqExpr %prec slice_comma { $1 :: $3 } 

@@ -490,6 +490,7 @@ module public AstTraversal =
                 | SynExpr.ArbitraryAfterError (_debugStr, _range) -> None
                 | SynExpr.FromParseError (synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _range) -> traverseSynExpr synExpr
+                | SynExpr.ReverseIndex(synExpr, _, _) -> traverseSynExpr synExpr
 
             visitor.VisitExpr(path, traverseSynExpr path, defaultTraverse, expr)
 
