@@ -453,19 +453,6 @@ module internal ExtensionTyping =
             member __.GetDefinitionLocationAttribute provider = provide().GetDefinitionLocationAttribute provider
             member __.GetXmlDocAttributes provider = provide().GetXmlDocAttributes provider
 
-        static member Create ctxt x = match x with null -> null | t -> ProvidedType(t, ctxt)
-        static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType(t, ctxt)
-        static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
-        static member CreateNoContext (x:Type) = ProvidedType.Create ProvidedTypeContext.Empty x
-        static member Void = ProvidedType.CreateNoContext typeof<System.Void>
-        static member ApplyContext (pt:ProvidedType, ctxt) =
-            match pt with
-            | null -> null
-            | _  -> ProvidedType(pt.Handle, ctxt)
-        static member TaintedEquals (pt1:Tainted<ProvidedType>, pt2:Tainted<ProvidedType>) =
-           Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
-
-        
         // The type provider spec distinguishes between 
         //   - calls that can be made on provided types (i.e. types given by ReturnType, ParameterType, and generic argument types)
         //   - calls that can be made on provided type definitions (types returned by ResolveTypeName, GetTypes etc.)
@@ -1208,7 +1195,7 @@ module internal ExtensionTyping =
             staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))), range=m)
 
         let defaultArgValues = defaultArgValues.PUntaint(id, m)
-        PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
+        computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
     /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
     let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: StaticArg[], m: range) =

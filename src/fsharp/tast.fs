@@ -620,9 +620,6 @@ and /// Represents a type definition, exception definition, module definition or
       // MUTABILITY; used only during creation and remapping of tycons 
       mutable entity_typars: LazyWithContext<Typars, range>        
 
-      // MUTABILITY; used only when establishing tycons. 
-      mutable entity_kind : TyparKind
-
       mutable entity_flags : EntityFlags
       
       /// The unique stamp of the "tycon blob". Note the same tycon in signature and implementation get different stamps 
@@ -645,11 +642,6 @@ and /// Represents a type definition, exception definition, module definition or
       //
       // MUTABILITY; used only during creation and remapping of tycons 
       mutable entity_tycon_repr: TyconRepresentation 
-
-      /// If non-None, indicates the type is an abbreviation for another type. 
-      //
-      // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_tycon_abbrev: TType option
       
       /// If non-None, indicates the type is an abbreviation for another type involving a type provider. 
       //
@@ -1043,7 +1035,6 @@ and /// Represents a type definition, exception definition, module definition or
           entity_tycon_repr= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
           entity_provider_abbrev= Unchecked.defaultof<_>
-          entity_exn_info= Unchecked.defaultof<_>
           entity_modul_contents= Unchecked.defaultof<_>
           entity_pubpath = Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
@@ -2109,8 +2100,8 @@ and Construct =
             entity_attribs=[] // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
-            entity_tycon_repr_accessibility = TAccess([])
-            entity_exn_info=TExnNone
+            // entity_tycon_repr_accessibility = TAccess([])
+            // entity_exn_info=TExnNone
             entity_provider_abbrev=None
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_contents = MaybeLazy.Lazy (lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
@@ -2135,8 +2126,8 @@ and Construct =
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
-            entity_tycon_repr_accessibility = access
-            entity_exn_info=TExnNone
+            // entity_tycon_repr_accessibility = access
+            // entity_exn_info=TExnNone
             entity_provider_abbrev=None
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
@@ -2214,9 +2205,6 @@ and
 
       /// When this typar represents a static parameter to a provider, what is its kind.
       mutable typar_staticarg_kind : TType option
-       
-       /// The inferred constraints for the type inference variable 
-      mutable typar_constraints: TyparConstraint list 
 
       /// A cached TAST type used when this type variable is used as type.
       mutable typar_astype: TType
@@ -2326,7 +2314,6 @@ and
           typar_flags = Unchecked.defaultof<_>
           typar_stamp = -1L
           typar_solution = Unchecked.defaultof<_>
-          typar_constraints = Unchecked.defaultof<_>
           typar_staticarg_kind = Unchecked.defaultof<_>
           typar_astype = Unchecked.defaultof<_>
           typar_opt_data = Unchecked.defaultof<_> }
@@ -4078,21 +4065,6 @@ and
     /// Indicates the type is a static argument to a type provider
     | TType_staticarg of TType * StaticArg
 #endif
-    /// For now, used only as a discriminant in error message.
-    /// See https://github.com/Microsoft/visualfsharp/issues/2561
-    member x.GetAssemblyName() =
-        match x with
-        | TType_forall (_tps, ty) -> ty.GetAssemblyName()
-        | TType_app (tcref, _tinst) -> tcref.CompilationPath.ILScopeRef.QualifiedName
-        | TType_tuple (_tupInfo, _tinst) -> ""
-        | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
-        | TType_fun (_d, _r) -> ""
-        | TType_measure _ms -> ""
-        | TType_var tp -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
-        | TType_ucase (_uc, _tinst) ->
-            let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
-            scope.QualifiedName
-
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
@@ -4126,14 +4098,15 @@ and
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
     member x.GetAssemblyName() =
         match x with
-        | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
-        | TType_app (tcref, _tinst)      -> tcref.CompilationPath.ILScopeRef.QualifiedName
+        | TType_forall (_tps, ty) -> ty.GetAssemblyName()
+        | TType_app (tcref, _tinst) -> tcref.CompilationPath.ILScopeRef.QualifiedName
         | TType_tuple (_tupInfo, _tinst) -> ""
-        | TType_fun (_d,_r)              -> ""
-        | TType_measure _ms              -> ""
-        | TType_var tp                   -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
-        | TType_ucase (_uc,_tinst)       ->
-            let (TILObjectReprData(scope,_nesting,_definition)) = _uc.Tycon.ILTyconInfo
+        | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
+        | TType_fun (_d, _r) -> ""
+        | TType_measure _ms -> ""
+        | TType_var tp -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
+        | TType_ucase (_uc, _tinst) ->
+            let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
 #if !NO_EXTENSIONTYPING
         | TType_staticarg(_,_arg)        -> ""
@@ -5486,6 +5459,7 @@ let copyTypar (tp: Typar) =
     let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
     Typar.New { typar_id = tp.typar_id
                 typar_flags = tp.typar_flags
+                typar_staticarg_kind = tp.typar_staticarg_kind
                 typar_stamp = newStamp()
                 typar_solution = tp.typar_solution
                 typar_astype = Unchecked.defaultof<_>
@@ -5781,8 +5755,7 @@ let NewTypar (kind, rigid, Typar(id, staticReq, isCompGen), isFromError, dynamic
         typar_stamp = newStamp() 
         typar_flags= TyparFlags(kind, rigid, isFromError, isCompGen, staticReq, dynamicReq, eqDep, compDep) 
         typar_solution = None
-        typar_constraints=[]
-        typar_xmldoc = XmlDoc.Empty
+        // typar_xmldoc = XmlDoc.Empty
         typar_staticarg_kind = None
         typar_astype = Unchecked.defaultof<_>
         typar_opt_data =
@@ -5814,8 +5787,9 @@ let NewExn cpath (id: Ident) access repr attribs doc =
         entity_attribs=attribs
         entity_logical_name=id.idText
         entity_range=id.idRange
-        entity_other_range=None
-        entity_exn_info= repr
+
+        // entity_other_range=None
+        // entity_exn_info= repr
         entity_provider_abbrev=None
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
@@ -5858,8 +5832,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_attribs=[] // fixed up after
         entity_typars=typars
         entity_tycon_repr = TNoRepr
-        entity_tycon_repr_accessibility = reprAccess
-        entity_exn_info=TExnNone
+        // entity_tycon_repr_accessibility = reprAccess
         entity_provider_abbrev=None
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_modul_contents = mtyp

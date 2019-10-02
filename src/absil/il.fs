@@ -502,6 +502,12 @@ type ILScopeRef =
 
     member x.AssemblyRef = match x with ILScopeRef.Assembly x -> x | _ -> failwith "not an assembly reference"
 
+    member scoref.QualifiedNameWithNoShortPrimaryAssembly =
+        match scoref with 
+        | ILScopeRef.Local -> ""
+        | ILScopeRef.Module mref -> "module "+mref.Name
+        | ILScopeRef.Assembly aref -> aref.QualifiedName
+
     member x.QualifiedName =
         match x with
         | ILScopeRef.Local -> ""

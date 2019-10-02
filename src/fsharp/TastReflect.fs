@@ -1,4 +1,4 @@
-﻿namespace Microsoft.FSharp.Compiler
+﻿namespace FSharp.Compiler
 
 #nowarn "40"
 #if !NO_EXTENSIONTYPING
@@ -10,13 +10,15 @@ module internal TastReflect =
     open System.IO
     open System.Collections.Generic
     open System.Reflection
-    open Microsoft.FSharp.Compiler.Range
-    open Microsoft.FSharp.Compiler.Tast
-    open Microsoft.FSharp.Compiler.Tastops
-    open Microsoft.FSharp.Compiler.AbstractIL.IL
-    open Microsoft.FSharp.Core.CompilerServices
-    open Microsoft.FSharp.Compiler.TcGlobals
-    open System.Runtime.Remoting.Lifetime
+    open FSharp.Compiler.Range
+    open FSharp.Compiler.Tast
+    open FSharp.Compiler.Tastops
+    open FSharp.Compiler.AbstractIL.IL
+    open FSharp.Core.CompilerServices
+    open FSharp.Compiler.TcGlobals
+    // This does not work anymore as the F# compiler is NOT distributed for the .NET Framework anymore.
+    // It's based on .NET Standard 2...
+    // open System.Runtime.Remoting.Lifetime
     open System.Runtime.InteropServices.ComTypes
 
 
@@ -744,7 +746,7 @@ module internal TastReflect =
 
         member __.Metadata = vref
 
-        override __.Name              = vref.CompiledName  
+        override __.Name              = vref.CompiledName None
         override __.DeclaringType     = declTy
         override __.MemberType        = MemberTypes.Method
         override __.Attributes        =
@@ -762,7 +764,7 @@ module internal TastReflect =
         override this.Equals(that:obj) = 
             match that with 
             | :? MethodInfo as thatMI -> 
-                vref.CompiledName = thatMI.Name 
+                vref.CompiledName None = thatMI.Name 
                 (*
                 TODO: Need to implement equality correctly for method defs
                 &&
@@ -786,7 +788,7 @@ module internal TastReflect =
         override __.GetCustomAttributes(_inherited) = notRequired "GetCustomAttributes"
         override __.GetCustomAttributes(_attributeType, _inherited) = notRequired "GetCustomAttributes" 
 
-        override __.ToString() = sprintf "ctxt method %s(...) in type %s" vref.CompiledName declTy.FullName
+        override __.ToString() = sprintf "ctxt method %s(...) in type %s" (vref.CompiledName None) declTy.FullName
 
     /// Makes a type definition read from a binary available as a System.Type. Not all methods are implemented.
     and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: TyconRef) as this = 
@@ -842,11 +844,11 @@ module internal TastReflect =
                     |> fun x -> x.IsSome
                 override __.GetCustomAttributesData() = ReflectCustomAttribute.TxCustomAttributesData(asm, inp.Attribs)
 
-                override this.GetHashCode() = hash inp.CompiledName
+                override this.GetHashCode() = hash (inp.CompiledName None)
                 override this.Equals(that:obj) = 
                     match that with 
                     | :? PropertyInfo as thatPI -> 
-                        inp.CompiledName = thatPI.Name  &&
+                        (inp.CompiledName None) = thatPI.Name  &&
                         eqType this.DeclaringType thatPI.DeclaringType 
                     | _ -> false
 
@@ -858,7 +860,7 @@ module internal TastReflect =
                 override __.GetCustomAttributes(attributeType, inherited) = notRequired "GetCustomAttributes"
                 override __.IsDefined(attributeType, inherited) = notRequired "IsDefined"
 
-                override __.ToString() = sprintf "ctxt property %s(...) in type %s" inp.CompiledName declTy.Name }
+                override __.ToString() = sprintf "ctxt property %s(...) in type %s" (inp.CompiledName None) declTy.Name }
 
         /// Make an event definition read from a binary available as an EventInfo. Not all methods are implemented.
         //and TxEventDefinition declTy gps (inp: ILEventDef) = 

@@ -1656,7 +1656,7 @@ let u_tyar_spec_data st =
       typar_stamp=newStamp()
       typar_flags=TyparFlags(int32 d)
       typar_solution=None
-      typar_xmldoc=g
+    //   typar_xmldoc=g
       typar_staticarg_kind=None
       typar_astype= Unchecked.defaultof<_>
       typar_opt_data=
@@ -2157,7 +2157,6 @@ and u_entity_spec_data st : Entity =
       entity_flags=EntityFlags x11
       entity_cpath=x12
       entity_modul_contents=MaybeLazy.Lazy x13
-      entity_exn_info=x14
       entity_provider_abbrev=None // FS-1023 TODO: Proper pickling
       entity_il_repr_cache=newCache()
       entity_opt_data=
@@ -2188,7 +2187,7 @@ and u_tcaug st =
         u_bool
         (u_space 1)
         st
-    {tcaug_compare=a1
+    {TyconAugmentation.tcaug_compare=a1
      tcaug_compare_withc=a2
      tcaug_hash_and_equals_withc=a3
      tcaug_equals=b2

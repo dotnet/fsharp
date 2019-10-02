@@ -94,8 +94,8 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
         try
 #if !NO_EXTENSIONTYPING
             match fakeTyconRef.TryDeref with
-            | VSome r -> false, r
-            | VNone ->
+            | ValueSome r -> false, r
+            | ValueNone ->
                 let asm = ccu.ReflectAssembly :?> TastReflect.ReflectAssembly
                 let typ = asm.GetType(String.concat "." (Array.toList path@[typeName]))
                 let ttyp =
@@ -129,12 +129,12 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
 #endif
     if wasReflectResolved then
         match tryRescopeEntity ccu tycon with
-        | Some tcref -> tcref
-        | None -> mkLocalEntityRef tycon
+        | ValueSome tcref -> tcref
+        | ValueNone -> mkLocalEntityRef tycon
     else
         match tryRescopeEntity ccu tycon with
-        | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
-        | Some tcref -> tcref
+        | ValueNone -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
+        | ValueSome tcref -> tcref
 
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, without caching
@@ -609,8 +609,9 @@ let ImportILAssembly(amap:(unit -> ImportMap), m, auxModuleLoader, ilScopeRef, s
             InvalidateEvent=invalidateCcu
             IsProviderGenerated = false
             ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)
-            ImportQualifiedTypeNameAsTypeValue = (fun _ -> failwith (sprintf "ImportQualifiedTypeNameAsTypeValue: from IL assembly!? %s" sref.QualifiedName))
-            ReflectAssembly = lazy failwith (sprintf "ReflectAssembly: from IL assembly!? %s" sref.QualifiedName)
+            // TODO: The error needs to fixed / updated.
+            ImportQualifiedTypeNameAsTypeValue = (fun _ -> failwith "Feck what is going on here D: :D?") // (fun _ -> failwith (sprintf "ImportQualifiedTypeNameAsTypeValue: from IL assembly!? %s" sref.QualifiedName))
+            ReflectAssembly = lazy failwith (fun _ -> failwith "Feck what is going on here D: :D?") // (sprintf "ReflectAssembly: from IL assembly!? %s" sref.QualifiedName)
             GetCcuBeingCompiledHack = (fun () -> None)
 #endif
             QualifiedName= Some ilScopeRef.QualifiedName

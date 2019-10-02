@@ -547,7 +547,7 @@ module public FSharp.Compiler.PrettyNaming
     /// Return a string array delimited by the given separator.
     /// Note that a quoted string is not going to be mangled into pieces. 
     let inline private isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
-    let private splitAroundQuotation (text: string) (separator: char) =
+    let splitAroundQuotation (text: string) (separator: char) =
         let length = text.Length
         let result = ResizeArray()
         let mutable insideQuotation = false
@@ -574,7 +574,7 @@ module public FSharp.Compiler.PrettyNaming
 
     /// Return a string array delimited by the given separator up to the maximum number.
     /// Note that a quoted string is not going to be mangled into pieces.
-    let private splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
+    let splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
         if count <= 1 then [| text |] else
         let mangledText  = splitAroundQuotation text separator
         match mangledText.Length > count with

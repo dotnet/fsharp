@@ -5557,7 +5557,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
 
           CheckSimulateException tcConfig
 #if !NO_EXTENSIONTYPING
-      tcImports.SetCcuBeingCompiledHack tcState.Ccu
+          tcImports.SetCcuBeingCompiledHack tcState.Ccu
 #endif
 
           let m = inp.Range

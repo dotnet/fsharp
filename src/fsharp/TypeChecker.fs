@@ -4872,21 +4872,20 @@ and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
     tpenv
 
 #if !NO_EXTENSIONTYPING
-and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (v: SynType) idOpt container =
+
+// Returns the static constant arg value a_i for a syntactic argument application.
+//
+// Note: In the presence of a syntactic type variable, this means we are in inference mode.
+
+and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ (v:SynType) idOpt container =
     let g = cenv.g
-    let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range)) 
+    let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv occ), v.Range)) 
     let record ttype =
         match idOpt with
         | Some id ->
             let item = Item.ArgName (id, ttype, Some container)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
         | _ -> ()
-
-// Returns the static constant arg value a_i for a syntactic argument application.
-//
-// Note: In the presence of a syntactic type variable, this means we are in inference mode.
-
-and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ (v:SynType) container =
     match v with
     | SynType.StaticConstantNamed(SynType.LongIdent(lidwd), st, _) ->
         match lidwd.Lid with
@@ -5127,13 +5126,36 @@ and calculateAbstractParameterInfos cenv (staticParameters : Tainted<ProvidedPar
     staticParameters
     |> Array.map parameterInfo
 and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv (tcref: TyconRef) (args: SynType list) m =
-    let typeBeforeArguments = 
-        match tcref.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.ProvidedType
-        | _ -> failwith "unreachable"
+    let args, _ = TcStaticConstantParameters cenv env tpenv occ (ArgumentContainer.Type tcref) args
+    let makeTy, parameterInfos =
+        match tcref.TypeReprInfo with
+            | TProvidedTypeExtensionPoint info ->
+                let typeBeforeArguments = info.ProvidedType
+                let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m)
+                let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
+                let paramInfos = calculateAbstractParameterInfos cenv staticParameters
+                let ty args = TType_app(tcref, args)
+                ty, paramInfos
+            | _ ->
+                match tcref.TypeAbbrev with
+                | Some ty ->
+                    let typars = tcref.Typars m
+                    let paramInfos =
+                        typars
+                        |> List.map (fun (typar : Typar) ->
+                            Some typar, fun _m -> null, typar.DisplayName, typar.typar_staticarg_kind)
+                        |> List.toArray
+                    let ty (args : TType list) =
+                        if args.Length <> typars.Length then
+                            error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToType(), m))
 
-    let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
-    let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
+                        let inst = List.zip typars args
+                        instType inst ty
+                    ty, paramInfos
+                | None -> failwith "unreachable"
+    let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (parameterInfos, args, tcref.DisplayName, m)
+    let instantiatedType = makeTy (argsInStaticParameterOrderIncludingDefaults |> Array.toList)
+    fullyEvaluateProvidedTypeExpression cenv instantiatedType m
 
 and convertTTypeToStaticArg (cenv : cenv) (ty : TType) : StaticArg =
     match ty with
@@ -15455,7 +15477,7 @@ module EstablishTypeDefinitionCores =
             let ctxt = ProvidedTypeContext.Create(lookupILTypeRef, lookupTyconRef)
 
             // Create a new provided type which captures the reverse-remapping tables.
-            let theRootTypeWithRemapping = theRootType.PApply ((fun x -> ProvidedType.ApplyContext(x, ctxt)), m)
+            let theRootTypeWithRemapping = theRootType.PApply ((fun x -> ProvidedType.ApplyContext x ctxt), m)
 
             let isRootGenerated, rootProvAssemStaticLinkInfoOpt = 
                 let stRootAssembly = theRootTypeWithRemapping.PApply((fun st -> st.Assembly), m)
