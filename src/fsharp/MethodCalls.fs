@@ -214,46 +214,46 @@ type CalledMethArgSet<'T> =
     member x.NumUnnamedCalledArgs = x.UnnamedCalledArgs.Length
 
 
-let MakeCalledArgs amap m (minfo: MethInfo) y _) as limitCminst =
-    // Mark up the arguments with their posiy _) as limitCtion, so we can sort them back into order later 
-    let paramDatas = minfo.GetParamDatas(amay _) as limitCp, m, minst)
-    paramDatas |> List.mapiSquared (fun i j y _) as limitC(ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
-      { Position=(i,j)y _) as limitC
-        IsParamArray=isParamArrayArgy _) as limitC
-        OptArgInfo=optArgInfoy _) as limitC
-        CallerInfo = callerInfoFlagsy _) as limitC
-        IsInArg=isInArgy _) as limitC
-        IsOutArg=isOutArgy _) as limitC
-        ReflArgInfo=reflArgInfoy _) as limitC
-        NameOpt=nmOpty _) as limitC
-        CalledArgumentType=typeOfCalledArg }y _) as limitC)
-y _) as limitC
-/// Represents the syntactic matching betweey _) as limitCn a caller of a method and the called method.
-///y _) as limitC
-/// The constructor takes all the informatioy _) as limitCn about the caller and called side of a method, match up named arguments, property setters etc.,
-/// and returns a CalledMeth object for furty _) as limitCher analysis.
-type CalledMeth<'T>y _) as limitC
-      (infoReader: InfoReader,y _) as limitC
-       nameEnv: NameResolutionEnv option,y _) as limitC
-       isCheckingAttributeCall,y _) as limitC
-       freshenMethInfo, // a function to hely _) as limitCp generate fresh type variables the property setters methods in generic classes 
-       m,y _) as limitC
-       ad,                // the access domay _) as limitCin of the place where the call is taking place
-       minfo: MethInfo,    // the method we'y _) as limitCre attempting to call 
-       calledTyArgs,      // the 'called typy _) as limitCe arguments', i.e. the fresh generic instantiation of the method we're attempting to call 
-       callerTyArgs: TType list, // the 'caly _) as limitCler type arguments', i.e. user-given generic instantiation of the method we're attempting to call 
-       pinfoOpt: PropInfo option,   // the py _) as limitCroperty related to the method we're attempting to call, if any  
-       callerObjArgTys: TType list,   // they _) as limitC types of the actual object argument, if any 
-       curriedCallerArgs: (CallerArg<'T> lisy _) as limitCt * CallerNamedArg<'T> list) list,     // the data about any arguments supplied by the caller 
-       allowParamArgs: bool,       // do we y _) as limitCallow the use of a param args method in its "expanded" form?
-       allowOutAndOptArgs: bool,  // do we ay _) as limitCllow the use of the transformation that converts out arguments as tuple returns?
-       tyargsOpt : TType option) // method py _) as limitCarameters
-    =y _) as limitC
-    let g = infoReader.gy _) as limitC
-    let methodRetTy = minfo.GetFSharpReturnTy _) as limitCy(infoReader.amap, m, calledTyArgs)
-y _) as limitC
-    let fullCurriedCalledArgs = MakeCalledAry _) as limitCgs infoReader.amap m minfo calledTyArgs
-    do assert (fullCurriedCalledArgs.Length y _) as limitC= fullCurriedCalledArgs.Length)
+let MakeCalledArgs amap m (minfo: MethInfo) minst =
+    // Mark up the arguments with their position, so we can sort them back into order later 
+    let paramDatas = minfo.GetParamDatas(amap, m, minst)
+    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
+      { Position=(i,j)
+        IsParamArray=isParamArrayArg
+        OptArgInfo=optArgInfo
+        CallerInfo = callerInfoFlags
+        IsInArg=isInArg
+        IsOutArg=isOutArg
+        ReflArgInfo=reflArgInfo
+        NameOpt=nmOpt
+        CalledArgumentType=typeOfCalledArg })
+
+/// Represents the syntactic matching between a caller of a method and the called method.
+///
+/// The constructor takes all the information about the caller and called side of a method, match up named arguments, property setters etc.,
+/// and returns a CalledMeth object for further analysis.
+type CalledMeth<'T>
+      (infoReader: InfoReader,
+       nameEnv: NameResolutionEnv option,
+       isCheckingAttributeCall,
+       freshenMethInfo, // a function to help generate fresh type variables the property setters methods in generic classes 
+       m,
+       ad,                // the access domain of the place where the call is taking place
+       minfo: MethInfo,    // the method we're attempting to call 
+       calledTyArgs,      // the 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call 
+       callerTyArgs: TType list, // the 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call 
+       pinfoOpt: PropInfo option,   // the property related to the method we're attempting to call, if any  
+       callerObjArgTys: TType list,   // the types of the actual object argument, if any 
+       curriedCallerArgs: (CallerArg<'T> list * CallerNamedArg<'T> list) list,     // the data about any arguments supplied by the caller 
+       allowParamArgs: bool,       // do we allow the use of a param args method in its "expanded" form?
+       allowOutAndOptArgs: bool,  // do we allow the use of the transformation that converts out arguments as tuple returns?
+       tyargsOpt : TType option) // method parameters
+    =
+    let g = infoReader.g
+    let methodRetTy = minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
+
+    let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
+    do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
  
     let argSetInfos = 
         (curriedCallerArgs, fullCurriedCalledArgs) ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 

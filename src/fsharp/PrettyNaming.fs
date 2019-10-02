@@ -28,27 +28,7 @@ module public FSharp.Compiler.PrettyNaming
     let [<Literal>] qmark = "?"
     let [<Literal>] qmarkSet = "?<-"
 
-    /// Prefix for compiled (mangled) operator na    if isAppTy amap.g declaringType then 
-        let declaringEntity = tcrefOfAppTy amap.g declaringType
-        if declaringEntity.IsLocalRef then
-            mbase.PUntaint((fun p ->
-                match p.Handle with
-                | :? TastReflect.ReflectMethodDefinition as m -> Some m.Metadata
-                | _ -> None
-                ), m)
-        else if ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
-            match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, methodName)) with 
-            | true, vref -> Some vref
-            | _ -> 
-            match amap.g.knownFSharpCoreModules.TryGetValue declaringEntity.LogicalName with
-            | true, modRef -> 
-                modRef.ModuleOrNamespaceType.AllValsByLogicalName 
-                |> Seq.tryPick (fun (KeyValue(_, v)) -> if (v.CompiledName amap.g.CompilerGlobalState) = methodName then Some (mkNestedValRef modRef v) else None)
-            | _ -> None
-        else
-            None
-    else
-        Nonees.
+    /// Prefix for compiled (mangled) operator na    if isAppTy amap.g declaringType then
     let [<Literal>] opNamePrefix = "op_"
 
     let private opNameTable = 

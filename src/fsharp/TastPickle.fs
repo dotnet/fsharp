@@ -112,96 +112,18 @@ type NodeOutTable<'Data, 'Node> =
 type WriterState =
   { os: ByteBuffer
     oscope: CcuThunk
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     occus: Table<CcuReference>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     oentities: NodeOutTable<EntityData, Entity>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     otypars: NodeOutTable<TyparData, Typar>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     ovals: NodeOutTable<ValData, Val>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     oanoninfos: NodeOutTable<AnonRecdTypeInfo, AnonRecdTypeInfo>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     ostrings: Table<string>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     opubpaths: Table<int[]>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     onlerefs: Table<int * int[]>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     osimpletys: Table<int>
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     oglobals : TcGlobals
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     mutable isStructThisArgPos : bool
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     ofile : string
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     /// Indicates if we are using in-memory format, where we store XML docs as we
         | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
         | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
@@ -210,54 +132,12 @@ type WriterState =
         | TType_var _            -> z
         | TType_measure _          -> zll
     oInMem : bool
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
   }
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
 let pfailwith st str = ffailwith st.ofile str
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
 
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
 [<NoEquality; NoComparison>]
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
 type NodeInTable<'Data, 'Node> =
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
     { LinkNode : ('Node -> 'Data -> unit)
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> z
       IsLinked : ('Node -> bool)
       Name : string
       Nodes : 'Node[] }
