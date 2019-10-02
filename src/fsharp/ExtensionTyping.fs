@@ -866,7 +866,7 @@ module internal ExtensionTyping =
     /// Detect a provided constant expression 
     let (|ProvidedConstantExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
-        |  Quotations.Patterns.Value(obj, ty) -> Some (obj, ProvidedType.Create x.Context ty)
+        |  Quotations.Patterns.Value(obj, ty)  -> Some (obj, ProvidedType.Create x.Context ty)
         | _ -> None
 
     /// Detect a provided type-as expression 
@@ -1211,7 +1211,7 @@ module internal ExtensionTyping =
         PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
     /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
-    let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: StaticArg[], m:range) =
+    let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: StaticArg[], m: range) =
         if staticArgs.Length = 0 then 
             Some methBeforeArgs
         else
@@ -1238,7 +1238,7 @@ module internal ExtensionTyping =
         enc @ [ mangledName ]
 
     /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
-    let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: StaticArg[], m:range) =
+    let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: StaticArg[], m: range) =
         if staticArgs.Length = 0 then 
             Some (typeBeforeArguments, (fun () -> ()))
         else 
@@ -1264,14 +1264,14 @@ module internal ExtensionTyping =
 
     /// Given a mangled name reference to a non-nested provided type, resolve it.
     /// If necessary, demangle its static arguments before applying them.
-    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, importQualifiedTypeNameAsTypeValue: string -> Type, moduleOrNamespace:string[], typeLogicalName: string, m: range) =
+    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, importQualifiedTypeNameAsTypeValue: string -> Type, moduleOrNamespace: string[], typeLogicalName: string, m: range) =
         
         // Demangle the static parameters
         let typeName, argNamesAndValues = 
             try 
                 PrettyNaming.demangleProvidedTypeName typeLogicalName 
             with PrettyNaming.InvalidMangledStaticArg piece -> 
-                error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText(piece), range0)) 
+                error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText piece, range0)) 
 
         let argSpecsTable = dict argNamesAndValues
         let typeBeforeArguments = ResolveProvidedType(resolver, range0, moduleOrNamespace, typeName) 
@@ -1326,6 +1326,7 @@ module internal ExtensionTyping =
                             assert (computedName = arg)
                             box ty
                           | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0))
+
                       | _ ->
                           if sp.PUntaint ((fun sp -> sp.IsOptional), m) then 
                               match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
