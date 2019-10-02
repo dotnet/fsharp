@@ -5496,11 +5496,11 @@ type TcState =
 
  
 /// Create the initial type checking state for compiling an assembly
-let GetInitialTcState(m, ccuName : string, tcConfig:TcConfig, tcGlobals, tcImports:TcImports, niceNameGen, tcEnv0) =
+let GetInitialTcState(m, ccuName : string, tcConfig: TcConfig, tcGlobals, tcImports: TcImports, niceNameGen, tcEnv0) =
     ignore tcImports
 
     // Create a ccu to hold all the results of compilation
-    let ccuType = NewCcuContents ILScopeRef.Local m ccuName (NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace)
+    let ccuType = NewCcuContents ILScopeRef.Local m ccuName (NewEmptyModuleOrNamespaceType Namespace)
 
     let ccuData: CcuData = 
         { IsFSharp=true
@@ -5516,8 +5516,8 @@ let GetInitialTcState(m, ccuName : string, tcConfig:TcConfig, tcGlobals, tcImpor
           TryGetILModuleDef = (fun () -> None)
           FileName=None 
           Stamp = newStamp()
-          QualifiedName = None
-          SourceCodeDirectory = tcConfig.implicitIncludeDir
+          QualifiedName= None
+          SourceCodeDirectory = tcConfig.implicitIncludeDir 
           ILScopeRef=ILScopeRef.Local
           Contents=ccuType
           MemberSignatureEquality= (Tastops.typeEquivAux EraseAll tcGlobals)

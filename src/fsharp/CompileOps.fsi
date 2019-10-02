@@ -412,7 +412,7 @@ type TcConfigBuilder =
     member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
     
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
-    
+ 
 [<Sealed>]
 // Immutable TcConfig
 type TcConfig =
