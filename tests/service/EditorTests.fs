@@ -1319,3 +1319,43 @@ let ``FSharpField.IsNameGenerated`` () =
      "type U = Case of string * Item2: string * string * Name: string",
         ["Item1", true; "Item2", false; "Item3", true; "Name", false]]
     |> List.iter (fun (source, expected) -> checkFields source |> shouldEqual expected)
+
+
+[<Test>]
+let ``ValNoMutable recovery`` () =
+    let source = """
+let x = 1
+x <-
+    let y = 1
+    y
+"""
+    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
+    let symbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+    symbols
+    |> Array.exists (fun su ->
+        match su.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DisplayName = "y"
+        | _ -> false)
+    |> shouldEqual true
+
+
+[<Test>]
+let ``PropertyCannotBeSet recovery`` () =
+    let source = """
+type T =
+    static member P = 1
+
+T.P <-
+    let y = 1
+    y
+"""
+    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
+    let symbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+    symbols
+    |> Array.exists (fun su ->
+        match su.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DisplayName = "y"
+        | _ -> false)
+    |> shouldEqual true

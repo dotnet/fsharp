@@ -9362,7 +9362,8 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                 if isByrefTy g vty then 
                     destByrefTy g vty 
                 else 
-                    if not vref.IsMutable then error (ValNotMutable(env.DisplayEnv, vref, mStmt))
+                    if not vref.IsMutable then
+                        errorR (ValNotMutable (env.DisplayEnv, vref, mStmt))
                     vty 
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false vty2 env tpenv e2
@@ -9415,15 +9416,15 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             if meths.IsEmpty then 
                 let meths = pinfos |> GettersOfPropInfos
                 let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
-                if isByrefMethReturnSetter then
-                    // x.P <- ... byref setter
-                    if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-                    TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
-                else
-                    error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                if not isByrefMethReturnSetter then
+                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                // x.P <- ... byref setter
+                if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
+                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
             else
                 let args = if pinfo.IsIndexer then args else []
-                if isNil meths then error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                if isNil meths then
+                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
                 // Note: static calls never mutate a struct object argument
                 TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
         | _ -> 
@@ -9600,12 +9601,11 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
             if meths.IsEmpty then 
                 let meths = pinfos |> GettersOfPropInfos
                 let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy cenv.g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
-                if isByrefMethReturnSetter then
-                    // x.P <- ... byref setter
-                    if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-                    TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed 
-                else
-                    error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                if not isByrefMethReturnSetter then
+                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                // x.P <- ... byref setter
+                if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
+                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed 
             else
                 let args = if pinfo.IsIndexer then args else []
                 let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
