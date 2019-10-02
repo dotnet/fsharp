@@ -93,11 +93,16 @@ type CodeLensOptions =
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
       IsOutliningEnabled: bool
-      UsePreviewTextHover: bool }
+      UsePreviewTextHover: bool
+      UsePreviewDiagnostics: bool }
     static member Default =
       { IsBlockStructureEnabled = true
         IsOutliningEnabled = true
-        UsePreviewTextHover = false }
+        UsePreviewTextHover = false
+        UsePreviewDiagnostics = false }
+    member this.AsLspOptions(): Options =
+        { usePreviewTextHover = this.UsePreviewTextHover
+          usePreviewDiagnostics = this.UsePreviewDiagnostics }
 
 [<CLIMutable>]
 type FormattingOptions =
@@ -203,8 +208,7 @@ module internal OptionsUI =
             async {
                 let lspService = this.GetService<LspService>()
                 let settings = this.GetService<EditorOptions>()
-                let options =
-                    { Options.usePreviewTextHover = settings.Advanced.UsePreviewTextHover }
+                let options = settings.Advanced.AsLspOptions()
                 do! lspService.SetOptions options
             } |> Async.Start
 

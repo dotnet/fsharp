@@ -1,0 +1,52 @@
+<Project>
+
+  <!--
+  Accurately reporting the command line arguments requires that the target Restore is run _without_ these values having
+  been set.  The project file helper associated with this .targets file calls Restore before calling into the target
+  that prints the command line arguments.
+  -->
+  <PropertyGroup Condition="'$(DesignTimeBuild)' == 'true'">
+    <ProvideCommandLineArgs>true</ProvideCommandLineArgs>
+    <BuildProjectReferences>false</BuildProjectReferences>
+    <SkipCompilerExecution>true</SkipCompilerExecution>
+    <DisableRarCache>true</DisableRarCache>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+    <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+    <SkipCopyBuildProduct>true</SkipCopyBuildProduct>
+    <AddModules>false</AddModules>
+    <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <!-- displays the target frameworks of a cross-targeted project -->
+  <Target Name="_ComputeDependsOn">
+    <!--
+    In a multi-targeted project, the _ComputeTargetFrameworkItems populates the ItemGroup _TargetFramework with the
+    appropriate values.  If the project contains just a single value for $(TargetFramework) then the target
+    _ComputeTargetFrameworkItems doesn't exist, so instead the helper target _PopulateTargetFrameworks is run which
+    populates the same group.
+    -->
+    <PropertyGroup>
+      <WorkerDependsOn Condition="'$(TargetFramework)' == ''">_ComputeTargetFrameworkItems</WorkerDependsOn>
+      <WorkerDependsOn Condition="'$(TargetFramework)' != ''">_PopulateTargetFrameworks</WorkerDependsOn>
+    </PropertyGroup>
+  </Target>
+  <Target Name="_PopulateTargetFrameworks">
+    <ItemGroup>
+      <_TargetFramework Include="$(TargetFramework)" />
+    </ItemGroup>
+  </Target>
+  <Target Name="_ReportTargetFrameworksWorker" DependsOnTargets="_ComputeDependsOn;$(WorkerDependsOn)">
+    <Message Text="DetectedTargetFramework=%(_TargetFramework.Identity)" Importance="High" />
+  </Target>
+  <Target Name="ReportTargetFrameworks" DependsOnTargets="_ComputeDependsOn;_ReportTargetFrameworksWorker">
+  </Target>
+
+  <!-- displays the command line arguments passed to fsc.exe -->
+  <Target Name="ReportCommandLineArgs"
+          DependsOnTargets="Build">
+    <Message Text="DetectedCommandLineArg=%(FscCommandLineArgs.Identity)" Importance="High" />
+  </Target>
+
+</Project>
