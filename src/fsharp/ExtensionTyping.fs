@@ -1208,7 +1208,7 @@ module internal ExtensionTyping =
             staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))), range=m)
 
         let defaultArgValues = defaultArgValues.PUntaint(id, m)
-        computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
+        PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
     /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
     let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: StaticArg[], m:range) =
@@ -1264,13 +1264,13 @@ module internal ExtensionTyping =
 
     /// Given a mangled name reference to a non-nested provided type, resolve it.
     /// If necessary, demangle its static arguments before applying them.
-    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, importQualifiedTypeNameAsTypeValue: string -> Type, moduleOrNamespace:string[], typeLogicalName:string, m:range) =
+    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, importQualifiedTypeNameAsTypeValue: string -> Type, moduleOrNamespace:string[], typeLogicalName: string, m: range) =
         
         // Demangle the static parameters
         let typeName, argNamesAndValues = 
             try 
-                demangleProvidedTypeName typeLogicalName 
-            with InvalidMangledStaticArg piece -> 
+                PrettyNaming.demangleProvidedTypeName typeLogicalName 
+            with PrettyNaming.InvalidMangledStaticArg piece -> 
                 error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText(piece), range0)) 
 
         let argSpecsTable = dict argNamesAndValues
@@ -1332,8 +1332,8 @@ module internal ExtensionTyping =
                               | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
                               | v -> v
                           else
-                              error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0)))
-                |> Array.map StaticArg
+                              error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0))
+                      |> StaticArg)
 
             match TryApplyProvidedType(typeBeforeArguments, None, staticArgs, range0) with 
             | Some (typeWithArguments, checkTypeName) -> 

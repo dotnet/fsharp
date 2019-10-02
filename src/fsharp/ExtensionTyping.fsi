@@ -90,8 +90,8 @@ module internal ExtensionTyping =
         /// Map the TyconRef objects, if any
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 
 
-    [<AllowNullLiteral; Sealed; Class>]
-    type ProvidedType =
+    type [<AllowNullLiteral; Sealed; Class>] 
+        ProvidedType =
         inherit ProvidedMemberInfo
         member IsSuppressRelocate : bool
         member IsErased : bool
