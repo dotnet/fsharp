@@ -298,6 +298,29 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
           yield! allSymbolsInEntities compGen e.NestedEntities ]
 
 
+let getSymbolUses (source: string) =
+    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+let getSymbols (source: string) =
+    getSymbolUses source
+    |> Array.map (fun symbolUse -> symbolUse.Symbol)
+
+
+let [<Literal>] missingName = "???"
+
+let getSymbolName (symbol: FSharpSymbol) =
+    match symbol with
+    | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.LogicalName
+    | :? FSharpEntity as entity -> entity.LogicalName
+    | :? FSharpGenericParameter as parameter -> parameter.Name
+    | :? FSharpParameter as parameter -> Option.defaultValue missingName parameter.Name
+    | :? FSharpStaticParameter as parameter -> parameter.Name
+    | :? FSharpActivePatternCase as case -> case.Name
+    | :? FSharpUnionCase as case -> case.Name
+    | _ -> missingName
+
+
 let coreLibAssemblyName =
 #if NETCOREAPP2_0
     "System.Runtime"

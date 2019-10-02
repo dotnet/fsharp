@@ -1329,14 +1329,9 @@ x <-
     let y = 1
     y
 """
-    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
-    let symbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
-
-    symbols
-    |> Array.exists (fun su ->
-        match su.Symbol with
-        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DisplayName = "y"
-        | _ -> false)
+    getSymbols source
+    |> Array.map getSymbolName
+    |> Array.contains "y"
     |> shouldEqual true
 
 
@@ -1350,14 +1345,9 @@ T.P <-
     let y = 1
     y
 """
-    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
-    let symbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
-
-    symbols
-    |> Array.exists (fun su ->
-        match su.Symbol with
-        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DisplayName = "y"
-        | _ -> false)
+    getSymbols source
+    |> Array.map getSymbolName
+    |> Array.contains "y"
     |> shouldEqual true
 
 
@@ -1371,12 +1361,7 @@ type R =
     let y = 1
     y
 """
-    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
-    let symbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
-
-    symbols
-    |> Array.exists (fun su ->
-        match su.Symbol with
-        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DisplayName = "y"
-        | _ -> false)
+    getSymbols source
+    |> Array.map getSymbolName
+    |> Array.contains "y"
     |> shouldEqual true
