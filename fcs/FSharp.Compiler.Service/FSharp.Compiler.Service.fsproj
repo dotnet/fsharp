@@ -66,16 +66,16 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fs">
       <Link>Logger.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/sformat.fsi">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/ErrorText/sformat.fsi">
       <Link>ErrorText/sformat.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/sformat.fs">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/ErrorText/sformat.fs">
       <Link>ErrorText/sformat.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/sr.fsi">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/ErrorText/sr.fsi">
       <Link>ErrorText/sr.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/sr.fs">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/ErrorText/sr.fs">
       <Link>ErrorText/sr.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/LanguageFeatures.fsi">
