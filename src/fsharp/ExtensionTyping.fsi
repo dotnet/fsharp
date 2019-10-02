@@ -142,7 +142,7 @@ module internal ExtensionTyping =
         static member ApplyContext : ProvidedType * ProvidedTypeContext -> ProvidedType
         member Context : ProvidedTypeContext 
         interface IProvidedCustomAttributeProvider
-        static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool
+        static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool 
 
     and [<AllowNullLiteral>] 
         IProvidedCustomAttributeProvider =
