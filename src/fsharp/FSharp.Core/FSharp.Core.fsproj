@@ -125,10 +125,10 @@
     <Compile Include="math\z.fs">
       <Link>Numerics/z.fs</Link>
     </Compile>
-    <Compile Include="..\FSharp.Compiler.Private\sformat.fsi">
+    <Compile Include="..\FSharp.Compiler.Private\ErrorText\sformat.fsi">
       <Link>ErrorText/sformat.fsi</Link>
     </Compile>
-    <Compile Include="..\FSharp.Compiler.Private\sformat.fs">
+    <Compile Include="..\FSharp.Compiler.Private\ErrorText\sformat.fs">
       <Link>ErrorText/sformat.fs</Link>
     </Compile>
     <Compile Include="printf.fsi">
