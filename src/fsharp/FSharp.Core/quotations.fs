@@ -663,10 +663,10 @@ module Patterns =
         if (not (assignableFrom expectedType receivedType)) then
           invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
-    let checkArgs (paramInfos: ParameterInfo[]) (args:list<Expr>) =
+    let checkArgsTypes (paramInfos: Type[]) (args:list<Expr>) =  
         if (paramInfos.Length <> args.Length) then invalidArg "args" (SR.GetString(SR.QincorrectNumArgs))
         List.iter2
-            ( fun (p:ParameterInfo) a -> checkTypesWeakSR p.ParameterType (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam)))
+            ( fun (p:Type) a -> checkTypesWeakSR p (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam))) 
             (paramInfos |> Array.toList)
             args
 
