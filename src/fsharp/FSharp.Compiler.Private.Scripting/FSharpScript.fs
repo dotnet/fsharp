@@ -30,6 +30,13 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
         ())()
 
     let config = FsiEvaluationSession.GetDefaultConfiguration()
+
+    let _evaluator = config.OnEvaluation.Subscribe (fun eval ->
+        let _value = eval.FsiValue
+        let _name = eval.Name
+        let _symbolUse = eval.SymbolUse
+        ())
+
     let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:netcore"; "--quiet" |]
     let argv = Array.append baseArgs additionalArgs
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
