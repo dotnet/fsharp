@@ -5,6 +5,7 @@ open System.IO
 open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FsUnit
 
 #if NETCOREAPP2_0
 let readRefs (folder : string) (projectFile: string) =
@@ -307,18 +308,23 @@ let getSymbols (source: string) =
     |> Array.map (fun symbolUse -> symbolUse.Symbol)
 
 
-let [<Literal>] missingName = "???"
-
 let getSymbolName (symbol: FSharpSymbol) =
     match symbol with
-    | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.LogicalName
-    | :? FSharpEntity as entity -> entity.LogicalName
-    | :? FSharpGenericParameter as parameter -> parameter.Name
-    | :? FSharpParameter as parameter -> Option.defaultValue missingName parameter.Name
-    | :? FSharpStaticParameter as parameter -> parameter.Name
-    | :? FSharpActivePatternCase as case -> case.Name
-    | :? FSharpUnionCase as case -> case.Name
-    | _ -> missingName
+    | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.LogicalName
+    | :? FSharpEntity as entity -> Some entity.LogicalName
+    | :? FSharpGenericParameter as parameter -> Some parameter.Name
+    | :? FSharpParameter as parameter -> parameter.Name
+    | :? FSharpStaticParameter as parameter -> Some parameter.Name
+    | :? FSharpActivePatternCase as case -> Some case.Name
+    | :? FSharpUnionCase as case -> Some case.Name
+    | _ -> None
+
+
+let assertContainsSymbolWithName name source =
+    getSymbols source
+    |> Array.choose getSymbolName
+    |> Array.contains name
+    |> shouldEqual true
 
 
 let coreLibAssemblyName =

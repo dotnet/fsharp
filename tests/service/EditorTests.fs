@@ -1329,10 +1329,7 @@ x <-
     let y = 1
     y
 """
-    getSymbols source
-    |> Array.map getSymbolName
-    |> Array.contains "y"
-    |> shouldEqual true
+    assertContainsSymbolWithName "y" source
 
 
 [<Test>]
@@ -1345,10 +1342,7 @@ T.P <-
     let y = 1
     y
 """
-    getSymbols source
-    |> Array.map getSymbolName
-    |> Array.contains "y"
-    |> shouldEqual true
+    assertContainsSymbolWithName "y" source
 
 
 [<Test>]
@@ -1361,7 +1355,4 @@ type R =
     let y = 1
     y
 """
-    getSymbols source
-    |> Array.map getSymbolName
-    |> Array.contains "y"
-    |> shouldEqual true
+    assertContainsSymbolWithName "y" source
