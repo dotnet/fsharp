@@ -63,16 +63,16 @@
     <Compile Include="..\Logger.fs">
       <Link>Logger.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fsi">
+    <Compile Include="..\..\ErrorText\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fs">
+    <Compile Include="..\..\ErrorText\sformat.fs">
       <Link>ErrorText\sformat.fs</Link>
     </Compile>
-    <Compile Include="..\sr.fsi">
+    <Compile Include="..\..\ErrorText\sr.fsi">
       <Link>ErrorText\sr.fsi</Link>
     </Compile>
-    <Compile Include="..\sr.fs">
+    <Compile Include="..\..\ErrorText\sr.fs">
       <Link>ErrorText\sr.fs</Link>
     </Compile>
     <Compile Include="..\LanguageFeatures.fsi">
