@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
   <PropertyGroup>
@@ -66,16 +66,16 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fs">
       <Link>Logger.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/utils/sformat.fsi">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/sformat.fsi">
       <Link>ErrorText/sformat.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/utils/sformat.fs">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/sformat.fs">
       <Link>ErrorText/sformat.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/sr.fsi">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/sr.fsi">
       <Link>ErrorText/sr.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/sr.fs">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FSharp.Compiler.Private/sr.fs">
       <Link>ErrorText/sr.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/LanguageFeatures.fsi">
@@ -626,7 +626,7 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
-	<Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fsi">
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fsi">
       <Link>Service/QuickParse.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fs">
