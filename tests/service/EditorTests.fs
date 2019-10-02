@@ -1359,3 +1359,24 @@ T.P <-
         | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DisplayName = "y"
         | _ -> false)
     |> shouldEqual true
+
+
+[<Test>]
+let ``FieldNotMutable recovery`` () =
+    let source = """
+type R =
+    { F: int }
+
+{ F = 1 }.F <-
+    let y = 1
+    y
+"""
+    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
+    let symbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+    symbols
+    |> Array.exists (fun su ->
+        match su.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DisplayName = "y"
+        | _ -> false)
+    |> shouldEqual true

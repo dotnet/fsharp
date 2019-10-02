@@ -1638,5 +1638,6 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
 exception FieldNotMutable of DisplayEnv * Tast.RecdFieldRef * range
 
 let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) = 
-    if not rfinfo.RecdField.IsMutable then error (FieldNotMutable(denv, rfinfo.RecdFieldRef, m))
+    if not rfinfo.RecdField.IsMutable then
+        errorR (FieldNotMutable (denv, rfinfo.RecdFieldRef, m))
 
