@@ -277,7 +277,9 @@ function BuildSolution {
 InitializeDotNetCli $restore
 
 # enable us to build netcoreapp2.1 binaries
-InstallDotNetSdk $_InitializeDotNetCli 2.1.503
+if [[ "$DotNetBuildFromSource" != "true" ]]; then
+  InstallDotNetSdk $_InitializeDotNetCli 2.1.503
+fi
 
 BuildSolution
 
