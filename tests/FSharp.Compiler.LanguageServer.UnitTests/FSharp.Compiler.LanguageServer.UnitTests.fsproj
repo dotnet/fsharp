@@ -11,8 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="TemporaryDirectory.fs" />
+    <Compile Include="TestClient.fs" />
     <Compile Include="ProtocolTests.fs" />
     <Compile Include="SerializationTests.fs" />
+    <Compile Include="DiagnosticsTests.fs" />
+    <Compile Include="MiscTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
