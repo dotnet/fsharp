@@ -2,7 +2,7 @@
 
 /// Configurable Diagnostics channel for the Abstract IL library
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+module internal FSharp.Compiler.AbstractIL.Diagnostics 
 
 open Internal.Utilities
 

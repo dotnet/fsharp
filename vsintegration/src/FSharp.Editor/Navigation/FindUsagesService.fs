@@ -7,15 +7,14 @@ open System.Collections.Immutable
 open System.Composition
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Editor.FindUsages
-open Microsoft.CodeAnalysis.FindUsages
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
-[<ExportLanguageService(typeof<IFindUsagesService>, FSharpConstants.FSharpLanguageName); Shared>]
+[<Export(typeof<IFSharpFindUsagesService>)>]
 type internal FSharpFindUsagesService
     [<ImportingConstructor>]
     (
@@ -40,19 +39,19 @@ type internal FSharpFindUsagesService
                             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
                                 let span = Tokenizer.fixupSpan(sourceText, span)
-                                return Some (DocumentSpan(doc, span))
+                                return Some (FSharpDocumentSpan(doc, span))
                             | None -> return None
                         })
                     |> Async.Parallel
                 return spans |> Array.choose id |> Array.toList
         }
 
-    let findReferencedSymbolsAsync(document: Document, position: int, context: IFindUsagesContext, allReferences: bool, userOpName: string) : Async<unit> =
+    let findReferencedSymbolsAsync(document: Document, position: int, context: IFSharpFindUsagesContext, allReferences: bool, userOpName: string) : Async<unit> =
         asyncMaybe {
             let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
             let checker = checkerProvider.Checker
-            let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
+            let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, context.CancellationToken)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -60,7 +59,7 @@ type internal FSharpFindUsagesService
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, userOpName=userOpName)
             let! declaration = checkFileResults.GetDeclarationLocation (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false, userOpName=userOpName) |> liftAsync
-            let tags = GlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
+            let tags = FSharpGlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
             let declarationRange = 
                 match declaration with
@@ -77,14 +76,14 @@ type internal FSharpFindUsagesService
                     return 
                         match declarationSpans with 
                         | [] -> 
-                            [ DefinitionItem.CreateNonNavigableItem(
+                            [ FSharpDefinitionItem.CreateNonNavigableItem(
                                 tags,
                                 ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)),
                                 ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
                         | _ ->
                             declarationSpans
                             |> List.map (fun span ->
-                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
+                                FSharpDefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
                 } |> liftAsync
             
             for definitionItem in definitionItems do
@@ -107,22 +106,7 @@ type internal FSharpFindUsagesService
                         // In order to find all its usages we have to check all F# projects.
                         | _ -> Seq.toList document.Project.Solution.Projects
                 
-                    asyncMaybe {
-                        let! symbolUses =
-                            projectsToCheck
-                            |> Seq.map (fun project ->
-                                asyncMaybe {
-                                    let! _parsingOptions, _site, projectOptions = projectInfoManager.TryGetOptionsForProject(project.Id)
-                                    let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName) |> liftAsync
-                                    return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol) |> liftAsync
-                                } |> Async.map (Option.defaultValue [||]))
-                            |> Async.Parallel
-                            |> liftAsync
-
-                        // FCS may return several `FSharpSymbolUse`s for same range, which have different `ItemOccurrence`s (Use, UseInAttribute, UseInType, etc.)
-                        // We don't care about the occurrence type here, so we distinct by range.
-                        return symbolUses |> Array.concat |> Array.distinctBy (fun x -> x.RangeAlternate)
-                    }
+                    SymbolHelpers.getSymbolUsesInProjects (symbolUse.Symbol, projectInfoManager, checker, projectsToCheck, userOpName) |> liftAsync
 
             for symbolUse in symbolUses do
                 match declarationRange with
@@ -136,13 +120,13 @@ type internal FSharpFindUsagesService
                         | _ ->
                             for referenceDocSpan in referenceDocSpans do
                                 for definitionItem in definitionItems do
-                                    let referenceItem = SourceReferenceItem(definitionItem, referenceDocSpan, true) // defaulting to `true` until we can officially determine if this usage is a write
+                                    let referenceItem = FSharpSourceReferenceItem(definitionItem, referenceDocSpan)
                                     do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask |> liftAsync
             
             ()
         } |> Async.Ignore
 
-    interface IFindUsagesService with
+    interface IFSharpFindUsagesService with
         member __.FindReferencesAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, true, userOpName)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

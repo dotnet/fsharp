@@ -3,9 +3,7 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.Globalization
-open System.Text
 open NUnit.Framework
-open Microsoft.FSharp.Compiler
 
 [<TestFixture>]
 module EditDistance =

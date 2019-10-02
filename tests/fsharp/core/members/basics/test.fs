@@ -293,7 +293,7 @@ module RecordTypeTest = begin
      with 
       // properties
       override x.ToString() = x.instanceField
-      member x.InstanceProperty = x.instanceField^".InstanceProperty"
+      member x.InstanceProperty = x.instanceField + ".InstanceProperty"
       member x.RecursiveInstance = x.recursiveInstance
       member x.RecursiveInstanceMethod() = x.recursiveInstance
       member x.MutableInstanceProperty
@@ -342,7 +342,7 @@ module RecordTypeTest = begin
       static member StaticMethod((s1:string),(s2:string)) = Printf.sprintf "AbstractType.StaticMethod(%s,%s)" s1 s2
 
       // private versions of the above
-      member x.PrivateInstanceProperty = x.instanceField^".InstanceProperty"
+      member x.PrivateInstanceProperty = x.instanceField + ".InstanceProperty"
       member x.PrivateMutableInstanceProperty
         with get() = x.mutableInstanceField
         and  set(v:string) = x.mutableInstanceField <- v
@@ -1178,8 +1178,8 @@ module ToStringOnRecordTest = begin
 
   let a1 = {A = "201"; B = 7}
   let c1 = {C = "20"; D = 17}
-  let expected1 = "{A = \"201\";\n B = 7;}"
-  let expected2 = "{C = \"20\";\n D = 17;}"
+  let expected1 = "{ A = \"201\"\n  B = 7 }"
+  let expected2 = "{ C = \"20\"\n  D = 17 }"
 
   do test "record-tostring-def" (a1.ToString() = expected1)
   do test "record-sprintfO-def" ((sprintf "%O" a1) = expected1)

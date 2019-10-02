@@ -78,6 +78,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         ''' <param name="vsFrameworkMultiTargeting"></param>
         Public Shared Function GetSupportedTargetFrameworkMonikers(ByVal vsFrameworkMultiTargeting As IVsFrameworkMultiTargeting,
                                                                    ByVal currentProject As Project,
+                                                                   isSdkProject As Boolean,
                                                                    ByVal supportedTargetFrameworksDescriptor As PropertyDescriptor) As IEnumerable(Of TargetFrameworkMoniker)
 
             Dim supportedFrameworksArray As Array = Nothing
@@ -99,21 +100,29 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
                     ' Filter out frameworks with a different identifier since they are not applicable to the current project type
                     Dim newFrameworkName As FrameworkName = New FrameworkName(moniker)
-                    If String.Compare(newFrameworkName.Identifier, currentFrameworkName.Identifier, StringComparison.OrdinalIgnoreCase) = 0 Then
-                        ' Use DTAR to get the display name corresponding to the moniker
-                        Dim displayName As String = ""
+                    Dim displayName As String = ""
+
+                    If isSdkProject Then
                         If String.Compare(newFrameworkName.Identifier, ".NETStandard", StringComparison.Ordinal) = 0 OrElse
                            String.Compare(newFrameworkName.Identifier, ".NETCoreApp", StringComparison.Ordinal) = 0 Then
                             displayName = CStr(supportedTargetFrameworksDescriptor.Converter?.ConvertTo(moniker, GetType(String)))
+                            supportedTargetFrameworkMonikers.Add(New TargetFrameworkMoniker(moniker, displayName))
                         Else
-                            VSErrorHandler.ThrowOnFailure(vsFrameworkMultiTargeting.GetDisplayNameForTargetFx(moniker, displayName))
+                            If String.Compare(newFrameworkName.Identifier, ".NETFramework", StringComparison.OrdinalIgnoreCase) = 0 And newFrameworkName.Version >= New Version(4, 5, 0, 0) Then
+                                ' Use DTAR to get the display name corresponding to the moniker
+                                VSErrorHandler.ThrowOnFailure(vsFrameworkMultiTargeting.GetDisplayNameForTargetFx(moniker, displayName))
+                                supportedTargetFrameworkMonikers.Add(New TargetFrameworkMoniker(moniker, displayName))
+                            End If
                         End If
-
-                        supportedTargetFrameworkMonikers.Add(New TargetFrameworkMoniker(moniker, displayName))
+                    Else
+                        If String.Compare(newFrameworkName.Identifier, currentFrameworkName.Identifier, StringComparison.OrdinalIgnoreCase) = 0 Then
+                            ' Use DTAR to get the display name corresponding to the moniker
+                            VSErrorHandler.ThrowOnFailure(vsFrameworkMultiTargeting.GetDisplayNameForTargetFx(moniker, displayName))
+                            supportedTargetFrameworkMonikers.Add(New TargetFrameworkMoniker(moniker, displayName))
+                        End If
                     End If
                 End If
             Next
-
             Return supportedTargetFrameworkMonikers
 
         End Function

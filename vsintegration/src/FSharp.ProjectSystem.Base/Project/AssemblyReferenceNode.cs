@@ -666,7 +666,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 var objectBrowserGuid = VSProjectConstants.guidObjectBrowser;
                 var logicalViewGuid = VSConstants.LOGVIEWID.Primary_guid;
-                IVsUIShellOpenDocument3 shellOpenDocument3 = Package.GetGlobalService(typeof(SVsUIShellOpenDocument)) as IVsUIShellOpenDocument3;
+                IVsUIShellOpenDocument3 shellOpenDocument3 = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsUIShellOpenDocument)) as IVsUIShellOpenDocument3;
                 return shellOpenDocument3.GetProvisionalViewingStatusForEditor(ref objectBrowserGuid, ref logicalViewGuid);
             }
 

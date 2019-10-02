@@ -1,14 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Driver 
+module internal FSharp.Compiler.Driver 
 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.TcGlobals
 
 [<AbstractClass>]
 type ErrorLoggerProvider =
@@ -32,8 +33,8 @@ val typecheckAndCompile :
     argv : string[] * 
     legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted : bool * 
-    openBinariesInMemory: bool * 
-    defaultCopyFSharpCore: bool * 
+    reduceMemoryUsage: ReduceMemoryFlag * 
+    defaultCopyFSharpCore: CopyFSharpCoreFlag * 
     exiter : Exiter *
     loggerProvider: ErrorLoggerProvider *
     tcImportsCapture: (TcImports -> unit) option *
@@ -45,8 +46,8 @@ val mainCompile :
     argv: string[] * 
     legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted: bool * 
-    openBinariesInMemory: bool * 
-    defaultCopyFSharpCore: bool * 
+    reduceMemoryUsage: ReduceMemoryFlag * 
+    defaultCopyFSharpCore: CopyFSharpCoreFlag * 
     exiter: Exiter * 
     loggerProvider: ErrorLoggerProvider * 
     tcImportsCapture: (TcImports -> unit) option *
@@ -56,7 +57,7 @@ val mainCompile :
 val compileOfAst : 
     ctok: CompilationThreadToken *
     legacyReferenceResolver: ReferenceResolver.Resolver * 
-    openBinariesInMemory: bool * 
+    reduceMemoryUsage: ReduceMemoryFlag * 
     assemblyName:string * 
     target:CompilerTarget * 
     targetDll:string * 
@@ -86,6 +87,6 @@ type ConsoleLoggerProvider =
 // For unit testing
 module internal MainModuleBuilder =
     
-    val fileVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
-    val productVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
+    val fileVersion: findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
+    val productVersion: findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
     val productVersionToILVersionInfo: string -> ILVersionInfo

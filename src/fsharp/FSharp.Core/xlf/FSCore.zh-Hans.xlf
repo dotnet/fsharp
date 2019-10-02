@@ -707,6 +707,11 @@
         <target state="translated">这不是有效的查询表达式。查询中使用了构造“{0}”，但 F#-LINQ 查询转换器无法识别该构造。请查看有效查询的规范，考虑是否将部分运算移到查询表达式之外。</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism 必须是正数，它之前是 {0}</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="notAPermutation">
         <source>The function did not compute a permutation.</source>
-        <target state="translated">関数は順列を計算しませんでした。</target>
+        <target state="translated">関数は順列をコンピューティングしませんでした。</target>
         <note />
       </trans-unit>
       <trans-unit id="notARecordType">
@@ -705,6 +705,11 @@
       <trans-unit id="unsupportedQueryConstructKind">
         <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
         <target state="translated">これは有効なクエリ式ではありません。クエリで構造 '{0}' が使用されていますが、F# から LINQ へのクエリ トランスレーターに認識されません。許可されたクエリの仕様を確認し、一部の操作をクエリ式の外に移動することを検討してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism には正の値を指定する必要がありますが、{0} が指定されました</target>
         <note />
       </trans-unit>
     </body>

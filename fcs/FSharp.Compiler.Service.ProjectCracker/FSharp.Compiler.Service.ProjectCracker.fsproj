@@ -1,67 +1,33 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\netfx.props" />
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
+    <TargetFrameworks>$(FcsTargetNetFxFramework)</TargetFrameworks>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
-  <Import Project="..\fcs.props" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\..\..\</SolutionDir>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>893c3cd9-5af8-4027-a667-21e62fc2c703</ProjectGuid>
-    <RootNamespace>FSharp.Compiler.Service.ProjectCracker</RootNamespace>
-    <AssemblyName>FSharp.Compiler.Service.ProjectCracker</AssemblyName>
-    <Name>FSharp.Compiler.Service.ProjectCracker</Name>
-    <OutputType>Library</OutputType>
-    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
-    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
-    <ResolveNuGetPackages>false</ResolveNuGetPackages>
-    <!-- We target .NET 4.5 for FSharp.Compiler.Service.dll to allow broader use of this DLL -->
-    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
-    <Prefer32Bit>true</Prefer32Bit>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <WarningLevel>3</WarningLevel>
-    <OtherFlags>$(OtherFlags) --version:$(VersionPrefix).0</OtherFlags>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <Tailcalls>true</Tailcalls>
-    <DefineConstants>TRACE</DefineConstants>
+    <Description>Legacy project file cracker for the F# compiler service.</Description>
+    <Summary>Legacy project file cracker for the F# compiler service.</Summary>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Authors>Microsoft Corporation; F# community contributors</Authors>
+    <PackageLicenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/fsharp/FSharp.Compiler.Service</PackageProjectUrl>
+    <PackageIcon>logo.png</PackageIcon>
+    <PackageTags>F#, compiler, msbuild</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xml" />
-    <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
-    <Reference Include="FSharp.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\misc\logo.png" Pack="true" Visible="false" PackagePath="" />
     <Compile Include="..\FSharp.Compiler.Service.ProjectCrackerTool\ProjectCrackerOptions.fs">
       <Link>ProjectCrackerOptions.fs</Link>
     </Compile>
     <Compile Include="ProjectCracker.fs" />
+    <Content Include="..\FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCracker.targets" PackagePath="build\$(FcsTargetNetFxFramework)" />
+    <Content Include="$(ArtifactsBinDir)\fcs\$(Configuration)\$(FcsTargetNetFxFramework)\FSharp.Compiler.Service.ProjectCrackerTool.exe" PackagePath="utilities\$(FcsTargetNetFxFramework)" />
+    <Content Include="$(ArtifactsBinDir)\fcs\$(Configuration)\$(FcsTargetNetFxFramework)\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" PackagePath="utilities\$(FcsTargetNetFxFramework)" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
-      <Name>FSharp.Compiler.Service</Name>
-      <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
-      <Private>True</Private>
-    </ProjectReference>
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.IO" />
+    <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
+    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
 </Project>

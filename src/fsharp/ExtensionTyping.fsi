@@ -2,7 +2,7 @@
 
 // Extension typing, validation of extension types, etc.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
@@ -12,9 +12,9 @@ module internal ExtensionTyping =
     open System.IO
     open System.Collections.Generic
     open Microsoft.FSharp.Core.CompilerServices
-    open Microsoft.FSharp.Compiler.AbstractIL.IL
-    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-    open Microsoft.FSharp.Compiler.Range
+    open FSharp.Compiler.AbstractIL.IL
+    open FSharp.Compiler.AbstractIL.Internal.Library
+    open FSharp.Compiler.Range
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
@@ -89,12 +89,6 @@ module internal ExtensionTyping =
 
         /// Map the TyconRef objects, if any
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 
-           
-#if FX_NO_CUSTOMATTRIBUTEDATA
-    type CustomAttributeData = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeData
-    type CustomAttributeNamedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeNamedArgument
-    type CustomAttributeTypedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeTypedArgument
-#endif
 
     [<AllowNullLiteral; Sealed; Class>]
     type ProvidedType =
@@ -132,6 +126,7 @@ module internal ExtensionTyping =
         member IsInterface : bool
         member IsClass : bool
         member IsSealed : bool
+        member IsAbstract : bool
         member IsPublic : bool
         member IsNestedPublic : bool
         member GenericParameterPosition : int
@@ -194,9 +189,7 @@ module internal ExtensionTyping =
         ProvidedMethodInfo = 
         inherit ProvidedMethodBase
         member ReturnType : ProvidedType
-#if !FX_NO_REFLECTION_METADATA_TOKENS
         member MetadataToken : int
-#endif
 
     and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedParameterInfo = 
@@ -369,11 +362,11 @@ module internal ExtensionTyping =
     
     /// Get the ILTypeRef for the provided type (including for nested types). Take into account
     /// any type relocations or static linking for generated types.
-    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> Microsoft.FSharp.Compiler.AbstractIL.IL.ILTypeRef
+    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
 
     /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
     /// any type relocations or static linking for generated types.
-    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> Microsoft.FSharp.Compiler.AbstractIL.IL.ILTypeRef
+    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
 
 
     /// Represents the remapping information for a generated provided type and its nested types.

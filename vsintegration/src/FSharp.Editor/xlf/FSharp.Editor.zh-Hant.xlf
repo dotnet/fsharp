@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="ExceptionsHeader">
         <source>Exceptions:</source>
-        <target state="translated">例外狀況: </target>
+        <target state="translated">例外狀況:</target>
         <note />
       </trans-unit>
       <trans-unit id="GenericParametersHeader">
@@ -145,6 +145,21 @@
       <trans-unit id="RenameValueToDoubleUnderscore">
         <source>Rename '{0}' to '__'</source>
         <target state="translated">將 '{0}' 重新命名為 '__'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6012">
+        <source>Advanced</source>
+        <target state="translated">進階</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6014">
+        <source>Formatting</source>
+        <target state="translated">格式化</target>
         <note />
       </trans-unit>
     </body>

@@ -40,7 +40,7 @@ open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.LanguageServices
@@ -315,6 +315,7 @@ type internal ProjectSitesAndFiles() =
         let option =
             let newOption () = {
                 ProjectFileName = projectSite.ProjectFileName
+                ProjectId = None
                 SourceFiles = projectSite.CompilationSourceFiles
                 OtherOptions = projectSite.CompilationOptions
                 ReferencedProjects = referencedProjectOptions

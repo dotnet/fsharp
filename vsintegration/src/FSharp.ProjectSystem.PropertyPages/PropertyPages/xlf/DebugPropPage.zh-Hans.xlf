@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="rbStartProgram.Text">
         <source>Start e&amp;xternal program:</source>
-        <target state="translated">启动外部程序(&amp;X): </target>
+        <target state="translated">启动外部程序(&amp;X):</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">

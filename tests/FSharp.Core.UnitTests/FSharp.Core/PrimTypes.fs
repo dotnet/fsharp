@@ -106,7 +106,7 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(1, resultRef)
 
 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETSTANDARD1_6 || NETCOREAPP
 // TODO named #define ?
 #else  
     [<Test>]
@@ -423,10 +423,47 @@ type LanguagePrimitivesModule() =
         let resultValue = LanguagePrimitives.ParseInt64 "0" 
         Assert.AreEqual(0L, resultValue)
 
+
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseInt64 "9223372036854775808" |> ignore)
+
         CheckThrowsFormatException(fun () -> LanguagePrimitives.ParseInt64 "" |> ignore)    
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseInt64 null  |> ignore)
-        
+
+    [<Test>]
+    member this.ParseBinaryInt64() =
+        let resultValue = LanguagePrimitives.ParseInt64 "0b1100100" 
+        Assert.AreEqual(typeof<int64>, resultValue.GetType())    
+        Assert.AreEqual(100L, resultValue)   
+
+        let resultValue = LanguagePrimitives.ParseInt64 "-0b101100011010001010111100001011101100010100000000000000000"
+        Assert.AreEqual(-100000000000000000L, resultValue)
+
+        let resultValue = LanguagePrimitives.ParseInt64 "0b1111111010011100101110101000011110100010011101100000000000000000"
+        Assert.AreEqual(-100000000000000000L, resultValue)
+
+        let resultValue = LanguagePrimitives.ParseInt64 "0b0"
+        Assert.AreEqual(0L, resultValue)
+
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseInt64 "0b10000000000000000000000000000000000000000000000000000000000000000" |> ignore)
+
+    [<Test>]
+    member this.ParseOctalInt64() =
+        let resultValue = LanguagePrimitives.ParseInt64 "0o144"
+        Assert.AreEqual(typeof<int64>, resultValue.GetType())
+        Assert.AreEqual(100L, resultValue)   
+
+        let resultValue = LanguagePrimitives.ParseInt64 "-0o5432127413542400000"
+        Assert.AreEqual(-100000000000000000L, resultValue)
+
+        let resultValue = LanguagePrimitives.ParseInt64 "0o1772345650364235400000"
+        Assert.AreEqual(-100000000000000000L, resultValue)
+
+        let resultValue = LanguagePrimitives.ParseInt64 "0o0"
+        Assert.AreEqual(0L, resultValue)
+
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseInt64 "0o2000000000000000000000" |> ignore)
+
     [<Test>]
     member this.ParseUInt32() =
         let resultValue = LanguagePrimitives.ParseUInt32 "100" 
@@ -444,8 +481,27 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(100UL, resultValue)        
 
         CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseUInt64 "-1" |> ignore)
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseUInt64 "18446744073709551616" |> ignore)
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseUInt64 null  |> ignore)
+
+    [<Test>]
+    member this.ParseBinaryUInt64() =
+        let resultValue = LanguagePrimitives.ParseUInt64 "0b1100100" 
+        Assert.AreEqual(typeof<uint64>, resultValue.GetType()) 
+        Assert.AreEqual(100UL, resultValue)        
+
+        CheckThrowsFormatException(fun () -> LanguagePrimitives.ParseUInt64 "-0b1" |> ignore)
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseUInt64 "0b10000000000000000000000000000000000000000000000000000000000000000" |> ignore)
+
+    [<Test>]
+    member this.ParseOctalUInt64() =
+        let resultValue = LanguagePrimitives.ParseUInt64 "0o144" 
+        Assert.AreEqual(typeof<uint64>, resultValue.GetType()) 
+        Assert.AreEqual(100UL, resultValue)        
+
+        CheckThrowsFormatException(fun () -> LanguagePrimitives.ParseUInt64 "-0o1" |> ignore)
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseUInt64 "0o2000000000000000000000" |> ignore)
 
     [<Test>]
     member this.ParseStringViaConversionOps() =
@@ -602,9 +658,8 @@ type UnitType() =
     member this.ObjectEquals() =
         let u:Unit = ()
         CheckThrowsNullRefException(fun() ->u.Equals(null) |>ignore) 
-        
 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETSTANDARD1_6 || NETCOREAPP
 // TODO named #define ?
 #else     
 [<TestFixture>]
@@ -816,3 +871,16 @@ type RangeTests() =
         if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
         
 
+open NonStructuralComparison
+
+
+[<TestFixture>]
+type NonStructuralComparisonTests() =
+
+    [<Test>]
+    member __.CompareFloat32() = // https://github.com/Microsoft/visualfsharp/pull/4493
+
+        let x = 32 |> float32
+        let y = 32 |> float32
+        let comparison = compare x y
+        Assert.AreEqual(0, comparison)

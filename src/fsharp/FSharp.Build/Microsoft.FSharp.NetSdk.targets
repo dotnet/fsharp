@@ -22,6 +22,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
     <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
     <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
+    <SimpleResolution>true</SimpleResolution>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">
@@ -36,15 +37,9 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </ItemGroup>
 
   <PropertyGroup>
-    <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
-    <_TargetFrameworkVersionWithoutV Condition="$(TargetFrameworkVersion.StartsWith('v'))">$(TargetFrameworkVersion.Substring(1))</_TargetFrameworkVersionWithoutV>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' " >mscorlib</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >netcore</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' >= '2.0' " >netstandard</TargetProfile>
-    <OtherFlags>$(OtherFlags) --simpleresolution --nocopyfsharpcore</OtherFlags>
   </PropertyGroup>
 
   <Import Project="Microsoft.FSharp.Targets" />
@@ -53,29 +48,15 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(FSharpCoreImplicitPackageVersion)' == '' ">
-    <FSharpCoreImplicitPackageVersion>4.2.*</FSharpCoreImplicitPackageVersion>
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' ">
-    <_FrameworkNeedsValueTupleReference Condition=" ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp') and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0') ">true</_FrameworkNeedsValueTupleReference>
-    <_FrameworkNeedsValueTupleReference Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' and 
-                                                    ('$(_TargetFrameworkVersionWithoutV)' == '4.0' or 
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5' or 
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.1' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.7') ">true</_FrameworkNeedsValueTupleReference>
+  <!-- When the developer specifies UseFSharpPreview=true then resolve the highest preview package from the F# myget feed -->
+  <PropertyGroup Condition="'$(UseFSharpPreview)' == 'true'">
+    <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePreviewPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <RestoreSources>$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' and '$(_FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplicitFSharpCoreReference)' != 'true' "></PackageReference>
-  </ItemGroup>
-
-  <PropertyGroup> 
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage> 
-  </PropertyGroup> 
 
   <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
     <PropertyGroup>

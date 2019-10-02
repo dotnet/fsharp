@@ -1,24 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.CommandLineMain
+module internal FSharp.Compiler.CommandLineMain
 
 open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.AbstractIL.IL // runningOnMono 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.IL // runningOnMono 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
-#if FX_RESIDENT_COMPILER
+#if RESIDENT_COMPILER
 type TypeInThisAssembly() = member x.Dummy = 1
 
 let progress = ref false
@@ -58,19 +54,15 @@ module FSharpResidentCompiler =
         // Use different base channel names on mono and CLR as a CLR remoting process can't talk
         // to a mono server
         static let baseChannelName = 
-#if ENABLE_MONO_SUPPORT
             if runningOnMono then 
                 "FSCChannelMono" 
             else 
-#endif
                 "FSCChannel"
         static let channelName = baseChannelName + "_" +  domainName + "_" + userName
         static let serverName = 
-#if ENABLE_MONO_SUPPORT
             if runningOnMono then 
                 "FSCServerMono" 
             else
-#endif
                 "FSCSever"
         static let mutable serverExists = true
         
@@ -131,7 +123,6 @@ module FSharpResidentCompiler =
 
             // On Unix, the file permissions of the implicit socket need to be set correctly to make this
             // private to the user.
-#if ENABLE_MONO_SUPPORT
             if runningOnMono then 
               try 
                   let monoPosix = System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
@@ -152,7 +143,6 @@ module FSharpResidentCompiler =
 #endif
                   ()
                   // Fail silently
-#endif
             server.Run()
             
         static member private ConnectToServer() =
@@ -177,7 +167,6 @@ module FSharpResidentCompiler =
                 with _ ->
                     if !progress then printfn "client: error while creating client, starting client instead"
                     let procInfo = 
-#if ENABLE_MONO_SUPPORT
                         if runningOnMono then
                             let shellName, useShellExecute = 
                                 match System.Environment.GetEnvironmentVariable("FSC_MONO") with 
@@ -194,7 +183,6 @@ module FSharpResidentCompiler =
                                              CreateNoWindow = true,
                                              UseShellExecute = useShellExecute)
                          else
-#endif
                             ProcessStartInfo(FileName=fscServerExe,
                                              Arguments = "/server",
                                              CreateNoWindow = true,
@@ -274,6 +262,7 @@ module Driver =
             System.Console.WriteLine("Press any key to continue...")
             System.Console.ReadKey() |> ignore
       
+#if RESIDENT_COMPILER
         if runningOnMono && hasArgument "resident" argv then 
             let argv = stripArgument "resident" argv
 
@@ -293,16 +282,13 @@ module Driver =
         elif runningOnMono && hasArgument "server" argv then 
             FSharpResidentCompiler.FSharpCompilationServer.RunServer()        
             0
-        
+#endif        
         else
             let errors, exitCode = FSharpChecker.Create().Compile (argv) |> Async.RunSynchronously
             for error in errors do eprintfn "%s" (error.ToString())
             exitCode
 
-#if FX_NO_DEFAULT_DEPENDENCY_TYPE
-#else
 [<Dependency("FSharp.Compiler",LoadHint.Always)>] 
-#endif
 do ()
 
 [<EntryPoint>]
@@ -319,5 +305,5 @@ let main(argv) =
     try 
         Driver.main(Array.append [| "fsc.exe" |] argv); 
     with e -> 
-        errorRecovery e Microsoft.FSharp.Compiler.Range.range0; 
+        errorRecovery e FSharp.Compiler.Range.range0; 
         1

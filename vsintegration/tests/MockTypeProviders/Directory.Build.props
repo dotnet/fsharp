@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- leap-frog up to the root of the repo -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <EnableXlfLocalization>false</EnableXlfLocalization>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+    <!-- don't warn about unused items in the various type provider tests -->
+    <NoWarn>0067;0169;1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

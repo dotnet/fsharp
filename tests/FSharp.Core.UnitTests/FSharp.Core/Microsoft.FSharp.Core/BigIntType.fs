@@ -183,8 +183,7 @@ type BigIntType() =
         Assert.AreEqual(BigInteger.GreatestCommonDivisor(bigPositiveA, bigPositiveB), 900000000090I)
         Assert.AreEqual(BigInteger.GreatestCommonDivisor(bigNegativeA, bigNegativeB), 900000000090I)
         Assert.AreEqual(BigInteger.GreatestCommonDivisor(0I, bigPositiveA), bigPositiveA)
-#if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
-#else
+#if !CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
         Assert.AreEqual(BigInteger.GreatestCommonDivisor(BigInteger(), bigPositiveA), bigPositiveA)
         Assert.AreEqual(BigInteger.GreatestCommonDivisor(bigPositiveA, BigInteger()), bigPositiveA)
         Assert.AreEqual(BigInteger.GreatestCommonDivisor(BigInteger(), bigNegativeA), bigPositiveA)
@@ -196,9 +195,8 @@ type BigIntType() =
     [<Test>]
     member this.One() = 
         Assert.AreEqual(BigInteger.One,1I)
-        
         ()
-#if !FSCORE_PORTABLE_OLD
+
     [<Test>]
     member this.Parse() = 
         Assert.AreEqual(BigInteger.Parse("12345678901234567890"),
@@ -220,7 +218,6 @@ type BigIntType() =
         CheckThrowsArgumentNullException(fun() -> BigInteger.Parse(null) |> ignore)
         
         ()
-#endif
         
     [<Test>]
     member this.Pow() = 

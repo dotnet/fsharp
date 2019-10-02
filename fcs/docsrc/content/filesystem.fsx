@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Virtualized File System
 ==========================================
@@ -21,7 +21,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Text
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 let defaultFileSystem = Shim.FileSystem
 
@@ -41,7 +41,7 @@ let B = File1.A + File1.A"""
     interface IFileSystem with
         // Implement the service to open files for reading and writing
         member __.FileStreamReadShim(fileName) = 
-            match files.TryGetValue(fileName) with
+            match files.TryGetValue fileName with
             | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> defaultFileSystem.FileStreamReadShim(fileName)
 
@@ -52,25 +52,33 @@ let B = File1.A + File1.A"""
             defaultFileSystem.FileStreamWriteExistingShim(fileName)
 
         member __.ReadAllBytesShim(fileName) = 
-            match files.TryGetValue(fileName) with
+            match files.TryGetValue fileName with
             | true, text -> Encoding.UTF8.GetBytes(text)
             | _ -> defaultFileSystem.ReadAllBytesShim(fileName)
 
         // Implement the service related to temporary paths and file time stamps
         member __.GetTempPathShim() = 
             defaultFileSystem.GetTempPathShim()
+
         member __.GetLastWriteTimeShim(fileName) = 
             defaultFileSystem.GetLastWriteTimeShim(fileName)
+
         member __.GetFullPathShim(fileName) = 
             defaultFileSystem.GetFullPathShim(fileName)
+
         member __.IsInvalidPathShim(fileName) = 
             defaultFileSystem.IsInvalidPathShim(fileName)
+
         member __.IsPathRootedShim(fileName) = 
             defaultFileSystem.IsPathRootedShim(fileName)
+
+        member __.IsStableFileHeuristic(fileName) = 
+            defaultFileSystem.IsStableFileHeuristic(fileName)
 
         // Implement the service related to file existence and deletion
         member __.SafeExists(fileName) = 
             files.ContainsKey(fileName) || defaultFileSystem.SafeExists(fileName)
+
         member __.FileDelete(fileName) = 
             defaultFileSystem.FileDelete(fileName)
 
@@ -78,6 +86,7 @@ let B = File1.A + File1.A"""
         // and for F# interactive.
         member __.AssemblyLoadFrom(fileName) = 
             defaultFileSystem.AssemblyLoadFrom fileName
+
         member __.AssemblyLoad(assemblyName) = 
             defaultFileSystem.AssemblyLoad assemblyName 
 
@@ -90,7 +99,7 @@ Doing a compilation with the FileSystem
 ---------------------------------------
 
 *)
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 let checker = FSharpChecker.Create()
 
@@ -131,7 +140,11 @@ let projectOptions =
                  yield "-r:" + r |]
  
     { ProjectFileName = @"c:\mycode\compilation.fsproj" // Make a name that is unique in this directory.
-      ProjectFileNames = [| fileName1; fileName2 |]
+      ProjectId = None
+      SourceFiles = [| fileName1; fileName2 |]
+      OriginalLoadReferences = []
+      ExtraProjectInfo=None
+      Stamp = None
       OtherOptions = allFlags 
       ReferencedProjects = [| |]
       IsIncompleteTypeCheckEnvironment = false

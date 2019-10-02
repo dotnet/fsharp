@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../bin/v4.5/"
+#I "../../../../artifacts/bin/fcs/net461"
 (**
 コンパイラサービス: エディタサービス
 ====================================
@@ -14,7 +14,7 @@
 今回も `FSharpChecker` オブジェクトを作成するところから始めます。
 
 > **注意:** 以下で使用しているAPIは試験的なもので、最新バージョンのnugetパッケージの
-  公開に伴って変更されることがあります。
+公開に伴って変更されることがあります。
 
 サンプルソースコードの型チェック
 --------------------------------
@@ -28,7 +28,7 @@
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()
@@ -44,21 +44,21 @@ let checker = FSharpChecker.Create()
 *)
 // サンプルの入力となる複数行文字列
 let input = 
-  """
-  open System
+    """
+open System
 
-  let foo() = 
-    let msg = String.Concat("Hello"," ","world")
-    if true then 
-      printfn "%s" msg.
-  """
+let foo() = 
+let msg = String.Concat("Hello"," ","world")
+if true then 
+printfn "%s" msg.
+"""
 // 入力値の分割とファイル名の定義
 let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
-let projOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+let projOptions, _errors1 = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
 
-let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
+let parsingOptions, _errors2 = checker.GetParsingOptionsFromProjectOptions(projOptions)
 
 (**
 
@@ -137,17 +137,16 @@ let checkFileResults =
 
 *)
 // 最後の引数に指定する、IDENTトークンのタグを取得
-open Microsoft.FSharp.Compiler
-let identToken = Parser.tagOfToken(Parser.token.IDENT("")) 
+open FSharp.Compiler
 
 // 特定の位置におけるツールチップを取得
-let tip = checkFileResults.GetToolTipTextAlternate(4, 7, inputLines.[1], ["foo"], identToken)
+let tip = checkFileResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], FSharpTokenTag.Identifier)
 printfn "%A" tip
 
 (**
 
 > **注意：** `GetToolTipTextAlternate` は古い関数 `GetToolTipText` に代わるものです。
-  `GetToolTipText` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
+`GetToolTipText` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
 
 この関数には位置とトークンの種類の他にも、
 (ソースコードの変更時に役立つように)特定行の現在の内容と、
@@ -179,8 +178,8 @@ printfn "%A" tip
 // 特定の位置における宣言(自動補完)を取得する
 let decls = 
     checkFileResults.GetDeclarationListInfo
-      (Some parseFileResults, 7, 23, inputLines.[6], [], "msg", fun _ -> false)
-    |> Async.RunSynchronously
+      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun _ -> []), fun _ -> false)
+      |> Async.RunSynchronously
 
 // 利用可能な項目を表示
 for item in decls.Items do
@@ -188,9 +187,9 @@ for item in decls.Items do
 (**
 
 > **注意：** `GetDeclarationListInfo` は古い関数 `GetDeclarations` に代わるものです。
-  `GetDeclarations` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
-  また、将来的には現在の `GetDeclarations` が削除され、 `GetDeclarationListInfo` が
-  `GetDeclarations` になる予定です。
+`GetDeclarations` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
+また、将来的には現在の `GetDeclarations` が削除され、 `GetDeclarationListInfo` が
+`GetDeclarations` になる予定です。
 
 コードを実行してみると、 `Substring` や `ToUpper` 、 `ToLower` といった
 文字列に対するいつものメソッドのリストが取得できていることでしょう。
@@ -214,7 +213,7 @@ for item in decls.Items do
 *)
 //String.Concatメソッドのオーバーロードを取得する
 let methods = 
-    checkFileResults.GetMethodsAlternate(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
+    checkFileResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
 
 // 連結された引数リストを表示
 for mi in methods.Methods do
@@ -247,9 +246,9 @@ F#コンパイラは型チェックを(自動的に)バックグラウンドで�
 ファイルに対する型チェックを諦めるか、どちらか選択することになります。
 
 > [fsharpbinding](https://github.com/fsharp/fsharpbinding) プロジェクトには
-  1つのF#エージェント経由ですべてのリクエストをバックグラウンドワークとして
-  処理するような、より複雑な具体例も含まれています。
-  エディタの機能を実装する方法としてはこちらのほうが適切です。
+1つのF#エージェント経由ですべてのリクエストをバックグラウンドワークとして
+処理するような、より複雑な具体例も含まれています。
+エディタの機能を実装する方法としてはこちらのほうが適切です。
 
 *)
 

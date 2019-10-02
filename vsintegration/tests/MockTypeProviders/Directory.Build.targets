@@ -1,0 +1,4 @@
+<Project>
+  <!-- leap-frog up to the root of the repo -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Directory.Build.targets" />
+</Project>

@@ -9,9 +9,7 @@ neg86.fsx(8,13,8,17): typecheck error FS3096: 'join' must be followed by a varia
 
 neg86.fsx(8,13,8,17): typecheck error FS3167: 'join' must be followed by 'in'. Usage: join var in collection on (outerKey = innerKey). Note that parentheses are required after 'on'.
 
-neg86.fsx(9,21,9,22): typecheck error FS0039: The value or constructor 'e' is not defined. Maybe you want one of the following:
-
-   c
+neg86.fsx(9,21,9,22): typecheck error FS0039: The value or constructor 'e' is not defined.
 
 neg86.fsx(23,13,23,17): typecheck error FS3097: Incorrect syntax for 'join'. Usage: join var in collection on (outerKey = innerKey). Note that parentheses are required after 'on'.
 

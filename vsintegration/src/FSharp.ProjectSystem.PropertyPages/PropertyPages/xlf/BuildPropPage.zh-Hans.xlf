@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">条件编译符号(&amp;Y): </target>
+        <target state="translated">条件编译符号(&amp;Y):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
@@ -49,12 +49,12 @@
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">全部(&amp;L)</target>
+        <target state="translated">所有(&amp;L)</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">特定警告(&amp;I): </target>
+        <target state="translated">特定警告(&amp;I):</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">

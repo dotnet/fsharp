@@ -14,27 +14,27 @@
       </trans-unit>
       <trans-unit id="fsiInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="translated">- EINGABEDATEIEN -</target>
+        <target state="translated">– EINGABEDATEIEN –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCodeGeneration">
         <source>- CODE GENERATION -</source>
-        <target state="translated">- CODEGENERIERUNG -</target>
+        <target state="translated">– CODEGENERIERUNG –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiErrorsAndWarnings">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="translated">- FEHLER UND WARNUNGEN -</target>
+        <target state="translated">– FEHLER UND WARNUNGEN –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLanguage">
         <source>- LANGUAGE -</source>
-        <target state="translated">- SPRACHE -</target>
+        <target state="translated">– SPRACHE –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMiscellaneous">
         <source>- MISCELLANEOUS -</source>
-        <target state="translated">- VERSCHIEDENES -</target>
+        <target state="translated">– VERSCHIEDENES –</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAdvanced">
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nAusnahme beim Schöndruck.\nMelden Sie dies, damit das Problem behoben werden kann.\nAblaufverfolgung: {0}\n</target>
+        <target state="translated">\n\nAusnahme bei der automatischen Strukturierung und Einrückung.\nMelden Sie dies, damit das Problem behoben werden kann.\nAblaufverfolgung: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="fsiAbortingMainThread">
         <source>- Aborting main thread...</source>
-        <target state="translated">- Hauptthread wird abgebrochen...</target>
+        <target state="translated">– Hauptthread wird abgebrochen...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCouldNotInstallCtrlCHandler">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Verhindert, dass Verweise vom interaktiven Prozess F# gesperrt werden</target>
+        <target state="translated">Verhindert, dass Verweise vom F# Interactive-Prozess gesperrt werden.</target>
         <note />
       </trans-unit>
     </body>

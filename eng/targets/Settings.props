@@ -1,0 +1,14 @@
+<Project>
+
+  <PropertyGroup>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>Visual F# Compiler FSharp functional programming</PackageTags>
+    <NuspecBasePath>$(ArtifactsBinDir)</NuspecBasePath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- this should be false for branch `release/dev16.2`, true otherwise -->
+    <IncludeVsLanguageServer>false</IncludeVsLanguageServer>
+  </PropertyGroup>
+
+</Project>

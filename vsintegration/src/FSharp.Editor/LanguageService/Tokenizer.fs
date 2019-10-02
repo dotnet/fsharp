@@ -3,29 +3,37 @@
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
+open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
+open System.Runtime.Caching
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Ast
+open FSharp.Compiler.SourceCodeServices
 
+open Microsoft.VisualStudio.Core.Imaging
+open Microsoft.VisualStudio.Imaging
+
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+
+type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
 
 [<RequireQualifiedAccess>]
-type internal LexerSymbolKind =
-    | Ident
-    | Operator
-    | Punctuation
-    | GenericTypeParameter
-    | StaticallyResolvedTypeParameter
-    | ActivePattern
-    | Other
+type internal LexerSymbolKind = 
+    | Ident = 0
+    | Operator = 1
+    | Punctuation = 2
+    | GenericTypeParameter = 3
+    | StaticallyResolvedTypeParameter = 4
+    | ActivePattern = 5
+    | Other = 6
 
 type internal LexerSymbol =
     { Kind: LexerSymbolKind
@@ -44,6 +52,7 @@ type internal SymbolLookupKind =
 
 [<RequireQualifiedAccess>]
 module internal Tokenizer =
+
 
     let (|Public|Internal|Protected|Private|) (a: FSharpAccessibility option) =
         match a with
@@ -137,6 +146,101 @@ module internal Tokenizer =
             | Private -> Glyph.StructurePrivate
         | FSharpGlyph.Variable -> Glyph.Local
         | FSharpGlyph.Error -> Glyph.Error
+
+    let GetImageIdForSymbol(symbol:FSharpSymbol, kind:LexerSymbolKind) =
+        let imageId =
+            match kind with
+            | LexerSymbolKind.Operator -> KnownImageIds.Operator
+            | _ ->
+                match symbol with
+                | :? FSharpUnionCase as x ->
+                    match Some x.Accessibility with
+                    | Public -> KnownImageIds.EnumerationPublic
+                    | Internal -> KnownImageIds.EnumerationInternal
+                    | Protected -> KnownImageIds.EnumerationProtected
+                    | Private -> KnownImageIds.EnumerationPrivate
+                | :? FSharpActivePatternCase -> KnownImageIds.EnumerationPublic
+                | :? FSharpField as x ->
+                if x.IsLiteral then
+                    match Some x.Accessibility with
+                    | Public -> KnownImageIds.ConstantPublic
+                    | Internal -> KnownImageIds.ConstantInternal
+                    | Protected -> KnownImageIds.ConstantProtected
+                    | Private -> KnownImageIds.ConstantPrivate
+                else
+                    match Some x.Accessibility with
+                    | Public -> KnownImageIds.FieldPublic
+                    | Internal -> KnownImageIds.FieldInternal
+                    | Protected -> KnownImageIds.FieldProtected
+                    | Private -> KnownImageIds.FieldPrivate
+                | :? FSharpParameter -> KnownImageIds.Parameter
+                | :? FSharpMemberOrFunctionOrValue as x ->
+                    if x.LiteralValue.IsSome then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.ConstantPublic
+                        | Internal -> KnownImageIds.ConstantInternal
+                        | Protected -> KnownImageIds.ConstantProtected
+                        | Private -> KnownImageIds.ConstantPrivate
+                    elif x.IsExtensionMember then KnownImageIds.ExtensionMethod
+                    elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.PropertyPublic
+                        | Internal -> KnownImageIds.PropertyInternal
+                        | Protected -> KnownImageIds.PropertyProtected
+                        | Private -> KnownImageIds.PropertyPrivate
+                    elif x.IsEvent then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.EventPublic
+                        | Internal -> KnownImageIds.EventInternal
+                        | Protected -> KnownImageIds.EventProtected
+                        | Private -> KnownImageIds.EventPrivate
+                    else
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.MethodPublic
+                        | Internal -> KnownImageIds.MethodInternal
+                        | Protected -> KnownImageIds.MethodProtected
+                        | Private -> KnownImageIds.MethodPrivate
+                | :? FSharpEntity as x ->
+                    if x.IsValueType then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.StructurePublic
+                        | Internal -> KnownImageIds.StructureInternal
+                        | Protected -> KnownImageIds.StructureProtected
+                        | Private -> KnownImageIds.StructurePrivate
+                    elif x.IsFSharpModule then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.ModulePublic
+                        | Internal -> KnownImageIds.ModuleInternal
+                        | Protected -> KnownImageIds.ModuleProtected
+                        | Private -> KnownImageIds.ModulePrivate
+                    elif x.IsEnum || x.IsFSharpUnion then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.EnumerationPublic
+                        | Internal -> KnownImageIds.EnumerationInternal
+                        | Protected -> KnownImageIds.EnumerationProtected
+                        | Private -> KnownImageIds.EnumerationPrivate
+                    elif x.IsInterface then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.InterfacePublic
+                        | Internal -> KnownImageIds.InterfaceInternal
+                        | Protected -> KnownImageIds.InterfaceProtected
+                        | Private -> KnownImageIds.InterfacePrivate
+                    elif x.IsDelegate then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.DelegatePublic
+                        | Internal -> KnownImageIds.DelegateInternal
+                        | Protected -> KnownImageIds.DelegateProtected
+                        | Private -> KnownImageIds.DelegatePrivate
+                    elif x.IsNamespace then
+                        KnownImageIds.Namespace
+                    else
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.ClassPublic
+                        | Internal -> KnownImageIds.ClassInternal
+                        | Protected -> KnownImageIds.ClassProtected
+                        | Private -> KnownImageIds.ClassPrivate
+                | _ -> KnownImageIds.None
+        ImageId(KnownImageIds.ImageCatalogGuid, imageId)
 
     let GetGlyphForSymbol (symbol: FSharpSymbol, kind: LexerSymbolKind) =
         match kind with
@@ -237,14 +341,73 @@ module internal Tokenizer =
             | _ -> Glyph.None
 
 
+    type FSharpTokenInfo with
+        member token.IsIdentifier = (token.CharClass = FSharpTokenCharKind.Identifier)
+        member token.IsOperator = (token.ColorClass = FSharpTokenColorKind.Operator)
+        member token.IsPunctuation = (token.ColorClass = FSharpTokenColorKind.Punctuation)
+    
+    /// This is the information we save for each token in a line for each active document.
+    /// It is a memory-critical data structure - do not make larger. This used to be ~100 bytes class, is now 8-byte struct
+    let [<Literal>] TagMask           = 0xFFFF000000000000UL // note, there are some spare bits here
+    let [<Literal>] KindMask          = 0x0000FF0000000000UL
+    let [<Literal>] LeftColumnMask    = 0x000000FFFFF00000UL
+    let [<Literal>] MatchedLengthMask = 0x00000000000FFFFFUL
+
+    [<Struct>]
+    type SavedTokenInfo = 
+        { Bits: uint64 }
+        //TagSaved: uint16 
+        //KindSaved: byte
+        //LeftColumnSaved: uint20  (up to 1048576)
+        //MatchedLengthSaved: uint20 (up to 1048576)
+
+        member token.Tag =                        int ((token.Bits &&& TagMask) >>> 48)
+        member token.Kind = enum<LexerSymbolKind>(int ((token.Bits &&& KindMask) >>> 40))
+        member token.LeftColumn =                 int ((token.Bits &&& LeftColumnMask) >>> 20)
+        member token.MatchedLength =              int ((token.Bits &&& MatchedLengthMask))
+
+        member token.IsIdentifier = (token.Kind = LexerSymbolKind.Ident)
+        member token.IsOperator = (token.Kind = LexerSymbolKind.Operator)
+        member token.IsPunctuation = (token.Kind = LexerSymbolKind.Punctuation)
+
+        static member inline Create (token: FSharpTokenInfo) = 
+            let kind = 
+                if token.IsOperator then LexerSymbolKind.Operator 
+                elif token.IsIdentifier then LexerSymbolKind.Ident 
+                elif token.IsPunctuation then LexerSymbolKind.Punctuation
+                else LexerSymbolKind.Other
+            Debug.Assert(uint32 token.Tag < 0xFFFFu)
+            Debug.Assert(uint32 kind < 0xFFu)
+            Debug.Assert(uint32 token.LeftColumn < 0xFFFFFu)
+            Debug.Assert(uint32 token.FullMatchedLength < 0xFFFFFu)
+            { Bits = 
+                 ((uint64 token.Tag        <<< 48) &&& TagMask) |||
+                 ((uint64 kind             <<< 40) &&& KindMask) |||
+                 ((uint64 token.LeftColumn <<< 20) &&& LeftColumnMask) |||
+                  (uint64 token.FullMatchedLength  &&& MatchedLengthMask) }
+
+        member token.RightColumn = token.LeftColumn + token.MatchedLength - 1 
+    
+    /// An intermediate extraction of information from the token
+    type private DraftTokenInfo = 
+        { Kind: LexerSymbolKind
+          LeftColumn: int 
+          MatchedLength: int } 
+
+        static member Create kind (token: SavedTokenInfo) = { Kind = kind; LeftColumn = int token.LeftColumn; MatchedLength = int token.MatchedLength }
+        
+        member token.RightColumn = token.LeftColumn + token.MatchedLength - 1 
+
+    /// This is the data saved about each line.  It is held strongly while a file is open and 
+    /// is important for memory performance
     type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, 
-                                hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: FSharpTokenInfo list) =
+                                hashCode: int, classifiedSpans: ClassifiedSpan[], savedTokens: SavedTokenInfo[]) =
         member val LineStart = lineStart
         member val LexStateAtStartOfLine = lexStateAtStartOfLine
         member val LexStateAtEndOfLine = lexStateAtEndOfLine
         member val HashCode = hashCode
         member val ClassifiedSpans = classifiedSpans
-        member val Tokens = tokens
+        member val SavedTokens = savedTokens
     
         member data.IsValid(textLine: TextLine) =
             data.LineStart = textLine.Start && 
@@ -268,7 +431,12 @@ module internal Tokenizer =
                 data.[i] <- None
                 i <- i + 1
 
-    let private dataCache = ConditionalWeakTable<DocumentId, ConcurrentDictionary<string list, SourceTextData>>()
+    /// This saves the tokenization data for a file for as long as the DocumentId object is alive.
+    /// This seems risky - if one single thing leaks a DocumentId (e.g. stores it in some global table of documents 
+    /// that have been closed), then we leak **all** this associated data, forever.
+
+    type private PerDocumentSavedData = ConcurrentDictionary<string list, SourceTextData>
+    let private dataCache = new MemoryCache("FSharp.Editor.Tokenization")
 
     let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
         match colorKind with
@@ -288,7 +456,7 @@ module internal Tokenizer =
     let private scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
-        let tokens = ResizeArray()
+        let tokens = ResizeArray<SavedTokenInfo>()
         let mutable tokenInfoOption = None
         let previousLexState = ref lexState
             
@@ -296,12 +464,18 @@ module internal Tokenizer =
             let classificationType = compilerTokenToRoslynToken(tokenInfoOption.Value.ColorClass)
             for i = tokenInfoOption.Value.LeftColumn to tokenInfoOption.Value.RightColumn do
                 Array.set colorMap i classificationType
-            tokens.Add tokenInfoOption.Value
+
+            let token = tokenInfoOption.Value
+            let savedToken = SavedTokenInfo.Create token
+
+            tokens.Add savedToken
 
         let scanAndColorNextToken() =
             let info, nextLexState = lineTokenizer.ScanToken(!previousLexState)
             tokenInfoOption <- info
             previousLexState := nextLexState
+
+            // Apply some hacks to clean up the token stream (we apply more later)
             match info with
             | Some info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
                     tokenInfoOption <- 
@@ -345,20 +519,32 @@ module internal Tokenizer =
             classifiedSpans.Add(new ClassifiedSpan(classificationType, textSpan))
             startPosition <- endPosition
 
-        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans, List.ofSeq tokens)
+        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans.ToArray(), tokens.ToArray())
 
 
     // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
     // We index the data by the active defines in the document.
     let private getSourceTextData(documentKey: DocumentId, defines: string list, linesCount) =
-        let dict = dataCache.GetValue(documentKey, fun key -> new ConcurrentDictionary<_,_>(1,1,HashIdentity.Structural))
-        if dict.ContainsKey(defines) then dict.[defines] 
+        let key = documentKey.ToString()
+        let dict = 
+            match dataCache.Get(key) with
+            | :? PerDocumentSavedData as dict -> dict
+            | _ -> 
+                let dict = new PerDocumentSavedData(1,1,HashIdentity.Structural)
+                let cacheItem = CacheItem(key, dict)
+                // evict per-document data after a sliding window
+                let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerDocumentSavedDataSlidingWindow)
+                dataCache.Set(cacheItem, policy)
+                dict 
+        if dict.ContainsKey(defines) then 
+            dict.[defines] 
         else 
             let data = SourceTextData(linesCount) 
             dict.TryAdd(defines, data) |> ignore
             data
 
-    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
+    /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
+    let getClassifiedSpans(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
                              cancellationToken: CancellationToken) : List<ClassifiedSpan> =
             try
                 let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
@@ -375,7 +561,7 @@ module internal Tokenizer =
                     i
                 // Rescan the lines if necessary and report the information
                 let result = new List<ClassifiedSpan>()
-                let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+                let mutable lexState = if scanStartLine = 0 then FSharpTokenizerLexState.Initial else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
  
                 for i = scanStartLine to endLine do
                     cancellationToken.ThrowIfCancellationRequested()
@@ -388,7 +574,7 @@ module internal Tokenizer =
                         //   2. the hash codes match
                         //   3. the start-of-line lex states are the same
                         match sourceTextData.[i] with 
-                        | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
+                        | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> 
                             data
                         | _ -> 
                             // Otherwise, we recompute
@@ -399,7 +585,7 @@ module internal Tokenizer =
                     lexState <- lineData.LexStateAtEndOfLine
  
                     if startLine <= i then
-                        result.AddRange(lineData.ClassifiedSpans |> Seq.filter(fun token ->
+                        result.AddRange(lineData.ClassifiedSpans |> Array.filter(fun token ->
                             textSpan.Contains(token.TextSpan.Start) ||
                             textSpan.Contains(token.TextSpan.End - 1) ||
                             (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
@@ -408,7 +594,7 @@ module internal Tokenizer =
                 if endLine < lines.Count - 1 then 
                     match sourceTextData.[endLine+1] with 
                     | Some data  -> 
-                        if data.LexStateAtStartOfLine <> lexState then
+                        if not (data.LexStateAtStartOfLine.Equals(lexState)) then
                             sourceTextData.ClearFrom (endLine+1)
                     | None -> ()
                 result
@@ -418,19 +604,11 @@ module internal Tokenizer =
                 Assert.Exception(ex)
                 List<ClassifiedSpan>()
 
-    type private DraftToken = {   
-        Kind: LexerSymbolKind
-        Token: FSharpTokenInfo 
-        RightColumn: int 
-    } with
-        static member inline Create kind token = 
-            { Kind = kind; Token = token; RightColumn = token.LeftColumn + token.FullMatchedLength - 1 }
-    
     /// Returns symbol at a given position.
-    let private getSymbolFromTokens 
+    let private getSymbolFromSavedTokens 
         (
             fileName: string, 
-            tokens: FSharpTokenInfo list, 
+            savedTokens: SavedTokenInfo[], 
             linePos: LinePosition, 
             lineStr: string, 
             lookupKind: SymbolLookupKind,
@@ -438,26 +616,22 @@ module internal Tokenizer =
         ) 
         : LexerSymbol option =
         
-        let isIdentifier t = t.CharClass = FSharpTokenCharKind.Identifier
-        let isOperator t = t.ColorClass = FSharpTokenColorKind.Operator
-        let isPunctuation t = t.ColorClass = FSharpTokenColorKind.Punctuation
-    
-        let (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|ActivePattern|Other|) (token: FSharpTokenInfo) =
+        let (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|ActivePattern|Other|) (token: SavedTokenInfo) =
             if token.Tag = FSharpTokenTag.QUOTE then GenericTypeParameterPrefix
             elif token.Tag = FSharpTokenTag.INFIX_AT_HAT_OP then
                     // The lexer return INFIX_AT_HAT_OP token for both "^" and "@" symbols.
                     // We have to check the char itself to distinguish one from another.
-                    if token.FullMatchedLength = 1 && token.LeftColumn < lineStr.Length && lineStr.[token.LeftColumn] = '^' then 
+                    if token.MatchedLength = 1 && token.LeftColumn < lineStr.Length && lineStr.[token.LeftColumn] = '^' then 
                         StaticallyResolvedTypeParameterPrefix
                     else Other
             elif token.Tag = FSharpTokenTag.LPAREN then
-                if token.FullMatchedLength = 1 && token.LeftColumn+1 < lineStr.Length && lineStr.[token.LeftColumn+1] = '|' then
+                if token.MatchedLength = 1 && token.LeftColumn+1 < lineStr.Length && lineStr.[token.LeftColumn+1] = '|' then
                     ActivePattern
                 else Other
             else Other
        
         // Operators: Filter out overlapped operators (>>= operator is tokenized as three distinct tokens: GREATER, GREATER, EQUALS. 
-        // Each of them has FullMatchedLength = 3. So, we take the first GREATER and skip the other two).
+        // Each of them has MatchedLength = 3. So, we take the first GREATER and skip the other two).
         //
         // Generic type parameters: we convert QUOTE + IDENT tokens into single IDENT token, altering its LeftColumn 
         // and FullMathedLength (for "'type" which is tokenized as (QUOTE, left=2) + (IDENT, left=3, length=4) 
@@ -466,10 +640,9 @@ module internal Tokenizer =
         // Statically resolved type parameters: we convert INFIX_AT_HAT_OP + IDENT tokens into single IDENT token, altering its LeftColumn 
         // and FullMathedLength (for "^type" which is tokenized as (INFIX_AT_HAT_OP, left=2) + (IDENT, left=3, length=4) 
         // we'll get (IDENT, left=2, length=5).
-        let tokens = 
-            let tokensCount = tokens.Length
-            tokens
-            |> List.foldi (fun (acc, lastToken) index (token: FSharpTokenInfo) ->
+        let draftTokens = 
+            let tokensCount = savedTokens.Length
+            (([], None), savedTokens) ||> Array.foldi (fun (acc, lastToken: DraftTokenInfo option) index token ->
                 match lastToken with
                 | Some t when token.LeftColumn <= t.RightColumn -> acc, lastToken
                 | Some ({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when
@@ -477,39 +650,39 @@ module internal Tokenizer =
                     (token.Tag = FSharpTokenTag.BAR || token.Tag = FSharpTokenTag.IDENT || token.Tag = FSharpTokenTag.UNDERSCORE) ->
                     
                     let mergedToken =
-                        {lastToken.Token with Tag = FSharpTokenTag.IDENT
-                                                    RightColumn = token.RightColumn
-                                                    FullMatchedLength = lastToken.Token.FullMatchedLength + token.FullMatchedLength }
+                        { lastToken with 
+                            Kind = LexerSymbolKind.Ident
+                            MatchedLength = lastToken.MatchedLength + token.MatchedLength }
 
-                    acc, Some { lastToken with Token = mergedToken; RightColumn = lastToken.RightColumn + token.FullMatchedLength }
+                    acc, Some mergedToken
                 | _ ->
                     let isLastToken = index = tokensCount - 1
                     match token with
-                    | GenericTypeParameterPrefix when not isLastToken -> acc, Some (DraftToken.Create LexerSymbolKind.GenericTypeParameter token)
-                    | StaticallyResolvedTypeParameterPrefix when not isLastToken -> acc, Some (DraftToken.Create LexerSymbolKind.StaticallyResolvedTypeParameter token)
-                    | ActivePattern when wholeActivePatterns -> acc, Some (DraftToken.Create LexerSymbolKind.ActivePattern token)
+                    | GenericTypeParameterPrefix when not isLastToken -> acc, Some (DraftTokenInfo.Create LexerSymbolKind.GenericTypeParameter token)
+                    | StaticallyResolvedTypeParameterPrefix when not isLastToken -> acc, Some (DraftTokenInfo.Create LexerSymbolKind.StaticallyResolvedTypeParameter token)
+                    | ActivePattern when wholeActivePatterns -> acc, Some (DraftTokenInfo.Create LexerSymbolKind.ActivePattern token)
                     | _ ->
                         let draftToken =
                             match lastToken with
-                            | Some { Kind = LexerSymbolKind.GenericTypeParameter | LexerSymbolKind.StaticallyResolvedTypeParameter as kind } when isIdentifier token ->
-                                DraftToken.Create kind { token with LeftColumn = token.LeftColumn - 1
-                                                                    FullMatchedLength = token.FullMatchedLength + 1 }
+                            | Some { Kind = LexerSymbolKind.GenericTypeParameter | LexerSymbolKind.StaticallyResolvedTypeParameter as kind } when token.IsIdentifier ->
+                                { Kind = kind
+                                  LeftColumn = token.LeftColumn - 1
+                                  MatchedLength = token.MatchedLength + 1 }
                             // ^ operator                                                
                             | Some { Kind = LexerSymbolKind.StaticallyResolvedTypeParameter } ->
-                                DraftToken.Create LexerSymbolKind.Operator { token with LeftColumn = token.LeftColumn - 1
-                                                                                        FullMatchedLength = 1 }
+                                { Kind = LexerSymbolKind.Operator 
+                                  LeftColumn = token.LeftColumn - 1
+                                  MatchedLength = 1 }
                             | Some ( { Kind = LexerSymbolKind.ActivePattern } as ap) when wholeActivePatterns && token.Tag = FSharpTokenTag.RPAREN ->
-                                DraftToken.Create LexerSymbolKind.Ident ap.Token
+                                { Kind = LexerSymbolKind.Ident
+                                  LeftColumn = ap.LeftColumn 
+                                  MatchedLength = ap.MatchedLength }
                             | _ -> 
-                                let kind = 
-                                    if isOperator token then LexerSymbolKind.Operator 
-                                    elif isIdentifier token then LexerSymbolKind.Ident 
-                                    elif isPunctuation token then LexerSymbolKind.Punctuation
-                                    else LexerSymbolKind.Other
-
-                                DraftToken.Create kind token
+                                { Kind = token.Kind
+                                  LeftColumn = token.LeftColumn 
+                                  MatchedLength = token.MatchedLength }
                         draftToken :: acc, Some draftToken
-                ) ([], None)
+                ) 
             |> fst
            
         // One or two tokens that in touch with the cursor (for "let x|(g) = ()" the tokens will be "x" and "(")
@@ -519,27 +692,27 @@ module internal Tokenizer =
                 | SymbolLookupKind.Precise -> 0
                 | SymbolLookupKind.Greedy -> 1
             
-            tokens |> List.filter (fun x -> x.Token.LeftColumn <= linePos.Character && (x.RightColumn + rightColumnCorrection) >= linePos.Character)
+            draftTokens |> List.filter (fun x -> x.LeftColumn <= linePos.Character && (x.RightColumn + rightColumnCorrection) >= linePos.Character)
                 
         // Select IDENT token. If failed, select OPERATOR token.
         tokensUnderCursor
-        |> List.tryFind (fun { DraftToken.Kind = k } -> 
-            match k with 
+        |> List.tryFind (fun token -> 
+            match token.Kind with 
             | LexerSymbolKind.Ident
             | LexerSymbolKind.ActivePattern
             | LexerSymbolKind.GenericTypeParameter 
             | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
             | _ -> false) 
-        |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
+        |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun token -> token.Kind = LexerSymbolKind.Operator))
         |> Option.map (fun token ->
             let partialName = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
-            let identStr = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
+            let identStr = lineStr.Substring(token.LeftColumn, token.MatchedLength)
             {   Kind = token.Kind
                 Ident = 
                     Ident(identStr, 
                         Range.mkRange 
                             fileName 
-                            (Range.mkPos (linePos.Line + 1) token.Token.LeftColumn)
+                            (Range.mkPos (linePos.Line + 1) token.LeftColumn)
                             (Range.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
                 FullIsland = partialName.QualifyingIdents @ [identStr] })
 
@@ -561,7 +734,7 @@ module internal Tokenizer =
                 ) do  
                 i <- i - 1
             i
-        let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+        let lexState = if scanStartLine = 0 then FSharpTokenizerLexState.Initial else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
         let lineContents = textLine.Text.ToString(textLine.Span)
         
         // We can reuse the old data when 
@@ -580,11 +753,11 @@ module internal Tokenizer =
     let tokenizeLine (documentKey, sourceText, position, fileName, defines) =
         try
             let lineData, _, _ = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
-            lineData.Tokens   
+            lineData.SavedTokens   
         with 
         |  ex -> 
             Assert.Exception(ex)
-            []
+            [| |]
 
     let getSymbolAtPosition
         (
@@ -600,7 +773,7 @@ module internal Tokenizer =
         
         try
             let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
-            getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind, wholeActivePatterns)
+            getSymbolFromSavedTokens(fileName, lineData.SavedTokens, textLinePos, lineContents, lookupKind, wholeActivePatterns)
         with 
         | :? System.OperationCanceledException -> reraise()
         |  ex -> 
@@ -641,12 +814,12 @@ module internal Tokenizer =
                         else PrettyNaming.IsIdentifierPartCharacter c) 
         
         let isFixableIdentifier (s: string) = 
-            not (String.IsNullOrEmpty s) && Lexhelp.Keywords.NormalizeIdentifierBackticks s |> isIdentifier
+            not (String.IsNullOrEmpty s) && Keywords.NormalizeIdentifierBackticks s |> isIdentifier
         
-        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\'' |]
+        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
         
         let isTypeNameIdent (s: string) =
-            not (String.IsNullOrEmpty s) && s.IndexOfAny forbiddenChars = -1 && isFixableIdentifier s 
+            not (String.IsNullOrEmpty s) && s.IndexOfAny forbiddenChars = -1 && isFixableIdentifier s
         
         let isUnionCaseIdent (s: string) =
             isTypeNameIdent s && Char.IsUpper(s.Replace(doubleBackTickDelimiter, "").[0])
@@ -666,7 +839,7 @@ module internal Tokenizer =
         | LexerSymbolKind.Punctuation, _ -> PrettyNaming.IsPunctuation name
         | LexerSymbolKind.GenericTypeParameter, _ -> isGenericTypeParameter name
         | LexerSymbolKind.StaticallyResolvedTypeParameter, _ -> isStaticallyResolvedTypeParameter name
-        | (LexerSymbolKind.Ident | LexerSymbolKind.ActivePattern | LexerSymbolKind.Other), _ ->
+        | _ ->
             match symbol with
             | :? FSharpEntity as e when e.IsClass || e.IsFSharpRecord || e.IsFSharpUnion || e.IsValueType || e.IsFSharpModule || e.IsInterface -> isTypeNameIdent name
             | _ -> isFixableIdentifier name

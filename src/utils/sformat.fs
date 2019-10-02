@@ -38,11 +38,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open ReflectionAdapters
-#endif
-
     [<StructuralEquality; NoComparison>]
     type LayoutTag =
         | ActivePatternCase
@@ -199,6 +194,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             let rightBracket = tagPunctuation "]"
             let leftBrace= tagPunctuation "{"
             let rightBrace = tagPunctuation "}"
+            let leftBraceBar = tagPunctuation "{|"
+            let rightBraceBar = tagPunctuation "|}"
             let equals = tagOperator "="
             let arrow = tagPunctuation "->"
             let questionMark = tagPunctuation "?"
@@ -264,10 +261,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let tagListL tagger = function
             | []    -> emptyL
             | [x]   -> x
-            | x::xs ->
+            | x :: xs ->
                 let rec process' prefixL = function
                   | []    -> prefixL
-                  | y::ys -> process' ((tagger prefixL) ++ y) ys
+                  | y :: ys -> process' ((tagger prefixL) ++ y) ys
                 process' x xs
             
         let commaListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.comma)) layouts
@@ -280,7 +277,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             match layouts with
             | []    -> emptyL
             | [x]   -> x
-            | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+            | x :: ys -> List.fold (fun pre y -> pre @@ y) x ys
 
         let optionL selector value = 
             match value with 
@@ -319,11 +316,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           StringLimit : int;
 #endif
           FormatProvider: System.IFormatProvider;
-#if FX_RESHAPED_REFLECTION
-          ShowNonPublic : bool
-#else
           BindingFlags: System.Reflection.BindingFlags
-#endif
           PrintWidth : int; 
           PrintDepth : int; 
           PrintLength : int;
@@ -337,11 +330,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
               StringLimit = System.Int32.MaxValue;
 #endif
               AttributeProcessor= (fun _ _ _ -> ());
-#if FX_RESHAPED_REFLECTION
-              ShowNonPublic = false
-#else
               BindingFlags = System.Reflection.BindingFlags.Public;
-#endif
               FloatingPointFormat = "g10";
               PrintWidth = 80 ; 
               PrintDepth = 100 ; 
@@ -356,11 +345,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         open System
         open System.Reflection
 
-#if FX_RESHAPED_REFLECTION
-        open PrimReflectionAdapters
-        open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
         [<NoEquality; NoComparison>]
         type TypeInfo =
           | TupleType of Type list
@@ -370,7 +354,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           | UnitType
           | ObjectType of Type
 
-        let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
+        let isNamedType (ty:Type) = not (ty.IsArray || ty.IsByRef || ty.IsPointer)
         let equivHeadTypes (ty1:Type) (ty2:Type) = 
             isNamedType(ty1) &&
             if ty1.IsGenericType then 
@@ -381,11 +365,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let option = typedefof<obj option>
         let func = typedefof<(obj -> obj)>
 
-        let isOptionTy typ = equivHeadTypes typ (typeof<int option>)
-        let isUnitType typ = equivHeadTypes typ (typeof<unit>)
-        let isListType typ = 
-            FSharpType.IsUnion typ && 
-            (let cases = FSharpType.GetUnionCases typ 
+        let isOptionTy ty = equivHeadTypes ty (typeof<int option>)
+        let isUnitType ty = equivHeadTypes ty (typeof<unit>)
+        let isListType ty = 
+            FSharpType.IsUnion ty && 
+            (let cases = FSharpType.GetUnionCases ty 
              cases.Length > 0 && equivHeadTypes (typedefof<list<_>>) cases.[0].DeclaringType)
 
         [<NoEquality; NoComparison>]
@@ -402,10 +386,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
             // Analyze an object to see if it the representation
             // of an F# value.
-            let GetValueInfoOfObject (bindingFlags:BindingFlags) (obj : obj) = 
-#if FX_RESHAPED_REFLECTION
-              let showNonPublic = isNonPublicFlag bindingFlags
-#endif
+            let GetValueInfoOfObject (bindingFlags:BindingFlags) (obj : obj) =
               match obj with 
               | null -> ObjectValue(obj)
               | _ -> 
@@ -427,34 +408,18 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                 // the type are the actual fields of the type.  Again,
                 // we should be reading attributes here that indicate the
                 // true structure of the type, e.g. the order of the fields.   
-#if FX_RESHAPED_REFLECTION
-                elif FSharpType.IsUnion(reprty, showNonPublic) then 
-                    let tag,vals = FSharpValue.GetUnionFields (obj,reprty, showNonPublic) 
-#else
                 elif FSharpType.IsUnion(reprty,bindingFlags) then 
                     let tag,vals = FSharpValue.GetUnionFields (obj,reprty,bindingFlags) 
-#endif
                     let props = tag.GetFields()
                     let pvals = (props,vals) ||> Array.map2 (fun prop v -> prop.Name,(v, prop.PropertyType))
                     ConstructorValue(tag.Name, Array.toList pvals)
-#if FX_RESHAPED_REFLECTION
-                elif FSharpType.IsExceptionRepresentation(reprty, showNonPublic) then 
-                    let props = FSharpType.GetExceptionFields(reprty, showNonPublic) 
-                    let vals = FSharpValue.GetExceptionFields(obj, showNonPublic)
-#else
                 elif FSharpType.IsExceptionRepresentation(reprty,bindingFlags) then 
                     let props = FSharpType.GetExceptionFields(reprty,bindingFlags) 
                     let vals = FSharpValue.GetExceptionFields(obj,bindingFlags) 
-#endif
                     let pvals = (props,vals) ||> Array.map2 (fun prop v -> prop.Name,(v, prop.PropertyType))
                     ExceptionValue(reprty, pvals |> Array.toList)
-#if FX_RESHAPED_REFLECTION
-                elif FSharpType.IsRecord(reprty, showNonPublic) then 
-                    let props = FSharpType.GetRecordFields(reprty, showNonPublic) 
-#else
                 elif FSharpType.IsRecord(reprty,bindingFlags) then 
                     let props = FSharpType.GetRecordFields(reprty,bindingFlags) 
-#endif
                     RecordValue(props |> Array.map (fun prop -> prop.Name, prop.GetValue(obj,null), prop.PropertyType) |> Array.toList)
                 else
                     ObjectValue(obj)
@@ -463,19 +428,19 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             // statically-known type information to aid in the
             // analysis of null values. 
 
-            let GetValueInfo bindingFlags (x : 'a, typ : Type)  (* x could be null *) = 
+            let GetValueInfo bindingFlags (x : 'a, ty : Type)  (* x could be null *) = 
                 let obj = (box x)
                 match obj with 
                 | null ->
                    let isNullaryUnion =
-                      match typ.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
+                      match ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
                       | [|:? CompilationRepresentationAttribute as attr|] -> 
                           (attr.Flags &&& CompilationRepresentationFlags.UseNullAsTrueValue) = CompilationRepresentationFlags.UseNullAsTrueValue
                       | _ -> false
                    if isNullaryUnion then
-                     let nullaryCase = FSharpType.GetUnionCases typ |> Array.filter (fun uc -> uc.GetFields().Length = 0) |> Array.item 0
+                     let nullaryCase = FSharpType.GetUnionCases ty |> Array.filter (fun uc -> uc.GetFields().Length = 0) |> Array.item 0
                      ConstructorValue(nullaryCase.Name, [])
-                   elif isUnitType typ then UnitValue
+                   elif isUnitType ty then UnitValue
                    else ObjectValue(obj)
                 | _ -> 
                   GetValueInfoOfObject bindingFlags (obj) 
@@ -488,22 +453,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         let string_of_int (i:int) = i.ToString()
 
-        let typeUsesSystemObjectToString (typ:System.Type) =
-#if FX_PORTABLE_OR_NETSTANDARD
-            try 
-#if FX_RESHAPED_REFLECTION
-                let methInfo = typ.GetRuntimeMethod("ToString",[| |])
-                methInfo.DeclaringType = typeof<System.Object>
-#else
-                let methInfo = typ.GetMethod("ToString",[| |])
-                methInfo.DeclaringType = typeof<System.Object>
-#endif
-            with e -> false
-#else        
-            try let methInfo = typ.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
+        let typeUsesSystemObjectToString (ty:System.Type) =
+            try
+                let methInfo = ty.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
                 methInfo.DeclaringType = typeof<System.Object>
             with e -> false
-#endif
         /// If "str" ends with "ending" then remove it from "str", otherwise no change.
         let trimEnding (ending:string) (str:string) =
           if str.EndsWith(ending,StringComparison.Ordinal) then 
@@ -652,7 +606,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         let combine (strs: string list) = System.String.Concat strs
         let showL opts leafFormatter layout =
-            let push x rstrs = x::rstrs
+            let push x rstrs = x :: rstrs
             let z0 = [],0
             let addText (rstrs,i) (text:string) = push text rstrs,i + text.Length
             let index   (_,i)               = i
@@ -740,18 +694,18 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // pprinter: using general-purpose reflection...
         // -------------------------------------------------------------------- 
           
-        let getValueInfo bindingFlags (x:'a, typ:Type) = Value.GetValueInfo bindingFlags (x, typ)
+        let getValueInfo bindingFlags (x:'a, ty:Type) = Value.GetValueInfo bindingFlags (x, ty)
 
         let unpackCons recd =
             match recd with 
             | [(_,h);(_,t)] -> (h,t)
             | _             -> failwith "unpackCons"
 
-        let getListValueInfo bindingFlags (x:obj, typ:Type) =
+        let getListValueInfo bindingFlags (x:obj, ty:Type) =
             match x with 
             | null -> None 
             | _ -> 
-                match getValueInfo bindingFlags (x, typ) with
+                match getValueInfo bindingFlags (x, ty) with
                 | ConstructorValue ("Cons",recd) -> Some (unpackCons recd)
                 | ConstructorValue ("Empty",[]) -> None
                 | _ -> failwith "List value had unexpected ValueInfo"
@@ -764,18 +718,14 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // pprinter: attributes
         // -------------------------------------------------------------------- 
 
-        let makeRecordVerticalL nameXs =
-            let itemL (name,xL) = let labelL = wordL name in ((labelL ^^ wordL Literals.equals)) -- (xL  ^^ (rightL Literals.semicolon))
-            let braceL xs = (leftL Literals.leftBrace) ^^ xs ^^ (rightL Literals.rightBrace)
-            braceL (aboveListL (List.map itemL nameXs))
-
-        // This is a more compact rendering of records - and is more like tuples 
-        let makeRecordHorizontalL nameXs = 
-            let itemL (name,xL) = let labelL = wordL name in ((labelL ^^ wordL Literals.equals)) -- xL
-            let braceL xs = (leftL Literals.leftBrace) ^^ xs ^^ (rightL Literals.rightBrace)
-            braceL (sepListL (rightL Literals.semicolon)  (List.map itemL nameXs))
-
-        let makeRecordL nameXs = makeRecordVerticalL nameXs 
+        let makeRecordL nameXs =
+            let itemL (name,xL) = wordL name ^^ wordL Literals.equals -- xL
+            let braceL xs = (wordL Literals.leftBrace) ^^ xs ^^ (wordL Literals.rightBrace)
+            
+            nameXs
+            |> List.map itemL
+            |> aboveListL
+            |> braceL
 
         let makePropertiesL nameXs =
             let itemL (name,v) = 
@@ -805,23 +755,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // -------------------------------------------------------------------- 
 
         let getProperty (ty: Type) (obj: obj) name =
-#if FX_PORTABLE_OR_NETSTANDARD
-            let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
-            if not (isNull prop) then prop.GetValue(obj,[||])
-#if FX_NO_MISSINGMETHODEXCEPTION
-            // Profile 7, 47, 78 and 259 raise MissingMemberException
-            else 
-                let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
-                raise (System.MissingMemberException(msg))
-#else
-            // Others raise MissingMethodException
-            else 
-                let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
-                raise (System.MissingMethodException(msg))
-#endif
-#else
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
-#endif
+
         let getField obj (fieldInfo: FieldInfo) =
             fieldInfo.GetValue(obj)
 
@@ -879,10 +814,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             | ShowTopLevelBinding
 
         // polymorphic and inner recursion limitations prevent us defining polyL in the recursive loop 
-        let polyL bindingFlags (objL: ShowMode -> int -> Precedence -> ValueInfo -> obj -> Layout) showMode i prec  (x:'a ,typ : Type) (* x could be null *) =
-            objL showMode i prec (getValueInfo bindingFlags (x, typ))  (box x) 
+        let polyL bindingFlags (objL: ShowMode -> int -> Precedence -> ValueInfo -> obj -> Layout) showMode i prec  (x:'a ,ty : Type) (* x could be null *) =
+            objL showMode i prec (getValueInfo bindingFlags (x, ty))  (box x) 
 
-        let anyL showMode bindingFlags (opts:FormatOptions) (x:'a, typ:Type) =
+        let anyL showMode bindingFlags (opts:FormatOptions) (x:'a, ty:Type) =
             // showMode = ShowTopLevelBinding on the outermost expression when called from fsi.exe,
             // This allows certain outputs, e.g. objects that would print as <seq> to be suppressed, etc. See 4343.
             // Calls to layout proper sub-objects should pass showMode = ShowAll.
@@ -899,8 +834,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             let stopShort _ = exceededPrintSize() // for unfoldL
 
             // Recursive descent
-            let rec objL depthLim prec (x:obj, typ:Type) = polyL bindingFlags objWithReprL ShowAll  depthLim prec (x, typ) // showMode for inner expr 
-            and sameObjL depthLim prec (x:obj, typ:Type) = polyL bindingFlags objWithReprL showMode depthLim prec (x, typ) // showMode preserved 
+            let rec objL depthLim prec (x:obj, ty:Type) = polyL bindingFlags objWithReprL ShowAll  depthLim prec (x, ty) // showMode for inner expr 
+            and sameObjL depthLim prec (x:obj, ty:Type) = polyL bindingFlags objWithReprL showMode depthLim prec (x, ty) // showMode preserved 
 
             and objWithReprL showMode depthLim prec (info:ValueInfo) (x:obj) (* x could be null *) =
                 try
@@ -947,7 +882,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                         let illFormedMatch = System.Text.RegularExpressions.Regex.IsMatch(txt, illFormedBracketPattern)
                                         match illFormedMatch with
                                         | true -> None // there are mismatched brackets, bail out
-                                        | false when layouts.Length > 1 -> Some (spaceListL (List.rev ((wordL (tagText(replaceEscapedBrackets(txt)))::layouts))))
+                                        | false when layouts.Length > 1 -> Some (spaceListL (List.rev ((wordL (tagText(replaceEscapedBrackets(txt))) :: layouts))))
                                         | false -> Some (wordL (tagText(replaceEscapedBrackets(txt))))
                                       | true ->
                                         // we have a hit on a property reference
@@ -984,7 +919,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                                       | false -> postText 
                                                       | true -> postTextMatch.Groups.["pre"].Value
 
-                                                  let newLayouts = (sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText currentPostText))::layouts
+                                                  let newLayouts = (sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText currentPostText)) :: layouts
                                                   match postText with
                                                     | "" ->
                                                       //We are done, build a space-delimited layout from the collection of layouts we've accumulated
@@ -1007,7 +942,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                                       | false ->
                                                         // We are done, there's more text but it doesn't contain any more properties, we need to remove escaped brackets now though
                                                         // since that wasn't done when creating currentPostText
-                                                        Some (spaceListL (List.rev ((sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText(replaceEscapedBrackets(remaingPropertyText))))::layouts)))
+                                                        Some (spaceListL (List.rev ((sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText(replaceEscapedBrackets(remaingPropertyText)))) :: layouts)))
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
@@ -1051,9 +986,9 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                     bracketIfL (prec <= Precedence.BracketIfTuple) basicL 
 
                 | RecordValue items -> 
-                    let itemL (name,x,typ) =
+                    let itemL (name,x,ty) =
                       countNodes 1 // record labels are counted as nodes. [REVIEW: discussion under 4090].
-                      (tagRecordField name,objL depthLim Precedence.BracketIfTuple (x, typ))
+                      (tagRecordField name,objL depthLim Precedence.BracketIfTuple (x, ty))
                     makeRecordL (List.map itemL items)
 
                 | ConstructorValue (constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 
@@ -1117,7 +1052,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                              let b1 = arr.GetLowerBound(0) 
                              let project depthLim = if depthLim=(b1+n) then None else Some ((box (arr.GetValue(depthLim)), ty),depthLim+1)
                              let itemLs = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) project stopShort b1 opts.PrintLength
-                             makeArrayL (if b1 = 0 then itemLs else wordL (tagText("bound1="+string_of_int b1))::itemLs)
+                             makeArrayL (if b1 = 0 then itemLs else wordL (tagText("bound1="+string_of_int b1)) :: itemLs)
                         | 2 -> 
                              let n1 = arr.GetLength(0)
                              let n2 = arr.GetLength(1)
@@ -1129,7 +1064,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                              let rowL x = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) (project2 x) stopShort b2 opts.PrintLength |> makeListL
                              let project1 x = if x>=(b1+n1) then None else Some (x,x+1)
                              let rowsL  = boundedUnfoldL rowL project1 stopShort b1 opts.PrintLength
-                             makeArray2L (if b1=0 && b2 = 0 then rowsL else wordL (tagText("bound1=" + string_of_int b1))::wordL(tagText("bound2=" + string_of_int b2))::rowsL)
+                             makeArray2L (if b1=0 && b2 = 0 then rowsL else wordL (tagText("bound1=" + string_of_int b1)) :: wordL(tagText("bound2=" + string_of_int b2)) :: rowsL)
                           | n -> 
                              makeArrayL [wordL (tagText("rank=" + string_of_int n))]
                         
@@ -1166,7 +1101,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                            let word = "seq"
                            let it = ie.GetEnumerator() 
                            let ty = ie.GetType().GetInterfaces() |> Array.filter (fun ty -> ty.IsGenericType && ty.Name = "IEnumerable`1") |> Array.tryItem 0
-                           let ty = Option.map (fun (typ:Type) -> typ.GetGenericArguments().[0]) ty
+                           let ty = Option.map (fun (ty:Type) -> ty.GetGenericArguments().[0]) ty
                            try 
                              let itemLs = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) (fun () -> if it.MoveNext() then Some((it.Current, match ty with | None -> it.Current.GetType() | Some ty -> ty),()) else None) stopShort () (1+opts.PrintLength/30)
                              (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
@@ -1189,11 +1124,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                                             // If the leafFormatter was directly here, then layout leaves could store strings.
                            match obj with 
                            | _ when opts.ShowProperties ->
-#if FX_PORTABLE_OR_NETSTANDARD
-                              let props = ty.GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
-#else                           
                               let props = ty.GetProperties(BindingFlags.GetField ||| BindingFlags.Instance ||| BindingFlags.Public)
-#endif                              
                               let fields = ty.GetFields(BindingFlags.Instance ||| BindingFlags.Public) |> Array.map (fun i -> i :> MemberInfo)
                               let propsAndFields = 
                                 props |> Array.map (fun i -> i :> MemberInfo)
@@ -1208,11 +1139,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
                               // massively reign in deep printing of properties 
                               let nDepth = depthLim/10
-#if FX_PORTABLE_OR_NETSTANDARD
-                              Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
-#else                              
-                              Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );
-#endif                        
+#if NETSTANDARD
+                              Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } )
+#else
+                              Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } )
+#endif
 
                               if propsAndFields.Length = 0 || (nDepth <= 0) then basicL 
                               else basicL --- 
@@ -1228,7 +1159,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                            | _ -> basicL 
                 | UnitValue -> countNodes 1; measureL
 
-            polyL bindingFlags objWithReprL showMode opts.PrintDepth Precedence.BracketIfTuple (x, typ)
+            polyL bindingFlags objWithReprL showMode opts.PrintDepth Precedence.BracketIfTuple (x, ty)
 
         // --------------------------------------------------------------------
         // pprinter: leafFormatter
@@ -1323,12 +1254,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let fsi_any_to_layout opts x = anyL ShowTopLevelBinding BindingFlags.Public opts x
 #else
 // FSharp.Core
-#if FX_RESHAPED_REFLECTION
-        let internal anyToStringForPrintf options (showNonPublicMembers : bool) x = 
-            let bindingFlags = ReflectionUtils.toBindingFlags showNonPublicMembers
-#else
         let internal anyToStringForPrintf options (bindingFlags:BindingFlags) x = 
-#endif
             x |> anyL ShowAll bindingFlags options |> layout_to_string options
 #endif
 

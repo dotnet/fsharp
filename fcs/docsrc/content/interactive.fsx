@@ -1,21 +1,21 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Interactive Service: Embedding F# Interactive
 =============================================
 
 This tutorial demonstrates how to embed F# interactive in your application. F# interactive
 is an interactive scripting environment that compiles F# code into highly efficient IL code
-and executes it on the fly. The F# interactive service allows you to embed F# evaluation in 
+and executes it on the fly. The F# interactive service allows you to embed F# evaluation in
 your application.
 
-> **NOTE:** There is a number of options for embedding F# Interactive. The easiest one is to use the 
+> **NOTE:** There is a number of options for embedding F# Interactive. The easiest one is to use the
 `fsi.exe` process and communicate with it using standard input and standard output. In this
 tutorial, we look at calling F# Interactive directly through .NET API. However, if you have
 no control over the input, it is a good idea to run F# interactive in a separate process.
 One reason is that there is no way to handle `StackOverflowException` and so a poorly written
-script can terminate the host process. **Remember that while calling F# Interactive through .NET API, 
-` --shadowcopyreferences` option will be ignored**. For detailed discussion, please take a look at 
+script can terminate the host process. **Remember that while calling F# Interactive through .NET API,
+` --shadowcopyreferences` option will be ignored**. For detailed discussion, please take a look at
 [this thread](https://github.com/fsharp/FSharp.Compiler.Service/issues/292).
 > **NOTE:** If `FsiEvaluationSession.Create` fails with an error saying that `FSharp.Core.dll` cannot be found,
 add the `FSharp.Core.sigdata` and `FSharp.Core.optdata` files. More info [here](https://fsharp.github.io/FSharp.Compiler.Service/corelib.html).
@@ -31,8 +31,8 @@ First, we need to reference the libraries that contain F# interactive service:
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Interactive.Shell
 
 (**
 To communicate with F# interactive, we need to create streams that represent input and
@@ -43,7 +43,7 @@ open System
 open System.IO
 open System.Text
 
-// Intialize output and input streams
+// Initialize output and input streams
 let sbOut = new StringBuilder()
 let sbErr = new StringBuilder()
 let inStream = new StringReader("")
@@ -55,7 +55,7 @@ let argv = [| "C:\\fsi.exe" |]
 let allArgs = Array.append argv [|"--noninteractive"|]
 
 let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-let fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream)  
+let fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream)
 
 
 
@@ -74,7 +74,7 @@ let evalExpression text =
   | None -> printfn "Got no result!"
 
 (**
-This takes a string as an argument and evaluates (i.e. executes) it as F# code. 
+This takes a string as an argument and evaluates (i.e. executes) it as F# code.
 *)
 evalExpression "42+1" // prints '43'
 
@@ -83,7 +83,7 @@ This can be used in a strongly typed way as follows:
 *)
 
 /// Evaluate expression & return the result, strongly typed
-let evalExpressionTyped<'T> (text) = 
+let evalExpressionTyped<'T> (text) =
     match fsiSession.EvalExpression(text) with
     | Some value -> value.ReflectionValue |> unbox<'T>
     | None -> failwith "Got no result!"
@@ -95,7 +95,7 @@ evalExpressionTyped<int> "42+1"  // gives '43'
 The `EvalInteraction` method can be used to evaluate side-effectful operations
 such as printing, declarations, or other interactions that are not valid F# expressions, but can be entered in
 the F# Interactive console. Such commands include `#time "on"` (and other directives), `open System`
-all declarations and other top-level statements. The code 
+all declarations and other top-level statements. The code
 does not require `;;` at the end. Just enter the code that you want to execute:
 *)
 fsiSession.EvalInteraction "printfn \"bye\""
@@ -116,12 +116,12 @@ Catching errors
 code has type checking warnings or errors, or if evaluation fails with an exception.
 In these cases you can use ``EvalExpressionNonThrowing``, ``EvalInteractionNonThrowing``
 and ``EvalScriptNonThrowing``. These return a tuple of a result and an array of ``FSharpErrorInfo`` values.
-These represent the errors and warnings. The result part is a ``Choice<_,_>`` between an actual 
+These represent the errors and warnings. The result part is a ``Choice<_,_>`` between an actual
 result and an exception.
 
 The result part of ``EvalExpression`` and ``EvalExpressionNonThrowing`` is an optional ``FSharpValue``.
 If that value is not present then it just indicates that the expression didn't have a tangible
-result that could be represented as a .NET object.  This siutation shouldn't actually
+result that could be represented as a .NET object.  This situation shouldn't actually
 occur for any normal input expressions, and only for primitives used in libraries.
 *)
 
@@ -129,7 +129,7 @@ File.WriteAllText("sample.fsx", "let twenty = 'a' + 10.0")
 let result, warnings = fsiSession.EvalScriptNonThrowing "sample.fsx"
 
 // show the result
-match result with 
+match result with
 | Choice1Of2 () -> printfn "checked and executed ok"
 | Choice2Of2 exn -> printfn "execution exception: %s" exn.Message
 
@@ -141,8 +141,8 @@ Gives:
 *)
 
 // show the errors and warnings
-for w in warnings do 
-   printfn "Warning %s at %d,%d" w.Message w.StartLineAlternate w.StartColumn 
+for w in warnings do
+   printfn "Warning %s at %d,%d" w.Message w.StartLineAlternate w.StartColumn
 
 (**
 Gives:
@@ -156,9 +156,9 @@ For expressions:
 
 let evalExpressionTyped2<'T> text =
    let res, warnings = fsiSession.EvalExpressionNonThrowing(text)
-   for w in warnings do 
-       printfn "Warning %s at %d,%d" w.Message w.StartLineAlternate w.StartColumn 
-   match res with 
+   for w in warnings do
+       printfn "Warning %s at %d,%d" w.Message w.StartLineAlternate w.StartColumn
+   match res with
    | Choice1Of2 (Some value) -> value.ReflectionValue |> unbox<'T>
    | Choice1Of2 None -> failwith "null or no result"
    | Choice2Of2 (exn:exn) -> failwith (sprintf "exception %s" exn.Message)
@@ -175,17 +175,17 @@ By default the code passed to ``EvalExpression`` is executed immediately. To exe
 
 open System.Threading.Tasks
 
-let sampleLongRunningExpr = 
+let sampleLongRunningExpr =
     """
-async { 
+async {
     // The code of what you want to run
     do System.Threading.Thread.Sleep 5000
-    return 10 
+    return 10
 }
   |> Async.StartAsTask"""
 
-let task1 = evalExpressionTyped<Task<int>>(sampleLongRunningExpr)  
-let task2 = evalExpressionTyped<Task<int>>(sampleLongRunningExpr)  
+let task1 = evalExpressionTyped<Task<int>>(sampleLongRunningExpr)
+let task2 = evalExpressionTyped<Task<int>>(sampleLongRunningExpr)
 
 (**
 Both computations have now started.  You can now fetch the results:
@@ -199,7 +199,7 @@ task2.Result // gives the result after completion (up to 5 seconds)
 Type checking in the evaluation context
 ------------------
 
-Let's assume you have a situation where you would like to typecheck code 
+Let's assume you have a situation where you would like to typecheck code
 in the context of the F# Interactive scripting session. For example, you first
 evaluation a declaration:
 *)
@@ -211,36 +211,38 @@ fsiSession.EvalInteraction "let xxx = 1 + 1"
 Now you want to typecheck the partially complete code `xxx + xx`
 *)
 
-let parseResults, checkResults, checkProjectResults = fsiSession.ParseAndCheckInteraction("xxx + xx")
+let parseResults, checkResults, checkProjectResults =
+    fsiSession.ParseAndCheckInteraction("xxx + xx")
+    |> Async.RunSynchronously
 
-(** 
+(**
 The `parseResults` and `checkResults` have types `ParseFileResults` and `CheckFileResults`
 explained in [Editor](editor.html). You can, for example, look at the type errors in the code:
 *)
 checkResults.Errors.Length // 1
 
-(** 
+(**
 The code is checked with respect to the logical type context available in the F# interactive session
 based on the declarations executed so far.
 
 You can also request declaration list information, tooltip text and symbol resolution:
 *)
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 
 // get a tooltip
-checkResults.GetToolTipTextAlternate(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
+checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT)
 
 checkResults.GetSymbolUseAtLocation(1, 2, "xxx + xx", ["xxx"]) // symbol xxx
-  
+
 (**
 The 'fsi' object
 ------------------
 
 If you want your scripting code to be able to access the 'fsi' object, you should pass in an implementation of this object explicitly.
-Normally the one fromm FSharp.Compiler.Interactive.Settings.dll is used.
+Normally the one from FSharp.Compiler.Interactive.Settings.dll is used.
 *)
 
-let fsiConfig2 = FsiEvaluationSession.GetDefaultConfiguration(fsi)
+let fsiConfig2 = FsiEvaluationSession.GetDefaultConfiguration(fsiSession)
 
 (**
 Collectible code generation
@@ -250,16 +252,16 @@ Evaluating code in using FsiEvaluationSession generates a .NET dynamic assembly 
 You can make generated code collectible by passing `collectible=true`.  However code will only
 be collected if there are no outstanding object references involving types, for example
 `FsiValue` objects returned by `EvalExpression`, and you must have disposed the `FsiEvaluationSession`.
-See also [Restrictions on Collectible Assemblies](http://msdn.microsoft.com/en-us/library/dd554932(v=vs.110).aspx#restrictions).
+See also [Restrictions on Collectible Assemblies](https://docs.microsoft.com/en-us/previous-versions/dotnet/netframework-4.0/dd554932(v=vs.100)#restrictions).
 
 The example below shows the creation of 200 evaluation sessions. Note that `collectible=true` and
-`use session = ...` are both used. 
+`use session = ...` are both used.
 
 If collectible code is working correctly,
 overall resource usage will not increase linearly as the evaluation progresses.
 *)
 
-let collectionTest() = 
+let collectionTest() =
 
     for i in 1 .. 200 do
         let defaultArgs = [|"fsi.exe";"--noninteractive";"--nologo";"--gui-"|]
@@ -269,7 +271,7 @@ let collectionTest() =
 
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
         use session = FsiEvaluationSession.Create(fsiConfig, defaultArgs, inStream, outStream, errStream, collectible=true)
-        
+
         session.EvalInteraction (sprintf "type D = { v : int }")
         let v = session.EvalExpression (sprintf "{ v = 42 * %d }" i)
         printfn "iteration %d, result = %A" i v.Value.ReflectionValue

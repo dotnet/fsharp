@@ -11,9 +11,7 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Text
-    open Microsoft.FSharp.Math
 
-#if !FX_NO_SYSTEM_CONSOLE
     /// <summary>Print to <c>stdout</c> using the given format.</summary>
     /// <param name="format">The formatter.</param>
     /// <returns>The formatted result.</returns>
@@ -37,7 +35,6 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     [<CompiledName("PrintFormatLineToError")>]
     val eprintfn  :               format:Printf.TextWriterFormat<'T> -> 'T
-#endif
 
     /// <summary>Print to a string using the given format.</summary>
     /// <param name="format">The formatter.</param>
@@ -121,6 +118,10 @@ module ExtraTopLevelOperators =
     /// <summary>Builds a read-only lookup table from a sequence of key/value pairs. The key objects are indexed using generic hashing and equality.</summary>
     [<CompiledName("CreateDictionary")>]
     val dict : keyValuePairs:seq<'Key * 'Value> -> System.Collections.Generic.IDictionary<'Key,'Value> when 'Key : equality
+
+    /// <summary>Builds a read-only lookup table from a sequence of key/value pairs. The key objects are indexed using generic hashing and equality.</summary>
+    [<CompiledName("CreateReadOnlyDictionary")>]
+    val readOnlyDict : keyValuePairs:seq<'Key * 'Value> -> System.Collections.Generic.IReadOnlyDictionary<'Key,'Value> when 'Key : equality
 
     /// <summary>Builds a 2D array from a sequence of sequences of elements.</summary>
     [<CompiledName("CreateArray2D")>]

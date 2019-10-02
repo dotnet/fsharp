@@ -77,11 +77,6 @@
         <target state="translated">Possibile overload: '{0}'. {1}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\nPossibile overload migliore: '{0}'.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Questa funzione utilizza troppi argomenti oppure è utilizzata in un contesto in cui non è prevista una funzione</target>
@@ -797,6 +792,11 @@
         <target state="translated">parola chiave 'match'</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">parola chiave 'match!'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
         <source>keyword 'mutable'</source>
         <target state="translated">parola chiave 'mutable'</target>
@@ -1339,7 +1339,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">I riferimenti ricorsivi all'oggetto in fase di definizione verranno controllati per verificare la correttezza dell'inizializzazione al runtime tramite l'utilizzo di un riferimento ritardato. Provare a inserire autoriferimenti nei membri o in un'espressione finale nel formato '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
+        <target state="translated">I riferimenti ricorsivi all'oggetto in fase di definizione verranno controllati per verificare la correttezza dell'inizializzazione al runtime tramite l'uso di un riferimento ritardato. Provare a inserire autoriferimenti nei membri o in un'espressione finale nel formato '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1420,6 +1420,11 @@
       <trans-unit id="MatchIncomplete4">
         <source> Unmatched elements will be ignored.</source>
         <target state="translated"> Gli elementi senza corrispondenza verranno ignorati.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="translated">Le enumerazioni possono accettare valori esterni a casi noti.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">
@@ -1605,6 +1610,16 @@
       <trans-unit id="TargetInvocationExceptionWrapper">
         <source>internal error: {0}</source>
         <target state="translated">errore interno: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="translated">simbolo '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="translated">simbolo '|}'</target>
         <note />
       </trans-unit>
     </body>

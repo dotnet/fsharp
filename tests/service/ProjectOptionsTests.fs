@@ -1,7 +1,7 @@
 ﻿#if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.ProjectCracker.dll"
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.ProjectCracker.dll"
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -14,12 +14,12 @@ open System
 open System.IO
 open NUnit.Framework
 open FsUnit
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Ast
+open FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
-#if !NO_PROJECTCRACKER
+#if !NO_PROJECTCRACKER && DISABLED // Disabled tests because of MSBuild API dependencies.  The ProjectCracker is basically deprecated in any case
 
 let hasMSBuild14 =
   use engine = new Microsoft.Build.Evaluation.ProjectCollection()
@@ -236,12 +236,12 @@ let ``Project file parsing -- Logging``() =
   let _, logMap = ProjectCracker.GetProjectOptionsFromProjectFileLogged(projectFileName, enableLogging=true)
   let log = logMap.[projectFileName]
   
-  Assert.That(log, Is.StringContaining("ResolveAssemblyReference"))
+  Assert.That(log, Does.Contain("ResolveAssemblyReference"))
   if runningOnMono then
-    Assert.That(log, Is.StringContaining("System.Core"))
-    Assert.That(log, Is.StringContaining("Microsoft.Build.Tasks.ResolveAssemblyReference"))
+    Assert.That(log, Does.Contain("System.Core"))
+    Assert.That(log, Does.Contain("Microsoft.Build.Tasks.ResolveAssemblyReference"))
   else  
-    Assert.That(log, Is.StringContaining("Microsoft.Build.Tasks.Core"))
+    Assert.That(log, Does.Contain("Microsoft.Build.Tasks.Core"))
 
 [<Test>]
 let ``Project file parsing -- FSharpProjectOptions.SourceFiles contains both fs and fsi files``() =
@@ -508,7 +508,7 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
         let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/" + scriptName + ".fsx"
         let scriptSource = File.ReadAllText scriptPath
         let projOpts, _diagnostics =
-            checker.GetProjectOptionsFromScript(scriptPath, scriptSource)
+            checker.GetProjectOptionsFromScript(scriptPath, FSharp.Compiler.Text.SourceText.ofString scriptSource)
             |> Async.RunSynchronously
         projOpts.SourceFiles
         |> Array.map Path.GetFileNameWithoutExtension
@@ -520,30 +520,38 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
     test "MainBad" [|"MainBad"|] 
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: no project options cracker for .NET Core?")>]
+#endif
 let ``Script load closure project`` () =
     let fileName1 = Path.GetTempPath() + Path.DirectorySeparatorChar.ToString() + "Impl.fs"
     let fileName2 = Path.ChangeExtension(Path.GetTempFileName(), ".fsx")
 
-    let fileSource1 = """
+    let fileSource1Text = """
 module ImplFile
 
 #if INTERACTIVE
 let x = 42
 #endif
 """
-
-    let fileSource2 = """
+    let fileSource1 = FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    let fileSource2Text = """
 #load "Impl.fs"
 ImplFile.x
 """
+    let fileSource2 = FSharp.Compiler.Text.SourceText.ofString fileSource2Text
+    File.WriteAllText(fileName1, fileSource1Text)
+    File.WriteAllText(fileName2, fileSource2Text)
 
-    File.WriteAllText(fileName1, fileSource1)
-    File.WriteAllText(fileName2, fileSource2)
-
+    printfn "------Starting Script load closure project----"
+    printfn "Getting project options..."
     let projectOptions, diagnostics =
-        checker.GetProjectOptionsFromScript(fileName2, fileSource2) |> Async.RunSynchronously
+        checker.GetProjectOptionsFromScript(fileName2, fileSource2, useFsiAuxLib=false) |> Async.RunSynchronously
+    for d in diagnostics do 
+       printfn "ERROR: %A" d
     diagnostics.IsEmpty |> shouldEqual true
 
+    printfn "Parse and check..."
     let _, checkResults =
         checker.ParseAndCheckFileInProject(fileName2, 0, fileSource2, projectOptions) |> Async.RunSynchronously
 
@@ -552,13 +560,20 @@ ImplFile.x
         results.Errors |> shouldEqual [| |]
     | _ -> failwith "type check was aborted"
 
+    printfn "Getting parsing options..."
     let parsingOptions, diagnostics = checker.GetParsingOptionsFromProjectOptions(projectOptions)
+    for d in diagnostics do 
+       printfn "ERROR: %A" d
     diagnostics.IsEmpty |> shouldEqual true
 
+    printfn "Parsing file..."
     let parseResults = checker.ParseFile(fileName1, fileSource1, parsingOptions) |> Async.RunSynchronously
+    printfn "Checking parsetree..."
     parseResults.ParseTree.IsSome |> shouldEqual true
+    printfn "Checking decls..."
     match parseResults.ParseTree.Value with
     | ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, modules, _)) ->
         let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = modules.Head
         decls.Length |> shouldEqual 1
     | _ -> failwith "got sig file"
+    printfn "------Finished Script load closure project----"

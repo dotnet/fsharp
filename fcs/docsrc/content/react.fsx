@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Reacting to Changes
 ============================================
@@ -19,7 +19,7 @@ referenced DLLs may change on disk, or referenced files may change.
 The ``FSharpChecker`` component from FSharp.Compiler.Service does _not_ actively "listen"
 to changes in the file system.  However ``FSharpChecker`` _does_ repeatedly ask for
 time stamps from the file system which it uses to decide if recomputation is needed.
-FCS doesn’t listen for changes directly - for example, it creates no ``FileWatcher`` object (and the
+FCS doesn't listen for changes directly - for example, it creates no ``FileWatcher`` object (and the
 ``IFileSystem`` API has no ability to create such objects).  This is partly for legacy reasons,
 and partly because some hosts forbid the creation of FileWatcher objects.
 
@@ -33,7 +33,7 @@ stays up-to-date when changes are observed.
 
 If you want to more actively listen for changes, then you should add watchers for the
 files specified in the ``DependencyFiles`` property of ``FSharpCheckFileResults`` and ``FSharpCheckProjectResults``.
-Here’s what you need to do: 
+Hereï¿½s what you need to do: 
 
 * When your client notices an CHANGE event on a DependencyFile, it should schedule a refresh call to perform the ParseAndCheckFileInProject (or other operation) again.
   This will result in fresh FileSystem calls to compute time stamps.
@@ -42,8 +42,8 @@ Here’s what you need to do:
   for all active projects in which the file occurs. This will result in fresh FileSystem calls to compute time 
   stamps, and fresh calls to compute whether files exist.
 
-* Generally clients don’t listen for DELETE events on files.  Although it would be logically more consistent 
-  to do so, in practice it’s very irritating for a "project clean" to invalidate all intellisense and 
+* Generally clients donï¿½t listen for DELETE events on files.  Although it would be logically more consistent 
+  to do so, in practice itï¿½s very irritating for a "project clean" to invalidate all intellisense and 
   cause lots of red squiggles.  Some source control tools also make a change by removing and adding files, which 
   is best noticed as a single change event.
 
@@ -67,7 +67,7 @@ If your host happens to be Visual Studio, then this is one technique you can use
 
         ...
         
-        // Unadvise file changes...
+        // Unadvised file changes...
         Com.ThrowOnFailure0(vsFileWatch.UnadviseFileChange(cookie))
 
 

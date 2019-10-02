@@ -1,3 +1,3 @@
 // #NoMT #CompilerOptions #Deterministic
-module TestDeterminsticCompilation
+module TestDeterministicCompilation
 exit 0

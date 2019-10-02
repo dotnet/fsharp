@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SwrProperty Include="ProjectDir=$(MSBuildThisFileDirectory)" />
+    <SwrProperty Include="SetupShimsDir=$(MSBuildThisFileDirectory)..\..\shims" />
+    <SwrProperty Include="VSGeneralVersion=$(VSGeneralVersion)" />
+    <SwrProperty Include="VsixVersion=$(VsixVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SwrFile Include="Package.swr" />
+  </ItemGroup>
+
+</Project>

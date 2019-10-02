@@ -3,9 +3,7 @@ module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
 open System.IO
-open System.Threading.Tasks
 open System.Diagnostics
-
 
 /// Checks if the filePath ends with ".fsi"
 let isSignatureFile (filePath:string) = 
@@ -16,11 +14,7 @@ let isScriptFile (filePath:string) =
     let ext = Path.GetExtension filePath 
     String.Equals (ext, ".fsx", StringComparison.OrdinalIgnoreCase) || String.Equals (ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
 
-/// Path combination operator
-let (</>) path1 path2 = Path.Combine (path1, path2) 
-
 type internal ISetThemeColors = abstract member SetColors: unit -> unit
-
 
 [<Sealed>]
 type MaybeBuilder () =
@@ -143,9 +137,11 @@ type AsyncMaybeBuilder () =
         }
 
     [<DebuggerStepThrough>]
-    member __.Using (resource : ('T :> IDisposable), body : _ -> Async<_ option>) : Async<_ option> =
-        try body resource
-        finally if not (isNull resource) then resource.Dispose ()
+    member __.Using (resource : ('T :> IDisposable), body : 'T -> Async<'U option>) : Async<'U option> =
+        async {
+            use resource = resource
+            return! body resource
+        }
 
     [<DebuggerStepThrough>]
     member x.While (guard, body : Async<_ option>) : Async<_ option> =
@@ -155,7 +151,7 @@ type AsyncMaybeBuilder () =
             x.Zero ()
 
     [<DebuggerStepThrough>]
-    member x.For (sequence : seq<_>, body : 'T -> Async<unit option>) : Async<_ option> =
+    member x.For (sequence : seq<_>, body : 'T -> Async<unit option>) : Async<unit option> =
         x.Using (sequence.GetEnumerator (), fun enum ->
             x.While (enum.MoveNext, x.Delay (fun () -> body enum.Current)))
 
@@ -197,6 +193,3 @@ module Async =
                     replyCh.Reply res 
             }
         async { return! agent.PostAndAsyncReply id }
-        
-
-

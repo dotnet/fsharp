@@ -162,9 +162,6 @@
   <data name="PossibleOverload" xml:space="preserve">
     <value>Possible overload: '{0}'. {1}.</value>
   </data>
-  <data name="PossibleBestOverload" xml:space="preserve">
-    <value>\n\nPossible best overload: '{0}'.</value>
-  </data>
   <data name="FunctionExpected" xml:space="preserve">
     <value>This function takes too many arguments, or is used in a context where a function is not expected</value>
   </data>
@@ -396,6 +393,9 @@
   <data name="Parser.TOKEN.LBRACK" xml:space="preserve">
     <value>symbol '['</value>
   </data>
+  <data name="Parser.TOKEN.LBRACE.BAR" xml:space="preserve">
+    <value>symbol '{|'</value>
+  </data>
   <data name="Parser.TOKEN.LBRACK.BAR" xml:space="preserve">
     <value>symbol '[|'</value>
   </data>
@@ -410,6 +410,9 @@
   </data>
   <data name="Parser.TOKEN.BAR.RBRACK" xml:space="preserve">
     <value>symbol '|]'</value>
+  </data>
+  <data name="Parser.TOKEN.BAR.RBRACE" xml:space="preserve">
+    <value>symbol '|}'</value>
   </data>
   <data name="Parser.TOKEN.GREATER.RBRACE" xml:space="preserve">
     <value>symbol '&gt;}'</value>
@@ -593,6 +596,9 @@
   </data>
   <data name="Parser.TOKEN.MATCH" xml:space="preserve">
     <value>keyword 'match'</value>
+  </data>
+  <data name="Parser.TOKEN.MATCH.BANG" xml:space="preserve">
+    <value>keyword 'match!'</value>
   </data>
   <data name="Parser.TOKEN.MUTABLE" xml:space="preserve">
     <value>keyword 'mutable'</value>
@@ -968,6 +974,9 @@
   </data>
   <data name="MatchIncomplete4" xml:space="preserve">
     <value> Unmatched elements will be ignored.</value>
+  </data>
+  <data name="EnumMatchIncomplete1" xml:space="preserve">
+    <value>Enums may take values outside known cases.</value>
   </data>
   <data name="RuleNeverMatched" xml:space="preserve">
     <value>This rule will never be matched</value>

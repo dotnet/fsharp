@@ -6,10 +6,10 @@
 /// morphed occurs, e.g. the module being morphed itself, the
 /// ILTypeDef (possibly nested) where the item occurs, 
 /// the ILMethodDef (if any) where the item occurs. etc.
-module internal Microsoft.FSharp.Compiler.AbstractIL.Morphs 
+module internal FSharp.Compiler.AbstractIL.Morphs 
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
 
 /// Morph each scope reference inside a type signature.
 val morphILScopeRefsInILTypeRef: (ILScopeRef -> ILScopeRef) -> ILTypeRef -> ILTypeRef 

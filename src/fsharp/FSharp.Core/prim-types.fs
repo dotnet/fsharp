@@ -6,8 +6,8 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 #nowarn "60" // Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
-#nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.
-#nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in compilation failures if you attempt to invoke the member constraint from your own code.
+#nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration...
+#nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler...
 #nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
 
 namespace Microsoft.FSharp.Core
@@ -20,11 +20,6 @@ namespace Microsoft.FSharp.Core
     open System.Reflection
     open System.Text
     
-
-    //-------------------------------------------------------------------------
-    // Unit
-
-    [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes")>] // No op_equality on unit  
     type Unit() =
         override x.GetHashCode() = 0
         override x.Equals(obj:obj) = 
@@ -33,19 +28,6 @@ namespace Microsoft.FSharp.Core
             member x.CompareTo(_obj:obj) = 0
         
     and unit = Unit
-
-
-namespace Microsoft.FSharp.Core
-
-    open System
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.Text
-
-    //-------------------------------------------------------------------------
-    // enumerations
 
     type SourceConstructFlags = 
        | None = 0
@@ -66,168 +48,157 @@ namespace Microsoft.FSharp.Core
        | None = 0
        | Static = 1
        | Instance = 2      
-       | ModuleSuffix = 4  // append 'Module' to the end of a non-unique module
-       | UseNullAsTrueValue = 8  // Note if you change this then change CompilationRepresentationFlags_PermitNull further below
+       /// append 'Module' to the end of a non-unique module
+       | ModuleSuffix = 4  
+       | UseNullAsTrueValue = 8
        | Event = 16
 
-#if FX_NO_ICLONEABLE
-    module ICloneableExtensions =
-        type System.Array with
-            member x.Clone() =
-               let ty = (x.GetType()).GetElementType()
-               let clone = System.Array.CreateInstance(ty,x.Length)
-               x.CopyTo(clone,0)
-               clone
-    
-    open ICloneableExtensions
-#endif
-
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     type SealedAttribute(value:bool) =
         inherit System.Attribute()
         member x.Value = value
         new() = new SealedAttribute(true)
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type AbstractClassAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.GenericParameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.GenericParameter, AllowMultiple=false)>]
     [<Sealed>]
     type EqualityConditionalOnAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.GenericParameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.GenericParameter, AllowMultiple=false)>]
     [<Sealed>]
     type ComparisonConditionalOnAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type AllowNullLiteralAttribute(value: bool) =
         inherit System.Attribute()
         member x.Value = value
         new () = new AllowNullLiteralAttribute(true)
       
-    [<AttributeUsage(AttributeTargets.Field,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
     [<Sealed>]
     type VolatileFieldAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute(value:bool) = 
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage (AttributeTargets.Property,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIEventAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIMutableAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type AutoSerializableAttribute(value:bool) = 
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute(check:bool) = 
         inherit System.Attribute()
         member x.Check = check
         new() = new DefaultValueAttribute(true)
 
-    [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]  
     [<Sealed>]
     type EntryPointAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type ReferenceEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type CustomEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type CustomComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor, AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute(includeValue: bool) =
         inherit System.Attribute()
         new() = ReflectedDefinitionAttribute(false)
         member x.IncludeValue = includeValue
 
-    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CompiledNameAttribute(compiledName:string) =
         inherit System.Attribute()
         member x.CompiledName = compiledName
 
-    [<AttributeUsage (AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.GenericParameter ||| AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.GenericParameter ||| AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAnnotatedAbbreviationAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Interface,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Interface, AllowMultiple=false)>]  
     [<Sealed>]
     type InterfaceAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type ClassAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Field,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
     [<Sealed>]
     type LiteralAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Assembly,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple=false)>]
     [<Sealed>]
     type FSharpInterfaceDataVersionAttribute(major:int,minor:int,release:int)  =
         inherit System.Attribute()
@@ -235,7 +206,7 @@ namespace Microsoft.FSharp.Core
         member x.Minor = minor
         member x.Release = release
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationMappingAttribute(sourceConstructFlags:SourceConstructFlags,
                                      variantNumber:int,
@@ -253,26 +224,26 @@ namespace Microsoft.FSharp.Core
         member x.TypeDefinitions = typeDefinitions
         member x.ResourceName = resourceName
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationSourceNameAttribute(sourceName:string)  =
         inherit System.Attribute()
         member x.SourceName = sourceName
 
     //-------------------------------------------------------------------------
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationRepresentationAttribute (flags : CompilationRepresentationFlags) =
         inherit System.Attribute()
         member x.Flags = flags
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute(message:string) =
         inherit System.Attribute()
         member x.Message = message    
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationArgumentCountsAttribute(counts:int[]) =
         inherit System.Attribute()
@@ -280,7 +251,7 @@ namespace Microsoft.FSharp.Core
            let unboxPrim(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
            (unboxPrim(counts.Clone()) : System.Collections.Generic.IEnumerable<int>)
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CustomOperationAttribute(name:string) =
         inherit System.Attribute()
@@ -301,18 +272,18 @@ namespace Microsoft.FSharp.Core
         member x.MaintainsVariableSpace with get() = maintainsVarSpace and set v = maintainsVarSpace <- v
         member x.MaintainsVariableSpaceUsingBind with get() = maintainsVarSpaceWithBind and set v = maintainsVarSpaceWithBind <- v
 
-    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false)>]
     [<Sealed>]
     type ProjectionParameterAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum, AllowMultiple=false)>]
     [<Sealed>]
     type StructuredFormatDisplayAttribute(value:string) =
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilerMessageAttribute(message:string, messageNumber : int) =
         inherit System.Attribute()
@@ -323,42 +294,50 @@ namespace Microsoft.FSharp.Core
         member x.IsError with get() = isError and set v = isError <- v
         member x.IsHidden with get() = isHidden and set v = isHidden <- v
 
-    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
     type UnverifiableAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
     type NoDynamicInvocationAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false)>]
     [<Sealed>]
     type OptionalArgumentAttribute() =
         inherit System.Attribute()
-      
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type GeneralizableValueAttribute() =
         inherit System.Attribute()
-      
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type RequiresExplicitTypeArgumentsAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit System.Attribute()
-      
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly,AllowMultiple=true)>]  
+
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute(path:string) =
         inherit System.Attribute()
         member x.Path = path
         new() =  AutoOpenAttribute("")
+
+    /// This Attribute is used to make Value bindings like
+    ///      let x = some code
+    /// operate like static properties.
+    [<AttributeUsage(AttributeTargets.Property, AllowMultiple=false)>]
+    [<Sealed>]
+    type ValueAsStaticPropertyAttribute() =
+        inherit System.Attribute()
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32
@@ -368,28 +347,32 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
 
-#if FX_RESHAPED_REFLECTION
-    module PrimReflectionAdapters =
-        
-        open System.Reflection
-        open System.Linq
-        // copied from BasicInlinedOperations
-        let inline box     (x:'T) = (# "box !0" type ('T) x : obj #)
-        let inline unboxPrim<'T>(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
-        type System.Type with
-            member inline this.IsGenericType = this.GetTypeInfo().IsGenericType
-            member inline this.IsValueType = this.GetTypeInfo().IsValueType
-            member inline this.IsSealed = this.GetTypeInfo().IsSealed
-            member inline this.IsAssignableFrom(otherType: Type) = this.GetTypeInfo().IsAssignableFrom(otherType.GetTypeInfo())
-            member inline this.GetGenericArguments() = this.GetTypeInfo().GenericTypeArguments
-            member inline this.GetProperty(name) = this.GetRuntimeProperty(name)
-            member inline this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
-            member inline this.GetCustomAttributes(attributeType: Type, inherits: bool) : obj[] = 
-                unboxPrim<_> (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attributeType, inherits).ToArray()))
+    /// <summary>Represents a managed pointer in F# code.</c></summary>
+    type byref<'T> = (# "!0&" #)
 
-    open PrimReflectionAdapters
+    /// <summary>Represents a managed pointer in F# code.</summary>
+    type byref<'T, 'Kind> = (# "!0&" #)
 
-#endif
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        [<Sealed>]
+        type Out() = class end
+
+        /// Represents a byref that can be read
+        [<Sealed>]
+        type In() = class end
+
+        /// Represents a byref that can be both read and written
+        [<Sealed>]
+        type InOut = class end 
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
 
     module internal BasicInlinedOperations =  
         let inline unboxPrim<'T>(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
@@ -463,9 +446,7 @@ namespace Microsoft.FSharp.Core
     
     module TupleUtils =
     
-        open BasicInlinedOperations
-
-        // adapted from System.Tuple::CombineHashCodes
+        // adapted from System.Tuple :: CombineHashCodes
         let inline mask (n:int) (m:int) = (# "and" n m : int #)
         let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
         let inline opxor (x:int) (y:int) : int = (# "xor" x y : int32 #)
@@ -490,18 +471,6 @@ namespace Microsoft.FSharp.Core
             combineTupleHashes (get codes 0) (get codes 1)
 
 
-namespace Microsoft.FSharp.Core
-
-    open System
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.Linq
-    open System.Text
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.BasicInlinedOperations
-
     //-------------------------------------------------------------------------
     // The main aim here is to bootstrap the definition of structural hashing 
     // and comparison.  Calls to these form part of the auto-generated 
@@ -510,14 +479,23 @@ namespace Microsoft.FSharp.Core
     module LanguagePrimitives =  
 
         module (* internal *) ErrorStrings =
-            // inline functions cannot call GetString, so we must make these bits public
+            // inline functions cannot call GetString, so we must make these bits public 
+            [<ValueAsStaticProperty>]
             let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
+
+            [<ValueAsStaticProperty>]
             let NoNegateMinValueString = SR.GetString(SR.noNegateMinValue)
+
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputSequenceEmptyString = SR.GetString(SR.inputSequenceEmpty) 
+
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputArrayEmptyString = SR.GetString(SR.arrayWasEmpty) 
+
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK              
@@ -537,22 +515,18 @@ namespace Microsoft.FSharp.Core
             // Byref usage checks prohibit type instantiations involving byrefs.
 
             [<NoDynamicInvocation>]
-            let inline (~&)  (obj : 'T) : 'T byref     = 
+            let inline (~&)  (obj : 'T) : byref<'T>     = 
                 ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
-                (# "throw" (e :> System.Exception) : 'T byref #)
+                (# "throw" (e :> System.Exception) : byref<'T> #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (obj : 'T) : nativeptr<'T> = 
                 ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
-          
-        
+
         open IntrinsicOperators
-#if FX_RESHAPED_REFLECTION
-        open PrimReflectionAdapters
-#endif
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK
         module IntrinsicFunctions =        
             
@@ -821,25 +795,33 @@ namespace Microsoft.FSharp.Core
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
             let rec GenericCompare (comp:GenericComparer) (xobj:obj,yobj:obj) = 
-                (*if objEq xobj yobj then 0 else *)
                   match xobj,yobj with 
                    | null,null -> 0
                    | null,_ -> -1
                    | _,null -> 1
+
                    // Use Ordinal comparison for strings
-                   | (:? string as x),(:? string as y) -> System.String.CompareOrdinal(x, y)
+                   | (:? string as x),(:? string as y) ->
+                       System.String.CompareOrdinal(x, y)
+
                    // Permit structural comparison on arrays
                    | (:? System.Array as arr1),_ -> 
                        match arr1,yobj with 
                        // Fast path
-                       | (:? (obj[]) as arr1), (:? (obj[]) as arr2)      -> GenericComparisonObjArrayWithComparer comp arr1 arr2
+                       | (:? (obj[]) as arr1), (:? (obj[]) as arr2) ->
+                           GenericComparisonObjArrayWithComparer comp arr1 arr2
                        // Fast path
-                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2)     -> GenericComparisonByteArray arr1 arr2
-                       | _                   , (:? System.Array as arr2) -> GenericComparisonArbArrayWithComparer comp arr1 arr2
-                       | _ -> FailGenericComparison xobj
+                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2) ->
+                           GenericComparisonByteArray arr1 arr2
+                       | _, (:? System.Array as arr2) ->
+                           GenericComparisonArbArrayWithComparer comp arr1 arr2
+                       | _ ->
+                           FailGenericComparison xobj
+
                    // Check for IStructuralComparable
                    | (:? IStructuralComparable as x),_ ->
                        x.CompareTo(yobj,comp)
+
                    // Check for IComparable
                    | (:? System.IComparable as x),_ -> 
                        if comp.ThrowsOnPER then 
@@ -852,91 +834,26 @@ namespace Microsoft.FSharp.Core
                                     raise NaNException
                            | _ -> ()
                        x.CompareTo(yobj)
-                   | (:? nativeint as x),(:? nativeint as y) -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                   | (:? unativeint as x),(:? unativeint as y) -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+
+                   | (:? nativeint as x),(:? nativeint as y) ->
+                       if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+
+                   | (:? unativeint as x),(:? unativeint as y) ->
+                       if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+
                    | _,(:? IStructuralComparable as yc) ->
                        let res = yc.CompareTo(xobj,comp)
                        if res < 0 then 1 elif res > 0 then -1 else 0
+
                    | _,(:? System.IComparable as yc) -> 
                        // Note -c doesn't work here: be careful of comparison function returning minint
-                       let c = yc.CompareTo(xobj) in 
+                       let c = yc.CompareTo(xobj)
                        if c < 0 then 1 elif c > 0 then -1 else 0
+
                    | _ -> FailGenericComparison xobj
 
             /// specialcase: Core implementation of structural comparison on arbitrary arrays.
             and GenericComparisonArbArrayWithComparer (comp:GenericComparer) (x:System.Array) (y:System.Array) : int  =
-#if FX_NO_ARRAY_LONG_LENGTH            
-                if x.Rank = 1 && y.Rank = 1 then 
-                    let lenx = x.Length
-                    let leny = y.Length 
-                    let c = intOrder lenx leny 
-                    if c <> 0 then c else
-                    let basex = (x.GetLowerBound(0))
-                    let basey = (y.GetLowerBound(0))
-                    let c = intOrder basex basey
-                    if c <> 0 then c else
-                    let rec check i =
-                       if i >= lenx then 0 else 
-                       let c = GenericCompare comp ((x.GetValue(i + basex)),(y.GetValue(i + basey)))
-                       if c <> 0 then c else check (i + 1)
-                    check 0
-                elif x.Rank = 2 && y.Rank = 2 then 
-                    let lenx0 = x.GetLength(0)
-                    let leny0 = y.GetLength(0)
-                    let c = intOrder lenx0 leny0 
-                    if c <> 0 then c else
-                    let lenx1 = x.GetLength(1)
-                    let leny1 = y.GetLength(1)
-                    let c = intOrder lenx1 leny1 
-                    if c <> 0 then c else
-                    let basex0 = (x.GetLowerBound(0))
-                    let basex1 = (x.GetLowerBound(1))
-                    let basey0 = (y.GetLowerBound(0))
-                    let basey1 = (y.GetLowerBound(1))
-                    let c = intOrder basex0 basey0
-                    if c <> 0 then c else
-                    let c = intOrder basex1 basey1
-                    if c <> 0 then c else
-                    let rec check0 i =
-                       let rec check1 j = 
-                           if j >= lenx1 then 0 else
-                           let c = GenericCompare comp ((x.GetValue(i + basex0,j + basex1)), (y.GetValue(i + basey0,j + basey1)))
-                           if c <> 0 then c else check1 (j + 1)
-                       if i >= lenx0 then 0 else 
-                       let c = check1 0
-                       if c <> 0 then c else
-                       check0 (i + 1)
-                    check0 0
-                else
-                    let c = intOrder x.Rank y.Rank
-                    if c <> 0 then c else
-                    let ndims = x.Rank
-                    // check lengths 
-                    let rec precheck k = 
-                        if k >= ndims then 0 else
-                        let c = intOrder (x.GetLength(k)) (y.GetLength(k))
-                        if c <> 0 then c else
-                        let c = intOrder (x.GetLowerBound(k)) (y.GetLowerBound(k))
-                        if c <> 0 then c else
-                        precheck (k+1)
-                    let c = precheck 0 
-                    if c <> 0 then c else
-                    let idxs : int[] = zeroCreate ndims 
-                    let rec checkN k baseIdx i lim =
-                       if i >= lim then 0 else
-                       set idxs k (baseIdx + i)
-                       let c = 
-                           if k = ndims - 1
-                           then GenericCompare comp ((x.GetValue(idxs)), (y.GetValue(idxs)))
-                           else check (k+1) 
-                       if c <> 0 then c else 
-                       checkN k baseIdx (i + 1) lim
-                    and check k =
-                       if k >= ndims then 0 else
-                       let baseIdx = x.GetLowerBound(k)
-                       checkN k baseIdx 0 (x.GetLength(k))
-                    check 0
-#else
                 if x.Rank = 1 && y.Rank = 1 then 
                     let lenx = x.LongLength
                     let leny = y.LongLength 
@@ -961,19 +878,19 @@ namespace Microsoft.FSharp.Core
                     let c = int64Order lenx1 leny1 
                     if c <> 0 then c else
                     let basex0 = int64 (x.GetLowerBound(0))
-                    let basex1 = int64 (x.GetLowerBound(1))
                     let basey0 = int64 (y.GetLowerBound(0))
-                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex0 basey0
                     if c <> 0 then c else
+                    let basex1 = int64 (x.GetLowerBound(1))
+                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex1 basey1
                     if c <> 0 then c else
                     let rec check0 i =
-                       let rec check1 j = 
+                       let rec check1 j =
                            if j >=. lenx1 then 0 else
                            let c = GenericCompare comp ((x.GetValue(i +. basex0,j +. basex1)), (y.GetValue(i +. basey0,j +. basey1)))
                            if c <> 0 then c else check1 (j +. 1L)
-                       if i >=. lenx0 then 0 else 
+                       if i >=. lenx0 then 0 else
                        let c = check1 0L
                        if c <> 0 then c else
                        check0 (i +. 1L)
@@ -982,8 +899,8 @@ namespace Microsoft.FSharp.Core
                     let c = intOrder x.Rank y.Rank
                     if c <> 0 then c else
                     let ndims = x.Rank
-                    // check lengths 
-                    let rec precheck k = 
+                    // check lengths
+                    let rec precheck k =
                         if k >= ndims then 0 else
                         let c = int64Order (x.GetLongLength(k)) (y.GetLongLength(k))
                         if c <> 0 then c else
@@ -1007,10 +924,9 @@ namespace Microsoft.FSharp.Core
                        let baseIdx = x.GetLowerBound(k)
                        checkN k (int64 baseIdx) 0L (x.GetLongLength(k))
                     check 0
-#endif                
-              
+
             /// optimized case: Core implementation of structural comparison on object arrays.
-            and GenericComparisonObjArrayWithComparer (comp:GenericComparer) (x:obj[]) (y:obj[]) : int  =
+            and GenericComparisonObjArrayWithComparer (comp:GenericComparer) (x:obj[]) (y:obj[]) : int =
                 let lenx = x.Length 
                 let leny = y.Length 
                 let c = intOrder lenx leny 
@@ -1019,8 +935,8 @@ namespace Microsoft.FSharp.Core
                     let mutable i = 0
                     let mutable res = 0  
                     while i < lenx do 
-                        let c = GenericCompare comp ((get x i), (get y i)) 
-                        if c <> 0 then (res <- c; i <- lenx) 
+                        let c = GenericCompare comp ((get x i), (get y i))
+                        if c <> 0 then (res <- c; i <- lenx)
                         else i <- i + 1
                     res
 
@@ -1042,7 +958,7 @@ namespace Microsoft.FSharp.Core
             type GenericComparer with
                 interface System.Collections.IComparer with
                     override c.Compare(x:obj,y:obj) = GenericCompare c (x,y)
-            
+
             /// The unique object for comparing values in PER mode (where local exceptions are thrown when NaNs are compared)
             let fsComparerPER        = GenericComparer(true)  
 
@@ -1089,7 +1005,7 @@ namespace Microsoft.FSharp.Core
                  when 'T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                     System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
 
@@ -1167,7 +1083,7 @@ namespace Microsoft.FSharp.Core
                  when 'T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                     System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
             /// Generic less-than with static optimizations for some well-known cases.
@@ -1373,7 +1289,7 @@ namespace Microsoft.FSharp.Core
                      | (:? (char[]) as arr1),    (:? (char[]) as arr2)     -> GenericEqualityCharArray arr1 arr2
                      | (:? (float32[]) as arr1), (:? (float32[]) as arr2) -> GenericEqualitySingleArray er arr1 arr2
                      | (:? (float[]) as arr1),   (:? (float[]) as arr2)     -> GenericEqualityDoubleArray er arr1 arr2
-                     | _                   ,    (:? System.Array as arr2) -> GenericEqualityArbArray er iec arr1 arr2
+                     | _,    (:? System.Array as arr2) -> GenericEqualityArbArray er iec arr1 arr2
                      | _ -> xobj.Equals(yobj)
                  | (:? IStructuralEquatable as x1),_ -> x1.Equals(yobj,iec)
                  // Ensure ER NaN semantics on recursive calls
@@ -1387,63 +1303,6 @@ namespace Microsoft.FSharp.Core
 
             /// specialcase: Core implementation of structural equality on arbitrary arrays.
             and GenericEqualityArbArray er (iec:System.Collections.IEqualityComparer) (x:System.Array) (y:System.Array) : bool =
-#if FX_NO_ARRAY_LONG_LENGTH
-                if x.Rank = 1 && y.Rank = 1 then 
-                    // check lengths 
-                    let lenx = x.Length
-                    let leny = y.Length 
-                    (int32Eq lenx leny) &&
-                    // check contents
-                    let basex = x.GetLowerBound(0)
-                    let basey = y.GetLowerBound(0)
-                    (int32Eq basex basey) &&
-                    let rec check i = (i >= lenx) || (GenericEqualityObj er iec ((x.GetValue(basex + i)),(y.GetValue(basey + i))) && check (i + 1))
-                    check 0                    
-                elif x.Rank = 2 && y.Rank = 2 then 
-                    // check lengths 
-                    let lenx0 = x.GetLength(0)
-                    let leny0 = y.GetLength(0)
-                    (int32Eq lenx0 leny0) && 
-                    let lenx1 = x.GetLength(1)
-                    let leny1 = y.GetLength(1)
-                    (int32Eq lenx1 leny1) && 
-                    let basex0 = x.GetLowerBound(0)
-                    let basex1 = x.GetLowerBound(1)
-                    let basey0 = y.GetLowerBound(0)
-                    let basey1 = y.GetLowerBound(1)
-                    (int32Eq basex0 basey0) && 
-                    (int32Eq basex1 basey1) && 
-                    // check contents
-                    let rec check0 i =
-                       let rec check1 j = (j >= lenx1) || (GenericEqualityObj er iec ((x.GetValue(basex0 + i,basex1 + j)), (y.GetValue(basey0 + i,basey1 + j))) && check1 (j + 1))
-                       (i >= lenx0) || (check1 0 && check0 (i + 1))
-                    check0 0
-                else 
-                    (x.Rank = y.Rank) && 
-                    let ndims = x.Rank
-                    // check lengths 
-                    let rec precheck k = 
-                        (k >= ndims) || 
-                        (int32Eq (x.GetLength(k)) (y.GetLength(k)) && 
-                         int32Eq (x.GetLowerBound(k)) (y.GetLowerBound(k)) && 
-                         precheck (k+1))
-                    precheck 0 &&
-                    let idxs : int32[] = zeroCreate ndims 
-                    // check contents
-                    let rec checkN k baseIdx i lim =
-                       (i >= lim) ||
-                       (set idxs k (baseIdx + i);
-                        (if k = ndims - 1 
-                         then GenericEqualityObj er iec ((x.GetValue(idxs)),(y.GetValue(idxs)))
-                         else check (k+1)) && 
-                        checkN k baseIdx (i + 1) lim)
-                    and check k = 
-                       (k >= ndims) || 
-                       (let baseIdx = x.GetLowerBound(k)
-                        checkN k baseIdx 0 (x.GetLength(k)))
-                           
-                    check 0
-#else
                 if x.Rank = 1 && y.Rank = 1 then 
                     // check lengths 
                     let lenx = x.LongLength
@@ -1452,9 +1311,9 @@ namespace Microsoft.FSharp.Core
                     // check contents
                     let basex = int64 (x.GetLowerBound(0))
                     let basey = int64 (y.GetLowerBound(0))
-                    (int64Eq basex basey) &&                    
+                    (int64Eq basex basey) &&
                     let rec check i = (i >=. lenx) || (GenericEqualityObj er iec ((x.GetValue(basex +. i)),(y.GetValue(basey +. i))) && check (i +. 1L))
-                    check 0L                    
+                    check 0L
                 elif x.Rank = 2 && y.Rank = 2 then 
                     // check lengths 
                     let lenx0 = x.GetLongLength(0)
@@ -1475,16 +1334,16 @@ namespace Microsoft.FSharp.Core
                        (i >=. lenx0) || (check1 0L && check0 (i +. 1L))
                     check0 0L
                 else 
-                    (x.Rank = y.Rank) && 
+                    (x.Rank = y.Rank) &&
                     let ndims = x.Rank
-                    // check lengths 
-                    let rec precheck k = 
-                        (k >= ndims) || 
-                        (int64Eq (x.GetLongLength(k)) (y.GetLongLength(k)) && 
-                         int32Eq (x.GetLowerBound(k)) (y.GetLowerBound(k)) && 
+                    // check lengths
+                    let rec precheck k =
+                        (k >= ndims) ||
+                        (int64Eq (x.GetLongLength(k)) (y.GetLongLength(k)) &&
+                         int32Eq (x.GetLowerBound(k)) (y.GetLowerBound(k)) &&
                          precheck (k+1))
                     precheck 0 &&
-                    let idxs : int64[] = zeroCreate ndims 
+                    let idxs : int64[] = zeroCreate ndims
                     // check contents
                     let rec checkN k baseIdx i lim =
                        (i >=. lim) ||
@@ -1497,10 +1356,8 @@ namespace Microsoft.FSharp.Core
                        (k >= ndims) || 
                        (let baseIdx = x.GetLowerBound(k)
                         checkN k (int64 baseIdx) 0L (x.GetLongLength(k)))
-                           
                     check 0
-#endif                    
-              
+
             /// optimized case: Core implementation of structural equality on object arrays.
             and GenericEqualityObjArray er iec (x:obj[]) (y:obj[]) : bool =
                 let lenx = x.Length 
@@ -1575,15 +1432,15 @@ namespace Microsoft.FSharp.Core
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : float = 
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                    if (# "ceq" x y : bool #) then
                         true
                     else
-                        (# "ceq" x y : bool #)
+                        not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : float32 =
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                    if (# "ceq" x y : bool #) then
                         true
                     else
-                        (# "ceq" x y : bool #)
+                        not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
@@ -1810,7 +1667,7 @@ namespace Microsoft.FSharp.Core
             let inline HashString (s:string) = 
                  match s with 
                  | null -> 0 
-                 | _ -> (# "call instance int32 [mscorlib]System.String::GetHashCode()" s : int #)
+                 | _ -> (# "call instance int32 [mscorlib]System.String :: GetHashCode()" s : int #)
                     
             // from mscorlib v4.0.30319
             let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
@@ -1884,7 +1741,9 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) = 
-                TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)
+                TupleUtils.combineTupleHashes
+                    (GenericHashWithComparerFast comparer x1)
+                    (GenericHashWithComparerFast comparer x2)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1894,7 +1753,11 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) =
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (GenericHashWithComparerFast comparer x3)
+                TupleUtils.combineTupleHashes
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x1)
+                        (GenericHashWithComparerFast comparer x2))
+                    (GenericHashWithComparerFast comparer x3)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1904,7 +1767,13 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) = 
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))
+                TupleUtils.combineTupleHashes
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x1)
+                        (GenericHashWithComparerFast comparer x2))
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x3)
+                        (GenericHashWithComparerFast comparer x4))
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1914,7 +1783,15 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) = 
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))) (GenericHashWithComparerFast comparer x5)
+                TupleUtils.combineTupleHashes 
+                    (TupleUtils.combineTupleHashes 
+                        (TupleUtils.combineTupleHashes 
+                            (GenericHashWithComparerFast comparer x1)
+                            (GenericHashWithComparerFast comparer x2))
+                        (TupleUtils.combineTupleHashes
+                            (GenericHashWithComparerFast comparer x3)
+                            (GenericHashWithComparerFast comparer x4)))
+                    (GenericHashWithComparerFast comparer x5)
 
             /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples
             //
@@ -2188,6 +2065,7 @@ namespace Microsoft.FSharp.Core
         let FloatComparer   = MakeGenericComparer<float>()
         let Float32Comparer = MakeGenericComparer<float32>()
         let DecimalComparer = MakeGenericComparer<decimal>()
+        let BoolComparer    = MakeGenericComparer<bool>()
 
         /// Use a type-indexed table to ensure we only create a single FastStructuralComparison function
         /// for each type
@@ -2225,6 +2103,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> null    
                 | ty when ty.Equals(typeof<decimal>)    -> null    
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> null
                 | _ -> MakeGenericComparer<'T>()
 
             static let f : System.Collections.Generic.IComparer<'T>  = 
@@ -2244,6 +2123,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32Comparer)
                 | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalComparer)
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolComparer)
                 | _ -> 
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.
@@ -2356,13 +2236,11 @@ namespace Microsoft.FSharp.Core
             then p <- p + 1; -1L
             else 1L 
 
-        let parseOctalUInt64 (s:string) p l = 
-            let rec parse n acc = if n < l then parse (n+1) (acc *.. 8UL +.. (let c = s.Chars(n) in if c >=... '0' && c <=... '7' then Convert.ToUInt64(c) -.. Convert.ToUInt64('0') else formatError())) else acc in
-            parse p 0UL
-
-        let parseBinaryUInt64 (s:string) p l = 
-            let rec parse n acc = if n < l then parse (n+1) (acc *.. 2UL +.. (match s.Chars(n) with '0' -> 0UL | '1' -> 1UL | _ -> formatError())) else acc in          
-            parse p 0UL
+        let parseBinaryUInt64 (s:string) = 
+            Convert.ToUInt64(s, 2)
+        
+        let parseOctalUInt64 (s:string) =
+            Convert.ToUInt64(s, 8)
 
         let inline removeUnderscores (s:string) =
             match s with
@@ -2379,8 +2257,8 @@ namespace Microsoft.FSharp.Core
             if p >= l then formatError() else
             match specifier with 
             | 'x' -> UInt32.Parse( s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
-            | 'b' -> Convert.ToUInt32(parseBinaryUInt64 s p l)
-            | 'o' -> Convert.ToUInt32(parseOctalUInt64 s p l)
+            | 'b' -> Convert.ToUInt32(parseBinaryUInt64 (s.Substring(p)))
+            | 'o' -> Convert.ToUInt32(parseOctalUInt64  (s.Substring(p)))
             | _ -> UInt32.Parse(s.Substring(p), NumberStyles.Integer, CultureInfo.InvariantCulture) in
 
         let inline int32OfUInt32 (x:uint32) = (# "" x  : int32 #)
@@ -2397,8 +2275,8 @@ namespace Microsoft.FSharp.Core
             if p >= l then formatError() else
             match Char.ToLowerInvariant(specifier) with 
             | 'x' -> sign * (int32OfUInt32 (Convert.ToUInt32(UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture))))
-            | 'b' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseBinaryUInt64 s p l)))
-            | 'o' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseOctalUInt64 s p l)))
+            | 'b' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseBinaryUInt64 (s.Substring(p)))))
+            | 'o' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseOctalUInt64  (s.Substring(p)))))
             | _ -> Int32.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
 
         let ParseInt64 (s:string) = 
@@ -2412,8 +2290,8 @@ namespace Microsoft.FSharp.Core
             if p >= l then formatError() else
             match Char.ToLowerInvariant(specifier) with 
             | 'x' -> sign *. Int64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
-            | 'b' -> sign *. (int64OfUInt64 (parseBinaryUInt64 s p l))
-            | 'o' -> sign *. (int64OfUInt64 (parseOctalUInt64 s p l))
+            | 'b' -> sign *. (int64OfUInt64 (parseBinaryUInt64 (s.Substring(p))))
+            | 'o' -> sign *. (int64OfUInt64 (parseOctalUInt64  (s.Substring(p))))
             | _ -> Int64.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
 
         let ParseUInt64     (s:string) : uint64 = 
@@ -2426,8 +2304,8 @@ namespace Microsoft.FSharp.Core
             if p >= l then formatError() else
             match specifier with 
             | 'x' -> UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
-            | 'b' -> parseBinaryUInt64 s p l
-            | 'o' -> parseOctalUInt64 s p l
+            | 'b' -> parseBinaryUInt64 (s.Substring(p))
+            | 'o' -> parseOctalUInt64  (s.Substring(p))
             | _ -> UInt64.Parse(s.Substring(p), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture) 
 
 
@@ -2790,17 +2668,17 @@ namespace Microsoft.FSharp.Core
     // Function Values
 
     [<AbstractClass>]
-    type FSharpTypeFunc() = 
+    type FSharpTypeFunc [<DebuggerHidden>] () = 
         abstract Specialize<'T> : unit -> obj
 
     [<AbstractClass>]
-    type FSharpFunc<'T,'Res>() = 
+    type FSharpFunc<'T,'Res> [<DebuggerHidden>] () = 
         abstract Invoke : 'T -> 'Res
 
     module OptimizedClosures = 
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V>() = 
+          type FSharpFunc<'T,'U,'V> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V)>()
               abstract Invoke : 'T * 'U -> 'V
               override f.Invoke(t) = (fun u -> f.Invoke(t,u))
@@ -2813,7 +2691,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u) = (retype func : FSharpFunc<'T,FSharpFunc<'U,'V>>).Invoke(t).Invoke(u) }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W>() = 
+          type FSharpFunc<'T,'U,'V,'W> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W)>()
               abstract Invoke : 'T * 'U * 'V -> 'W
               override f.Invoke(t) = (fun u v -> f.Invoke(t,u,v))
@@ -2831,7 +2709,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u,v) = (retype func : FSharpFunc<'T,('U -> 'V -> 'W)>).Invoke(t) u v }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X>() = 
+          type FSharpFunc<'T,'U,'V,'W,'X> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X)>()
               abstract Invoke : 'T * 'U * 'V * 'W -> 'X
               static member Adapt(func : 'T -> 'U -> 'V -> 'W -> 'X) = 
@@ -2854,7 +2732,7 @@ namespace Microsoft.FSharp.Core
               override f.Invoke(t) = (fun u v w -> f.Invoke(t,u,v,w))
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X,'Y>() =
+          type FSharpFunc<'T,'U,'V,'W,'X,'Y> [<DebuggerHidden>] () =
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)>()
               abstract Invoke : 'T * 'U * 'V * 'W * 'X -> 'Y
               override f.Invoke(t) = (fun u v w x -> f.Invoke(t,u,v,w,x))
@@ -2910,40 +2788,78 @@ namespace Microsoft.FSharp.Core
 
 
     type FSharpFunc<'T,'Res> with
-#if FX_NO_CONVERTER
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> func.Invoke(t))
+        static member op_Implicit(converter : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
-#else    
+        static member op_Implicit(func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member op_Implicit(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 
-        static member FromConverter (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
-        static member ToConverter ( func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
-#endif
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
+        static member FromConverter (converter: System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+
+        static member ToConverter (func: ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
 
     [<AbstractClass>]
     [<Sealed>]
     type FuncConvert = 
-        static member  ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
-#if FX_NO_CONVERTER
-        static member  ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
-#else        
-        static member  ToFSharpFunc (converter: Converter<_,_>) = (fun t -> converter.Invoke(t))
-#endif        
-        static member FuncFromTupled (func:'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e-> func (a, b, c, d, e))
 
+        static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 
+        static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
+        static member  inline ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
+
+        static member  inline FromFunc (func: System.Func<_>) = (fun () -> func.Invoke())
+
+        static member  inline FromFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
+
+        static member  inline FromFunc (func: System.Func<_, _, _>) = (fun t1 t2 -> func.Invoke(t1,t2))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _>) = (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _, _>) = (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
+
+        static member  inline FromAction (action: System.Action) = (fun () -> action.Invoke())
+
+        static member  inline FromAction (action: System.Action<_>) = (fun t -> action.Invoke(t))
+
+        static member  inline FromAction (action: System.Action<_, _>) = (fun t1 t2 -> action.Invoke(t1,t2))
+
+        static member  inline FromAction (action: System.Action<_, _, _>) = (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
+
+        static member  inline FromAction (action: System.Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
+
+        static member  inline FromAction (action: System.Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e -> func (a, b, c, d, e))
 
     //-------------------------------------------------------------------------
     // Refs
@@ -2998,7 +2914,6 @@ namespace Microsoft.FSharp.Core
 
     and 'T option = Option<'T> 
 
-
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
     [<Struct>]
@@ -3006,9 +2921,35 @@ namespace Microsoft.FSharp.Core
       | Ok of ResultValue:'T 
       | Error of ErrorValue:'TError
 
+    [<StructuralEquality; StructuralComparison>]
+    [<Struct>]
+    [<CompiledName("FSharpValueOption`1")>]
+    [<DebuggerDisplay("ValueSome({Value})")>]
+    type ValueOption<'T> =
+        | ValueNone : 'T voption
+        | ValueSome : 'T -> 'T voption
 
-//============================================================================
-//============================================================================
+        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        static member None : 'T voption = ValueNone
+
+        static member Some (value) : 'T voption = ValueSome(value)
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        member x.IsNone = match x with ValueNone -> true | _ -> false
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        member x.IsSome = match x with ValueSome _ -> true | _ -> false
+
+        static member op_Implicit (value) : 'T option = Some(value)
+
+        override x.ToString() = 
+           // x is non-null, hence ValueSome
+           "ValueSome("^anyToStringShowingNull x.Value^")"
+
+    and 'T voption = ValueOption<'T>
+
 namespace Microsoft.FSharp.Collections
 
     //-------------------------------------------------------------------------
@@ -3031,13 +2972,11 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("FSharpList`1")>]
     type List<'T> = 
        | ([])  :                  'T list
-       | (::)  : Head: 'T * Tail: 'T list -> 'T list
+       | ( :: )  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
-
-#if !FSCORE_PORTABLE_OLD
        interface System.Collections.Generic.IReadOnlyCollection<'T>
-#endif
+       interface System.Collections.Generic.IReadOnlyList<'T>
         
     and 'T list = List<'T>
 
@@ -3045,29 +2984,34 @@ namespace Microsoft.FSharp.Collections
     // List (debug view)
     //-------------------------------------------------------------------------
 
-    and 
+    and
        ListDebugView<'T>(l:list<'T>) =
 
-           let ListDebugViewMaxLength = 50
-           let rec count l n = 
-               match l with 
-               | [] -> n 
-               | _::t -> if n > ListDebugViewMaxLength then n else count t (n+1) 
+           let ListDebugViewMaxLength = 50                          // default displayed Max Length
+           let ListDebugViewMaxFullLength = 5000                    // display only when FullList opened (5000 is a super big display used to cut-off an infinite list or undebuggably huge one)
+           let rec count l n max =
+               match l with
+               | [] -> n
+               | _ :: t -> if n > max then n else count t (n+1) max
 
-           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-           member x.Items =
-               let n = count l 0 
-               let items = zeroCreate n 
+           let items length =
+               let items = zeroCreate length
                let rec copy (items: 'T[]) l i = 
                    match l with
                    | [] -> () 
-                   | h::t -> 
-                       if i < n then 
+                   | h :: t -> 
+                       if i < length then 
                            SetArray items i h
                            copy items t (i+1)
 
                copy items l 0
                items
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+           member x.Items = items (count l 0 ListDebugViewMaxLength)
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
+           member x._FullList = items (count l 0 ListDebugViewMaxFullLength)
 
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
 
@@ -3084,14 +3028,14 @@ namespace Microsoft.FSharp.Collections
         let nonempty x = match x with [] -> false | _ -> true
         // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
         // tail cons cells is permitted in carefully written library code.
-        let inline setFreshConsTail cons t = cons.(::).1 <- t
+        let inline setFreshConsTail cons t = cons.( :: ).1 <- t
         let inline freshConsNoTail h = h :: (# "ldnull" : 'T list #)
 
         // Return the last cons it the chain
         let rec appendToFreshConsTail cons xs = 
             match xs with 
             | [] -> cons
-            | h::t -> 
+            | h :: t -> 
                 let cons2 = [h]
                 setFreshConsTail cons cons2
                 appendToFreshConsTail cons2 t
@@ -3139,7 +3083,7 @@ namespace Microsoft.FSharp.Collections
         let rec nth l n = 
             match l with 
             | [] -> raise (new System.ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
-            | h::t -> 
+            | h :: t -> 
                if n < 0 then raise (new System.ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
                elif n = 0 then h
                else nth t (n - 1)
@@ -3149,7 +3093,7 @@ namespace Microsoft.FSharp.Collections
             if n = 0 then setFreshConsTail cons [] else
             match l with
             | [] -> outOfRange()
-            | x::xs ->
+            | x :: xs ->
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
                 sliceFreshConsTail cons2 (n - 1) xs
@@ -3160,7 +3104,7 @@ namespace Microsoft.FSharp.Collections
             if n < 0 then [] else
             match l with
             | [] -> outOfRange()
-            | x::xs ->
+            | x :: xs ->
                 let cons = freshConsNoTail x
                 sliceFreshConsTail cons n xs
                 cons
@@ -3171,7 +3115,7 @@ namespace Microsoft.FSharp.Collections
             let rec loop i lst =
                 match lst with
                 | _ when i = 0 -> lst
-                | _::t -> loop (i-1) t
+                | _ :: t -> loop (i-1) t
                 | [] -> outOfRange()
             loop n l
 
@@ -3197,7 +3141,7 @@ namespace Microsoft.FSharp.Collections
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         static member Empty       : 'T list = []
 
-        static member Cons(head,tail) : 'T list = head::tail
+        static member Cons(head,tail) : 'T list = head :: tail
         override x.ToString() = 
            match x with 
            | [] -> "[]"
@@ -3221,10 +3165,11 @@ namespace Microsoft.FSharp.Collections
         interface System.Collections.IEnumerable with
             member l.GetEnumerator() = (PrivateListHelpers.mkListEnumerator l :> System.Collections.IEnumerator)
 
-#if !FSCORE_PORTABLE_OLD
         interface IReadOnlyCollection<'T> with
             member l.Count = l.Length
-#endif
+
+        interface IReadOnlyList<'T> with
+            member l.Item with get(index) = l.[index]
 
     type seq<'T> = IEnumerable<'T>
 
@@ -3251,53 +3196,6 @@ namespace Microsoft.FSharp.Core
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1046:DoNotOverloadOperatorEqualsOnReferenceTypes")>]
     module Operators = 
-
-
-#if MULTI_DIMENSIONAL_EXTENSION_PROPERTIES
-        type ``[,]``<'T> with 
-            [<CompiledName("Length1")>]
-            member arr.Length1 = (# "ldlen.multi 2 0" arr : int #)  
-            [<CompiledName("Length2")>]
-            member arr.Length2 = (# "ldlen.multi 2 1" arr : int #)  
-            [<CompiledName("Base1")>]
-            member arr.Base1 = arr.GetLowerBound(0) 
-            [<CompiledName("Base2")>]
-            member arr.Base2 = arr.GetLowerBound(1) 
-
-
-        type ``[,,]``<'T> with 
-            [<CompiledName("Length1")>]
-            member arr.Length1 = (# "ldlen.multi 3 0" arr : int #)  
-            [<CompiledName("Length2")>]
-            member arr.Length2 = (# "ldlen.multi 3 1" arr : int #)  
-            [<CompiledName("Length3")>]
-            member arr.Length3 = (# "ldlen.multi 3 2" arr : int #)  
-            [<CompiledName("Base1")>]
-            member arr.Base1 = arr.GetLowerBound(0)  
-            [<CompiledName("Base2")>]
-            member arr.Base2 = arr.GetLowerBound(1)  
-            [<CompiledName("Base3")>]
-            member arr.Base3 = arr.GetLowerBound(2)
-
-
-        type ``[,,,]``<'T> with 
-            [<CompiledName("Length1")>]
-            member arr.Length1 = (# "ldlen.multi 4 0" arr : int #)  
-            [<CompiledName("Length2")>]
-            member arr.Length2 = (# "ldlen.multi 4 1" arr : int #)  
-            [<CompiledName("Length3")>]
-            member arr.Length3 = (# "ldlen.multi 4 2" arr : int #)  
-            [<CompiledName("Length4")>]
-            member arr.Length4 = (# "ldlen.multi 4 3" arr : int #)  
-            [<CompiledName("Base1")>]
-            member arr.Base1 = arr.GetLowerBound(0)  
-            [<CompiledName("Base2")>]
-            member arr.Base2 = arr.GetLowerBound(1)  
-            [<CompiledName("Base3")>]
-            member arr.Base3 = arr.GetLowerBound(2)
-            [<CompiledName("Base4")>]
-            member arr.Base4 = arr.GetLowerBound(3)
-#endif
 
         [<CompiledName("CreateSequence")>]
         let seq (sequence: seq<'T>) = sequence 
@@ -3416,11 +3314,11 @@ namespace Microsoft.FSharp.Core
 
         let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
-
         [<CompiledName("DefaultArg")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
+        [<CompiledName("DefaultValueArg")>]
+        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
         [<NoDynamicInvocation>]
         let inline (~-) (n: ^T) : ^T = 
@@ -3635,18 +3533,21 @@ namespace Microsoft.FSharp.Core
 
         let inline castToString (x:'T) = (# "" x : string #)  // internal
 
-        // let rec (@) x y = match x with [] -> y | (h::t) -> h :: (t @ y)
+        // let rec (@) x y = match x with [] -> y | (h :: t) -> h :: (t @ y)
         let (@) list1 list2 = 
             match list1 with
             | [] -> list2
-            | (h::t) -> 
+            | (h :: t) -> 
             match list2 with
             | [] -> list1
-            | _ -> 
-              let res = [h] 
-              let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
-              PrivateListHelpers.setFreshConsTail lastCons list2
-              res
+            | _ ->
+              match t with
+              | [] -> h :: list2
+              | _ ->
+                  let res = [h] 
+                  let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
+                  PrivateListHelpers.setFreshConsTail lastCons list2
+                  res
 
         [<CompiledName("Increment")>]
         let incr cell = cell.contents <- cell.contents + 1
@@ -4035,7 +3936,7 @@ namespace Microsoft.FSharp.Core
                 when ^T : float32= (# "clt" x y : bool #) 
                 when ^T : char   = (# "clt" x y : bool #)
                 when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static greater-than with static optimizations for some well-known cases.
             let inline (>) (x:^T) (y:^U) = 
@@ -4055,7 +3956,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static less-than-or-equal with static optimizations for some well-known cases.
             let inline (<=) (x:^T) (y:^U) = 
@@ -4075,7 +3976,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
             let inline (>=) (x:^T) (y:^U) = 
@@ -4095,7 +3996,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
@@ -4160,14 +4061,14 @@ namespace Microsoft.FSharp.Core
                                     else (# "ceq" e1 e1 : int #)
                  when ^T : float32 = if   (# "clt" e1 e2 : bool #) then (-1)
                                      elif (# "cgt" e1 e2 : bool #) then (1)
-                                     elif (# "ceq" e1 e2 : bool #) then (1)
+                                     elif (# "ceq" e1 e2 : bool #) then (0)
                                      elif (# "ceq" e2 e2 : bool #) then (-1)
                                      else (# "ceq" e1 e1 : int #)
                  when ^T : char   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
                  when ^T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" e1 : string #) ,(# "" e2 : string #))
+                     System.String.CompareOrdinal((# "" e1 : string #),(# "" e2 : string #))
                  when ^T : decimal     = System.Decimal.Compare((# "" e1:decimal #), (# "" e2:decimal #))
 
             [<CompiledName("Max")>]
@@ -4202,26 +4103,12 @@ namespace Microsoft.FSharp.Core
         module Attributes = 
             open System.Runtime.CompilerServices
 
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-            [<assembly: System.Runtime.CompilerServices.DefaultDependency(System.Runtime.CompilerServices.LoadHint.Always)>] 
-#endif
-
-#if !FX_NO_COMVISIBLE
             [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
-#endif            
             [<assembly: System.CLSCompliant(true)>]
-
-#if BE_SECURITY_TRANSPARENT
             [<assembly: System.Security.SecurityTransparent>] // assembly is fully transparent
 #if CROSS_PLATFORM_COMPILER
 #else
             [<assembly: System.Security.SecurityRules(System.Security.SecurityRuleSet.Level2)>] // v4 transparency; soon to be the default, but not yet
-#endif
-#else
-#if !FX_NO_SECURITY_PERMISSIONS
-            // REVIEW: Need to choose a specific permission for the action to be applied to
-            [<assembly: System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.RequestMinimum)>]
-#endif
 #endif
             do ()
 
@@ -4253,6 +4140,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeOf")>]
         let inline typeof<'T> = BasicInlinedOperations.typeof<'T>
 
+        [<CompiledName("NameOf")>]
+        let inline nameof (_: 'T) : string = raise (Exception "may not call directly, should always be optimized away")
+
         [<CompiledName("MethodHandleOf")>]
         let methodhandleof (_call: ('T -> 'TResult)) : System.RuntimeMethodHandle = raise (Exception "may not call directly, should always be optimized away")
 
@@ -4271,7 +4161,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Identity")>]
         let id x = x
 
-#if !FX_NO_SYSTEM_CONSOLE
         // std* are TypeFunctions with the effect of reading the property on instantiation.
         // So, direct uses of stdout should capture the current System.Console.Out at that point.
         [<CompiledName("ConsoleIn")>]
@@ -4282,10 +4171,8 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("ConsoleError")>]
         let stderr<'T> = System.Console.Error
-#endif
-            
 
-        module Unchecked = 
+        module Unchecked =
 
             [<CompiledName("Unbox")>]
             let inline unbox<'T> (v:obj) = unboxPrim<'T> v
@@ -4588,24 +4475,10 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : byte     = (# "conv.ovf.i.un" value  : nativeint #)
 
-#if NAN_INFINITY_MEASURES
-        module Measure =
+        module OperatorIntrinsics =
 
-            let infinity<[<Measure>] 'Measure> : float<'Measure> = LanguagePrimitives.FloatWithMeasure System.Double.PositiveInfinity
-            let nan<[<Measure>] 'Measure> : float<'Measure> = LanguagePrimitives.FloatWithMeasure System.Double.NaN
-
-            let infinityf<[<Measure>] 'Measure> : float32<'Measure> = LanguagePrimitives.Float32WithMeasure System.Single.PositiveInfinity
-            let nanf<[<Measure>] 'Measure> : float32<'Measure> = LanguagePrimitives.Float32WithMeasure System.Single.NaN
-#endif
-
-        module OperatorIntrinsics =  begin
-
-            
             open System.Collections
-#if FX_RESHAPED_REFLECTION
-            open PrimReflectionAdapters
-#endif
-            
+
             let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
             let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
 
@@ -4998,7 +4871,7 @@ namespace Microsoft.FSharp.Core
             let inline ComputeSlice bound start finish length =
                 match start, finish with
                 | None, None -> bound, bound + length - 1
-                | None, Some n when n >= bound  -> bound , n
+                | None, Some n when n >= bound  -> bound, n
                 | Some m, None when m <= bound + length -> m, bound + length - 1
                 | Some m, Some n -> m, n
                 | _ -> raise (System.IndexOutOfRangeException())
@@ -5502,10 +5375,7 @@ namespace Microsoft.FSharp.Core
             let TanhDynamic x           = TanhDynamicImplTable<_>.Result x 
             let PowDynamic x y          = PowDynamicImplTable<_,_>.Result x y
 
-
-        end
         open OperatorIntrinsics
-        
                    
         let inline (..) (start:^T) (finish:^T) = 
            RangeGeneric (GenericOne< (^T) >)  Checked.(+) start finish
@@ -5762,153 +5632,19 @@ namespace Microsoft.FSharp.Control
 namespace Microsoft.FSharp.Control
 
     open System
-    open System.Diagnostics
     open Microsoft.FSharp.Core
 
     type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="AddHandler")>]
         abstract AddHandler: handler:'Delegate -> unit
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="RemoveHandler")>]
         abstract RemoveHandler: handler:'Delegate -> unit 
 
     type IEvent<'Delegate,'Args when 'Delegate : delegate<'Args,unit> and 'Delegate :> System.Delegate > =
         inherit IDelegateEvent<'Delegate>
         inherit IObservable<'Args>
 
-
-
-    [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix",Justification="This type is an all-purpose Handler and is deliberately designed to have a simple name")>]
     [<CompiledName("FSharpHandler`1")>]
     type Handler<'Args> =  delegate of sender:obj * args:'Args -> unit 
 
     type IEvent<'Args> = IEvent<Handler<'Args>, 'Args>
 
-    // FxCop suppressions 
-    open System.Diagnostics.CodeAnalysis
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Addition`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_BitwiseAnd`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_BitwiseOr`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Division`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Equality`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_ExclusiveOr`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_GreaterThanOrEqual`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_GreaterThan`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_LeftShift`1(!!0,System.Int32)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_LessThanOrEqual`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_LessThan`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_LogicalNot`1(!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Modulus`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Multiply`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_RightShift`1(!!0,System.Int32)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Subtraction`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_UnaryNegation`1(!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_UnaryPlus`1(!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators+Checked.#op_Addition`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators+Checked.#op_Multiply`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators+Checked.#op_Subtraction`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators+Checked.#op_UnaryNegation`1(!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Type",Justification="This appears to be a false warning from FxCop")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpVar.#Type",Justification="This appears to be a false warning from FxCop")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="member", Target="Microsoft.FSharp.Control.FSharpEvent`1.#Publish",Justification="")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpSet`1",Justification="Adding suffix 'Collection' would break the simple user model of this type, akin to 'List'")>]
-
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="This is a compilation residue from a public discrimianted union, which are allowed in FSharp.Core.dll")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="This is a compilation residue from a public discrimianted union, which are allowed in FSharp.Core.dll")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2224:OverrideEqualsOnOverloadingOperatorEquals", Scope="type", Target="Microsoft.FSharp.Core.Operators",Justification="This is from the use of op_Equality as a primitive F# operator name. We do not need any override")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="Microsoft.FSharp.Control.FSharpEvent`1.#Publish",Justification="This appears to be a false warning from FxCop")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1030:UseEventsWhereAppropriate", Scope="member", Target="Microsoft.FSharp.Core.Operators.#Raise`1(System.Exception)",Justification="No event required here")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1724:TypeNamesShouldNotMatchNamespaces", Scope="type", Target="Microsoft.FSharp.Text.StructuredPrintfImpl.Layout",Justification="This functionality is scheduled for deletion from FSharp.Core.dll")>]
-
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Value(System.Object,System.Type)", MessageId="0#")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Value`1(!!0)", MessageId="0#")>]
-
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.LanguagePrimitives+HashCompare",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Operators+Checked",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Operators+Unchecked",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Operators+OperatorIntrinsics",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`3",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`4",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`5",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`6",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Operators+OperatorIntrinsics",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice2Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice4Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice5Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice6Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice1Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice2Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice3Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice4Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice1Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice2Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice3Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice1Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice7Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice4Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice5Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice6Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice1Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice3Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice1Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice2Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice3Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`2+_Choice1Of2",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`2+_Choice2Of2",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice4Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice5Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice2Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice3Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`5",Justification="F# implements IComparable as a way to implement its generic equality")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.MatchFailureException",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`4",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`7",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`6",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`3",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`2",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.FSharpOption`1",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.FSharpRef`1",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Quotations.FSharpVar",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Collections.FSharpMap`2",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Collections.FSharpSet`1",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", Scope="member", Target="Microsoft.FSharp.Core.FSharpRef`1.#contents", MessageId="contents",Justification="This lowercase public name is provided for ML compatibility. For technical reasons it can't be placed in a different DLL")>]
-
-
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice4Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice5Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice6Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice7Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice1Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice2Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice3Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice4Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice1Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice2Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice3Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice1Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice4Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice5Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice6Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice1Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice2Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice3Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice1Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice2Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice3Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`2+_Choice1Of2",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`2+_Choice2Of2",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice4Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice5Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice2Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice3Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-
-
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors", Scope="type", Target="Microsoft.FSharp.Core.MatchFailureException",Justification="Like F# record types, F# exception declarations implement one primary constructor which accepts initial values for all fields")>]
-    [<assembly:CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1051:DoNotDeclareVisibleInstanceFields", Scope="member", Target="Microsoft.FSharp.Core.FSharpRef`1.#contents@")>]
     do()

@@ -10,13 +10,6 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("FSharp.PropertyPages.dll")> 
-<Assembly: AssemblyDescription("FSharp.PropertyPages.dll")> 
-<Assembly: AssemblyCompany("Microsoft Corporation")> 
-<Assembly: AssemblyProduct("Microsoft® F#")> 
-<Assembly: AssemblyCopyright("© Microsoft Corporation. All rights reserved.")> 
-<Assembly: AssemblyTrademark("")> 
-
 <Assembly: ComVisible(True)> 
 
 'The following GUID is for the ID of the typelib if this project is exposed to COM

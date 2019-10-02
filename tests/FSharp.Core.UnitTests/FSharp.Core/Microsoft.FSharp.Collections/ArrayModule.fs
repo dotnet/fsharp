@@ -125,44 +125,41 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.average nullArr |> ignore) 
 
         ()
-        
+
     [<Test>]
-    member this.AverageBy() =  
-    
-        // empty double array   
+    member this.AverageBy() =
+
+        // empty double array
         let emptyDouArray = Array.empty<System.Double>
-        let funcd x = x + 6.7
-        CheckThrowsArgumentException(fun () -> Array.averageBy funcd emptyDouArray |> ignore)
-                
+        CheckThrowsArgumentException(fun () -> Array.averageBy (fun x -> x + 6.7) emptyDouArray |> ignore)
+
         // empty float32 array
         let emptyFloat32Array: float32[] = [||]
-        let funcf x = x + 9.8f 
-        CheckThrowsArgumentException(fun () -> Array.averageBy funcf emptyFloat32Array |> ignore)
-        
+        CheckThrowsArgumentException(fun () -> Array.averageBy (fun x -> x + 9.8f) emptyFloat32Array |> ignore)
+
         // empty decimal array
         let emptyDecimalArray = Array.empty<System.Decimal>
-        let funcDecimal x = x + 9.8M 
-        CheckThrowsArgumentException(fun () -> Array.averageBy funcDecimal emptyDecimalArray |> ignore)
-        
+        CheckThrowsArgumentException(fun () -> Array.averageBy (fun x -> x + 9.8M) emptyDecimalArray |> ignore)
+
         // float32 array
-        let floatArray: float32[] = [| 1.2f;3.5f;6.7f |]      
-        let averageOfFloat = Array.averageBy funcf floatArray
-        if averageOfFloat <> 13.5999994f then Assert.Fail()
-        
+        let floatArray: float32[] = [| 1.5f; 2.5f; 3.5f; 4.5f |] // using values that behave nicely with IEEE floats
+        let averageOfFloat = Array.averageBy (fun x -> x + 1.0f) floatArray
+        Assert.AreEqual(4.0f, averageOfFloat)
+
         // double array
-        let doubleArray: System.Double[] = [| 1.0;8.0 |]
-        let averageOfDouble = Array.averageBy funcd doubleArray
-        if averageOfDouble <> 11.2 then Assert.Fail()
-        
+        let doubleArray: System.Double[] = [| 1.0; 8.0 |] // using values that behave nicely with IEEE doubles
+        let averageOfDouble = Array.averageBy (fun x -> x + 1.0) doubleArray
+        Assert.AreEqual(5.5, averageOfDouble)
+
         // decimal array
         let decimalArray: decimal[] = [| 0M;19M;19.03M |]
-        let averageOfDecimal = Array.averageBy funcDecimal decimalArray
-        if averageOfDecimal <> 22.476666666666666666666666667M then Assert.Fail()     
-        
+        let averageOfDecimal = Array.averageBy (fun x -> x + 9.8M) decimalArray
+        Assert.AreEqual(22.476666666666666666666666667M, averageOfDecimal)
+
         // null array
         let nullArr : double[] = null
-        CheckThrowsArgumentNullException (fun () -> Array.averageBy funcd nullArr |> ignore) 
-        
+        CheckThrowsArgumentNullException (fun () -> Array.averageBy (fun x -> x + 6.7) nullArr |> ignore)
+
         ()
 
     [<Test>]
@@ -416,11 +413,9 @@ type ArrayModule() =
     member this.Choose() = 
         this.ChooseTester Array.choose Array.choose
 
-#if !FX_NO_TPL_PARALLEL
     [<Test>]
     member this.``Parallel.Choose`` () = 
         this.ChooseTester Array.Parallel.choose Array.Parallel.choose
-#endif
 
     member private this.CollectTester collectInt collectString =
     
@@ -463,11 +458,9 @@ type ArrayModule() =
         Array.collect f [|1;2;3|] |> ignore
         Assert.AreEqual(3,!stamp)
         
-#if !FX_NO_TPL_PARALLEL
     [<Test>]
     member this.``Parallel.Collect`` () =
         this.CollectTester Array.Parallel.collect Array.Parallel.collect
-#endif
 
     [<Test>]
     member this.compareWith() =
@@ -1191,6 +1184,24 @@ type ArrayModule() =
         CheckThrowsArgumentException(fun () -> Array.exactlyOne [|"1"; "2"|] |> ignore)
 
     [<Test>]
+    member this.``tryExactlyOne should return the element from singleton arrays``() =
+        Assert.AreEqual(Some 1, Array.tryExactlyOne [|1|])
+        Assert.AreEqual(Some "2", Array.tryExactlyOne [|"2"|])
+        ()
+
+    [<Test>]
+    member this.``tryExactlyOne should return None on empty array``() =
+        Assert.AreEqual(None, Array.tryExactlyOne [||])
+
+    [<Test>]
+    member this.``tryExactlyOne should return None for arrays with more than one element``() =
+        Assert.AreEqual(None, Array.tryExactlyOne [|"1"; "2"|])
+
+    [<Test>]
+    member this.``tryExactlyOne should fail on null array``() =
+        CheckThrowsArgumentNullException(fun () -> Array.tryExactlyOne null |> ignore)
+
+    [<Test>]
     member this.GroupBy() =
         let funcInt x = x%5
              
@@ -1279,11 +1290,9 @@ type ArrayModule() =
         Array.init 10 f |> ignore
         Assert.AreEqual (10, !stamp)
         
-#if !FX_NO_TPL_PARALLEL
     [<Test>]
     member this.``Parallel.Init``() = 
         this.InitTester Array.Parallel.init Array.Parallel.init
-#endif
 
     [<Test>]
     member this.IsEmpty() =
@@ -1491,11 +1500,9 @@ type ArrayModule() =
         Array.map f [| 1..100 |] |> ignore
         Assert.AreEqual(100,!stamp)
         
-#if !FX_NO_TPL_PARALLEL
     [<Test>]
     member this.``Parallel.Map`` () =
         this.MapTester Array.Parallel.map Array.Parallel.map
-#endif
 
     member private this.MapiTester mapiInt mapiString =
         // empty array 
@@ -1533,7 +1540,6 @@ type ArrayModule() =
         Assert.AreEqual(100,!stamp)
         ()
         
-#if !FX_NO_TPL_PARALLEL
     [<Test>]
     member this.``Parallel.Mapi`` () =
         this.MapiTester Array.Parallel.mapi Array.Parallel.mapi
@@ -1603,7 +1609,6 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.Parallel.iteri funStr nullArr |> ignore)  
         
         ()
-#endif
     
     member private this.PartitionTester partInt partString =
         // int array
@@ -1648,11 +1653,9 @@ type ArrayModule() =
         Assert.AreEqual([|[]|], Array.singleton [])
         Assert.IsTrue([|[||]|] = Array.singleton [||])
 
-#if !FX_NO_TPL_PARALLEL
     [<Test>]
     member this.``Parallel.Partition`` () =
         this.PartitionTester Array.Parallel.partition Array.Parallel.partition    
-#endif    
 
     [<Test>]
     member this.Contains() =

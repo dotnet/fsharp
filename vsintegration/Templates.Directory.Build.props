@@ -1,0 +1,34 @@
+<Project>
+
+  <Import Project="Directory.Build.props" />
+
+  <!-- The VSSDK can't handle these values being fully qualified.  The ~hack~ fix is to unset them and manually copy the templates after the build. -->
+  <PropertyGroup>
+    <BaseOutputPath></BaseOutputPath>
+    <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
+    <OutputPath></OutputPath>
+    <IntermediateOutputPath></IntermediateOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DebugSymbols>false</DebugSymbols>
+    <PublishOutputToSymStore>true</PublishOutputToSymStore>
+    <UseCommonOutputDirectory Condition="'$(UseCommonOutputDirectory)' == ''">true</UseCommonOutputDirectory>
+    <IncludeAssemblyInVSIXContainer>false</IncludeAssemblyInVSIXContainer>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <TargetFramework>net472</TargetFramework>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <IsPackage>true</IsPackage>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
+    <IncludeDebugSymbolsInLocalVSIXDeployment>false</IncludeDebugSymbolsInLocalVSIXDeployment>
+    <DeployExtension>false</DeployExtension>
+    <DeployVSTemplates>false</DeployVSTemplates>
+    <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
+    <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+    <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+  </PropertyGroup>
+
+</Project>

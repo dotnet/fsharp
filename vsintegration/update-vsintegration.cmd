@@ -20,7 +20,7 @@
 @rem * Installation of F# FSC compiler and FSI are done in the SHARED SDK directory. Henceforth
 @rem   each installation of Visual Studio 2017 will use the updated FSC.exe and the commandline
 @rem   FSI.exe. The in-product VS FSI plugin, syntax highlighting and IntelliSense must be 
-@rem   installed through VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
+@rem   installed through VSIXInstaller.exe debug\net40\bin\VisualFSharpFull.vsix
 @rem   
 @rem   This procedure needs to be changed once F# supports multiple side-by-side installations
 @rem   at which point everything will go through VSIXInstaller.exe
@@ -83,7 +83,7 @@ GOTO :start
 
 echo.
 echo Installs or restores F# SDK bits, which applies system-wide to all Visual Studio
-echo 2017 installations. After running this, each project targeting F# 4.1 will use
+echo 2017 installations. After running this, each project targeting F# 4.5 will use
 echo your locally built FSC.exe. It will not update other F# tools, see remarks below.
 echo.
 echo Requires Administrator privileges for removing/restoring strong-naming.
@@ -117,12 +117,12 @@ echo.
 echo For Release builds:
 echo.
 echo ^> VSIXInstaller.exe /u:"VisualFSharp"
-echo ^> VSIXInstaller.exe release\net40\bin\VisualFSharpOpenSource.vsix
+echo ^> VSIXInstaller.exe release\net40\bin\VisualFSharpFull.vsix
 echo.
 echo For Debug builds:
 echo.
 echo ^> VSIXInstaller.exe /u:"VisualFSharp"
-echo ^> VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
+echo ^> VSIXInstaller.exe debug\net40\bin\VisualFSharpFull.vsix
 echo.
 
 exit /b 1
@@ -158,8 +158,8 @@ set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
-set FSHARPVERSION=4.1
-set FSHARPVERSION2=41
+set FSHARPVERSION=4.3
+set FSHARPVERSION2=43
 
 rem The various locations of the SDK and tools
 
@@ -226,6 +226,7 @@ if "!BIN_AVAILABLE!" == "true" (
     CALL :backupAndOrCopy Microsoft.Portable.FSharp.Targets "%COMPILERSDKPATH%"
     CALL :backupAndOrCopy Microsoft.FSharp.NetSdk.props "%COMPILERSDKPATH%"
     CALL :backupAndOrCopy Microsoft.FSharp.NetSdk.targets "%COMPILERSDKPATH%"
+    CALL :backupAndOrCopy Microsoft.FSharp.Overrides.NetSdk.targets "%COMPILERSDKPATH%"
 
     rem Special casing for SupportedRuntimes.xml, it has a different source directory, it's always there
     set SOURCEDIR="%TOPDIR%\vsintegration\src\SupportedRuntimes"
@@ -250,68 +251,6 @@ if "!BIN_AVAILABLE!" == "true" (
 )
 
  
-rem Deploying for .NET Core 3.7
-
-echo.
-CALL :colorEcho 02 "[!ACTION!] Processing files for profile_7" & echo.
-
-set SOURCEDIR=%BINDIR%\..\..\portable7\bin
-set RESTOREDIR=!RESTOREBASE!\profile_7
-CALL :checkAvailability profile_7
-if "!BIN_AVAILABLE!" == "true" (
-    CALL :backupAndOrCopy FSharp.Core.dll "%COMPILER7ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILER7ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILER7ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.xml "%COMPILER7ASSEMBLIESPATH%"
-)
-
- 
-rem Deploying for .NET Core 3.78
-
-echo.
-CALL :colorEcho 02 "[!ACTION!] Processing files for profile_78" & echo.
-
-set SOURCEDIR=%BINDIR%\..\..\portable78\bin
-set RESTOREDIR=!RESTOREBASE!\profile_78
-CALL :checkAvailability profile_78
-if "!BIN_AVAILABLE!" == "true" (
-    CALL :backupAndOrCopy FSharp.Core.dll "%COMPILER78ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILER78ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILER78ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.xml "%COMPILER78ASSEMBLIESPATH%"
-)
-
-
-rem Deploying for .NET Core 3.259
-
-echo.
-CALL :colorEcho 02 "[!ACTION!] Processing files for profile_259" & echo.
-
-set SOURCEDIR=%BINDIR%\..\..\portable259\bin
-set RESTOREDIR=!RESTOREBASE!\profile_259
-CALL :checkAvailability profile_259
-if "!BIN_AVAILABLE!" == "true" (
-    CALL :backupAndOrCopy FSharp.Core.dll "%COMPILER259ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILER259ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILER259ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.xml "%COMPILER259ASSEMBLIESPATH%"
-)
-
-
-rem Deploying for .NET Portable 3.47
-
-echo.
-CALL :colorEcho 02 "[!ACTION!] Processing files for profile_47" & echo.
-
-set SOURCEDIR=%BINDIR%\..\..\portable47\bin
-set RESTOREDIR=!RESTOREBASE!\profile_47
-CALL :checkAvailability profile_47
-if "!BIN_AVAILABLE!" == "true" (
-    CALL :backupAndOrCopy FSharp.Core.dll "%COMPILER47ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILER47ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILER47ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.xml "%COMPILER47ASSEMBLIESPATH%"
-)
 
 REM TODO: this was already here (2017-09-28) and was already commented out, I think (AB) that these redirects aren't necessary anymore and can be permanently removed
 REM echo ^<configuration^>^<runtime^>^<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1" appliesTo="v4.0.30319"^>^<dependentAssembly^>^<assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" /^> ^<bindingRedirect oldVersion="2.0.0.0-4.%FSHARPVERSION%.0" newVersion="4.%FSHARPVERSION%.0"/^>^</dependentAssembly^>^</assemblyBinding^>^</runtime^>^</configuration^> > "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.0\pub.config"

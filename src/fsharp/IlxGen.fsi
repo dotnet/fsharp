@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.IlxGen
+module internal FSharp.Compiler.IlxGen
 
 open System
 open System.IO
 open System.Reflection
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
 
 /// Indicates how the generated IL code is ultimately emitted 
 type IlxGenBackend =
@@ -18,21 +18,39 @@ type IlxGenBackend =
 [<NoEquality; NoComparison>]
 type internal IlxGenOptions = 
     { fragName                               : string
+
+      /// Indicates if we are generating filter blocks
       generateFilterBlocks                   : bool
+
+      /// Indicates if we should workaround old reflection emit bugs
       workAroundReflectionEmitBugs           : bool
+
+      /// Indicates if static array data should be emitted using static blobs
       emitConstantArraysUsingStaticDataBlobs : bool
+
       /// If this is set, then the last module becomes the "main" module 
       mainMethodInfo                         : Attribs option
+
+      /// Indicates if local optimizations are active
       localOptimizationsAreOn                : bool
+
+      /// Indicates if we are generating debug symbols or not
       generateDebugSymbols                   : bool
+
+      /// A flag to help test emit of debug information
       testFlagEmitFeeFeeAs100001             : bool
+
+      /// Indicates which backend we are generating code for
       ilxBackend                             : IlxGenBackend
+
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
       isInteractive                          : bool 
+
       /// Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
       /// storage, even though 'it' is not logically mutable
       isInteractiveItExpr                    : bool
+
       /// Indicates that, whenever possible, use callvirt instead of call
       alwaysCallVirt                         : bool }
 
@@ -44,6 +62,10 @@ type public IlxGenResults =
       ilAssemAttrs           : ILAttribute list
       /// The generated IL/ILX .NET module attributes
       ilNetModuleAttrs       : ILAttribute list
+      /// The attributes for the assembly in F# form
+      topAssemblyAttrs : Attribs
+      /// The security attributes to attach to the assembly
+      permissionSets : ILSecurityDecl list
       /// The generated IL/ILX resources associated with F# quotations
       quotationResourceInfo : (ILTypeRef list * byte[])  list }
 
@@ -70,9 +92,6 @@ type public IlxAssemblyGenerator =
     /// Generate ILX code for an assembly fragment
     member GenerateCode : IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults
 
-    /// Create the CAS permission sets for an assembly fragment
-    member CreatePermissionSets : Attrib list ->  ILPermission list
-
     /// Invert the compilation of the given value and clear the storage of the value
     member ClearGeneratedValue : ExecutionContext * Val -> unit
 
@@ -81,4 +100,6 @@ type public IlxAssemblyGenerator =
 
 
 val ReportStatistics : TextWriter -> unit
-val IsValCompiledAsMethod : TcGlobals -> Val -> bool
+
+/// Determine if an F#-declared value, method or function is compiled as a method.
+val IsFSharpValCompiledAsMethod : TcGlobals -> Val -> bool

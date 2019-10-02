@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Build
+namespace FSharp.Build
 
 open System.Collections
 open System.IO
@@ -155,20 +155,24 @@ type FSharpEmbedResourceText() =
         let mutable holes = ResizeArray()  //  order
         let sb = new System.Text.StringBuilder()
         let AddHole holeType =
-            sb.Append(sprintf "{%d}" holeNumber) |> ignore
+            match holeType with
+            | "System.UInt32" -> sb.Append(sprintf "{%d:x}" holeNumber) |> ignore
+            | _ -> sb.Append(sprintf "{%d}" holeNumber) |> ignore
             holeNumber <- holeNumber + 1
             holes.Add(holeType)
         while i < txt.Length do
             if txt.[i] = '%' then
                 if i+1 = txt.Length then
-                    Err(filename, lineNum, "(at end of string) % must be followed by d, f, s, or %")
+                    Err(filename, lineNum, "(at end of string) % must be followed by d, x, f, s, or %")
                 else
                     match txt.[i+1] with
                     | 'd' -> AddHole "System.Int32"
+                    | 'x' -> AddHole "System.UInt32"
+                    | 'X' -> AddHole "System.UInt32"
                     | 'f' -> AddHole "System.Double"
                     | 's' -> AddHole "System.String"
                     | '%' -> sb.Append('%') |> ignore
-                    | c -> Err(filename, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%f %%s or %%%%" c)
+                    | c -> Err(filename, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%x %%X %%f %%s or %%%%" c)
                 i <- i + 2
             else
                 match txt.[i] with
@@ -238,19 +242,9 @@ open Printf
     let StringBoilerPlate filename = @"
     // BEGIN BOILERPLATE
 
-    static let getCurrentAssembly () =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
-        typeof<SR>.GetTypeInfo().Assembly
-    #else
-        System.Reflection.Assembly.GetExecutingAssembly()
-    #endif
+    static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
 
-    static let getTypeInfo (t: System.Type) =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
-        t.GetTypeInfo()
-    #else
-        t
-    #endif
+    static let getTypeInfo (t: System.Type) = t
 
     static let resources = lazy (new System.Resources.ResourceManager(""" + filename + @""", getCurrentAssembly()))
 
@@ -290,7 +284,7 @@ open Printf
         | '%' -> go args ty (i+1)
         | 'd'
         | 'f'
-        | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n::args) rty (i+1))
+        | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n :: args) rty (i+1))
         | _ -> failwith ""bad format specifier""
 
     // newlines and tabs get converted to strings when read from a resource file
@@ -348,14 +342,16 @@ open Printf
           let outFilename = Path.Combine(_outputPath, justfilename + ".fs")
           let outXmlFilename = Path.Combine(_outputPath, justfilename + ".resx")
 
-          if File.Exists(outFilename) && 
-               File.Exists(outXmlFilename) && 
-               File.Exists(filename) && 
-               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename) &&
-               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outXmlFilename) then
-            printMessage (sprintf "Skipping generation of %s and %s since up-to-date" outFilename outXmlFilename)
+          let condition1 = File.Exists(outFilename) 
+          let condition2 = condition1 && File.Exists(outXmlFilename)
+          let condition3 = condition2 && File.Exists(filename)
+          let condition4 = condition3 && (File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename))
+          let condition5 = condition4 && (File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outXmlFilename) )
+          if condition5 then
+            printMessage (sprintf "Skipping generation of %s and %s from %s since up-to-date" outFilename outXmlFilename filename)
             Some (filename, outFilename, outXmlFilename)
           else
+            printMessage (sprintf "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"  outFilename outXmlFilename filename (if not condition1 then 1 elif not condition2 then 2 elif not condition3 then 3 elif not condition4 then 4 else 5) )
 
             printMessage (sprintf "Reading %s" filename)
             let lines = File.ReadAllLines(filename) 
@@ -414,10 +410,11 @@ open Printf
                 fprintfn out "    /// %s" str
                 fprintfn out "    /// (Originally from %s:%d)" filename (lineNum+1)
                 let justPercentsFromFormatString = 
-                    (holes |> Array.fold (fun acc holeType -> 
-                        acc + match holeType with 
-                                | "System.Int32" -> ",,,%d" 
-                                | "System.Double" -> ",,,%f" 
+                    (holes |> Array.fold (fun acc holeType ->
+                        acc + match holeType with
+                                | "System.Int32" -> ",,,%d"
+                                | "System.UInt32" -> ",,,%x"
+                                | "System.Double" -> ",,,%f"
                                 | "System.String" -> ",,,%s"
                                 | _ -> failwith "unreachable") "") + ",,,"
                 let errPrefix = match optErrNum with

@@ -9,9 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 open FsCheck
-#endif
 
 module Utils =
     let internal memoizeAsync f =
@@ -25,7 +23,6 @@ type [<Struct>] Dummy (x: int) =
     member this.Dispose () = ()
 
 
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 [<AutoOpen>]
 module ChoiceUtils =
 
@@ -137,9 +134,7 @@ module ChoiceUtils =
         if not <| List.isEmpty ops then
             let minTimeout = getMinTime()
             let minTimeoutOps = ops |> Seq.filter (fun op -> op.Timeout <= minTimeout) |> Seq.length
-            Assert.LessOrEqual(!completed, minTimeoutOps)
-
-#endif
+            Assert.IsTrue(!completed <= minTimeoutOps)
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -166,23 +161,15 @@ type AsyncModule() =
                 do! Async.Sleep(20)
                 
             return !tickstamps
-        }     
+        }
 
-    let wait (wh : #System.Threading.WaitHandle) (timeoutMilliseconds : int) = 
-#if FX_NO_WAITONE_MILLISECONDS
-        wh.WaitOne(TimeSpan.FromMilliseconds (float timeoutMilliseconds))
-#else
-#if FX_NO_EXIT_CONTEXT_FLAGS
-        wh.WaitOne(timeoutMilliseconds)
-#else
+    let wait (wh : System.Threading.WaitHandle) (timeoutMilliseconds : int) = 
         wh.WaitOne(timeoutMilliseconds, exitContext=false)
-#endif
-#endif
 
     let dispose(d : #IDisposable) = d.Dispose()
 
-    let testErrorAndCancelRace computation = 
-        for _ in 1..20 do
+    let testErrorAndCancelRace testCaseName computation = 
+        for i in 1..20 do
             let cts = new System.Threading.CancellationTokenSource()
             use barrier = new System.Threading.ManualResetEvent(false)
             async { cts.Cancel() } 
@@ -193,7 +180,7 @@ type AsyncModule() =
 
             Async.StartWithContinuations(
                 computation,
-                (fun _ -> failwith "success not expected"),
+                (fun _ -> failwith (sprintf "Testcase: %s  --- success not expected iterations 1 .. 20 - failed on iteration %d" testCaseName i)),
                 (fun _ -> incr()),
                 (fun _ -> incr()),
                 cts.Token
@@ -271,7 +258,7 @@ type AsyncModule() =
         // wait 10 seconds for completion
         let ok = wait barrier 10000
         if not ok then Assert.Fail("Async computation was not completed in given time")
-    
+
     [<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle1``() = 
         let wh = new System.Threading.ManualResetEvent(false)
@@ -354,7 +341,7 @@ type AsyncModule() =
 
         for _i = 1 to 3 do test()
 
-
+#if EXPENSIVE
     [<Test; Category("Expensive"); Explicit>]
     member this.``Async.AwaitWaitHandle does not leak memory`` () =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
@@ -388,7 +375,8 @@ type AsyncModule() =
         
         // The leak hangs on a race condition which is really hard to trigger in F# 3.0, hence the 100000 runs...
         for _ in 1..10 do tryToLeak()
-           
+#endif
+
     [<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle2``() = 
         let wh = new System.Threading.ManualResetEvent(false)
@@ -417,7 +405,7 @@ type AsyncModule() =
                 Assert.Fail("TimeoutException expected")
             with
                 :? System.TimeoutException -> ()
-#if !FSCORE_PORTABLE_OLD
+
     [<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
@@ -434,24 +422,24 @@ type AsyncModule() =
             if !failed then Assert.Fail("TimeoutException expected")
         run null
         run (System.Threading.SynchronizationContext())
-#endif
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
         let disposedEvent = new System.Threading.ManualResetEvent(false)
         dispose disposedEvent
-
-        testErrorAndCancelRace(Async.AwaitWaitHandle disposedEvent)
+        testErrorAndCancelRace "RaceBetweenCancellationAndError.AwaitWaitHandle" (Async.AwaitWaitHandle disposedEvent)
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Sleep``() =
-        testErrorAndCancelRace (Async.Sleep (-5))
+        testErrorAndCancelRace "RaceBetweenCancellationAndError.Sleep" (Async.Sleep (-5))
 
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW || coreclr)
+#if EXPENSIVE
+#if NET46
     [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
         Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
+#endif
 #endif
 
     [<Test>]
@@ -499,7 +487,6 @@ type AsyncModule() =
             }
         Async.RunSynchronously(test)
         
-#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``FromContinuationsCanTailCallCurrentThread``() = 
         let cnt = ref 0
@@ -520,7 +507,6 @@ type AsyncModule() =
         f 5000 |> Async.StartImmediate 
         Assert.AreEqual(origTid, !finalTid)
         Assert.AreEqual(5000, !cnt)
-#endif
 
     [<Test>]
     member this.``AwaitWaitHandle With Cancellation``() = 
@@ -573,8 +559,8 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
-    [<Test>]
+#if IGNORED
+    [<Test; Ignore("See https://github.com/Microsoft/visualfsharp/issues/4887")>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
         let errCount = ref 0
@@ -639,3 +625,67 @@ type AsyncModule() =
         } |> Async.RunSynchronously
         Console.WriteLine "Checking result...."
         Assert.AreEqual(1, !x)
+
+    [<Test>]
+    member this.``Parallel with maxDegreeOfParallelism`` () =
+        let mutable i = 1
+        let action j = async {
+            Assert.AreEqual(j, i)
+            i <- i + 1
+        }
+        let computation =
+            [| for i in 1 .. 1000 -> action i |]
+            |> fun cs -> Async.Parallel(cs, 1)
+        Async.RunSynchronously(computation) |> ignore
+
+    [<Test>]
+    member this.``maxDegreeOfParallelism can not be 0`` () =
+        try
+            [| for i in 1 .. 10 -> async { return i } |]
+            |> fun cs -> Async.Parallel(cs, 0)
+            |> ignore
+            Assert.Fail("Unexpected success")
+        with
+        | :? System.ArgumentException as exc ->
+            Assert.AreEqual("maxDegreeOfParallelism", exc.ParamName)
+            Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was 0"))
+
+    [<Test>]
+    member this.``maxDegreeOfParallelism can not be negative`` () =
+        try
+            [| for i in 1 .. 10 -> async { return i } |]
+            |> fun cs -> Async.Parallel(cs, -1)
+            |> ignore
+            Assert.Fail("Unexpected success")
+        with
+        | :? System.ArgumentException as exc ->
+            Assert.AreEqual("maxDegreeOfParallelism", exc.ParamName)
+            Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was -1"))
+
+//  This has been failing very regularly on LINUX --- issue   :  https://github.com/dotnet/fsharp/issues/7112
+#if !TESTING_ON_LINUX
+    [<Test>]
+    member this.``RaceBetweenCancellationAndError.Parallel``() =
+        [| for i in 1 .. 1000 -> async { return i } |]
+        |> fun cs -> Async.Parallel(cs, 1)
+        |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel"
+#endif
+
+    [<Test>]
+    member this.``error on one workflow should cancel all others with maxDegreeOfParallelism``() =
+        let counter =
+            async {
+                let counter = ref 0
+                let job i = async {
+                    if i = 55 then failwith "boom"
+                    else
+                        do! Async.Sleep 1000
+                        incr counter
+                }
+
+                let! _ = Async.Parallel ([ for i in 1 .. 100 -> job i ], 2) |> Async.Catch
+                do! Async.Sleep 5000
+                return !counter
+            } |> Async.RunSynchronously
+
+        Assert.AreEqual(0, counter)

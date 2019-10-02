@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.CompileOptions
+module internal FSharp.Compiler.CompileOptions
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Import
-open Microsoft.FSharp.Compiler.Optimizer
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Import
+open FSharp.Compiler.Optimizer
+open FSharp.Compiler.TcGlobals
 
 //----------------------------------------------------------------------------
 // Compiler Option Parser

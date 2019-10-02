@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Editor services
 ==================================
@@ -26,7 +26,8 @@ of `InteractiveChecker`:
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -52,8 +53,8 @@ let input =
 let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
-let projOptions = 
-    checker.GetProjectOptionsFromScript(file, input)
+let projOptions, errors = 
+    checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
     |> Async.RunSynchronously
 
 let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
@@ -68,7 +69,7 @@ together.
 // Perform parsing  
 
 let parseFileResults = 
-    checker.ParseFile(file, input, parsingOptions) 
+    checker.ParseFile(file, SourceText.ofString input, parsingOptions)
     |> Async.RunSynchronously
 (**
 Before we look at the interesting operations provided by `TypeCheckResults`, we 
@@ -78,7 +79,7 @@ result (but it may contain incorrectly "guessed" results).
 
 // Perform type checking
 let checkFileAnswer = 
-    checker.CheckFileInProject(parseFileResults, file, 0, input, projOptions) 
+    checker.CheckFileInProject(parseFileResults, file, 0, SourceText.ofString input, projOptions)
     |> Async.RunSynchronously
 
 (**
@@ -86,7 +87,7 @@ Alternatively you can use `ParseAndCheckFileInProject` to check both in one step
 *)
 
 let parseResults2, checkFileAnswer2 = 
-    checker.ParseAndCheckFileInProject(file, 0, input, projOptions) 
+    checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projOptions)
     |> Async.RunSynchronously
 
 (**
@@ -127,11 +128,11 @@ identifier (the other option lets you get tooltip with full assembly location wh
 
 *)
 // Get tag of the IDENT token to be used as the last argument
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 let identToken = FSharpTokenTag.Identifier
 
 // Get tool tip at the specified location
-let tip = checkFileResults.GetToolTipTextAlternate(4, 7, inputLines.[1], ["foo"], identToken)
+let tip = checkFileResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], identToken)
 printfn "%A" tip
 
 (**
@@ -159,13 +160,13 @@ list of members of the string value `msg`.
 
 To do this, we call `GetDeclarationListInfo` with the location of the `.` symbol on the last line 
 (ending with `printfn "%s" msg.`). The offsets are one-based, so the location is `7, 23`.
-We also need to specify a function that says that the text has not changed and the current identifer
+We also need to specify a function that says that the text has not changed and the current identifier
 where we need to perform the completion.
 *)
 // Get declarations (autocomplete) for a location
 let decls = 
     checkFileResults.GetDeclarationListInfo
-      (Some parseFileResults, 7, 23, inputLines.[6], [], "msg", fun _ -> false)
+      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun () -> []), fun _ -> false)
     |> Async.RunSynchronously
 
 // Print the names of available items
@@ -197,7 +198,7 @@ changes):
 *)
 // Get overloads of the String.Concat method
 let methods = 
-    checkFileResults.GetMethodsAlternate(5, 27, inputLines.[4], Some ["String"; "Concat"])
+    checkFileResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"])
     |> Async.RunSynchronously
 
 // Print concatenated parameter lists

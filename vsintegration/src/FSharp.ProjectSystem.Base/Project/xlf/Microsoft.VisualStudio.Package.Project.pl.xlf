@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">Minimalny</target>
+        <target state="translated">minimalne</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -262,7 +262,7 @@
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">Brak</target>
+        <target state="translated">brak</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
@@ -462,7 +462,7 @@
       </trans-unit>
       <trans-unit id="BuildCaption">
         <source>Build</source>
-        <target state="translated">Kompiluj</target>
+        <target state="translated">Kompilacja</target>
         <note />
       </trans-unit>
       <trans-unit id="OutputPath">
@@ -637,7 +637,7 @@
       </trans-unit>
       <trans-unit id="CopyAlways">
         <source>Copy always</source>
-        <target state="translated">Zawsze kopiuj</target>
+        <target state="translated">Zawsze Kopiuj</target>
         <note>CopyToOutputDirectory - drop down option</note>
       </trans-unit>
       <trans-unit id="CopyToOutputDirectory">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">Ścieżka</target>
+        <target state="translated">ŚCIEŻKA</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

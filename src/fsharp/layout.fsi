@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public Microsoft.FSharp.Compiler.Layout
+module public FSharp.Compiler.Layout
 
 open System.Text
 open System.Collections.Generic
@@ -104,6 +104,8 @@ module TaggedTextOps =
         val rightBracket : TaggedText
         val leftBrace: TaggedText
         val rightBrace : TaggedText
+        val leftBraceBar: TaggedText
+        val rightBraceBar : TaggedText
         val leftAngle: TaggedText
         val rightAngle: TaggedText
         val equals : TaggedText

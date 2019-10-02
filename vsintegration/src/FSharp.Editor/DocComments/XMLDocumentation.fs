@@ -3,14 +3,14 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
-open Internal.Utilities.Collections
-open EnvDTE
-open EnvDTE80
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
+open System.Collections.Generic
 
 type internal ITaggedTextCollector =
     abstract Add: text: TaggedText -> unit
@@ -212,54 +212,22 @@ module internal XmlDocumentation =
     let vsToken = VsThreadToken()
     
     /// Provide Xml Documentation             
-    type Provider(xmlIndexService:IVsXMLMemberIndexService, dte: DTE) = 
+    type Provider(xmlIndexService:IVsXMLMemberIndexService) = 
         /// Index of assembly name to xml member index.
-        let mutable xmlCache = new AgedLookup<VsThreadToken,string,IVsXMLMemberIndex>(10,areSimilar=(fun (x,y) -> x = y))
+        let cache = Dictionary<string, IVsXMLMemberIndex>()
         
-        let events = dte.Events :?> Events2
-        let solutionEvents = events.SolutionEvents
-        do solutionEvents.add_AfterClosing(fun () -> 
-            xmlCache.Clear(vsToken))
-
-    #if DEBUG // Keep under DEBUG so that it can keep building.
-
-        let _AppendTypeParameters (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,count = memberData.GetTypeParamCount()
-            if Com.Succeeded(ok) && count > 0 then 
-                for param in 0..count do
-                    let ok,name,text = memberData.GetTypeParamTextAt(param)
-                    if Com.Succeeded(ok) then
-                        EnsureHardLine collector
-                        collector.Add(tagTypeParameter name)
-                        collector.Add(Literals.space)
-                        collector.Add(tagPunctuation "-")
-                        collector.Add(Literals.space)
-                        collector.Add(tagText text)
-
-        let _AppendRemarks (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,remarksText = memberData.GetRemarksText()
-            if Com.Succeeded(ok) then 
-                AppendOnNewLine collector remarksText            
-    #endif
-
-        let _AppendReturns (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,returnsText = memberData.GetReturnsText()
-            if Com.Succeeded(ok) then 
-                if not collector.EndsWithLineBreak then 
-                    AppendHardLine(collector)
-                    AppendHardLine(collector)
-                AppendOnNewLine collector returnsText
+        do Events.SolutionEvents.OnAfterCloseSolution.Add (fun _ -> cache.Clear())
 
         /// Retrieve the pre-existing xml index or None
         let GetMemberIndexOfAssembly(assemblyName) =
-            match xmlCache.TryGet(vsToken, assemblyName) with 
-            | Some(memberIndex) -> Some(memberIndex)
-            | None -> 
+            match cache.TryGetValue(assemblyName) with 
+            | true, memberIndex -> Some(memberIndex)
+            | false, _ -> 
                 let ok,memberIndex = xmlIndexService.CreateXMLMemberIndex(assemblyName)
                 if Com.Succeeded(ok) then 
                     let ok = memberIndex.BuildMemberIndex()
-                    if Com.Succeeded(ok) then 
-                        xmlCache.Put(vsToken, assemblyName,memberIndex)
+                    if Com.Succeeded(ok) then
+                        cache.Add(assemblyName, memberIndex)
                         Some(memberIndex)
                     else None
                 else None
@@ -276,7 +244,7 @@ module internal XmlDocumentation =
 
         interface IDocumentationBuilder with 
             /// Append the given processed XML formatted into the string builder
-            override this.AppendDocumentationFromProcessedXML(xmlCollector, exnCollector, processedXml, showExceptions, showParameters, paramName) =
+            override __.AppendDocumentationFromProcessedXML(xmlCollector, exnCollector, processedXml, showExceptions, showParameters, paramName) =
                 match XmlDocReader.TryCreate processedXml with
                 | Some xmlDocReader ->
                     match paramName with
@@ -413,6 +381,6 @@ module internal XmlDocumentation =
     let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =
         AppendXmlComment(documentationProvider, TextSanitizingCollector(xmlCollector), TextSanitizingCollector(xmlCollector), xml, false, true, Some paramName)
 
-    let documentationBuilderCache = System.Runtime.CompilerServices.ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
-    let CreateDocumentationBuilder(xmlIndexService: IVsXMLMemberIndexService, dte: DTE) = 
-        documentationBuilderCache.GetValue(xmlIndexService,(fun _ -> Provider(xmlIndexService, dte) :> IDocumentationBuilder))
+    let documentationBuilderCache = ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
+    let CreateDocumentationBuilder(xmlIndexService: IVsXMLMemberIndexService) = 
+        documentationBuilderCache.GetValue(xmlIndexService,(fun _ -> Provider(xmlIndexService) :> IDocumentationBuilder))

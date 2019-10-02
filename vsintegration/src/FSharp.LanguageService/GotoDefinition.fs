@@ -5,23 +5,20 @@
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
-open System.IO
-open System.Collections.Generic
 open System.Diagnostics
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop 
 open Microsoft.VisualStudio.TextManager.Interop 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 
 module internal OperatorToken =
     
     let asIdentifier_DEPRECATED (token : TokenInfo) =
         // Typechecker reports information about all values in the same fashion no matter whether it is named value (let binding) or operator
         // here we piggyback on this fact and just pretend that we need data time for identifier
-        let tagOfIdentToken = Microsoft.FSharp.Compiler.Parser.tagOfToken(Microsoft.FSharp.Compiler.Parser.IDENT "")
+
+        let tagOfIdentToken = FSharpTokenTag.IDENT
+
         let endCol = token.EndIndex + 1 // EndIndex from GetTokenInfoAt points to the last operator char, but here it should point to column 'after' the last char 
         tagOfIdentToken, token.StartIndex, endCol
 
@@ -40,7 +37,7 @@ module internal GotoDefinition =
         let ls = textView.GetBuffer() |> Com.ThrowOnFailure1
         let len = ls.GetLengthOfLine line |> Com.ThrowOnFailure1
         let lineStr = ls.GetLineText(line, 0, line, len) |> Com.ThrowOnFailure1
-        
+
         // in many cases we assume gotodef should work even if we don't stand on the identifier directly
         // treatTokenAsIdentifier governs if we want to have raw value of token (possibly operator) or if should always be considered as identifier
         let rec gotoDefinition alwaysTreatTokenAsIdentifier =
@@ -69,14 +66,13 @@ module internal GotoDefinition =
                 |> GotoDefinitionResult_DEPRECATED.MakeError
             | Some(colIdent, tag, qualId) ->
                 if typedResults.HasFullTypeCheckInfo then 
-                    if Parser.tokenTagToTokenId tag <> Parser.TOKEN_IDENT then 
+                    // Used to be the Parser's internal definition, now hard-coded to avoid an IVT into the parser itsef.
+                    // Dead code (aside from legacy tests), ignore
+                    if tag <> FSharpTokenTag.IDENT then
                         Strings.GotoDefinitionFailed_NotIdentifier()
                         |> GotoDefinitionResult_DEPRECATED.MakeError
                     else
                       match typedResults.GetDeclarationLocation (line+1, colIdent, lineStr, qualId, false) |> Async.RunSynchronously with
-                      | FSharpFindDeclResult.DeclFound m -> 
-                          let span = TextSpan (iStartLine = m.StartLine-1, iEndLine = m.StartLine-1, iStartIndex = m.StartColumn, iEndIndex = m.StartColumn) 
-                          GotoDefinitionResult_DEPRECATED.MakeSuccess(m.FileName, span)
                       | FSharpFindDeclResult.DeclNotFound(reason) ->
                           if makeAnotherAttempt then gotoDefinition true
                           else
@@ -88,8 +84,13 @@ module internal GotoDefinition =
                               | FSharpFindDeclFailureReason.ProvidedType(typeName) -> String.Format(Strings.GotoDefinitionFailed_ProvidedType(), typeName)
                               | FSharpFindDeclFailureReason.ProvidedMember(name) -> String.Format(Strings.GotoDefinitionFailed_ProvidedMember(), name)
                           GotoDefinitionResult_DEPRECATED.MakeError text
+                      | FSharpFindDeclResult.DeclFound m when System.IO.File.Exists m.FileName -> 
+                          let span = TextSpan (iStartLine = m.StartLine-1, iEndLine = m.StartLine-1, iStartIndex = m.StartColumn, iEndIndex = m.StartColumn) 
+                          GotoDefinitionResult_DEPRECATED.MakeSuccess(m.FileName, span)
+                      | FSharpFindDeclResult.DeclFound _ (* File does not exist *) -> 
+                          GotoDefinitionResult_DEPRECATED.MakeError(Strings.GotoDefinitionFailed_NotSourceCode())
                       | FSharpFindDeclResult.ExternalDecl _ -> 
-                            GotoDefinitionResult_DEPRECATED.MakeError(Strings.GotoDefinitionFailed_NotSourceCode())
+                          GotoDefinitionResult_DEPRECATED.MakeError(Strings.GotoDefinitionFailed_NotSourceCode())
                 else
                     Trace.Write("LanguageService", "Goto definition: No 'TypeCheckInfo' available")
                     Strings.GotoDefinitionFailed_NoTypecheckInfo()

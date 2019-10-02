@@ -1,0 +1,19 @@
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TestsToRun Include="tests\*.proj" />
+  </ItemGroup>
+
+  <Target Name="Build">
+    <MSBuild Projects="@(TestsToRun)" Targets="Test" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="Rebuild" />
+  <Target Name="Clean" />
+  <Target Name="Restore" />
+
+</Project>

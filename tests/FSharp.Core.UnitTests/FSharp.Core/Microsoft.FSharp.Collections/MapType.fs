@@ -111,6 +111,27 @@ type MapType() =
         CheckThrowsKeyNotFoundException(fun () -> id.[1] |> ignore)  
         Assert.AreEqual(id.Keys,   [| |] )
         Assert.AreEqual(id.Values, [| |] ) 
+
+    [<Test>]
+    member this.IReadOnlyDictionary() =
+        let irod = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IReadOnlyDictionary<_,_> 
+        
+        Assert.IsTrue(irod.ContainsKey(1))   
+        Assert.IsFalse(irod.ContainsKey(5))  
+        Assert.AreEqual(irod.[1], 1)  
+        Assert.AreEqual(irod.[3], 9) 
+        Assert.AreEqual(irod.Keys,   [| 1; 2; 3|])         
+        Assert.AreEqual(irod.Values, [| 1; 4; 9|])
+        
+        Assert.IsTrue(irod.TryGetValue(1, ref 1))
+        Assert.IsFalse(irod.TryGetValue(100, ref 1))
+        
+        // Empty IROD
+        let irod = Map.empty :> IReadOnlyDictionary<int, int>   // Note no type args  
+        Assert.IsFalse(irod.ContainsKey(5))
+        CheckThrowsKeyNotFoundException(fun () -> irod.[1] |> ignore)  
+        Assert.AreEqual(irod.Keys,   [| |] )
+        Assert.AreEqual(irod.Values, [| |] ) 
     
     [<Test>]
     member this.ICollection() =        
@@ -136,6 +157,18 @@ type MapType() =
         let newArr = Array.create 5 (new KeyValuePair<int,int>(0,0))
         ic.CopyTo(newArr,0) 
     
+    [<Test>]
+    member this.IReadOnlyCollection() =
+        // Legit IROC
+        let iroc = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IReadOnlyCollection<KeyValuePair<_,_>>
+        
+        Assert.AreEqual(iroc.Count, 3)
+        
+        // Empty IROC
+        let iroc = Map.empty :> IReadOnlyCollection<KeyValuePair<int, int>>
+
+        Assert.AreEqual(iroc.Count, 0)
+
     [<Test>]
     member this.IComparable() =        
         // Legit IC

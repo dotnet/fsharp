@@ -540,4 +540,7 @@
   <data name="unsupportedQueryConstructKind" xml:space="preserve">
     <value>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</value>
   </data>
+  <data name="maxDegreeOfParallelismNotPositive" xml:space="preserve">
+    <value>maxDegreeOfParallelism must be positive, was {0}</value>
+  </data>
 </root>

@@ -514,7 +514,7 @@
       </trans-unit>
       <trans-unit id="QunionNeedsDiffNumArgs">
         <source>F# union type requires different number of arguments</source>
-        <target state="translated">К# типу объединения требуется другое количество аргументов</target>
+        <target state="translated">Типу объединения F# требуется другое количество аргументов</target>
         <note />
       </trans-unit>
       <trans-unit id="QwritingGetOnly">
@@ -705,6 +705,11 @@
       <trans-unit id="unsupportedQueryConstructKind">
         <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
         <target state="translated">Недопустимое выражение запроса. Конструкция "{0}" использовалась запросе, но не была распознана транслятором запросов из F# в LINQ. Проверьте спецификацию разрешенных запросов и попробуйте вынести часть операций за пределы выражения запроса.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">Параметр maxDegreeOfParallelism должен иметь положительное значение, указано значение {0}</target>
         <note />
       </trans-unit>
     </body>

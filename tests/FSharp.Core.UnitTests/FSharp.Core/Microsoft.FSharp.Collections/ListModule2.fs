@@ -94,26 +94,22 @@ type ListModule02() =
         
         // string List
         let funcStr x y z = x + y + z        
-        let resultStr = List.map3 funcStr ["A";"B";"C";"D"] ["a";"b";"c";"d"] ["1";"2";"3";"4"]        
+        let resultStr = List.map3 funcStr ["A";"B";"C";"D"] ["a";"b";"c";"d"] ["1";"2";"3";"4"]
         Assert.AreEqual(["Aa1";"Bb2";"Cc3";"Dd4"], resultStr)
-        
+
         // lists of different length
         let shortList = [1]
         let longerList = [1; 2]
         CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)
         CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList longerList shortList |> ignore)
-        CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)  
+        CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)
 
         // empty List
         let resultEpt = List.map3 funcInt List.empty List.empty List.empty
         Assert.AreEqual(List.empty<int>, resultEpt)
-        
-        ()
-
 
     [<Test>]
-    member this.Collect() = 
-        // integer List
+    member this.Collect() =        // integer List
         let funcInt x = 
                 match x with
                 | _ when x % 3 = 0 -> [999;999]            
@@ -812,6 +808,30 @@ type ListModule02() =
         Assert.AreEqual(List.empty, resultEpt)
         
         ()   
+
+    [<Test>]
+    member this.Transpose() =
+        // integer list
+        Assert.AreEqual([[1; 4]; [2; 5]; [3; 6]], List.transpose (seq [[1..3]; [4..6]]))
+        Assert.AreEqual([[1]; [2]; [3]], List.transpose [[1..3]])
+        Assert.AreEqual([[1..2]], List.transpose [[1]; [2]])
+
+        // string list
+        Assert.AreEqual([["a";"d"]; ["b";"e"]; ["c";"f"]], List.transpose (seq [["a";"b";"c"]; ["d";"e";"f"]]))
+
+        // empty list
+        Assert.AreEqual([], List.transpose [])
+
+        // list of empty lists - m x 0 list transposes to 0 x m (i.e. empty)
+        Assert.AreEqual([], List.transpose [[]])
+        Assert.AreEqual([], List.transpose [[]; []])
+
+        // jagged lists
+        CheckThrowsArgumentException (fun () -> List.transpose [[1; 2]; [3]] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.transpose [[1]; [2; 3]] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.transpose [[]; [1; 2]; [3; 4]] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.transpose [[1; 2]; []; [3; 4]] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.transpose [[1; 2]; [3; 4]; []] |> ignore)
 
     [<Test>]
     member this.Truncate() =

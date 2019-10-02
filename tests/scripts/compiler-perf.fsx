@@ -122,8 +122,9 @@ let build(cloneUrl,sha:string,baseSha,ref,prNumber) =
     let timesHeaderText, timesText = runScenario "bigfiles"
 
     let logFile = "compiler-perf-results.txt"
-    let logHeader = sprintf "url ref  sha base build %s" timesHeaderText
-    let logLine = sprintf "%s %-28s %s %s %0.2f %s" cloneUrl ref sha baseSha buildTime.TotalSeconds timesText
+    let logHeader = sprintf "url ref  sha base computer build %s" timesHeaderText
+    let computer = System.Environment.GetEnvironmentVariable("COMPUTERNAME")
+    let logLine = sprintf "%s %-28s %s %s %s %0.2f %s" cloneUrl ref sha baseSha computer buildTime.TotalSeconds timesText
     let existing = if File.Exists logFile then File.ReadAllLines(logFile) else [| logHeader |]
     printfn "writing results %s"  logLine
 

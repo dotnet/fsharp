@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="ru" original="../Script.fsx">
     <body>
       <trans-unit id="LearnMore">
-        <source>Learn more about F# at http://fsharp.org</source>
-        <target state="translated">Дополнительные сведения о F# см. на http://fsharp.org</target>
+        <source>Learn more about F# at https://fsharp.org</source>
+        <target state="translated">Дополнительные сведения об F# см. на странице https://fsharp.org</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeTutorial">

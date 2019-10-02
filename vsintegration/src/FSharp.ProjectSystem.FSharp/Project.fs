@@ -42,12 +42,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
     open EnvDTE
 
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Private", CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Server.Shared", CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.UIResources", CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.0.0", NewVersion = "4.4.1.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
-    do ()
-
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
             /// custom/extended property pages.
@@ -84,10 +78,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let getConfigExtendedPropertyPages() = match lazyPropertyPages.Force() with (_,config,_) -> config
             let getPriorityExtendedPropertyPages() = match lazyPropertyPages.Force() with (_,_,priority) -> priority
 
-//////////////////////
-
     // An IProjectSite object with hot-swappable inner implementation
-    type internal DynamicProjectSite(origInnerImpl : Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite) =
+    type internal DynamicProjectSite(origInnerImpl : Microsoft.VisualStudio.FSharp.Editor.IProjectSite) =
 
         let mutable inner = origInnerImpl
 
@@ -95,7 +87,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             inner <- newInner
 
         // This interface is thread-safe, assuming "inner" is thread-safe
-        interface Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+        interface Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
             member __.Description = inner.Description
             member __.CompilationSourceFiles = inner.CompilationSourceFiles
             member __.CompilationOptions = inner.CompilationOptions
@@ -128,7 +120,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
         // This member is thread-safe
         member x.GetProjectSite() =
             Debug.Assert(state <> ProjectSiteOptionLifetimeState.Opening, "ProjectSite is not available")
-            projectSite.Value :> Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite
+            projectSite.Value :> Microsoft.VisualStudio.FSharp.Editor.IProjectSite
 
         // This member is thread-safe
         member x.TryGetProjectSite() =
@@ -136,7 +128,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             | ProjectSiteOptionLifetimeState.Opening, _ 
             | ProjectSiteOptionLifetimeState.Closed, _ -> None
             | _, None ->  None
-            | _, Some x ->  Some(x :> Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite)
+            | _, Some x ->  Some(x :> Microsoft.VisualStudio.FSharp.Editor.IProjectSite)
 
         member x.Open(site) =
             Debug.Assert((state = ProjectSiteOptionLifetimeState.Opening), "Called Open, but not in Opening state")
@@ -159,7 +151,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
         static member ExploreFolderInWindows = 1635u
 
     type internal Notifier() =
-        let notificationsDict = new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges>()
+        let notificationsDict = new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.FSharp.Editor.AdviseProjectSiteChanges>()
         member this.Notify() =
             for kvp in notificationsDict do
                 kvp.Value.Invoke()
@@ -185,39 +177,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     exception internal ExitedOk
     exception internal ExitedWithError
 
-    //--------------------------------------------------------------------------------------
-    // The big mutually recursive set of types.
-    //    FSharpProjectPackage
-    //    EditorFactory
-    //    FSharpProjectFactory
-    //    ....
-
-    [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
-                        "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
-                        6000s,      6001s,              // resource id for localisation of the above
-                        true)>]                         // true = supports automation
-    [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
-    [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
-                        // The following should place the ToolWindow with the OutputWindow by default.
-                        Orientation=ToolWindowOrientation.Bottom,
-                        Style=VsDockStyle.Tabbed,
-                        PositionX = 0,
-                        PositionY = 0,
-                        Width = 360,
-                        Height = 120,
-                        Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>] // where 34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3 = outputToolWindow
     [<Guid(GuidList.guidFSharpProjectPkgString)>]
-    type internal FSharpProjectPackage() as this = 
+    type internal FSharpProjectPackage() = 
             inherit ProjectPackage() 
-
-            let mutable vfsiToolWindow = Unchecked.defaultof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>
-            let GetToolWindowAsITestVFSI() =
-                if vfsiToolWindow = Unchecked.defaultof<_> then
-                    vfsiToolWindow <- this.FindToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 0, true) :?> Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow
-                vfsiToolWindow :> Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI
-
-            // FSI-LINKAGE-POINT: unsited init
-            do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
             /// This method loads a localized string based on the specified resource.
 
@@ -233,12 +195,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 resourceValue
 
             override this.Initialize() =
-                UIThread.CaptureSynchronizationContext()
+                Microsoft.VisualStudio.FSharp.LanguageService.UIThread.CaptureSynchronizationContext()
+                Microsoft.VisualStudio.FSharp.ProjectSystem.UIThread.CaptureSynchronizationContext()
 
                 base.Initialize()
-
-                let fSharpEditorFactory = new Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpEditorFactory(this);
-                this.RegisterEditorFactory(fSharpEditorFactory);
 
                 // read list of available FSharp.Core versions
                 do
@@ -247,64 +207,63 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             member this.ListAvailableFSharpCoreVersions(_) = Array.empty }
 
                     let service = 
-                        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
-                        | None -> nullService
-                        | Some path ->
-                            try
-                                let supportedRuntimesXml = System.Xml.Linq.XDocument.Load(Path.Combine(path, "SupportedRuntimes.xml"))
-                                let tryGetAttr (el : System.Xml.Linq.XElement) attr = 
-                                    match el.Attribute(System.Xml.Linq.XName.Get attr) with
-                                    | null -> None
-                                    | x -> Some x.Value
-                                let flatList = 
-                                    supportedRuntimesXml.Root.Elements(System.Xml.Linq.XName.Get "TargetFramework")
-                                    |> Seq.choose (fun tf ->
-                                        match tryGetAttr tf "Identifier", tryGetAttr tf "Version", tryGetAttr tf "Profile" with
-                                        | Some key1, Some key2, _ 
-                                        | Some key1, _, Some key2 ->
-                                            Some(
-                                                key1, // identifier
-                                                key2, // version or profile
-                                                [|
-                                                    for asm in tf.Elements(System.Xml.Linq.XName.Get "Assembly") do
-                                                        let version = asm.Attribute(System.Xml.Linq.XName.Get "Version")
-                                                        let description = asm.Attribute(System.Xml.Linq.XName.Get "Description")
-                                                        match version, description with
-                                                        | null, _ | _, null -> ()
-                                                        | version, description ->
-                                                            yield Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpCoreVersion(version.Value, description.Value)
-                                                |]
-                                            )
-                                        | _ -> None
-                                     )
-                                     
-                                    |> Seq.toList
-                                let (_, _, v2) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v20)
-                                let (_, _, v4) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v40)
-                                let (_, _, v45) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v45)
-                                {
-                                    new Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService with
-                                        member this.ListAvailableFSharpCoreVersions(targetFramework) =
-                                            if targetFramework.Identifier = FSharpSDKHelper.NETFramework
-                                            then 
-                                                // for .NETFramework we distinguish between 2.0, 4.0 and 4.5
-                                                if targetFramework.Version.Major < 4 then v2 
-                                                elif targetFramework.Version.Major = 4 && targetFramework.Version.Minor < 5 then v4 
-                                                else v45
-                                            else 
-                                                // for other target frameworks we assume that they are distinguished by the profile
-                                                let result = 
-                                                    flatList
-                                                    |> List.tryPick(fun (k1, k2, list) -> 
-                                                        if k1 = targetFramework.Identifier && k2 = targetFramework.Profile then Some list else None
-                                                    )
-                                                match result with
-                                                | Some list -> list
-                                                | None ->
-                                                    Debug.Assert(false, sprintf "Unexpected target framework identifier '%O'" targetFramework)
-                                                    [||]
-                                }
-                            with _ -> nullService
+                        try
+                            // SupportedRuntimes is deployed alongside the ProjectSystem dll
+                            let path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+                            let supportedRuntimesXml = System.Xml.Linq.XDocument.Load(Path.Combine(path, "SupportedRuntimes.xml"))
+                            let tryGetAttr (el : System.Xml.Linq.XElement) attr = 
+                                match el.Attribute(System.Xml.Linq.XName.Get attr) with
+                                | null -> None
+                                | x -> Some x.Value
+                            let flatList = 
+                                supportedRuntimesXml.Root.Elements(System.Xml.Linq.XName.Get "TargetFramework")
+                                |> Seq.choose (fun tf ->
+                                    match tryGetAttr tf "Identifier", tryGetAttr tf "Version", tryGetAttr tf "Profile" with
+                                    | Some key1, Some key2, _ 
+                                    | Some key1, _, Some key2 ->
+                                        Some(
+                                            key1, // identifier
+                                            key2, // version or profile
+                                            [|
+                                                for asm in tf.Elements(System.Xml.Linq.XName.Get "Assembly") do
+                                                    let version = asm.Attribute(System.Xml.Linq.XName.Get "Version")
+                                                    let description = asm.Attribute(System.Xml.Linq.XName.Get "Description")
+                                                    match version, description with
+                                                    | null, _ | _, null -> ()
+                                                    | version, description ->
+                                                        yield Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpCoreVersion(version.Value, description.Value)
+                                            |]
+                                        )
+                                    | _ -> None
+                                 )
+                                 
+                                |> Seq.toList
+                            let (_, _, v2) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v20)
+                            let (_, _, v4) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v40)
+                            let (_, _, v45) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v45)
+                            {
+                                new Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService with
+                                    member this.ListAvailableFSharpCoreVersions(targetFramework) =
+                                        if targetFramework.Identifier = FSharpSDKHelper.NETFramework
+                                        then 
+                                            // for .NETFramework we distinguish between 2.0, 4.0 and 4.5
+                                            if targetFramework.Version.Major < 4 then v2 
+                                            elif targetFramework.Version.Major = 4 && targetFramework.Version.Minor < 5 then v4 
+                                            else v45
+                                        else 
+                                            // for other target frameworks we assume that they are distinguished by the profile
+                                            let result = 
+                                                flatList
+                                                |> List.tryPick(fun (k1, k2, list) -> 
+                                                    if k1 = targetFramework.Identifier && k2 = targetFramework.Profile then Some list else None
+                                                )
+                                            match result with
+                                            | Some list -> list
+                                            | None ->
+                                                Debug.Assert(false, sprintf "Unexpected target framework identifier '%O'" targetFramework)
+                                                [||]
+                            }
+                        with _ -> nullService
                     (this :> IServiceContainer).AddService(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService>, service, promote = true)
 
 
@@ -315,13 +274,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 // global state was needed for e.g. Tools\Options
                 //TODO the TypeProviderSecurityGlobals does not exists anymore, remove the initialization?
                 this.GetService(typeof<FSharpLanguageService>) |> ignore  
-
-                // FSI-LINKAGE-POINT: sited init
-                let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
-                Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
-                // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-                let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-                ()
 
             /// This method is called during Devenv /Setup to get the bitmap to
             /// display on the splash screen for this package.
@@ -367,13 +319,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 pIdIco <- 400u
                 VSConstants.S_OK
 
-            interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
-                member this.SendTextInteraction(s:string) =
-                    GetToolWindowAsITestVFSI().SendTextInteraction(s)
-                member this.GetMostRecentLines(n:int) : string[] =
-                    GetToolWindowAsITestVFSI().GetMostRecentLines(n)
-            
-
     /// Factory for creating our editor, creates FSharp Projects
     [<Guid(GuidList.guidFSharpProjectFactoryString)>]
     type internal FSharpProjectFactory(package:FSharpProjectPackage ) =  
@@ -415,8 +360,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let mutable sourcesAndFlags : option<(string[] * string[])> = None
 
             let mutable normalizedRefs : string[] option = None
-
-            let mutable binOutputPath : string option = None
 
 #if DEBUG
             let logger = new Microsoft.Build.Logging.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
@@ -509,7 +452,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                  "3.259.3.1"; "3.259.4.0"]        // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             let latestOnlyVersions = 
-                                ["4.4.1.0"                        // .NET 4 desktop
+                                ["4.4.3.0"                        // .NET 4 desktop
                                  "3.47.41.0"                       // portable 47
                                  "3.7.41.0"                        // portable 7
                                  "3.78.41.0"                       // portable 78
@@ -545,7 +488,17 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         this.ComputeSourcesAndFlags()
             
             override this.SendReferencesToFSI(references) = 
-                Microsoft.VisualStudio.FSharp.Interactive.Hooks.AddReferencesToFSI this.Package references
+                let shell = this.Site.GetService(typeof<SVsShell>) :?> IVsShell
+                let packageToBeLoadedGuid = ref (Guid(FSharpConstants.fsiPackageGuidString))
+                let pkg =
+                    match shell.LoadPackage packageToBeLoadedGuid with
+                    | VSConstants.S_OK, pkg -> pkg :?> Package
+                    | _ -> null
+
+                if pkg = null then
+                    nullArg "Can't find FSI Package."
+
+                Microsoft.VisualStudio.FSharp.Interactive.Hooks.AddReferencesToFSI pkg references
 
             override x.SetSite(site:IOleServiceProvider) = 
                 base.SetSite(site)  |> ignore
@@ -839,7 +792,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <param name="source">Full path to template file</param>
             /// <param name="target">Full path to destination file</param>
             override x.AddFileFromTemplate(source:string, target:string ) =
-                if not (Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
+                if not (FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
                     raise <| new FileNotFoundException(String.Format(FSharpSR.TemplateNotFound(), source))
 
                 // We assume that there is no token inside the file because the only
@@ -1300,23 +1253,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let updatedNormalizedRefs = flags |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] else None) |> Array.map (fun fn -> Path.GetFullPath(Path.Combine(x.ProjectFolder, fn)))
                 sourcesAndFlags <- Some (updatedNormalizedSources, flags)
                 normalizedRefs <- Some updatedNormalizedRefs
-                binOutputPath <- x.GetCurrentOutputAssembly() |> Option.ofObj
 
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
-
-            // =====================================================================================================
-            // Todo: x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) for VS2017.7
-            // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
-            // This is so that during the interim, earlier VS's will still load the OSS project
-            // =====================================================================================================
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) =
-                x.CoreCompile(flags, sources)
-                if actuallyBuild then
-                    compile.Invoke(0)
-                else
-                    0
 
             member x.Compile(compile:Func<int>, flags:string[], sources:string[]) =
                 x.CoreCompile(flags, sources)
@@ -1328,7 +1268,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member __.CompilationSourceFiles = match sourcesAndFlags with None -> [| |] | Some (sources,_) -> sources
             member __.CompilationOptions = match sourcesAndFlags with None -> [| |] | Some (_,flags) -> flags
             member __.CompilationReferences = match normalizedRefs with None -> [| |] | Some refs -> refs
-            member __.CompilationBinOutputPath = binOutputPath
 
             override x.ComputeSourcesAndFlags() =
 
@@ -1370,8 +1309,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         // If property is not set - msbuild will resolve only primary dependencies,
                         // and compiler will be very unhappy when during processing of referenced assembly it will discover that all fundamental types should be
                         // taken from System.Runtime that is not supplied
-                        
-                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
+                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true"); KeyValuePair("DesignTimeBuild", "true")])
                         sourcesAndFlagsNotifier.Notify()
                     finally
                         actuallyBuild <- true
@@ -1446,12 +1384,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // Returns an IProjectSite that references "this" to get its information
             member private x.CreateRunningProjectSite() =
                 let creationTime = System.DateTime.UtcNow
-                { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+                { new Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
 
                     member __.CompilationSourceFiles = x.CompilationSourceFiles
                     member __.CompilationOptions = x.CompilationOptions
                     member __.CompilationReferences = x.CompilationReferences
-                    member __.CompilationBinOutputPath = x.CompilationBinOutputPath
+                    member __.CompilationBinOutputPath = 
+                        let outputPath = x.GetCurrentOutputAssembly()
+                        if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
 
                     member __.Description = 
                         match sourcesAndFlags with
@@ -1471,15 +1411,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
-
+                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
             // that does _not_ reference "this" to get its information.
             // CreateStaticProjectSite can be called on a project that failed to load (as in Close)
             member private x.CreateStaticProjectSite() =
-                let outputPath = x.CompilationBinOutputPath
+                let outputPath = x.GetCurrentOutputAssembly()
                 let sourceFiles = x.CompilationSourceFiles
                 let options = x.CompilationOptions
                 let refs = x.CompilationReferences
@@ -1490,12 +1429,12 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let creationTime = DateTime.UtcNow
 
                 // This object is thread-safe
-                { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+                { new Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
                     member __.Description = description
                     member __.CompilationSourceFiles = sourceFiles
                     member __.CompilationOptions = options
                     member __.CompilationReferences = refs
-                    member __.CompilationBinOutputPath = outputPath
+                    member __.CompilationBinOutputPath = if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
                     member __.ProjectFileName = projFileName
                     member __.BuildErrorReporter 
                         with get() = staticBuildErrorReporter
@@ -1507,11 +1446,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = targetFrameworkMoniker
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
+                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
                 }
 
             // let the language service ask us questions
-            interface Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite with
+            interface Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite with
                 member x.GetProjectSite() = 
                     match projectSite.State with
                     | ProjectSiteOptionLifetimeState.Opening ->

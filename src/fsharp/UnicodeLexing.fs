@@ -1,25 +1,29 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.UnicodeLexing
+module internal FSharp.Compiler.UnicodeLexing
 
 //------------------------------------------------------------------
 // Functions for Unicode char-based lexing (new code).
 //
 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Features
 open Internal.Utilities
-open System.IO 
+open System.IO
 
 open Internal.Utilities.Text.Lexing
 
 type Lexbuf =  LexBuffer<char>
 
-let StringAsLexbuf (s:string) : Lexbuf =
-    LexBuffer<_>.FromChars (s.ToCharArray())
-  
-let FunctionAsLexbuf (bufferFiller: char[] * int * int -> int) : Lexbuf =
-    LexBuffer<_>.FromFunction bufferFiller 
-     
+let StringAsLexbuf (supportsFeature: Features.LanguageFeature -> bool, s:string) : Lexbuf =
+    LexBuffer<_>.FromChars (supportsFeature, s.ToCharArray())
+
+let FunctionAsLexbuf (supportsFeature: Features.LanguageFeature -> bool, bufferFiller: char[] * int * int -> int) : Lexbuf =
+    LexBuffer<_>.FromFunction(supportsFeature, bufferFiller)
+
+let SourceTextAsLexbuf (supportsFeature: Features.LanguageFeature -> bool, sourceText) =
+    LexBuffer<char>.FromSourceText(supportsFeature, sourceText)
+
 // The choice of 60 retries times 50 ms is not arbitrary. The NTFS FILETIME structure 
 // uses 2 second resolution for LastWriteTime. We retry long enough to surpass this threshold 
 // plus 1 second. Once past the threshold the incremental builder will be able to retry asynchronously based
@@ -38,7 +42,7 @@ let numRetries = 60
 /// we can't just return the LexBuffer object, since the file it wraps wouldn't
 /// get closed when we're finished with the LexBuffer. Hence we return the stream,
 /// the reader and the LexBuffer. The caller should dispose the first two when done.
-let UnicodeFileAsLexbuf (filename,codePage : int option, retryLocked:bool) :  Lexbuf =
+let UnicodeFileAsLexbuf (supportsFeature: Features.LanguageFeature -> bool, filename, codePage: int option, retryLocked: bool): Lexbuf =
     // Retry multiple times since other processes may be writing to this file.
     let rec getSource retryNumber =
       try 
@@ -47,7 +51,7 @@ let UnicodeFileAsLexbuf (filename,codePage : int option, retryLocked:bool) :  Le
         use reader = 
             match codePage with 
             | None -> new  StreamReader(stream,true)
-            | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncodingShim(n)) 
+            | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncoding(n)) 
         reader.ReadToEnd()
       with 
           // We can get here if the file is locked--like when VS is saving a file--we don't have direct
@@ -65,5 +69,5 @@ let UnicodeFileAsLexbuf (filename,codePage : int option, retryLocked:bool) :  Le
                else 
                    reraise()
     let source = getSource 0
-    let lexbuf = LexBuffer<_>.FromChars(source.ToCharArray())  
+    let lexbuf = LexBuffer<_>.FromChars(supportsFeature, source.ToCharArray())  
     lexbuf

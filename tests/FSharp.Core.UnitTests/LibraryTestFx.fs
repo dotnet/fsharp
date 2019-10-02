@@ -13,17 +13,12 @@ open NUnit.Framework
 /// Check that the lambda throws an exception of the given type. Otherwise
 /// calls Assert.Fail()
 let CheckThrowsExn<'a when 'a :> exn> (f : unit -> unit) =
-    let funcThrowsAsExpected =
-        try
-            let _ = f ()
-            false // Did not throw!
-        with
-        | :? 'a
-            -> true   // Thew null ref, OK
-        | _ -> false  // Did now throw a null ref exception!
-    if funcThrowsAsExpected
-    then ()
-    else Assert.Fail()
+    try
+        let _ = f ()
+        sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail 
+    with
+    | :? 'a -> ()
+    | e -> sprintf "Expected %O exception, got: %O" typeof<'a> e |> Assert.Fail
 
 let private CheckThrowsExn2<'a when 'a :> exn> s (f : unit -> unit) =
     let funcThrowsAsExpected =
@@ -57,67 +52,51 @@ let CheckThrowsFormatException       f = CheckThrowsExn<FormatException>        
 
 // Verifies two sequences are equal (same length, equiv elements)
 let VerifySeqsEqual (seq1 : seq<'T>) (seq2 : seq<'T>) =
-    CollectionAssert.AreEqual (seq1, seq2)
+    CollectionAssert.AreEqual(seq1, seq2)
 
-let sleep(n : int32) =        
-#if FX_NO_THREAD
-    async { do! Async.Sleep(n) } |> Async.RunSynchronously
-#else
+let sleep(n : int32) =
     System.Threading.Thread.Sleep(n)
-#endif
 
 module SurfaceArea =
     open System.Reflection
     open System
     open System.Text.RegularExpressions
-    
+
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
-    
+
         // get current FSharp.Core
-        let asm = 
-            #if portable7 || portable78 || portable259 || coreclr
-            typeof<int list>.GetTypeInfo().Assembly
-            #else
-            typeof<int list>.Assembly
-            #endif
-        
+        let asm = typeof<int list>.Assembly
+        let fsCoreFullName = asm.FullName
+
         // public types only
-        let types =
-            #if portable7 || portable78 || portable259 || coreclr
-            asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
-            #else
-            asm.GetExportedTypes()
-            #endif
+        let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
 
         // extract canonical string form for every public member of every type
         let getTypeMemberStrings (t : Type) =
             // for System.Runtime-based profiles, need to do lots of manual work
-            #if portable7 || portable78 || portable259 || coreclr
             let getMembers (t : Type) =
                 let ti = t.GetTypeInfo()
-                let cast (info : #MemberInfo) = (t, info :> MemberInfo)
+                let cast (info: #MemberInfo) = (t, info :> MemberInfo)
+                let isDeclaredInFSharpCore (m:MemberInfo) = m.DeclaringType.Assembly.FullName = fsCoreFullName
                 seq {
-                    yield! t.GetRuntimeEvents()     |> Seq.filter (fun m -> m.AddMethod.IsPublic) |> Seq.map cast
-                    yield! t.GetRuntimeProperties() |> Seq.filter (fun m -> m.GetMethod.IsPublic) |> Seq.map cast
-                    yield! t.GetRuntimeMethods()    |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
-                    yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
+                    yield! t.GetRuntimeEvents()     |> Seq.filter (fun m -> m.AddMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeProperties() |> Seq.filter (fun m -> m.GetMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeMethods()    |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
                     yield! ti.DeclaredConstructors  |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
                 } |> Array.ofSeq
 
+
             getMembers t
             |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
-            #else
-            t.GetMembers()
-            |> Array.map (fun v -> sprintf "%s: %s" (v.ReflectedType.ToString()) (v.ToString()))
-            #endif
-            
+
         let actual =
             types |> Array.collect getTypeMemberStrings
 
         asm,actual
-    
+
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
         let normalize (s:string) =
@@ -125,7 +104,7 @@ module SurfaceArea =
 
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-        
+
         let expected =
             // Split the "expected" string into individual lines, then normalize it.
             (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
@@ -144,35 +123,38 @@ module SurfaceArea =
         // If both sets are empty, the surface areas match so allow the test to pass.
         if Set.isEmpty unexpectedlyMissing
           && Set.isEmpty unexpectedlyPresent then
-            Assert.Pass ()
+            // pass
+            ()
+        else
 
-        let logFile =
-            let workDir = TestContext.CurrentContext.WorkDirectory
-            sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
+            let logFile =
+                let workDir = TestContext.CurrentContext.WorkDirectory
+                sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
+            System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
-        // The surface areas don't match; prepare an easily-readable output message.
-        let msg =
-            let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
-            let sb = System.Text.StringBuilder ()
-            Printf.bprintf sb "Assembly: %A" asm
-            newLine sb
-            sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
-            Printf.bprintf sb "    windiff %s %s" fileName logFile
-            newLine sb
-            newLine sb
-            sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
-            for s in unexpectedlyMissing do
+            // The surface areas don't match; prepare an easily-readable output message.
+            let msg =
+                let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
+                let sb = System.Text.StringBuilder ()
+                Printf.bprintf sb "Assembly: %A" asm
                 newLine sb
-                sb.Append "    " |> ignore
-                sb.Append s |> ignore
-            newLine sb
-            newLine sb
-            sb.Append "Unexpectedly present (actual, not expected):" |> ignore
-            for s in unexpectedlyPresent do
+                sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
+                Printf.bprintf sb "    windiff %s %s" fileName logFile
                 newLine sb
-                sb.Append "    " |> ignore
-                sb.Append s |> ignore
-            newLine sb
-            sb.ToString ()
+                newLine sb
+                sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
+                for s in unexpectedlyMissing do
+                    newLine sb
+                    sb.Append "    " |> ignore
+                    sb.Append s |> ignore
+                newLine sb
+                newLine sb
+                sb.Append "Unexpectedly present (actual, not expected):" |> ignore
+                for s in unexpectedlyPresent do
+                    newLine sb
+                    sb.Append "    " |> ignore
+                    sb.Append s |> ignore
+                newLine sb
+                sb.ToString ()
 
-        Assert.Fail msg
+            failwith msg

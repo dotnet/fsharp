@@ -2,6 +2,7 @@
 # Run some a variation of the tests/fsharp suite
 # Run the FSharp.Core.UnitTests suite
 
+# note: expects to run from top directory
 (cd tests/projects; ./build.sh) &&
 (cd tests/fsharp/core; ./run-opt.sh) 
 # This currently takes too long in travis

@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The ILPdbWriter 
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter 
+module internal FSharp.Compiler.AbstractIL.ILPdbWriter 
 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open Internal.Utilities
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 open System.Collections.Generic 
 open System.IO
 open System.Reflection.Metadata
@@ -82,10 +83,14 @@ type idd =
       iddData: byte[];
       iddChunk: BinaryChunk }
 
-val generatePortablePdb : embedAllSource:bool -> embedSourceList:string list -> sourceLink: string -> showTimes:bool -> info:PdbData -> isDeterministic:bool -> (int64 * BlobContentId * MemoryStream)
+type HashAlgorithm =
+    | Sha1
+    | Sha256
+
+val generatePortablePdb : embedAllSource: bool -> embedSourceList: string list -> sourceLink: string -> checksumAlgorithm: HashAlgorithm -> showTimes: bool -> info: PdbData -> pathMap:PathMap -> (int64 * BlobContentId * MemoryStream * string * byte[])
 val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> (int64 * BlobContentId * MemoryStream)
-val embedPortablePdbInfo : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> pdbChunk:BinaryChunk -> idd[]
-val writePortablePdbInfo : contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> idd[]
+val embedPortablePdbInfo: uncompressedLength: int64 -> contentId: BlobContentId -> stream: MemoryStream -> showTimes: bool -> fpdb: string -> cvChunk: BinaryChunk -> pdbChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPDB: bool -> deterministic: bool -> idd[]
+val writePortablePdbInfo: contentId: BlobContentId -> stream: MemoryStream -> showTimes: bool -> fpdb: string -> pathMap: PathMap -> cvChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPDB: bool -> deterministic: bool -> idd[]
 
 #if !FX_NO_PDB_WRITER
 val writePdbInfo : showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> cvChunk:BinaryChunk -> idd[]

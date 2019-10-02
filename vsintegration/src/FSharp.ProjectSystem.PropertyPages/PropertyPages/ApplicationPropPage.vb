@@ -14,7 +14,6 @@ Imports Microsoft.VisualStudio.Editors
 Imports OLE = Microsoft.VisualStudio.OLE.Interop
 
 Imports Shell = Microsoft.VisualStudio.Shell
-Imports Interop = Microsoft.VisualStudio.OLE.Interop
 Imports Microsoft.VisualStudio.Editors.PropertyPages
 Imports System.Runtime.InteropServices
 Imports System.ComponentModel
@@ -23,6 +22,7 @@ Imports VslangProj90
 Imports VslangProj100
 Imports System.Runtime.Versioning
 Imports Microsoft.VisualStudio.FSharp.ProjectSystem
+Imports Microsoft.VisualStudio.Shell
 
 Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
@@ -49,8 +49,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Protected Const INDEX_WINDOWSCLASSLIB As Integer = 2
         Protected Const INDEX_LAST As Integer = INDEX_WINDOWSCLASSLIB
         Public Const Const_TargetFrameworkMoniker As String = "TargetFrameworkMoniker"
-        Private m_v20FSharpRedistInstalled As Boolean = False
-        Private m_v40FSharpRedistInstalled As Boolean = False
 
         Friend WithEvents TargetFramework As System.Windows.Forms.ComboBox
         Friend WithEvents TargetFrameworkLabel As System.Windows.Forms.Label
@@ -74,18 +72,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             m_OutputTypeStringKeys(INDEX_WINDOWSAPP) = SR.GetString(SR.PPG_WindowsApp)
             m_OutputTypeStringKeys(INDEX_COMMANDLINEAPP) = SR.GetString(SR.PPG_CommandLineApp)
             m_OutputTypeStringKeys(INDEX_WINDOWSCLASSLIB) = SR.GetString(SR.PPG_WindowsClassLib)
-
-#If VS_VERSION_DEV14 Then
-            Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v2.0"
-            Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-#End If
-#If VS_VERSION_DEV15 Then
-            Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v2.0"
-            Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v4.0"
-#End If
-
-            m_v20FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v20FSharpRedistKey, Nothing, Nothing)))
-            m_v40FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v40FSharpRedistKey, Nothing, Nothing)))
 
             'Add any initialization after the InitializeComponent() call
             AddChangeHandlers()
@@ -377,6 +363,9 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 OutputType = CType(value, VSLangProj.prjOutputType)
                 Me.OutputType.SelectedIndex = OutputType
                 PopulateControlSet(OutputType)
+
+                'Populate the target framework combobox
+                PopulateTargetFrameworkAssemblies()
             Else
                 '// We're indeterminate 
                 Me.OutputType.SelectedIndex = INDEX_INVALID
@@ -472,8 +461,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 Me.Win32ResourceFileBrowse.Enabled = False
             End If
 
-            'Populate the target framework combobox
-            PopulateTargetFrameworkAssemblies()
             ' Populate list of possible versions of FSharp.Core
             PopulateAvailableFSharpCoreVersions()
         End Sub
@@ -518,6 +505,10 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
             Me.PopulateControlSet(OutputType)
 
+            PopulateTargetFrameworkAssemblies()
+
+            SetDirty(VsProjPropId.VBPROJPROPID_OutputType, False)
+            SetDirty(True) 'True forces Apply
             SetIconAndWin32ResourceFile()
         End Sub
 
@@ -583,28 +574,21 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         ''' Fill up the allowed values in the target framework listbox
         ''' </summary>
         ''' <remarks></remarks>
-
-        'REVIEW: Are the periods in my version strings culture-safe?
         Private Function ValidateTargetFrameworkMoniker(ByVal moniker As String) As Boolean
-            If moniker = "" Or moniker = Nothing Then
+            If String.IsNullOrWhiteSpace(moniker) Then
                 Return False
-            End If
-            ' .NET Core and .NETStandard don't need redists to be installed.
-            If moniker.StartsWith(".NETCoreApp") OrElse moniker.StartsWith(".NETStandard") Then
+            ElseIf moniker.StartsWith(".NETCoreApp", StringComparison.OrdinalIgnoreCase) Then
+                If Me.OutputType.SelectedIndex <> INDEX_INVALID Then    ' NetCore always include
+                    ' .NET Core and .NETStandard don't need redists to be installed.
+                    Return True
+                End If
+            ElseIf moniker.StartsWith(".NETStandard", StringComparison.OrdinalIgnoreCase) Then
+                If Me.OutputType.SelectedIndex = 2 Then                 ' NetStandard ClassLibrary only
+                    Return True
+                End If
+            ElseIf moniker.Contains("v2") OrElse moniker.Contains("v3.0") OrElse moniker.Contains("v3.5") OrElse moniker.Contains("v4") Then
+                ' With the latest tooling, if we have editors the redist is installed by definition
                 Return True
-            End If
-            If moniker.Contains("v2") Then
-                Return Me.m_v20FSharpRedistInstalled
-            End If
-            If moniker.Contains("v3.0") Then
-                Return Me.m_v20FSharpRedistInstalled
-            End If
-            If moniker.Contains("v3.5") Then
-                Return Me.m_v20FSharpRedistInstalled
-            End If
-            '' Is this cheating?
-            If moniker.Contains("v4") Then
-                Return Me.m_v40FSharpRedistInstalled
             End If
             Return False
         End Function
@@ -638,7 +622,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
         Private Sub PopulateAvailableFSharpCoreVersions()
             TargetFSharpCoreVersion.Items.Clear()
-            TargetFSharpCoreVersion.SelectedIndex = -1
+            TargetFSharpCoreVersion.SelectedIndex = INDEX_INVALID
 
             Dim currentFrameworkName As FrameworkName = GetCurrentFrameworkName(DTEProject)
             Dim siteServiceProvider As Microsoft.VisualStudio.OLE.Interop.IServiceProvider = Nothing
@@ -673,13 +657,24 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
         Private Sub PopulateTargetFrameworkAssemblies()
             Dim targetFrameworkSupported As Boolean = False
+            Dim selectedItem As String = Nothing
+            If Me.TargetFramework.SelectedIndex <> INDEX_INVALID Then
+                selectedItem = Me.TargetFramework.Text
+            End If
             Me.TargetFramework.Items.Clear()
-            Me.TargetFramework.SelectedIndex = -1
+            Me.TargetFramework.SelectedIndex = INDEX_INVALID
 
             Try
                 Dim sp As System.IServiceProvider = GetServiceProvider()
 
                 Dim vsFrameworkMultiTargeting As IVsFrameworkMultiTargeting = TryCast(sp.GetService(GetType(SVsFrameworkMultiTargeting)), IVsFrameworkMultiTargeting)
+                Dim slnSvc As IVsSolution = TryCast(sp.GetService(GetType(SVsSolution)), IVsSolution)
+
+                Dim hier As IVsHierarchy = Nothing
+                Dim isSdkProject = False
+                If slnSvc.GetProjectOfUniqueName(DTEProject.UniqueName, hier) = 0 Then
+                    isSdkProject = hier.IsCapabilityMatch("CPS")
+                End If
 
                 If vsFrameworkMultiTargeting IsNot Nothing Then
                     Dim currentFrameworkName As FrameworkName = GetCurrentFrameworkName(DTEProject)
@@ -687,7 +682,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                     targetFrameworkSupported = True
 
                     Dim supportedTargetFrameworksDescriptor As PropertyDescriptor = GetPropertyDescriptor("SupportedTargetFrameworks")
-                    Dim supportedFrameworks As IEnumerable(Of TargetFrameworkMoniker) = TargetFrameworkMoniker.GetSupportedTargetFrameworkMonikers(vsFrameworkMultiTargeting, DTEProject, supportedTargetFrameworksDescriptor)
+                    Dim supportedFrameworks As IEnumerable(Of TargetFrameworkMoniker) = TargetFrameworkMoniker.GetSupportedTargetFrameworkMonikers(vsFrameworkMultiTargeting, DTEProject, isSdkProject, supportedTargetFrameworksDescriptor)
 
                     For Each supportedFramework As TargetFrameworkMoniker In supportedFrameworks
                         If Me.ValidateTargetFrameworkMoniker(supportedFramework.Moniker) Then
@@ -700,6 +695,12 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                     Next
 
                 End If
+
+                ' Put back previous value
+                If Not IsNothing(selectedItem) Then
+                    Me.TargetFramework.Text = selectedItem
+                End If
+
             Catch ex As Exception
                 targetFrameworkSupported = False
                 Me.TargetFramework.Items.Clear()
@@ -709,6 +710,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 Me.TargetFramework.Enabled = False
             End If
         End Sub
+
         Private Function SetTargetFSharpCore(ByVal control As Control, ByVal prop As PropertyDescriptor, ByVal value As Object) As Boolean
             Dim combobox As ComboBox = CType(control, ComboBox)
             combobox.SelectedIndex = INDEX_INVALID

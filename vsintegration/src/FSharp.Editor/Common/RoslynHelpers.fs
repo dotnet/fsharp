@@ -10,11 +10,12 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.VisualStudio.FSharp.LanguageService
+open FSharp.Compiler
+open FSharp.Compiler.Layout
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
+open Microsoft.VisualStudio.FSharp.Editor.Logging
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<RequireQualifiedAccess>]
 module internal RoslynHelpers =
@@ -129,14 +130,6 @@ module internal RoslynHelpers =
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation  :> Task
 
-    let private TheSupportedDiagnostics =
-        // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
-        let dummyDescriptors = 
-           [| for i in 0 .. 10000 -> DiagnosticDescriptor(sprintf "FS%04d" i, String.Empty, String.Empty, String.Empty, DiagnosticSeverity.Error, true, null, null) |]
-        ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptors)
-
-    let SupportedDiagnostics() = TheSupportedDiagnostics
-
     let ConvertError(error: FSharpErrorInfo, location: Location) =
         // Normalize the error message into the same format that we will receive it from the compiler.
         // This ensures that IntelliSense and Compiler errors in the 'Error List' are de-duplicated.
@@ -149,7 +142,7 @@ module internal RoslynHelpers =
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
         let customTags = 
             match error.ErrorNumber with
-            | 1182 -> DiagnosticCustomTags.Unnecessary
+            | 1182 -> FSharpDiagnosticCustomTags.Unnecessary
             | _ -> null
         let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
         Diagnostic.Create(descriptor, location)
@@ -160,6 +153,16 @@ module internal RoslynHelpers =
         let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
         Location.Create(filePath, textSpan, linePositionSpan)
 
+    let StartAsyncSafe cancellationToken context computation =
+        let computation =
+            async {
+                try
+                    return! computation
+                with e ->
+                    logExceptionWithContext(e, context)
+                    return Unchecked.defaultof<_>
+            }
+        Async.Start (computation, cancellationToken)
 
 module internal OpenDeclarationHelper =
     /// <summary>
@@ -172,9 +175,15 @@ module internal OpenDeclarationHelper =
         let mutable minPos = None
 
         let insert line lineStr (sourceText: SourceText) : SourceText =
-            let pos = sourceText.Lines.[line].Start
+            let ln = sourceText.Lines.[line]
+            let pos = ln.Start
             minPos <- match minPos with None -> Some pos | Some oldPos -> Some (min oldPos pos)
-            sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + Environment.NewLine))
+
+            // find the line break characters on the previous line to use, Environment.NewLine should not be used
+            // as it makes assumptions on the line endings in the source.
+            let lineBreak = ln.Text.ToString(TextSpan(ln.End, ln.EndIncludingLineBreak - ln.End))
+
+            sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + lineBreak))
 
         let getLineStr line = sourceText.Lines.[line].ToString().Trim()
         let pos = ParsedInput.adjustInsertionPoint getLineStr ctx

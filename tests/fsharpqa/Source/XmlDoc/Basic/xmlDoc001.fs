@@ -1,7 +1,7 @@
 // #XMLDoc
 // Regression test for FSHARP1.0:850
 // Simple /// is xmldoc
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light 
 
@@ -17,7 +17,7 @@ let test =
 #if WITHXMLVERIFICATION
     let xml = new System.Xml.XmlDocument()
     xml.Load(xmlname);
-    if System.String.Compare(xml.GetElementsByTagName("summary").Item(0).FirstChild.Value, System.Environment.NewLine ^ " I'm an xml comment!" ^ System.Environment.NewLine) = 0 then 0 else 1
+    if System.String.Compare(xml.GetElementsByTagName("summary").Item(0).FirstChild.Value, System.Environment.NewLine + " I'm an xml comment!" + System.Environment.NewLine) = 0 then 0 else 1
 #else
     0 
 #endif

@@ -1,39 +1,44 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.NameResolution
+open FSharp.Compiler
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Import
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.NameResolution
 
 // Implementation details used by other code in the compiler    
-module internal Impl = 
-    type internal cenv = 
-        new : TcGlobals * thisCcu:CcuThunk * tcImports: TcImports -> cenv
-        member amap: Import.ImportMap
-        member g: TcGlobals
+type internal SymbolEnv = 
+    new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports -> SymbolEnv
+    new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
+    member amap: ImportMap
+    member g: TcGlobals
 
 /// Indicates the accessibility of a symbol, as seen by the F# language
 type public FSharpAccessibility = 
     internal new: Accessibility * ?isProtected: bool -> FSharpAccessibility
 
-    /// Indicates the symbol has public accessibility
-    member IsPublic : bool
+    /// Indicates the symbol has public accessibility.
+    member IsPublic: bool
 
-    /// Indicates the symbol has private accessibility
-    member IsPrivate : bool
+    /// Indicates the symbol has private accessibility.
+    member IsPrivate: bool
 
-    /// Indicates the symbol has internal accessibility
-    member IsInternal : bool
+    /// Indicates the symbol has internal accessibility.
+    member IsInternal: bool
+
+    /// Indicates the symbol has protected accessibility.
+    member IsProtected: bool
 
     /// The underlying Accessibility
-    member internal Contents : Accessibility
+    member internal Contents: Accessibility
 
 
 /// Represents the information needed to format types and other information in a style
@@ -45,14 +50,16 @@ type [<Class>] public FSharpDisplayContext =
     internal new : denv: (TcGlobals -> Tastops.DisplayEnv) -> FSharpDisplayContext
     static member Empty: FSharpDisplayContext
 
+    member WithShortTypeNames: bool -> FSharpDisplayContext
+
 /// Represents a symbol in checked F# source code or a compiled .NET component. 
 ///
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase
 /// FSharpField, FSharpGenericParameter, FSharpStaticParameter, FSharpMemberOrFunctionOrValue, FSharpParameter,
 /// or FSharpActivePatternCase.
 type [<Class>] public FSharpSymbol = 
-    /// Internal use only. 
-    static member internal Create : g:TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * item:NameResolution.Item -> FSharpSymbol
+    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: NameResolution.Item -> FSharpSymbol
+    static member internal Create: cenv: SymbolEnv * item: NameResolution.Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
     member IsAccessible: FSharpAccessibilityRights -> bool
@@ -86,7 +93,12 @@ type [<Class>] public FSharpSymbol =
     ///
     /// This is the relation used by GetUsesOfSymbol and GetUsesOfSymbolInFile.
     member IsEffectivelySameAs : other: FSharpSymbol -> bool
+
+    /// A hash compatible with the IsEffectivelySameAs relation
+    member GetEffectivelySameAsHash : unit -> int
+
     member IsExplicitlySuppressed : bool
+
     static member GetAccessibility : FSharpSymbol -> FSharpAccessibility option
 
 /// Represents an assembly as seen by the F# language
@@ -116,7 +128,7 @@ and [<Class>] public FSharpAssembly =
 /// Represents an inferred signature of part of an assembly as seen by the F# language
 and [<Class>] public FSharpAssemblySignature = 
 
-    internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * topAttribs: TypeChecker.TopAttribs option * contents: ModuleOrNamespaceType -> FSharpAssemblySignature
+    internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * topAttribs: TypeChecker.TopAttribs option * contents: ModuleOrNamespaceType -> FSharpAssemblySignature
 
     /// The (non-nested) module and type definitions in this signature
     member Entities:  IList<FSharpEntity>
@@ -133,11 +145,11 @@ and [<Class>] public FSharpAssemblySignature =
 and [<Class>] public FSharpEntity = 
     inherit FSharpSymbol
     
-    internal new : Impl.cenv * EntityRef -> FSharpEntity
+    internal new : SymbolEnv * EntityRef -> FSharpEntity
 
-    //   /// Return the FSharpEntity corresponding to a .NET type
-    // static member FromType : System.Type -> FSharpEntity
-
+    /// Get the enclosing entity for the definition
+    member DeclaringEntity : FSharpEntity option
+    
     /// Get the name of the type or module, possibly with `n mangling  
     member LogicalName: string
 
@@ -293,7 +305,6 @@ and [<Class>] public FSharpEntity =
     /// Get the cases of a union type
     member UnionCases : IList<FSharpUnionCase>
 
-
     /// Indicates if the type is a delegate with the given Invoke signature 
     member FSharpDelegateSignature : FSharpDelegateSignature
 
@@ -340,7 +351,7 @@ and [<Class>] public FSharpAbstractParameter =
 
 /// Represents the signature of an abstract slot of a class or interface 
 and [<Class>] public FSharpAbstractSignature =
-    internal new : Impl.cenv * SlotSig -> FSharpAbstractSignature
+    internal new : SymbolEnv * SlotSig -> FSharpAbstractSignature
 
     /// Get the arguments of the abstract slot
     member AbstractArguments : IList<IList<FSharpAbstractParameter>>
@@ -363,7 +374,7 @@ and [<Class>] public FSharpAbstractSignature =
 /// A subtype of FSharpSymbol that represents a union case as seen by the F# language
 and [<Class>] public FSharpUnionCase =
     inherit FSharpSymbol
-    internal new : Impl.cenv * UnionCaseRef -> FSharpUnionCase
+    internal new : SymbolEnv * UnionCaseRef -> FSharpUnionCase
 
     /// Get the name of the union case 
     member Name: string 
@@ -395,17 +406,36 @@ and [<Class>] public FSharpUnionCase =
     /// Indicates if the union case is for a type in an unresolved assembly 
     member IsUnresolved : bool
 
+/// A subtype of FSharpSymbol that represents a record or union case field as seen by the F# language
+and [<Class>] public FSharpAnonRecordTypeDetails =
+    
+    /// The assembly where the compiled form of the anonymous type is defined
+    member Assembly : FSharpAssembly
 
+    /// Names of any enclosing types of the compiled form of the anonymous type (if the anonymous type was defined as a nested type)
+    member EnclosingCompiledTypeNames : string list
+
+    /// The name of the compiled form of the anonymous type
+    member CompiledName : string 
+
+    /// The sorted labels of the anonymous type
+    member SortedFieldNames : string[]
 
 /// A subtype of FSharpSymbol that represents a record or union case field as seen by the F# language
 and [<Class>] public FSharpField =
 
     inherit FSharpSymbol
-    internal new : Impl.cenv * RecdFieldRef -> FSharpField
-    internal new : Impl.cenv * UnionCaseRef * int -> FSharpField
+    internal new : SymbolEnv * RecdFieldRef -> FSharpField
+    internal new : SymbolEnv * UnionCaseRef * int -> FSharpField
 
-    /// Get the declaring entity of this field
-    member DeclaringEntity: FSharpEntity
+    /// Get the declaring entity of this field, if any. Fields from anonymous types do not have a declaring entity
+    member DeclaringEntity: FSharpEntity option
+
+    /// Is this a field from an anonymous record type?
+    member IsAnonRecordField: bool
+
+    /// If the field is from an anonymous record type then get the details of the field including the index in the sorted array of fields
+    member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType[] * int
 
     /// Indicates if the field is declared 'static'
     member IsMutable: bool
@@ -424,6 +454,10 @@ and [<Class>] public FSharpField =
 
     /// Indicates a compiler generated field, not visible to Intellisense or name resolution 
     member IsCompilerGenerated: bool
+
+    /// Indicates if the field name was generated by compiler (e.g. ItemN names in union cases and DataN in exceptions).
+    /// This API returns true for source defined symbols only.
+    member IsNameGenerated: bool
 
     /// Get the in-memory XML documentation for the field, used when code is checked in-memory
     member XmlDoc: IList<string>
@@ -464,7 +498,7 @@ and [<Class>] public FSharpAccessibilityRights =
 and [<Class>] public FSharpGenericParameter = 
 
     inherit FSharpSymbol
-    internal new : Impl.cenv * Typar -> FSharpGenericParameter
+    internal new : SymbolEnv * Typar -> FSharpGenericParameter
 
     /// Get the name of the generic parameter 
     member Name: string
@@ -634,8 +668,8 @@ and [<RequireQualifiedAccess>] public FSharpInlineAnnotation =
 and [<Class>] public FSharpMemberOrFunctionOrValue = 
 
     inherit FSharpSymbol
-    internal new : Impl.cenv * ValRef -> FSharpMemberOrFunctionOrValue
-    internal new : Impl.cenv * Infos.MethInfo -> FSharpMemberOrFunctionOrValue
+    internal new : SymbolEnv * ValRef -> FSharpMemberOrFunctionOrValue
+    internal new : SymbolEnv * Infos.MethInfo -> FSharpMemberOrFunctionOrValue
 
     /// Indicates if the member, function or value is in an unresolved assembly 
     member IsUnresolved : bool
@@ -815,6 +849,9 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
 
     /// Indicates if this is a constructor.
     member IsConstructor : bool
+    
+    /// Format the type using the rules of the given display context
+    member FormatLayout : context: FSharpDisplayContext -> Layout
 
 
 /// A subtype of FSharpSymbol that represents a parameter 
@@ -839,6 +876,9 @@ and [<Class>] public FSharpParameter =
 
     /// Indicate this is an out argument
     member IsOutArg: bool
+
+    /// Indicate this is an in argument
+    member IsInArg: bool
 
     /// Indicate this is an optional argument
     member IsOptionalArg: bool
@@ -888,8 +928,8 @@ and [<Class>] public FSharpActivePatternGroup =
 and [<Class>] public FSharpType =
 
     /// Internal use only. Create a ground type.
-    internal new : g:TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * typ:TType -> FSharpType
-    internal new : Impl.cenv * typ:TType -> FSharpType
+    internal new : g:TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * ty:TType -> FSharpType
+    internal new : SymbolEnv * ty:TType -> FSharpType
 
     /// Indicates this is a named type in an unresolved assembly 
     member IsUnresolved : bool
@@ -918,6 +958,12 @@ and [<Class>] public FSharpType =
     /// Indicates if the type is a function type. The GenericArguments property returns the domain and range of the function type.
     member IsFunctionType : bool
 
+    /// Indicates if the type is an anonymous record type. The GenericArguments property returns the type instantiation of the anonymous record type
+    member IsAnonRecordType: bool
+
+    /// Get the details of the anonymous record type.
+    member AnonRecordTypeDetails: FSharpAnonRecordTypeDetails
+
     /// Indicates if the type is a variable type, whether declared, generalized or an inference type parameter  
     member IsGenericParameter : bool
 
@@ -926,6 +972,9 @@ and [<Class>] public FSharpType =
 
     /// Format the type using the rules of the given display context
     member Format : context: FSharpDisplayContext -> string
+
+    /// Format the type using the rules of the given display context
+    member FormatLayout : context: FSharpDisplayContext -> Layout
 
     /// Instantiate generic type parameters in a type
     member Instantiate : (FSharpGenericParameter * FSharpType) list -> FSharpType
@@ -940,7 +989,7 @@ and [<Class>] public FSharpType =
 
     /// Adjust the type by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.
-    static member Prettify : typ:FSharpType -> FSharpType
+    static member Prettify : ty:FSharpType -> FSharpType
 
     /// Adjust a group of types by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.
@@ -988,21 +1037,25 @@ and [<Class>] public FSharpAttribute =
     member Format : context: FSharpDisplayContext -> string
 
 /// Represents open declaration in F# code.
+[<Sealed>]
 type public FSharpOpenDeclaration =
-    { /// Idents.
-      LongId: Ident list 
-      
-      /// Range of the open declaration.
-      Range: range option
 
-      /// Modules or namespaces which is opened with this declaration.
-      Modules: FSharpEntity list 
+    internal new : longId: Ident list * range: range option * modules: FSharpEntity list * appliedScope: range * isOwnNamespace: bool -> FSharpOpenDeclaration
+
+    /// Idents.
+    member LongId: Ident list 
       
-      /// Scope in which open declaration is visible.
-      AppliedScope: range 
+    /// Range of the open declaration.
+    member Range: range option
+
+    /// Modules or namespaces which is opened with this declaration.
+    member Modules: FSharpEntity list 
       
-      /// If it's `namespace Xxx.Yyy` declaration.
-      IsOwnNamespace: bool }
+    /// Scope in which open declaration is visible.
+    member AppliedScope: range 
+      
+    /// If it's `namespace Xxx.Yyy` declaration.
+    member IsOwnNamespace: bool
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

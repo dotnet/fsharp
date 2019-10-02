@@ -11,10 +11,6 @@ namespace Microsoft.FSharp.Control
     open System.Reflection
     open System.Diagnostics
 
-#if FX_RESHAPED_REFLECTION
-    open ReflectionAdapters
-#endif
-
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() = 
         let mutable multicast : System.Delegate = null
@@ -147,5 +143,3 @@ namespace Microsoft.FSharp.Control
                    (e :?> IEvent<_,_>).AddHandler(h)
                    { new System.IDisposable with 
                         member x.Dispose() = (e :?> IEvent<_,_>).RemoveHandler(h) } }
-
-

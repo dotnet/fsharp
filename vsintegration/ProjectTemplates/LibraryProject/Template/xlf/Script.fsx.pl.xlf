@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="pl" original="../Script.fsx">
     <body>
       <trans-unit id="LearnMore">
-        <source>Learn more about F# at http://fsharp.org</source>
-        <target state="translated">Dowiedz się więcej na temat języka F# pod adresem http://fsharp.org</target>
+        <source>Learn more about F# at https://fsharp.org</source>
+        <target state="translated">Dowiedz się więcej o języku F# na stronie https://fsharp.org</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeTutorial">
