@@ -50,6 +50,8 @@ type [<Class>] public FSharpDisplayContext =
     internal new : denv: (TcGlobals -> Tastops.DisplayEnv) -> FSharpDisplayContext
     static member Empty: FSharpDisplayContext
 
+    member WithShortTypeNames: bool -> FSharpDisplayContext
+
 /// Represents a symbol in checked F# source code or a compiled .NET component. 
 ///
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase

@@ -12,17 +12,17 @@ type Server(sendingStream: Stream, receivingStream: Stream) =
     let converter = JsonOptionConverter() // special handler to convert between `Option<'T>` and `obj/null`.
     do formatter.JsonSerializer.Converters.Add(converter)
     let handler = new HeaderDelimitedMessageHandler(sendingStream, receivingStream, formatter)
-    let state = State()
-    let methods = Methods(state)
+    let methods = Methods()
     let rpc = new JsonRpc(handler, methods)
+    do methods.State.JsonRpc <- Some rpc
 
     member __.StartListening() =
         rpc.StartListening()
 
     member __.WaitForExitAsync() =
         async {
-            do! Async.AwaitEvent (state.Shutdown)
-            do! Async.AwaitEvent (state.Exit)
+            do! Async.AwaitEvent (methods.State.Shutdown)
+            do! Async.AwaitEvent (methods.State.Exit)
         }
 
     interface IDisposable with
