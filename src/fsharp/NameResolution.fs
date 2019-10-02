@@ -428,27 +428,7 @@ type ResultCollectionSettings =
 
 /// Allocate the next extension method priority. This is an incrementing sequence of integers
 /// during type checking.
-let NextExtensionMethodPriority() = uint64 (newStamp())    if isAppTy amap.g declaringType then 
-        let declaringEntity = tcrefOfAppTy amap.g declaringType
-        if declaringEntity.IsLocalRef then
-            mbase.PUntaint((fun p ->
-                match p.Handle with
-                | :? TastReflect.ReflectMethodDefinition as m -> Some m.Metadata
-                | _ -> None
-                ), m)
-        else if ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
-            match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, methodName)) with 
-            | true, vref -> Some vref
-            | _ -> 
-            match amap.g.knownFSharpCoreModules.TryGetValue declaringEntity.LogicalName with
-            | true, modRef -> 
-                modRef.ModuleOrNamespaceType.AllValsByLogicalName 
-                |> Seq.tryPick (fun (KeyValue(_, v)) -> if (v.CompiledName amap.g.CompilerGlobalState) = methodName then Some (mkNestedValRef modRef v) else None)
-            | _ -> None
-        else
-            None
-    else
-        None
+let NextExtensionMethodPriority() = uint64 (newStamp())
 
 /// Get the info for all the .NET-style extension members listed as static members in the type.
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =

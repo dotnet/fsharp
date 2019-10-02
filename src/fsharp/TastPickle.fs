@@ -125,12 +125,6 @@ type WriterState =
     mutable isStructThisArgPos : bool
     ofile : string
     /// Indicates if we are using in-memory format, where we store XML docs as we
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
-        | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
-        | TType_var _            -> z
-        | TType_measure _          -> zll
     oInMem : bool
   }
 let pfailwith st str = ffailwith st.ofile str
