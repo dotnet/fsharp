@@ -18,7 +18,9 @@ if errorlevel 1 (
 :: don't care if this fails
 dotnet build-server shutdown >NUL 2>&1
 
-packages\FAKE\tools\FAKE.exe build.fsx %*
+dotnet tool install fake-cli --tool-path .\tools
+.\tools\fake.exe build.fsx %*
+
 if errorlevel 1 (
   endlocal
   exit /b %errorlevel%
