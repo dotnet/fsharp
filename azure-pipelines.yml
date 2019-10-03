@@ -298,17 +298,17 @@ stages:
             continueOnError: true
             condition: always()
 
-        - job: Linux_FCS
-          pool:
-            vmImage: ubuntu-16.04
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./fcs/build.sh Build
-            displayName: Build
+        #- job: Linux_FCS
+        #  pool:
+        #    vmImage: ubuntu-16.04
+        #  variables:
+        #  - name: _SignType
+        #    value: Test
+        #  steps:
+        #  - checkout: self
+        #    clean: true
+        #  - script: ./fcs/build.sh Build
+        #    displayName: Build
 
         - job: MacOS_FCS
           pool:
