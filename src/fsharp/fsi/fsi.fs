@@ -1141,6 +1141,7 @@ type internal FsiDynamicCompiler
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
 
         // Find all new declarations the EvaluationListener
+        let mutable lastValue = None
         try
             let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports, declaredImpls)
             let contentFile = contents.ImplementationFiles.[0]
@@ -1165,20 +1166,21 @@ type internal FsiDynamicCompiler
                         let symbol = FSharpSymbol.Create(cenv, v.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
                         fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
+                        lastValue <- fsiValueOpt
                     | FSharpImplementationFileDeclaration.Entity (e,_) ->
                         // Report a top-level module or namespace definition
                         let symbol = FSharpSymbol.Create(cenv, e.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
                         fsi.TriggerEvaluation (None, symbolUse, decl)
+                        lastValue <- None
                     | FSharpImplementationFileDeclaration.InitAction _ ->
                         // Top level 'do' bindings are not reported as incremental declarations
-                        ()
+                        lastValue <- None
             | _ -> ()
         with _ -> ()
 
-        newState
-      
-     
+        newState, Completed lastValue
+
     /// Evaluate the given expression and produce a new interactive state.
     member fsiDynamicCompiler.EvalParsedExpression (ctok, errorLogger: ErrorLogger, istate, expr: SynExpr) =
         let tcConfig = TcConfig.Create (tcConfigB, validate=false)
@@ -1188,7 +1190,7 @@ type internal FsiDynamicCompiler
         let defs = fsiDynamicCompiler.BuildItBinding expr
 
         // Evaluate the overall definitions.
-        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs)
+        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs) |> fst
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with 
         | NameResolution.Item.Value vref -> 
@@ -1390,7 +1392,6 @@ type internal FsiDynamicCompiler
 //----------------------------------------------------------------------------
 
 type ControlEventHandler = delegate of int -> bool
-
 
 // One strange case: when a TAE happens a strange thing 
 // occurs the next read from stdin always returns
@@ -1757,6 +1758,8 @@ type internal FsiInteractionProcessor
 
     let referencedAssemblies = Dictionary<string, DateTime>()
 
+    let assemblyReferencedEvent = Control.Event<string>()
+
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
@@ -1842,7 +1845,7 @@ type internal FsiInteractionProcessor
 
             | IDefns (defs,_) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
-                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
+                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
@@ -2155,7 +2158,7 @@ type internal FsiInteractionProcessor
     /// Send a dummy interaction through F# Interactive, to ensure all the most common code generation paths are 
     /// JIT'ed and ready for use.
     member __.LoadDummyInteraction(ctok, errorLogger) =
-        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []), Completed None) |> fst)
+        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []) |> fst, Completed None) |> fst)
         
     member __.EvalInteraction(ctok, sourceText, scriptFileName, errorLogger) =
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
@@ -2293,6 +2296,8 @@ type internal FsiInteractionProcessor
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
+
+    member __.AssemblyReferenceAdded = assemblyReferencedEvent.Publish
 
 
 //----------------------------------------------------------------------------
