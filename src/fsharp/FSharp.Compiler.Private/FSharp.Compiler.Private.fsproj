@@ -16,14 +16,6 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
-    <Tailcalls>true</Tailcalls>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <Tailcalls>true</Tailcalls>
-  </PropertyGroup>
-
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <PropertyGroup>
       <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
@@ -224,7 +216,7 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith(netstandard))">
+    <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith('netstandard'))">
       <Link>AbsIL\ilsign.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilnativeres.fsi">
@@ -524,10 +516,15 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
-
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager.Integration.fsi">
+      <Link>Driver\DependencyManager.Integration.fsi</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager.Integration.fs">
+      <Link>Driver\DependencyManager.Integration.fs</Link>
     </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
@@ -641,6 +638,9 @@
     <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
     </Compile>
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
+      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
     <Compile Include="..\service\ExternalSymbol.fsi">
       <Link>Service/ExternalSymbol.fsi</Link>
     </Compile>
@@ -705,6 +705,7 @@
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
+
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />

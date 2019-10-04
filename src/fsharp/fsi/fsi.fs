@@ -964,6 +964,8 @@ type internal FsiDynamicCompiler
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
 
+    let mutable needsPackageResolution = false
+
     let generateDebugInfo = tcConfigB.debuginfo
 
     let valuePrinter = FsiValuePrinter(fsi, tcGlobals, generateDebugInfo, resolveAssemblyRef, outWriter)
@@ -1139,44 +1141,50 @@ type internal FsiDynamicCompiler
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
 
         // Find all new declarations the EvaluationListener
+        let mutable itValue = None
         try
             let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports, declaredImpls)
             let contentFile = contents.ImplementationFiles.[0]
+
             // Skip the "FSI_NNNN"
-            match contentFile.Declarations with 
-            | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] -> 
+            match contentFile.Declarations with
+            | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] ->
                 let cenv = SymbolEnv(newState.tcGlobals, newState.tcState.Ccu, Some newState.tcState.CcuSig, newState.tcImports)
-                for decl in modDecls do 
-                    match decl with 
+                for decl in modDecls do
+                    match decl with
                     | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (v,_,_) ->
                         // Report a top-level function or value definition
-                      if v.IsModuleValueOrMember && not v.IsMember then 
-                        let fsiValueOpt = 
-                            match v.Item with 
-                            | Item.Value vref ->
-                                let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
-                                match optValue with
-                                | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(cenv, vref.Type)))
-                                | None -> None 
-                            | _ -> None
+                        if v.IsModuleValueOrMember && not v.IsMember then
+                            let fsiValueOpt =
+                                match v.Item with
+                                | Item.Value vref ->
+                                    let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
+                                    match optValue with
+                                    | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(cenv, vref.Type)))
+                                    | None -> None 
+                                | _ -> None
 
-                        let symbol = FSharpSymbol.Create(cenv, v.Item)
-                        let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
-                        fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
+                            if v.CompiledName = "it" then
+                                itValue <- fsiValueOpt
+
+                            let symbol = FSharpSymbol.Create(cenv, v.Item)
+                            let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
+                            fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
+
                     | FSharpImplementationFileDeclaration.Entity (e,_) ->
                         // Report a top-level module or namespace definition
                         let symbol = FSharpSymbol.Create(cenv, e.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
                         fsi.TriggerEvaluation (None, symbolUse, decl)
+
                     | FSharpImplementationFileDeclaration.InitAction _ ->
                         // Top level 'do' bindings are not reported as incremental declarations
                         ()
             | _ -> ()
         with _ -> ()
 
-        newState
-      
-     
+        newState, Completed itValue
+
     /// Evaluate the given expression and produce a new interactive state.
     member fsiDynamicCompiler.EvalParsedExpression (ctok, errorLogger: ErrorLogger, istate, expr: SynExpr) =
         let tcConfig = TcConfig.Create (tcConfigB, validate=false)
@@ -1186,13 +1194,13 @@ type internal FsiDynamicCompiler
         let defs = fsiDynamicCompiler.BuildItBinding expr
 
         // Evaluate the overall definitions.
-        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs)
+        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs) |> fst
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with 
         | NameResolution.Item.Value vref -> 
              if not tcConfig.noFeedback then 
                  valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, istate.emEnv, istate.ilxGenerator, vref.Deref)
-             
+
              /// Clear the value held in the previous "it" binding, if any, as long as it has never been referenced.
              match prevIt with
              | Some prevVal when not prevVal.Deref.HasBeenReferenced -> 
@@ -1253,6 +1261,53 @@ type internal FsiDynamicCompiler
         resolutions,
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
 
+
+    member __.EvalDependencyManagerTextFragment (packageManager:DependencyManagerIntegration.IDependencyManagerProvider,m,path: string) =
+        let path = DependencyManagerIntegration.removeDependencyManagerKey packageManager.Key path
+
+        match tcConfigB.packageManagerLines |> Map.tryFind packageManager.Key with
+        | Some lines -> tcConfigB.packageManagerLines <- Map.add packageManager.Key (lines @ [false, path, m]) tcConfigB.packageManagerLines
+        | _ -> tcConfigB.packageManagerLines <- Map.add packageManager.Key [false, path, m] tcConfigB.packageManagerLines
+
+        needsPackageResolution <- true
+
+    member fsiDynamicCompiler.CommitDependencyManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger) = 
+        if not needsPackageResolution then istate else
+        needsPackageResolution <- false
+
+        tcConfigB.packageManagerLines |> Seq.fold(fun istate kv ->
+            let inline snd3 (_, b, _) = b
+            let packageManagerKey, packageManagerLines = kv.Key, kv.Value
+            match packageManagerLines with
+            | [] -> istate
+            | (_, _, m)::_ ->
+                match DependencyManagerIntegration.tryFindDependencyManagerByKey tcConfigB.compilerToolPaths tcConfigB.outputDir m packageManagerKey with
+                | None ->
+                    errorR(DependencyManagerIntegration.createPackageManagerUnknownError tcConfigB.compilerToolPaths tcConfigB.outputDir packageManagerKey m)
+                    istate
+                | Some packageManager ->
+                    let packageManagerTextLines = packageManagerLines |> List.map snd3
+                    let removeErrorLinesFromScript () =
+                        tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
+                    try
+                        match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx" m packageManagerTextLines with
+                        | None -> istate // error already reported
+                        | Some (succeeded, generatedScripts, additionalIncludeFolders) ->    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                            if succeeded then
+                                tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
+                            else
+                                removeErrorLinesFromScript ()
+                            for folder in additionalIncludeFolders do 
+                                tcConfigB.AddIncludePath(m, folder, "")
+                            if generatedScripts.Length > 0 then
+                                fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, generatedScripts, lexResourceManager, errorLogger)
+                            else istate
+                    with _ ->
+                        // An exception occured during processing, so remove the lines causing the error from the package manager list.
+                        removeErrorLinesFromScript ()
+                        reraise ()
+            ) istate
+
     member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
         WithImplicitHome
            (tcConfigB, directoryName sourceFile) 
@@ -1260,6 +1315,7 @@ type internal FsiDynamicCompiler
                ProcessMetaCommandsFromInput 
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
                     (fun st (m,nm) -> snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, nm))),
+                    (fun st (packageManagerPrefix,m,nm) -> fsiDynamicCompiler.EvalDependencyManagerTextFragment (packageManagerPrefix,m,nm); st),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
       
@@ -1340,7 +1396,6 @@ type internal FsiDynamicCompiler
 //----------------------------------------------------------------------------
 
 type ControlEventHandler = delegate of int -> bool
-
 
 // One strange case: when a TAE happens a strange thing 
 // occurs the next read from stdin always returns
@@ -1707,6 +1762,8 @@ type internal FsiInteractionProcessor
 
     let referencedAssemblies = Dictionary<string, DateTime>()
 
+    let assemblyReferencedEvent = Control.Event<string>()
+
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
@@ -1780,37 +1837,57 @@ type internal FsiInteractionProcessor
 
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
-        istate |> InteractiveCatch errorLogger (fun istate -> 
+        istate |> InteractiveCatch errorLogger (fun istate ->
             match action with 
             | IDefns ([  ],_) ->
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 istate,Completed None
+
             | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],_) ->
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
+
             | IDefns (defs,_) -> 
-                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
+                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
-                let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
-                resolutions |> List.iter (fun ar -> 
-                    let format = 
-                        if tcConfig.shadowCopyReferences then
-                            let resolvedPath = ar.resolvedPath.ToUpperInvariant()
-                            let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
-                            match referencedAssemblies.TryGetValue resolvedPath with
-                            | false, _ -> 
-                                referencedAssemblies.Add(resolvedPath, fileTime)
-                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                            | true, time when time <> fileTime ->
-                                FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
-                            | _ ->
-                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                        else
-                            FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
-                    fsiConsoleOutput.uprintnfnn "%s" format)
-                istate,Completed None
+            | IHash (ParsedHashDirective(("reference" | "r"), [path], m), _) -> 
+                match DependencyManagerIntegration.tryFindDependencyManagerInPath tcConfigB.compilerToolPaths tcConfigB.outputDir m (path:string) with
+                | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager ->
+                   if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                       fsiDynamicCompiler.EvalDependencyManagerTextFragment(packageManager, m, path)
+                       istate,Completed None
+                   else
+                       errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                       istate, Completed None
+
+                | DependencyManagerIntegration.ReferenceType.UnknownType -> 
+                    // error already reported
+                    istate,Completed None
+
+                | DependencyManagerIntegration.ReferenceType.Library path ->
+                    let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
+                    resolutions |> List.iter (fun ar -> 
+                        let format =
+                            if tcConfig.shadowCopyReferences then
+                                let resolvedPath = ar.resolvedPath.ToUpperInvariant()
+                                let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
+                                match referencedAssemblies.TryGetValue resolvedPath with
+                                | false, _ -> 
+                                    referencedAssemblies.Add(resolvedPath, fileTime)
+                                    FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                                | true, time when time <> fileTime ->
+                                    FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
+                                | _ ->
+                                    FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                            else
+                                FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
+                        fsiConsoleOutput.uprintnfnn "%s" format)
+                    istate,Completed None
 
             | IHash (ParsedHashDirective("I",[path],m),_) -> 
                 tcConfigB.AddIncludePath (m,path, tcConfig.implicitIncludeDir)
@@ -2085,7 +2162,7 @@ type internal FsiInteractionProcessor
     /// Send a dummy interaction through F# Interactive, to ensure all the most common code generation paths are 
     /// JIT'ed and ready for use.
     member __.LoadDummyInteraction(ctok, errorLogger) =
-        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []), Completed None) |> fst)
+        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []) |> fst, Completed None) |> fst)
         
     member __.EvalInteraction(ctok, sourceText, scriptFileName, errorLogger) =
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
@@ -2223,6 +2300,8 @@ type internal FsiInteractionProcessor
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
+
+    member __.AssemblyReferenceAdded = assemblyReferencedEvent.Publish
 
 
 //----------------------------------------------------------------------------
@@ -2425,7 +2504,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef) 
 
-    let fsiInterruptController = FsiInterruptController(fsiOptions, fsiConsoleOutput)
+    let fsiInterruptController = FsiInterruptController(fsiOptions, fsiConsoleOutput) 
 
     let uninstallMagicAssemblyResolution = MagicAssemblyResolution.Install(tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput)
 
