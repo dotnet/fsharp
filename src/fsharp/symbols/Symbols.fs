@@ -2201,7 +2201,7 @@ and FSharpType(cenv, ty:TType) =
 #if !NO_EXTENSIONTYPING
             | TType_staticarg _ -> failwith "" // FS-1023 TODO
 #endif
-        hashType typ
+        hashType ty
 
     member x.Format(denv: FSharpDisplayContext) = 
        protect <| fun () -> 

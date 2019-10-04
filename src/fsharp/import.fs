@@ -61,7 +61,7 @@ let CanImportILScopeRef (env: ImportMap) m scoref =
     match scoref with 
     | ILScopeRef.Local    -> true
     | ILScopeRef.Module _ -> true
-    | ILScopeRef.Assembly assemblyRef -> 
+    | ILScopeRef.Assembly _ -> 
 
         // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
         // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
@@ -611,7 +611,7 @@ let ImportILAssembly(amap:(unit -> ImportMap), m, auxModuleLoader, ilScopeRef, s
             ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)
             // TODO: The error needs to fixed / updated.
             ImportQualifiedTypeNameAsTypeValue = (fun _ -> failwith "Feck what is going on here D: :D?") // (fun _ -> failwith (sprintf "ImportQualifiedTypeNameAsTypeValue: from IL assembly!? %s" sref.QualifiedName))
-            ReflectAssembly = lazy failwith (fun _ -> failwith "Feck what is going on here D: :D?") // (sprintf "ReflectAssembly: from IL assembly!? %s" sref.QualifiedName)
+            ReflectAssembly = lazy (failwith "Feck what is going on here D: :D?") // (sprintf "ReflectAssembly: from IL assembly!? %s" sref.QualifiedName)
             GetCcuBeingCompiledHack = (fun () -> None)
 #endif
             QualifiedName= Some ilScopeRef.QualifiedName

@@ -1001,11 +1001,6 @@ let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst di
     Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
     exprTy
 
-/// Build a call to the System.Object constructor taking no arguments,
-let BuildObjCtorCall (g: TcGlobals) m =
-    let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object,[])).MethodRef
-    Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,true,ilMethRef,[],[],[g.obj_ty]),[],[],m)
-
 /// Build a call to an F# method.
 ///
 /// Consume the arguments in chunks and build applications.  This copes with various F# calling signatures
