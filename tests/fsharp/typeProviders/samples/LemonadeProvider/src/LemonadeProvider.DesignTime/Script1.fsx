@@ -57,6 +57,8 @@ module AttributedRecord =
 
     let T = typeof<AttributedRecord>
     type S = TypePassing.Summarize<AttributedRecord>
+    printfn "%s" S.Name
+    printfn "%A" S.IsRecord
     check "acnkewcwpo1" S.Name T.Name
     inaccurate "acnkewcwpo2" S.Assembly_DefinedTypes_Count (Seq.length T.Assembly.DefinedTypes) 0  // INACCURACY: this is wrong value, not sure why
     inaccurate "acnkewcwpo3" S.Assembly_FullName T.FullName "script" // INACCURACY: the full name is not returned
@@ -92,7 +94,8 @@ module AttributedRecord =
    // TODO: rest of System.Type properties and methods
    // TODO: reset of FSharp Reflection methods 
 
-
+   
+(*
 // Check an generic F# record type from this assembly
 module MyGenericRecord = 
     let T = typeof<MyGenericRecord<String>>
@@ -265,3 +268,4 @@ if failures.Length > 0 then
 else   
     printfn "TEST PASSED (with some inaccuracies)"
     exit 0
+*)
