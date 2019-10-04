@@ -1,0 +1,22 @@
+source https://nuget.org/api/v2
+
+frameworks: net45, netcoreapp2.0, netstandard2.0
+
+# Add the nuget packages you use here
+nuget FSharp.Core 4.3.4
+
+nuget NETStandard.Library.NETFramework
+# nuget System.Text.Encoding.CodePages
+
+# THis lines are used by Paket to get the latest version of the Type Provider SDK files
+github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
+github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
+
+group Test
+  source https://nuget.org/api/v2
+  frameworks: net461, netcoreapp2.0
+
+  nuget NUnit 3.6.1
+  nuget NUnit.Console 3.6.1
+  nuget NUnit3TestAdapter 3.7.0 version_in_path: true
+  nuget FSharp.Core 4.3.4

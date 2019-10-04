@@ -1,0 +1,8 @@
+File:ProvidedTypes.fsi
+File:ProvidedTypes.fs
+
+FSharp.Core
+
+# put any package references here
+# Some.Package
+# System.Text.Encoding.CodePages framework: netstandard2.0,netcoreapp2.0
