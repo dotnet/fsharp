@@ -1,12 +1,10 @@
 
-This is a simple F# type provider.  It has separate design-time and runtime assemblies.
+This is a simple F# type provider.
 
 Paket is used to acquire the type provider SDK and build the nuget package (you can remove this use of paket if you like)
 
-Building:
+Running the current example script for testing the feature of FS-1023 aka pass types to TypeProviders:
 
-    .paket\paket.exe update
+    Build the F# compiler first in the root of this repo via `build.cmd -noVisualstudio`
 
-    dotnet build -c release
-
-    .paket\paket.exe pack src\LemonadeProvider.Runtime\paket.template --version 0.0.1
+    Run `run.cmd` or `run.sh` to test the TypeProvider
