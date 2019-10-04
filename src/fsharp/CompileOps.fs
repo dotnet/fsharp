@@ -55,12 +55,6 @@ open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
-#if DEBUG
-[<AutoOpen>]
-module internal CompilerService =
-    let showAssertForUnexpectedException = ref true
-#endif // DEBUG
-
 //----------------------------------------------------------------------------
 // Some Globals
 //--------------------------------------------------------------------------
@@ -1392,8 +1386,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           | _ -> os.Append(Failure4E().Format s) |> ignore
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (exn.ToString())
-          if !showAssertForUnexpectedException then 
-              System.Diagnostics.Debug.Assert(false, sprintf "Unexpected exception seen in compiler: %s\n%s" s (exn.ToString()))
+          reportUnexpectedException s exn
 #endif
 
       | FullAbstraction(s, _) -> os.Append(FullAbstractionE().Format s) |> ignore
@@ -1582,8 +1575,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(TargetInvocationExceptionWrapperE().Format e.Message) |> ignore
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (e.ToString())
-          if !showAssertForUnexpectedException then 
-              System.Diagnostics.Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
+          reportUnexpectedException "" e
 #endif
 
     OutputExceptionR os err.Exception

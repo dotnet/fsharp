@@ -6,6 +6,25 @@ open FSharp.Compiler
 open FSharp.Compiler.Range
 open System
 
+#if DEBUG
+
+[<AutoOpen>]
+module internal CompilerService =
+    type private UnexpectedExceptionAction =
+        | ShowAssert
+        | Raise
+        | Ignore
+
+    let mutable private unexpectedExceptionAction = ShowAssert
+
+    let reportUnexpectedException s (exn: Exception) =
+        match unexpectedExceptionAction with
+        | ShowAssert -> System.Diagnostics.Debug.Assert(false, sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
+        | Raise -> raise exn
+        | _ -> ()
+
+#endif
+
 //------------------------------------------------------------------------
 // General error recovery mechanism
 //-----------------------------------------------------------------------
@@ -365,10 +384,10 @@ module ErrorLoggerExtensions =
 
     type ErrorLogger with  
 
-        member x.ErrorR  exn = 
+        member x.ErrorR exn = 
             match exn with 
             | InternalError (s, _) 
-            | Failure s  as exn -> System.Diagnostics.Debug.Assert(false, sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
+            | Failure s as exn -> reportUnexpectedException s exn
             | _ -> ()
 
             match exn with 

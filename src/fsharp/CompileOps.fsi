@@ -26,13 +26,6 @@ open Microsoft.FSharp.Core.CompilerServices
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-
-#if DEBUG
-
-module internal CompilerService =
-    val showAssertForUnexpectedException: bool ref
-#endif
-
 //----------------------------------------------------------------------------
 // File names and known file suffixes
 //--------------------------------------------------------------------------
