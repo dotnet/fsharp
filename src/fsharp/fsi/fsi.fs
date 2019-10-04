@@ -1141,45 +1141,49 @@ type internal FsiDynamicCompiler
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
 
         // Find all new declarations the EvaluationListener
-        let mutable lastValue = None
+        let mutable itValue = None
         try
             let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports, declaredImpls)
             let contentFile = contents.ImplementationFiles.[0]
+
             // Skip the "FSI_NNNN"
-            match contentFile.Declarations with 
-            | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] -> 
+            match contentFile.Declarations with
+            | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] ->
                 let cenv = SymbolEnv(newState.tcGlobals, newState.tcState.Ccu, Some newState.tcState.CcuSig, newState.tcImports)
-                for decl in modDecls do 
-                    match decl with 
+                for decl in modDecls do
+                    match decl with
                     | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (v,_,_) ->
                         // Report a top-level function or value definition
-                      if v.IsModuleValueOrMember && not v.IsMember then 
-                        let fsiValueOpt = 
-                            match v.Item with 
-                            | Item.Value vref ->
-                                let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
-                                match optValue with
-                                | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(cenv, vref.Type)))
-                                | None -> None 
-                            | _ -> None
+                        if v.IsModuleValueOrMember && not v.IsMember then
+                            let fsiValueOpt =
+                                match v.Item with
+                                | Item.Value vref ->
+                                    let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
+                                    match optValue with
+                                    | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(cenv, vref.Type)))
+                                    | None -> None 
+                                | _ -> None
 
-                        let symbol = FSharpSymbol.Create(cenv, v.Item)
-                        let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
-                        fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
-                        lastValue <- fsiValueOpt
+                            if v.CompiledName = "it" then
+                                itValue <- fsiValueOpt
+
+                            let symbol = FSharpSymbol.Create(cenv, v.Item)
+                            let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
+                            fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
+
                     | FSharpImplementationFileDeclaration.Entity (e,_) ->
                         // Report a top-level module or namespace definition
                         let symbol = FSharpSymbol.Create(cenv, e.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
                         fsi.TriggerEvaluation (None, symbolUse, decl)
-                        lastValue <- None
+
                     | FSharpImplementationFileDeclaration.InitAction _ ->
                         // Top level 'do' bindings are not reported as incremental declarations
-                        lastValue <- None
+                        ()
             | _ -> ()
         with _ -> ()
 
-        newState, Completed lastValue
+        newState, Completed itValue
 
     /// Evaluate the given expression and produce a new interactive state.
     member fsiDynamicCompiler.EvalParsedExpression (ctok, errorLogger: ErrorLogger, istate, expr: SynExpr) =
@@ -1196,7 +1200,7 @@ type internal FsiDynamicCompiler
         | NameResolution.Item.Value vref -> 
              if not tcConfig.noFeedback then 
                  valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, istate.emEnv, istate.ilxGenerator, vref.Deref)
-             
+
              /// Clear the value held in the previous "it" binding, if any, as long as it has never been referenced.
              match prevIt with
              | Some prevVal when not prevVal.Deref.HasBeenReferenced -> 
