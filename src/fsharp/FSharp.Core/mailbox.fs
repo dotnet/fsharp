@@ -4,54 +4,13 @@ namespace Microsoft.FSharp.Control
 
     open System
     open System.Threading
+    open System.Collections.Generic
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Control.AsyncBuilderImpl
     open Microsoft.FSharp.Control.AsyncPrimitives
     open Microsoft.FSharp.Collections
-
-    /// We use our own internal implementation of queues to avoid a dependency on System.dll
-    type Queue<'T>() =
-
-        let mutable array = [| |]
-        let mutable head = 0
-        let mutable size = 0
-        let mutable tail = 0
-
-        let SetCapacity capacity =
-            let destinationArray = Array.zeroCreate capacity
-            if (size > 0) then
-                if (head < tail) then
-                    Array.Copy(array, head, destinationArray, 0, size)
-
-                else
-                    Array.Copy(array, head, destinationArray, 0, array.Length - head)
-                    Array.Copy(array, 0, destinationArray, array.Length - head, tail)
-            array <- destinationArray
-            head <- 0
-            tail <- if (size = capacity) then 0 else size
-
-        member x.Dequeue() =
-            if (size = 0) then
-                failwith "Dequeue"
-            let local = array.[head]
-            array.[head] <- Unchecked.defaultof<'T>
-            head <- (head + 1) % array.Length
-            size <- size - 1
-            local
-
-        member this.Enqueue item =
-            if (size = array.Length) then
-                let capacity = int ((int64 array.Length * 200L) / 100L)
-                let capacity = max capacity (array.Length + 4)
-                SetCapacity capacity
-            array.[tail] <- item
-            tail <- (tail + 1) % array.Length
-            size <- size + 1
-
-        member x.Count = size
-
 
     module AsyncHelpers =
 
@@ -93,7 +52,7 @@ namespace Microsoft.FSharp.Control
     [<AutoSerializable(false)>]
     type Mailbox<'Msg>(cancellationSupported: bool) =
         let mutable inboxStore  = null
-        let mutable arrivals = new Queue<'Msg>()
+        let arrivals = Queue<'Msg>()
         let syncRoot = arrivals
 
         // Control elements indicating the state of the reader. When the reader is "blocked" at an
