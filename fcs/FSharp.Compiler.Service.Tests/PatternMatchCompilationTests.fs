@@ -43,7 +43,7 @@ match A with
 
 [<Test>]
 let ``Attributes 01 `` () =
-    assertContainsSymbolsWithNames ["x"; "y"] """
+    assertContainsSymbolsWithNames ["x"; "y"; "CompiledNameAttribute"] """
 match () with
 | [<CompiledName("Foo")>] x -> let y = () in ()
 """

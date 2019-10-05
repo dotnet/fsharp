@@ -5329,6 +5329,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
     | SynPat.Attrib (p, attrs, _) ->
         errorR (Error (FSComp.SR.tcAttributesInvalidInPatterns (), rangeOfNonNilAttrs attrs))
+        for attrList in attrs do
+            TcAttributes cenv env Unchecked.defaultof<_> attrList.Attributes |> ignore 
         TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p
 
     | SynPat.Or (pat1, pat2, m) ->
