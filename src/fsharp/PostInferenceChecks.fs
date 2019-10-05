@@ -1575,6 +1575,7 @@ and CheckDecisionTreeTest cenv env m discrim =
     | DecisionTreeTest.IsNull -> ()
     | DecisionTreeTest.IsInst (srcTy, tgtTy)    -> CheckTypeNoInnerByrefs cenv env m srcTy; CheckTypeNoInnerByrefs cenv env m tgtTy
     | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)     -> CheckExprNoByrefs cenv env exp
+    | DecisionTreeTest.Error _ -> ()
 
 and CheckAttrib cenv env (Attrib(_, _, args, props, _, _, _)) = 
     props |> List.iter (fun (AttribNamedArg(_, _, _, expr)) -> CheckAttribExpr cenv env expr)

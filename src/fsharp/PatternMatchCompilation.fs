@@ -45,6 +45,8 @@ type Pattern =
     | TPat_range of char * char * range
     | TPat_null of range
     | TPat_isinst of TType * TType * PatternValBinding option * range
+    | TPat_error of range
+
     member this.Range =
         match this with
         |   TPat_const(_, m) -> m
@@ -61,6 +63,7 @@ type Pattern =
         |   TPat_range(_, _, m) -> m
         |   TPat_null m -> m
         |   TPat_isinst(_, _, _, m) -> m
+        |   TPat_error m -> m
 
 and PatternValBinding = PBind of Val * TypeScheme
 
@@ -419,7 +422,11 @@ let getDiscrimOfPattern (g: TcGlobals) tpinst t =
     | TPat_array (args, ty, _m) ->
         Some(DecisionTreeTest.ArrayLength (args.Length, ty))
     | TPat_query ((activePatExpr, resTys, apatVrefOpt, idx, apinfo), _, _m) ->
-        Some(DecisionTreeTest.ActivePatternCase (activePatExpr, instTypes tpinst resTys, apatVrefOpt, idx, apinfo))
+        Some (DecisionTreeTest.ActivePatternCase (activePatExpr, instTypes tpinst resTys, apatVrefOpt, idx, apinfo))
+
+    | TPat_error range ->
+        Some (DecisionTreeTest.Error range)
+
     | _ -> None
 
 let constOfDiscrim discrim =
@@ -459,10 +466,10 @@ let rec chooseSimultaneousEdgeSet prevOpt f l =
     | [] -> [], []
     | h :: t ->
         match f prevOpt h with
-        | Some x, _ ->
+        | Some x ->
              let l, r = chooseSimultaneousEdgeSet (Some x) f t
              x :: l, r
-        | None, _cont ->
+        | None ->
              let l, r = chooseSimultaneousEdgeSet prevOpt f t
              l, h :: r
 
@@ -490,6 +497,11 @@ let discrimsHaveSameSimultaneousClass g d1 d2 =
 
     | _ -> false
 
+let canInvestigate (pat: Pattern) =
+    match pat with
+    | TPat_null _ | TPat_isinst _ | TPat_exnconstr _ | TPat_unioncase _
+    | TPat_array _ | TPat_const _ | TPat_query _ | TPat_range _ | TPat_error _ -> true
+    | _ -> false
 
 /// Decide the next pattern to investigate
 let ChooseInvestigationPointLeftToRight frontiers =
@@ -498,8 +510,7 @@ let ChooseInvestigationPointLeftToRight frontiers =
         let rec choose l =
             match l with
             | [] -> failwith "ChooseInvestigationPointLeftToRight: no non-immediate patterns in first rule"
-            | (Active(_, _, (TPat_null _ | TPat_isinst _ | TPat_exnconstr _ | TPat_unioncase _ | TPat_array _ | TPat_const _ | TPat_query _ | TPat_range _)) as active)
-                :: _ -> active
+            | Active (_, _, pat) as active :: _ when canInvestigate pat -> active
             | _ :: t -> choose t
         choose actives
     | [] -> failwith "ChooseInvestigationPointLeftToRight: no frontiers!"
@@ -698,6 +709,7 @@ let rec isPatternPartial p =
     | TPat_range _ -> false
     | TPat_null _ -> false
     | TPat_isinst _ -> false
+    | TPat_error _ -> false
 
 let rec erasePartialPatterns inpp =
     match inpp with
@@ -716,7 +728,8 @@ let rec erasePartialPatterns inpp =
     | TPat_wild _
     | TPat_range _
     | TPat_null _
-    | TPat_isinst _ -> inpp
+    | TPat_isinst _
+    | TPat_error _ -> inpp
 
 and erasePartials inps =
     List.map erasePartialPatterns inps
@@ -736,14 +749,14 @@ let CompilePatternBasic
         warnOnIncomplete
         actionOnFailure
         (origInputVal, origInputValTypars, _origInputExprOpt: Expr option)
-        (clausesL: TypedMatchClause list)
+        (typedClauses: TypedMatchClause list)
         inputTy
         resultTy =
     // Add the targets to a match builder.
     // Note the input expression has already been evaluated and saved into a variable,
     // hence no need for a new sequence point.
     let matchBuilder = MatchBuilder (NoSequencePointAtInvisibleBinding, exprm)
-    clausesL |> List.iter (fun c -> matchBuilder.AddTarget c.Target |> ignore)
+    typedClauses |> List.iter (fun c -> matchBuilder.AddTarget c.Target |> ignore)
 
     // Add the incomplete or rethrow match clause on demand,
     // printing a warning if necessary (only if it is ever exercised).
@@ -807,8 +820,8 @@ let CompilePatternBasic
         | Some c -> c
 
     // Helpers to get the variables bound at a target.
-    // We conceptually add a dummy clause that will always succeed with a "throw"
-    let clausesA = Array.ofList clausesL
+    // We conceptually add a dummy clause that will always succeed with a "throw".
+    let clausesA = Array.ofList typedClauses
     let nClauses = clausesA.Length
     let GetClause i refuted =
         if i < nClauses then
@@ -842,14 +855,10 @@ let CompilePatternBasic
             | _ ->
                  // Otherwise choose a point (i.e. a path) to investigate.
                 let (Active(path, subexpr, pat))  = ChooseInvestigationPointLeftToRight frontiers
-                match pat with
-                // All these constructs should have been eliminated in BindProjectionPattern
-                | TPat_as _ | TPat_tuple _ | TPat_wild _ | TPat_disjs _ | TPat_conjs _ | TPat_recd _ ->
+                if not (canInvestigate pat) then
+                    // All these constructs should have been eliminated in BindProjectionPattern
                     failwith "Unexpected pattern"
-
-                // Leaving the ones where we have real work to do.
-                | _ ->
-
+                else
                     let simulSetOfEdgeDiscrims, fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
 
                     let inpExprOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr
@@ -861,8 +870,7 @@ let CompilePatternBasic
 
                     // Work out what the default/fall-through tree looks like, is any
                     // Check if match is complete, if so optimize the default case away.
-
-                    let defaultTreeOpt  : DecisionTree option = CompileFallThroughTree fallthroughPathFrontiers path refuted  simulSetOfCases
+                    let defaultTreeOpt = CompileFallThroughTree fallthroughPathFrontiers path refuted  simulSetOfCases
 
                     // OK, build the whole tree and whack on the binding if any
                     let finalDecisionTree =
@@ -913,14 +921,14 @@ let CompilePatternBasic
                 match getDiscrimOfPattern p with
                 | Some discrim ->
                     if (match prevOpt with None -> true | Some (EdgeDiscrim(_, discrimPrev, _)) -> discrimsHaveSameSimultaneousClass g discrim discrimPrev) then
-                        Some (EdgeDiscrim(i', discrim, p.Range)), true
+                        Some (EdgeDiscrim(i', discrim, p.Range))
                     else
-                        None, false
+                        None
 
                 | None ->
-                    None, true
+                    None
             else
-                None, true)
+                None)
 
     and IsCopyableInputExpr origInputExpr =
         match origInputExpr with
@@ -1235,8 +1243,17 @@ let CompilePatternBasic
                 | _ ->
                     [frontier]
 
+            | TPat_error range ->
+                match discrim with
+                | DecisionTreeTest.Error testRange when range = testRange ->
+                    [Frontier (i, active', valMap)]
+                | _ ->
+                    [frontier]
+
             | _ -> failwith "pattern compilation: GenerateNewFrontiersAfterSuccessfulInvestigation"
-        else [frontier]
+
+        else
+            [frontier]
 
     and BindProjectionPattern (Active(path, subExpr, p) as inp) ((accActive, accValMap) as s) =
         let (SubExpr(accessf, ve)) = subExpr
@@ -1286,11 +1303,11 @@ let CompilePatternBasic
     and BindProjectionPatterns ps s =
         List.foldBack (fun p sofar -> List.collect (BindProjectionPattern p) sofar) ps [s]
 
-    (* The setup routine of the match compiler *)
+    // The setup routine of the match compiler.
     let frontiers =
-        ((clausesL
+        ((typedClauses
           |> List.mapi (fun i c ->
-                let initialSubExpr = SubExpr((fun _tpinst x -> x), (exprForVal origInputVal.Range origInputVal, origInputVal))
+                let initialSubExpr = SubExpr((fun _ x -> x), (exprForVal origInputVal.Range origInputVal, origInputVal))
                 let investigations = BindProjectionPattern (Active(PathEmpty inputTy, initialSubExpr, c.Pattern)) ([], ValMap<_>.Empty)
                 mkFrontiers investigations i)
           |> List.concat)
@@ -1308,7 +1325,7 @@ let CompilePatternBasic
     if warnOnUnused then
         let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
 
-        clausesL |> List.iteri (fun i c ->
+        typedClauses |> List.iteri (fun i c ->
             if not (used.Contains i) then warning (RuleNeverMatched c.Range))
 
     dtree, targets

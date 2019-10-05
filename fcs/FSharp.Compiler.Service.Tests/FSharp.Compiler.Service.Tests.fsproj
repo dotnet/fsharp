@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp2.0</TargetFrameworks>
@@ -69,6 +69,7 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
       <Link>Program.fs</Link>
     </Compile>
+    <Compile Include="PatternMatchCompilationTests.fs" />
     <NoneSubstituteText Include="App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>

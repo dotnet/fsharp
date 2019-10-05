@@ -145,12 +145,6 @@ let checkForMultipleAugmentations m a1 a2 =
 let grabXmlDoc(parseState:IParseState,elemIdx) = 
     LexbufLocalXmlDocStore.GrabXmlDocBeforeMarker(parseState.LexBuffer,rhs parseState elemIdx)
 
-let unionRangeWithListBy projectRangeFromThing m listOfThing = 
-    (m, listOfThing) ||> List.fold (fun m thing -> unionRanges m (projectRangeFromThing thing))
-
-let rangeOfNonNilAttrs(attrs:SynAttributes) =
-    (attrs.Head.Range,attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
-
 let rangeOfLongIdent(lid:LongIdent) =
     System.Diagnostics.Debug.Assert(not lid.IsEmpty, "the parser should never produce a long-id that is the empty list") 
     (lid.Head.idRange,lid) ||> unionRangeWithListBy (fun id -> id.idRange) 

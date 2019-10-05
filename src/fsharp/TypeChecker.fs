@@ -5266,14 +5266,12 @@ and TcPatAndRecover warnOnUpper cenv (env: TcEnv) topValInfo vFlags (tpenv, name
         //solveTypAsError cenv env.DisplayEnv m ty
         (fun _ -> TPat_wild m), (tpenv, names, takenNames)
 
-/// Typecheck a pattern. Patterns are type-checked in three phases: 
-/// 1. TcPat builds a List.map from simple variable names to inferred types for 
-///   those variables. It also returns a function to perform the second phase.
-/// 2. The second phase assumes the caller has built the actual value_spec's 
-///    for the values being defined, and has decided if the types of these 
-///    variables are to be generalized. The caller hands this information to
-///    the second-phase function in terms of a List.map from names to actual
-///    value specifications. 
+/// Type check a pattern. Patterns are type-checked in three phases:
+/// 1. TcPat builds a List.map from simple variable names to inferred types for those variables.
+///    It also returns a function to perform the second phase.
+/// 2. The second phase assumes the caller has built the actual value_spec's for the values being defined,
+///    and has decided if the types of these variables are to be generalized. The caller hands this information to
+///    the second-phase function in terms of a List.map from names to actual value specifications.
 and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty pat = 
     let ad = env.eAccessRights
     match pat with 
@@ -5282,31 +5280,41 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         | SynConst.Bytes (bytes, m) -> 
             UnifyTypes cenv env m ty (mkByteArrayTy cenv.g) 
             TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.ArrayOrList (true, [ for b in bytes -> SynPat.Const(SynConst.Byte b, m) ], m))
+
         | SynConst.UserNum _ -> 
-            error(Error(FSComp.SR.tcInvalidNonPrimitiveLiteralInPatternMatch(), m))
-        | _ -> 
-            let c' = TcConst cenv ty m env c
-            (fun (_: TcPatPhase2Input) -> TPat_const(c', m)), (tpenv, names, takenNames)
-        
+            errorR (Error (FSComp.SR.tcInvalidNonPrimitiveLiteralInPatternMatch (), m))
+            (fun _ -> TPat_error m), (tpenv, names, takenNames)
+
+        | _ ->
+            try
+                let c' = TcConst cenv ty m env c
+                (fun _ -> TPat_const (c', m)), (tpenv, names, takenNames)
+            with _ ->
+                (fun _ -> TPat_error m), (tpenv, names, takenNames)
+
     | SynPat.Wild m ->
         (fun _ -> TPat_wild m), (tpenv, names, takenNames)
 
-    | SynPat.IsInst(cty, m) 
+    | SynPat.IsInst (cty, m) 
     | SynPat.Named (SynPat.IsInst(cty, m), _, _, _, _) -> 
         let srcTy = ty
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurence.UseInType env tpenv cty
         TcRuntimeTypeTest (*isCast*)false (*isOperator*)true cenv env.DisplayEnv m tgtTy srcTy
         match pat with 
-        | SynPat.IsInst(_, m) ->
+        | SynPat.IsInst (_, m) ->
             (fun _ -> TPat_isinst (srcTy, tgtTy, None, m)), (tpenv, names, takenNames)
+
         | SynPat.Named (SynPat.IsInst _, id, isMemberThis, vis, m) -> 
             let bindf, names, takenNames = TcPatBindingName cenv env id tgtTy isMemberThis vis None vFlags (names, takenNames)
             (fun values -> TPat_isinst (srcTy, tgtTy, Some(bindf values), m)), 
             (tpenv, names, takenNames)
+
         | _ -> failwith "TcPat"
 
-    | SynPat.OptionalVal (_, m) -> 
-        error(Error(FSComp.SR.tcOptionalArgsOnlyOnMembers(), m))
+    | SynPat.OptionalVal (id, m) -> 
+        errorR (Error (FSComp.SR.tcOptionalArgsOnlyOnMembers (), m))
+        let bindf, names, takenNames = TcPatBindingName cenv env id ty false None topValInfo vFlags (names, takenNames)
+        (fun values -> TPat_as (TPat_wild m, bindf values, m)), (tpenv, names, takenNames)
 
     | SynPat.Named (p, id, isMemberThis, vis, m) -> 
         let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
@@ -5319,8 +5327,9 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         UnifyTypes cenv env m ty cty'
         TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
-    | SynPat.Attrib (_, _, m) ->
-        error(Error(FSComp.SR.tcAttributesInvalidInPatterns(), m))
+    | SynPat.Attrib (p, attrs, _) ->
+        errorR (Error (FSComp.SR.tcAttributesInvalidInPatterns (), rangeOfNonNilAttrs attrs))
+        TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p
 
     | SynPat.Or (pat1, pat2, m) ->
         let pat1', (tpenv, names1, takenNames1) = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty pat1
@@ -5541,8 +5550,10 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
         | _ -> error (Error(FSComp.SR.tcRequireVarConstRecogOrLiteral(), m))
 
-    | SynPat.QuoteExpr(_, m) -> error (Error(FSComp.SR.tcInvalidPattern(), m))
-          
+    | SynPat.QuoteExpr (_, m) ->
+        errorR (Error (FSComp.SR.tcInvalidPattern (), m))
+        (fun _ -> TPat_error m), (tpenv, names, takenNames)
+
     | SynPat.Tuple (isExplicitStruct, args, m) ->
         let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
         let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argTys args

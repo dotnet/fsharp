@@ -922,6 +922,8 @@ and ConvDecisionTree cenv env tgs typR x =
                   | DecisionTreeTest.ActivePatternCase _ -> wfail(InternalError( "DecisionTreeTest.ActivePatternCase test in quoted expression", m))
 
                   | DecisionTreeTest.ArrayLength _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainArrayPatternMatching(), m))
+
+                  | DecisionTreeTest.Error m -> wfail(InternalError( "DecisionTreeTest.Error in quoted expression", m))
                  )
         EmitDebugInfoIfNecessary cenv env m converted
 

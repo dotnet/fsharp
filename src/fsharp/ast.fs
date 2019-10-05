@@ -2030,6 +2030,10 @@ type SynExpr with
 type SynReturnInfo = SynReturnInfo of (SynType * SynArgInfo) * range: range
 
 
+let unionRangeWithListBy projectRangeFromThing m listOfThing = 
+    (m, listOfThing) ||> List.fold (fun m thing -> unionRanges m (projectRangeFromThing thing))
+
+
 let mkAttributeList attrs range =
     [{ Attributes = attrs
        Range = range }]
@@ -2041,6 +2045,9 @@ let ConcatAttributesLists (attrsLists: SynAttributeList list) =
 
 let (|Attributes|) synAttributes =
     ConcatAttributesLists synAttributes
+
+let rangeOfNonNilAttrs (attrs: SynAttributes) =
+    (attrs.Head.Range, attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
 
 /// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
 ///
