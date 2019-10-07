@@ -5391,7 +5391,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
             match args with
             | SynConstructorArgs.Pats _ -> ()
-            | _ -> error (Error (FSComp.SR.tcNamedActivePattern (apinfo.ActiveTags.[idx]), m))
+            | _ -> errorR (Error (FSComp.SR.tcNamedActivePattern (apinfo.ActiveTags.[idx]), m))
 
             let args = getArgPatterns ()
 
