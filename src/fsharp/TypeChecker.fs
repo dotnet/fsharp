@@ -5461,13 +5461,12 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             // Report information about the case occurrence to IDE
             CallNameResolutionSink cenv.tcSink (lidRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Pattern, env.DisplayEnv, env.eAccessRights)
 
-            // DATA MATCH CONSTRUCTORS
             let mkf, argTys, argNames = ApplyUnionCaseOrExnTypesForPat m cenv env ty item
             let numArgTys = argTys.Length
 
-            let args =
+            let args, extraPatternsFromNames =
                 match args with
-                | SynConstructorArgs.Pats args -> args
+                | SynConstructorArgs.Pats args -> args, []
                 | SynConstructorArgs.NamePatPairs (pairs, m) ->
                     // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)
                     // so type T = Case of name: int * value: int
@@ -5475,9 +5474,12 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     // will become
                     // | Case(_, v)
                     let result = Array.zeroCreate numArgTys
-                    for (id, pat) in pairs do
+                    let extraPatterns = List ()
+
+                    for id, pat in pairs do
                         match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText) with
-                        | None -> 
+                        | None ->
+                            extraPatterns.Add pat
                             match item with
                             | Item.UnionCase(uci, _) ->
                                 errorR (Error (FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (uci.Name, id.idText), id.idRange))
@@ -5487,65 +5489,73 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                                 errorR (Error (FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName (id.idText), id.idRange))
 
                         | Some idx ->
-                            match box result.[idx] with
-                            | null -> 
-                                result.[idx] <- pat
-                                let argContainerOpt =
-                                    match item with
-                                    | Item.UnionCase (uci, _) -> Some (ArgumentContainer.UnionCase uci)
-                                    | Item.ExnCase tref -> Some (ArgumentContainer.Type tref)
-                                    | _ -> None
+                            let argContainerOpt =
+                                match item with
+                                | Item.UnionCase (uci, _) -> Some (ArgumentContainer.UnionCase uci)
+                                | Item.ExnCase tref -> Some (ArgumentContainer.Type tref)
+                                | _ -> None
 
-                                let argItem = Item.ArgName (argNames.[idx], argTys.[idx], argContainerOpt)   
-                                CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, argItem, emptyTyparInst, ItemOccurence.Pattern, env.DisplayEnv, ad)
+                            let argItem = Item.ArgName (argNames.[idx], argTys.[idx], argContainerOpt)   
+                            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, argItem, emptyTyparInst, ItemOccurence.Pattern, env.DisplayEnv, ad)
+
+                            match box result.[idx] with
+                            | null -> result.[idx] <- pat
                             | _ ->
+                                extraPatterns.Add pat
                                 errorR (Error (FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce (id.idText), id.idRange))
 
                     for i = 0 to numArgTys - 1 do
                         if isNull (box result.[i]) then
-                            result.[i] <- SynPat.Wild(m.MakeSynthetic())
+                            result.[i] <- SynPat.Wild (m.MakeSynthetic())
+
+                    let extraPatterns =
+                        if isNull extraPatterns then [] else List.ofSeq extraPatterns
 
                     let args = List.ofArray result
-                    if result.Length = 1 then args
-                    else [ SynPat.Tuple(false, args, m) ]
+                    if result.Length = 1 then args, extraPatterns
+                    else [ SynPat.Tuple(false, args, m) ], extraPatterns
 
-            let args = 
+            let args, extraPatterns = 
                 match args with 
-                | [] -> []
+                | [] -> [], []
 
                 // note: the next will always be parenthesized 
-                | [SynPatErrorSkip(SynPat.Tuple (false, args, _)) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Tuple (false, args, _)), _))] when numArgTys > 1 -> args
+                | [SynPatErrorSkip(SynPat.Tuple (false, args, _)) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Tuple (false, args, _)), _))] when numArgTys > 1 -> args, []
 
                 // note: we allow both 'C _' and 'C (_)' regardless of number of argument of the pattern 
-                | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> Array.toList (Array.create numArgTys e)
+                | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> Array.toList (Array.create numArgTys e), []
 
-                | [arg] -> [arg] 
+                | [arg] -> [arg], []
 
-                | _ when numArgTys = 0 ->
+                | args when numArgTys = 0 ->
                     errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
-                    []
+                    [], args
 
-                | arg :: _ when numArgTys = 1 ->
+                | arg :: rest when numArgTys = 1 ->
                     errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))
-                    [arg]
+                    [arg], rest
 
-                | _ -> error (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
+                | args ->
+                    errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
+                    [], args
 
-            let args =
+            let args, extraPatterns =
                 let numArgs = args.Length
                 if numArgs = numArgTys then
-                    args
+                    args, extraPatterns
                 else
                     if numArgs < numArgTys then
                         errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
-                        args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic())))
+                        args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
                     else
                         let args, remaining = args |> List.splitAt numArgTys
                         for remainingArg in remaining do
                             errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, remainingArg.Range))
-                        args
+                        args, extraPatterns @ remaining
 
+            let extraPatterns = extraPatterns @ extraPatternsFromNames
             let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argTys args
+            let _, acc = TcPatterns warnOnUpper cenv env vFlags acc (NewInferenceTypes extraPatterns) extraPatterns
             (fun values -> mkf m (List.map (fun f -> f values) args')), acc
                 
         | Item.ILField finfo ->
