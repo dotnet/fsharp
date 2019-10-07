@@ -887,7 +887,7 @@ let CompilePatternBasic
         let es2 =
             vs2 |> List.map (fun v ->
                 match valMap.TryFind v with
-                | None -> error(Error(FSComp.SR.patcMissingVariable(v.DisplayName), v.Range))
+                | None -> mkUnit g v.Range
                 | Some res -> res)
         let rhs' = TDSuccess(es2, i)
         match GetWhenGuardOfClause i refuted with
