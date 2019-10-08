@@ -2942,11 +2942,12 @@ namespace Microsoft.FSharp.Core
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member x.IsSome = match x with ValueSome _ -> true | _ -> false
 
-        static member op_Implicit (value) : 'T option = Some(value)
+        static member op_Implicit (value) : 'T voption = ValueSome(value)
 
-        override x.ToString() = 
-           // x is non-null, hence ValueSome
-           "ValueSome("^anyToStringShowingNull x.Value^")"
+        override x.ToString() =
+            match x with
+            | ValueNone -> "ValueNone"
+            | ValueSome y -> anyToStringShowingNull y
 
     and 'T voption = ValueOption<'T>
 

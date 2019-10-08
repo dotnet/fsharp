@@ -223,6 +223,11 @@ type ValueOptionTests() =
     let assertWasNotCalledThunk () = raise (exn "Thunk should not have been called.")
 
     [<Test>]
+    member _.``Null ValueOption gives a "ValueNone" when calling ToString`` () =
+        Assert.AreEqual("ValueNone", ValueNone.ToString())
+        Assert.AreEqual("ValueNone", string ValueNone)
+
+    [<Test>]
     member this.ValueOptionBasics () =
         Assert.AreEqual((ValueNone: int voption), (ValueNone: int voption))
         Assert.True((ValueNone: int voption) <= (ValueNone: int voption))
