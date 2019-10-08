@@ -5527,16 +5527,18 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 // note: we allow both 'C _' and 'C (_)' regardless of number of argument of the pattern 
                 | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> Array.toList (Array.create numArgTys e), []
 
-                | [arg] -> [arg], []
 
                 | args when numArgTys = 0 ->
                     errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
                     [], args
 
-                | arg :: rest ->
-                    if numArgTys = 1 then
+
+                | arg :: rest when numArgTys = 1 ->
+                    if numArgTys = 1 && not (List.isEmpty rest) then
                         errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))
                     [arg], rest
+
+                | [arg] -> [arg], []
 
                 | args ->
                     errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
@@ -5548,7 +5550,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     args, extraPatterns
                 else
                     if numArgs < numArgTys then
-                        if numArgs <> 0 then
+                        if numArgs <> 0 && numArgTys <> 0 then
                             errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
                         args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
                     else
@@ -5623,9 +5625,13 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         (fun _ -> TPat_error m), (tpenv, names, takenNames)
 
     | SynPat.Tuple (isExplicitStruct, args, m) ->
-        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
-        let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argTys args
-        (fun values -> TPat_tuple(tupInfo, List.map (fun f -> f values) args', argTys, m)), acc
+        try
+            let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
+            let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argTys args
+            (fun values -> TPat_tuple (tupInfo, List.map (fun f -> f values) args', argTys, m)), acc
+        with _ ->
+            let _, acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (NewInferenceTypes args) args
+            (fun _ -> TPat_error m), acc
 
     | SynPat.Paren (p, _) ->
         TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p

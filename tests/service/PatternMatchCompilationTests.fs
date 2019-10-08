@@ -97,9 +97,8 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(7,8--7,9): This constructor is applied to 3 argument(s) but expects 1"
-        "(7,11--7,12): This constructor is applied to 3 argument(s) but expects 1"
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
+        "(7,5--7,12): This expression was expected to have type 'int' but here has type ''a * 'b * 'c'"
+        "(6,6--6,7): Incomplete pattern matches on this expression."
     ]
 
 
@@ -131,7 +130,7 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(7,4--7,5): This constructor is applied to 1 argument(s) but expects 0"
+        "(7,2--7,5): This union case does not take arguments"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'B (_)' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -197,8 +196,20 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(7,2--7,7): This constructor is applied to 1 argument(s) but expects 2"
+        "(7,2--7,7): This union case expects 2 arguments in tupled form"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
+    ]
+
+
+[<Test>]
+let ``Union case 09 - Single arg`` () =
+    let _, checkResults = getParseAndCheckResults """
+match None with
+| None -> ()
+| Some (x, z) -> let y = x + z + 1 in ()
+"""
+    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
+    dumpErrors checkResults |> shouldEqual [
     ]
 
 
