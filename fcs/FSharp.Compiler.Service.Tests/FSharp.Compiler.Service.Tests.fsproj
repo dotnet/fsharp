@@ -69,7 +69,9 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
       <Link>Program.fs</Link>
     </Compile>
-    <Compile Include="PatternMatchCompilationTests.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\PatternMatchCompilationTests.fs">
+      <Link>PatternMatchCompilationTests.fs</Link>
+    </Compile>
     <NoneSubstituteText Include="App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
