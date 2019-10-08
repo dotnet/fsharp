@@ -2911,7 +2911,7 @@ namespace Microsoft.FSharp.Core
         member private x.DebugDisplay =
             match x with
             | None -> "None"
-            | Some x -> String.Format("Some({0})", x.ToString())
+            | Some _ -> String.Format("Some({0})", anyToStringShowingNull x.Value)
 
         override x.ToString() = 
            // x is non-null, hence Some
@@ -2952,12 +2952,12 @@ namespace Microsoft.FSharp.Core
         member private x.DebugDisplay =
             match x with
             | ValueNone -> "ValueNone"
-            | ValueSome x -> String.Format("ValueSome({0})", x.ToString())
+            | ValueSome _ -> String.Format("ValueSome({0})", anyToStringShowingNull x.Value)
 
         override x.ToString() =
             match x with
             | ValueNone -> "ValueNone"
-            | ValueSome y -> anyToStringShowingNull y
+            | ValueSome _ -> anyToStringShowingNull x.Value
 
     and 'T voption = ValueOption<'T>
 
