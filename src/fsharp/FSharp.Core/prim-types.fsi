@@ -1860,6 +1860,11 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Return 'true' if the value option is a 'ValueNone' value.</summary>
         member IsNone : bool
+        
+        /// <summary>Implicitly converts a value into an optional that is a 'ValueSome' value.</summary>
+        /// <param name="value">The input value</param>
+        /// <returns>A voption representing the value.</returns>
+        static member op_Implicit : value:'T -> 'T voption
 
     /// <summary>The type of optional values, represented as structs.</summary>
     ///
