@@ -5336,16 +5336,18 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         let pat1', (tpenv, names1, takenNames1) = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty pat1
         let pat2', (tpenv, names2, takenNames2) = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty pat2
         if not (takenNames1 = takenNames2) then
-            // We don't try to recover from this error since we get later bad internal errors during pattern
-            // matching 
-            error (UnionPatternsBindDifferentNames m)
+            errorR (UnionPatternsBindDifferentNames m)
 
         names1 |> Map.iter (fun _ (PrelimValScheme1 (id1, _, ty1, _, _, _, _, _, _, _, _)) -> 
             match names2.TryGetValue id1.idText with 
-            | true, PrelimValScheme1 (_, _, ty2, _, _, _, _, _, _, _, _) -> 
-                UnifyTypes cenv env m ty1 ty2
+            | true, PrelimValScheme1 (id2, _, ty2, _, _, _, _, _, _, _, _) ->
+                try UnifyTypes cenv env id2.idRange ty1 ty2
+                with _ -> ()
             | _ -> ())
-        (fun values -> TPat_disjs ([pat1' values; pat2' values.RightPath], m)), (tpenv, names1, takenNames1)
+
+        let names = NameMap.layer names1 names2
+        let takenNames = Set.union takenNames1 takenNames2
+        (fun values -> TPat_disjs ([pat1' values; pat2' values.RightPath], m)), (tpenv, names, takenNames)
 
     | SynPat.Ands (pats, m) ->
         let pats', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> ty) pats) pats

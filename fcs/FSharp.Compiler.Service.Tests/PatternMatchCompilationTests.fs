@@ -244,3 +244,43 @@ match AttributeTargets.All with
         "(5,2--5,27): This literal pattern does not take arguments"
         "(4,6--4,26): Incomplete pattern matches on this expression. For example, the value 'AttributeTargets.Assembly' may indicate a case not covered by the pattern(s)."
     ]
+
+
+[<Test>]
+let ``Or 01 - No errors`` () =
+    let _, checkResults = getParseAndCheckResults """
+match 1 with
+| x | x -> let y = x + 1 in ()
+"""
+    assertHasSymbolUsages ["x"; "y"] checkResults
+    dumpErrors checkResults |> shouldEqual []
+
+
+[<Test>]
+let ``Or 02 - Different names`` () =
+    let _, checkResults = getParseAndCheckResults """
+match 1 with
+| x | z -> let y = x + z + 1 in ()
+"""
+    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(3,2--3,7): The two sides of this 'or' pattern bind different sets of variables"
+    ]
+
+
+[<Test>]
+let ``Or 03 - Different names and types`` () =
+    let _, checkResults = getParseAndCheckResults """
+type U =
+    | A
+    | B of int * string
+
+match A with
+| B (x, y) | B (a, x) -> let z = x + 1 in ()
+"""
+    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(7,2--7,21): The two sides of this 'or' pattern bind different sets of variables"
+        "(7,19--7,20): This expression was expected to have type 'int' but here has type 'string'"
+        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
+    ]
