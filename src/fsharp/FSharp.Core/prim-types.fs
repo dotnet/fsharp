@@ -2911,7 +2911,7 @@ namespace Microsoft.FSharp.Core
         member private x.DebugDisplay =
             match x with
             | None -> "None"
-            | Some x -> String.Format("ValueSome({0})", x.ToString())
+            | Some x -> String.Format("Some({0})", x.ToString())
 
         override x.ToString() = 
            // x is non-null, hence Some
