@@ -5531,8 +5531,9 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
                     [], args
 
-                | arg :: rest when numArgTys = 1 ->
-                    errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))
+                | arg :: rest ->
+                    if numArgTys = 1 then
+                        errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))
                     [arg], rest
 
                 | args ->
