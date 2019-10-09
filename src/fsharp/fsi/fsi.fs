@@ -2353,6 +2353,11 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
 
     runLoop();
 
+/// Thrown when there was an error compiling the given code in FSI.
+type FsiCompilationException(message: string, errorInfos: FSharpErrorInfo[] option) =
+    inherit System.Exception(message)
+    member __.ErrorInfos = errorInfos
+
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
 type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) = 
@@ -2516,21 +2521,22 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let fsiInteractionProcessor = FsiInteractionProcessor(fsi, tcConfigB, fsiOptions, fsiDynamicCompiler, fsiConsolePrompt, fsiConsoleOutput, fsiInterruptController, fsiStdinLexerProvider, lexResourceManager, initialInteractiveState) 
 
     let commitResult res =
-        match res with 
+        match res with
         | Choice1Of2 r -> r
-        | Choice2Of2 None -> failwith "Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing"
+        | Choice2Of2 None -> raise (FsiCompilationException(FSIstrings.SR.fsiOperationFailed(), None))
         | Choice2Of2 (Some userExn) -> raise userExn
 
-    let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res = 
+    let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res =
         let errs = errorLogger.GetErrors()
-        let userRes = 
-            match res with 
+        let errorInfos = ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs, true)
+        let userRes =
+            match res with
             | Choice1Of2 r -> Choice1Of2 r
-            | Choice2Of2 None -> Choice2Of2 (System.Exception "Operation could not be completed due to earlier error")
+            | Choice2Of2 None -> Choice2Of2 (FsiCompilationException(FSIstrings.SR.fsiOperationCouldNotBeCompleted(), Some errorInfos) :> exn)
             | Choice2Of2 (Some userExn) -> Choice2Of2 userExn
 
         // 'true' is passed for "suggestNames" because we want the FSI session to suggest names for misspellings and it won't affect IDE perf much
-        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs, true)
+        userRes, errorInfos
 
     let dummyScriptFileName = "input.fsx"
 

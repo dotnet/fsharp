@@ -92,6 +92,23 @@ type InteractiveTests() =
         Assert.False(foundAssemblyReference)
 
     [<Test>]
+    member _.``Compilation errors report a specific exception``() =
+        use script = new FSharpScript()
+        let result, _errors = script.Eval("abc")
+        match result with
+        | Ok(_) -> Assert.Fail("expected a failure")
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
+    [<Test>]
+    member _.``Runtime exceptions are propagated``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("System.IO.File.ReadAllText(\"not-a-file-path-that-can-be-found-on-disk.txt\")")
+        Assert.IsEmpty(errors)
+        match result with
+        | Ok(_) -> Assert.Fail("expected a failure")
+        | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
+
+    [<Test>]
     member __.``Nuget reference fires multiple events``() =
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let mutable assemblyRefCount = 0;
