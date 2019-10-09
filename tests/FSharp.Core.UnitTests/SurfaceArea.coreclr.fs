@@ -7,7 +7,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 
 type SurfaceAreaTest() =
     [<Test>]
-    member this.VerifyArea(): unit =
+    member this.VerifyArea() =
         let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
@@ -2700,4 +2700,3 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
         SurfaceArea.verify expected "coreclr" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
-        ()

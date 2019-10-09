@@ -55,7 +55,7 @@ type FSharpProjectOptions =
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
       UnresolvedReferences : UnresolvedReferencesSet option
-      OriginalLoadReferences: (range * string) list
+      OriginalLoadReferences: (range * string * string) list
       ExtraProjectInfo : obj option
       Stamp : int64 option
     }
