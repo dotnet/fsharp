@@ -938,6 +938,19 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
             let hasCallInfo = ccallInfo.IsSome
             let mustTakeAddress = hasCallInfo || minfo.ObjArgNeedsAddress(amap, m)
             let objArgTy = tyOfExpr g objArgExpr
+            
+            let isMutable =
+                match isMutable with
+                | DefinitelyMutates
+                | NeverMutates 
+                | AddressOfOp -> isMutable
+                | PossiblyMutates ->
+                    // Check to see if the method is read-only. Perf optimization.
+                    // If there is an extension member whose first arg is an inref, we must return NeverMutates.
+                    if mustTakeAddress && (minfo.IsReadOnly || minfo.IsReadOnlyExtensionMember (amap, m)) then
+                        NeverMutates
+                    else
+                        isMutable
 
             let wrap, objArgExprAddr, isReadOnly, _isWriteOnly =
                 mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m

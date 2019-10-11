@@ -23,20 +23,7 @@ module internal FSharpEnvironment =
 #endif
 
     let versionOf<'t> =
-#if FX_RESHAPED_REFLECTION
-        let aq = (typeof<'t>).AssemblyQualifiedName
-        let version = 
-            if aq <> null then 
-                let x = aq.Split(',', ' ') |> Seq.filter(fun x -> x.StartsWith("Version=", StringComparison.OrdinalIgnoreCase)) |> Seq.tryHead
-                match x with 
-                | Some(x) -> x.Substring(8)
-                | _ -> null
-            else
-                null
-        version
-#else
         typeof<'t>.Assembly.GetName().Version.ToString()
-#endif
 
     let FSharpCoreLibRunningVersion = 
         try match versionOf<Unit> with
@@ -200,7 +187,7 @@ module internal FSharpEnvironment =
 #else
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
-        try 
+        try
             // FSharp.Compiler support setting an appkey for compiler location. I've never seen this used.
             let result = tryAppConfig "fsharp-compiler-location"
             match result with 

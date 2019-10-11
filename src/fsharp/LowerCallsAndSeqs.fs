@@ -1314,7 +1314,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                       thisVars = []
                       asyncVars = emptyFreeVars }
                 | _ -> 
-                    error(InternalError(sprintf "immediate argument was not statically known", expr.Range))
+                    error(InternalError(sprintf "target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method", pcExpr.Range))
 
             // The expanded code for state machines may use sequential binding and sequential execution.
             //

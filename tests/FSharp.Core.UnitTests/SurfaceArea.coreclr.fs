@@ -5,7 +5,6 @@ namespace FSharp.Core.UnitTests.Portable.SurfaceArea
 open NUnit.Framework
 open FSharp.Core.UnitTests.LibraryTestFx
 
-
 type SurfaceAreaTest() =
     [<Test>]
     member this.VerifyArea(): unit =
@@ -548,6 +547,8 @@ Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Sys
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[System.Threading.CancellationToken] get_CancellationToken()
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[System.Threading.Tasks.Task`1[T]] StartChildAsTask[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.Tasks.TaskCreationOptions])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Parallel[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]])
+Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Parallel[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Sequential[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] AwaitEvent[TDel,T](Microsoft.FSharp.Control.IEvent`2[TDel,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] AwaitTask[T](System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] FromBeginEnd[TArg1,TArg2,TArg3,T](TArg1, TArg2, TArg3, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`5[TArg1,TArg2,TArg3,System.AsyncCallback,System.Object],System.IAsyncResult], Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
@@ -629,7 +630,10 @@ Microsoft.FSharp.Control.ObservableModule: System.IObservable`1[T] Merge[T](Syst
 Microsoft.FSharp.Control.ObservableModule: System.Tuple`2[System.IObservable`1[TResult1],System.IObservable`1[TResult2]] Split[T,TResult1,TResult2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[TResult1,TResult2]], System.IObservable`1[T])
 Microsoft.FSharp.Control.ObservableModule: System.Tuple`2[System.IObservable`1[T],System.IObservable`1[T]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.IObservable`1[T])
 Microsoft.FSharp.Control.ObservableModule: Void Add[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], System.IObservable`1[T])
+Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncDownloadFile(System.Net.WebClient, System.Uri, System.String)
+Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Byte[]] AsyncDownloadData(System.Net.WebClient, System.Uri)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Net.WebResponse] AsyncGetResponse(System.Net.WebRequest)
+Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.String] AsyncDownloadString(System.Net.WebClient, System.Uri)
 Microsoft.FSharp.Core.AbstractClassAttribute: Void .ctor()
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Boolean Value
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Boolean get_Value()
@@ -1633,6 +1637,10 @@ Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Microsoft.FSharp.Cor
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7] NewChoice5Of7(T5)
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7] NewChoice6Of7(T6)
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7] NewChoice7Of7(T7)
+Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: Microsoft.FSharp.Core.FSharpFunc`2[T,TResult] FromConverter(System.Converter`2[T,TResult])
+Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: Microsoft.FSharp.Core.FSharpFunc`2[T,TResult] op_Implicit(System.Converter`2[T,TResult])
+Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: System.Converter`2[T,TResult] ToConverter(Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
+Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: System.Converter`2[T,TResult] op_Implicit(Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: TResult Invoke(T)
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: V InvokeFast[V](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,V]], T, TResult)
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: Void .ctor()
@@ -1748,6 +1756,7 @@ Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit] FromAction[T](System.Action`1[T])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit] ToFSharpFunc[T](System.Action`1[T])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T,TResult] FromFunc[T,TResult](System.Func`2[T,TResult])
+Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T,TResult] ToFSharpFunc[T,TResult](System.Converter`2[T,TResult])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,Microsoft.FSharp.Core.FSharpFunc`2[T3,Microsoft.FSharp.Core.FSharpFunc`2[T4,Microsoft.FSharp.Core.FSharpFunc`2[T5,Microsoft.FSharp.Core.Unit]]]]] FromAction[T1,T2,T3,T4,T5](System.Action`5[T1,T2,T3,T4,T5])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,Microsoft.FSharp.Core.FSharpFunc`2[T3,Microsoft.FSharp.Core.FSharpFunc`2[T4,Microsoft.FSharp.Core.FSharpFunc`2[T5,TResult]]]]] FromFunc[T1,T2,T3,T4,T5,TResult](System.Func`6[T1,T2,T3,T4,T5,TResult])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,Microsoft.FSharp.Core.FSharpFunc`2[T3,Microsoft.FSharp.Core.FSharpFunc`2[T4,Microsoft.FSharp.Core.FSharpFunc`2[T5,TResult]]]]] FuncFromTupled[T1,T2,T3,T4,T5,TResult](Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`5[T1,T2,T3,T4,T5],TResult])
@@ -2049,6 +2058,7 @@ Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleError[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
 Microsoft.FSharp.Core.Operators: System.Object Box[T](T)
+Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)
 Microsoft.FSharp.Core.Operators: System.Tuple`2[TKey,TValue] KeyValuePattern[TKey,TValue](System.Collections.Generic.KeyValuePair`2[TKey,TValue])

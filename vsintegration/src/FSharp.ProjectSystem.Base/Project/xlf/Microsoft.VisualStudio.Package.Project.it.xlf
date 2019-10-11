@@ -119,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Error">
         <source>error</source>
-        <target state="translated">Errore</target>
+        <target state="translated">errore</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidFileName">
@@ -387,7 +387,7 @@
       </trans-unit>
       <trans-unit id="Warning">
         <source>warning</source>
-        <target state="translated">Avviso</target>
+        <target state="translated">avviso</target>
         <note />
       </trans-unit>
       <trans-unit id="WinExe">

@@ -446,21 +446,19 @@ module MapTree =
 [<CompiledName("FSharpMap`2")>]
 type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonConditionalOn>]'Value when 'Key : comparison >(comparer: IComparer<'Key>, tree: MapTree<'Key, 'Value>) =
 
-#if !FX_NO_BINARY_SERIALIZATION
     [<System.NonSerialized>]
-    // This type is logically immutable. This field is only mutated during deserialization. 
-    let mutable comparer = comparer 
+    // This type is logically immutable. This field is only mutated during deserialization.
+    let mutable comparer = comparer
  
     [<System.NonSerialized>]
-    // This type is logically immutable. This field is only mutated during deserialization. 
-    let mutable tree = tree 
+    // This type is logically immutable. This field is only mutated during deserialization.
+    let mutable tree = tree
 
-    // This type is logically immutable. This field is only mutated during serialization and deserialization. 
+    // This type is logically immutable. This field is only mutated during serialization and deserialization.
     //
-    // WARNING: The compiled name of this field may never be changed because it is part of the logical 
+    // WARNING: The compiled name of this field may never be changed because it is part of the logical
     // WARNING: permanent serialization format for this type.
-    let mutable serializedData = null 
-#endif
+    let mutable serializedData = null
 
     // We use .NET generics per-instantiation static fields to avoid allocating a new object for each empty
     // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
@@ -468,7 +466,6 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
         let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
         new Map<'Key, 'Value>(comparer, MapTree<_, _>.MapEmpty)
 
-#if !FX_NO_BINARY_SERIALIZATION
     [<System.Runtime.Serialization.OnSerializingAttribute>]
     member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
@@ -483,9 +480,8 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member __.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
         comparer <- LanguagePrimitives.FastGenericComparer<'Key>
-        tree <- serializedData |> Array.map (fun (KeyValue(k, v)) -> (k, v)) |> MapTree.ofArray comparer 
+        tree <- serializedData |> Array.map (fun (KeyValue(k, v)) -> (k, v)) |> MapTree.ofArray comparer
         serializedData <- null
-#endif
 
     static member Empty : Map<'Key, 'Value> =
         empty

@@ -22,14 +22,34 @@
         <target state="new">Resource header beginning at offset {0} is malformed.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">Zobrazte si povolené hodnoty verze jazyka a pak zadejte požadovanou verzi, například latest nebo preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">Podporované jazykové verze:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">Nerozpoznaná hodnota {0} pro parametr --langversion; seznam možností zobrazíte zadáním --langversion:?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">Neočekávaný symbol . v definici členu. Očekávalo se with, = nebo jiný token.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">Zadejte algoritmus pro výpočet kontrolního součtu zdrojového souboru uloženého v PDB. Podporované hodnoty jsou: SHA1 nebo SHA256 (výchozí).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">Algoritmus {0} není podporovaný.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -250,11 +270,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">Nerozpoznané nastavení ochrany osobních údajů {0} pro spravovaný prostředek. Platné možnosti jsou public a private.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Víc odkazů na knihovnu {0}.dll se nepovoluje.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -2034,7 +2049,7 @@
       </trans-unit>
       <trans-unit id="parsTypeAnnotationsOnGetSet">
         <source>Type annotations on property getters and setters must be given after the 'get()' or 'set(v)', e.g. 'with get() : string = ...'</source>
-        <target state="translated">Poznámky typu u metod getter nebo setter vlastnosti se musí předávat až po get() nebo set(v). Příklad: with get() : string = </target>
+        <target state="translated">Poznámky typu u metod getter nebo setter vlastnosti se musí předávat až po get() nebo set(v). Příklad: with get() : string = ...</target>
         <note />
       </trans-unit>
       <trans-unit id="parsGetterMustHaveAtLeastOneArgument">
@@ -5312,11 +5327,6 @@
         <target state="translated">Vazby DLLImport musí být statickými členy v definici třídy nebo funkce v modulu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">Pokud se na knihovnu mscorlib.dll nebo FSharp.Core.dll odkazuje explicitně, musí se předávat taky možnost {0}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">V FSharp.Core se nenašel soubor FSharp.Core.sigdata. Soubor se očekával v {0}. Zvažte upgrade na novější verzi FSharp.Core, kde se tento soubor už nevyžaduje.</target>
@@ -7190,6 +7200,16 @@
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
         <target state="translated">Následující členy nemají žádnou implementaci (některé výsledky jsou vynechané): {0} Všechny členy rozhraní je potřeba implementovat a uvést pod příslušnou deklarací interface, třeba takto: interface ... with member ...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">Výraz není pojmenovaný.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">Použití operátoru nameof jako hodnoty funkce první třídy není povolené.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

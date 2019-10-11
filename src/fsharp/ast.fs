@@ -12,6 +12,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
 
@@ -671,7 +672,7 @@ and
     /// F# syntax: lazy expr
     | Lazy of SynExpr * range: range
 
-    /// Seq(seqPoint, isTrueSeq, e1, e2, m)
+    /// Sequential(seqPoint, isTrueSeq, e1, e2, m)
     ///  isTrueSeq: false indicates "let v = a in b; v"
     ///
     /// F# syntax: expr; expr
@@ -749,9 +750,11 @@ and
     /// Computation expressions only, based on JOIN_IN token from lex filter
     | JoinIn of SynExpr * range * SynExpr * range: range
 
-    /// F# syntax: <implicit>
-    /// Computation expressions only, implied by final "do" or "do!"
+    /// Used internally during type checking for translating computation expressions.
     | ImplicitZero of range: range
+
+    /// Used internally during type checking for translating computation expressions.
+    | SequentialOrImplicitYield of seqPoint:SequencePointInfoForSeq * expr1:SynExpr * expr2:SynExpr * ifNotStmt:SynExpr * range:range
 
     /// F# syntax: yield expr
     /// F# syntax: return expr
@@ -833,6 +836,7 @@ and
         | SynExpr.TryWith (range=m)
         | SynExpr.TryFinally (range=m)
         | SynExpr.Sequential (range=m)
+        | SynExpr.SequentialOrImplicitYield (range=m)
         | SynExpr.ArbitraryAfterError (range=m)
         | SynExpr.FromParseError (range=m)
         | SynExpr.DiscardAfterMissingQualificationAfterDot (range=m)
@@ -872,138 +876,25 @@ and
     /// range ignoring any (parse error) extra trailing dots
     member e.RangeSansAnyExtraDot =
         match e with
-        | SynExpr.Paren (range=m)
-        | SynExpr.Quote (range=m)
-        | SynExpr.Const (range=m)
-        | SynExpr.Typed (range=m)
-        | SynExpr.Tuple (range=m)
-        | SynExpr.ArrayOrList (range=m)
-        | SynExpr.AnonRecd (range=m)
-        | SynExpr.Record (range=m)
-        | SynExpr.New (range=m)
-        | SynExpr.ObjExpr (range=m)
-        | SynExpr.While (range=m)
-        | SynExpr.For (range=m)
-        | SynExpr.ForEach (range=m)
-        | SynExpr.CompExpr (range=m)
-        | SynExpr.ArrayOrListOfSeqExpr (range=m)
-        | SynExpr.Lambda (range=m)
-        | SynExpr.Match (range=m)
-        | SynExpr.MatchLambda (range=m)
-        | SynExpr.Do (range=m)
-        | SynExpr.Assert (range=m)
-        | SynExpr.App (range=m)
-        | SynExpr.TypeApp (range=m)
-        | SynExpr.LetOrUse (range=m)
-        | SynExpr.TryWith (range=m)
-        | SynExpr.TryFinally (range=m)
-        | SynExpr.Sequential (range=m)
-        | SynExpr.ArbitraryAfterError (range=m)
-        | SynExpr.FromParseError (range=m)
-        | SynExpr.IfThenElse (range=m)
-        | SynExpr.LongIdentSet (range=m)
-        | SynExpr.NamedIndexedPropertySet (range=m)
-        | SynExpr.DotIndexedGet (range=m)
-        | SynExpr.DotIndexedSet (range=m)
-        | SynExpr.DotSet (range=m)
-        | SynExpr.Set (range=m)
-        | SynExpr.DotNamedIndexedPropertySet (range=m)
-        | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
-        | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
-        | SynExpr.LibraryOnlyILAssembly (range=m)
-        | SynExpr.LibraryOnlyStaticOptimization (range=m)
-        | SynExpr.TypeTest (range=m)
-        | SynExpr.Upcast (range=m)
-        | SynExpr.AddressOf (range=m)
-        | SynExpr.Downcast (range=m)
-        | SynExpr.JoinIn (range=m)
-        | SynExpr.InferredUpcast (range=m)
-        | SynExpr.InferredDowncast (range=m)
-        | SynExpr.Null (range=m)
-        | SynExpr.Lazy (range=m)
-        | SynExpr.TraitCall (range=m)
-        | SynExpr.ImplicitZero (range=m)
-        | SynExpr.YieldOrReturn (range=m)
-        | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseBang (range=m)
-        | SynExpr.MatchBang (range=m)
-        | SynExpr.DoBang (range=m) -> m
         | SynExpr.DotGet (expr, _, lidwd, m) -> if lidwd.ThereIsAnExtraDotAtTheEnd then unionRanges expr.Range lidwd.RangeSansAnyExtraDot else m
         | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeSansAnyExtraDot
         | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
-        | SynExpr.Fixed (_, m) -> m
-        | SynExpr.Ident id -> id.idRange
+        | _ -> e.Range
 
     /// Attempt to get the range of the first token or initial portion only - this is extremely ad-hoc, just a cheap way to improve a certain 'query custom operation' error range
     member e.RangeOfFirstPortion =
         match e with
-        // haven't bothered making these cases better than just .Range
-        | SynExpr.Quote (range=m)
-        | SynExpr.Const (range=m)
-        | SynExpr.Typed (range=m)
-        | SynExpr.Tuple (range=m)
-        | SynExpr.ArrayOrList (range=m)
-        | SynExpr.AnonRecd (range=m)
-        | SynExpr.Record (range=m)
-        | SynExpr.New (range=m)
-        | SynExpr.ObjExpr (range=m)
-        | SynExpr.While (range=m)
-        | SynExpr.For (range=m)
-        | SynExpr.CompExpr (range=m)
-        | SynExpr.ArrayOrListOfSeqExpr (range=m)
-        | SynExpr.Lambda (range=m)
-        | SynExpr.Match (range=m)
-        | SynExpr.MatchLambda (range=m)
-        | SynExpr.Do (range=m)
-        | SynExpr.Assert (range=m)
-        | SynExpr.TypeApp (range=m)
-        | SynExpr.LetOrUse (range=m)
-        | SynExpr.TryWith (range=m)
-        | SynExpr.TryFinally (range=m)
-        | SynExpr.ArbitraryAfterError (range=m)
-        | SynExpr.FromParseError (range=m)
-        | SynExpr.DiscardAfterMissingQualificationAfterDot (range=m)
-        | SynExpr.IfThenElse (range=m)
-        | SynExpr.LongIdent (range=m)
-        | SynExpr.LongIdentSet (range=m)
-        | SynExpr.NamedIndexedPropertySet (range=m)
-        | SynExpr.DotIndexedGet (range=m)
-        | SynExpr.DotIndexedSet (range=m)
-        | SynExpr.DotGet (range=m)
-        | SynExpr.DotSet (range=m)
-        | SynExpr.Set (range=m)
-        | SynExpr.DotNamedIndexedPropertySet (range=m)
-        | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
-        | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
-        | SynExpr.LibraryOnlyILAssembly (range=m)
-        | SynExpr.LibraryOnlyStaticOptimization (range=m)
-        | SynExpr.TypeTest (range=m)
-        | SynExpr.Upcast (range=m)
-        | SynExpr.AddressOf (range=m)
-        | SynExpr.Downcast (range=m)
-        | SynExpr.JoinIn (range=m)
-        | SynExpr.InferredUpcast (range=m)
-        | SynExpr.InferredDowncast (range=m)
-        | SynExpr.Null (range=m)
-        | SynExpr.Lazy (range=m)
-        | SynExpr.TraitCall (range=m)
-        | SynExpr.ImplicitZero (range=m)
-        | SynExpr.YieldOrReturn (range=m)
-        | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseBang (range=m)
-        | SynExpr.MatchBang (range=m)
-        | SynExpr.DoBang (range=m)  -> m
         // these are better than just .Range, and also commonly applicable inside queries
         | SynExpr.Paren (_, m, _, _) -> m
         | SynExpr.Sequential (_, _, e1, _, _)
+        | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
         | SynExpr.App (_, _, e1, _, _) ->
             e1.RangeOfFirstPortion
         | SynExpr.ForEach (_, _, _, pat, _, _, r) ->
             let start = r.Start
             let e = (pat.Range: range).Start
             mkRange r.FileName start e
-        | SynExpr.Ident id -> id.idRange
-        | SynExpr.Fixed (_, m) -> m
+        | _ -> e.Range
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1972,35 +1863,50 @@ let PushCurriedPatternsToExpr synArgNameGenerator wholem isMember pats rhs =
             expr
     spatsl, expr
 
-/// Helper for parsing the inline IL fragments.
+let internal internalParseAssemblyCodeInstructions s isFeatureSupported m =
 #if NO_INLINE_IL_PARSER
-let ParseAssemblyCodeInstructions _s m =
+    ignore s
+    ignore isFeatureSupported
+
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     [| |]
 #else
-let ParseAssemblyCodeInstructions s m =
-    try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
+    try
+        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf s)
+           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
     with _ ->
-      errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [| |]
+      errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
+let ParseAssemblyCodeInstructions s m =
+    // Public API can not answer the isFeatureSupported questions, so here we support everything
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    internalParseAssemblyCodeInstructions s isFeatureSupported m
 
-/// Helper for parsing the inline IL fragments.
+let internal internalParseAssemblyCodeType s isFeatureSupported m =
+    ignore s
+    ignore isFeatureSupported
+
 #if NO_INLINE_IL_PARSER
-let ParseAssemblyCodeType _s m =
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     IL.EcmaMscorlibILGlobals.typ_Object
 #else
-let ParseAssemblyCodeType s m =
-    try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    try
+        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
            FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf s)
+           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
       IL.EcmaMscorlibILGlobals.typ_Object
 #endif
+
+/// Helper for parsing the inline IL fragments.
+let ParseAssemblyCodeType s m =
+    // Public API can not answer the isFeatureSupported questions, so here we support everything
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    internalParseAssemblyCodeType s isFeatureSupported m
 
 //------------------------------------------------------------------------
 // AST constructors
@@ -2563,6 +2469,8 @@ let rec synExprContainsError inpExpr =
           | SynExpr.TryFinally (e1, e2, _, _, _) ->
               walkExpr e1 || walkExpr e2
           | SynExpr.Sequential (_, _, e1, e2, _) ->
+              walkExpr e1 || walkExpr e2
+          | SynExpr.SequentialOrImplicitYield (_, e1, e2, _, _) ->
               walkExpr e1 || walkExpr e2
           | SynExpr.IfThenElse (e1, e2, e3opt, _, _, _, _) ->
               walkExpr e1 || walkExpr e2 || walkExprOpt e3opt

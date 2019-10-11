@@ -707,6 +707,11 @@
         <target state="translated">Dies ist kein gültiger Abfrageausdruck. Das Konstrukt "{0}" wurde in einer Abfrage verwendet, wird jedoch vom F#-to-LINQ-Abfragekonvertierungsprogramm nicht erkannt. Überprüfen Sie die Spezifikation zulässiger Abfragen, und entfernen Sie unter Umständen einige Operationen aus dem Abfrageausdruck.</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism muss positiv sein, lautete jedoch "{0}".</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

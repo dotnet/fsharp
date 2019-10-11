@@ -29,17 +29,17 @@
       </trans-unit>
       <trans-unit id="GotoDefinitionFailed_ProvidedMember">
         <source>Cannot navigate to the provided member '{0}'.</source>
-        <target state="translated">Wechseln zum angegebenen Member '{0}' ist nicht möglich.</target>
+        <target state="translated">Wechseln zum angegebenen Member "{0}" ist nicht möglich.</target>
         <note />
       </trans-unit>
       <trans-unit id="GotoDefinitionFailed_ProvidedType">
         <source>Cannot navigate to the provided type '{0}'.</source>
-        <target state="translated">Wechseln zum angegebenen Typ '{0}' ist nicht möglich.</target>
+        <target state="translated">Wechseln zum angegebenen Typ "{0}" ist nicht möglich.</target>
         <note />
       </trans-unit>
       <trans-unit id="GotoDefinitionFailed_NoTypecheckInfo">
         <source>Cannot navigate to definition. Type check information is not available, please try later.</source>
-        <target state="translated">Wechseln zur Definition ist nicht möglich. Die Informationen zum Überprüfen des Typen sind nicht verfügbar. Versuchen Sie es später erneut.</target>
+        <target state="translated">Wechseln zur Definition ist nicht möglich. Die Informationen zum Überprüfen des Typen sind nicht verfügbar. Versuchen Sie es später noch mal.</target>
         <note />
       </trans-unit>
       <trans-unit id="GotoDefinitionFailed_NotSourceCode">

@@ -22,14 +22,34 @@
         <target state="new">Resource header beginning at offset {0} is malformed.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">Dil sürümü için izin verilen değerleri görüntüleyin, dil sürümünü 'en son' veya 'önizleme' örneklerindeki gibi belirtin</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">Desteklenen dil sürümleri:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">--langversion için '{0}' değeri tanınmıyor. Tam liste için --langversion:? kullanın</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">Üye tanımında '.' sembolü beklenmiyordu. 'with', '=' veya başka bir belirteç bekleniyordu.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">PDB içinde depolanan kaynak dosyası sağlama toplamını hesaplama algoritmasını belirtin. Desteklenen değerler: SHA1 veya SHA256 (varsayılan)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">{0}' algoritması desteklenmiyor</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -250,11 +270,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">Yönetilen kaynak için tanınmayan gizlilik ayarı '{0}'; geçerli seçenekler: 'public' ve 'private'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Birden çok '{0}.dll' başvurusuna izin verilmiyor</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -5312,11 +5327,6 @@
         <target state="translated">DLLImport bağlamaları bir sınıf içinde statik üyeler veya bir modül içinde işlev tanımları olmalıdır</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">mscorlib.dll veya FSharp.Core.dll dosyalarına açık olarak başvurulduğunda {0} seçeneği de geçirilmelidir</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">FSharp.Core.sigdata, FSharp.Core ile birlikte bulunamadı. Dosyanın {0} içinde olması bekleniyordu. Bu dosyayı gerektirmeyen daha yeni bir FSharp.Core sürümüne yükseltmeniz önerilir.</target>
@@ -7190,6 +7200,16 @@
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
         <target state="translated">Bu üyelere uygulama verilmedi (bazı sonuçlar atlandı): {0}Tüm arabirim üyelerinin uygulanması ve uygun bir "arabirim" bildirimi (ör. "arabirim ... ile üye ..." kapsamında listelenmesi gerektiğini unutmayın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">İfade bir ada sahip değil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">'Nameof' işlecinin birinci sınıf işlev değeri olarak kullanılmasına izin verilmez.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

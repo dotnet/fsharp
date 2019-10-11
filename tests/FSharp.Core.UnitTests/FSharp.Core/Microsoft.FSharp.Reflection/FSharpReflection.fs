@@ -26,30 +26,6 @@ Make sure each method works on:
 * Struct versions of the above
 *)
 
-#if FX_RESHAPED_REFLECTION
-module PrimReflectionAdapters =
-    open System.Linq
-    
-    type System.Type with
-        member this.Assembly = this.GetTypeInfo().Assembly
-        member this.IsGenericType = this.GetTypeInfo().IsGenericType
-        member this.IsValueType = this.GetTypeInfo().IsValueType
-        member this.IsAssignableFrom(otherTy : Type) = this.GetTypeInfo().IsAssignableFrom(otherTy.GetTypeInfo())
-        member this.GetProperty(name) = this.GetRuntimeProperty(name)
-        member this.GetProperties() = this.GetRuntimeProperties() |> Array.ofSeq
-        member this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
-        member this.GetCustomAttributes(attrTy : Type, inherits : bool) : obj[] = 
-            unbox (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, inherits).ToArray()))
-            
-    type System.Reflection.MemberInfo with
-        member this.ReflectedType = this.DeclaringType
-        
-    type System.Reflection.Assembly with
-        member this.GetTypes() = this.DefinedTypes |> Seq.map (fun ti -> ti.AsType()) |> Array.ofSeq
-
-open PrimReflectionAdapters
-#endif
-
 module IsModule = 
     type IsModuleType () = 
         member __.M = 1
@@ -1056,22 +1032,14 @@ type FSharpTypeTests() =
 
     // Regression for 5588, Reflection: unit is still treated as a record type, but only if you pass BindingFlags.NonPublic
     [<Test>]
-    member __.``IsRecord.Regression5588``() =    
-        
+    member __.``IsRecord.Regression5588``() =
         // negative
         Assert.IsFalse(FSharpType.IsRecord(typeof<unit>))
-        
-#if FX_RESHAPED_REFLECTION
-        Assert.IsFalse( FSharpType.IsRecord(typeof<unit>, true) )
-#else 
         Assert.IsFalse( FSharpType.IsRecord(typeof<unit>, System.Reflection.BindingFlags.NonPublic) )
-#endif
         ()
 
-        
     [<Test>]
-    member __.IsTuple() =    
-               
+    member __.IsTuple() =
         // positive
         Assert.IsTrue(FSharpType.IsTuple(typeof<Tuple<int, int>>))
         Assert.IsTrue(FSharpType.IsTuple(typeof<Tuple<int, int, string>>))

@@ -68,8 +68,6 @@ type ValueBuilder() =
         (__resumableObject
             { new ValueStateMachine<'T>() with 
                 member sm.Step () =
-                    __resumeAt 0
-                    sm.Current <- ValueNone
                     __resumeAt sm.ResumptionPoint
                     __expand_code sm }).Start()
 
@@ -153,6 +151,7 @@ type ValueBuilder() =
                 sm.Current <- ValueSome v
                 false
             | None -> 
+                sm.Current <- ValueNone
                 true)
 
     //[<NoDynamicInvocation>]

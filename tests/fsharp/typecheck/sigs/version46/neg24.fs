@@ -68,4 +68,3 @@ type C() =
 
 // Check that the error for a named argument/setter that does not exist is located in a good place
 let _ = C().M(qez=3)
-
