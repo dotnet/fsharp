@@ -533,7 +533,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let parentTyconR = ConvTyconRef cenv tcref m
             let propRetTypeR = ConvType cenv env m fspec.FormalType
             let callArgR = ConvExpr cenv env obj
-            let exnTypeR = ConvType cenv env m (generalizedTyOfTyconRef g tcref)
+            let exnTypeR = ConvType cenv env m (generalizedTyconRef g tcref)
             QP.mkPropGet( (parentTyconR, fspec.Name,propRetTypeR, []), [], [QP.mkCoerce (exnTypeR, callArgR)])
 
         | TOp.Coerce, [tgtTy;srcTy], [x]  ->

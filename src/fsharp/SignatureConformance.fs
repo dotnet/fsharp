@@ -213,8 +213,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     false
                 else
 
-                let aNull2 = TypeNullIsExtraValueOld g m (generalizedTyOfTyconRef g (mkLocalTyconRef implTycon))
-                let fNull2 = TypeNullIsExtraValueOld g m (generalizedTyOfTyconRef g (mkLocalTyconRef sigTycon))
+                let aNull2 = TypeNullIsExtraValueOld g m (generalizedTyconRef g (mkLocalTyconRef implTycon))
+                let fNull2 = TypeNullIsExtraValueOld g m (generalizedTyconRef g (mkLocalTyconRef sigTycon))
                 if aNull2 && not fNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m))
                     false
@@ -223,8 +223,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     false
                 else
 
-                let aSealed = isSealedTy g (generalizedTyOfTyconRef g (mkLocalTyconRef implTycon))
-                let fSealed = isSealedTy g (generalizedTyOfTyconRef g (mkLocalTyconRef sigTycon))
+                let aSealed = isSealedTy g (generalizedTyconRef g (mkLocalTyconRef implTycon))
+                let fSealed = isSealedTy g (generalizedTyconRef g (mkLocalTyconRef sigTycon))
                 if aSealed && not fSealed then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m))
                     false

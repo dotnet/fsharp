@@ -1036,11 +1036,9 @@ type LazyWithContext<'T, 'ctxt> =
     member x.UnsynchronizedForce ctxt = 
         match x.funcOrException with 
         | null -> x.value 
-
         | :? LazyWithContextFailure as res -> 
               // Re-raise the original exception 
               raise (x.findOriginalException res.Exception)
-
         | :? ('ctxt -> 'T) as f -> 
               x.funcOrException <- box(LazyWithContextFailure.Undefined)
               try 
@@ -1051,7 +1049,6 @@ type LazyWithContext<'T, 'ctxt> =
               with e -> 
                   x.funcOrException <- box(new LazyWithContextFailure(e))
                   reraise()
-
         | _ -> 
             failwith "unreachable"
 

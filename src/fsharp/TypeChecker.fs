@@ -13768,7 +13768,7 @@ module MutRecBindingChecking =
                                     errorR(Error(FSComp.SR.tcDllImportNotAllowed(), bind.Var.Range))
                                     
                                 let nm = bind.Var.DisplayName
-                                let ty = generalizedTyOfTyconRef g tcref
+                                let ty = generalizedTyconRef g tcref
                                 let ad = envNonRec.eAccessRights
                                 match TryFindIntrinsicMethInfo cenv.infoReader bind.Var.Range ad nm ty, 
                                       TryFindPropInfo cenv.infoReader bind.Var.Range ad nm ty with 
@@ -14255,7 +14255,7 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
         let overridesOK = DeclKind.CanOverrideOrImplement declKind
         members |> List.collect (function 
             | SynMemberDefn.Interface(ity, defnOpt, _) -> 
-                  let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyOfTyconRef g tcref
+                  let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyconRef g tcref
                   let m = ity.Range
                   if tcref.IsTypeAbbrev then error(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveInterfaceDeclaration(), m))
                   if tcref.IsEnumTycon then error(Error(FSComp.SR.tcEnumerationsCannotHaveInterfaceDeclaration(), m))
@@ -14366,7 +14366,7 @@ module AddAugmentationDeclarations =
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && scSet.Contains tycon.Stamp then 
             let tcref = mkLocalTyconRef tycon
             let tcaug = tycon.TypeContents
-            let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyOfTyconRef g tcref
+            let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyconRef g tcref
             let m = tycon.Range
             let genericIComparableTy = mkAppTy g.system_GenericIComparable_tcref [ty]
 
@@ -14453,7 +14453,7 @@ module AddAugmentationDeclarations =
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon then 
             let tcref = mkLocalTyconRef tycon
             let tcaug = tycon.TypeContents
-            let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyOfTyconRef g tcref
+            let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyconRef g tcref
             let m = tycon.Range
             
             // Note: tycon.HasOverride only gives correct results after we've done the type augmentation 

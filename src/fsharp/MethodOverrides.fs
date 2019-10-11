@@ -235,7 +235,7 @@ module DispatchSlotChecking =
     let OverrideImplementsDispatchSlot g amap m dispatchSlot availPriorOverride =
         IsExactMatch g amap m dispatchSlot availPriorOverride &&
         // The override has to actually be in some subtype of the dispatch slot
-        ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyOfTyconRef g availPriorOverride.BoundingTyconRef) dispatchSlot.DeclaringTyconRef
+        ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyconRef g availPriorOverride.BoundingTyconRef) dispatchSlot.DeclaringTyconRef
 
     /// Check if a dispatch slot is already implemented
     let DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed (dispatchSlot: MethInfo) =
@@ -568,7 +568,7 @@ module DispatchSlotChecking =
         let tcaug = tycon.TypeContents        
         let interfaces = tycon.ImmediateInterfacesOfFSharpTycon |> List.map (fun (ity, _compgen, m) -> (ity, m))
 
-        let overallTy = generalizedTyOfTyconRef g (mkLocalTyconRef tycon)
+        let overallTy = generalizedTyconRef g (mkLocalTyconRef tycon)
 
         let allReqdTys = (overallTy, tycon.Range) :: interfaces 
 

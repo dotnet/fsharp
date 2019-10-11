@@ -783,7 +783,7 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
         errorR(Error(FSComp.SR.augInvalidAttrs(), m))
     
     let hasNominalInterface tcref =
-        let ty = generalizedTyOfTyconRef g (mkLocalTyconRef tycon)
+        let ty = generalizedTyconRef g (mkLocalTyconRef tycon)
         ExistsHeadTypeInEntireHierarchy g amap tycon.Range ty tcref
 
     let hasExplicitICompare = 
@@ -1004,13 +1004,13 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
                 
             // build the equals rhs
             let withcEqualsExpr =
-                let _tinst,ty = mkMinimalTy g tcref
-                let thisv,thise = mkThisVar g m ty
-                let thatobjv,thatobje = mkCompGenLocal m "obj" g.obj_ty
-                let thatv,thate = mkCompGenLocal m "that" ty  
-                let compv,compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
-                let equalse = equalsf g tcref tycon (thisv, thise) thatobje (thatv,thate) compe
-                mkMultiLambdas g m tps [[thisv];[thatobjv;compv]] (equalse,g.bool_ty)
+                let _tinst, ty = mkMinimalTy g tcref
+                let thisv, thise = mkThisVar g m ty
+                let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty
+                let thatv, thate = mkCompGenLocal m "that" ty  
+                let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
+                let equalse = equalsf g tcref tycon (thisv, thise) thatobje (thatv, thate) compe
+                mkMultiLambdas g m tps [[thisv];[thatobjv; compv]] (equalse, g.bool_ty)
 
             let objGetHashCodeExpr = 
                 let tinst, ty = mkMinimalTy g tcref
@@ -1043,7 +1043,7 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
       | Some (objEqualsVal, nocEqualsVal) -> 
           // this is the body of the real strongly typed implementation 
           let nocEqualsExpr = 
-              let thisv,thatv,equalse = equalsf g tcref tycon 
+              let thisv, thatv, equalse = equalsf g tcref tycon 
               mkLambdas g m tps [thisv;thatv] (equalse, g.bool_ty)  
 
           // this is the body of the override 

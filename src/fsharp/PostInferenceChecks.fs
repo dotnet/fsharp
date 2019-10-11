@@ -1884,8 +1884,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             if v.IsExtensionMember then 
                 tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
                     if v2.IsExtensionMember && not (valEq v v2) && (v.CompiledName cenv.g.CompilerGlobalState) = (v2.CompiledName cenv.g.CompilerGlobalState) then
-                        let minfo1 =  FSMeth(g, generalizedTyOfTyconRef g tcref, mkLocalValRef v, Some 0UL)
-                        let minfo2 =  FSMeth(g, generalizedTyOfTyconRef g tcref, mkLocalValRef v2, Some 0UL)
+                        let minfo1 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v, Some 0UL)
+                        let minfo2 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v2, Some 0UL)
                         if tyconRefEq g v.MemberApparentEntity v2.MemberApparentEntity && 
                            MethInfosEquivByNameAndSig EraseAll true g cenv.amap v.Range minfo1 minfo2 then 
                             errorR(Duplicate(kind, v.DisplayName, v.Range)))
@@ -1945,7 +1945,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     let g = cenv.g
     let m = tycon.Range 
     let tcref = mkLocalTyconRef tycon
-    let ty = generalizedTyOfTyconRef g tcref
+    let ty = generalizedTyconRef g tcref
 
     let env = { env with reflect = env.reflect || HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute tycon.Attribs }
     let env = BindTypars g env (tycon.Typars m)

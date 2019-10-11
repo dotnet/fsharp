@@ -50,3 +50,7 @@ type internal ByteStream =
     member Position : int 
     static member FromBytes : byte[] * start:int * length:int -> ByteStream
     
+#if LAZY_UNPICKLE
+    member CloneAndSeek : int -> ByteStream
+    member Skip : int -> unit
+#endif

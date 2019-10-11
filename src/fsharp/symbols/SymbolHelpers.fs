@@ -845,7 +845,7 @@ module internal SymbolHelpers =
              isAppTy g ty &&
              g.suppressed_types 
              |> List.exists (fun supp -> 
-                let generalizedSupp = generalizedTyOfTyconRef g supp
+                let generalizedSupp = generalizedTyconRef g supp
                 // check the display name is precisely the one we're suppressing
                 isAppTy g generalizedSupp && it = supp.DisplayName &&
                 // check if they are the same logical type (after removing all abbreviations)
@@ -986,7 +986,7 @@ module internal SymbolHelpers =
             match item with
             | Item.Types (_, ((TType_app (tcref, _, _)) :: _))
             | Item.UnqualifiedType(tcref :: _) ->
-                let ty = generalizedTyOfTyconRef g tcref
+                let ty = generalizedTyconRef g tcref
                 Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
         with _ -> false
@@ -1011,7 +1011,7 @@ module internal SymbolHelpers =
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
             let uc = ucinfo.UnionCase 
-            let rty = generalizedTyOfTyconRef g ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let recd = uc.RecdFields 
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
@@ -1362,7 +1362,7 @@ module internal SymbolHelpers =
         | Item.UnqualifiedType (tcref :: _)
         | Item.ExnCase tcref -> 
             // strip off any abbreviation
-            match generalizedTyOfTyconRef g tcref with 
+            match generalizedTyconRef g tcref with 
             | AppTy g (tcref, _)  -> Some (ticksAndArgCountTextOfTyconRef tcref)
             | _ -> None
 

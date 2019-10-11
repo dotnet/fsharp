@@ -255,7 +255,7 @@ module internal DescriptionListsImpl =
                 match ucinfo.UnionCase.RecdFields with
                 | [f] -> [PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
                 | fs -> fs |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
-            let rty = generalizedTyOfTyconRef g ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let rtyL = NicePrint.layoutType denv rty
             prettyParams, rtyL
 

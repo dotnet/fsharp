@@ -6801,7 +6801,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
     | TAsmRepr _ | TILObjectRepr _ | TMeasureableRepr _ -> ()
     | TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ ->
         let eenvinner = ReplaceTyenv (TypeReprEnv.ForTycon tycon) eenv
-        let thisTy = generalizedTyOfTyconRef g tcref
+        let thisTy = generalizedTyconRef g tcref
 
         let ilThisTy = GenType cenv.amap m eenvinner.tyenv thisTy
         let tref = ilThisTy.TypeRef

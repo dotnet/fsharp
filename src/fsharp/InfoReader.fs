@@ -192,7 +192,7 @@ let IsIndexerType g amap ty =
     isListTy g ty ||
     match tryDestAppTy g ty with
     | ValueSome tcref ->
-        let entityTy = generalizedTyOfTyconRef g tcref
+        let entityTy = generalizedTyconRef g tcref
         let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy
         props |> List.exists (fun x -> x.PropertyName = "Item")
     | ValueNone -> false

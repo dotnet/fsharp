@@ -22,6 +22,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILAsciiWriter 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
+open FSharp.Core.Printf
 
 let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
 
@@ -1277,7 +1278,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                 else
 #endif
                     modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, null, Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ]))
-            ilG.EmitAndLog(OpCodes.Call, meth)
+            ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_newarr (shape, ty) -> 
         if (shape = ILArrayShape.SingleDimensional)
@@ -1285,14 +1286,14 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         else 
             let aty = convType cenv emEnv  (ILType.Array(shape, ty)) 
             let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, null, Array.create shape.Rank (typeof<int>))
-            ilG.EmitAndLog(OpCodes.Newobj, meth)
+            ilG.EmitAndLog (OpCodes.Newobj, meth)
 
-    | I_ldlen -> ilG.EmitAndLog(OpCodes.Ldlen)
-    | I_mkrefany ty -> ilG.EmitAndLog(OpCodes.Mkrefany, convType cenv emEnv ty)
-    | I_refanytype -> ilG.EmitAndLog(OpCodes.Refanytype)
-    | I_refanyval ty -> ilG.EmitAndLog(OpCodes.Refanyval, convType cenv emEnv ty)
-    | I_rethrow -> ilG.EmitAndLog(OpCodes.Rethrow)
-    | I_break -> ilG.EmitAndLog(OpCodes.Break)
+    | I_ldlen -> ilG.EmitAndLog OpCodes.Ldlen
+    | I_mkrefany ty -> ilG.EmitAndLog (OpCodes.Mkrefany, convType cenv emEnv ty)
+    | I_refanytype -> ilG.EmitAndLog OpCodes.Refanytype
+    | I_refanyval ty -> ilG.EmitAndLog (OpCodes.Refanyval, convType cenv emEnv ty)
+    | I_rethrow -> ilG.EmitAndLog OpCodes.Rethrow
+    | I_break -> ilG.EmitAndLog OpCodes.Break
     | I_seqpoint src -> 
 #if FX_RESHAPED_REFEMIT
         ignore src

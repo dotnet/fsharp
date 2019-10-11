@@ -1936,7 +1936,7 @@ type IRawFSharpAssemblyData =
     abstract GetAutoOpenAttributes: ILGlobals -> string list
 
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
-    abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
+    abstract GetInternalsVisibleToAttributes: ILGlobals -> string list
 
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service

@@ -1624,7 +1624,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
         match objArgs, ad with 
         | [objArg], AccessibleFrom(paths, Some tcref) -> 
             let objArgTy = tyOfExpr g objArg 
-            let ty = generalizedTyOfTyconRef g tcref
+            let ty = generalizedTyconRef g tcref
             // We get to keep our rights if the type we're in subsumes the object argument type
             if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce objArgTy then
                 ad

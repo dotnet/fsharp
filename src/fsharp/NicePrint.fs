@@ -1677,7 +1677,7 @@ module private TastDefinitionPrinting =
 
     let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
       let g = denv.g
-      let ty = generalizedTyOfTyconRef g (mkLocalTyconRef tycon) 
+      let ty = generalizedTyconRef g (mkLocalTyconRef tycon) 
       let start, name = 
           let n = tycon.DisplayName
           if isStructTy g ty then Some "struct", tagStruct n

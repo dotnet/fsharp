@@ -892,7 +892,7 @@ module FSharpExprConvert =
                 let parent = ILTypeRef.Create(e.Scope, e.Enclosing.Tail, e.Enclosing.Head)
                 Import.ImportILTypeRef cenv.amap m parent, Some e.Name
                 
-        let enclosingType = generalizedTyOfTyconRef g tcref
+        let enclosingType = generalizedTyconRef g tcref
         
         let makeCall minfo =
             ConvObjectModelCallLinear cenv env (isNewObj, minfo, enclTypeArgs, methTypeArgs, callArgs) id   

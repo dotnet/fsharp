@@ -2397,7 +2397,7 @@ let generalizeTyconRef (g: TcGlobals) tcref =
     let tinst = generalTyconRefInst tcref
     tinst, TType_app(tcref, tinst, g.knownWithoutNull)
 
-let generalizedTyOfTyconRef (g: TcGlobals) tcref = 
+let generalizedTyconRef (g: TcGlobals) tcref = 
     let tinst = generalTyconRefInst tcref
     TType_app(tcref, tinst, g.knownWithoutNull)
 

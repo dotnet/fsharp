@@ -28,7 +28,7 @@ let inline WCHAR s = char s
 let inline BYTE s = byte s
 
 type ResourceException(name: string, ?inner: Exception) =
-    inherit Exception(name, Option.toObj inner)
+    inherit Exception (name, Option.toObj inner)
 
 type RESOURCE_STRING () =
     member val Ordinal = Unchecked.defaultof<WORD> with get, set
@@ -108,6 +108,7 @@ type CvtResFile () =
             pstring.theString <- sb.ToString ()
         pstring
 
+
 [<Flags>]
 type SectionCharacteristics =
     | TypeReg = 0u
@@ -171,7 +172,6 @@ type ResourceSection() =
 
 [<Extension>]
 type StreamExtensions () =
-
     [<Extension>]
     static member TryReadAll (stream: Stream, buffer: byte[], offset: int, count: int) = 
         Debug.Assert (count > 0)
@@ -274,7 +274,6 @@ type ICONDIRENTRY =
     val mutable dwImageOffset: DWORD
 
 type VersionHelper() =
-
     /// <summary>
     /// Parses a version string of the form "major [ '.' minor [ '.' build [ '.' revision ] ] ]".
     /// </summary>
