@@ -1288,16 +1288,6 @@ let ``Test TPProject param info`` () =
 
 #endif // TEST_TP_PROJECTS
 
-#if EXE
-
-``Intro test`` () 
-//``Test TPProject all symbols`` () 
-//``Test TPProject errors`` () 
-//``Test TPProject quick info`` () 
-//``Test TPProject param info`` () 
-``Basic cancellation test`` ()
-``Intro test`` () 
-#endif
 
 [<Test>]
 let ``FSharpField.IsNameGenerated`` () =

@@ -24,6 +24,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="FSharp.Compiler.LanguageServer.DesignTime.proj" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="FSharp.Compiler.LanguageServer.DesignTime.targets" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>

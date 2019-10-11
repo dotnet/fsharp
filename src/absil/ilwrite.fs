@@ -3037,7 +3037,6 @@ module FileSystemUtilites =
     open System
     open System.Reflection
     open System.Globalization
-
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
     let setExecutablePermission (filename: string) =
 
@@ -3730,27 +3729,24 @@ let writeBinaryAndReportMappings (outfile,
           let nextPhys = align alignPhys (textSectionPhysLoc + textSectionSize)
           let textSectionPhysSize = nextPhys - textSectionPhysLoc
           let next = align alignVirt (textSectionAddr + textSectionSize)
-          
-          // .RSRC SECTION (DATA) 
+
+          // .RSRC SECTION (DATA)
           let dataSectionPhysLoc = nextPhys
           let dataSectionAddr = next
           let dataSectionVirtToPhys v = v - dataSectionAddr + dataSectionPhysLoc
-          
-          let resourceFormat = if modul.Is64Bit then Support.X64 else Support.X86
-          
-          let nativeResources = 
+          let nativeResources =
             match modul.NativeResources with
             | [] -> [||]
             | resources ->
-                let unlinkedResources = 
-                    resources |> List.map (function 
+                let unlinkedResources =
+                    resources |> List.map (function
                         | ILNativeResource.Out bytes -> bytes
-                        | ILNativeResource.In (fileName, linkedResourceBase, start, len) -> 
+                        | ILNativeResource.In (fileName, linkedResourceBase, start, len) ->
                              let linkedResource = File.ReadBinaryChunk (fileName, start, len)
                              unlinkResource linkedResourceBase linkedResource)
-                             
+
                 begin
-                  try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName outfile)
+                  try linkNativeResources unlinkedResources next
                   with e -> failwith ("Linking a native resource failed: "+e.Message+"")
                 end
 

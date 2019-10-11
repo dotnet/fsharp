@@ -62,6 +62,7 @@ type public Fsc () as this =
     let mutable dotnetFscCompilerPath : string = null
     let mutable generateInterfaceFile : string = null
     let mutable keyFile : string = null
+    let mutable langVersion : string = null
     let mutable otherFlags : string = null
     let mutable outputAssembly : string = null 
     let mutable pathMap : string = null
@@ -91,6 +92,7 @@ type public Fsc () as this =
     let mutable dotnetFscCompilerPath : string? = null
     let mutable generateInterfaceFile : string? = null
     let mutable keyFile : string? = null
+    let mutable langVersion : string? = null
     let mutable otherFlags : string? = null
     let mutable outputAssembly : string? = null 
     let mutable pathMap : string? = null
@@ -149,9 +151,10 @@ type public Fsc () as this =
         for item in embeddedFiles do
             builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
+        builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         // NoFramework
-        if noFramework then 
-            builder.AppendSwitch("--noframework") 
+        if noFramework then
+            builder.AppendSwitch("--noframework")
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
@@ -159,7 +162,6 @@ type public Fsc () as this =
             builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
-
         // GenerateInterfaceFile
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
@@ -400,6 +402,10 @@ type public Fsc () as this =
         with get() = keyFile
         and set(s) = keyFile <- s
 
+    member fsc.LangVersion
+        with get() = langVersion
+        and set(s) = langVersion <- s
+
     member fsc.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
@@ -433,7 +439,7 @@ type public Fsc () as this =
     member fsc.PathMap
         with get() = pathMap
         and set(s) = pathMap <- s
-    
+
     // --pdb <string>: 
     //     Name the debug output file
     member fsc.PdbFile

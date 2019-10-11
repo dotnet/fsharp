@@ -93,21 +93,21 @@ module TypeProviderDesignTimeComponentLoading =
     let ``check tooling paths for type provider design time component loading`` () =
         let expected =
           [
-#if NET472
-            // only searched when executing on .NET Framework
-            for tfm in ["net471"; "net47"; "net462"; "net461"; "net452"; "net451"; "net45"] do
-                yield Path.Combine("typeproviders", "fsharp41", tfm)
-                yield Path.Combine("tools", "fsharp41", tfm)
-#else
-            // only searched when executing on .NET Core
-            for tfm in ["netcoreapp2.1"; "netcoreapp2.0"] do
-                yield Path.Combine("typeproviders", "fsharp41", tfm)
-                yield Path.Combine("tools", "fsharp41", tfm)
-#endif
-            // always searched
-            for tfm in ["netstandard2.0"] do
-                yield Path.Combine("typeproviders", "fsharp41", tfm)
-                yield Path.Combine("tools", "fsharp41", tfm)
+#if NET472 // only available on net472
+            Path.Combine("typeproviders", "fsharp41", "net461")
+            Path.Combine("tools", "fsharp41", "net461")
+            Path.Combine("typeproviders", "fsharp41", "net452")
+            Path.Combine("tools", "fsharp41", "net452")
+            Path.Combine("typeproviders", "fsharp41", "net451")
+            Path.Combine("tools", "fsharp41", "net451")
+            Path.Combine("typeproviders", "fsharp41", "net45")
+            Path.Combine("tools", "fsharp41", "net45")
+#else // only available on netcoreapp2.0
+            Path.Combine("typeproviders", "fsharp41", "netcoreapp2.0")
+            Path.Combine("tools", "fsharp41", "netcoreapp2.0")
+#endif // available in both
+            Path.Combine("typeproviders", "fsharp41", "netstandard2.0")
+            Path.Combine("tools", "fsharp41", "netstandard2.0")
           ]
         let actual = FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
         printfn "actual = %A" actual

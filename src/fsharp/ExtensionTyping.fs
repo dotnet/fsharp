@@ -45,9 +45,9 @@ module internal ExtensionTyping =
     // Detect the host tooling context
     let toolingCompatibleVersions() = 
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then 
-            [ "net471"; "net47"; "net462"; "net461"; "net452"; "net451"; "net45"; "netstandard2.0"]
+            [ "net461"; "net452"; "net451"; "net45"; "netstandard2.0"]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then 
-            [ "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0"]
+            [ "netcoreapp2.0"; "netstandard2.0"]
         else
             System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [  "netstandard2.0"]
@@ -143,9 +143,7 @@ module internal ExtensionTyping =
 
     let StripException (e: exn) =
         match e with
-#if !FX_REDUCED_EXCEPTIONS
         |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
-#endif
         |   :? TypeInitializationException as e -> e.InnerException
         |   _ -> e
 
@@ -428,6 +426,7 @@ module internal ExtensionTyping =
         member __.IsEnum = x.IsEnum
         member __.IsClass = x.IsClass
         member __.IsSealed = x.IsSealed
+        member __.IsAbstract = x.IsAbstract
         member __.IsInterface = x.IsInterface
         member __.GetArrayRank() = x.GetArrayRank()
         member __.GenericParameterPosition = x.GenericParameterPosition

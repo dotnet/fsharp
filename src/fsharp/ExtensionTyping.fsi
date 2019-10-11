@@ -131,6 +131,7 @@ module internal ExtensionTyping =
         member IsInterface : bool
         member IsClass : bool
         member IsSealed : bool
+        member IsAbstract : bool
         member IsPublic : bool
         member IsNestedPublic : bool
         member GenericParameterPosition : int

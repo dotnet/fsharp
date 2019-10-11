@@ -166,21 +166,13 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs:seq<'Key*'T>) : IDictionary<'Key,'T> =
-#if FX_RESHAPED_REFLECTION
-        if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
         if typeof<'Key>.IsValueType
-#endif
             then dictValueType keyValuePairs :> _
             else dictRefType   keyValuePairs :> _
 
     [<CompiledName("CreateReadOnlyDictionary")>]
     let readOnlyDict (keyValuePairs:seq<'Key*'T>) : IReadOnlyDictionary<'Key,'T> =
-#if FX_RESHAPED_REFLECTION
-        if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
         if typeof<'Key>.IsValueType
-#endif
             then dictValueType keyValuePairs :> _
             else dictRefType   keyValuePairs :> _
 
@@ -227,7 +219,6 @@ module ExtraTopLevelOperators =
     [<CompiledName("PrintFormatLineToTextWriter")>]
     let fprintfn (textWriter:TextWriter) format = Printf.fprintfn textWriter format 
     
-#if !FX_NO_SYSTEM_CONSOLE
     [<CompiledName("PrintFormat")>]
     let printf format = Printf.printf      format 
 
@@ -239,7 +230,6 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format = Printf.eprintfn    format 
-#endif
 
     [<CompiledName("FailWith")>]
     let failwith s = raise (Failure s)

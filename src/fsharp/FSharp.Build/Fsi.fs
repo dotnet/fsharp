@@ -32,6 +32,7 @@ type public Fsi () as this =
     let mutable commandLineArgs : ITaskItem list = []
     let mutable defineConstants : ITaskItem[] = [||]
     let mutable fsiExec = false
+    let mutable langVersion : string = null
     let mutable noFramework = false
     let mutable optimize = true
     let mutable provideCommandLineArgs = false
@@ -89,6 +90,7 @@ type public Fsi () as this =
 
         builder.AppendSwitchIfNotNull("--codepage:", codePage)
 
+        builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         if noFramework then builder.AppendSwitch("--noframework")
 
         for item in defineConstants do
@@ -184,6 +186,10 @@ type public Fsi () as this =
     member fsi.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
+
+    member fsc.LangVersion
+        with get() = langVersion
+        and set(s) = langVersion <- s
 
     // --noframework
     member fsi.NoFramework

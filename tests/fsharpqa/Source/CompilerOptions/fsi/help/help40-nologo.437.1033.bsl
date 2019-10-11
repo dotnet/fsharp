@@ -52,6 +52,10 @@ Usage: fsiAnyCpu.exe <options> [script.fsx [<arguments>]]
 
 
 		- LANGUAGE -
+--langversion:{?|version|latest|preview} Display the allowed values for
+                                         language version, specify language
+                                         version such as 'latest' or
+                                         'preview'
 --checked[+|-]                           Generate overflow checks
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)

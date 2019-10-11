@@ -47,11 +47,6 @@ module internal PrintfImpl =
     open Microsoft.FSharp.Collections
     open LanguagePrimitives.IntrinsicOperators
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
     open System.IO
     
     [<Flags>]
@@ -1070,12 +1065,8 @@ module internal PrintfImpl =
 
         static member GenericToString<'T>(spec: FormatSpecifier) = 
             let bindingFlags = 
-#if FX_RESHAPED_REFLECTION
-                isPlusForPositives spec.Flags // true - show non-public
-#else
                 if isPlusForPositives spec.Flags then BindingFlags.Public ||| BindingFlags.NonPublic
                 else BindingFlags.Public 
-#endif
 
             let useZeroWidth = isPadWithZeros spec.Flags
             let opts = 
@@ -1645,20 +1636,6 @@ module Printf =
     [<CompiledName("PrintFormatToStringThenFail")>]
     let failwithf format = ksprintf failwith format
 
-#if !FX_NO_SYSTEM_CONSOLE
-#if EXTRAS_FOR_SILVERLIGHT_COMPILER
-    [<CompiledName("PrintFormat")>]
-    let printf format = fprintf (!outWriter) format
-
-    [<CompiledName("PrintFormatToError")>]
-    let eprintf format = fprintf (!errorWriter) format
-
-    [<CompiledName("PrintFormatLine")>]
-    let printfn format = fprintfn (!outWriter) format
-
-    [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn format = fprintfn (!errorWriter) format
-#else
     [<CompiledName("PrintFormat")>]
     let printf format = fprintf Console.Out format
 
@@ -1670,5 +1647,3 @@ module Printf =
 
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format = fprintfn Console.Error format
-#endif
-#endif 

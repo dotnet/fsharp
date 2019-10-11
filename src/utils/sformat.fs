@@ -38,11 +38,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open ReflectionAdapters
-#endif
-
     [<StructuralEquality; NoComparison>]
     type LayoutTag =
         | ActivePatternCase
@@ -326,11 +321,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           StringLimit : int;
 #endif
           FormatProvider: System.IFormatProvider;
-#if FX_RESHAPED_REFLECTION
-          ShowNonPublic : bool
-#else
           BindingFlags: System.Reflection.BindingFlags
-#endif
           PrintWidth : int; 
           PrintDepth : int; 
           PrintLength : int;
@@ -344,11 +335,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
               StringLimit = System.Int32.MaxValue;
 #endif
               AttributeProcessor= (fun _ _ _ -> ());
-#if FX_RESHAPED_REFLECTION
-              ShowNonPublic = false
-#else
               BindingFlags = System.Reflection.BindingFlags.Public;
-#endif
               FloatingPointFormat = "g10";
               PrintWidth = 80 ; 
               PrintDepth = 100 ; 
@@ -362,11 +349,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     module ReflectUtils = 
         open System
         open System.Reflection
-
-#if FX_RESHAPED_REFLECTION
-        open PrimReflectionAdapters
-        open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
         [<NoEquality; NoComparison>]
         type TypeInfo =
@@ -409,10 +391,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
             // Analyze an object to see if it the representation
             // of an F# value.
-            let GetValueInfoOfObject (bindingFlags:BindingFlags) (obj : obj) = 
-#if FX_RESHAPED_REFLECTION
-              let showNonPublic = isNonPublicFlag bindingFlags
-#endif
+            let GetValueInfoOfObject (bindingFlags:BindingFlags) (obj : obj) =
               match obj with 
               | null -> ObjectValue(obj)
               | _ -> 
@@ -434,34 +413,18 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                 // the type are the actual fields of the type.  Again,
                 // we should be reading attributes here that indicate the
                 // true structure of the type, e.g. the order of the fields.   
-#if FX_RESHAPED_REFLECTION
-                elif FSharpType.IsUnion(reprty, showNonPublic) then 
-                    let tag,vals = FSharpValue.GetUnionFields (obj,reprty, showNonPublic) 
-#else
                 elif FSharpType.IsUnion(reprty,bindingFlags) then 
                     let tag,vals = FSharpValue.GetUnionFields (obj,reprty,bindingFlags) 
-#endif
                     let props = tag.GetFields()
                     let pvals = (props,vals) ||> Array.map2 (fun prop v -> prop.Name,(v, prop.PropertyType))
                     ConstructorValue(tag.Name, Array.toList pvals)
-#if FX_RESHAPED_REFLECTION
-                elif FSharpType.IsExceptionRepresentation(reprty, showNonPublic) then 
-                    let props = FSharpType.GetExceptionFields(reprty, showNonPublic) 
-                    let vals = FSharpValue.GetExceptionFields(obj, showNonPublic)
-#else
                 elif FSharpType.IsExceptionRepresentation(reprty,bindingFlags) then 
                     let props = FSharpType.GetExceptionFields(reprty,bindingFlags) 
                     let vals = FSharpValue.GetExceptionFields(obj,bindingFlags) 
-#endif
                     let pvals = (props,vals) ||> Array.map2 (fun prop v -> prop.Name,(v, prop.PropertyType))
                     ExceptionValue(reprty, pvals |> Array.toList)
-#if FX_RESHAPED_REFLECTION
-                elif FSharpType.IsRecord(reprty, showNonPublic) then 
-                    let props = FSharpType.GetRecordFields(reprty, showNonPublic) 
-#else
                 elif FSharpType.IsRecord(reprty,bindingFlags) then 
                     let props = FSharpType.GetRecordFields(reprty,bindingFlags) 
-#endif
                     RecordValue(props |> Array.map (fun prop -> prop.Name, prop.GetValue(obj,null), prop.PropertyType) |> Array.toList)
                 else
                     ObjectValue(obj)
@@ -496,12 +459,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let string_of_int (i:int) = i.ToString()
 
         let typeUsesSystemObjectToString (ty:System.Type) =
-            try 
-#if FX_RESHAPED_REFLECTION
-                let methInfo = ty.GetRuntimeMethod("ToString",[| |])
-#else
+            try
                 let methInfo = ty.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
-#endif
                 methInfo.DeclaringType = typeof<System.Object>
             with e -> false
         /// If "str" ends with "ending" then remove it from "str", otherwise no change.
@@ -801,17 +760,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // -------------------------------------------------------------------- 
 
         let getProperty (ty: Type) (obj: obj) name =
-#if FX_RESHAPED_REFLECTION
-            let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
-            match prop with 
-            | null -> 
-                let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
-                raise (System.MissingMethodException(msg))
-            | NonNull prop -> 
-                prop.GetValue(obj,[||])
-#else
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
-#endif
+
         let getField obj (fieldInfo: FieldInfo) =
             fieldInfo.GetValue(obj)
 
@@ -1179,11 +1129,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                                             // If the leafFormatter was directly here, then layout leaves could store strings.
                            match obj with 
                            | _ when opts.ShowProperties ->
-#if FX_RESHAPED_REFLECTION
-                              let props = ty.GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
-#else                           
                               let props = ty.GetProperties(BindingFlags.GetField ||| BindingFlags.Instance ||| BindingFlags.Public)
-#endif                              
                               let fields = ty.GetFields(BindingFlags.Instance ||| BindingFlags.Public) |> Array.map (fun i -> i :> MemberInfo)
                               let propsAndFields = 
                                 props |> Array.map (fun i -> i :> MemberInfo)
@@ -1199,10 +1145,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                               // massively reign in deep printing of properties 
                               let nDepth = depthLim/10
 #if NETSTANDARD
-                              Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
-#else                              
-                              Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );
-#endif                        
+                              Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } )
+#else
+                              Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } )
+#endif
 
                               if propsAndFields.Length = 0 || (nDepth <= 0) then basicL 
                               else basicL --- 
@@ -1313,12 +1259,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let fsi_any_to_layout opts x = anyL ShowTopLevelBinding BindingFlags.Public opts x
 #else
 // FSharp.Core
-#if FX_RESHAPED_REFLECTION
-        let internal anyToStringForPrintf options (showNonPublicMembers : bool) x = 
-            let bindingFlags = ReflectionUtils.toBindingFlags showNonPublicMembers
-#else
         let internal anyToStringForPrintf options (bindingFlags:BindingFlags) x = 
-#endif
             x |> anyL ShowAll bindingFlags options |> layout_to_string options
 #endif
 

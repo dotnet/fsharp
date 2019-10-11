@@ -3639,8 +3639,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertAutoCompleteContains 
             [ "open System." ]
             "." // marker
-            [ "Collections" ] // should contain (namespace)
-            [ "Console" ] // should not contain (type)
+            [ "Collections"; "Console" ] // should contain (namespace, static type)
+            [ "Int32" ] // should not contain (non-static type)
 
     [<Test>]
     member public this.``OpenNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case2``() =        

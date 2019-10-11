@@ -13,13 +13,9 @@
     <DefineConstants>$(DefineConstants);USES_FSHARP_CORE_45_PACKAGE</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
-    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_PROJECTCRACKER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ReshapedReflection.fs">
-      <Link>ReshapedReflection.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>

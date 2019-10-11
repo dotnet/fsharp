@@ -7,14 +7,49 @@
         <target state="translated">{0} para F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">Mostrar los valores permitidos para la versión de idioma, especificar la versión de idioma como "latest" "preview"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">Versiones de lenguaje admitidas:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">Valor no reconocido "{0}" para --langversion, use --langversion:? para una lista completa</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">Símbolo inesperado "." en la definición de miembro. Se esperaba "with", "=" u otro token.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">Especifique el algoritmo para calcular la suma de comprobación del archivo de origen almacenada en PDB. Los valores admitidos son SHA1 o SHA256 (predeterminado)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">No se admite el algoritmo '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -230,11 +265,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">Configuración de privacidad '{0}' no reconocida para un recurso administrado. Las opciones válidas son 'public' y 'private'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">No se permiten varias referencias a '{0}.dll'.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -4939,7 +4969,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidFloat">
         <source>Invalid floating point number</source>
-        <target state="translated">número de punto flotante no válido.</target>
+        <target state="translated">Número de punto flotante no válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOusideDecimal">
@@ -5174,7 +5204,7 @@
       </trans-unit>
       <trans-unit id="tcParameterInferredByref">
         <source>The parameter '{0}' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref&lt;int&gt;'. When used, a byref parameter is implicitly dereferenced.</source>
-        <target state="translated">Se infirió que el parámetro "{0}" tiene un tipo byref. Los parámetros de tipo byref deben recibir una anotación de tipo explícita, por ejemplo,"'x1: byref&lt;int&gt;". Cuando se usa, la referencia de un parámetro byref se elimina de forma implícita.</target>
+        <target state="translated">Se infirió que el parámetro "{0}" tiene un tipo byref. Los parámetros de tipo byref deben recibir una anotación de tipo explícita, por ejemplo,"x1: byref&lt;int&gt;". Cuando se usa, la referencia de un parámetro byref se elimina de forma implícita.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
@@ -5290,11 +5320,6 @@
       <trans-unit id="tcDllImportNotAllowed">
         <source>DLLImport bindings must be static members in a class or function definitions in a module</source>
         <target state="translated">Los enlaces DLLImport deben ser miembros estáticos en definiciones de función o clase dentro de un módulo.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">Cuando se hace referencia de forma explícita a mscorlib.dll o FSharp.Core.dll, debe pasarse también la opción {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
@@ -7230,6 +7255,16 @@
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
         <target state="translated">No se ofreció ninguna implementación para esos miembros (se omitieron algunos resultados): {0} Tenga en cuenta que todos los miembros de la interfaz deben implementarse y enumerarse bajo una declaración de "interface" apropiada; por ejemplo, "interface ... with member ...".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">La expresión no tiene un nombre.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">No se permite el uso del operador "nameof" como un valor de función de primera clase.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

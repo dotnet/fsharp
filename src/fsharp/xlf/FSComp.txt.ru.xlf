@@ -7,14 +7,49 @@
         <target state="translated">{0} для F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">Отображение допустимых значений для версии языка. Укажите версию языка, например, "latest" или "preview".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">Поддерживаемые языковые версии:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">Не удалось распознать значение "{0}" для параметра --langversion. Для получения полного списка допустимых значений выполните команду use --langversion:?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">Неожиданный символ "." в определении члена. Ожидаемые инструкции: "with", "=" или другие токены.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">Укажите алгоритм для вычисления контрольной суммы исходного файла, хранящейся в файле PDB. Поддерживаемые значения: SHA1 или SHA256 (по умолчанию)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">Алгоритм "{0}" не поддерживается</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -230,11 +265,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">Нераспознанный параметр конфиденциальности "{0}" для управляемого ресурса. Допускается использование параметров "public" и "private"</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Множественные ссылки на файлы "{0}.dll" не допускаются</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -5292,11 +5322,6 @@
         <target state="translated">Привязки DLLImport должны быть статическими элементами в определениях класса или функции в модуле</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">При явной ссылке на mscorlib.dll или FSharp.Core.dll также должен передаваться параметр {0}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">Ресурс FSharp.Core.sigdata не найден вместе с FSharp.Core. Файл ожидался в {0}. Рекомендуется обновление до более новой версии FSharp.Core, где этот файл не требуется.</target>
@@ -7230,6 +7255,16 @@
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
         <target state="translated">Реализация для этих членов отсутствует (некоторые результаты опущены): {0}Обратите внимание, что каждый член интерфейса должен быть реализован и указан в соответствующем объявлении "interface", например, "интерфейс ... с членом ...".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">Выражение не имеет имени.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">Использование оператора "nameof" в качестве значения функции первого класса не допускается.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

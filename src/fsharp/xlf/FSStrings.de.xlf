@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="PossibleOverload">
         <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Mögliche Überladung: '{0}'. {1}.</target>
+        <target state="translated">Mögliche Überladung: "{0}". {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.QMARK.GREATER">
         <source>symbol ':?&gt;'</source>
-        <target state="translated">Symbol ':?&gt;'</target>
+        <target state="translated">Symbol ":?&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP">
@@ -634,7 +634,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.CONST">
         <source>keyword 'const'</source>
-        <target state="translated">Schlüsselwort 'const'</target>
+        <target state="translated">Schlüsselwort "const"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OWITH">
@@ -1434,7 +1434,7 @@
       </trans-unit>
       <trans-unit id="ValNotMutable">
         <source>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</source>
-        <target state="translated">Dieser Wert ist nicht änderbar. Verwenden Sie ggf. ein änderbares Schlüsselwort, z. B. "let mutable {0} = Ausdruck".</target>
+        <target state="translated">Dieser Wert ist nicht änderbar. Verwenden Sie ggf. ein änderbares Schlüsselwort, z.B. "let mutable {0} = Ausdruck".</target>
         <note />
       </trans-unit>
       <trans-unit id="ValNotLocal">
@@ -1549,17 +1549,17 @@
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
         <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#I-Direktiven dürfen nur in F#-Skriptdateien (Dateierweiterungen .fsx oder .fsscript) verwendet werden. Verschieben Sie entweder diesen Code in eine Skriptdatei, fügen Sie die Compileroption "-I" für diesen Verweis hinzu, oder trennen Sie die Direktive mit "#if INTERACTIVE'/'#endif" ab.</target>
+        <target state="translated">#I-Direktiven dürfen nur in F#-Skriptdateien (Dateierweiterungen .fsx oder .fsscript) verwendet werden. Verschieben Sie entweder diesen Code in eine Skriptdatei, fügen Sie die Compileroption "-I" für diesen Verweis hinzu, oder trennen Sie die Direktive mit "#if INTERACTIVE"/"#endif" ab.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
         <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#r-Anweisungen dürfen nur in F#-Skriptdateien (Dateierweiterungen .fsx oder .fsscript) verwendet werden. Verschieben Sie entweder diesen Code in eine Skriptdatei, oder ersetzen Sie diesen Verweis durch die Compileroption "-r". Wenn diese Anweisung als Benutzereingabe ausgeführt wird, trennen Sie sie mit "#if INTERACTIVE'/'#endif" ab.</target>
+        <target state="translated">#r-Anweisungen dürfen nur in F#-Skriptdateien (Dateierweiterungen .fsx oder .fsscript) verwendet werden. Verschieben Sie entweder diesen Code in eine Skriptdatei, oder ersetzen Sie diesen Verweis durch die Compileroption "-r". Wenn diese Anweisung als Benutzereingabe ausgeführt wird, trennen Sie sie mit "#if INTERACTIVE"/"#endif" ab.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">
         <source>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Diese Direktive darf nur in F#-Skriptdateien (Dateierweiterungen .fsx oder .fsscript) verwendet werden. Entfernen Sie entweder die Direktive, verschieben Sie diesen Code in eine Skriptdatei, oder trennen Sie die Direktive mit "#if INTERACTIVE'/'#endif" ab.</target>
+        <target state="translated">Diese Direktive darf nur in F#-Skriptdateien (Dateierweiterungen .fsx oder .fsscript) verwendet werden. Entfernen Sie entweder die Direktive, verschieben Sie diesen Code in eine Skriptdatei, oder trennen Sie die Direktive mit "#if INTERACTIVE"/"#endif" ab.</target>
         <note />
       </trans-unit>
       <trans-unit id="FileNameNotResolved">

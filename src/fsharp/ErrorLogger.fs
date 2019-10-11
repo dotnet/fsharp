@@ -350,10 +350,6 @@ module ErrorLoggerExtensions =
 
     /// Reraise an exception if it is one we want to report to Watson.
     let ReraiseIfWatsonable(exn:exn) =
-#if FX_REDUCED_EXCEPTIONS
-        ignore exn
-        ()
-#else
         match  exn with 
         // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
         | :? System.Reflection.TargetInvocationException -> ()
@@ -365,7 +361,6 @@ module ErrorLoggerExtensions =
             PreserveStackTrace exn
             raise exn
         | _ -> ()
-#endif
 
     type ErrorLogger with  
 
@@ -403,10 +398,7 @@ module ErrorLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             (* Don't send ThreadAbortException down the error channel *)
-#if FX_REDUCED_EXCEPTIONS
-#else
             | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException), _) ->  ()
-#endif
             | ReportedError _  | WrappedError(ReportedError _, _)  -> ()
             | StopProcessing | WrappedError(StopProcessing, _) -> 
                 PreserveStackTrace exn
@@ -684,7 +676,7 @@ type public FSharpErrorSeverityOptions =
 
 
 // See https://github.com/Microsoft/visualfsharp/issues/6417, if a compile of the FSharp.Compiler.Services.dll or other compiler
-// binary produces exactly 65536 methods then older versions of the compiler raise a bug.  If you hit this bug again then try removing
-// this.
-let dummyMethodFOrBug6417A() = () 
-let dummyMethodFOrBug6417B() = () 
+// binary produces exactly 65536 methods then older versions of the compiler raise a bug.  If you hit this bug again then try adding
+// this back in.
+// let dummyMethodFOrBug6417A() = () 
+// let dummyMethodFOrBug6417B() = () 

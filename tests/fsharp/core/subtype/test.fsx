@@ -1386,12 +1386,10 @@ module CoercivePipingTest =
     check "clwcweki" (f8 3) (box 3)
     check "clwcweki" (f9 3) (box 3)
 
-#if !FX_RESHAPED_REFLECTION
     // this was the actual repro
     let f (info: System.Reflection.MethodInfo) = 
       System.Attribute.GetCustomAttribute(info, typeof<ReflectedDefinitionAttribute>)
       :?> ReflectedDefinitionAttribute
-#endif
 
 module Test_Dev10_Bug_917383 = 
 
@@ -1728,7 +1726,6 @@ module InliningOnSubTypes1 =
     do check "clkewlijwlkw" (f()) (13, 17) 
 
 
-#if !FX_RESHAPED_REFLECTION
 module StructUnionSingleCase = 
     [<Struct>]
     type S = S
@@ -1756,7 +1753,6 @@ module StructUnionSingleCase =
 
     do check "wekew0ewek5" (typeof<S3>.IsValueType) true
     do check "wekew0ewek5b" (typeof<S3>.BaseType) typeof<System.ValueType>
-#endif
 
 // See https://github.com/Microsoft/visualfsharp/issues/238
 module GenericPropertyConstraintSolvedByRecord = 

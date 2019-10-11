@@ -1052,7 +1052,7 @@ type TypeCheckAccumulator =
 
       
 /// Global service state
-type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list* (*fsharpBinaries*)string
+type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list * (*fsharpBinaries*)string * (*langVersion*)decimal
 
 /// Represents a cache of 'framework' references that can be shared betweeen multiple incremental builds
 type FrameworkImportsCache(keepStrongly) = 
@@ -1083,12 +1083,13 @@ type FrameworkImportsCache(keepStrongly) =
             // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
             // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
             // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
-            let key = (frameworkDLLsKey, 
-                        tcConfig.primaryAssembly.Name, 
-                        tcConfig.GetTargetFrameworkDirectories(), 
-                        tcConfig.fsharpBinariesDir)
+            let key = (frameworkDLLsKey,
+                        tcConfig.primaryAssembly.Name,
+                        tcConfig.GetTargetFrameworkDirectories(),
+                        tcConfig.fsharpBinariesDir,
+                        tcConfig.langVersion.SpecifiedVerson)
 
-            match frameworkTcImportsCache.TryGet (ctok, key) with 
+            match frameworkTcImportsCache.TryGet (ctok, key) with
             | Some res -> return res
             | None -> 
                 let tcConfigP = TcConfigProvider.Constant tcConfig

@@ -17,6 +17,7 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -267,9 +268,6 @@ type TcConfigBuilder =
       mutable openDebugInformationForLaterStaticLinking: bool
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
-      mutable compilingFslib20: string option
-      mutable compilingFslib40: bool
-      mutable compilingFslibNoBigInt: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
@@ -400,6 +398,8 @@ type TcConfigBuilder =
       mutable noConditionalErasure: bool
 
       mutable pathMap : PathMap
+
+      mutable langVersion : LanguageVersion
     }
 
     static member Initial: ReferenceResolver.Resolver -> TcConfigBuilder
@@ -438,9 +438,6 @@ type TcConfig =
     member openDebugInformationForLaterStaticLinking: bool
     member fsharpBinariesDir: string
     member compilingFslib: bool
-    member compilingFslib20: string option
-    member compilingFslib40: bool
-    member compilingFslibNoBigInt: bool
     member useIncrementalBuilder: bool
     member includes: string list
     member implicitOpens: string list
@@ -566,6 +563,7 @@ type TcConfig =
     member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     member useSdkRefs: bool
+    member langVersion: LanguageVersion
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 
@@ -694,7 +692,7 @@ val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string * assemblyReferenceAdded: (string -> unit) -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput: 

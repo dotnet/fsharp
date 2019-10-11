@@ -4,8 +4,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard1.6</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
@@ -115,20 +115,11 @@
     <Compile Include="set.fs">
       <Link>Collections/set.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshapedreflection.fs">
-      <Link>Reflection/reshapedreflection.fs</Link>
-    </Compile>
     <Compile Include="reflect.fsi">
       <Link>Reflection/reflect.fsi</Link>
     </Compile>
     <Compile Include="reflect.fs">
       <Link>Reflection/reflect.fs</Link>
-    </Compile>
-    <Compile Include="math\n.fsi">
-      <Link>Numerics/n.fsi</Link>
-    </Compile>
-    <Compile Include="math\n.fs">
-      <Link>Numerics/n.fs</Link>
     </Compile>
     <Compile Include="math\z.fsi">
       <Link>Numerics/z.fsi</Link>
@@ -223,11 +214,6 @@
     <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryableVersion)" />
     <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
   </ItemGroup>
 
   <!-- Hook compilation phase to do custom work -->
