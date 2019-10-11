@@ -3110,7 +3110,7 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel =
            valRefEq g v g.cgh__resumableStruct_vref|| 
            valRefEq g v g.cgh__resumableObject_vref 
            ->
-                errorR(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(), m))
+                errorR(Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen(v.DisplayName), m))
 
   // Emit "methodhandleof" calls as ldtoken instructions
   //

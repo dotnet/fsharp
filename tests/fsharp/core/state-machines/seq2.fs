@@ -73,15 +73,12 @@ type SeqBuilder() =
             (__resumableObject
                 { new SeqStateMachine<'T>() with 
                     member sm.Step () =
-                        __resumeAt 0
-                            (sm.Current <- ValueNone
-                             __resumeAt sm.ResumptionPoint
-                             __expand_code sm) }).Start()
+                     __resumeAt sm.ResumptionPoint
+                     __expand_code sm }).Start()
         else
             let sm = 
                 { new SeqStateMachine<'T>() with 
                     member sm.Step () = 
-                       sm.Current <- ValueNone
                        sm.ResumptionFunc sm }
             sm.ResumptionFunc <- __expand_code
             sm.Start()
@@ -219,9 +216,12 @@ type SeqBuilder() =
                     sm.Current <- ValueSome v
                     false
                 | None -> 
+                    sm.Current <- ValueNone
                     true
             else
-                let cont = (fun sm -> true)
+                let cont (sm: SeqStateMachine<'T>) =
+                    sm.Current <- ValueNone
+                    true
                 sm.ResumptionFunc <- cont
                 sm.Current <- ValueSome v
                 false)

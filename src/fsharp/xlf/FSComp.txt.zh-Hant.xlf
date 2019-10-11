@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
-        <source>State machine constructs may only be used in inlined code protected by 'if __useResumableCode then ...' and whose composition forms valid state machine code.</source>
-        <target state="new">State machine constructs may only be used in inlined code protected by 'if __useResumableCode then ...' and whose composition forms valid state machine code.</target>
+        <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
+        <target state="new">The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</target>
         <note />
       </trans-unit>
       <trans-unit id="fSharpBannerVersion">

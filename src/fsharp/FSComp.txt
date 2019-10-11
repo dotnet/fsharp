@@ -1466,7 +1466,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3251,chkNoFirstClassNameOf,"Using the 'nameof' operator as a first-class function value is not permitted."
 3300,chkInvalidFunctionParameterType,"The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL."
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
-3401,ilxgenInvalidConstructInStateMachineDuringCodegen,"State machine constructs may only be used in inlined code protected by 'if __useResumableCode then ...' and whose composition forms valid state machine code."
+3401,ilxgenInvalidConstructInStateMachineDuringCodegen,"The resumable code construct '%s' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 fSharpBannerVersion,"%s for F# %s"
 nativeResourceFormatError,"Stream does not begin with a null resource and is not in '.RES' format."
