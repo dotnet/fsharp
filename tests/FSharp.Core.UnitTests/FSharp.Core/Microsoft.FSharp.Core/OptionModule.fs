@@ -227,6 +227,7 @@ type ValueOptionTests() =
         Assert.AreEqual("ValueNone", ValueNone.ToString())
         Assert.AreEqual("ValueNone", string ValueNone)
     
+    [<Test>]
     member _.``ValueNone with sprintf`` () =
         Assert.AreEqual("ValueNone", sprintf "%O" (ValueNone.ToString()))
         Assert.AreEqual("ValueNone", sprintf "%A" ValueNone)
