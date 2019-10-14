@@ -164,14 +164,13 @@ let tname_IAsyncResult = "System.IAsyncResult"
 //------------------------------------------------------------------------- 
 
 type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, directoryToResolveRelativePaths, 
-                      mlCompatibility: bool, isInteractive:bool, assumeNullOnImport: bool, checkNullness: bool, langVersion: double,
+                      mlCompatibility: bool, isInteractive:bool, assumeNullOnImport: bool, checkNullness: bool,
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, noDebugData: bool,
                       pathMap: PathMap, langVersion: LanguageVersion) =
       
-  let v_langFeatureNullness = (langVersion >= 5.0)
-  let v_langFeatureAnonRecds = (langVersion >= 5.0)
+  let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
 
   let v_knownWithoutNull =
       if v_langFeatureNullness then KnownWithoutNull else KnownAmbivalentToNull
@@ -923,20 +922,19 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member __.langFeatureNullness = v_langFeatureNullness
 
-  member __.langFeatureAnonRecds = v_langFeatureAnonRecds
-
   member g.knownWithoutNull = v_knownWithoutNull
 
   member __.langVersion = langVersion
-      // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
-      // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
+
+  // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
+  // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member __.knownFSharpCoreModules         = v_knownFSharpCoreModules
+
   member __.compilingFslib                 = compilingFslib
   member __.mlCompatibility                = mlCompatibility
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
   member __.pathMap = pathMap
-  member __.langVersion = langVersion
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu

@@ -2095,7 +2095,6 @@ type TcConfigBuilder =
       mutable mlCompatibility: bool
       mutable assumeNullOnImport: bool
       mutable checkNullness: bool
-      mutable langVersion: double
       mutable checkOverflow: bool
       mutable showReferenceResolutions: bool
       mutable outputFile: string option
@@ -2260,7 +2259,6 @@ type TcConfigBuilder =
           mlCompatibility = false
           assumeNullOnImport = false
           checkNullness = false
-          langVersion = 5.0
           checkOverflow = false
           showReferenceResolutions = false
           outputFile = None
@@ -2711,7 +2709,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.mlCompatibility = data.mlCompatibility
     member x.assumeNullOnImport = data.assumeNullOnImport
     member x.checkNullness = data.checkNullness
-    member x.langVersion = data.langVersion
     member x.checkOverflow = data.checkOverflow
     member x.showReferenceResolutions = data.showReferenceResolutions
     member x.outputFile = data.outputFile

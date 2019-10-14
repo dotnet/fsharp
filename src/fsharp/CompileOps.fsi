@@ -293,7 +293,6 @@ type TcConfigBuilder =
       mutable mlCompatibility:bool
       mutable assumeNullOnImport: bool
       mutable checkNullness: bool
-      mutable langVersion: double
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
       mutable outputFile: string option
@@ -457,7 +456,6 @@ type TcConfig =
     member mlCompatibility:bool
     member assumeNullOnImport: bool
     member checkNullness: bool
-    member langVersion: double
     member checkOverflow:bool
     member showReferenceResolutions:bool
     member outputFile: string option

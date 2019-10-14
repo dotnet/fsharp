@@ -4721,8 +4721,6 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
                 TType_tuple(tupInfo,args'),tpenv
 
     | SynType.AnonRecd(isStruct, args,m) ->   
-        if not g.langFeatureAnonRecds then 
-            error(Error(FSComp.SR.tcLangFeatureNotEnabled50(), m)) 
 
         let tupInfo = mkTupInfo isStruct
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
@@ -8720,7 +8718,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                 if hasTypeUnit then 
                     Choice2Of2 expr, tpenv
                 else
-                    let genResultTy = NewInferenceType ()
+                    let genResultTy = NewInferenceType  cenv.g
                     UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
                     let exprTy = tyOfExpr cenv.g expr
                     AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css m  NoTrace genResultTy exprTy
@@ -8888,7 +8886,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                 | Result tcref when IsEntityAccessible cenv.amap m ad tcref -> 
                     () // resolved to a type name, done with checks
                 | _ -> 
-                    let overallTy = match overallTyOpt with None -> NewInferenceType() | Some t -> t 
+                    let overallTy = match overallTyOpt with None -> NewInferenceType cenv.g | Some t -> t 
                     let _, _ = TcLongIdentThen cenv overallTy env tpenv lidd delayed
                     () // checked as an expression, done with checks
             List.last longId

@@ -28,7 +28,7 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
-
+    | NullnessChecking = 9
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersion) =
@@ -55,6 +55,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.NameOf, previewVersion
         LanguageFeature.ImplicitYield, languageVersion47
         LanguageFeature.OpenStaticClasses, previewVersion
+        LanguageFeature.NullnessChecking, languageVersion47 // currently always on because requires FSharp.Core build
         |]
 
     let specified =

@@ -29,10 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

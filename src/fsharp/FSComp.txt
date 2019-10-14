@@ -1482,7 +1482,6 @@ csTypeHasNullAsExtraValue,"The type '%s' has 'null' as an extra value but a cons
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 optsCheckNulls,"Enable nullness declarations and checks"
-optsLangVersion,"Specify the language version"
 fSharpBannerVersion,"%s for F# %s"
 nativeResourceFormatError,"Stream does not begin with a null resource and is not in '.RES' format."
 nativeResourceHeaderMalformed,"Resource header beginning at offset %s is malformed."

@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
