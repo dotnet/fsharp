@@ -3669,6 +3669,7 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let args =
         [|  yield! mkProjectCommandLineArgs (dllName, fileNames) 
             yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "FSharp.Data"))
+            yield @"-r:" + sysLib "System.Xml.Linq" 
         |]
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
