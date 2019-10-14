@@ -249,9 +249,9 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-langversion-45.exe -g --langversion:4.5" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
 
-        exec cfg ("." ++ "test-langversion-45.exe") ""
+        exec cfg ("." ++ "test-langversion-46.exe") ""
 
         testOkFile.CheckExists()
 
@@ -1188,9 +1188,9 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-langversion-45.exe -g --langversion:4.5" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
 
-        exec cfg ("." ++ "test-langversion-45.exe") ""
+        exec cfg ("." ++ "test-langversion-46.exe") ""
 
         testOkFile.CheckExists()
 
