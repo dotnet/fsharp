@@ -104,15 +104,16 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
         // Identify path to a dll in the framework directory from a simple name
         let frameworkPathFromSimpleName simpleName =
-            let pathDll = Path.Combine(implementationAssemblyDir, simpleName + ".dll")
-            if not (File.Exists(pathDll)) then
-                let pathExe = Path.Combine(implementationAssemblyDir, simpleName + ".exe")
-                if not (File.Exists(pathExe)) then
-                    pathDll
-                else
-                    pathExe
-            else
-                pathDll
+            let root = Path.Combine(implementationAssemblyDir, simpleName)
+            let pathOpt =
+                [| ""; ".dll"; ".exe" |]
+                |> Seq.tryPick(fun ext ->
+                    let path = root + ext
+                    if File.Exists(path) then Some path
+                    else None)
+            match pathOpt with
+            | Some path -> path
+            | None -> root
 
         // Collect all assembly dependencies into assemblies dictionary
         let rec traverseDependencies reference =
