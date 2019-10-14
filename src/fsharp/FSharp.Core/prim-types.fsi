@@ -2760,7 +2760,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <returns>The two dimensional sub array from the input indices.</returns>
-            val GetArraySlice2D : source:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> 'T[,]
+            val inline GetArraySlice2D : source:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> 'T[,]
 
             /// <summary>Gets a vector slice of a 2D array. The index of the first dimension is fixed.</summary>
             /// <param name="source">The source array.</param>

@@ -658,7 +658,7 @@ namespace Microsoft.FSharp.Core
                 | _ -> raise (System.IndexOutOfRangeException())
 
             let inline Array2DZeroCreate (n:int) (m:int) = (# "newarr.multi 2 !0" type ('T) n m : 'T[,] #)
-            let GetArray2DSub (src: 'T[,]) src1 src2 len1 len2 =
+            let inline GetArray2DSub (src: 'T[,]) src1 src2 len1 len2 =
                 let len1 = (if len1 < 0 then 0 else len1)
                 let len2 = (if len2 < 0 then 0 else len2)
                 let dst = Array2DZeroCreate len1 len2
@@ -667,7 +667,7 @@ namespace Microsoft.FSharp.Core
                         SetArray2D dst i j (GetArray2D src (src1 + i) (src2 + j))
                 dst
 
-            let SetArray2DSub (dst: 'T[,]) src1 src2 len1 len2 src =
+            let inline SetArray2DSub (dst: 'T[,]) src1 src2 len1 len2 src =
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
                         SetArray2D dst (src1+i) (src2+j) (GetArray2D src i j)
@@ -694,7 +694,7 @@ namespace Microsoft.FSharp.Core
 
             let inline Array3DZeroCreate (n1:int) (n2:int) (n3:int) = (# "newarr.multi 3 !0" type ('T) n1 n2 n3 : 'T[,,] #)
 
-            let GetArray3DSub (src: 'T[,,]) src1 src2 src3 len1 len2 len3 =
+            let inline GetArray3DSub (src: 'T[,,]) src1 src2 src3 len1 len2 len3 =
                 let len1 = (if len1 < 0 then 0 else len1)
                 let len2 = (if len2 < 0 then 0 else len2)
                 let len3 = (if len3 < 0 then 0 else len3)
@@ -705,7 +705,7 @@ namespace Microsoft.FSharp.Core
                             SetArray3D dst i j k (GetArray3D src (src1+i) (src2+j) (src3+k))
                 dst
 
-            let SetArray3DSub (dst: 'T[,,]) src1 src2 src3 len1 len2 len3 src =
+            let inline SetArray3DSub (dst: 'T[,,]) src1 src2 src3 len1 len2 len3 src =
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
                         for k = 0 to len3 - 1 do
@@ -4906,7 +4906,7 @@ namespace Microsoft.FSharp.Core
                 let finish = (match finish with None -> target.Length - 1 | Some n -> n) 
                 SetArraySub target start (finish - start + 1) source
 
-            let GetArraySlice2D (source: _[,]) start1 finish1 start2 finish2 =
+            let inline GetArraySlice2D (source: _[,]) start1 finish1 start2 finish2 =
                 let bound1 = source.GetLowerBound(0)
                 let bound2 = source.GetLowerBound(1)
                 let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 source)
