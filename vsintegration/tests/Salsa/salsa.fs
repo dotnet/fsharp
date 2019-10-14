@@ -614,7 +614,6 @@ module internal Salsa =
                  otherProjMisc:string,
                  targetFrameworkVersion:string) =
 
-            let references = List.append references [ "netstandard", false; "System", false; "System.Numerics", false ]
             // Determine which FSharp.targets file to use. If we use the installed
             // targets file then we check the registry for F#'s install path. Otherwise
             // we look in the same directory as the Unit Tests assembly.

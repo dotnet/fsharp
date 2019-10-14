@@ -13,7 +13,7 @@ open UnitTests.TestLib.ProjectSystem
 
 [<AutoOpen>]
 module QuickInfoStandardSettings = 
-    let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics"; "netstandard" ]
+    let standard40AssemblyRefs  = [ ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
 
 [<TestFixture>]

@@ -89,12 +89,7 @@ let mkStandardProjectReferences () =
             let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
             readRefs projDir file
 #else
-            [ yield sysLib "mscorlib"
-              yield sysLib "System"
-              yield sysLib "System.Core"
-              yield sysLib "Facades\\netstandard"
-              yield sysLib "System.Numerics"
-              yield fsCoreDefaultReference() ]
+            [ yield fsCoreDefaultReference() ]
 #endif              
 
 let mkProjectCommandLineArgsSilent (dllName, fileNames) = 

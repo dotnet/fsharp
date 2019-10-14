@@ -14,7 +14,7 @@ open UnitTests.TestLib.ProjectSystem
 
 [<AutoOpen>]
 module StandardSettings = 
-    let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics"; "netstandard" ]
+    let standard40AssemblyRefs  = [ ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
     type Expectation = 
         | QuickInfoExpected of string * string
@@ -4120,7 +4120,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``WithNonExistentDll``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
-        System.Diagnostics.Debugger.Break()
         let project = CreateProject(solution,"testproject")
         // in the project system, 'AddAssemblyReference' would throw, so just poke this into the .fsproj file
         PlaceIntoProjectFileBeforeImport

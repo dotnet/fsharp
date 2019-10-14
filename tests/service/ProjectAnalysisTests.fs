@@ -3666,14 +3666,10 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
-    let args = 
+    let args =
         [|  yield! mkProjectCommandLineArgs (dllName, fileNames) 
             yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "FSharp.Data"))
-            yield @"-r:" + sysLib "System.Xml.Linq"
-            yield @"-r:" + sysLib "System"
-            yield @"-r:" + sysLib "System.Numerics"
-            yield @"-r:" + sysLib @"Facades/netstandard"
-           |]
+        |]
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 [<Test>]
