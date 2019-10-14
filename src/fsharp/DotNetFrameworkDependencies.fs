@@ -71,7 +71,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                 let name = netcoreApp.Name
                 try
                     if name.StartsWith(tfmPrefix, StringComparison.InvariantCultureIgnoreCase) then
-                        Some (Double.Parse(name.Substring(tfmPrefix.Length)))
+                        Some (Double.Parse(name.Substring(tfmPrefix.Length), NumberStyles.AllowDecimalPoint))
                     else
                         None
                 with _ -> None
