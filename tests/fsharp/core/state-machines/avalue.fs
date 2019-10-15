@@ -65,11 +65,14 @@ type ValueBuilder() =
 
     [<NoDynamicInvocation>]
     member inline __.Run(__expand_code : ValueCode<'T>) : IValuable<'T> = 
-        (__resumableObject
-            { new ValueStateMachine<'T>() with 
-                member sm.Step () =
-                    __resumeAt sm.ResumptionPoint
-                    __expand_code sm }).Start()
+        if __useResumableCode then
+            (__resumableObject
+                { new ValueStateMachine<'T>() with 
+                    member sm.Step () =
+                        __resumeAt sm.ResumptionPoint
+                        __expand_code sm }).Start()
+        else
+            failwith "no dynamic implementation"
 
     [<NoDynamicInvocation>]
     member inline __.Zero() : ValueCode<'T> =
@@ -78,26 +81,33 @@ type ValueBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Combine(__expand_task1: ValueCode<'T>, __expand_task2: ValueCode<'T>) : ValueCode<'T> =
         (fun sm -> 
-            let ``__machine_step$cont`` = __expand_task1 sm
-            if ``__machine_step$cont`` then 
-                __expand_task2 sm
+            if __useResumableCode then
+                let ``__machine_step$cont`` = __expand_task1 sm
+                if ``__machine_step$cont`` then 
+                    __expand_task2 sm
+                else
+                    false
             else
-                false)
+                failwith "no dynamic implementation")
             
     [<NoDynamicInvocation>]
     member inline __.While(__expand_condition : unit -> bool, __expand_body : ValueCode<'T>) : ValueCode<'T> =
         (fun sm -> 
-            let mutable __stack_completed = false 
-            while __stack_completed && __expand_condition() do
-                // NOTE: The body of the 'while' may contain await points, resuming may branch directly into the while loop
-                let ``__machine_step$cont`` = __expand_body sm
-                // If we make it to the assignment we prove we've made a step 
-                __stack_completed <- ``__machine_step$cont``
-            __stack_completed)
+            if __useResumableCode then
+                let mutable __stack_completed = false 
+                while __stack_completed && __expand_condition() do
+                    // NOTE: The body of the 'while' may contain await points, resuming may branch directly into the while loop
+                    let ``__machine_step$cont`` = __expand_body sm
+                    // If we make it to the assignment we prove we've made a step 
+                    __stack_completed <- ``__machine_step$cont``
+                __stack_completed
+            else
+                failwith "no dynamic implementation")
 
     [<NoDynamicInvocation>]
     member inline __.TryWith(__expand_body : ValueCode<'T>, __expand_catch : exn -> ValueCode<'T>) : ValueCode<'T> =
         (fun sm -> 
+            if __useResumableCode then
                 let mutable __stack_completed = false
                 let mutable __stack_caught = false
                 let mutable __stack_savedExn = Unchecked.defaultof<_>
@@ -114,26 +124,31 @@ type ValueBuilder() =
                     // Place the catch code outside the catch block 
                     __expand_catch __stack_savedExn sm
                 else
-                    __stack_completed)
+                    __stack_completed
+            else
+                failwith "no dynamic implementation")
 
     [<NoDynamicInvocation>]
     member inline __.TryFinally(__expand_body: ValueCode<'T>, compensation : unit -> unit) : ValueCode<'T> =
         (fun sm -> 
-            let mutable completed = false
-            sm.PushDispose compensation
-            try
-                let ``__machine_step$cont`` = __expand_body sm
-                // If we make it to the assignment we prove we've made a step without an exception
-                completed <- ``__machine_step$cont``
-            with _ ->
-                sm.PopDispose()
-                compensation()
-                reraise()
+            if __useResumableCode then
+                let mutable completed = false
+                sm.PushDispose compensation
+                try
+                    let ``__machine_step$cont`` = __expand_body sm
+                    // If we make it to the assignment we prove we've made a step without an exception
+                    completed <- ``__machine_step$cont``
+                with _ ->
+                    sm.PopDispose()
+                    compensation()
+                    reraise()
 
-            if completed then 
-                sm.PopDispose()
-                compensation()
-            completed)
+                if completed then 
+                    sm.PopDispose()
+                    compensation()
+                completed
+            else
+                failwith "no dynamic implementation")
 
     [<NoDynamicInvocation>]
     member inline this.Using(disp : #IDisposable, __expand_body : #IDisposable -> ValueCode<'T>) = 
@@ -145,14 +160,17 @@ type ValueBuilder() =
     [<NoDynamicInvocation>]
     member inline __.Return (v: 'T) : ValueCode<'T> =
         (fun sm ->
-            match __resumableEntry() with
-            | Some contID ->
-                sm.ResumptionPoint <- contID
-                sm.Current <- ValueSome v
-                false
-            | None -> 
-                sm.Current <- ValueNone
-                true)
+            if __useResumableCode then
+                match __resumableEntry() with
+                | Some contID ->
+                    sm.ResumptionPoint <- contID
+                    sm.Current <- ValueSome v
+                    false
+                | None -> 
+                    sm.Current <- ValueNone
+                    true
+            else
+                failwith "no dynamic implementation")
 
     //[<NoDynamicInvocation>]
     //member inline this.ReturnFrom (source: IValuable<'T>) : ValueCode<'T> =

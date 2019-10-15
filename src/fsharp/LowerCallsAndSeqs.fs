@@ -965,9 +965,10 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 // TODO: this is too adhoc
 let isMustExpandVar (v: Val) = 
     let nm = v.LogicalName
-    nm.StartsWith "__expand_" 
-    || nm.StartsWith "builder@" 
-    || (v.BaseOrThisInfo = MemberThisVal)
+    (nm.StartsWith "__expand_" 
+     || nm.StartsWith "builder@" 
+     || (v.BaseOrThisInfo = MemberThisVal)) &&
+    not v.IsCompiledAsTopLevel
 
 let isExpandVar (v: Val) = 
     isMustExpandVar v
