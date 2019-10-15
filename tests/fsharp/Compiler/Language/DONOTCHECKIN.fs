@@ -13,7 +13,7 @@ module DONOTCHECKIN =
 open System
 
 let arr = [1;2;3]
-let a = ^1
+//Console.WriteLine(arr.Length - 1)
 Console.WriteLine(arr.[^1..])
             """
 

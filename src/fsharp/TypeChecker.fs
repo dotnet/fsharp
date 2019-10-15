@@ -6337,6 +6337,21 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         | [SynIndexerArg.One h] -> SynExpr.Paren (h, range0, None, idxRange)
         | _ -> SynExpr.Paren (SynExpr.Tuple (false, GetIndexArgs indexArgs @ Option.toList vopt, [], idxRange), range0, None, idxRange)
 
+    //let desugarHat (expr: SynIndexerArg) (collectionIdent: SynExpr) = expr.Exprs |> List.map (fun ex -> 
+    //        match ex with
+    //        | SynExpr.ReverseIndex(innerExpr, _, _) -> mkSynInfix 
+    //    )
+
+    //let makeReverseIndex (arr: Ident) (offset: int32) (range: range) = 
+    //    SynExpr.App(
+    //        ExprAtomicFlag.NonAtomic,
+    //        true,
+    //        SynExpr.Ident("op_Subtraction", range),
+    //        SynConst.Int32(offset),
+    //        range
+    //    )
+
+    printfn "%A" wholeExpr
     let attemptArrayString = 
         if isArray || isString then 
 
