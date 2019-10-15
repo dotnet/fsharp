@@ -46,7 +46,6 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
                                          off by default
 --checknulls[+|-]                        Enable nullness declarations and
                                          checks
---langversion:                           Specify the language version
 --consolecolors[+|-]                     Output warning and error messages in
                                          color
 

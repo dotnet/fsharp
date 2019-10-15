@@ -225,7 +225,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-checknulls.exe -g --langversion:5.0 --checknulls" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:latest --checknulls" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
 
@@ -237,7 +237,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:5.0 --checknulls-" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:latest --checknulls-" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-no-checknulls.exe") ""
 
@@ -1175,7 +1175,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-checknulls.exe -g --langversion:5.0 --checknulls" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:latest --checknulls" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
 
