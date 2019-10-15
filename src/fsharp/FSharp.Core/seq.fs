@@ -1071,11 +1071,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (source:seq<'T>) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then mkDelayedSeq (fun () -> groupByValueType projection source)
                 else mkDelayedSeq (fun () -> groupByRefType   projection source)
 
@@ -1164,11 +1160,7 @@ namespace Microsoft.FSharp.Collections
         let countBy (projection:'T->'Key) (source:seq<'T>) =
             checkNonNull "source" source
 
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then mkDelayedSeq (fun () -> countByValueType projection source)
                 else mkDelayedSeq (fun () -> countByRefType   projection source)
 

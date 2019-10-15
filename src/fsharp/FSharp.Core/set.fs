@@ -512,23 +512,20 @@ module internal SetTree =
 [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
 [<DebuggerDisplay("Count = {Count}")>]
 [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
-type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
-
-#if !FX_NO_BINARY_SERIALIZATION
-    [<System.NonSerialized>]
-    // NOTE: This type is logically immutable. This field is only mutated during deserialization. 
-    let mutable comparer = comparer 
+type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) =
 
     [<System.NonSerialized>]
-    // NOTE: This type is logically immutable. This field is only mutated during deserialization. 
-    let mutable tree = tree 
+    // NOTE: This type is logically immutable. This field is only mutated during deserialization.
+    let mutable comparer = comparer
 
-    // NOTE: This type is logically immutable. This field is only mutated during serialization and deserialization. 
-    //
-    // WARNING: The compiled name of this field may never be changed because it is part of the logical 
+    [<System.NonSerialized>]
+    // NOTE: This type is logically immutable. This field is only mutated during deserialization.
+    let mutable tree = tree
+
+    // NOTE: This type is logically immutable. This field is only mutated during serialization and deserialization.
+    // WARNING: The compiled name of this field may never be changed because it is part of the logical
     // WARNING: permanent serialization format for this type.
-    let mutable serializedData = null 
-#endif
+    let mutable serializedData = null
 
     // We use .NET generics per-instantiation static fields to avoid allocating a new object for each empty
     // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
@@ -537,7 +534,6 @@ type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T
         let comparer = LanguagePrimitives.FastGenericComparer<'T> 
         Set<'T>(comparer, SetEmpty)
 
-#if !FX_NO_BINARY_SERIALIZATION
     [<System.Runtime.Serialization.OnSerializingAttribute>]
     member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
@@ -554,7 +550,6 @@ type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T
         comparer <- LanguagePrimitives.FastGenericComparer<'T>
         tree <- SetTree.ofArray comparer serializedData
         serializedData <- null
-#endif
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member internal set.Comparer = comparer

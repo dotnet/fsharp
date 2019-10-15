@@ -7,14 +7,49 @@
         <target state="translated">F # {1} 的 {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">顯示語言版本允許的值，指定 'latest' 或 'preview' 等語言版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">支援的語言版本:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">對 --langversion 為無法識別的值 '{0}'，對完整清單使用 --langversion:?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">成員定義中的非預期符號 '.'。預期為 'with'、'=' 或其他語彙基元。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">請指定用來計算 PDB 中所儲存來源檔案總和檢查碼的演算法。支援的值為: SHA1 或 SHA256 (預設)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">不支援演算法 '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -230,11 +265,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">受控資源的無法辨識隱私設定 '{0}'，有效的選項是 'public' 和 'private'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">不允許多次參考 '{0}.dll'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -5287,11 +5317,6 @@
         <target state="translated">DLLImport 繫結必須是類別中的靜態成員或模組中的函式定義</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">如果明確參考了 mscorlib.dll 或 FSharp.Core.dll，就必須同時傳遞 {0} 選項</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">找不到與 FSharp.Core 並存的 FSharp.Core.sigdata。檔案應位於 {0}。請考慮升級至最新版的 FSharp.Core，其中不再需要此檔案。</target>
@@ -7165,6 +7190,16 @@
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
         <target state="translated">未提供任何實作給這些成員 (部分結果已省略): {0}請注意，所有介面成員都必須經過實作，並列於適當的 'interface' 宣告下，例如 'interface ... with member ...'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">運算式沒有名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">不允許使用"nameof" 運算子作為第一類函式值。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

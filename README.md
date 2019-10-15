@@ -12,6 +12,12 @@ Build from the command line:
 build.cmd
 ```
 
+The build depends on an installation of Visual Studio. To build the compiler without this dependency use:
+
+```
+build.cmd -noVisualStudio
+```
+
 After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
 
 ### Quickstart on Linux or macOS

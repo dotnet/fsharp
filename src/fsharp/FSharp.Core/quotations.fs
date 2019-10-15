@@ -20,11 +20,6 @@ open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedTextOps
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
-#if FX_RESHAPED_REFLECTION
-open PrimReflectionAdapters
-open ReflectionAdapters
-#endif
-
 //--------------------------------------------------------------------------
 // RAW quotations - basic data types
 //--------------------------------------------------------------------------
@@ -56,11 +51,7 @@ module Helpers =
     let staticBindingFlags = BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
     let staticOrInstanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
     let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
-#if FX_RESHAPED_REFLECTION
-    let publicOrPrivateBindingFlags = true
-#else
     let publicOrPrivateBindingFlags = BindingFlags.Public ||| BindingFlags.NonPublic
-#endif
 
     let isDelegateType (typ:Type) =
         if typ.IsSubclassOf(typeof<Delegate>) then
@@ -989,11 +980,7 @@ module Patterns =
           let resT  = instFormal tyargTs rty
           let methInfo =
               try
-#if FX_RESHAPED_REFLECTION
-                 match parentT.GetMethod(nm, argTs) with
-#else
                  match parentT.GetMethod(nm, staticOrInstanceBindingFlags, null, argTs, null) with
-#endif
                  | null -> None
                  | res -> Some res
                with :? AmbiguousMatchException -> None
@@ -1021,11 +1008,7 @@ module Patterns =
         let tyArgs = List.toArray tyArgs
         let methInfo =
             try
-#if FX_RESHAPED_REFLECTION
-                match ty.GetMethod(nm, argTypes) with
-#else
                 match ty.GetMethod(nm, staticOrInstanceBindingFlags, null, argTypes, null) with
-#endif
                 | null -> None
                 | res -> Some res
             with :? AmbiguousMatchException -> None
@@ -1138,21 +1121,13 @@ module Patterns =
             | _ -> null
         | ctor -> ctor
 
-
     let bindProp (tc, propName, retType, argTypes, tyargs) =
         // We search in the instantiated type, rather than searching the generic type.
         let typ = mkNamedType (tc, tyargs)
         let argtyps : Type list = argTypes |> inst tyargs
         let retType : Type = retType |> inst tyargs |> removeVoid
-#if FX_RESHAPED_REFLECTION
-        try
-            typ.GetProperty(propName, staticOrInstanceBindingFlags)
-        with :? AmbiguousMatchException -> null // more than one property found with the specified name and matching binding constraints - return null to initiate manual search
-        |> bindPropBySearchIfCandidateIsNull typ propName retType (Array.ofList argtyps)
-        |> checkNonNullResult ("propName", String.Format(SR.GetString(SR.QfailedToBindProperty), propName)) // fxcop may not see "propName" as an arg
-#else
         typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null) |> checkNonNullResult ("propName", String.Format(SR.GetString(SR.QfailedToBindProperty), propName)) // fxcop may not see "propName" as an arg
-#endif
+
     let bindField (tc, fldName, tyargs) =
         let typ = mkNamedType (tc, tyargs)
         typ.GetField(fldName, staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", String.Format(SR.GetString(SR.QfailedToBindField), fldName)) // fxcop may not see "fldName" as an arg
@@ -1163,26 +1138,12 @@ module Patterns =
 
     let bindGenericCtor (tc:Type, argTypes:Instantiable<Type list>) =
         let argtyps = instFormal (getGenericArguments tc) argTypes
-#if FX_RESHAPED_REFLECTION
-        let argTypes = Array.ofList argtyps
-        tc.GetConstructor argTypes
-        |> bindCtorBySearchIfCandidateIsNull tc argTypes
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
-#else
         tc.GetConstructor(instanceBindingFlags, null, Array.ofList argtyps, null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
-#endif
 
     let bindCtor (tc, argTypes:Instantiable<Type list>, tyargs) =
         let typ = mkNamedType (tc, tyargs)
         let argtyps = argTypes |> inst tyargs
-#if FX_RESHAPED_REFLECTION
-        let argTypes = Array.ofList argtyps
-        typ.GetConstructor argTypes
-        |> bindCtorBySearchIfCandidateIsNull typ argTypes
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
-#else
         typ.GetConstructor(instanceBindingFlags, null, Array.ofList argtyps, null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
-#endif
 
     let chop n xs =
         if n < 0 then invalidArg "n" (SR.GetString(SR.inputMustBeNonNegative))
@@ -1358,11 +1319,7 @@ module Patterns =
         if a = "" then mscorlib
         elif a = "." then st.localAssembly
         else
-#if FX_RESHAPED_REFLECTION
-            match System.Reflection.Assembly.Load(AssemblyName a) with
-#else
             match System.Reflection.Assembly.Load a with
-#endif
             | null -> raise <| System.InvalidOperationException(String.Format(SR.GetString(SR.QfailedToBindAssembly), a.ToString()))
             | assembly -> assembly
 
@@ -1684,14 +1641,6 @@ module Patterns =
 
     let decodedTopResources = new Dictionary<Assembly * string, int>(10, HashIdentity.Structural)
 
-#if FX_NO_REFLECTION_MODULE_HANDLES // not available on Silverlight
-    [<StructuralEquality;StructuralComparison>]
-    type ModuleHandle = ModuleHandle of string * string
-    type System.Reflection.Module with
-        member x.ModuleHandle = ModuleHandle(x.Assembly.FullName, x.Name)
-#else
-    type ModuleHandle = System.ModuleHandle
-#endif
 
     [<StructuralEquality; NoComparison>]
     type ReflectedDefinitionTableKey =
@@ -1735,11 +1684,7 @@ module Patterns =
                              not (decodedTopResources.ContainsKey((assem, resourceName))) then
 
                             let cmaAttribForResource =
-#if FX_RESHAPED_REFLECTION
-                                CustomAttributeExtensions.GetCustomAttributes(assem, typeof<CompilationMappingAttribute>) |> Seq.toArray
-#else
                                 assem.GetCustomAttributes(typeof<CompilationMappingAttribute>, false)
-#endif
                                 |> (function null -> [| |] | x -> x)
                                 |> Array.tryPick (fun ca ->
                                      match ca with

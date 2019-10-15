@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">mínimo</target>
+        <target state="translated">Mínimo</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">

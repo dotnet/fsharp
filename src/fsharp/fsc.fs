@@ -34,8 +34,8 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.IlxGen
 
+open FSharp.Compiler.IlxGen
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.Ast
@@ -496,11 +496,10 @@ module BinaryGenerationUtilities =
            for _ in 1..(4 - (initialAlignment + v.Length) % 4) % 4 do
                yield 0x0uy |]
 
-// Generate nodes in a .res file format. These are then linked by Abstract IL using the 
-// linkNativeResources function, which invokes the cvtres.exe utility
-module ResFileFormat = 
+// Generate nodes in a .res file format. These are then linked by Abstract IL using linkNativeResources
+module ResFileFormat =
     open BinaryGenerationUtilities
-    
+
     let ResFileNode(dwTypeID, dwNameID, wMemFlags, wLangID, data: byte[]) =
         [| yield! i32 data.Length  // DWORD ResHdr.dwDataSize
            yield! i32 0x00000020  // dwHeaderSize
@@ -870,11 +869,9 @@ module MainModuleBuilder =
               error(Error(FSComp.SR.fscAssemblyCultureAttributeError(), rangeCmdArgs))
 
             // Add the type forwarders to any .NET DLL post-.NET-2.0, to give binary compatibility
-            let exportedTypesList = 
-                if (tcConfig.compilingFslib && tcConfig.compilingFslib40) then 
-                   (List.append (createMscorlibExportList tcGlobals)
-                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcConfig tcImports))
-                   )
+            let exportedTypesList =
+                if tcConfig.compilingFslib then
+                   List.append (createMscorlibExportList tcGlobals) (createSystemNumericsExportList tcConfig tcImports)
                 else
                     []
 
@@ -1066,13 +1063,10 @@ module MainModuleBuilder =
             elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") || runningOnMono then ""
             // otherwise, include the default manifest
             else
-#if FX_NO_RUNTIMEENVIRONMENT
-                // On coreclr default manifest is alongside the compiler
-                Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
-#else
-                // On the desktop default manifest is alongside the clr
-                Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
-#endif
+                let path = Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
+                if File.Exists(path) then path
+                else Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
+
         let nativeResources = 
             [ for av in assemblyVersionResources findAttribute assemblyVersion do
                   yield ILNativeResource.Out av
@@ -1109,13 +1103,80 @@ module MainModuleBuilder =
 //----------------------------------------------------------------------------
 
 /// Optional static linking of all DLLs that depend on the F# Library, plus other specified DLLs
-module StaticLinker = 
+module StaticLinker =
+
+    open FSharp.Compiler.AbstractIL
+
+    // Handles TypeForwarding for the generated IL model
+    type TypeForwarding (tcImports: TcImports) =
+
+        // Make a dictionary of ccus passed to the compiler will be looked up by qualified assembly name
+        let ccuThunksQualifiedName =
+            tcImports.GetCcusInDeclOrder()
+            |> List.filter(fun ccuThunk -> ccuThunk.QualifiedName |> Option.isSome)
+            |> List.map(fun ccuThunk -> ccuThunk.QualifiedName |> Option.defaultValue "Assembly Name Not Passed", ccuThunk)
+            |> dict
+
+        // If we can't type forward using exact assembly match, we need to rely on the loader (Policy, Configuration or the coreclr load heuristics), so use try simple name
+        let ccuThunksSimpleName =
+            tcImports.GetCcusInDeclOrder()
+            |> List.filter(fun ccuThunk -> not (String.IsNullOrEmpty(ccuThunk.AssemblyName)))
+            |> List.map(fun ccuThunk -> ccuThunk.AssemblyName, ccuThunk)
+            |> dict
+
+        let followTypeForwardForILTypeRef (tref:ILTypeRef) =
+            let typename =
+                let parts =  tref.FullName.Split([|'.'|])
+                match parts.Length with
+                | 0 -> None
+                | 1 -> Some (Array.empty<string>, parts.[0])
+                | n -> Some (parts.[0..n-2], parts.[n-1])
+
+            let  scoref = tref.Scope
+            match scoref with
+            | ILScopeRef.Assembly scope ->
+                match ccuThunksQualifiedName.TryGetValue(scope.QualifiedName) with
+                | true, ccu ->
+                    match typename with
+                    | Some (parts, name) ->
+                        let forwarded = ccu.TryForward(parts, name)
+                        let result =
+                            match forwarded with
+                            | Some fwd -> fwd.CompilationPath.ILScopeRef
+                            | None -> scoref
+                        result
+                    | None -> scoref
+                | false, _ ->
+                    // Couldn't find an assembly with the version so try using a simple name
+                    match ccuThunksSimpleName.TryGetValue(scope.Name) with
+                    | true, ccu ->
+                        match typename with
+                        | Some (parts, name) ->
+                            let forwarded = ccu.TryForward(parts, name)
+                            let result =
+                                match forwarded with
+                                | Some fwd -> fwd.CompilationPath.ILScopeRef
+                                | None -> scoref
+                            result
+                        | None -> scoref
+                    | false, _ -> scoref
+            | _ -> scoref
+
+        let typeForwardILTypeRef (tref: ILTypeRef) =
+            let scoref1 = tref.Scope
+            let scoref2 = followTypeForwardForILTypeRef tref
+            if scoref1 === scoref2 then tref
+            else ILTypeRef.Create (scoref2, tref.Enclosing, tref.Name)
+
+        member __.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
+
     let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
 
-    let StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list) = 
+    let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list) = 
         if isNil dependentILModules then 
             ilxMainModule, (fun x -> x) 
         else
+            let typeForwarding = new TypeForwarding(tcImports)
 
             // Check no dependent assemblies use quotations   
             let dependentCcuUsingQuotations = dependentILModules |> List.tryPick (function (Some ccu, _) when ccu.UsesFSharp20PlusQuotations -> Some ccu | _ -> None)   
@@ -1201,73 +1262,17 @@ module StaticLinker =
                    (mkILMethods (topTypeDefs |> List.collect (fun td -> td.Methods.AsList)), 
                     mkILFields (topTypeDefs |> List.collect (fun td -> td.Fields.AsList)))
 
-            let ilxMainModule = 
-                { ilxMainModule with 
-                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs)) })
-                    CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ])
-                    TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
-                    Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
-                    NativeResources = savedNativeResources }
+            let ilxMainModule =
+                let main =
+                    { ilxMainModule with
+                        Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs)) })
+                        CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ])
+                        TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
+                        Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
+                        NativeResources = savedNativeResources }
+                Morphs.morphILTypeRefsInILModuleMemoized ilGlobals typeForwarding.TypeForwardILTypeRef main
 
             ilxMainModule, rewriteExternalRefsToLocalRefs
-
-
-    // LEGACY: This is only used when compiling an FSharp.Core for .NET 2.0 (FSharp.Core 2.3.0.0). We no longer
-    // build new FSharp.Core for that configuration.
-    //
-    // Find all IL modules that are to be statically linked given the static linking roots.
-    let LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig: TcConfig, ilGlobals: ILGlobals, ilxMainModule) = 
-        let mscorlib40 = tcConfig.compilingFslib20.Value 
-              
-        let ilBinaryReader = 
-            let ilGlobals = mkILGlobals ILScopeRef.Local
-            let opts : ILReaderOptions = 
-                { ilGlobals = ilGlobals
-                  reduceMemoryUsage = tcConfig.reduceMemoryUsage
-                  metadataOnly = MetadataOnlyFlag.No
-                  tryGetMetadataSnapshot = (fun _ -> None)
-                  pdbDirPath = None  } 
-            ILBinaryReader.OpenILModuleReader mscorlib40 opts
-              
-        let tdefs1 = ilxMainModule.TypeDefs.AsList  |> List.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
-        let tdefs2 = ilBinaryReader.ILModuleDef.TypeDefs.AsList |> List.filter (fun td -> MainModuleBuilder.injectedCompatTypes.Contains(td.Name))
-        //printfn "tdefs2 = %A" (tdefs2 |> List.map (fun tdef -> tdef.Name))
-
-        // rewrite the mscorlib references 
-        let tdefs2 = 
-            let fakeModule = mkILSimpleModule "" "" true (4, 0) false (mkILTypeDefs tdefs2) None None 0 (mkILExportedTypes []) ""
-            let fakeModule = 
-                  fakeModule |> Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (fun tref -> 
-                      if MainModuleBuilder.injectedCompatTypes.Contains(tref.Name)  || (tref.Enclosing  |> List.exists (fun x -> MainModuleBuilder.injectedCompatTypes.Contains x)) then 
-                          tref
-                          //|> Morphs.morphILScopeRefsInILTypeRef (function ILScopeRef.Local -> ilGlobals.mscorlibScopeRef | x -> x) 
-                      // The implementations of Tuple use two private methods from System.Environment to get a resource string. Remap it
-                      elif tref.Name = "System.Environment" then 
-                          ILTypeRef.Create(ILScopeRef.Local, [], "Microsoft.FSharp.Core.PrivateEnvironment")  //|> Morphs.morphILScopeRefsInILTypeRef (function ILScopeRef.Local -> ilGlobals.mscorlibScopeRef | x -> x) 
-                      else 
-                          tref |> Morphs.morphILScopeRefsInILTypeRef (fun _ -> ilGlobals.primaryAssemblyScopeRef) )
-                  
-            // strip out System.Runtime.TargetedPatchingOptOutAttribute, which doesn't exist for 2.0
-            let fakeModule = 
-              {fakeModule with 
-                TypeDefs = 
-                  mkILTypeDefs 
-                      ([ for td in fakeModule.TypeDefs do 
-                             let meths = td.Methods.AsList
-                                            |> List.map (fun md ->
-                                                md.With(customAttrs = 
-                                                              mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                                ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")))) 
-                                            |> mkILMethods
-                             let td = td.With(methods=meths)
-                             yield td.With(methods=meths) ])}
-            //ILAsciiWriter.output_module stdout fakeModule
-            fakeModule.TypeDefs.AsList
-
-        let ilxMainModule = 
-            { ilxMainModule with 
-                TypeDefs = mkILTypeDefs (tdefs1 @ tdefs2) }
-        ilxMainModule
 
     [<NoEquality; NoComparison>]
     type Node = 
@@ -1413,7 +1418,7 @@ module StaticLinker =
     let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals) = 
 
 #if !NO_EXTENSIONTYPING
-        let providerGeneratedAssemblies = 
+        let providerGeneratedAssemblies =
 
             [ // Add all EST-generated assemblies into the static linking set
                 for KeyValue(_, importedBinary: ImportedBinary) in tcImports.DllTable do
@@ -1422,10 +1427,7 @@ module StaticLinker =
                         | None -> ()
                         | Some provAssemStaticLinkInfo -> yield (importedBinary, provAssemStaticLinkInfo) ]
 #endif
-        if tcConfig.compilingFslib && tcConfig.compilingFslib20.IsSome then 
-            (fun ilxMainModule -> LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig, ilGlobals, ilxMainModule))
-          
-        elif not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
+        if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
 #if !NO_EXTENSIONTYPING
              && providerGeneratedAssemblies.IsEmpty 
 #endif
@@ -1578,8 +1580,8 @@ module StaticLinker =
 
               // Glue all this stuff into ilxMainModule 
               let ilxMainModule, rewriteExternalRefsToLocalRefs = 
-                  StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModules @ providerGeneratedILModules)
-              
+                  StaticLinkILModules (tcConfig, ilGlobals, tcImports, ilxMainModule, dependentILModules @ providerGeneratedILModules)
+
               // Rewrite type and assembly references
               let ilxMainModule =
                   let isMscorlib = ilGlobals.primaryAssemblyName = PrimaryAssembly.Mscorlib.Name
@@ -1706,25 +1708,19 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
           exiter: Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
 
     // See Bug 735819 
-    let lcidFromCodePage = 
-#if FX_LCIDFROMCODEPAGE
+    let lcidFromCodePage =
         if (Console.OutputEncoding.CodePage <> 65001) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
                 Thread.CurrentThread.CurrentUICulture <- new CultureInfo("en-US")
                 Some 1033
         else
-#endif
             None
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
     let setProcessThreadLocals tcConfigB =
                     match tcConfigB.preferredUiLang with
-#if FX_RESHAPED_GLOBALIZATION
-                    | Some s -> CultureInfo.CurrentUICulture <- new CultureInfo(s)
-#else
                     | Some s -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(s)
-#endif
                     | None -> ()
                     if tcConfigB.utf8output then 
                         Console.OutputEncoding <- Encoding.UTF8

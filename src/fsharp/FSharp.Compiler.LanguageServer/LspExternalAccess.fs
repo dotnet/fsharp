@@ -9,10 +9,18 @@ module FunctionNames =
     [<Literal>]
     let OptionsSet = "options/set"
 
+    [<Literal>]
+    let TextDocumentPublishDiagnostics = "textDocument/publishDiagnostics"
+
 type Options =
-    { usePreviewTextHover: bool }
+    { usePreviewTextHover: bool
+      usePreviewDiagnostics: bool }
     static member Default() =
-        { usePreviewTextHover = false }
+        { usePreviewTextHover = false
+          usePreviewDiagnostics = false }
+    static member AllOn() =
+        { usePreviewTextHover = true
+          usePreviewDiagnostics = true }
 
 module Extensions =
     type JsonRpc with

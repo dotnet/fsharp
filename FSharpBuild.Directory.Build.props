@@ -94,6 +94,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+    <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
+  </PropertyGroup>
+
   <!-- SDK targets override -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
     <FSharpTargetsPath>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Targets</FSharpTargetsPath>

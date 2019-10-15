@@ -7,6 +7,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     open System
     open System.Collections.Generic
     open System.Diagnostics
+    open System.Globalization
     open System.IO
     open System.Reflection
 
@@ -14,7 +15,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
     let getFSharpCoreLibraryName = "FSharp.Core"
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
-    let frameworkDir = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
+    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
     let getDefaultFSharpCoreReference = typeof<Microsoft.FSharp.Core.Unit>.Assembly.Location
     let getFSharpCompilerLocation = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
 
@@ -34,117 +35,85 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                     None
         with _ -> None
 
-    // Compare nuget version strings
+
+    // Algorithm:
+    //     use implementation location of obj type, on shared frameworks it will always be in:
     //
-    // Format:
-    // =======
-    //      $(Major).$(Minor).$(Build) [-SomeSuffix]
-    //   Major, Minor, Build collates normally
-    //   Strings without -SomeSuffix collate higher than SomeSuffix, 
-    //   SomeSuffix collates using normal alphanumeric rules
+    //        dotnet\shared\Microsoft.NETCore.App\sdk-version\System.Private.CoreLib.dll
     //
-    let deconstructVersion (version:string)  =
-        let version, suffix =
-            let pos = version.IndexOf("-")
-            if pos >= 0 then
-                version.Substring(0, pos), version.Substring(pos + 1)
-            else version, ""
-
-        let elements = version.Split('.')
-        if elements.Length < 3 then
-            struct (0, 0, 0, suffix)
-        else
-            struct (Int32.Parse(elements.[0]), Int32.Parse(elements.[1]), Int32.Parse(elements.[2]), suffix)
-
-    let versionCompare c1 c2 =
-        if c1 = c2 then 0
-        else
-            try
-                let struct (major1, minor1, build1, suffix1 ) = deconstructVersion c1
-                let struct (major2, minor2, build2, suffix2 ) = deconstructVersion c2
-                let v = major1 - major2
-                if v <> 0 then v
-                else
-                    let v = minor1 - minor2
-                    if v <> 0 then v
-                    else
-                        let v = build1 - build2
-                        if v <> 0 then v
-                        else
-                            match String.IsNullOrEmpty(suffix1), String.IsNullOrEmpty(suffix2) with
-                            | true, true -> 0
-                            | true, false -> 1
-                            | false, true -> -1
-                            | false, false -> String.Compare(suffix1, suffix2, StringComparison.InvariantCultureIgnoreCase)
-            with _ -> 0
-
-    let executionTfm =
-        let file =
-            try
-                let depsJsonPath = Path.ChangeExtension(Assembly.GetEntryAssembly().Location, "deps.json")
-                File.ReadAllText(depsJsonPath)
-            with _ -> ""
-
-        let tfmPrefix=".NETCoreApp,Version=v"
-        let pattern = "\"name\": \"" + tfmPrefix
-        let startPos =
-            let startPos = file.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
-            if startPos >= 0  then startPos + (pattern.Length) else startPos
-
-        let length =
-            if startPos >= 0 then
-                let ep = file.IndexOf("\"", startPos)
-                if ep >= 0 then ep - startPos else ep
-            else -1
-        match startPos, length with
-        | -1, _
-        | _, -1 -> None
-        | pos, length -> Some ("netcoreapp" + file.Substring(pos, length))
-
-
-    let getFrameworkRefsPackDirectoryPath =
-        match executionTfm with
-        | Some _ ->
-            let appRefDir = Path.Combine(getFSharpCompilerLocation, "../../../packs/Microsoft.NETCore.App.Ref")
-            if Directory.Exists(appRefDir) then
-                Some appRefDir
+    //     if that changes we will need to find another way to do this.  Hopefully the sdk will eventually provide an API
+    //     use the well know location for obj to traverse the file system towards the
+    //
+    //          packs\Microsoft.NETCore.App.Ref\sdk-version\netcoreappn.n
+    //     we will rely on the sdk-version match on the two paths to ensure that we get the product that ships with the
+    //     version of the runtime we are executing on
+    //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location.
+    let version, frameworkRefsPackDirectoryRoot =
+        try
+            let version = DirectoryInfo(implementationAssemblyDir).Name
+            let microsoftNETCoreAppRef = Path.Combine(implementationAssemblyDir, "../../../packs/Microsoft.NETCore.App.Ref")
+            if Directory.Exists(microsoftNETCoreAppRef) then
+                Some version, Some microsoftNETCoreAppRef
             else
-                None
-        | _ -> None
+               Some version,  None
+        with | _ -> None, None
 
     let isInReferenceAssemblyPackDirectory filename =
-        match getFrameworkRefsPackDirectoryPath with
-        | Some appRefDir ->
+        match frameworkRefsPackDirectoryRoot with
+        | Some root ->
             let path = Path.GetDirectoryName(filename)
-            path.StartsWith(appRefDir, StringComparison.OrdinalIgnoreCase)
+            path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
         | _ -> false
 
-    let getFrameworkRefsPackDirectory =
-        match executionTfm, getFrameworkRefsPackDirectoryPath with
-        | Some tfm, Some appRefDir ->
+    let frameworkRefsPackDirectory =
+        let tfmPrefix = "netcoreapp"
+        let tfmCompare c1 c2 =
+            let deconstructTfmApp (netcoreApp: DirectoryInfo) =
+                let name = netcoreApp.Name
+                try
+                    if name.StartsWith(tfmPrefix, StringComparison.InvariantCultureIgnoreCase) then
+                        Some (Double.Parse(name.Substring(tfmPrefix.Length), NumberStyles.AllowDecimalPoint,  CultureInfo.InvariantCulture))
+                    else
+                        None
+                with _ -> None
+
+            if c1 = c2 then 0
+            else
+                match (deconstructTfmApp c1), (deconstructTfmApp c2) with
+                | Some c1, Some c2 -> int(c1 - c2)
+                | None, Some _ -> -1
+                | Some _, None -> 1
+                | _ -> 0
+
+        match version, frameworkRefsPackDirectoryRoot with
+        | Some version, Some root ->
             try
-                let refDirs = Directory.GetDirectories(appRefDir)
-                let versionPath = refDirs |> Array.sortWith (versionCompare) |> Array.last
-                Some(Path.Combine(versionPath, "ref", tfm))
+                let ref = Path.Combine(root, version, "ref")
+                let highestTfm = DirectoryInfo(ref).GetDirectories()
+                                 |> Array.sortWith tfmCompare
+                                 |> Array.tryLast
+
+                match highestTfm with
+                | Some tfm -> Some (Path.Combine(ref, tfm.Name))
+                | None -> None
             with | _ -> None
         | _ -> None
-
-
 
     let getDependenciesOf assemblyReferences =
         let assemblies = new Dictionary<string, string>()
 
         // Identify path to a dll in the framework directory from a simple name
         let frameworkPathFromSimpleName simpleName =
-            let pathDll = Path.Combine(frameworkDir, simpleName + ".dll")
-            if not (File.Exists(pathDll)) then
-                let pathExe = Path.Combine(frameworkDir, simpleName + ".exe")
-                if not (File.Exists(pathExe)) then
-                    pathDll
-                else
-                    pathExe
-            else
-                pathDll
+            let root = Path.Combine(implementationAssemblyDir, simpleName)
+            let pathOpt =
+                [| ""; ".dll"; ".exe" |]
+                |> Seq.tryPick(fun ext ->
+                    let path = root + ext
+                    if File.Exists(path) then Some path
+                    else None)
+            match pathOpt with
+            | Some path -> path
+            | None -> root
 
         // Collect all assembly dependencies into assemblies dictionary
         let rec traverseDependencies reference =
@@ -179,7 +148,6 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     //    (a) included in the environment used for all .fsx files (see service.fs)
     //    (b) included in environment for files 'orphaned' from a project context
     //            -- for orphaned files (files in VS without a project context)
-    //            -- for files given on a command line without --noframework set
     let getDesktopDefaultReferences useFsiAuxLib = [
         yield "mscorlib"
         yield "System"
@@ -226,14 +194,14 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                     let getImplementationReferences () =
                         // Coreclr supports netstandard assemblies only for now
                         (getDependenciesOf [
-                            yield Path.Combine(frameworkDir, "netstandard.dll")
+                            yield Path.Combine(implementationAssemblyDir, "netstandard.dll")
                             yield getDefaultFSharpCoreReference
                             if useFsiAuxLib then yield getFsiLibraryName
                         ]).Values |> Seq.toList
 
                     if useSdkRefs then
                         // Go fetch references
-                        match getFrameworkRefsPackDirectory with
+                        match frameworkRefsPackDirectory with
                         | Some path ->
                             try [ yield! Directory.GetFiles(path, "*.dll")
                                   yield getDefaultFSharpCoreReference

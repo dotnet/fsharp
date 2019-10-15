@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">depurar</target>
+        <target state="translated">Depurar</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -365,7 +365,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Error">
         <source>Error</source>
-        <target state="translated">Fehler</target>
+        <target state="translated">Error</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_OptionStrict_Custom">
@@ -614,7 +614,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_PermCalcFailedCaption">
         <source>Error</source>
-        <target state="translated">Fehler</target>
+        <target state="translated">Error</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityAdvancedPage_Title">
