@@ -14,7 +14,7 @@ open UnitTests.TestLib.ProjectSystem
 
 [<AutoOpen>]
 module StandardSettings = 
-    let standard40AssemblyRefs  = [ ]
+    let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics"; "netstandard" ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
     type Expectation = 
         | QuickInfoExpected of string * string

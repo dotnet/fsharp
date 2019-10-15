@@ -336,9 +336,6 @@ type LanguageServiceBaseTests() =
 
             for r in (defaultArg references []) do 
                 GlobalFunctions.AddAssemblyReference(proj, r)
-            GlobalFunctions.AddAssemblyReference(proj, "netstandard")
-            GlobalFunctions.AddAssemblyReference(proj, "System")
-            GlobalFunctions.AddAssemblyReference(proj, "System.Numerics")
 
             let content = String.concat Environment.NewLine content
             let _ = AddFileFromTextBlob(proj, fileName, content)
