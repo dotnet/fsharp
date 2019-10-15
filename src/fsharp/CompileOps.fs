@@ -2847,7 +2847,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                     if Directory.Exists runtimeRootWPF then
                         yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
 
-                    match getFrameworkRefsPackDirectory with
+                    match frameworkRefsPackDirectory with
                     | Some path when Directory.Exists(path) ->
                         yield path
                     | _ -> ()
