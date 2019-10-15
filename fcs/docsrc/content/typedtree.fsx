@@ -26,6 +26,7 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 open System
 open System.IO
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 (**
 
 ### Checking code
@@ -42,7 +43,7 @@ let parseAndCheckSingleFile (input) =
     File.WriteAllText(file, input)
     // Get context representing a stand-alone (script) file
     let projOptions, _errors = 
-        checker.GetProjectOptionsFromScript(file, input)
+        checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
         |> Async.RunSynchronously
 
     checker.ParseAndCheckProject(projOptions) 

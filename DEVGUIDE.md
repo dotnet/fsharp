@@ -53,7 +53,17 @@ After you build the first time you can open and use this solution in Visual Stud
     
 If you don't have everything installed yet, you'll get prompted by Visual Studio to install a few more things. This is because we use a `.vsconfig` file that specifies all our dependencies.
 
-## Developing on Windows - No Visual Studio
+If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
+
+### Developing the F# Compiler (Linux/macOS)
+
+For Linux/Mac:
+
+    ./build.sh
+
+Running tests:
+
+    ./build.sh --test
 
 We recommend installing the latest released Visual Studio and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
@@ -128,7 +138,7 @@ VSIXInstaller.exe /u:"VisualFSharp"
 VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpFull.vsix
 ```
 
-It's important to use `Release` if you want to see if your changes have had a noticable performance impact.
+It's important to use `Release` if you want to see if your changes have had a noticeable performance impact.
 
 ### Performance and debugging
 

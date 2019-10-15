@@ -18,8 +18,6 @@ let y = "hello"
 let changeX() =
     x = 20
     y = "test"
-    
-exit 0
             """
             FSharpErrorSeverity.Warning
             20
@@ -36,8 +34,6 @@ let y = "hello"
 let changeX() =
     x = 20
     y = "test"
-    
-exit 0
             """
             FSharpErrorSeverity.Warning
             20
@@ -56,8 +52,6 @@ let y = "hello"
 let changeProperty() =
     z.Enabled = true
     y = "test"
-
-exit 0
             """
             FSharpErrorSeverity.Warning
             20
@@ -78,8 +72,6 @@ let y = "hello"
 let changeProperty() =
     x.Property2 = "20"
     y = "test"
-    
-exit 0
             """
             FSharpErrorSeverity.Warning
             20
@@ -99,8 +91,6 @@ let y = "hello"
 let changeProperty() =
     x.Property2 = "22"
     y = "test"
-    
-exit 0
             """
             FSharpErrorSeverity.Warning
             20

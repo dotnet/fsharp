@@ -4,10 +4,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetExt>.exe</TargetExt>
-    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <PackageDescription>Implements the Language Server Protocol (LSP) for F#.</PackageDescription>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +21,15 @@
     <Compile Include="Methods.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="FSharp.Compiler.LanguageServer.DesignTime.proj" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="FSharp.Compiler.LanguageServer.DesignTime.targets" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer.UnitTests" />
   </ItemGroup>
 
   <ItemGroup>

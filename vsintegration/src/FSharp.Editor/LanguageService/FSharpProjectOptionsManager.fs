@@ -378,11 +378,15 @@ type internal FSharpProjectOptionsManager
             match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
             | true, projectId -> projectId
             | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
-        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId);
-        let fullPath p =
-            if Path.IsPathRooted(p) || path = null then p
-            else Path.Combine(Path.GetDirectoryName(path), p)
-        let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
+        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId)
+
+        let getFullPath p =
+            let p' =
+                if Path.IsPathRooted(p) || path = null then p
+                else Path.Combine(Path.GetDirectoryName(path), p)
+            Path.GetFullPathSafe(p')
+
+        let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
 
         reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
 

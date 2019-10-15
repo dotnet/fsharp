@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="LearnMore">
         <source>Learn more about F# at https://fsharp.org</source>
-        <target state="translated">請參閱 https://fsharp.org，進一步了解 F#</target>
+        <target state="translated">前往 https://fsharp.org 深入了解 F#</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeTutorial">

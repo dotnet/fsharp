@@ -1,0 +1,49 @@
+<Project DefaultTargets="Build">
+
+  <!--
+
+  Usage: dotnet build <this-file> /p:ProjectFile=<path-to-project>
+  Returns: The project's supported target frameworks, one per line, in the format of:
+           DetectedTargetFramework=<tfm-1>
+           DetectedTargetFramework=<tfm-2>
+           ...
+
+  Usage: dotnet build <this-file> /p:ProjectFile=<path-to-project> /p:TargetFramework=<tfm>
+  Returns: The project's command line arguments, one per line, as they would be passed to fsc.exe in the format of:
+           DetectedCommandLineArg=<arg-1>
+           DetectedCommandLineArg=<arg-2>
+           ...
+
+  To avoid recreating a distribution of MSBuild just to get some evaluated project values, we instead inject a special
+  targets file into the specified project which then prints the values with a well-known prefix that's easy to parse.
+
+  The benefits of doing it this way are:
+    - We don't have to re-create a copy of MSBuild.  That would be difficult, large, and change frequently.
+    - This works on any OS and any TFM.
+    - We use the exact version of MSBuild and the compiler that the user has instead of dealing with the potential
+      mismatch between what this tool would include vs. what they actually have.
+      
+  The downsides of this method are:
+    - We're dependent upon the continued existence of some well-known Targets and ItemGroups, but the ones we depend on
+      have been stable for some time.
+    - An external process invoke is slow, but this is only done once at LSP instantiation.
+
+  -->
+
+  <PropertyGroup>
+    <!-- See this file for details on the magic. -->
+    <InjetedTargetsFile>$(MSBuildThisFileDirectory)FSharp.Compiler.LanguageServer.DesignTime.targets</InjetedTargetsFile>
+  </PropertyGroup>
+
+  <Target Name="Build">
+    <Error Text="Property `ProjectFile` must be specified." Condition="'$(ProjectFile)' == ''" />
+
+    <!-- report TFMs if none specified -->
+    <MSBuild Projects="$(ProjectFile)" Targets="ReportTargetFrameworks" Properties="CustomAfterMicrosoftCommonCrossTargetingTargets=$(InjetedTargetsFile);CustomAfterMicrosoftCommonTargets=$(InjetedTargetsFile)" Condition="'$(TargetFramework)' == ''" />
+
+    <!-- report command line arguments when TFM is given -->
+    <MSBuild Projects="$(ProjectFile)" Targets="Restore" Condition="'$(TargetFramework)' != ''" />
+    <MSBuild Projects="$(ProjectFile)" Targets="ReportCommandLineArgs" Properties="DesignTimeBuild=true;CustomAfterMicrosoftCommonTargets=$(InjetedTargetsFile);TargetFramework=$(TargetFramework)" Condition="'$(TargetFramework)' != ''" />
+  </Target>
+
+</Project>

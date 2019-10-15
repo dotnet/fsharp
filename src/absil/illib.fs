@@ -12,10 +12,6 @@ open System.Reflection
 open System.Threading
 open System.Runtime.CompilerServices
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 // Logical shift right treating int32 as unsigned integer.
 // Code that uses this should probably be adjusted to use unsigned integer types.
 let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
@@ -257,12 +253,6 @@ module Option =
     let attempt (f: unit -> 'T) = try Some (f()) with _ -> None
         
 module List = 
-
-    //let item n xs = List.nth xs n
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
     let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
     
@@ -1271,11 +1261,6 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
 [<AutoOpen>]
 module Shim =
-
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
     type IFileSystem = 
 

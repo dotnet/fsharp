@@ -15,6 +15,7 @@ open FSharp.Compiler.Parser
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open Internal.Utilities
@@ -767,23 +768,28 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 
 [<Sealed>]
 type FSharpSourceTokenizer(defineConstants: string list, filename: string option) =
+
+    // Public callers are unable to answer LanguageVersion feature support questions.
+    // External Tools including the VS IDE will enable the default LanguageVersion 
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+ 
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
     let lexArgsLightOn = mkLexargs(filename, defineConstants, LightSyntaxStatus(true, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
     let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
 
     member this.CreateLineTokenizer(lineText: string) =
-        let lexbuf = UnicodeLexing.StringAsLexbuf lineText
+        let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, lineText)
         FSharpLineTokenizer(lexbuf, Some lineText.Length, filename, lexArgsLightOn, lexArgsLightOff)
 
-
     member this.CreateBufferTokenizer bufferFiller =
-        let lexbuf = UnicodeLexing.FunctionAsLexbuf bufferFiller
+        let lexbuf = UnicodeLexing.FunctionAsLexbuf(isFeatureSupported, bufferFiller)
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
 
 module Keywords =
     open FSharp.Compiler.Lexhelp.Keywords
 
+    let DoesIdentifierNeedQuotation s = DoesIdentifierNeedQuotation s
     let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
     let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
     let KeywordsWithDescription = keywordsWithDescription

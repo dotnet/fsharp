@@ -203,7 +203,7 @@ let pdbChecksumDebugInfo timestamp (checksumPdbChunk: BinaryChunk) (algorithmNam
         buffer
     { iddCharacteristics = 0                                                    // Reserved
       iddMajorVersion = 1                                                       // VersionMajor should be 1
-      iddMinorVersion = 0x0100                                                  // VersionMinor should be 0x0100
+      iddMinorVersion = 0                                                       // VersionMinor should be 0
       iddType = 19                                                              // IMAGE_DEBUG_TYPE_CHECKSUMPDB
       iddTimestamp = timestamp
       iddData = iddBuffer                                                       // Path name to the pdb file when built

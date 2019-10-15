@@ -17,7 +17,7 @@ let _ = Path.GetFullPath "images"
             FSharpErrorSeverity.Error
             39
             (2, 9, 2, 13)
-            "The value, namespace, type or module 'Path' is not defined."
+            "The value, namespace, type or module 'Path' is not defined. Maybe you want one of the following:\r\n   Math"
 
     [<Test>]
     let ``Dont Suggest When Things Are Open``() =

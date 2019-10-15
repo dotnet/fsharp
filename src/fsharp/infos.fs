@@ -835,7 +835,15 @@ type ILMethInfo =
     member x.IsDllImport (g: TcGlobals) =
         match g.attrib_DllImportAttribute with
         | None -> false
-        | Some (AttribInfo(tref, _)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref |> Option.isSome
+        | Some attr ->
+            x.RawMetadata.CustomAttrs
+            |> TryFindILAttribute attr
+
+    /// Indicates if the method is marked with the [<IsReadOnly>] attribute. This is done by looking at the IL custom attributes on
+    /// the method.
+    member x.IsReadOnly (g: TcGlobals) =
+        x.RawMetadata.CustomAttrs
+        |> TryFindILAttribute g.attrib_IsReadOnlyAttribute
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
@@ -1237,6 +1245,25 @@ type MethInfo =
     /// For an extension method, this indicates if the method extends a struct type.
     member x.IsStruct =
         isStructTy x.TcGlobals x.ApparentEnclosingType
+
+    /// Indicates if this method is read-only; usually by the [<IsReadOnly>] attribute.
+    /// Must be an instance method.
+    /// Receiver must be a struct type.
+    member x.IsReadOnly =
+        // Perf Review: Is there a way we can cache this result?
+        x.IsInstance &&
+        x.IsStruct &&
+        match x with
+        | ILMeth (g, ilMethInfo, _) -> ilMethInfo.IsReadOnly g
+        | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
+        | _ -> false
+
+    /// Indicates if this method is an extension member that is read-only.
+    /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
+    member x.IsReadOnlyExtensionMember (amap: Import.ImportMap, m) =
+        x.IsExtensionMember && 
+        x.TryObjArgByrefType(amap, m, x.FormalMethodInst)
+        |> Option.exists (isInByrefTy amap.g)
 
     /// Build IL method infos.
     static member CreateILMeth (amap: Import.ImportMap, m, ty: TType, md: ILMethodDef) =

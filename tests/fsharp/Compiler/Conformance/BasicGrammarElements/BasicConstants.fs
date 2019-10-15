@@ -59,7 +59,8 @@ let socialSecurityNumber = 999_99_9999L
 
 if socialSecurityNumber <> 999999999L then failwith "Wrong parsing"    
 if creditCardNumber <> 1234567890123456L then failwith "Wrong parsing"    
-exit 0
+printfn "%A" socialSecurityNumber
+printfn "%A" creditCardNumber
             """
 
     [<Test>]
@@ -68,7 +69,7 @@ exit 0
             """
 let pi = 3.14_15F
 if pi <> 3.1415F  then failwith "Wrong parsing"
-exit 0
+printfn "%A" pi
             """
 
     [<Test>]
@@ -77,7 +78,7 @@ exit 0
             """
 let hexBytes = 0xFF_EC_DE_5E
 if hexBytes <> 0xFFECDE5E then failwith "Wrong parsing"
-exit 0
+printfn "%A" hexBytes
             """
 
 
@@ -87,7 +88,7 @@ exit 0
             """
 let hexWords = 0xCAFE_BABE
 if hexWords <> 0xCAFEBABE then failwith "Wrong parsing"
-exit 0
+printfn "%A" hexWords
             """
 
     [<Test>]
@@ -96,7 +97,7 @@ exit 0
             """
 let maxLong = 0x7fff_ffff_ffff_ffffL
 if maxLong <> 0x7fffffffffffffffL then failwith "Wrong parsing"
-exit 0
+printfn "%A" maxLong
             """
 
     [<Test>]
@@ -105,7 +106,7 @@ exit 0
             """
 let nybbles = 0b0010_0101
 if nybbles <> 0b00100101 then failwith "Wrong parsing"
-exit 0
+printfn "%A" nybbles
             """
 
     [<Test>]
@@ -114,7 +115,7 @@ exit 0
             """
 let bytes = 0b11010010_01101001_10010100_10010010
 if bytes <> 0b11010010011010011001010010010010 then failwith "Wrong parsing"
-exit 0
+printfn "%A" bytes
             """
 
     [<Test>]
@@ -123,7 +124,7 @@ exit 0
             """
 let x2 = 5_2
 if x2 <> 52 then failwith "Wrong parsing"
-exit 0
+printfn "%A" x2
             """
 
     [<Test>]
@@ -132,7 +133,7 @@ exit 0
             """
 let x4 = 5_______2
 if x4 <> 52 then failwith "Wrong parsing"
-exit 0
+printfn "%A" x4
             """
 
     [<Test>]
@@ -142,7 +143,7 @@ exit 0
 let x7 = 0x5_2
 if x7 <> 0x52 then
     failwith "Wrong parsing"
-exit 0
+printfn "%A" x7
             """
 
     [<Test>]
@@ -151,8 +152,8 @@ exit 0
             """
 let x9 = 0_52
 if x9 <> 052 then failwith "Wrong parsing"
-exit 0
-            """           
+printfn "%A" x9
+            """
 
     [<Test>]
     let ``int with single underscore after leteral with leading zero ``() = 
@@ -160,8 +161,8 @@ exit 0
             """
 let x10 = 05_2
 if x10 <> 052 then failwith "Wrong parsing"
-exit 0
-            """       
+printfn "%A" x10
+            """
 
     [<Test>]
     let ``int with single underscore after octo leteral ``() = 
@@ -169,9 +170,5 @@ exit 0
             """
 let x14 = 0o5_2
 if x14 <> 0o52 then failwith "Wrong parsing"
-exit 0
+printfn "%A" x14
             """
-
-
-          
-

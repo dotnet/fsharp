@@ -93,7 +93,10 @@ type env =
       returnScope : int 
       
       /// Are we in an app expression (Expr.App)?
-      isInAppExpr: bool } 
+      isInAppExpr: bool
+    } 
+
+    override __.ToString() = "<env>"
 
 let BindTypar env (tp: Typar) = 
     { env with 
@@ -183,22 +186,38 @@ let CombineLimits limits =
 
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
+
       limitVals: Dictionary<Stamp, Limit>
+
       mutable potentialUnboundUsesOfVals: StampMap<range> 
+
       mutable anonRecdTypes: StampMap<AnonRecdTypeInfo> 
+
       g: TcGlobals 
+
       amap: Import.ImportMap 
+
       /// For reading metadata
       infoReader: InfoReader
+
       internalsVisibleToPaths : CompilationPath list
+
       denv: DisplayEnv 
+
       viewCcu : CcuThunk
+
       reportErrors: bool
+
       isLastCompiland : bool*bool
+
       isInternalTestSpanStackReferring: bool
+
       // outputs
       mutable usesQuotations : bool
+
       mutable entryPointGiven: bool  }
+
+    override x.ToString() = "<cenv>"
 
 /// Check if the value is an argument of a function
 let IsValArgument env (v: Val) =
@@ -263,7 +282,8 @@ let GetLimitValByRef cenv env m v =
     { scope = scope; flags = flags }
 
 let LimitVal cenv (v: Val) limit = 
-    cenv.limitVals.[v.Stamp] <- limit
+    if not v.IgnoresByrefScope then
+        cenv.limitVals.[v.Stamp] <- limit
 
 let BindVal cenv env (v: Val) = 
     //printfn "binding %s..." v.DisplayName
@@ -678,6 +698,7 @@ and CheckValRef (cenv: cenv) (env: env) v m (context: PermitByRefExpr) =
         if isSpliceOperator cenv.g v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
+        if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
 
         // ByRefLike-typed values can only occur in permitting contexts 
         if context.Disallow && isByrefLikeTy cenv.g m v.Type then 

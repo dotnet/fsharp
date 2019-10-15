@@ -116,12 +116,22 @@ let mkFuncTypeRef n =
                          [IlxSettings.ilxNamespace () + ".OptimizedClosures"], 
                          "FSharpFunc`"+ string (n + 1))
 type cenv = 
-    { ilg:ILGlobals
+    {
+      ilg:ILGlobals
+
       tref_Func: ILTypeRef[]
+
       mkILTyFuncTy: ILType
+
       addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef
+
       addFieldNeverAttrs: ILFieldDef -> ILFieldDef
-      addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef }
+
+      addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef
+    }
+
+    override __.ToString() = "<cenv>"
+
   
 let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) = 
     tdef.With(methods = (tdef.Methods.AsList |> List.map (fun md -> md |> cenv.addMethodGeneratedAttrs) |> mkILMethods))

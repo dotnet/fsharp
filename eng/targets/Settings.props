@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Authors>Microsoft and F# Software Foundation</Authors>
     <PackageTags>Visual F# Compiler FSharp functional programming</PackageTags>
     <NuspecBasePath>$(ArtifactsBinDir)</NuspecBasePath>
   </PropertyGroup>
