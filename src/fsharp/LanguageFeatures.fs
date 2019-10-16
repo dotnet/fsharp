@@ -66,7 +66,7 @@ type LanguageVersion (specifiedVersion) =
         match specifiedVersion with
         | "?" -> 0m
         | "preview" -> previewVersion
-        | "default" -> latestVersion
+        | "default" -> defaultVersion
         | "latest" -> latestVersion
         | "latestmajor" -> latestMajorVersion
         | _ ->
