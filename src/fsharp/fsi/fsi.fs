@@ -1888,7 +1888,8 @@ type internal FsiInteractionProcessor
     /// 
     /// #directive comes through with other definitions as a SynModuleDecl.HashDirective.
     /// We split these out for individual processing.
-    let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: ErrorLogger, lastResult:option<FsiInteractionStepStatus>)  =
+    let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: ErrorLogger, lastResult:option<FsiInteractionStepStatus>, cancellationToken: CancellationToken)  =
+        cancellationToken.ThrowIfCancellationRequested()
         let action,nextAction,istate = 
             match action with
             | None                                      -> None,None,istate
@@ -1935,7 +1936,7 @@ type internal FsiInteractionProcessor
           | Some action, _ ->
               let istate,cont = ExecInteraction (ctok, tcConfig, istate, action, errorLogger)
               match cont with
-                | Completed _                  -> execParsedInteractions (ctok, tcConfig, istate, nextAction, errorLogger, Some cont)
+                | Completed _                  -> execParsedInteractions (ctok, tcConfig, istate, nextAction, errorLogger, Some cont, cancellationToken)
                 | CompletedWithReportedError e -> istate,CompletedWithReportedError e             (* drop nextAction on error *)
                 | EndOfFile                    -> istate,defaultArg lastResult (Completed None)   (* drop nextAction on EOF *)
                 | CtrlC                        -> istate,CtrlC                                    (* drop nextAction on CtrlC *)
@@ -1962,9 +1963,9 @@ type internal FsiInteractionProcessor
            stopProcessingRecovery e range0;
            istate, CompletedWithReportedError e
 
-    let mainThreadProcessParsedInteractions ctok errorLogger (action, istate) = 
+    let mainThreadProcessParsedInteractions ctok errorLogger (action, istate) cancellationToken = 
       istate |> mainThreadProcessAction ctok (fun ctok tcConfig istate ->
-        execParsedInteractions (ctok, tcConfig, istate, action, errorLogger, None))
+        execParsedInteractions (ctok, tcConfig, istate, action, errorLogger, None, cancellationToken))
 
     let parseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
@@ -1997,8 +1998,8 @@ type internal FsiInteractionProcessor
     /// During processing of startup scripts, this runs on the main thread.
     ///
     /// This is blocking: it reads until one chunk of input have been received, unless IsPastEndOfStream is true
-    member __.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter, errorLogger) =
-
+    member __.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter, errorLogger, ?cancellationToken: CancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
         if tokenizer.LexBuffer.IsPastEndOfStream then 
             let stepStatus = 
                 if fsiInterruptController.FsiInterruptStdinState = StdinEOFPermittedBecauseCtrlCRecentlyPressed then 
@@ -2022,7 +2023,7 @@ type internal FsiInteractionProcessor
 
                 // After we've unblocked and got something to run we switch 
                 // over to the run-thread (e.g. the GUI thread) 
-                let res = istate  |> runCodeOnMainThread (fun ctok istate -> mainThreadProcessParsedInteractions ctok errorLogger (action, istate)) 
+                let res = istate  |> runCodeOnMainThread (fun ctok istate -> mainThreadProcessParsedInteractions ctok errorLogger (action, istate) cancellationToken)
 
                 if !progress then fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res;
                 res)
@@ -2093,7 +2094,8 @@ type internal FsiInteractionProcessor
     member __.LoadDummyInteraction(ctok, errorLogger) =
         setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []) |> fst, Completed None) |> fst)
         
-    member __.EvalInteraction(ctok, sourceText, scriptFileName, errorLogger) =
+    member __.EvalInteraction(ctok, sourceText, scriptFileName, errorLogger, ?cancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
         use _unwind2 = ErrorLogger.PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
@@ -2102,7 +2104,7 @@ type internal FsiInteractionProcessor
         currState 
         |> InteractiveCatch errorLogger (fun istate ->
             let expr = ParseInteraction tokenizer
-            mainThreadProcessParsedInteractions ctok errorLogger (expr, istate) )
+            mainThreadProcessParsedInteractions ctok errorLogger (expr, istate) cancellationToken)
         |> commitResult
 
     member this.EvalScript (ctok, scriptPath, errorLogger) =
@@ -2592,25 +2594,26 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.EvalExpression(ctok, sourceText, dummyScriptFileName, errorLogger)
         |> commitResultNonThrowing errorOptions dummyScriptFileName errorLogger
 
-    member x.EvalInteraction(sourceText) : unit =
+    member x.EvalInteraction(sourceText, ?cancellationToken) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
-
-        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger) 
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger, cancellationToken)
         |> commitResult
         |> ignore
 
-    member x.EvalInteractionNonThrowing(sourceText) =
+    member x.EvalInteractionNonThrowing(sourceText, ?cancellationToken) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger)
+        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger, cancellationToken)
         |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
 
     member x.EvalScript(scriptPath) : unit =
