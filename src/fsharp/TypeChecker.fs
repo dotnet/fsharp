@@ -6361,7 +6361,8 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
 
     let expandedIndexArgs = (GetIndexArgs indexArgs) |> List.map (fun expr -> 
         match expr with 
-        | SynExpr.App(_, _, _, innerExpr, _) -> match innerExpr with
+        | SynExpr.App(_, _, _, innerExpr, _) -> 
+            match innerExpr with
             | SynExpr.ReverseIndex(offsetExpr, range, _) -> 
                 match e1 with
                 | SynExpr.Ident collectionIdent -> generateReverseOffset collectionIdent offsetExpr range
