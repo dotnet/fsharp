@@ -6337,19 +6337,38 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         | [SynIndexerArg.One h] -> SynExpr.Paren (h, range0, None, idxRange)
         | _ -> SynExpr.Paren (SynExpr.Tuple (false, GetIndexArgs indexArgs @ Option.toList vopt, [], idxRange), range0, None, idxRange)
 
-    //let desugarHat (expr: SynIndexerArg) (collectionIdent: SynExpr) = expr.Exprs |> List.map (fun ex -> 
-    //        match ex with
-    //        | SynExpr.ReverseIndex(innerExpr, _, _) -> mkSynInfix 
-    //    )
+    let generateReverseOffset (arr: Ident) (offset: SynExpr) (range: range) = 
+        SynExpr.App(
+            ExprAtomicFlag.NonAtomic,
+            false,
+            SynExpr.App(
+                ExprAtomicFlag.NonAtomic,
+                true,
+                SynExpr.Ident(Ident("op_Subtraction", range)),
+                SynExpr.LongIdent(
+                    false,
+                    LongIdentWithDots(
+                        [arr; Ident("Length", range)], [range]
+                    ),
+                    None,
+                    range
+                ),
+                range
+            ),
+            offset,
+            range
+        )
 
-    //let makeReverseIndex (arr: Ident) (offset: int32) (range: range) = 
-    //    SynExpr.App(
-    //        ExprAtomicFlag.NonAtomic,
-    //        true,
-    //        SynExpr.Ident("op_Subtraction", range),
-    //        SynConst.Int32(offset),
-    //        range
-    //    )
+    let expandedIndexArgs = (GetIndexArgs indexArgs) |> List.map (fun expr -> 
+        match expr with 
+        | SynExpr.App(_, _, _, innerExpr, _) -> match innerExpr with
+            | SynExpr.ReverseIndex(offsetExpr, range, _) -> 
+                match e1 with
+                | SynExpr.Ident collectionIdent -> generateReverseOffset collectionIdent offsetExpr range
+                | _ -> expr
+            | _ -> expr
+        | _ -> expr
+    )
 
     printfn "%A" wholeExpr
     let attemptArrayString = 
@@ -6369,7 +6388,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
                 | false, true, SynExpr.DotIndexedSet (_, [SynIndexerArg.One _], e3, _, _, _)                                       -> Some (indexOpPath, "SetArray", (GetIndexArgs indexArgs @ [e3]))
                 | true, false, SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _], _, _)                                            -> Some (sliceOpPath, "GetStringSlice", GetIndexArgs indexArgs)
                 | true, false, SynExpr.DotIndexedGet (_, [SynIndexerArg.One _], _, _)                                            -> Some (indexOpPath, "GetString", GetIndexArgs indexArgs)
-                | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _], _, _)                                            -> Some (sliceOpPath, "GetArraySlice", GetIndexArgs indexArgs)
+                | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _], _, _)                                            -> Some (sliceOpPath, "GetArraySlice", expandedIndexArgs)
                 | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _], _, _)                        -> Some (sliceOpPath, "GetArraySlice2DFixed1", GetIndexArgs indexArgs)
                 | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _], _, _)                        -> Some (sliceOpPath, "GetArraySlice2DFixed2", GetIndexArgs indexArgs)
                 | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)                        -> Some (sliceOpPath, "GetArraySlice2D", GetIndexArgs indexArgs)
