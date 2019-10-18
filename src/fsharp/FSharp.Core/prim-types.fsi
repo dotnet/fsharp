@@ -2738,8 +2738,6 @@ namespace Microsoft.FSharp.Core
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
         /// and dynamic invocations of other F# operators</summary>
         module OperatorIntrinsics =
-            
-
 
             /// <summary>Gets a slice of an array</summary>
             /// <param name="source">The input array.</param>
@@ -2860,7 +2858,7 @@ namespace Microsoft.FSharp.Core
             /// <returns>The substring from the given indices.</returns>
             val inline GetStringSlice : source:string -> start:int option -> finish:int option -> string
 
-                        /// <summary>Generate a range of integers</summary>  
+            /// <summary>Generate a range of integers</summary>  
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
             val RangeInt32        : start:int        -> step:int        -> stop:int        -> seq<int>  
 

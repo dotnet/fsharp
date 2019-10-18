@@ -5087,7 +5087,6 @@ namespace Microsoft.FSharp.Core
                 let finish4 = (match finish4 with None -> bound4 + Array4DLength4 target - 1 | Some n -> n) 
                 SetArray4DSub target start1 start2 start3 start4 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) (finish4 - start4 + 1) source
 
-                
             let inline GetStringSlice (source: string) start finish =
                 let start, finish = ComputeSlice 0 start finish source.Length
                 let len = finish-start+1
@@ -5505,7 +5504,6 @@ namespace Microsoft.FSharp.Core
            when ^T : sbyte       = RangeSByte   (retype start) (retype step) (retype finish)
            when ^T : byte        = RangeByte    (retype start) (retype step) (retype finish)
 
-
         [<CompiledName("Abs")>]
         let inline abs (value: ^T) : ^T = 
              AbsDynamic value
@@ -5711,7 +5709,6 @@ namespace Microsoft.FSharp.Core
                 = SetArraySlice3DFixedDouble target source index1 index3 start2 finish2 1
             member target.SetSlice(start1: int option, finish1: int option,  index2: int, index3: int, source: 'T[])
                 = SetArraySlice3DFixedDouble target source index2 index3 start1 finish1 0
-
 
 
 namespace Microsoft.FSharp.Control
