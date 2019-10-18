@@ -1191,7 +1191,8 @@ type internal FsiDynamicCompiler
         // Construct the code that saves the 'it' value into the 'SaveIt' register.
         let defs =
             match expr with
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.Ident(i), _, m) when i.idText = "raise" -> [SynModuleDecl.DoExpr(NoSequencePointAtInvisibleBinding, expr, m)]
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.Ident(i), _, m)
+                when i.idText = "raise" || i.idText = "failwith" -> [SynModuleDecl.DoExpr(NoSequencePointAtInvisibleBinding, expr, m)]
             | _ -> fsiDynamicCompiler.BuildItBinding expr
 
         // Evaluate the overall definitions.

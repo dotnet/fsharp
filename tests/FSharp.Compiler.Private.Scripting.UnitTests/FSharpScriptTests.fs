@@ -141,3 +141,12 @@ type InteractiveTests() =
         match result with
         | Ok(v) -> Assert.Fail(sprintf "expected a failure, got %A" v)
         | Error(ex) -> Assert.IsInstanceOf<NotImplementedException>(ex)
+
+    [<Test>]
+    member _.``Top level failwith is handled appropriately``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("failwith \"fail\"")
+        Assert.IsEmpty(errors)
+        match result with
+        | Ok(v) -> Assert.Fail(sprintf "expected a failure, got %A" v)
+        | Error(ex) -> Assert.IsInstanceOf<Exception>(ex)
