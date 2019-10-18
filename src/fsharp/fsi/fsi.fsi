@@ -4,6 +4,7 @@
 module public FSharp.Compiler.Interactive.Shell
 
 open System.IO
+open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
@@ -146,7 +147,7 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalInteraction : code: string -> unit
+    member EvalInteraction : code: string * ?cancellationToken: CancellationToken -> unit
 
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
@@ -155,7 +156,7 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalInteractionNonThrowing : code: string -> Choice<FsiValue option, exn> * FSharpErrorInfo[]
+    member EvalInteractionNonThrowing : code: string * ?cancellationToken: CancellationToken -> Choice<FsiValue option, exn> * FSharpErrorInfo[]
 
     /// Execute the given script. Stop on first error, discarding the rest
     /// of the script. Errors are sent to the output writer, a 'true' return value indicates there

@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Scripting
 
 open System
+open System.Threading
 open FSharp.Compiler.Interactive.Shell
 
 type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: string[]) as this =
@@ -42,8 +43,9 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
 
     member __.ErrorProduced = errorProduced.Publish
 
-    member __.Eval(code: string) =
-        let ch, errors = fsi.EvalInteractionNonThrowing code
+    member __.Eval(code: string, ?cancellationToken: CancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        let ch, errors = fsi.EvalInteractionNonThrowing(code, cancellationToken)
         match ch with
         | Choice1Of2 v -> Ok(v), errors
         | Choice2Of2 ex -> Error(ex), errors
