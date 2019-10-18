@@ -2,16 +2,13 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Collections.Immutable
 open System.Composition
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
 open FSharp.Compiler.SourceCodeServices.Keywords
@@ -57,8 +54,8 @@ type internal FSharpRenameParamToMatchSignature
                                                 yield TextChange(textSpan, replacement) |]
                                 return changes 
                             }
-                        let title = FSComp.SR.replaceWithSuggestion suggestion
-                        let codefix = createTextChangeCodeFix(title, context, computeChanges)
+                        let title = CompilerDiagnostics.getErrorMessage (ReplaceWithSuggestion suggestion)
+                        let codefix = CodeFixHelpers.createTextChangeCodeFix(title, context, computeChanges)
                         context.RegisterCodeFix(codefix, diagnostics)
             | _ -> ()
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

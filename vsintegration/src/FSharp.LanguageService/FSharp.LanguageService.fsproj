@@ -3,16 +3,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
-    <ImportVsSDK>true</ImportVsSDK>
-    <CreateVsixContainer>false</CreateVsixContainer>
     <NoWarn>$(NoWarn);75</NoWarn>
+    <NoWarn>$(NoWarn);44</NoWarn><!-- warning about Roslyn API only for F# and TypeScript -->
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
-    <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
+    <DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
@@ -35,7 +32,6 @@
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.LanguageService.Strings</GeneratedModuleName>
     </EmbeddedResource>
-    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="LanguageServiceConstants.fs" />
     <Compile Include="Error.fs" />
     <Compile Include="Vs.fs" />
@@ -63,25 +59,37 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.LanguageServices" Version="$(MicrosoftVisualStudioLanguageServicesPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.ProjectAggregator" Version="$(MicrosoftVisualStudioProjectAggregatorPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="$(MicrosoftVisualStudioShellImmutable100PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="$(MicrosoftVisualStudioShellImmutable110PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.10.0" Version="$(MicrosoftVisualStudioShellInterop100PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.11.0" Version="$(MicrosoftVisualStudioShellInterop110PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTuplePackageVersion)" />
-    <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="EnvDTE80" Version="$(EnvDTE80Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense" Version="$(MicrosoftVisualStudioLanguageIntellisenseVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Language.StandardClassification" Version="$(MicrosoftVisualStudioLanguageStandardClassificationVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServices" Version="$(MicrosoftVisualStudioLanguageServicesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.ProjectAggregator" Version="$(MicrosoftVisualStudioProjectAggregatorVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="$(MicrosoftVisualStudioShellImmutable100Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="$(MicrosoftVisualStudioShellImmutable110Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.10.0" Version="$(MicrosoftVisualStudioShellInterop100Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.11.0" Version="$(MicrosoftVisualStudioShellInterop110Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTupleVersion)" />
+    <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+	<PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
+      <AssemblyName>FSharp.LanguageService</AssemblyName>
+      <Version>$(VSAssemblyVersion)</Version>
+      <CodeBase>$PackageFolder$\FSharp.LanguageService.dll</CodeBase>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>

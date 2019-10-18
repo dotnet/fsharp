@@ -1,7 +1,7 @@
 use vs
 
 package name=Microsoft.FSharp.SDK
-        version=$(FSharpPackageVersion)
+        version=$(VsixVersion)
 
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharpSdk"
 

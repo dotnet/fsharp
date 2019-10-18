@@ -92,7 +92,7 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-"  + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine +
                      "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
@@ -416,7 +416,8 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine) cmd
+                     "--nocopyfsharpcore" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestReferencePathWithSpaces() =

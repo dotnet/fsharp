@@ -98,6 +98,8 @@ val mkFileIndexRange : FileIndex -> pos -> pos -> range
 /// This view hides the use of file indexes and just uses filenames 
 val mkRange : string -> pos -> pos -> range
 
+val equals : range -> range -> bool
+
 /// Reduce a range so it only covers a line
 val trimRangeToLine : range -> range
 

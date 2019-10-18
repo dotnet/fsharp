@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../VSPackage.resx">
     <body>
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 pro F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Nástroje Microsoft Visual F# 10.4 pro F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 pro F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Nástroje Microsoft Visual F# 10.4 pro F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Visual F# Tools 10.2 pro F# 4.5</target>
+        <source>Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Nástroje Visual F# 10.4 pro F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
@@ -499,7 +499,7 @@
       </trans-unit>
       <trans-unit id="NeedReloadToChangeTargetFx">
         <source>Changing the Target Framework requires that the current project be closed and then reopened.\nAny unsaved changes within the project will be automatically saved.\n\nChanging Target Framework may require manual modification of project files in order to build.\n\nAre you sure you want to change the Target Framework for this project?</source>
-        <target state="translated">Změna cílového rámce vyžaduje zavření a opětovné otevření aktuálního projektu. \nJakékoliv neuložené změny v rámci projektu budou automaticky uloženy.\n\nZměna cílového rámce může vyžadovat ruční úpravy souborů projektu, aby mohlo být provedeno sestavení.\n\nJste si jisti, že chcete změnit cílový rámec tohoto projektu?</target>
+        <target state="translated">Změna cílové architektury vyžaduje zavření a opětovné otevření aktuálního projektu. \nJakékoliv neuložené změny v rámci projektu budou automaticky uloženy.\n\nZměna cílové architektury může vyžadovat ruční úpravy souborů projektu, aby mohlo být provedeno sestavení.\n\nJste si jisti, že chcete změnit cílovou architekturu tohoto projektu?</target>
         <note />
       </trans-unit>
       <trans-unit id="AddReferenceDialogTitle">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
         <source>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</source>
-        <target state="translated">Odkazování na tuto verzi oboru názvů FSharp.Core zapříčíní nekompatibilitu projektu se staršími verzemi Visual Studia. Chcete pokračovat?</target>
+        <target state="translated">Odkazování na tuto verzi oboru názvů FSharp.Core zapříčiní nekompatibilitu projektu se staršími verzemi sady Visual Studio. Chcete pokračovat?</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputingSourcesAndFlags">

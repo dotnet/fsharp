@@ -1,8 +1,8 @@
 ﻿
 #if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.ProjectCracker.dll"
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.ProjectCracker.dll"
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -563,6 +563,17 @@ let testHashUIntPtr (x:unativeint) = hash x
 let testHashString (x:string) = hash x
 let testTypeOf (x:'T) = typeof<'T>
 
+let inline mutableVar x =
+    if x > 0 then
+        let mutable acc = x
+        acc <- x
+
+let inline mutableConst () =
+    let mutable acc = ()
+    acc <- ()
+
+let testMutableVar = mutableVar 1
+let testMutableConst = mutableConst ()
     """
 
     File.WriteAllText(fileName2, fileSource2)
@@ -753,6 +764,10 @@ let ``Test Unoptimized Declarations Project1`` () =
         "let testHashUIntPtr(x) = Operators.Hash<Microsoft.FSharp.Core.unativeint> (x) @ (14,37--14,43)";
         "let testHashString(x) = Operators.Hash<Microsoft.FSharp.Core.string> (x) @ (16,32--16,38)";
         "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
+        "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
+        "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
+        "let testMutableVar = N.mutableVar (1) @ (28,21--28,33)";
+        "let testMutableConst = N.mutableConst (()) @ (29,23--29,38)";
       ]
 
     printDeclarations None (List.ofSeq file1.Declarations) 
@@ -893,6 +908,10 @@ let ``Test Optimized Declarations Project1`` () =
         "let testHashUIntPtr(x) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (x)),2147483647) @ (14,37--14,43)";
         "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else Operators.Hash<Microsoft.FSharp.Core.string> (x)) @ (16,32--16,38)";
         "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
+        "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
+        "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
+        "let testMutableVar = let x: Microsoft.FSharp.Core.int = 1 in (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (28,21--28,33)";
+        "let testMutableConst = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (29,23--29,38)";
       ]
 
     // printFSharpDecls "" file2.Declarations |> Seq.iter (printfn "%s")

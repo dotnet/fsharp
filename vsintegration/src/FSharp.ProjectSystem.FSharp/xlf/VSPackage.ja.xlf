@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../VSPackage.resx">
     <body>
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">F# 4.6 用 Microsoft Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">F# 4.6 用 Microsoft Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,13 +453,13 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">F# 4.6 用 Visual F# Tools 10.4</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">F# Interactive に渡されるパスとコマンド ライン引数を変更します</target>
+        <target state="translated">F# インタラクティブに渡されるパスとコマンド ライン引数を変更します</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">

@@ -1646,57 +1646,38 @@ module internal VsActual =
 
     let vsInstallDir =
         // use the environment variable to find the VS installdir
-        let vsvar = 
-            let var =
-                let vs16 = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
-                if String.IsNullOrEmpty vs16 then
-                    Environment.GetEnvironmentVariable("VS150COMNTOOLS")
-                else
-                    vs16
+        let vsvar =
+            let var = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
             if String.IsNullOrEmpty var then
-                Environment.GetEnvironmentVariable("VSAPPIDDIR") 
+                Environment.GetEnvironmentVariable("VSAPPIDDIR")
             else
                 var
-        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS, VS15COMNTOOLS and VSAPPIDDIR environment variables not found."
+        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =
         let thisAssembly = Assembly.GetExecutingAssembly().Location
-        let editorAssemblyDir = Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
-        let privateAssemblyDir = Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies")
-        let publicAssemblyDir = Path.Combine(vsInstallDir, @"IDE\PublicAssemblies")
-
-        let CreateAssemblyCatalog(path, file) =
-            let fullPath = Path.GetFullPath(Path.Combine(path, file))
-            if File.Exists(fullPath) then
-                new AssemblyCatalog(fullPath)
-            else
-                failwith("could not find " + fullPath)
-
+        let thisAssemblyDir = Path.GetDirectoryName(thisAssembly)
         let list = new ResizeArray<ComposablePartCatalog>()
-
-        let addMovedFile originalDir alternateDir file =
-            let path = Path.Combine(originalDir, file)
-            if File.Exists(path) then
-                list.Add(CreateAssemblyCatalog(originalDir,  file))
+        let add p =
+            let fullPath = Path.GetFullPath(Path.Combine(thisAssemblyDir, p))
+            if File.Exists(fullPath) then
+                list.Add(new AssemblyCatalog(fullPath))
             else
-                list.Add(CreateAssemblyCatalog(alternateDir,  file))
+                failwith <| sprintf "unable to find assembly %s" p
 
         list.Add(new AssemblyCatalog(thisAssembly))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.Data.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.Logic.dll"))
-
-        // "Microsoft.VisualStudio.Text.Internal.dll" moved locations between dev15 and 16
-        // This ensures we can run in both Devs 15 and 16
-        addMovedFile privateAssemblyDir editorAssemblyDir "Microsoft.VisualStudio.Text.Internal.dll"
-
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.UI.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.UI.Wpf.dll"))
-        list.Add(CreateAssemblyCatalog(privateAssemblyDir, "Microsoft.VisualStudio.Threading.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Platform.VSEditor.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Editor.Implementation.dll"))
-        list.Add(CreateAssemblyCatalog(publicAssemblyDir,  "Microsoft.VisualStudio.ComponentModelHost.dll"))
-        list.Add(CreateAssemblyCatalog(publicAssemblyDir,  "Microsoft.VisualStudio.Shell.15.0.dll"))
+        [ "Microsoft.VisualStudio.Text.Data.dll"
+          "Microsoft.VisualStudio.Text.Logic.dll"
+          "Microsoft.VisualStudio.Text.Internal.dll"
+          "Microsoft.VisualStudio.Text.UI.dll"
+          "Microsoft.VisualStudio.Text.UI.Wpf.dll"
+          "Microsoft.VisualStudio.Threading.dll"
+          "Microsoft.VisualStudio.Platform.VSEditor.dll"
+          "Microsoft.VisualStudio.Editor.Implementation.dll"
+          "Microsoft.VisualStudio.ComponentModelHost.dll"
+          "Microsoft.VisualStudio.Shell.15.0.dll" ]
+        |> List.iter add
         new AggregateCatalog(list)
 
     let exportProvider = new CompositionContainer(new AggregateCatalog(CreateEditorCatalog()), true, null)

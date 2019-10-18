@@ -1,7 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiOperationCouldNotBeCompleted">
+        <source>Operation could not be completed due to earlier error</source>
+        <target state="new">Operation could not be completed due to earlier error</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiOperationFailed">
+        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
+        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Arrêt en raison d'une erreur\n</target>
@@ -134,7 +144,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nException déclenchée durant l'impression automatique.\nSignalez ce problème afin qu'il soit corrigé.\nTrace : {0}\n</target>
+        <target state="translated">\n\nException déclenchée pendant le listing en mode Pretty. \nSignalez ce problème afin qu'il soit corrigé.\nTrace : {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">

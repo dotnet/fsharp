@@ -9,7 +9,6 @@ open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Range
 
-
 /// What should the decision tree contain for any incomplete match? 
 type ActionOnFailure = 
     | ThrowIncompleteMatchException 
@@ -23,19 +22,20 @@ type ActionOnFailure =
 type Pattern =
     | TPat_const of Const * range
     | TPat_wild of range
-    | TPat_as of  Pattern * PatternValBinding * range
-    | TPat_disjs of  Pattern list * range
-    | TPat_conjs of  Pattern list * range
+    | TPat_as of Pattern * PatternValBinding * range
+    | TPat_disjs of Pattern list * range
+    | TPat_conjs of Pattern list * range
     | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * PrettyNaming.ActivePatternInfo) * Pattern * range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
     | TPat_exnconstr of TyconRef * Pattern list * range
-    | TPat_tuple of  TupInfo * Pattern list * TType list * range
-    | TPat_array of  Pattern list * TType * range
+    | TPat_tuple of TupInfo * Pattern list * TType list * range
+    | TPat_array of Pattern list * TType * range
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
     | TPat_range of char * char * range
     | TPat_null of range
     | TPat_isinst of TType * TType * PatternValBinding option * range
-    member Range : range
+
+    member Range: range
 
 and PatternValBinding = 
     | PBind of Val * TypeScheme
@@ -43,10 +43,10 @@ and PatternValBinding =
 and TypedMatchClause =  
     | TClause of Pattern * Expr option * DecisionTreeTarget * range
 
-val ilFieldToTastConst : ILFieldInit -> Tast.Const
+val ilFieldToTastConst: ILFieldInit -> Tast.Const
 
 /// Compile a pattern into a decision tree and a set of targets.
-val internal CompilePattern : 
+val internal CompilePattern: 
     TcGlobals ->
     DisplayEnv ->
     Import.ImportMap -> 
@@ -66,8 +66,8 @@ val internal CompilePattern :
     TType -> 
     // result type
     TType ->
-      // produce TAST nodes
-      DecisionTree * DecisionTreeTarget list
+        // produce TAST nodes
+        DecisionTree * DecisionTreeTarget list
 
 exception internal MatchIncomplete of bool * (string * bool) option * range
 exception internal RuleNeverMatched of range

@@ -45,7 +45,7 @@ module Structure =
     let longIdentRange (longId:LongIdent) =
         match longId with 
         | [] -> range0
-        | head::_ -> Range.startToEnd head.idRange (List.last longId).idRange
+        | head :: _ -> Range.startToEnd head.idRange (List.last longId).idRange
 
     /// Caclulate the range of the provided type arguments (<'a, ..., 'z>) 
     /// or return the range `other` when `typeArgs` = []
@@ -115,7 +115,7 @@ module Structure =
         | Attribute
         | Interface
         | HashDirective
-        | LetOrUseOrAndBang
+        | LetOrUseBang
         | TypeExtension
         | YieldOrReturn
         | YieldOrReturnBang
@@ -164,7 +164,7 @@ module Structure =
             | Attribute           -> "Attribute"
             | Interface           -> "Interface"
             | HashDirective       -> "HashDirective"
-            | LetOrUseOrAndBang   -> "LetOrUseOrAndBang"
+            | LetOrUseBang   -> "LetOrUseBang"
             | TypeExtension       -> "TypeExtension"
             | YieldOrReturn       -> "YieldOrReturn"
             | YieldOrReturnBang   -> "YieldOrReturnBang"
@@ -220,7 +220,7 @@ module Structure =
             match expression with
             | SynExpr.Upcast (e, _, _)
             | SynExpr.Downcast (e, _, _)
-            | SynExpr.AddressOf(_, e, _, _)
+            | SynExpr.AddressOf (_, e, _, _)
             | SynExpr.InferredDowncast (e, _)
             | SynExpr.InferredUpcast (e, _)
             | SynExpr.DotGet (e, _, _, _)
@@ -245,7 +245,7 @@ module Structure =
             | SynExpr.DoBang (e, r) ->
                 rcheck Scope.Do Collapse.Below r <| Range.modStart 3 r
                 parseExpr e
-            | SynExpr.LetOrUseOrAndBang (_,_,_,pat,eLet,_,es,eBody) ->
+            | SynExpr.LetOrUseBang (_,_,_,pat,eLet,_,es,eBody) ->
                 [
                     yield eLet
                     yield! [ for (_,_,_,_,eAndBang,_) in es do yield eAndBang ]
@@ -256,7 +256,7 @@ module Structure =
                     // on the same line. If there is an `=` the range will be adjusted during the
                     // tooltip creation
                     let r = Range.endToEnd pat.Range e.Range
-                    rcheck Scope.LetOrUseOrAndBang Collapse.Below r r
+                    rcheck Scope.LetOrUseBang Collapse.Below r r
                     parseExpr e
                 )
                 parseExpr eBody
@@ -412,7 +412,7 @@ module Structure =
             rcheck Scope.MatchClause Collapse.Same e.Range collapse
             parseExpr e
 
-        and parseAttributes (attrs: SynAttributes) =
+        and parseAttributes (Attributes attrs) =
             let attrListRange() =
                 if not (List.isEmpty attrs) then
                     let range = Range.startToEnd (attrs.[0].Range) (attrs.[attrs.Length-1].ArgExpr.Range)
@@ -555,13 +555,13 @@ module Structure =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
-                    | [], _ -> List.rev (currentBulk::res)
+                    | [], _ -> List.rev (currentBulk :: res)
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ 
                         when r.StartLine = last.EndLine + 1 || 
                              sourceLines.[last.EndLine..r.StartLine - 2] |> Array.forall System.String.IsNullOrWhiteSpace ->
-                        loop rest res (r::currentBulk)
-                    | r :: rest, _ -> loop rest (currentBulk::res) [r]
+                        loop rest res (r :: currentBulk)
+                    | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
             let selectRanges (ranges: range list) =
@@ -783,11 +783,11 @@ module Structure =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
-                    | [], _ -> List.rev (currentBulk::res)
+                    | [], _ -> List.rev (currentBulk :: res)
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ when r.StartLine = last.EndLine + 1 ->
-                        loop rest res (r::currentBulk)
-                    | r :: rest, _ -> loop rest (currentBulk::res) [r]
+                        loop rest res (r :: currentBulk)
+                    | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
             let selectSigRanges (ranges: range list) =

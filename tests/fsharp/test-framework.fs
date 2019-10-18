@@ -105,6 +105,9 @@ module Commands =
     let ildasm exec ildasmExe flags assembly =
         exec ildasmExe (sprintf "%s %s" flags (quotepath assembly))
 
+    let ilasm exec ilasmExe flags assembly =
+        exec ilasmExe (sprintf "%s %s" flags (quotepath assembly))
+
     let peverify exec peverifyExe flags path =
         exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
 
@@ -132,6 +135,7 @@ type TestConfig =
       FSharpCompilerInteractiveSettings : string
       fsi_flags : string
       ILDASM : string
+      ILASM : string
       PEVERIFY : string
       Directory: string 
       DotNetExe: string
@@ -152,45 +156,53 @@ type FSLibPaths =
 let requireFile nm = 
     if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
 
+let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+
 let config configurationName envVars =
 
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__
-    let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
-#if NET46
-    let fscArchitecture = "net46"
-    let fsiArchitecture = "net46"
+#if NET472
+    let fscArchitecture = "net472"
+    let fsiArchitecture = "net472"
     let fsharpCoreArchitecture = "net45"
-    let fsharpBuildArchitecture = "net46"
-    let fsharpCompilerInteractiveSettingsArchitecture = "net46"
+    let fsharpBuildArchitecture = "net472"
+    let fsharpCompilerInteractiveSettingsArchitecture = "net472"
 #else
     let fscArchitecture = "netcoreapp2.1"
     let fsiArchitecture = "netcoreapp2.1"
-    let fsharpCoreArchitecture = "netstandard1.6"
-    let fsharpBuildArchitecture = "netstandard2.0"
+    let fsharpCoreArchitecture = "netstandard2.0"
+    let fsharpBuildArchitecture = "netcoreapp2.1"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
     let artifactsBinPath = artifactsPath ++ "bin"
+    let coreClrRuntimePackageVersion = "3.0.0-preview-27318-01"
     let csc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
     let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let CSC = requireFile (packagesDir ++ "Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
-    let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
-    let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
-    let PEVERIFY = requireFile (artifactsBinPath ++ "PEVerify" ++ configurationName ++ "net46" ++ "PEVerify.exe")
+    let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
+    let ILASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ilasm.exe")
+    let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
+    let PEVERIFY = requireFile (artifactsBinPath ++ "PEVerify" ++ configurationName ++ "net472" ++ "PEVerify.exe")
     let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireFile (artifactsBinPath ++ "FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireFile (artifactsBinPath ++ "FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
-    let dotNetExe = artifactsPath ++ "toolset" ++ "dotnet" ++ "dotnet.exe"
-    // ildasm requires coreclr.dll to run which has already been restored to the packages directory
+    let dotNetExe =
+        // first look for {repoRoot}\.dotnet\dotnet.exe, otherwise fallback to %PATH%
+        let repoLocalDotnetPath = repoRoot ++ ".dotnet" ++ "dotnet.exe"
+        if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
+        else "dotnet.exe"
+    // ildasm + ilasm requires coreclr.dll to run which has already been restored to the packages directory
     File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
+    File.Copy(coreclrdll, Path.GetDirectoryName(ILASM) ++ "coreclr.dll", overwrite=true)
 
     let FSI = requireFile (FSI_FOR_SCRIPTS)
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ "net46" ++ "fsiAnyCpu.exe")
+    let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
 #endif
     let FSC = requireFile (artifactsBinPath ++ "fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
     let FSCOREDLLPATH = requireFile (artifactsBinPath ++ "FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
@@ -205,6 +217,7 @@ let config configurationName envVars =
     { EnvironmentVariables = envVars
       FSCOREDLLPATH = FSCOREDLLPATH
       ILDASM = ILDASM
+      ILASM = ILASM
       PEVERIFY = PEVERIFY
       CSC = CSC 
       BUILD_CONFIG = configurationName
@@ -430,7 +443,8 @@ let execAppendIgnoreExitCode cfg stdoutPath stderrPath p = Command.exec cfg.Dire
 let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p >> checkResult
 let execExpectFail cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p >> checkErrorLevel1
 let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables execArgs p >> checkResult
-let execBothToOut cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = OutputAndErrorToSameFile(Overwrite(outFile)) } p >> checkResult
+let execBothToOutNoCheck cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = OutputAndErrorToSameFile(Overwrite(outFile)) } p
+let execBothToOut cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkResult
 let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = Output(Append(outFile)) } p >> alwaysSuccess
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
 let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
@@ -443,6 +457,7 @@ let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec
 let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendErrExpectFail cfg errPath) cfg.DotNetExe  cfg.FSC) arg
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
+let ilasm cfg arg = Printf.ksprintf (Commands.ilasm (exec cfg) cfg.ILASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)

@@ -21,9 +21,9 @@ neg15.fs(112,18,112,78): typecheck error FS1093: The union cases or fields of th
 
 neg15.fs(112,18,112,78): typecheck error FS1093: The union cases or fields of the type 'RecordTypeWithPrivateRepresentation' are not accessible from this code location
 
-neg15.fs(113,19,113,76): typecheck error FS1093: The union cases or fields of the type 'RecordTypeWithPrivateRepresentation' are not accessible from this code location
+neg15.fs(113,17,113,76): typecheck error FS1093: The union cases or fields of the type 'RecordTypeWithPrivateRepresentation' are not accessible from this code location
 
-neg15.fs(114,19,114,52): typecheck error FS1092: The type 'PrivateRecordType' is not accessible from this code location
+neg15.fs(114,17,114,52): typecheck error FS1092: The type 'PrivateRecordType' is not accessible from this code location
 
 neg15.fs(115,19,115,48): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 

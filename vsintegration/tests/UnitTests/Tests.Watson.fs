@@ -4,6 +4,7 @@ namespace Tests.Compiler.Watson
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CompileOps
@@ -26,10 +27,14 @@ type Check =
                 if (File.Exists("watson-test.fs")) then
                     File.Delete("watson-test.fs")
                 File.WriteAllText("watson-test.fs", "// Hello watson" )
-                let argv = [| "--simulateException:"+simulationCode; "watson-test.fs"|]
+                let argv =
+                    [|  "--simulateException:"+simulationCode
+                        "--nowarn:988" // don't show `watson-test.fs(1,16): warning FS0988: Main module of program is empty: nothing will happen when it is run`
+                        "watson-test.fs"
+                    |]
 
                 let ctok = AssumeCompilationThreadWithoutEvidence ()
-                let _code = mainCompile (ctok, argv, FSharp.Compiler.MSBuildReferenceResolver.Resolver, false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
+                let _code = mainCompile (ctok, argv, LegacyMSBuildReferenceResolver.getResolver(), false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
                 ()
             with 
             | :? 'TException as e -> 

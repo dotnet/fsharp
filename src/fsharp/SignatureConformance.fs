@@ -37,8 +37,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         // Used when checking attributes.
         let sigToImplRemap = 
             let remap = Remap.Empty 
-            let remap = (remapInfo.RepackagedEntities, remap) ||> List.foldBack (fun (implTcref , signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
-            let remap = (remapInfo.RepackagedVals    , remap) ||> List.foldBack (fun (implValRef, signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
+            let remap = (remapInfo.RepackagedEntities, remap) ||> List.foldBack (fun (implTcref, signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
+            let remap = (remapInfo.RepackagedVals, remap) ||> List.foldBack (fun (implValRef, signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
             remap
             
         // For all attributable elements (types, modules, exceptions, record fields, unions, parameters, generic type parameters)
@@ -49,7 +49,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         //     b.	If an attribute is found in ASig that has the same attribute type, then a warning is given and the attribute in the implementation is ignored 
         //     c.	Otherwise, the attribute in the implementation is kept
         // (c)	The attributes appearing in the compiled element are the compiled forms of the attributes from the signature and the kept attributes from the implementation
-        let checkAttribs _aenv (implAttribs:Attribs) (sigAttribs:Attribs) fixup =
+        let checkAttribs _aenv (implAttribs: Attribs) (sigAttribs: Attribs) fixup =
             
             // Remap the signature attributes to make them look as if they were declared in 
             // the implementation. This allows us to compare them and propagate them to the implementation
@@ -107,7 +107,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             fixup (sigAttribs @ keptImplAttribs)
             true
 
-        let rec checkTypars m (aenv: TypeEquivEnv) (implTypars:Typars) (sigTypars:Typars) = 
+        let rec checkTypars m (aenv: TypeEquivEnv) (implTypars: Typars) (sigTypars: Typars) = 
             if implTypars.Length <> sigTypars.Length then 
                 errorR (Error(FSComp.SR.typrelSigImplNotCompatibleParamCountsDiffer(), m)) 
                 false
@@ -149,7 +149,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               true) &&
                   (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.SetAttribs attribs)))
 
-        and checkTypeDef (aenv: TypeEquivEnv) (implTycon:Tycon) (sigTycon:Tycon) =
+        and checkTypeDef (aenv: TypeEquivEnv) (implTycon: Tycon) (sigTycon: Tycon) =
             let m = implTycon.Range
             
             // Propagate defn location information from implementation to signature . 
@@ -294,7 +294,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   implVal.SetValReprInfo (Some (ValReprInfo (sigTyparNames, implArgInfos, implRetInfo)))
                   res
 
-        and checkVal implModRef (aenv:TypeEquivEnv) (implVal:Val) (sigVal:Val) =
+        and checkVal implModRef (aenv: TypeEquivEnv) (implVal: Val) (sigVal: Val) =
 
             // Propagate defn location information from implementation to signature . 
             sigVal.SetOtherRange (implVal.Range, true)
@@ -305,7 +305,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m = implVal.Range
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
-            elif implVal.CompiledName <> sigVal.CompiledName then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
+            elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
             elif implVal.DisplayName <> sigVal.DisplayName then (err denv FSComp.SR.ValueNotContainedMutabilityDisplayNamesDiffer)
             elif isLessAccessible implVal.Accessibility sigVal.Accessibility then (err denv FSComp.SR.ValueNotContainedMutabilityAccessibilityMore)
             elif implVal.MustInline <> sigVal.MustInline then (err denv FSComp.SR.ValueNotContainedMutabilityInlineFlagsDiffer)
@@ -369,7 +369,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             match implMemberInfo, sigMemberInfo with 
             | None, None -> true
             | Some implMembInfo, Some sigMembInfo -> 
-                if not (implVal.CompiledName = sigVal.CompiledName) then 
+                if not ((implVal.CompiledName  g.CompilerGlobalState) = (sigVal.CompiledName g.CompilerGlobalState)) then 
                   err(FSComp.SR.ValueNotContainedMutabilityDotNetNamesDiffer)
                 elif not (implMembInfo.MemberFlags.IsInstance = sigMembInfo.MemberFlags.IsInstance) then 
                   err(FSComp.SR.ValueNotContainedMutabilityStaticsDiffer)
@@ -408,7 +408,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         // sig for err then checkRecordFieldsForExn.
         // -------------------------------------------------------------------------------
 
-        and checkRecordFields m aenv (implTycon:Tycon) (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
+        and checkRecordFields m aenv (implTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
@@ -426,7 +426,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
              then true
              else (errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldOrderDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false))
 
-        and checkRecordFieldsForExn _g _denv err aenv (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
+        and checkRecordFieldsForExn _g _denv err aenv (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
@@ -439,9 +439,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
              then true
              else (errorR(err (FSComp.SR.ExceptionDefsNotCompatibleFieldOrderDiffers)); false))
 
-        and checkVirtualSlots denv m (implTycon:Tycon) implAbstractSlots sigAbstractSlots =
-            let m1 = NameMap.ofKeyedList (fun (v:ValRef) -> v.DisplayName) implAbstractSlots
-            let m2 = NameMap.ofKeyedList (fun (v:ValRef) -> v.DisplayName) sigAbstractSlots
+        and checkVirtualSlots denv m (implTycon: Tycon) implAbstractSlots sigAbstractSlots =
+            let m1 = NameMap.ofKeyedList (fun (v: ValRef) -> v.DisplayName) implAbstractSlots
+            let m2 = NameMap.ofKeyedList (fun (v: ValRef) -> v.DisplayName) sigAbstractSlots
             (m1, m2) ||> NameMap.suball2 (fun _s vref -> 
                 let kindText = implTycon.TypeOrMeasureKind.ToString()
                 let valText = NicePrint.stringValOrMember denv vref.Deref
@@ -452,7 +452,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let valText = NicePrint.stringValOrMember denv vref.Deref
                 errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(kindText, implTycon.DisplayName, valText), m)); false) (fun _x _y -> true)  
 
-        and checkClassFields isStruct m aenv (implTycon:Tycon) (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
+        and checkClassFields isStruct m aenv (implTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name) 
@@ -468,7 +468,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 true)
             
 
-        and checkTypeRepr m aenv (implTycon:Tycon) sigTypeRepr =
+        and checkTypeRepr m aenv (implTycon: Tycon) sigTypeRepr =
             let reportNiceError k s1 s2 = 
               let aset = NameSet.ofList s1
               let fset = NameSet.ofList s2
@@ -536,7 +536,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 if typeAEquiv g aenv ty1 ty2 then true else (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
             | TNoRepr, TNoRepr -> true
 #if !NO_EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint info1 , TProvidedTypeExtensionPoint info2 ->  
+            | TProvidedTypeExtensionPoint info1, TProvidedTypeExtensionPoint info2 ->  
                 Tainted.EqTainted info1.ProvidedType.TypeProvider info2.ProvidedType.TypeProvider && ProvidedType.TaintedEquals(info1.ProvidedType, info2.ProvidedType)
             | TProvidedNamespaceExtensionPoint _, TProvidedNamespaceExtensionPoint _ -> 
                 System.Diagnostics.Debug.Assert(false, "unreachable: TProvidedNamespaceExtensionPoint only on namespaces, not types" )
@@ -545,7 +545,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | TNoRepr, _ -> (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
             | _, _ -> (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
 
-        and checkTypeAbbrev m aenv (implTycon:Tycon) (sigTycon:Tycon) =
+        and checkTypeAbbrev m aenv (implTycon: Tycon) (sigTycon: Tycon) =
             let kind1 = implTycon.TypeOrMeasureKind
             let kind2 = sigTycon.TypeOrMeasureKind
             if kind1 <> kind2 then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, kind2.ToString(), kind1.ToString()), m)); false)
@@ -562,12 +562,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
               | Some _, None -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
               | None, Some _ -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSigHasAbbreviation(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
 
-        and checkModuleOrNamespaceContents m aenv (implModRef:ModuleOrNamespaceRef) (signModType:ModuleOrNamespaceType) = 
+        and checkModuleOrNamespaceContents m aenv (implModRef: ModuleOrNamespaceRef) (signModType: ModuleOrNamespaceType) = 
             let implModType = implModRef.ModuleOrNamespaceType
             (if implModType.ModuleOrNamespaceKind <> signModType.ModuleOrNamespaceKind then errorR(Error(FSComp.SR.typrelModuleNamespaceAttributesDifferInSigAndImpl(), m)))
 
 
-            (implModType.TypesByMangledName , signModType.TypesByMangledName)
+            (implModType.TypesByMangledName, signModType.TypesByMangledName)
              ||> NameMap.suball2 
                 (fun s _fx -> errorR(RequiredButNotSpecified(denv, implModRef, "type", (fun os -> Printf.bprintf os "%s" s), m)); false) 
                 (checkTypeDef aenv)  &&
@@ -578,7 +578,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                    (fun s fx -> errorR(RequiredButNotSpecified(denv, implModRef, (if fx.IsModule then "module" else "namespace"), (fun os -> Printf.bprintf os "%s" s), m)); false) 
                    (fun x1 x2 -> checkModuleOrNamespace aenv (mkLocalModRef x1) x2)  &&
 
-            let sigValHadNoMatchingImplementation (fx:Val) (_closeActualVal: Val option) = 
+            let sigValHadNoMatchingImplementation (fx: Val) (_closeActualVal: Val option) = 
                 errorR(RequiredButNotSpecified(denv, implModRef, "value", (fun os -> 
                    (* In the case of missing members show the full required enclosing type and signature *)
                    if fx.IsMember then 
@@ -586,7 +586,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                    else
                        Printf.bprintf os "%s" fx.DisplayName), m))
             
-            let valuesPartiallyMatch (av:Val) (fv:Val) =
+            let valuesPartiallyMatch (av: Val) (fv: Val) =
                 let akey = av.GetLinkagePartialKey()
                 let fkey = fv.GetLinkagePartialKey()
                 (akey.MemberParentMangledName = fkey.MemberParentMangledName) &&
@@ -595,7 +595,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                        
             (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached)
               ||> NameMap.suball2 
-                    (fun _s (fxs:Val list) -> sigValHadNoMatchingImplementation fxs.Head None; false)
+                    (fun _s (fxs: Val list) -> sigValHadNoMatchingImplementation fxs.Head None; false)
                     (fun avs fvs -> 
                         match avs, fvs with 
                         | [], _ | _, [] -> failwith "unreachable"
@@ -637,7 +637,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             checkModuleOrNamespaceContents implModRef.Range aenv implModRef sigModRef.ModuleOrNamespaceType &&
             checkAttribs aenv implModRef.Attribs sigModRef.Attribs implModRef.Deref.SetAttribs
 
-        member __.CheckSignature aenv (implModRef:ModuleOrNamespaceRef) (signModType:ModuleOrNamespaceType) = 
+        member __.CheckSignature aenv (implModRef: ModuleOrNamespaceRef) (signModType: ModuleOrNamespaceType) = 
             checkModuleOrNamespaceContents implModRef.Range aenv implModRef signModType
 
         member __.CheckTypars m aenv (implTypars: Typars) (signTypars: Typars) = 
@@ -645,7 +645,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
 
 /// Check the names add up between a signature and its implementation. We check this first.
-let rec CheckNamesOfModuleOrNamespaceContents denv (implModRef:ModuleOrNamespaceRef) (signModType:ModuleOrNamespaceType) = 
+let rec CheckNamesOfModuleOrNamespaceContents denv (implModRef: ModuleOrNamespaceRef) (signModType: ModuleOrNamespaceType) = 
         let m = implModRef.Range 
         let implModType = implModRef.ModuleOrNamespaceType
         NameMap.suball2 
@@ -657,11 +657,11 @@ let rec CheckNamesOfModuleOrNamespaceContents denv (implModRef:ModuleOrNamespace
         (implModType.ModulesAndNamespacesByDemangledName, signModType.ModulesAndNamespacesByDemangledName ) 
           ||> NameMap.suball2 
                 (fun s fx -> errorR(RequiredButNotSpecified(denv, implModRef, (if fx.IsModule then "module" else "namespace"), (fun os -> Printf.bprintf os "%s" s), m)); false) 
-                (fun x1 (x2:ModuleOrNamespace) -> CheckNamesOfModuleOrNamespace denv (mkLocalModRef x1) x2.ModuleOrNamespaceType)  &&
+                (fun x1 (x2: ModuleOrNamespace) -> CheckNamesOfModuleOrNamespace denv (mkLocalModRef x1) x2.ModuleOrNamespaceType)  &&
 
-        (implModType.AllValsAndMembersByLogicalNameUncached , signModType.AllValsAndMembersByLogicalNameUncached) 
+        (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached) 
           ||> NameMap.suball2 
-                (fun _s (fxs:Val list) -> 
+                (fun _s (fxs: Val list) -> 
                     let fx = fxs.Head
                     errorR(RequiredButNotSpecified(denv, implModRef, "value", (fun os -> 
                        // In the case of missing members show the full required enclosing type and signature 
@@ -672,6 +672,6 @@ let rec CheckNamesOfModuleOrNamespaceContents denv (implModRef:ModuleOrNamespace
                 (fun _ _ -> true) 
 
 
-and CheckNamesOfModuleOrNamespace denv (implModRef:ModuleOrNamespaceRef) signModType = 
+and CheckNamesOfModuleOrNamespace denv (implModRef: ModuleOrNamespaceRef) signModType = 
         CheckNamesOfModuleOrNamespaceContents denv implModRef signModType
 

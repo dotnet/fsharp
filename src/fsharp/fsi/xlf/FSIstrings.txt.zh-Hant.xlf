@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiOperationCouldNotBeCompleted">
+        <source>Operation could not be completed due to earlier error</source>
+        <target state="new">Operation could not be completed due to earlier error</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiOperationFailed">
+        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
+        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">已因錯誤而停止\n</target>
@@ -74,7 +84,7 @@
       </trans-unit>
       <trans-unit id="fsiGui">
         <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="translated">在 Windows Form 事件迴圈上執行互動 (預設為開啟)</target>
+        <target state="translated">在 Windows Forms 事件迴圈上執行互動 (預設為開啟)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
@@ -99,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">啟動 F# 互動處理序時發生問題。這可能是因為背景處理序主控台對於支援某些 Windows 系統上具備 Unicode 支援功能之應用程式的已知問題所造成。請嘗試選取 [工具]5D; -&gt; [選項]5D; -&gt; [F# Interactive for Visual Studio]5D;，然後輸入 '--fsi-server-no-unicode'。</target>
+        <target state="translated">啟動 F# 互動處理序時發生問題。這可能是因為背景處理序主控台對於支援某些 Windows 系統上具備 Unicode 支援功能之應用程式的已知問題所造成。請嘗試選取 [工具] -&gt; [選項] -&gt; [F# Interactive for Visual Studio]，然後輸入 '--fsi-server-no-unicode'。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -139,7 +149,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  F# 互動指示詞:</target>
+        <target state="translated">F# 互動指示詞:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -174,7 +184,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="translated">  F# 互動命令列選項:</target>
+        <target state="translated">F# 互動命令列選項:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">

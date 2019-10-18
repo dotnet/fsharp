@@ -24,12 +24,14 @@ type public Fsc () as this =
     let mutable baseAddress : string = null
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
+    let mutable checksumAlgorithm: string = null
     let mutable codePage : string = null
     let mutable commandLineArgs : ITaskItem list = []
     let mutable debugSymbols = false
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
     let mutable delaySign : bool = false
+    let mutable deterministic : bool = false
     let mutable disabledWarnings : string = null
     let mutable documentationFile : string = null
     let mutable dotnetFscCompilerPath : string = null
@@ -38,10 +40,12 @@ type public Fsc () as this =
     let mutable generateInterfaceFile : string = null
     let mutable highEntropyVA : bool = false
     let mutable keyFile : string = null
+    let mutable langVersion : string = null
     let mutable noFramework = false
     let mutable optimize  : bool = true
     let mutable otherFlags : string = null
-    let mutable outputAssembly : string = null 
+    let mutable outputAssembly : string = null
+    let mutable pathMap : string = null
     let mutable pdbFile : string = null
     let mutable platform : string = null
     let mutable prefer32bit : bool = false
@@ -100,15 +104,15 @@ type public Fsc () as this =
                 | "EMBEDDED" -> "embedded"
                 | "FULL"     -> "full"
                 | _          -> null)
-        if embedAllSources then
-            builder.AppendSwitch("--embed+")
+        if embedAllSources then builder.AppendSwitch("--embed+")
         if embeddedFiles <> null then 
             for item in embeddedFiles do
                 builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
+        builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         // NoFramework
-        if noFramework then 
-            builder.AppendSwitch("--noframework") 
+        if noFramework then
+            builder.AppendSwitch("--noframework")
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
@@ -117,7 +121,6 @@ type public Fsc () as this =
                 builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
-
         // GenerateInterfaceFile
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
@@ -133,15 +136,22 @@ type public Fsc () as this =
             builder.AppendSwitch("--tailcalls-")
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
-        // Platform
+// Platform
         builder.AppendSwitchIfNotNull("--platform:",
             let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
                 | "ANYCPU",  _, _  -> "anycpu"
-                | "X86"   ,  _, _  -> "x86"
-                | "X64"   ,  _, _  -> "x64"
+                | "X86",  _, _  -> "x86"
+                | "X64",  _, _  -> "x64"
+                | _ -> null)
+        // checksumAlgorithm
+        builder.AppendSwitchIfNotNull("--checksumalgorithm:",
+            let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
+            match ToUpperInvariant(checksumAlgorithm) with
+                | "SHA1" -> "Sha1"
+                | "SHA256" -> "Sha256"
                 | _ -> null)
         // Resources
         if resources <> null then 
@@ -233,6 +243,13 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
 
         builder.AppendSwitch("--nocopyfsharpcore")
+        
+        match pathMap with
+        | null -> ()
+        | _ -> builder.AppendSwitchIfNotNull("--pathmap:", pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+
+        if deterministic then
+            builder.AppendSwitch("--deterministic+")
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
@@ -249,6 +266,11 @@ type public Fsc () as this =
         with get() = baseAddress 
         and set(s) = baseAddress <- s
 
+    // --checksumalgorithm
+    member fsc.ChecksumAlgorithm
+        with get() = checksumAlgorithm 
+        and set(s) = checksumAlgorithm <- s
+
     // --codepage <int>: Specify the codepage to use when opening source files
     member fsc.CodePage
         with get() = codePage
@@ -263,6 +285,10 @@ type public Fsc () as this =
     member fsc.DebugType
         with get() = debugType
         and set(s) = debugType <- s
+
+    member fsc.Deterministic 
+        with get() = deterministic
+        and set(p) = deterministic <- p
 
     member fsc.DelaySign
         with get() = delaySign
@@ -317,6 +343,10 @@ type public Fsc () as this =
         with get() = keyFile
         and set(s) = keyFile <- s
 
+    member fsc.LangVersion
+        with get() = langVersion
+        and set(s) = langVersion <- s
+
     member fsc.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
@@ -345,6 +375,11 @@ type public Fsc () as this =
     member fsc.OutputAssembly
         with get() = outputAssembly
         and set(s) = outputAssembly <- s
+
+    // --pathmap <string>: Paths to rewrite when producing deterministic builds
+    member fsc.PathMap
+        with get() = pathMap
+        and set(s) = pathMap <- s
 
     // --pdb <string>: 
     //     Name the debug output file

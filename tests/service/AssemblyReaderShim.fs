@@ -1,6 +1,6 @@
 ﻿#if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -29,5 +29,5 @@ let x = 123
 """
 
     let fileName, options = Common.mkTestFileAndOptions source [| |]
-    Common.checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously |> ignore
+    Common.checker.ParseAndCheckFileInProject(fileName, 0, FSharp.Compiler.Text.SourceText.ofString source, options) |> Async.RunSynchronously |> ignore
     gotRequest |> should be True

@@ -20,7 +20,7 @@ This repo should be _identical_ to 'fsharp' except:
     - No bootstrap or proto compiler is used - an installed F# compiler is assumed
 
   - Build script using FAKE that builds everything, produces NuGet package and 
-    generates documentation, files for publising NuGet packages etc.
+    generates documentation, files for publishing NuGet packages etc.
     (following [F# project scaffold](https://github.com/fsprojects/FSharp.ProjectScaffold))
 
   - Changes to compiler source code to expose new functionality; Changes to the
@@ -30,7 +30,7 @@ This repo should be _identical_ to 'fsharp' except:
 
   - Additions to compiler source code which add new functionality to the compiler service API
 
-If language or compiler addiitons are committed to `fsharp/fsharp`, they should be merged into 
+If language or compiler additions are committed to `fsharp/fsharp`, they should be merged into
 this repo and a new NuGet package released.
 
 ## Building and NuGet

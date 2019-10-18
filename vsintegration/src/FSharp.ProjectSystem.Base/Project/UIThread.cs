@@ -100,7 +100,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 #if DEBUG
             StackTrace stackTrace = new StackTrace(true);
 #endif
+#pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
             ctxt.Post(delegate (object ignore)
+#pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
             {
                 UIThread.MustBeCalledFromUIThread();
                 ourUIQueue.Enqueue(action);
@@ -153,7 +155,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Exception exn = null;
             Debug.Assert(ctxt != null, "The SynchronizationContext must be captured before calling this method");
             // Send on UI thread will execute immediately.
+#pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
             ctxt.Send(ignore =>
+#pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
             {
                 try
                 {
@@ -178,28 +182,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Local JoinableTaskContext
         /// ensuring non-reentrancy.
         /// </summary>
-        private static JoinableTaskContext jtc = null;
-        private static JoinableTaskFactory JTF
-        {
-            get
-            {
-                if (jtc == null)
-                {
-                    JoinableTaskContext j = null;
-                    if (VsTaskLibraryHelper.ServiceInstance == null)
-                    {
-                        j = new JoinableTaskContext();
-                    }
-                    else
-                    {
-                        j = ThreadHelper.JoinableTaskContext;
-                    }
-                    Interlocked.CompareExchange(ref jtc, j, null);
-                }
-
-                return jtc.Factory;
-            }
-        }
+        private static JoinableTaskFactory JTF => ThreadHelper.JoinableTaskContext.Factory;
 
         /// <summary>
         /// Performs a callback on the UI thread and blocks until it is done, using the VS mechanism for

@@ -19,8 +19,8 @@
 //    Use F# Interactive.  This only works for FSHarp.Compiler.Service.dll which has a public API
 
 #if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -122,8 +122,8 @@ let ``Basic cancellation test`` () =
     let file = "/home/user/Test.fsx"
     async { 
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, input) 
-        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, checkOptions) 
+        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.Text.SourceText.ofString input) 
+        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.Text.SourceText.ofString input, checkOptions) 
         return parseResult, typedRes
     } |> Async.RunSynchronously
       |> ignore
@@ -1288,16 +1288,6 @@ let ``Test TPProject param info`` () =
 
 #endif // TEST_TP_PROJECTS
 
-#if EXE
-
-``Intro test`` () 
-//``Test TPProject all symbols`` () 
-//``Test TPProject errors`` () 
-//``Test TPProject quick info`` () 
-//``Test TPProject param info`` () 
-``Basic cancellation test`` ()
-``Intro test`` () 
-#endif
 
 [<Test>]
 let ``FSharpField.IsNameGenerated`` () =

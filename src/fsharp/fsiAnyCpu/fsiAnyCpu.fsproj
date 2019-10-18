@@ -4,16 +4,15 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <TargetExt>.exe</TargetExt>
-    <AssemblyName>fsiAnyCpu</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags)  --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
+    <NGenBinary>true</NGenBinary>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -23,7 +22,10 @@
   <ItemGroup>
     <Compile Include="..\fsi\console.fs" />
     <Compile Include="..\fsi\fsimain.fs" />
-    <None Include="..\fsi\app.config" />
+    <NoneSubstituteText Include="App.config">
+      <Pattern1>{{FSCoreVersion}}</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </NoneSubstituteText>
   </ItemGroup>
 
   <ItemGroup>

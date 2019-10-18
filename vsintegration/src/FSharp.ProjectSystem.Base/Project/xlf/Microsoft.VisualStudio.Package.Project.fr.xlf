@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -487,7 +487,7 @@
       </trans-unit>
       <trans-unit id="CustomToolDescription">
         <source>Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool.</source>
-        <target state="translated">Spécifie l'outil qui transforme un fichier au moment du design et qui place les résultats de cette transformation dans un autre fichier. Par exemple, un fichier dataset (.xsd) est fourni avec un outil personnalisé par défaut.</target>
+        <target state="translated">Spécifie l'outil qui transforme un fichier au moment du design et place le résultat de cette transformation dans un autre fichier. Par exemple, un fichier de dataset (.xsd) est fourni avec un outil personnalisé par défaut.</target>
         <note />
       </trans-unit>
       <trans-unit id="CustomToolNamespace">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">PATH</target>
+        <target state="translated">Chemin</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

@@ -3,7 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>nunit</UnitTestType>
@@ -31,8 +32,7 @@
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />
     <Compile Include="EditDistance.fs" />
-    <Compile Include="ILHelpers.fs" />
-    <Compile Include="Language\StringConcat.fs" />
+    <Compile Include="SuggestionBuffer.fs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Tutorial.fsx">
     <body>
@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">並選取 [以互動方式執行]5D;。您可以從 [檢視]5D; 功能表開啟 F# 互動視窗。</target>
+        <target state="translated">並選取 [以互動方式執行]。您可以從 [檢視] 功能表開啟 F# 互動式視窗。</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">

@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 // Sample on records
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 type R = R of int * int
 

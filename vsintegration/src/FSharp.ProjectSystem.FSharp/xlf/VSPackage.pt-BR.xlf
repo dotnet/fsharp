@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../VSPackage.resx">
     <body>
@@ -124,7 +124,7 @@
       </trans-unit>
       <trans-unit id="ProjectFileExtensionFilter">
         <source>F# Project File (*.fsproj)</source>
-        <target state="translated">Arquivo de Projeto #F (*.fsproj)</target>
+        <target state="translated">Arquivo de projeto F# (*.fsproj)</target>
         <note />
       </trans-unit>
       <trans-unit id="ComponentFileExtensionFilter">
@@ -334,17 +334,17 @@
       </trans-unit>
       <trans-unit id="5041">
         <source>SQL Database Connection (LINQ to SQL, type provider)</source>
-        <target state="translated">Conexão de Banco de Dados SQL (LINQ para SQL, provedor de tipos)</target>
+        <target state="translated">Conexão de Banco de Dados SQL (LINQ to SQL, provedor de tipos)</target>
         <note />
       </trans-unit>
       <trans-unit id="5042">
         <source>A project item for using the SqlDataConnection (LINQ to SQL) type provider to generate types and consume data in a live SQL database.</source>
-        <target state="translated">Um item de projeto para usar o provedor de tipos SqlDataConnection (LINQ para SQL) para gerar tipos e consumir dados em um banco de dados SQL dinâmico.</target>
+        <target state="translated">Um item de projeto para usar o provedor de tipos SqlDataConnection (LINQ to SQL) para gerar tipos e consumir dados em um banco de dados SQL dinâmico.</target>
         <note />
       </trans-unit>
       <trans-unit id="5043">
         <source>SQL Database Connection (LINQ to Entities, type provider)</source>
-        <target state="translated">Conexão de Banco de Dados SQL (LINQ para Entidades, provedor de tipos)</target>
+        <target state="translated">Conexão de Banco de Dados SQL (LINQ to Entities, provedor de tipos)</target>
         <note />
       </trans-unit>
       <trans-unit id="5044">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 para F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Microsoft Visual F# Tools 10.4 para F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 para F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Microsoft Visual F# Tools 10.4 para F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Visual F# Tools 10.2 para F# 4.5</target>
+        <source>Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Visual F# Tools 10.4 para F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

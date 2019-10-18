@@ -27,10 +27,10 @@ let decodeVarargs args =
   let rec normals = function 
     | [] -> ([],None)
     | Sentinel :: t -> ([],Some (varargs t))
-    | SigArg (_,p)::t -> let (n,r) = normals t in (p::n, r)
+    | SigArg (_,p) :: t -> let (n,r) = normals t in (p :: n, r)
   and varargs = function 
     | [] -> []
-    | SigArg (_,ty):: t ->  let l = varargs t in ty::l
+    | SigArg (_,ty) :: t ->  let l = varargs t in ty :: l
     | Sentinel :: t -> pfailwith "two sentinels in vararg call"
   normals args
 
@@ -226,7 +226,7 @@ sigArgs1a:
      sigArg
         { [$1] }
    | sigArgs1a COMMA sigArg
-        { $3:: $1 }
+        { $3 :: $1 }
 
 sigArg: 
    | typ opt_id
@@ -261,7 +261,7 @@ slashedName:
      name1 
         { ([],$1) } 
    | name1 SLASH slashedName
-        { let (enc,nm) = $3 in ($1::enc, nm)  } 
+        { let (enc,nm) = $3 in ($1 :: enc, nm)  } 
 
 typeNameInst:
      className opt_actual_tyargs 

@@ -3,10 +3,11 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
+open System.Windows
+open System.Windows.Controls
+open FSharp.Compiler.LanguageServer
 open Microsoft.VisualStudio.Shell
-
 open Microsoft.VisualStudio.FSharp.UIResources
-open OptionsUIHelpers
 
 module DefaultTuning = 
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
@@ -53,14 +54,16 @@ type CodeFixesOptions =
     { SimplifyName: bool
       AlwaysPlaceOpensAtTopLevel: bool
       UnusedOpens: bool 
-      UnusedDeclarations: bool }
+      UnusedDeclarations: bool
+      SuggestNamesForErrors: bool }
     static member Default =
       { // We have this off by default, disable until we work out how to make this low priority 
         // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
         SimplifyName = false 
         AlwaysPlaceOpensAtTopLevel = true
         UnusedOpens = true 
-        UnusedDeclarations = true }
+        UnusedDeclarations = true
+        SuggestNamesForErrors = true }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
@@ -89,10 +92,17 @@ type CodeLensOptions =
 [<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
-      IsOutliningEnabled: bool }
+      IsOutliningEnabled: bool
+      UsePreviewTextHover: bool
+      UsePreviewDiagnostics: bool }
     static member Default =
       { IsBlockStructureEnabled = true
-        IsOutliningEnabled = true }
+        IsOutliningEnabled = true
+        UsePreviewTextHover = false
+        UsePreviewDiagnostics = false }
+    member this.AsLspOptions(): Options =
+        { usePreviewTextHover = this.UsePreviewTextHover
+          usePreviewDiagnostics = this.UsePreviewDiagnostics }
 
 [<CLIMutable>]
 type FormattingOptions =
@@ -142,20 +152,22 @@ module internal WorkspaceSettingFromDocumentExtension =
 
 module internal OptionsUI =
 
+    open OptionsUIHelpers
+
     [<Guid(Guids.intelliSenseOptionPageIdString)>]
     type internal IntelliSenseOptionPage() =
         inherit AbstractOptionPage<IntelliSenseOptions>()
         override this.CreateView() =
             let view = IntelliSenseOptionControl()
             view.charTyped.Unchecked.Add <| fun _ -> view.charDeleted.IsChecked <- System.Nullable false
-           
-            let path = "EnterKeySetting" 
+
+            let path = "EnterKeySetting"
             bindRadioButton view.nevernewline path EnterKeySetting.NeverNewline 
             bindRadioButton view.newlinecompleteline path EnterKeySetting.NewlineOnCompleteWord 
             bindRadioButton view.alwaysnewline path EnterKeySetting.AlwaysNewline
 
-            upcast view              
-            
+            upcast view
+
     [<Guid(Guids.quickInfoOptionPageIdString)>]
     type internal QuickInfoOptionPage() =
         inherit AbstractOptionPage<QuickInfoOptions>()
@@ -172,14 +184,14 @@ module internal OptionsUI =
     type internal CodeFixesOptionPage() =
         inherit AbstractOptionPage<CodeFixesOptions>()
         override this.CreateView() =
-            upcast CodeFixesOptionControl()            
+            upcast CodeFixesOptionControl()
 
     [<Guid(Guids.languageServicePerformanceOptionPageIdString)>]
     type internal LanguageServicePerformanceOptionPage() =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
-    
+
     [<Guid(Guids.codeLensOptionPageIdString)>]
     type internal CodeLensOptionPage() =
         inherit AbstractOptionPage<CodeLensOptions>()
@@ -191,6 +203,14 @@ module internal OptionsUI =
         inherit AbstractOptionPage<AdvancedOptions>()
         override __.CreateView() =
             upcast AdvancedOptionsControl()
+        override this.OnApply(args) =
+            base.OnApply(args)
+            async {
+                let lspService = this.GetService<LspService>()
+                let settings = this.GetService<EditorOptions>()
+                let options = settings.Advanced.AsLspOptions()
+                do! lspService.SetOptions options
+            } |> Async.Start
 
     [<Guid(Guids.formattingOptionPageIdString)>]
     type internal FormattingOptionPage() =

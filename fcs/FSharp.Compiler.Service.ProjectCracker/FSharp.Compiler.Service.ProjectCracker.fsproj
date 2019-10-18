@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>net45</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework)</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
   <PropertyGroup>
@@ -12,22 +11,23 @@
     <Authors>Microsoft Corporation; F# community contributors</Authors>
     <PackageLicenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/fsharp/FSharp.Compiler.Service</PackageProjectUrl>
-    <PackageIconUrl>https://raw.github.com/fsharp/FSharp.Compiler.Service/master/misc/logo.png</PackageIconUrl>
+    <PackageIcon>logo.png</PackageIcon>
     <PackageTags>F#, compiler, msbuild</PackageTags>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\misc\logo.png" Pack="true" Visible="false" PackagePath="" />
     <Compile Include="..\FSharp.Compiler.Service.ProjectCrackerTool\ProjectCrackerOptions.fs">
       <Link>ProjectCrackerOptions.fs</Link>
     </Compile>
     <Compile Include="ProjectCracker.fs" />
-    <Content Include="..\FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCracker.targets" PackagePath="build\net45" />
-    <Content Include="$(ArtifactsBinDir)\fcs\net45\FSharp.Compiler.Service.ProjectCrackerTool.exe" PackagePath="utilities\net45" />
-    <Content Include="$(ArtifactsBinDir)\fcs\net45\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" PackagePath="utilities\net45" />
+    <Content Include="..\FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCracker.targets" PackagePath="build\$(FcsTargetNetFxFramework)" />
+    <Content Include="$(ArtifactsBinDir)\fcs\$(Configuration)\$(FcsTargetNetFxFramework)\FSharp.Compiler.Service.ProjectCrackerTool.exe" PackagePath="utilities\$(FcsTargetNetFxFramework)" />
+    <Content Include="$(ArtifactsBinDir)\fcs\$(Configuration)\$(FcsTargetNetFxFramework)\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" PackagePath="utilities\$(FcsTargetNetFxFramework)" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Runtime" />
     <Reference Include="System.IO" />
-    <PackageReference Include="FSharp.Core" Version="4.5.2" />
+    <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 </Project>

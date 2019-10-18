@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSStrings.resx">
     <body>
@@ -75,11 +75,6 @@
       <trans-unit id="PossibleOverload">
         <source>Possible overload: '{0}'. {1}.</source>
         <target state="translated">Olası aşırı yükleme: '{0}'. {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\nOlası en iyi aşırı yükleme: '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -184,7 +179,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Bazı soyut üyelere bir uygulama verilmediğinden bu bir 'abstract' türdür. Bu bilerek yapıldıysa, türünüze '[&lt;AbstractClass&gt;]' özniteliğini ekleyin.</target>
+        <target state="translated">Bazı soyut üyelere bir uygulama verilmediğinden bu tür 'soyut'. Bilerek yaptıysanız türünüze '[&lt;AbstractClass&gt;]' özniteliğini ekleyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -254,7 +249,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.GREATER">
         <source>symbol ':&gt;'</source>
-        <target state="translated">':&gt;' simgesi</target>
+        <target state="translated">sembol ':&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.COLON">
@@ -289,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.QMARK.GREATER">
         <source>symbol ':?&gt;'</source>
-        <target state="translated">':?&gt;' simgesi</target>
+        <target state="translated">sembol ':?&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP">
@@ -304,12 +299,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP">
         <source>symbol '&amp;'</source>
-        <target state="translated">'&amp;' simgesi</target>
+        <target state="translated">sembol '&amp;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP.AMP">
         <source>symbol '&amp;&amp;'</source>
-        <target state="translated">'&amp;&amp;' simgesi</target>
+        <target state="translated">sembol '&amp;&amp;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.BAR">
@@ -319,12 +314,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LESS">
         <source>symbol '&lt;'</source>
-        <target state="translated">'&lt;' simgesi</target>
+        <target state="translated">sembol '&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER">
         <source>symbol '&gt;'</source>
-        <target state="translated">'&gt;' simgesi</target>
+        <target state="translated">sembol '&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.QMARK">
@@ -379,7 +374,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LARROW">
         <source>symbol '&lt;-'</source>
-        <target state="translated">'&lt;-' simgesi</target>
+        <target state="translated">sembol '&lt;-'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EQUALS">
@@ -389,7 +384,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACK">
         <source>symbol '&gt;|]'</source>
-        <target state="translated">'&gt;|]' simgesi</target>
+        <target state="translated">sembol '&gt;|]'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MINUS">
@@ -474,7 +469,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACK.LESS">
         <source>symbol '[&lt;'</source>
-        <target state="translated">'[&lt;' simgesi</target>
+        <target state="translated">sembol '[&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE">
@@ -484,7 +479,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.LESS">
         <source>symbol '{&lt;'</source>
-        <target state="translated">'{&lt;' simgesi</target>
+        <target state="translated">sembol '{&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACK">
@@ -494,12 +489,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.RBRACE">
         <source>symbol '&gt;}'</source>
-        <target state="translated">'&gt;}' simgesi</target>
+        <target state="translated">sembol '&gt;}'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.RBRACK">
         <source>symbol '&gt;]'</source>
-        <target state="translated">'&gt;]' simgesi</target>
+        <target state="translated">sembol '&gt;]'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RQUOTE">
@@ -694,7 +689,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RARROW">
         <source>symbol '-&gt;'</source>
-        <target state="translated">'-&gt;' simgesi</target>
+        <target state="translated">sembol '-&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.SIG">
@@ -954,7 +949,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHITESPACE">
         <source>whitespace</source>
-        <target state="translated">whitespace</target>
+        <target state="translated">boşluk</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COMMENT">
@@ -1174,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">Anahtar Sözcük</target>
+        <target state="translated">anahtar sözcük</target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
@@ -1279,7 +1274,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Statik iş parçacıklı ve statik bağlamlı 'let' bağlamaları kullanım dışıdır. Onun yerine bir sınıfta 'static val mutable &lt;ident&gt; : &lt;tür&gt;' biçimindeki bildirimi kullanın. Değerin her yeni iş parçacığında varsayılan değerle başlatıldığını belirtmek için bu bildirime 'DefaultValue' özniteliğini ekleyin.</target>
+        <target state="translated">İş parçacığı ve bağlam açısından statik 'let' bağlamaları kullanımdan kaldırılmıştır. Bunun yerine bir sınıfta 'static val mutable &lt;ident&gt; : &lt;type&gt;' biçiminde bir bildirim kullanın. Değerin her yeni iş parçacığında varsayılan değerle başlatıldığını belirtmek için bu bildirime 'DefaultValue' özniteliğini ekleyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1289,7 +1284,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
         <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">Bu ifadenin sonucu '{0}' türüne sahip ve örtük olarak yoksayılır. Bu değeri açıkça atmak için 'ignore' kullanmayı (örn. 'deyim |&gt; ignore') veya sonucu bir ada bağlamak için 'let' kullanmayı (örn. 'let sonuc = deyim') deneyin.</target>
+        <target state="translated">Bu ifadenin sonucu '{0}' türüne sahip ve örtük olarak yoksayılıyor. Bu değeri açıkça atmak için 'ignore' öğesini (ör. 'expr |&gt; ignore') veya sonucu bir ada bağlamak için 'let' öğesini (ör. 'let result = expr') kullanmayı göz önünde bulundurun.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
@@ -1299,17 +1294,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün (örneğin, 'let sonuc = deyim'). Bir özelliğin değerini ayarlamak istiyorsanız, '&lt;-' işlecini kullanın (örneğin, '{1}.{2} &lt;- deyim').</target>
+        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılıyor. Sonucu bir ada bağlamak için 'let' kullanmayı (ör. 'let result = expression') göz önünde bulundurun. Bir özelliğe yönelik bir değer ayarlamaya çalıştıysanız '&lt;-' işlecini (ör. '{1}.{2} &lt;- expression') kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün (örneğin, 'let sonuc = deyim'). Bir değeri değiştirmek istiyorsanız, değeri 'mutable' olarak işaretleyin ve '&lt;-' işlecini kullanın; örneğin, '{1} &lt;- deyim'.</target>
+        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılıyor. Sonucu bir ada bağlamak için 'let' kullanmayı göz önünde bulundurun, ör. 'let result = expression'. Bir değeri değiştirmeye çalıştıysanız değeri 'mutable' olarak işaretleyin ve '&lt;-' işlecini kullanın, ör. '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün (örneğin 'let sonuc = deyim'). Bir değeri değiştirmek istiyorsanız, '&lt;-' işlecini kullanın; örneğin, '{1} &lt;- deyim'.</target>
+        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılıyor. Sonucu bir ada bağlamak için 'let' kullanmayı (ör. 'let result = expression') göz önünde bulundurun. Bir değeri değiştirmeye çalıştıysanız '&lt;-' işlecini (ör. '{1} &lt;- expression') kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1344,7 +1339,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">Tanımlanmakta olan nesneye yapılan özyinelemeli başvurular, geç başvuru kullanımı aracılığıyla çalışma zamanında başlatma sağlamlığı açısından denetlenecek. Kendine yapılan başvuruları üyelere veya '&lt;ctor-expr&gt; then &lt;expr&gt;' biçimindeki izleyen ifadenin içine yerleştirmeyi düşünün.</target>
+        <target state="translated">Tanımlanmakta olan nesneye yönelik özyinelemeli başvurular, çalışma zamanında gecikmeli bir başvuru kullanılarak başlatma sağlamlığı açısından denetlenir. Üyelerin veya sondaki bir ifadenin içine '&lt;ctor-expr&gt; sonra &lt;expr&gt;' biçiminde kendi kendine başvurular yerleştirmeyi göz önünde bulundurun.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1619,12 +1614,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.BAR">
         <source>symbol '{|'</source>
-        <target state="new">symbol '{|'</target>
+        <target state="translated">sembol '{|'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
-        <target state="new">symbol '|}'</target>
+        <target state="translated">sembol '|}'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AND.BANG">

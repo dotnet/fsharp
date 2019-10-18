@@ -1,7 +1,7 @@
 
 #if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -19,10 +19,6 @@ open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.Service.Tests.Common
 
 open NUnit.Framework
-
-#if FX_RESHAPED_REFLECTION
-open ReflectionAdapters
-#endif
 
 exception 
    VerificationException of (*assembly:*)string * (*errorCode:*)int * (*output:*)string
@@ -48,7 +44,7 @@ type PEVerifier () =
             Some ("pedump", "--verify all")
         else
             let peverifyPath configuration =
-                Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "artifacts", "bin", "PEVerify", configuration, "net46", "PEVerify.exe")
+                Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "artifacts", "bin", "PEVerify", configuration, "net472", "PEVerify.exe")
             let peverify =
                 if File.Exists(peverifyPath "Debug") then peverifyPath "Debug"
                 else peverifyPath "Release"

@@ -2,42 +2,25 @@
 
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
-#nowarn "40"
-
 open System
-open System.Collections.Concurrent
-open System.Collections.Generic
-open System.Collections.Immutable
-open System.ComponentModel.Composition
 open System.ComponentModel.Design
-open System.Diagnostics
-open System.IO
-open System.Linq
-open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Threading
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Options
-open FSharp.Compiler.CompileOps
 open FSharp.Compiler.SourceCodeServices
+open FSharp.NativeInterop
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.Editor.SiteProvider
-open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Events
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Text.Outlining
 open FSharp.NativeInterop
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 
 #nowarn "9" // NativePtr.toNativeInt
 
@@ -69,16 +52,43 @@ type internal FSharpCheckerWorkspaceServiceFactory
         projectInfoManager: FSharpProjectOptionsManager
     ) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
-        member this.CreateService(_workspaceServices) =
+        member __.CreateService(_workspaceServices) =
             upcast { new FSharpCheckerWorkspaceService with
-                member this.Checker = checkerProvider.Checker
-                member this.FSharpProjectOptionsManager = projectInfoManager }
+                member __.Checker = checkerProvider.Checker
+                member __.FSharpProjectOptionsManager = projectInfoManager }
+
+[<Sealed>]
+type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
+
+    interface IVsSolutionEvents with
+
+        member __.OnAfterCloseSolution(_) =
+            projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            VSConstants.S_OK
+
+        member __.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnAfterOpenProject(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnAfterOpenSolution(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnBeforeCloseProject(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnBeforeCloseSolution(_) = VSConstants.E_NOTIMPL
+
+        member __.OnBeforeUnloadProject(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnQueryCloseProject(_, _, _) = VSConstants.E_NOTIMPL
+
+        member __.OnQueryCloseSolution(_, _) = VSConstants.E_NOTIMPL
+
+        member __.OnQueryUnloadProject(_, _) = VSConstants.E_NOTIMPL       
 
 [<Microsoft.CodeAnalysis.Host.Mef.ExportWorkspaceServiceFactory(typeof<EditorOptions>, Microsoft.CodeAnalysis.Host.Mef.ServiceLayer.Default)>]
 type internal FSharpSettingsFactory
     [<Composition.ImportingConstructor>] (settings: EditorOptions) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
-        member this.CreateService(_) = upcast settings
+        member __.CreateService(_) = upcast settings
 
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
@@ -144,25 +154,58 @@ type internal FSharpPackage() as this =
             vfsiToolWindow <- this.FindToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 0, true) :?> Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow
         vfsiToolWindow :> Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI
 
+    let mutable solutionEventsOpt = None
+
     // FSI-LINKAGE-POINT: unsited init
-    do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
+    do 
+        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    override this.Initialize() =
-        base.Initialize()
+    override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
+        // `base.` methods can't be called in the `async` builder, so we have to cache it
+        let baseInitializeAsync = base.InitializeAsync(cancellationToken, progress)
+        let task =
+            async {
+                do! baseInitializeAsync |> Async.AwaitTask
 
-        // FSI-LINKAGE-POINT: sited init
-        let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
-        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
-        // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-        let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>) |> Async.AwaitTask // FSI-LINKAGE-POINT
+                let commandService = commandService :?> OleMenuCommandService
+                let packageInit () =
+                    // FSI-LINKAGE-POINT: sited init
+                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
 
-        ()
+                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+                    let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                    let projectInfoManager = this.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
+                    let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
+                    let solution = solution :?> IVsSolution
+                    let solutionEvents = FSharpSolutionEvents(projectInfoManager)
+                    let rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>).Result
+                    let rdt = rdt :?> IVsRunningDocumentTable
+
+                    solutionEventsOpt <- Some(solutionEvents)
+                    solution.AdviseSolutionEvents(solutionEvents) |> ignore
+
+                    let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+                    let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
+                    let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
+                    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectInfoManager, projectContextFactory, rdt)
+                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
+                    ()
+                let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
+                if awaiter.IsCompleted then
+                    packageInit() // already on the UI thread
+                else
+                    awaiter.OnCompleted(fun () -> packageInit())
+
+            } |> Async.StartAsTask
+        upcast task // convert Task<unit> to Task
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-    override this.CreateLanguageService() = FSharpLanguageService(this, this.GetService(typeof<SVsSolution>) :?> IVsSolution)
+    override this.CreateLanguageService() = FSharpLanguageService(this)
     override this.CreateEditorFactories() = seq { yield FSharpEditorFactory(this) :> IVsEditorFactory }
-    override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
+    override this.RegisterMiscellaneousFilesWorkspaceInformation(miscFilesWorkspace) =
+        miscFilesWorkspace.RegisterLanguage(Guid(FSharpConstants.languageServiceGuidString), FSharpConstants.FSharpLanguageName, ".fsx")
 
     interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
         member this.SendTextInteraction(s:string) =
@@ -171,78 +214,29 @@ type internal FSharpPackage() as this =
             GetToolWindowAsITestVFSI().GetMostRecentLines(n)
 
 [<Guid(FSharpConstants.languageServiceGuidString)>]
-type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSolution) =
+type internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
-
-    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
-
-    let projectDisplayNameOf projectFileName =
-        if String.IsNullOrWhiteSpace projectFileName then projectFileName
-        else Path.GetFileNameWithoutExtension projectFileName
-
-    let singleFileProjects = ConcurrentDictionary<_, IWorkspaceProjectContext>()
-
-    let tryRemoveSingleFileProject projectId =
-        match singleFileProjects.TryRemove(projectId) with
-        | true, project ->
-            projectInfoManager.ClearInfoForSingleFileProject(projectId)
-            project.Dispose()
-        | _ -> ()
-
-    let tryGetOrCreateProjectId (workspace: VisualStudioWorkspaceImpl) (projectFileName: string) =
-        let projectDisplayName = projectDisplayNameOf projectFileName
-        Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
-
-    let mutable legacyProjectWorkspaceMap = Unchecked.defaultof<LegacyProjectWorkspaceMap>
 
     override this.Initialize() = 
         base.Initialize()
 
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
-
-        this.Workspace.DocumentClosed.Add <| fun args -> tryRemoveSingleFileProject args.Document.Project.Id
-
-        legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>(), this.SystemServiceProvider)
-        legacyProjectWorkspaceMap.Initialize()
+        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.FSharpCompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
+        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.FSharpServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
 
-    member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
-        let loadTime = DateTime.Now
-        let projectFileName = fileName
-        let projectDisplayName = projectDisplayNameOf projectFileName
+    override __.ContentTypeName = FSharpConstants.FSharpContentTypeName
+    override __.LanguageName = FSharpConstants.FSharpLanguageName
+    override __.RoslynLanguageName = FSharpConstants.FSharpLanguageName
 
-        let mutable projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+    override __.LanguageServiceId = new Guid(FSharpConstants.languageServiceGuidString)
+    override __.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
 
-        if isNull (workspace.ProjectTracker.GetProject projectId) then
-            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
-
-            let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null)
-            
-            projectId <- workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-
-            projectContext.AddSourceFile(fileName)
-            
-            singleFileProjects.[projectId] <- projectContext
-
-        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents) |> Async.RunSynchronously
-        projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
-
-    override this.ContentTypeName = FSharpConstants.FSharpContentTypeName
-    override this.LanguageName = FSharpConstants.FSharpLanguageName
-    override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
-
-    override this.LanguageServiceId = new Guid(FSharpConstants.languageServiceGuidString)
-    override this.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
-
-    override this.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
+    override __.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
 
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
-
-        let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
 
         // Toggles outlining (or code folding) based on settings
         let outliningManagerService = this.Package.ComponentModel.GetService<IOutliningManagerService>()
@@ -251,43 +245,3 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         if not (isNull outliningManager) then
             let settings = this.Workspace.Services.GetService<EditorOptions>()
             outliningManager.Enabled <- settings.Advanced.IsOutliningEnabled
-
-        match textView.GetBuffer() with
-        | (VSConstants.S_OK, textLines) ->
-            let filename = VsTextLines.GetFilename textLines
-
-            match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
-            | Some (hier, _) ->
-
-
-                // Check if the file is in a CPS project or not.
-                // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
-                // Simple explanation:
-                //    Legacy projects have IVSHierarchy and IProjectSite
-                //    CPS Projects, out-of-project file and script files don't
-
-                match hier with
-                | :? IProvideProjectSite as _siteProvider when not (IsScript(filename)) ->
-
-                    // This is the path for .fs/.fsi files in legacy projects
-                    ()
-                | h when not (isNull h) && not (IsScript(filename)) ->
-                    let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
-                    match docId with
-                    | null ->
-                        if not (h.IsCapabilityMatch("CPS")) then
-
-                            // This is the path when opening out-of-project .fs/.fsi files in CPS projects
-
-                            let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                            this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-                    | _ -> ()
-                | _ ->
-
-                    // This is the path for both in-project and out-of-project .fsx files
-
-                    let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                    this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-
-            | _ -> ()
-        | _ -> ()

@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:3135
 // Usage of "->>" in a sequence expression is deprecated
 // Use "do yield! ..." instead
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 let s = seq {  for i in [1 .. 2] do yield! seq { yield i+1 } }

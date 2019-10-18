@@ -1,10 +1,15 @@
 <Project>
 
   <PropertyGroup>
-    <DotNetExe Condition=" '$(OS)' == 'Unix' ">dotnet</DotNetExe>
-    <DotNetExe Condition=" '$(OS)' != 'Unix' ">dotnet.exe</DotNetExe>
-    <!-- When building from source, `dotnet` is expected to be on the path. -->
+    <!-- during a regular build `dotnet(.exe)` is expected to be on the path -->
+    <DotNetExe Condition="'$(OS)' == 'Unix'">dotnet</DotNetExe>
+    <DotNetExe Condition="'$(OS)' != 'Unix'">dotnet.exe</DotNetExe>
+    <!-- if already running under dotnet, use that instance -->
+    <DotNetExe Condition="'$(DOTNET_HOST_PATH)' != ''">$(DOTNET_HOST_PATH)</DotNetExe>
     <DotNetExePath>$(DotNetExe)</DotNetExePath>
+
+    <!-- this is usually set by Arcade, but non-arcade builds won't have it -->
+    <DotNetTool Condition="'$(DotNetTool)' == ''">$(DotNetExePath)</DotNetTool>
   </PropertyGroup>
 
   <!-- Build FsLex files. -->
@@ -15,14 +20,14 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <FsLexPath>$(ArtifactsBinDir)\fslex\Proto\netcoreapp2.0\fslex.dll</FsLexPath>
+        <FsLexPath Condition="'$(FsLexPath)' == ''">$(ArtifactsDir)\Bootstrap\fslex\fslex.dll</FsLexPath>
     </PropertyGroup>
 
     <!-- Create the output directory -->
     <MakeDir Directories="$(FsLexOutputFolder)"/>
 
     <!-- Run the tool -->
-    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsLexPath)&quot; -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" />
+    <Exec Command="&quot;$(DotNetTool)&quot; &quot;$(FsLexPath)&quot; -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" />
 
     <!-- Make sure it will get cleaned -->
     <CreateItem Include="$(FsLexOutputFolder)%(FsLex.Filename).fs">
@@ -38,14 +43,14 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <FsYaccPath>$(ArtifactsBinDir)\fsyacc\Proto\netcoreapp2.0\fsyacc.dll</FsYaccPath>
+        <FsYaccPath Condition="'$(FsYaccPath)' == ''">$(ArtifactsDir)\Bootstrap\fsyacc\fsyacc.dll</FsYaccPath>
     </PropertyGroup>
 
     <!-- Create the output directory -->
     <MakeDir Directories="$(FsYaccOutputFolder)" />
 
     <!-- Run the tool -->
-    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsYaccPath)&quot; -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
+    <Exec Command="&quot;$(DotNetTool)&quot; &quot;$(FsYaccPath)&quot; -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
 
     <!-- Make sure it will get cleaned -->
     <CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">

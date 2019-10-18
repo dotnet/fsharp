@@ -59,8 +59,8 @@ module public FSharp.Compiler.PrettyNaming
        ("&&", "op_BooleanAnd")
        ("||", "op_BooleanOr")
        ("<=", "op_LessThanOrEqual")
-       ("=","op_Equality")
-       ("<>","op_Inequality")
+       ("=", "op_Equality")
+       ("<>", "op_Inequality")
        (">=", "op_GreaterThanOrEqual")
        ("<", "op_LessThan")
        (">", "op_GreaterThan")
@@ -119,7 +119,7 @@ module public FSharp.Compiler.PrettyNaming
     /// The set of characters usable in custom operators.
     let private opCharSet =
         let t = new HashSet<_>()
-        for (c,_) in opCharTranslateTable do
+        for (c, _) in opCharTranslateTable do
             t.Add(c) |> ignore
         t
         
@@ -139,7 +139,7 @@ module public FSharp.Compiler.PrettyNaming
         // there is single operator containing a space - range operator with step: `.. ..`
         name = ".. .." || name |> Seq.forall (fun c -> c <> ' ' && opCharSet.Contains c)
 
-    let IsMangledOpName (n:string) =
+    let IsMangledOpName (n: string) =
         n.StartsWithOrdinal(opNamePrefix)
 
     /// Compiles a custom operator into a mangled operator name.
@@ -167,7 +167,7 @@ module public FSharp.Compiler.PrettyNaming
 
         fun opp ->
             // Has this operator already been compiled?
-            compiledOperators.GetOrAdd(opp, fun (op:string) ->
+            compiledOperators.GetOrAdd(opp, fun (op: string) ->
                 let opLength = op.Length
                 let sb = new Text.StringBuilder (opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
                 for i = 0 to opLength - 1 do
@@ -281,7 +281,7 @@ module public FSharp.Compiler.PrettyNaming
         let standardOps =
             let ops = Dictionary<string, string> (opNameTable.Length, StringComparer.Ordinal)
             for x, y in opNameTable do
-                ops.Add(y,x)
+                ops.Add(y, x)
             ops
 
         fun opName ->
@@ -459,18 +459,18 @@ module public FSharp.Compiler.PrettyNaming
 
     let [<Literal>] private compilerGeneratedMarkerChar = '@'
     
-    let IsCompilerGeneratedName (nm:string) =
+    let IsCompilerGeneratedName (nm: string) =
         nm.IndexOf compilerGeneratedMarkerChar <> -1
         
     let CompilerGeneratedName nm =
         if IsCompilerGeneratedName nm then nm else nm+compilerGeneratedMarker
 
-    let GetBasicNameOfPossibleCompilerGeneratedName (name:string) =
+    let GetBasicNameOfPossibleCompilerGeneratedName (name: string) =
             match name.IndexOf(compilerGeneratedMarker, StringComparison.Ordinal) with 
             | -1 | 0 -> name
             | n -> name.[0..n-1]
 
-    let CompilerGeneratedNameSuffix (basicName:string) suffix =
+    let CompilerGeneratedNameSuffix (basicName: string) suffix =
         basicName+compilerGeneratedMarker+suffix
 
 
@@ -480,7 +480,7 @@ module public FSharp.Compiler.PrettyNaming
      
     let [<Literal>] private mangledGenericTypeNameSym = '`'
 
-    let TryDemangleGenericNameAndPos (n:string) =
+    let TryDemangleGenericNameAndPos (n: string) =
         (* check what comes after the symbol is a number *)
         let pos = n.LastIndexOf mangledGenericTypeNameSym
         if pos = -1 then ValueNone else
@@ -498,20 +498,20 @@ module public FSharp.Compiler.PrettyNaming
 
     type NameArityPair = NameArityPair of string * int
 
-    let DecodeGenericTypeName pos (mangledName:string) =
-        let res = mangledName.Substring(0,pos)
-        let num = mangledName.Substring(pos+1,mangledName.Length - pos - 1)
+    let DecodeGenericTypeName pos (mangledName: string) =
+        let res = mangledName.Substring(0, pos)
+        let num = mangledName.Substring(pos+1, mangledName.Length - pos - 1)
         NameArityPair(res, int32 num)
 
-    let DemangleGenericTypeNameWithPos pos (mangledName:string) =
-        mangledName.Substring(0,pos)
+    let DemangleGenericTypeNameWithPos pos (mangledName: string) =
+        mangledName.Substring(0, pos)
 
-    let DemangleGenericTypeName (mangledName:string) =
+    let DemangleGenericTypeName (mangledName: string) =
         match TryDemangleGenericNameAndPos mangledName with
         | ValueSome pos -> DemangleGenericTypeNameWithPos pos mangledName
         | _ -> mangledName
 
-    let private chopStringTo (s:string) (c:char) =
+    let private chopStringTo (s: string) (c: char) =
         match s.IndexOf c with
         | -1 -> s
         | idx ->
@@ -547,7 +547,7 @@ module public FSharp.Compiler.PrettyNaming
     /// Return a string array delimited by the given separator.
     /// Note that a quoted string is not going to be mangled into pieces. 
     let inline private isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
-    let private splitAroundQuotation (text:string) (separator:char) =
+    let private splitAroundQuotation (text: string) (separator: char) =
         let length = text.Length
         let result = ResizeArray()
         let mutable insideQuotation = false
@@ -574,7 +574,7 @@ module public FSharp.Compiler.PrettyNaming
 
     /// Return a string array delimited by the given separator up to the maximum number.
     /// Note that a quoted string is not going to be mangled into pieces.
-    let private splitAroundQuotationWithCount (text:string) (separator:char) (count:int)=
+    let private splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
         if count <= 1 then [| text |] else
         let mangledText  = splitAroundQuotation text separator
         match mangledText.Length > count with
@@ -588,7 +588,7 @@ module public FSharp.Compiler.PrettyNaming
     let IllegalCharactersInTypeAndNamespaceNames = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`'  |]
 
     /// Determines if the specified name is a valid name for an active pattern.
-    let IsActivePatternName (nm:string) =
+    let IsActivePatternName (nm: string) =
         let nameLen = nm.Length
         // The name must start and end with '|'
         (nm.IndexOf '|' = 0) &&
@@ -612,19 +612,19 @@ module public FSharp.Compiler.PrettyNaming
     type ActivePatternInfo = 
         | APInfo of bool * (string  * Range.range) list * Range.range
 
-        member x.IsTotal = let (APInfo(p,_,_)) = x in p
+        member x.IsTotal = let (APInfo(p, _, _)) = x in p
 
-        member x.ActiveTags = let (APInfo(_,tags,_)) = x in List.map fst tags
+        member x.ActiveTags = let (APInfo(_, tags, _)) = x in List.map fst tags
 
-        member x.ActiveTagsWithRanges = let (APInfo(_,tags,_)) = x in tags
+        member x.ActiveTagsWithRanges = let (APInfo(_, tags, _)) = x in tags
 
-        member x.Range = let (APInfo(_,_,m)) = x in m
+        member x.Range = let (APInfo(_, _, m)) = x in m
 
-    let ActivePatternInfoOfValName nm (m:Range.range) = 
+    let ActivePatternInfoOfValName nm (m: Range.range) = 
         // Note: The approximate range calculations in this code assume the name is of the form "(|A|B|)" not "(|  A   |   B   |)"
         // The ranges are used for IDE refactoring support etc.  If names of the second type are used,
         // renaming may be inaccurate/buggy. However names of the first form are dominant in F# code.
-        let rec loop (nm:string) (mp:Range.range) = 
+        let rec loop (nm: string) (mp: Range.range) = 
             let n = nm.IndexOf '|'
             if n > 0 then 
                let m1 = Range.mkRange mp.FileName mp.Start (Range.mkPos mp.StartLine (mp.StartColumn + n))
@@ -638,31 +638,31 @@ module public FSharp.Compiler.PrettyNaming
             // Skip the '|' at each end when recovering ranges
             let m0 = Range.mkRange m.FileName (Range.mkPos m.StartLine (m.StartColumn + 1)) (Range.mkPos m.EndLine (m.EndColumn - 1)) 
             let names = loop nm.[1..nm.Length-2] m0
-            let resH,resT = List.frontAndBack names
-            Some(if fst resT = "_" then APInfo(false,resH,m) else APInfo(true,names,m))
+            let resH, resT = List.frontAndBack names
+            Some(if fst resT = "_" then APInfo(false, resH, m) else APInfo(true, names, m))
         else 
             None
     
-    let private mangleStaticStringArg (nm:string,v:string) = 
+    let private mangleStaticStringArg (nm: string, v: string) = 
         nm + "=" + "\"" + v.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""
 
-    let private tryDemangleStaticStringArg (mangledText:string) =
+    let private tryDemangleStaticStringArg (mangledText: string) =
         match splitAroundQuotationWithCount mangledText '=' 2 with
         | [| nm; v |] ->
             if v.Length >= 2 then
-                Some(nm,v.[1..v.Length-2].Replace("\\\\","\\").Replace("\\\"","\""))
+                Some(nm, v.[1..v.Length-2].Replace("\\\\", "\\").Replace("\\\"", "\""))
             else
-                Some(nm,v)
+                Some(nm, v)
         | _ -> None
 
     exception InvalidMangledStaticArg of string
 
     /// Demangle the static parameters
-    let demangleProvidedTypeName (typeLogicalName:string) = 
+    let demangleProvidedTypeName (typeLogicalName: string) = 
         if typeLogicalName.Contains "," then 
             let pieces = splitAroundQuotation typeLogicalName ','
             match pieces with
-            | [| x; "" |] -> x, [| |]
+            | [| x; "" |] -> x,  [| |]
             | _ ->
                 let argNamesAndValues = pieces.[1..] |> Array.choose tryDemangleStaticStringArg
                 if argNamesAndValues.Length = (pieces.Length - 1) then
@@ -688,7 +688,7 @@ module public FSharp.Compiler.PrettyNaming
     /// Mangle the static parameters for a provided type or method
     let computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues) =
         let nonDefaultArgs = 
-            (staticArgs,defaultArgValues) 
+            (staticArgs, defaultArgValues) 
             ||> Array.zip 
             |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
                 let actualArgValue = string staticArg 

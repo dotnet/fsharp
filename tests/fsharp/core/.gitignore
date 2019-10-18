@@ -25,7 +25,7 @@ printing/z.output.test.*.txt
 printing/z.raw.output.test.*.txt
 printing/z.output.test.*.diff
 
-quotes/cslib.dll
+cslib*.dll
 
 parsing/crlf.dll
 parsing/crlf.pdb

@@ -39,6 +39,7 @@ let main argv =
 
     0 // return an integer exit code
     "
+
     static member private testCases: Object[][] = [|
         [| "123456";                    None |] // Numeric literals are not interesting
         [| "is a string";               Some("\"This is a string\"") |]

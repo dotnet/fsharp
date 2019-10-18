@@ -120,6 +120,7 @@ module internal ExtensionTyping =
         member IsInterface : bool
         member IsClass : bool
         member IsSealed : bool
+        member IsAbstract : bool
         member IsPublic : bool
         member IsNestedPublic : bool
         member GenericParameterPosition : int
@@ -181,9 +182,7 @@ module internal ExtensionTyping =
         ProvidedMethodInfo = 
         inherit ProvidedMethodBase
         member ReturnType : ProvidedType
-#if !FX_NO_REFLECTION_METADATA_TOKENS
         member MetadataToken : int
-#endif
 
     and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedParameterInfo = 

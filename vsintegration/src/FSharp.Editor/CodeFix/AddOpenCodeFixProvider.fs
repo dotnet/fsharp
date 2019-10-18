@@ -96,7 +96,7 @@ type internal FSharpAddOpenCodeFixProvider
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken)
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)

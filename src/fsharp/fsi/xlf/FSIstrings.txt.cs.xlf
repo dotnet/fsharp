@@ -1,7 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiOperationCouldNotBeCompleted">
+        <source>Operation could not be completed due to earlier error</source>
+        <target state="new">Operation could not be completed due to earlier error</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiOperationFailed">
+        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
+        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Zastavilo se kvůli chybě.\n</target>
@@ -99,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Při spuštění procesu F# Interactive se vyskytl problém. Ten mohly způsobit známé potíže s podporou konzoly procesu na pozadí pro aplikace umožňující kódování Unicode v některých systémech Windows. V případě Visual Studia zkuste vybrat Nástroje-&gt;Možnosti-&gt;F# Interactive a zadat: --fsi-server-no-unicode.</target>
+        <target state="translated">Při spuštění procesu F# Interactive se vyskytl problém. Ten mohly způsobit známé potíže s podporou konzoly procesu na pozadí pro aplikace umožňující kódování Unicode v některých systémech Windows. V případě sady Visual Studio zkuste vybrat Nástroje-&gt;Možnosti-&gt;F# Interactive a zadat: --fsi-server-no-unicode.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -264,7 +274,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Znemožňuje zamknutí referencí procesem nástroje F# Interactive.</target>
+        <target state="translated">Znemožňuje zamknutí referencí procesem F# Interactive.</target>
         <note />
       </trans-unit>
     </body>

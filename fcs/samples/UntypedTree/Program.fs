@@ -11,7 +11,7 @@ let checker = FSharpChecker.Create()
 // Get untyped tree for a specified input
 let getUntypedTree (file, input) = 
   let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| file |] }
-  let untypedRes = checker.ParseFile(file, input, parsingOptions) |> Async.RunSynchronously
+  let untypedRes = checker.ParseFile(file, FSharp.Compiler.Text.SourceText.ofString input, parsingOptions) |> Async.RunSynchronously
   match untypedRes.ParseTree with
   | Some tree -> tree
   | None -> failwith "Something went wrong during parsing!"

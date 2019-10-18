@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.NameResolution
 
-open FSharp.Compiler 
+open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Infos
@@ -14,6 +14,7 @@ open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Text
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =
@@ -21,6 +22,7 @@ type NameResolver =
     member InfoReader : InfoReader
     member amap : ImportMap
     member g : TcGlobals
+    member languageSupportsNameOf : bool
 
 /// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
 val ActivePatternElemsOfModuleOrNamespace : ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
@@ -185,7 +187,7 @@ val internal AddValRefToNameEnv                    : NameResolutionEnv -> ValRef
 val internal AddActivePatternResultTagsToNameEnv   : ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv
 
 /// Add a list of type definitions to the name resolution environment 
-val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
+val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
 
 /// Add an F# exception definition to the name resolution environment 
 val internal AddExceptionDeclsToNameEnv            : BulkAdd -> NameResolutionEnv -> TyconRef -> NameResolutionEnv
@@ -200,7 +202,7 @@ val internal AddModuleOrNamespaceRefsToNameEnv                   : TcGlobals -> 
 val internal AddModuleOrNamespaceRefToNameEnv                    : TcGlobals -> ImportMap -> range -> bool -> AccessorDomain -> NameResolutionEnv -> ModuleOrNamespaceRef -> NameResolutionEnv
 
 /// Add a list of modules or namespaces to the name resolution environment
-val internal AddModulesAndNamespacesContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
+val internal AddEntitiesContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
 
 /// A flag which indicates if it is an error to have two declared type parameters with identical names
 /// in the name resolution environment.
@@ -347,7 +349,7 @@ type internal OpenDeclaration =
 /// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
     { /// Source text
-      Source: string
+      SourceText: ISourceText
       /// Array of line start positions
       LineStartPositions: int[] }
 
@@ -370,7 +372,7 @@ type ITypecheckResultsSink =
     abstract NotifyOpenDeclaration : OpenDeclaration -> unit
 
     /// Get the current source
-    abstract CurrentSource : string option
+    abstract CurrentSourceText : ISourceText option
 
     /// Cached line-end normalized source text and an array of line end positions, used for format string parsing
     abstract FormatStringCheckContext : FormatStringCheckContext option
@@ -379,7 +381,7 @@ type ITypecheckResultsSink =
 type internal TcResultsSinkImpl =
 
     /// Create a TcResultsSinkImpl
-    new : tcGlobals : TcGlobals * ?source:string -> TcResultsSinkImpl
+    new : tcGlobals : TcGlobals * ?sourceText: ISourceText -> TcResultsSinkImpl
 
     /// Get all the resolutions reported to the sink
     member GetResolutions : unit -> TcResolutions
@@ -398,6 +400,13 @@ type TcResultsSink =
     { mutable CurrentSink : ITypecheckResultsSink option }
     static member NoSink : TcResultsSink
     static member WithSink : ITypecheckResultsSink -> TcResultsSink
+
+
+/// Indicates if we only need one result or all possible results from a resolution.
+[<RequireQualifiedAccess>]
+type ResultCollectionSettings =
+    | AllResults
+    | AtMostOneResult
 
 /// Temporarily redirect reporting of name resolution and type checking results
 val internal WithNewTypecheckResultsSink : ITypecheckResultsSink * TcResultsSink -> System.IDisposable
@@ -421,13 +430,13 @@ val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutio
 val internal CallOpenDeclarationSink    : TcResultsSink -> OpenDeclaration -> unit
 
 /// Get all the available properties of a type (both intrinsic and extension)
-val internal AllPropInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain -> FindMemberFlag -> range -> TType -> PropInfo list
+val internal AllPropInfosOfTypeInScope : ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> AccessorDomain -> FindMemberFlag -> range -> TType -> PropInfo list
 
 /// Get all the available properties of a type (only extension)
-val internal ExtensionPropInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain  -> range -> TType -> PropInfo list
+val internal ExtensionPropInfosOfTypeInScope : ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> AccessorDomain -> range -> TType -> PropInfo list
 
 /// Get the available methods of a type (both declared and inherited)
-val internal AllMethInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain -> FindMemberFlag -> range -> TType -> MethInfo list
+val internal AllMethInfosOfTypeInScope : ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> AccessorDomain -> FindMemberFlag -> range -> TType -> MethInfo list
 
 /// Used to report an error condition where name resolution failed due to an indeterminate type
 exception internal IndeterminateType of range
@@ -460,14 +469,8 @@ type PermitDirectReferenceToGeneratedType =
     | Yes 
     | No
 
-/// Indicates if we only need one result or all possible results from a resolution.
-[<RequireQualifiedAccess>]
-type ResultCollectionSettings =
-| AllResults
-| AtMostOneResult
-
-/// Resolve a long identifier to a namespace or module.
-val internal ResolveLongIndentAsModuleOrNamespace   : TcResultsSink -> ResultCollectionSettings -> Import.ImportMap -> range -> bool -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident -> Ident list -> isOpenDecl: bool -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
+/// Resolve a long identifier to a namespace, module or static class.
+val internal ResolveLongIndentAsModuleOrNamespaceOrStaticClass   : TcResultsSink -> ResultCollectionSettings -> Import.ImportMap -> range -> allowStaticClasses: bool -> first: bool -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident -> Ident list -> isOpenDecl: bool -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
 
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor               : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>

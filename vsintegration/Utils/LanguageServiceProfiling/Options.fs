@@ -29,7 +29,6 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSIstrings.fs"
              @"src\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs"
              @"src\assemblyinfo\assemblyinfo.shared.fs"
-             @"src\utils\reshapedreflection.fs"
              @"src\utils\sformat.fsi"
              @"src\utils\sformat.fs"
              @"src\fsharp\sr.fsi"
@@ -77,6 +76,8 @@ let FCS (repositoryDir: string) : Options =
              @"src\absil\ilprint.fs"
              @"src\absil\ilmorph.fsi"
              @"src\absil\ilmorph.fs"
+             @"src\absil\ilwritenativeres.fsi"
+             @"src\absil\ilwritenativeres.fs"
              @"src\absil\ilsupp.fsi"
              @"src\absil\ilsupp.fs"
              @"src\fsharp\FSharp.Compiler.Service\ilpars.fs"
@@ -142,6 +143,7 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\ConstraintSolver.fs"
              @"src\fsharp\CheckFormatStrings.fsi"
              @"src\fsharp\CheckFormatStrings.fs"
+             @"src\fsharp\FindUnsolved.fsi"
              @"src\fsharp\FindUnsolved.fs"
              @"src\fsharp\QuotationTranslator.fsi"
              @"src\fsharp\QuotationTranslator.fs"
@@ -155,7 +157,9 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\DetupleArgs.fs"
              @"src\fsharp\InnerLambdasToTopLevelFuncs.fsi"
              @"src\fsharp\InnerLambdasToTopLevelFuncs.fs"
+             @"src\fsharp\LowerCallsAndSeqs.fsi"
              @"src\fsharp\LowerCallsAndSeqs.fs"
+             @"src\fsharp\autobox.fsi"
              @"src\fsharp\autobox.fs"
              @"src\fsharp\IlxGen.fsi"
              @"src\fsharp\IlxGen.fs"
@@ -187,6 +191,8 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\service\ServiceUntypedParse.fs"
              @"src\utils\reshapedmsbuild.fs"
              @"src\fsharp\SimulatedMSBuildReferenceResolver.fs"
+             @"src\fsharp\service\FSharpCheckerResults.fsi"
+             @"src\fsharp\service\FSharpCheckerResults.fs"
              @"src\fsharp\service\service.fsi"
              @"src\fsharp\service\service.fs"
              @"src\fsharp\service\SimpleServices.fsi"
@@ -202,12 +208,11 @@ let FCS (repositoryDir: string) : Options =
           [|@"-o:obj\Release\FSharp.Compiler.Private.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
             @"--define:CROSS_PLATFORM_COMPILER";
-            @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
+            @"--define:FX_ATLEAST_40";
             @"--define:COMPILER";
             @"--define:ENABLE_MONO_SUPPORT"; "--define:FX_MSBUILDRESOLVER_RUNTIMELIKE";
-            @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
-            @"--define:FX_RESIDENT_COMPILER"; "--define:SHADOW_COPY_REFERENCES";
-            @"--define:EXTENSIONTYPING";
+            @"--define:FX_RESX_RESOURCE_READER"; "--define:FX_RESIDENT_COMPILER";
+            @"--define:SHADOW_COPY_REFERENCES"; "--define:EXTENSIONTYPING";
             @"--define:COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0";
             @"--define:COMPILER_SERVICE_DLL"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
             @"--doc:..\..\..\bin\v4.5\FSharp.Compiler.Service.xml"; "--optimize-";

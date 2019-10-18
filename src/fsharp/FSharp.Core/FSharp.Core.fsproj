@@ -4,17 +4,15 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
-    <AssemblyName>FSharp.Core</AssemblyName>
-    <PackageId>FSharp.Core</PackageId>
-    <PackageVersion>$(FSCorePackageVersion)</PackageVersion>
-    <NuspecFile>FSharp.Core.nuspec</NuspecFile>
+    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <DefineConstants Condition="'$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --compiling-fslib-40 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 
   <ItemGroup>
@@ -115,20 +113,11 @@
     <Compile Include="set.fs">
       <Link>Collections/set.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshapedreflection.fs">
-      <Link>Reflection/reshapedreflection.fs</Link>
-    </Compile>
     <Compile Include="reflect.fsi">
       <Link>Reflection/reflect.fsi</Link>
     </Compile>
     <Compile Include="reflect.fs">
       <Link>Reflection/reflect.fs</Link>
-    </Compile>
-    <Compile Include="math\n.fsi">
-      <Link>Numerics/n.fsi</Link>
-    </Compile>
-    <Compile Include="math\n.fs">
-      <Link>Numerics/n.fs</Link>
     </Compile>
     <Compile Include="math\z.fsi">
       <Link>Numerics/z.fsi</Link>
@@ -220,14 +209,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryablePackageVersion)" />
-    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryableVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
   </ItemGroup>
 
   <!-- Hook compilation phase to do custom work -->

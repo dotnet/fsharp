@@ -13,18 +13,18 @@ namespace Microsoft.FSharp.Control
 
     /// We use our own internal implementation of queues to avoid a dependency on System.dll
     type Queue<'T>() =
-    
+
         let mutable array = [| |]
         let mutable head = 0
         let mutable size = 0
         let mutable tail = 0
 
-        let SetCapacity(capacity) =
+        let SetCapacity capacity =
             let destinationArray = Array.zeroCreate capacity
-            if (size > 0) then 
-                if (head < tail) then 
+            if (size > 0) then
+                if (head < tail) then
                     Array.Copy(array, head, destinationArray, 0, size)
-        
+
                 else
                     Array.Copy(array, head, destinationArray, 0, array.Length - head)
                     Array.Copy(array, 0, destinationArray, array.Length - head, tail)
@@ -41,11 +41,11 @@ namespace Microsoft.FSharp.Control
             size <- size - 1
             local
 
-        member this.Enqueue(item) =
-            if (size = array.Length) then 
+        member this.Enqueue item =
+            if (size = array.Length) then
                 let capacity = int ((int64 array.Length * 200L) / 100L)
                 let capacity = max capacity (array.Length + 4)
-                SetCapacity(capacity)
+                SetCapacity capacity
             array.[tail] <- item
             tail <- (tail + 1) % array.Length
             size <- size + 1
@@ -60,7 +60,7 @@ namespace Microsoft.FSharp.Control
                 let resultCell = new ResultCell<_>()
                 let! cancellationToken = Async.CancellationToken
                 let start a f =
-                    Async.StartWithContinuationsUsingDispatchInfo(a, 
+                    Async.StartWithContinuationsUsingDispatchInfo(a,
                         (fun res -> resultCell.RegisterResult(f res |> AsyncResult.Ok, reuseThread=false) |> ignore),
                         (fun edi -> resultCell.RegisterResult(edi |> AsyncResult.Error, reuseThread=false) |> ignore),
                         (fun oce -> resultCell.RegisterResult(oce |> AsyncResult.Canceled, reuseThread=false) |> ignore),
@@ -79,10 +79,10 @@ namespace Microsoft.FSharp.Control
             assert (msec >= 0)
             let resultCell = new ResultCell<_>()
             Async.StartWithContinuations(
-                computation=Async.Sleep(msec),
+                computation=Async.Sleep msec,
                 continuation=(fun () -> resultCell.RegisterResult((), reuseThread = false) |> ignore),
-                exceptionContinuation=ignore, 
-                cancellationContinuation=ignore, 
+                exceptionContinuation=ignore,
+                cancellationContinuation=ignore,
                 cancellationToken = cancellationToken)
             // Note: It is ok to use "NoDirectCancel" here because the started computations use the same
             //       cancellation token and will register a cancelled result if cancellation occurs.
@@ -90,14 +90,14 @@ namespace Microsoft.FSharp.Control
             resultCell.AwaitResult_NoDirectCancelOrTimeout
 
     [<Sealed>]
-    [<AutoSerializable(false)>]        
-    type Mailbox<'Msg>(cancellationSupported: bool) =  
-        let mutable inboxStore  = null 
+    [<AutoSerializable(false)>]
+    type Mailbox<'Msg>(cancellationSupported: bool) =
+        let mutable inboxStore  = null
         let mutable arrivals = new Queue<'Msg>()
         let syncRoot = arrivals
 
-        // Control elements indicating the state of the reader. When the reader is "blocked" at an 
-        // asynchronous receive, either 
+        // Control elements indicating the state of the reader. When the reader is "blocked" at an
+        // asynchronous receive, either
         //     -- "cont" is non-null and the reader is "activated" by re-scheduling cont in the thread pool; or
         //     -- "pulse" is non-null and the reader is "activated" by setting this event
         let mutable savedCont : (bool -> AsyncReturn) option = None
@@ -106,69 +106,69 @@ namespace Microsoft.FSharp.Control
         let mutable pulse : AutoResetEvent = null
 
         // Make sure that the "pulse" value is created
-        let ensurePulse() = 
-            match pulse with 
-            | null -> 
-                pulse <- new AutoResetEvent(false);
-            | _ -> 
+        let ensurePulse() =
+            match pulse with
+            | null ->
+                pulse <- new AutoResetEvent(false)
+            | _ ->
                 ()
             pulse
-                
-        let waitOneNoTimeoutOrCancellation = 
-            MakeAsync (fun ctxt -> 
-                match savedCont with 
-                | None -> 
-                    let descheduled = 
+
+        let waitOneNoTimeoutOrCancellation =
+            MakeAsync (fun ctxt ->
+                match savedCont with
+                | None ->
+                    let descheduled =
                         // An arrival may have happened while we're preparing to deschedule
-                        lock syncRoot (fun () -> 
-                            if arrivals.Count = 0 then 
+                        lock syncRoot (fun () ->
+                            if arrivals.Count = 0 then
                                 // OK, no arrival so deschedule
-                                savedCont <- Some(fun res -> ctxt.QueueContinuationWithTrampoline(res))
+                                savedCont <- Some(fun res -> ctxt.QueueContinuationWithTrampoline res)
                                 true
                             else
                                 false)
-                    if descheduled then 
+                    if descheduled then
                         Unchecked.defaultof<_>
-                    else 
+                    else
                         // If we didn't deschedule then run the continuation immediately
                         ctxt.CallContinuation true
-                | Some _ -> 
+                | Some _ ->
                     failwith "multiple waiting reader continuations for mailbox")
 
-        let waitOneWithCancellation timeout = 
+        let waitOneWithCancellation timeout =
             Async.AwaitWaitHandle(ensurePulse(), millisecondsTimeout=timeout)
 
-        let waitOne timeout = 
-            if timeout < 0 && not cancellationSupported then 
+        let waitOne timeout =
+            if timeout < 0 && not cancellationSupported then
                 waitOneNoTimeoutOrCancellation
-            else 
-                waitOneWithCancellation(timeout)
+            else
+                waitOneWithCancellation timeout
 
-        member __.inbox = 
-            match inboxStore with 
+        member __.inbox =
+            match inboxStore with
             | null -> inboxStore <- new System.Collections.Generic.List<'Msg>(1)
-            | _ -> () 
+            | _ -> ()
             inboxStore
 
-        member x.CurrentQueueLength = 
+        member x.CurrentQueueLength =
             lock syncRoot (fun () -> x.inbox.Count + arrivals.Count)
 
-        member x.ScanArrivalsUnsafe(f) =
-            if arrivals.Count = 0 then 
+        member x.ScanArrivalsUnsafe f =
+            if arrivals.Count = 0 then
                 None
-            else 
+            else
                 let msg = arrivals.Dequeue()
                 match f msg with
-                | None -> 
-                    x.inbox.Add(msg)
-                    x.ScanArrivalsUnsafe(f)
+                | None ->
+                    x.inbox.Add msg
+                    x.ScanArrivalsUnsafe f
                 | res -> res
 
         // Lock the arrivals queue while we scan that
-        member x.ScanArrivals(f) = 
-            lock syncRoot (fun () -> x.ScanArrivalsUnsafe(f))
+        member x.ScanArrivals f =
+            lock syncRoot (fun () -> x.ScanArrivalsUnsafe f)
 
-        member x.ScanInbox(f,n) =
+        member x.ScanInbox(f, n) =
             match inboxStore with
             | null -> None
             | inbox ->
@@ -177,178 +177,178 @@ namespace Microsoft.FSharp.Control
                 else
                     let msg = inbox.[n]
                     match f msg with
-                    | None -> x.ScanInbox (f,n+1)
-                    | res -> inbox.RemoveAt(n); res
+                    | None -> x.ScanInbox (f, n+1)
+                    | res -> inbox.RemoveAt n; res
 
         member x.ReceiveFromArrivalsUnsafe() =
-            if arrivals.Count = 0 then 
+            if arrivals.Count = 0 then
                 None
-            else 
+            else
                 Some(arrivals.Dequeue())
 
-        member x.ReceiveFromArrivals() = 
+        member x.ReceiveFromArrivals() =
             lock syncRoot (fun () -> x.ReceiveFromArrivalsUnsafe())
 
         member x.ReceiveFromInbox() =
             match inboxStore with
             | null -> None
             | inbox ->
-                if inbox.Count = 0 then 
+                if inbox.Count = 0 then
                     None
                 else
                     let x = inbox.[0]
-                    inbox.RemoveAt(0)
-                    Some(x)
+                    inbox.RemoveAt 0
+                    Some x
 
-        member x.Post(msg) =
+        member x.Post msg =
             lock syncRoot (fun () ->
 
                 // Add the message to the arrivals queue
-                arrivals.Enqueue(msg)
+                arrivals.Enqueue msg
 
                 // Cooperatively unblock any waiting reader. If there is no waiting
                 // reader we just leave the message in the incoming queue
                 match savedCont with
-                | None -> 
-                    match pulse with 
-                    | null -> 
+                | None ->
+                    match pulse with
+                    | null ->
                         () // no one waiting, leaving the message in the queue is sufficient
-                    | ev -> 
+                    | ev ->
                         // someone is waiting on the wait handle
                         ev.Set() |> ignore
 
-                | Some action -> 
+                | Some action ->
                     savedCont <- None
                     action true |> ignore)
 
         member x.TryScan ((f: 'Msg -> (Async<'T>) option), timeout) : Async<'T option> =
             let rec scan timeoutAsync (timeoutCts:CancellationTokenSource) =
-                async { 
-                    match x.ScanArrivals(f) with
-                    | None -> 
+                async {
+                    match x.ScanArrivals f with
+                    | None ->
                         // Deschedule and wait for a message. When it comes, rescan the arrivals
                         let! ok = AsyncHelpers.awaitEither waitOneNoTimeoutOrCancellation timeoutAsync
                         match ok with
-                        | Choice1Of2 true -> 
+                        | Choice1Of2 true ->
                             return! scan timeoutAsync timeoutCts
                         | Choice1Of2 false ->
                             return failwith "should not happen - waitOneNoTimeoutOrCancellation always returns true"
                         | Choice2Of2 () ->
-                            lock syncRoot (fun () -> 
+                            lock syncRoot (fun () ->
                                 // Cancel the outstanding wait for messages installed by waitOneWithCancellation
                                 //
                                 // HERE BE DRAGONS. This is bestowed on us because we only support
                                 // a single mailbox reader at any one time.
                                 // If awaitEither returned control because timeoutAsync has terminated, waitOneNoTimeoutOrCancellation
-                                // might still be in-flight. In practical terms, it means that the push-to-async-result-cell 
+                                // might still be in-flight. In practical terms, it means that the push-to-async-result-cell
                                 // continuation that awaitEither registered on it is still pending, i.e. it is still in savedCont.
                                 // That continuation is a no-op now, but it is still a registered reader for arriving messages.
                                 // Therefore we just abandon it - a brutal way of canceling.
                                 // This ugly non-compositionality is only needed because we only support a single mailbox reader
-                                // (i.e. the user is not allowed to run several Receive/TryReceive/Scan/TryScan in parallel) - otherwise 
+                                // (i.e. the user is not allowed to run several Receive/TryReceive/Scan/TryScan in parallel) - otherwise
                                 // we would just have an extra no-op reader in the queue.
                                 savedCont <- None)
 
                             return None
-                    | Some resP ->                     
+                    | Some resP ->
                         timeoutCts.Cancel() // cancel the timeout watcher
                         let! res = resP
                         return Some res
                 }
             let rec scanNoTimeout () =
-                async { 
-                    match x.ScanArrivals(f) with
-                    | None -> 
-                        let! ok = waitOne(Timeout.Infinite)
+                async {
+                    match x.ScanArrivals f with
+                    | None ->
+                        let! ok = waitOne Timeout.Infinite
                         if ok then
                             return! scanNoTimeout()
                         else
                             return (failwith "Timed out with infinite timeout??")
-                    | Some resP -> 
+                    | Some resP ->
                         let! res = resP
                         return Some res
                 }
 
             // Look in the inbox first
-            async { 
-                match x.ScanInbox(f,0) with
-                | None  when timeout < 0 -> 
+            async {
+                match x.ScanInbox(f, 0) with
+                | None  when timeout < 0 ->
                     return! scanNoTimeout()
-                | None -> 
+                | None ->
                     let! cancellationToken = Async.CancellationToken
                     let timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken.None)
                     let timeoutAsync = AsyncHelpers.timeout timeout timeoutCts.Token
                     return! scan timeoutAsync timeoutCts
-                | Some resP -> 
+                | Some resP ->
                     let! res = resP
                     return Some res
             }
 
         member x.Scan((f: 'Msg -> (Async<'T>) option), timeout) =
-            async { 
-                let! resOpt = x.TryScan(f,timeout)
+            async {
+                let! resOpt = x.TryScan(f, timeout)
                 match resOpt with
                 | None -> return raise(TimeoutException(SR.GetString(SR.mailboxScanTimedOut)))
-                | Some res -> return res 
+                | Some res -> return res
             }
 
-        member x.TryReceive(timeout) =
+        member x.TryReceive timeout =
             let rec processFirstArrival() =
-                async { 
+                async {
                     match x.ReceiveFromArrivals() with
-                    | None -> 
-                        // Make sure the pulse is created if it is going to be needed. 
-                        // If it isn't, then create it, and go back to the start to 
+                    | None ->
+                        // Make sure the pulse is created if it is going to be needed.
+                        // If it isn't, then create it, and go back to the start to
                         // check arrivals again.
                         match pulse with
                         | null when timeout >= 0 || cancellationSupported ->
                             ensurePulse() |> ignore
                             return! processFirstArrival()
-                        | _ -> 
+                        | _ ->
                             // Wait until we have been notified about a message. When that happens, rescan the arrivals
-                            let! ok = waitOne(timeout)
-                            if ok then 
+                            let! ok = waitOne timeout
+                            if ok then
                                 return! processFirstArrival()
-                            else 
+                            else
                                 return None
-                    | res -> return res 
+                    | res -> return res
                 }
 
             // look in the inbox first
-            async { 
+            async {
                 match x.ReceiveFromInbox() with
                 | None -> return! processFirstArrival()
-                | res -> return res 
+                | res -> return res
             }
 
-        member x.Receive(timeout) =
+        member x.Receive timeout =
 
             let rec processFirstArrival() =
-                async { 
+                async {
                     match x.ReceiveFromArrivals() with
-                    | None -> 
-                        // Make sure the pulse is created if it is going to be needed. 
-                        // If it isn't, then create it, and go back to the start to 
+                    | None ->
+                        // Make sure the pulse is created if it is going to be needed.
+                        // If it isn't, then create it, and go back to the start to
                         // check arrivals again.
                         match pulse with
                         | null when timeout >= 0 || cancellationSupported ->
                             ensurePulse() |> ignore
                             return! processFirstArrival()
-                        | _ -> 
+                        | _ ->
                             // Wait until we have been notified about a message. When that happens, rescan the arrivals
-                            let! ok = waitOne(timeout)
-                            if ok then 
+                            let! ok = waitOne timeout
+                            if ok then
                                 return! processFirstArrival()
-                            else 
+                            else
                                 return raise(TimeoutException(SR.GetString(SR.mailboxReceiveTimedOut)))
-                    | Some res -> return res 
+                    | Some res -> return res
                 }
 
             // look in the inbox first
-            async { 
+            async {
                 match x.ReceiveFromInbox() with
-                | None -> return! processFirstArrival() 
-                | Some res -> return res 
+                | None -> return! processFirstArrival()
+                | Some res -> return res
             }
 
         interface System.IDisposable with
@@ -357,14 +357,14 @@ namespace Microsoft.FSharp.Control
 
 #if DEBUG
         member x.UnsafeContents =
-            (x.inbox,arrivals,pulse,savedCont) |> box
+            (x.inbox, arrivals, pulse, savedCont) |> box
 #endif
 
 
     [<Sealed>]
     [<CompiledName("FSharpAsyncReplyChannel`1")>]
     type AsyncReplyChannel<'Reply>(replyf : 'Reply -> unit) =
-        member x.Reply(value) = replyf(value)
+        member x.Reply value = replyf value
 
     [<Sealed>]
     [<AutoSerializable(false)>]
@@ -380,9 +380,9 @@ namespace Microsoft.FSharp.Control
 
         member __.CurrentQueueLength = mailbox.CurrentQueueLength // nb. unprotected access gives an approximation of the queue length
 
-        member __.DefaultTimeout 
-            with get() = defaultTimeout 
-            and set(v) = defaultTimeout <- v
+        member __.DefaultTimeout
+            with get() = defaultTimeout
+            and set v = defaultTimeout <- v
 
         [<CLIEvent>]
         member __.Error = errorEvent.Publish
@@ -400,82 +400,82 @@ namespace Microsoft.FSharp.Control
                 // Protect the execution and send errors to the event.
                 // Note that exception stack traces are lost in this design - in an extended design
                 // the event could propagate an ExceptionDispatchInfo instead of an Exception.
-                let p = 
-                    async { try 
-                                do! body x 
-                            with exn -> 
+                let p =
+                    async { try
+                                do! body x
+                            with exn ->
                                 errorEvent.Trigger exn }
 
                 Async.Start(computation=p, cancellationToken=cancellationToken)
 
-        member __.Post(message) = mailbox.Post(message)
+        member __.Post message = mailbox.Post message
 
-        member __.TryPostAndReply(buildMessage : (_ -> 'Msg), ?timeout) : 'Reply option = 
+        member __.TryPostAndReply(buildMessage : (_ -> 'Msg), ?timeout) : 'Reply option =
             let timeout = defaultArg timeout defaultTimeout
             use resultCell = new ResultCell<_>()
             let msg = buildMessage (new AsyncReplyChannel<_>(fun reply ->
                                     // Note the ResultCell may have been disposed if the operation
-                                    // timed out. In this case RegisterResult drops the result on the floor.                                                                        
-                                    resultCell.RegisterResult(reply,reuseThread=false) |> ignore))
-            mailbox.Post(msg)
-            resultCell.TryWaitForResultSynchronously(timeout=timeout) 
+                                    // timed out. In this case RegisterResult drops the result on the floor.
+                                    resultCell.RegisterResult(reply, reuseThread=false) |> ignore))
+            mailbox.Post msg
+            resultCell.TryWaitForResultSynchronously(timeout=timeout)
 
-        member x.PostAndReply(buildMessage, ?timeout) : 'Reply = 
-            match x.TryPostAndReply(buildMessage,?timeout=timeout) with
+        member x.PostAndReply(buildMessage, ?timeout) : 'Reply =
+            match x.TryPostAndReply(buildMessage, ?timeout=timeout) with
             | None ->  raise (TimeoutException(SR.GetString(SR.mailboxProcessorPostAndReplyTimedOut)))
             | Some res -> res
 
-        member __.PostAndTryAsyncReply(buildMessage, ?timeout) : Async<'Reply option> = 
+        member __.PostAndTryAsyncReply(buildMessage, ?timeout) : Async<'Reply option> =
             let timeout = defaultArg timeout defaultTimeout
             let resultCell = new ResultCell<_>()
             let msg = buildMessage (new AsyncReplyChannel<_>(fun reply ->
                                     // Note the ResultCell may have been disposed if the operation
                                     // timed out. In this case RegisterResult drops the result on the floor.
                                     resultCell.RegisterResult(reply, reuseThread=false) |> ignore))
-            mailbox.Post(msg)
+            mailbox.Post msg
             match timeout with
-            | Threading.Timeout.Infinite when not cancellationSupported -> 
+            | Threading.Timeout.Infinite when not cancellationSupported ->
                 async { let! result = resultCell.AwaitResult_NoDirectCancelOrTimeout
-                        return Some result }  
-                        
+                        return Some result }
+
             | _ ->
                 async { use _disposeCell = resultCell
                         let! ok =  Async.AwaitWaitHandle(resultCell.GetWaitHandle(), millisecondsTimeout=timeout)
                         let res = (if ok then Some(resultCell.GrabResult()) else None)
                         return res }
-                    
-        member x.PostAndAsyncReply(buildMessage, ?timeout:int) =                 
+
+        member x.PostAndAsyncReply(buildMessage, ?timeout:int) =
             let timeout = defaultArg timeout defaultTimeout
             match timeout with
-            | Threading.Timeout.Infinite when not cancellationSupported -> 
+            | Threading.Timeout.Infinite when not cancellationSupported ->
                 // Nothing to dispose, no wait handles used
                 let resultCell = new ResultCell<_>()
-                let msg = buildMessage (new AsyncReplyChannel<_>(fun reply -> resultCell.RegisterResult(reply,reuseThread=false) |> ignore))
-                mailbox.Post(msg)
+                let msg = buildMessage (new AsyncReplyChannel<_>(fun reply -> resultCell.RegisterResult(reply, reuseThread=false) |> ignore))
+                mailbox.Post msg
                 resultCell.AwaitResult_NoDirectCancelOrTimeout
-            | _ ->            
-                let asyncReply = x.PostAndTryAsyncReply(buildMessage,timeout=timeout) 
+            | _ ->
+                let asyncReply = x.PostAndTryAsyncReply(buildMessage, timeout=timeout)
                 async { let! res = asyncReply
-                        match res with 
+                        match res with
                         | None ->  return! raise (TimeoutException(SR.GetString(SR.mailboxProcessorPostAndAsyncReplyTimedOut)))
                         | Some res -> return res }
-                           
-        member __.Receive(?timeout) = 
+
+        member __.Receive(?timeout) =
             mailbox.Receive(timeout=defaultArg timeout defaultTimeout)
 
-        member __.TryReceive(?timeout) = 
+        member __.TryReceive(?timeout) =
             mailbox.TryReceive(timeout=defaultArg timeout defaultTimeout)
 
-        member __.Scan(scanner: 'Msg -> (Async<'T>) option,?timeout) = 
-            mailbox.Scan(scanner,timeout=defaultArg timeout defaultTimeout)
+        member __.Scan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
+            mailbox.Scan(scanner, timeout=defaultArg timeout defaultTimeout)
 
-        member __.TryScan(scanner: 'Msg -> (Async<'T>) option,?timeout) = 
-            mailbox.TryScan(scanner,timeout=defaultArg timeout defaultTimeout)
+        member __.TryScan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
+            mailbox.TryScan(scanner, timeout=defaultArg timeout defaultTimeout)
 
         interface System.IDisposable with
             member __.Dispose() = (mailbox :> IDisposable).Dispose()
 
-        static member Start(body,?cancellationToken) = 
-            let mailboxProcessor = new MailboxProcessor<'Msg>(body,?cancellationToken=cancellationToken)
+        static member Start(body, ?cancellationToken) =
+            let mailboxProcessor = new MailboxProcessor<'Msg>(body, ?cancellationToken=cancellationToken)
             mailboxProcessor.Start()
             mailboxProcessor

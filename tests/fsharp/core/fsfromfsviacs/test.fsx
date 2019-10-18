@@ -71,22 +71,53 @@ let _ = test "structunion394b36" (Lib.NestedStructUnionsTests.testPattern3mut(u2
 
 // F# option implicit converter tests
 
-let testFsOpt() =
-    let testOpt (t : 'T option) =
-        test (sprintf "fsimplicitconv (%A)" t) (ApiWrapper.ConsumeOptionalParam<'T>(t) = t)
+module TestConsumeOptionalParameter = 
+    let testFsOpt() =
+        let testOpt (t : 'T option) =
+            test (sprintf "fsimplicitconv (%A)" t) (ApiWrapper.ConsumeOptionalParam<'T>(t) = t)
 
-    testOpt(Option<int>.None)
-    testOpt(Some 42)
+        testOpt(Option<int>.None)
+        testOpt(Some 42)
 
-    // check that implicit conversion of optionals does 
-    // differentiate between 'null' and 'Some null'
-    testOpt(Option<string>.None)
-    testOpt(Option<string>.Some null)
-    testOpt(Some "")
-    testOpt(Some "test")
+        // check that implicit conversion of optionals does 
+        // differentiate between 'null' and 'Some null'
+        testOpt(Option<string>.None)
+        testOpt(Option<string>.Some null)
+        testOpt(Some "")
+        testOpt(Some "test")
 
-testFsOpt()
+    testFsOpt()
 
+module TestConsumeCSharpOptionalParameter = 
+    open System
+    open CSharpOptionalParameters
+    check "csoptional23982f31" (SomeClass.MethodTakingOptionals()) 11
+    check "csoptional23982f32" (SomeClass.MethodTakingOptionals(x = 6)) 14
+    check "csoptional23982f33" (SomeClass.MethodTakingOptionals(y = "aaaaaa")) 14
+    check "csoptional23982f34" (SomeClass.MethodTakingOptionals(d = 8.0)) 14
+
+    check "csoptional23982f41" (SomeClass.MethodTakingNullableOptionalsWithDefaults()) 11
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = Nullable 6)) 14
+    check "csoptional23982f43" (SomeClass.MethodTakingNullableOptionalsWithDefaults(y = "aaaaaa")) 14
+    check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = Nullable 8.0)) 14
+
+    check "csoptional23982f51" (SomeClass.MethodTakingNullableOptionals()) -3
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = Nullable 6)) 4
+    check "csoptional23982f53" (SomeClass.MethodTakingNullableOptionals(y = "aaaaaa")) 4
+    check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = Nullable 8.0)) 6
+
+    // These require https://github.com/fsharp/fslang-suggestions/issues/774 to be implemented
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?x = Some 6)) 14
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?y = Some "aaaaaa")) 14
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?d = Some 8.0)) 14
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?x = None)) 11
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?y = None)) 11
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?d = None)) 11
+
+    //check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14
+    //check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = 8.0)) 14
+    //check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = 6)) 4
+    //check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6
 
 module NestedStructPatternMatchingAcrossAssemblyBoundaries = 
     open Lib.NestedStructUnionsTests
@@ -178,6 +209,75 @@ let ToFSharpFunc() =
     test "vkejhwew903" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f3)(3)("a")(6uy)  =  FSharpFuncTests.ApiWrapper.f3.Invoke(3, "a", 6uy))
     test "vkejhwew904" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f4)(3)("a")(6uy)(7y)  =  FSharpFuncTests.ApiWrapper.f4.Invoke(3, "a", 6uy, 7y))
     test "vkejhwew905" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f5)(3)("a")(6uy)(7y)(7s)  =  FSharpFuncTests.ApiWrapper.f5.Invoke(3, "a", 6uy, 7y, 7s))
+
+module TestStructs =
+    open StructTests
+
+    let someFunc (s: NonReadOnlyStruct) = 
+        s.M(456)
+        s.X
+
+    let someByrefFunc (s: byref<NonReadOnlyStruct>) = 
+        s.M(456)
+        s.X
+
+    let someInrefFunc (s: inref<NonReadOnlyStruct>) = 
+        s.M(456)
+        s.X
+
+    let someFuncReturn (s: NonReadOnlyStruct) =
+        s.X
+
+    let someInrefFuncReturn (s: inref<NonReadOnlyStruct>) =
+        s.X
+
+    let test1 () =
+        let s = NonReadOnlyStruct()
+        check "hdlcjiklhen1" s.X 0
+        s.M(123)
+        check "hdlcjiklhen2" s.X 123
+        check "hdlcjiklhen3" (someFunc s) 456
+        check "hdlcjiklhen4" s.X 123
+
+
+    let test2 () =
+        let mutable s = NonReadOnlyStruct()
+        check "hdlcjiklhen5" s.X 0
+        s.M(123)
+        check "hdlcjiklhen6" s.X 123
+        check "hdlcjiklhen7" (someByrefFunc &s) 456
+        check "hdlcjiklhen8" s.X 456
+
+
+    let test3 () =
+        let s = NonReadOnlyStruct()
+        check "hdlcjiklhen9" s.X 0
+        s.M(123)
+        check "hdlcjiklhen10" s.X 123
+        check "hdlcjiklhen11" (someInrefFunc &s) 123
+        check "hdlcjiklhen12" s.X 123
+
+    let test4 () =
+        let s = NonReadOnlyStruct()
+        check "hdlcjiklhen13" s.X 0
+        s.M(123)
+        check "hdlcjiklhen14" s.X 123
+        check "hdlcjiklhen15" (someFuncReturn s) 0 // Technically a bug today, but test is to verify current behavior.
+        check "hdlcjiklhen16" s.X 123
+
+    let test5 () =
+        let s = NonReadOnlyStruct()
+        check "hdlcjiklhen17" s.X 0
+        s.M(123)
+        check "hdlcjiklhen18" s.X 123
+        check "hdlcjiklhen19" (someInrefFuncReturn &s) 123
+        check "hdlcjiklhen20" s.X 123
+
+TestStructs.test1 ()
+TestStructs.test2 ()
+TestStructs.test3 () 
+TestStructs.test4 () 
+TestStructs.test5 () 
 
 #endif
 

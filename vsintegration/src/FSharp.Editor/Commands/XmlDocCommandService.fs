@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
+open System.Threading
 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
@@ -66,10 +67,10 @@ type internal XmlDocCommandFilter
                                 // XmlDocable line #1 are 1-based, editor is 0-based
                                 let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
                                 let! document = document.Value
-                                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-                                let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
+                                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None)
+                                let! sourceText = document.GetTextAsync(CancellationToken.None)
                                 let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
-                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) 
+                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText.ToFSharpSourceText(), Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
                                     xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 
@@ -111,9 +112,13 @@ type internal XmlDocCommandFilter
             else
                 VSConstants.E_FAIL
 
-[<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpConstants.FSharpContentTypeName)>]
-[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
+// Disabled:
+// - https://github.com/Microsoft/visualfsharp/issues/6076
+// - The feature does not work; it should probably use an exposed Roslyn API of some sort
+// - Despite not working, it is a source of UI delays
+//[<Export(typeof<IWpfTextViewCreationListener>)>]
+//[<ContentType(FSharpConstants.FSharpContentTypeName)>]
+//[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,

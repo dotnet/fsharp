@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../VFSIstrings.resx">
     <body>
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="couldNotFindFsiExe">
         <source>Could not find fsi.exe, the F# Interactive executable.\nThis file does not exist:\n\n{0}\n</source>
-        <target state="translated">Não foi possível encontrar fsi.exe, o Executável F# Interativo.\nEste arquivo não existe:\n\n{0}\n</target>
+        <target state="translated">Não foi possível encontrar fsi.exe, o executável do F# Interativo.\nEste arquivo não existe:\n\n{0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="killingProcessRaisedException">

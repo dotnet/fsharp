@@ -369,6 +369,9 @@ exception DefensiveCopyWarning of string * range
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 
+/// Helper to create an expression that dereferences an address.
+val mkDerefAddrExpr: mAddrGet: range -> expr: Expr -> mExpr: range -> exprTy: TType -> Expr
+
 /// Helper to take the address of an expression
 val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool * bool
 
@@ -1205,10 +1208,10 @@ val MakeExportRemapping : CcuThunk -> ModuleOrNamespace -> Remap
 val ApplyExportRemappingToEntity :  TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace 
 
 /// Determine if a type definition is hidden by a signature
-val IsHiddenTycon     : (Remap * SignatureHidingInfo) list -> Tycon -> bool
+val IsHiddenTycon     : TcGlobals -> (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
 /// Determine if the representation of a type definition is hidden by a signature
-val IsHiddenTyconRepr : (Remap * SignatureHidingInfo) list -> Tycon -> bool
+val IsHiddenTyconRepr : TcGlobals -> (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
 /// Determine if a member, function or value is hidden by a signature
 val IsHiddenVal       : (Remap * SignatureHidingInfo) list -> Val -> bool
@@ -1290,7 +1293,7 @@ module DebugPrint =
     val showType : TType -> string
 
     /// Convert an expression to a string for debugging purposes
-    val showExpr : Expr -> string
+    val showExpr : TcGlobals -> Expr -> string
 
     /// Debug layout for a reference to a value
     val valRefL : ValRef -> layout
@@ -1299,7 +1302,7 @@ module DebugPrint =
     val unionCaseRefL : UnionCaseRef -> layout
 
     /// Debug layout for an value definition at its binding site
-    val valAtBindL : Val -> layout
+    val valAtBindL : TcGlobals -> Val -> layout
 
     /// Debug layout for an integer
     val intL : int -> layout
@@ -1326,31 +1329,31 @@ module DebugPrint =
     val slotSigL : SlotSig -> layout
 
     /// Debug layout for the type signature of a module or namespace definition
-    val entityTypeL : ModuleOrNamespaceType -> layout
+    val entityTypeL : TcGlobals -> ModuleOrNamespaceType -> layout
 
     /// Debug layout for a module or namespace definition
-    val entityL : ModuleOrNamespace -> layout
+    val entityL : TcGlobals -> ModuleOrNamespace -> layout
 
     /// Debug layout for the type of a value
     val typeOfValL : Val -> layout
 
     /// Debug layout for a binding of an expression to a value
-    val bindingL : Binding -> layout
+    val bindingL : TcGlobals -> Binding -> layout
 
     /// Debug layout for an expression
-    val exprL : Expr -> layout
+    val exprL : TcGlobals -> Expr -> layout
 
     /// Debug layout for a type definition
-    val tyconL : Tycon -> layout
+    val tyconL : TcGlobals -> Tycon -> layout
 
     /// Debug layout for a decision tree
-    val decisionTreeL : DecisionTree -> layout
+    val decisionTreeL : TcGlobals -> DecisionTree -> layout
 
     /// Debug layout for an implementation file
-    val implFileL : TypedImplFile -> layout
+    val implFileL : TcGlobals -> TypedImplFile -> layout
 
     /// Debug layout for a list of implementation files
-    val implFilesL : TypedImplFile list -> layout
+    val implFilesL : TcGlobals -> TypedImplFile list -> layout
 
     /// Debug layout for class and record fields
     val recdFieldRefL : RecdFieldRef -> layout
@@ -1388,7 +1391,7 @@ val mkVoidPtrTy  : TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType      : TcGlobals -> TType -> TType
 
-/// Determine is a type is an option type
+/// Determine if a type is an option type
 val isOptionTy     : TcGlobals -> TType -> bool
 
 /// Take apart an option type
@@ -1396,6 +1399,15 @@ val destOptionTy   : TcGlobals -> TType -> TType
 
 /// Try to take apart an option type
 val tryDestOptionTy : TcGlobals -> TType -> ValueOption<TType>
+
+/// Determine is a type is a System.Nullable type
+val isNullableTy : TcGlobals -> TType -> bool
+
+/// Try to take apart a System.Nullable type
+val tryDestNullableTy: TcGlobals -> TType -> ValueOption<TType>
+
+/// Take apart a System.Nullable type
+val destNullableTy: TcGlobals -> TType -> TType
 
 /// Determine if a type is a System.Linq.Expression type
 val isLinqExpressionTy     : TcGlobals -> TType -> bool
@@ -1647,6 +1659,10 @@ val mkSomeCase  : TcGlobals -> UnionCaseRef
 val mkNil  : TcGlobals -> range -> TType -> Expr
 
 val mkCons : TcGlobals -> TType -> Expr -> Expr -> Expr
+
+val mkSome : TcGlobals -> TType -> Expr -> range -> Expr
+
+val mkNone: TcGlobals -> TType -> range -> Expr
 
 //-------------------------------------------------------------------------
 // Make a few more expressions
@@ -2078,6 +2094,18 @@ val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 /// Check if the type is a byref-like but not a byref.
 val isSpanLikeTy : TcGlobals -> range -> TType -> bool
 
+val isSpanTy : TcGlobals -> range -> TType -> bool
+
+val tryDestSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
+
+val destSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
+
+val isReadOnlySpanTy : TcGlobals -> range -> TType -> bool
+
+val tryDestReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
+
+val destReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
+
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
 //------------------------------------------------------------------------- 
@@ -2104,7 +2132,7 @@ val mkMethodTy : TcGlobals -> TType list list -> TType -> TType
 
 val mkAnyAnonRecdTy : TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
 
-val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Exprs -> TType list -> Expr 
+val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr 
 
 val AdjustValForExpectedArity : TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 
@@ -2215,6 +2243,8 @@ val (|EnumExpr|_|) : TcGlobals -> Expr -> Expr option
 val (|TypeOfExpr|_|) : TcGlobals -> Expr -> TType option
 
 val (|TypeDefOfExpr|_|) : TcGlobals -> Expr -> TType option
+val (|NameOfExpr|_|) : TcGlobals -> Expr -> TType option
+val (|SeqExpr|_|) : TcGlobals -> Expr -> unit option
 
 val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 
@@ -2277,3 +2307,4 @@ val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
+val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool

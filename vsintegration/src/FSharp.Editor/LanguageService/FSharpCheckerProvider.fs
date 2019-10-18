@@ -6,13 +6,12 @@ open System
 open System.ComponentModel.Composition
 open System.Diagnostics
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open FSharp.NativeInterop
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 #nowarn "9" // NativePtr.toNativeInt
 
@@ -21,15 +20,14 @@ open FSharp.NativeInterop
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
     (
-        analyzerService: IDiagnosticAnalyzerService,
-        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl,
+        analyzerService: IFSharpDiagnosticAnalyzerService,
+        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
         settings: EditorOptions
     ) =
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
         try
-            let metadataReferenceProvider = workspace.Services.GetService<VisualStudioMetadataReferenceManager>()
-            let md = metadataReferenceProvider.GetMetadata(path, timeStamp)
+            let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
             let amd = (md :?> AssemblyMetadata)
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
@@ -58,8 +56,8 @@ type internal FSharpCheckerProvider
                     projectCacheSize = settings.LanguageServicePerformance.ProjectCheckCacheSize, 
                     keepAllBackgroundResolutions = false,
                     // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
-                    (* , MaxMemory = 2300 *) 
-                    legacyReferenceResolver=FSharp.Compiler.MSBuildReferenceResolver.Resolver,
+                    (* , MaxMemory = 2300 *)
+                    legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.

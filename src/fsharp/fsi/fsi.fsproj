@@ -4,19 +4,18 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net46;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
     <TargetExt>.exe</TargetExt>
-    <AssemblyName>fsi</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags)  --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net46'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <PlatformTarget>x86</PlatformTarget>
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
   </PropertyGroup>
@@ -24,22 +23,22 @@
   <ItemGroup>
     <Compile Include="console.fs" />
     <Compile Include="fsimain.fs" />
-    <None Include="app.config" />
+    <NoneSubstituteText Include="App.config">
+      <Pattern1>{{FSCoreVersion}}</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </NoneSubstituteText>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
 
-    <!-- only used when '$(TargetFramework)' == 'netstandard2.0' -->
-    <ProjectReference Include="..\FSharp.Build\FSharp.Build.fsproj" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-
-    <!-- only used when '$(TargetFramework)' == 'net46' -->
-    <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' == 'net46'" />
+    <!-- only used when '$(TargetFramework)' == 'net472' -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="PresentationCore" />
@@ -48,14 +47,14 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
-    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
-    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalPackageVersion)" />
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
   </ItemGroup>
 
 </Project>

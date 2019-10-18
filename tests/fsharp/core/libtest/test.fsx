@@ -4926,7 +4926,6 @@ type ToStringStruct =
     override this.ToString() = string this.x
   end
 do check "Bug1049.customStruct" (string (ToStringStruct(123))) "123"
-
 type ToStringEnum = 
     | A = 1
     | B = 2
@@ -5120,7 +5119,6 @@ module Check1477 = begin
     val x1      : string
   end
 end
-
 
 (*---------------------------------------------------------------------------
 !* BUG 1561: (-star-star-) opens a comment but does not close it and other XML Doc issues.
@@ -5320,8 +5318,6 @@ end
 
 module TestNoNullElementsInListChainFromInit = begin
 
-
-
  let test n x = 
    printfn "testing %A" n;
    let a = List.init n x in
@@ -5336,10 +5332,7 @@ module TestNoNullElementsInListChainFromInit = begin
 
 end
 
-
 module TestNoNullElementsInListChainFromUnzip = begin
-
-
 
  let test x = 
    printfn "testing %A" x;
@@ -5443,6 +5436,7 @@ module Bug5816 = begin
         abstract View : 'v
     end 
 end
+
 (*---------------------------------------------------------------------------
 !* Bug 5825: Constraints with nested types
  *--------------------------------------------------------------------------- *)
@@ -5501,7 +5495,6 @@ module Bug920236 =
   for i in a do
       result := i::(!result)  
   do test "hfduweyr" (!result = [box 1])
-    
 
 module TripleQuoteStrings = 
 
@@ -5596,6 +5589,7 @@ module Regression_139182 =
 module LittleTestFor823 = 
     let x, y = 1, 2
     let v = Some ((x = y), (x = x))
+
 
 (*---------------------------------------------------------------------------
 !* wrap up

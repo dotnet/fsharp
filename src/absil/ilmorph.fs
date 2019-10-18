@@ -113,7 +113,7 @@ let mref_ty2ty (f: ILType -> ILType) (x:ILMethodRef) =
 
 type formal_scopeCtxt =  Choice<ILMethodSpec, ILFieldSpec>
 
-let mspec_ty2ty (((factualty : ILType -> ILType) , (fformalty: formal_scopeCtxt -> ILType -> ILType))) (x: ILMethodSpec) = 
+let mspec_ty2ty (((factualty : ILType -> ILType), (fformalty: formal_scopeCtxt -> ILType -> ILType))) (x: ILMethodSpec) = 
     mkILMethSpecForMethRefInTy(mref_ty2ty (fformalty (Choice1Of2 x)) x.MethodRef,
                                factualty x.DeclaringType, 
                                tys_ty2ty factualty  x.GenericArgs)

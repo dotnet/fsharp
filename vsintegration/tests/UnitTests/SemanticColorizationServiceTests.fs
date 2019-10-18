@@ -30,10 +30,10 @@ type SemanticClassificationServiceTests() =
     let checker = FSharpChecker.Create()
     let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
-    let getRanges (sourceText: string) : (Range.range * SemanticClassificationType) list =
+    let getRanges (source: string) : (Range.range * SemanticClassificationType) list =
         asyncMaybe {
 
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, sourceText, projectOptions, perfOptions, "")
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(source), projectOptions, perfOptions, "")
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously
@@ -41,7 +41,7 @@ type SemanticClassificationServiceTests() =
         |> List.collect Array.toList
 
     let verifyClassificationAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
-        let text = SourceText.From fileContents
+        let text = SourceText.From(fileContents)
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Range.mkPos (Range.Line.fromZ line.Line) (line.Character + marker.Length - 1)
@@ -50,7 +50,7 @@ type SemanticClassificationServiceTests() =
         | Some(_, ty) -> Assert.AreEqual(classificationType, FSharpClassificationTypes.getClassificationTypeName ty, "Classification data doesn't match for end of marker")
 
     let verifyNoClassificationDataAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
-        let text = SourceText.From fileContents
+        let text = SourceText.From(fileContents)
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Range.mkPos (Range.Line.fromZ line.Line) (line.Character + marker.Length - 1)

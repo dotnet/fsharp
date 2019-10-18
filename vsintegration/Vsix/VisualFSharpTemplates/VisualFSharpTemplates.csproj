@@ -3,25 +3,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>VisualFSharpTemplate</AssemblyName>
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharpTemplates</ExtensionInstallationFolder>
+    <TargetFramework>net472</TargetFramework>
+    <IsShipping>true</IsShipping>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="$(MSBuildThisFileDirectory)\..\..\..\artifacts\packages\$(Configuration)\FSharp.Core.$(FSCorePackageVersion).nupkg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>packages\FSharp.Core.$(FSCorePackageVersion).nupkg</Link>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
     <Content Include="$(NuGetPackageRoot)\System.ValueTuple\4.4.0\System.ValueTuple.4.4.0.nupkg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>packages\System.ValueTuple.4.4.0.nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="$(NuGetPackageRoot)\FSharp.Core\$(FSharpCoreShippedPackageVersion)\FSharp.Core.$(FSharpCoreShippedPackageVersion).nupkg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>packages\FSharp.Core.$(FSharpCoreShippedPackageVersion).nupkg</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- must include a shipped version in the VSIX, not what's currently in source -->
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersion)" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

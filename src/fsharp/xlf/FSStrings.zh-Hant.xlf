@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSStrings.resx">
     <body>
@@ -75,11 +75,6 @@
       <trans-unit id="PossibleOverload">
         <source>Possible overload: '{0}'. {1}.</source>
         <target state="translated">可能的多載: '{0}'。{1}。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\n可能的最佳多載: '{0}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -184,7 +179,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">因為尚未對一些抽象成員提供實作，所以此類型為「抽象」。若故意形成此情況，請將 '[&lt;AbstractClass&gt;]' 屬性新增至您的類型。</target>
+        <target state="translated">因為未提供實作給某些抽象成員，所以此類型為 'abstract'。如果這是預期的情況，則請將 '[&lt;AbstractClass&gt;]' 屬性新增到您的類型。</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1279,7 +1274,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Thread 靜態和 Context 靜態的 'let' 繫結已被取代。請改成在類別中使用 'static val mutable &lt;ident&gt; : &lt;type&gt;' 形式的宣告。將 'DefaultValue' 屬性加入這個宣告以表示會在每個新執行緒時將值初始化成預設值。</target>
+        <target state="translated">靜態執行緒和靜態環境 'let' 繫結已淘汰。請在類別中改用 'static val mutable &lt;ident&gt; : &lt;type&gt;' 形式的宣告。將 'DefaultValue' 屬性新增到此宣告，可指出值會在每個新的執行緒均初始化為預設值。</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1289,7 +1284,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
         <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">這個運算式的結果類型為 '{0}'，已隱含略過。請考慮使用 'ignore' 以明確捨棄此值，例如 'expr |&gt; ignore'，或使用 'let' 將結果繫結至名稱，例如 'let result = expr'。</target>
+        <target state="translated">這個運算式的結果有 '{0}' 類型，會隱含略過。請考慮使用 'ignore' 來明確捨棄這個值，例如 'expr |&gt; ignore'，或使用 'let' 將結果繫結到名稱，例如 'let result = expr'。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
@@ -1299,17 +1294,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">這個等號比較運算式的結果類型為 '{0}'，已隱含捨棄。請考慮使用 'let' 將結果繫結至名稱，例如 'let result = expression'。若您要設定屬性值，請使用 '&lt;-' 運算子，例如 '{1}.{2} &lt;- expression'。</target>
+        <target state="translated">這個等號運算式的結果有 '{0}' 類型，會隱含捨棄。請考慮使用 'let' 將結果繫結到名稱，例如 'let result = expression'。若您想要將值設為屬性，則請使用 '&lt;-' 運算子，例如 '{1}.{2} &lt;- expression'。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">這個等號比較運算式的結果類型為 '{0}'，已隱含捨棄。請考慮使用 'let' 將結果繫結至名稱，例如 'let result = expression'。若您要變動值，請將值標示為「可變動」，並使用 '&lt;-' 運算子，例如 '{1} &lt;- expression'。</target>
+        <target state="translated">這個等號運算式的結果有 '{0}' 類型，會隱含略過。請考慮使用 'let' 將結果繫結到名稱，例如 'let result = expression'。若您想要變更值，請標示 'mutable' 值並使用 '&lt;-' 運算子，例如 '{1} &lt;- expression'。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">這個等號比較運算式的結果類型為 '{0}'，已隱含捨棄。請考慮使用 'let' 將結果繫結至名稱，例如 'let result = expression'。若您要變動值，請使用 '&lt;-' 運算子，例如 '{1} &lt;- expression'。</target>
+        <target state="translated">這個等號運算式的結果有 '{0}' 類型，會隱含捨棄。請考慮使用 'let' 將結果繫結到名稱，例如 'let result = expression'。若您想要變更值，則請使用 '&lt;-' 運算子，例如 '{1} &lt;- expression'。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1344,7 +1339,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">對所定義物件的遞迴參考，將在執行階段透過使用延遲參考來檢查初始化是否正確。請考慮將自我參考放在成員中或 '&lt;ctor-expr&gt; then &lt;expr&gt;' 形式的尾端運算式內。</target>
+        <target state="translated">在執行階段，會透過使用延遲參考來檢查所定義物件的遞迴參考初始設定是否正確。請考慮在成員或 '&lt;ctor-expr&gt; then &lt;expr&gt;' 形式的後置運算式中放置自我參考。</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1619,12 +1614,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.BAR">
         <source>symbol '{|'</source>
-        <target state="new">symbol '{|'</target>
+        <target state="translated">符號 '{|'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
-        <target state="new">symbol '|}'</target>
+        <target state="translated">符號 '|}'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AND.BANG">

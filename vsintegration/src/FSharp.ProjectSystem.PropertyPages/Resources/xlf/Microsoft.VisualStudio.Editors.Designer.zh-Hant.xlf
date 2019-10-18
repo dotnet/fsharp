@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -315,7 +315,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">啟動表單(&amp;O):</target>
+        <target state="translated">起始形式(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -452,7 +452,7 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_Calculate">
         <source>&amp;Calculate Permissions</source>
-        <target state="translated">計算使用權限(&amp;C)</target>
+        <target state="translated">計算權限(&amp;C)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_MgdStatus_Stopped">
@@ -985,7 +985,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">基底位址必須是少於或等於 8 位數的十六進位數字，例如 &amp;H11000000。</target>
+        <target state="translated">基底位址 (Base Address) 必須是少於或等於 8 位數的十六進位數字，例如 &amp;H11000000。</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -2233,7 +2233,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_CategiesLabel">
         <source>&amp;Categories:</source>
-        <target state="translated">分類(&amp;C):</target>
+        <target state="translated">類別(&amp;C):</target>
         <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
       </trans-unit>
       <trans-unit id="RSE_PropDesc_Name">
@@ -2715,7 +2715,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectLabelText">
         <source>Startup &amp;object:</source>
-        <target state="translated">啟始物件(&amp;O):</target>
+        <target state="translated">啟動物件(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">

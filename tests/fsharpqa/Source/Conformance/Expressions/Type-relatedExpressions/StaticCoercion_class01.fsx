@@ -1,6 +1,6 @@
 // #Conformance #TypeRelatedExpressions #TypeAnnotations 
 // Upcast with 1-level class hierarchy
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 type K1() = class

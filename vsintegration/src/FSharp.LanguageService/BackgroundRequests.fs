@@ -12,7 +12,6 @@ open Microsoft.VisualStudio.Text
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 
-
 #nowarn "44" // use of obsolete CheckFileInProjectAllowingStaleCachedResults
 
 //
@@ -95,7 +94,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         lazy // This portion is executed on the language service thread
                             let timestamp = if source=null then System.DateTime(2000,1,1) else source.OpenedTime // source is null in unit tests
                             let checker = getInteractiveChecker()
-                            let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName, sourceText, timestamp, [| |]) |> Async.RunSynchronously
+                            let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName,  FSharp.Compiler.Text.SourceText.ofString sourceText, timestamp, [| |]) |> Async.RunSynchronously
                             let referencedProjectFileNames = [| |]
                             let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, checkOptions)
                             { ProjectSite = projectSite

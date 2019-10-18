@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">déboguer</target>
+        <target state="translated">Déboguer</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="PPG_VdtGeneralTitle">
         <source>Database</source>
-        <target state="translated">Base de données </target>
+        <target state="translated">Base de données</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Security">
@@ -784,12 +784,12 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">Entrez le &amp;mot de passe pour ouvrir le fichier {0}</target>
+        <target state="translated">Entrer un &amp;mot de passe pour ouvrir le fichier {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
         <source>Enter &amp;password for new file {0}</source>
-        <target state="translated">Entrez le &amp;mot de passe du nouveau fichier {0}</target>
+        <target state="translated">Entrer un &amp;mot de passe pour le nouveau fichier {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_ProjectAlreadyContainsFile">
@@ -960,7 +960,7 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceRemoveButton">
         <source>&amp;Remove</source>
-        <target state="translated">Supp&amp;rimer</target>
+        <target state="translated">&amp;Supprimer</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceNoUnusedReferences">
@@ -985,7 +985,7 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">L'adresse de base doit être un nombre hexadécimal contenant au maximum 8 chiffres, par exemple, &amp;H11000000.</target>
+        <target state="translated">L'adresse de base doit être un nombre hexadécimal inférieur ou égal à 8 chiffres, par exemple, &amp;H11000000.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1879,27 +1879,27 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add">
         <source>&amp;Add</source>
-        <target state="translated">&amp;Ajouter</target>
+        <target state="translated">Aj&amp;outer</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Remove">
         <source>&amp;Remove</source>
-        <target state="translated">Supp&amp;rimer</target>
+        <target state="translated">&amp;Supprimer</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views">
         <source>&amp;Views</source>
-        <target state="translated">A&amp;ffichages</target>
+        <target state="translated">&amp;Vues</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_ExistingFile">
         <source>&amp;Existing File...</source>
-        <target state="translated">Fichi&amp;er existant...</target>
+        <target state="translated">Fichier &amp;existant...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_String">
         <source>New &amp;String</source>
-        <target state="translated">Nou&amp;velle chaîne</target>
+        <target state="translated">Nouvelle &amp;chaîne</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image">
@@ -1969,12 +1969,12 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Type_PNG">
         <source>Portable Network Graphics</source>
-        <target state="translated">Portable Network Graphics</target>
+        <target state="translated">Format PNG</target>
         <note>Friendly Image types</note>
       </trans-unit>
       <trans-unit id="RSE_Type_TIFF">
         <source>Tag Image File Format</source>
-        <target state="translated">Tag Image File Format</target>
+        <target state="translated">Format TIF</target>
         <note>Friendly Image types</note>
       </trans-unit>
       <trans-unit id="RSE_Type_Icon">
@@ -2063,7 +2063,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_FilterSave_PNG">
         <source>Portable Network Graphics</source>
-        <target state="translated">Portable Network Graphics</target>
+        <target state="translated">Format PNG</target>
         <note># File dialog filters
 #
 # E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
@@ -2090,7 +2090,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_FilterSave_TIFF">
         <source>Tag Image File Format</source>
-        <target state="translated">Tag Image File Format</target>
+        <target state="translated">Format TIF</target>
         <note># File dialog filters
 #
 # E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
@@ -2108,7 +2108,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_List">
         <source>&amp;List</source>
-        <target state="translated">&amp;Répertorier</target>
+        <target state="translated">&amp;Liste</target>
         <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_Details">
@@ -2512,7 +2512,7 @@ Voulez-vous mettre à jour la valeur dans le fichier .settings ?</target>
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">
         <source>R&amp;emove Setting</source>
-        <target state="translated">Supprim&amp;er un paramètre</target>
+        <target state="translated">S&amp;upprimer le paramètre</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
@@ -2715,7 +2715,7 @@ Voulez-vous mettre à jour la valeur dans le fichier .settings ?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectLabelText">
         <source>Startup &amp;object:</source>
-        <target state="translated">&amp;Objet de démarrage :</target>
+        <target state="translated">&amp;Objet de démarrage :</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
@@ -2840,7 +2840,7 @@ Voulez-vous mettre à jour la valeur dans le fichier .settings ?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
         <source>To enable client application services, you must set the Target Framework for your application to .NET Framework 3.5 or later. In C#, you can do this on the Application property page. In Visual Basic, you can do this one the Compile property page by clicking Advanced Compile Options.</source>
-        <target state="translated">Pour activer les services d'application cliente, vous devez définir le Framework cible pour votre application à .NET Framework 3.5 ou version ultérieure. En C#, vous le faites sur la page de propriétés Application. En Visual Basic, vous le faites sur le page de propriétés Compiler en cliquant sur Options avancées de compilation.</target>
+        <target state="translated">Pour activer les services d'application cliente, vous devez définir le Framework cible pour votre application sur .NET Framework 3.5 ou version ultérieure. En C#, vous le faites sur la page de propriétés Application. En Visual Basic, vous le faites sur le page de propriétés Compiler en cliquant sur Options avancées de compilation.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">

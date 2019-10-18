@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../Strings.resx">
     <body>
@@ -40,6 +40,11 @@
       <trans-unit id="Completion_Lists">
         <source>Completion Lists</source>
         <target state="translated">Listy uzupełniania</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="new">Diagnostics</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -100,6 +105,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">Podkreślenie _ciągłe</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">Najechanie kursorem na tekst</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -164,27 +174,37 @@
       </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
-        <target state="new">Always add new line on enter</target>
+        <target state="translated">Zawsze dodawaj nowy wiersz po naciśnięciu klawisza Enter</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_never">
         <source>Never add new line on enter</source>
-        <target state="new">Never add new line on enter</target>
+        <target state="translated">Nigdy nie dodawaj nowego wiersza po naciśnięciu klawisza Enter</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_only">
         <source>Only add new line on enter after end of fully typed word</source>
-        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <target state="translated">Dodaj nowy wiersz tylko po naciśnięciu klawisza Enter na końcu w pełni wpisanego wyrazu</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_Key_Rule">
         <source>Enter key behavior</source>
-        <target state="new">Enter key behavior</target>
+        <target state="translated">Zachowanie klawisza Enter</target>
         <note />
       </trans-unit>
       <trans-unit id="Format_on_paste">
         <source>Re-format indentation on paste</source>
-        <target state="new">Re-format indentation on paste</target>
+        <target state="translated">Ponownie formatuj wcięcia przy wklejaniu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">Sugeruj nazwy w przypadku nierozpoznanych identyfikatorów</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_out_of_process_language_server">
+        <source>(Preview) Use out of process language server</source>
+        <target state="translated">(Wersja zapoznawcza) Korzystanie z serwera języka poza procesem</target>
         <note />
       </trans-unit>
     </body>

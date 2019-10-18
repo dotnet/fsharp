@@ -8,6 +8,7 @@ if errorlevel 1 (
   exit /b %errorlevel%
 )
 
+powershell -noprofile -executionPolicy RemoteSigned -file "%~dp0\download-paket.ps1"
 .paket\paket.exe restore
 if errorlevel 1 (
   endlocal

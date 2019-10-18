@@ -1,9 +1,0 @@
-use vs
-
-package name=Microsoft.FSharp.Dependencies
-        version=$(FSharpPackageVersion)
-
-vs.dependencies
-  vs.dependency id=Microsoft.FSharp.SDK
-                version=$(FSharpPackageVersion)
-                type=Required

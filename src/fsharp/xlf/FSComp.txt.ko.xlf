@@ -1,7 +1,57 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSComp.resx">
     <body>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="translated">F# {1}용 {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">언어 버전의 허용된 값을 표시하고 '최신' 또는 '미리 보기'와 같은 언어 버전을 지정합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">지원되는 언어 버전:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">전체 목록에 대한 --langversion use --langversion:?의 인식할 수 없는 값 '{0}'입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">멤버 정의의 예기치 않은 기호 '.'입니다. 'with', '=' 또는 기타 토큰이 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsChecksumAlgorithm">
+        <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
+        <target state="translated">PDB에 저장된 소스 파일 체크섬을 계산하기 위한 알고리즘을 지정합니다. 지원되는 값은 SHA1 또는 SHA256(기본값)입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnknownChecksumAlgorithm">
+        <source>Algorithm '{0}' is not supported</source>
+        <target state="translated">{0}' 알고리즘은 지원되지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">'{0}' 네임스페이스가 정의되지 않았습니다.</target>
@@ -84,17 +134,17 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="needs-review-translation">목록 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <target state="translated">목록 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="needs-review-translation">배열 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <target state="translated">배열 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
         <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
-        <target state="needs-review-translation">'if' 식에 'else' 분기가 누락되었습니다. 'then' 분기의 형식은 '{0}'입니다. 'if'는 문이 아니라 식이므로 동일한 형식의 값을 반환하는 'else' 분기를 추가하세요.</target>
+        <target state="translated">'if' 식에 'else' 분기가 누락되었습니다. 'then' 분기의 형식은 '{0}'입니다. 'if'는 문이 아니라 식이므로 동일한 형식의 값을 반환하는 'else' 분기를 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -104,12 +154,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">if' 식의 모든 분기는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <target state="translated">if' 식의 모든 분기는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">패턴 일치 식의 모든 분기는 동일한 형식의 값을 반환해야 합니다. 첫 번째 분기는 '{0}' 형식의 값을 반환했지만, 이 분기는 '{1}' 형식의 값을 반환했습니다.</target>
+        <target state="translated">패턴 일치 식의 모든 분기는 동일한 형식의 값을 반환해야 합니다. 첫 번째 분기는 '{0}' 형식의 값을 반환했지만 이 분기는 '{1}' 형식의 값을 반환했습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -135,6 +185,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">'return'이 아니라 'return!'를 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="useSdkRefs">
+        <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
+        <target state="translated">기본적으로 활성화되는 참조 어셈블리를 .NET Framework 참조에 사용합니다(사용 가능한 경우).</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -212,11 +267,6 @@
         <target state="translated">관리되는 리소스에 대해 인식할 수 없는 개인 정보 보호 설정 '{0}'입니다. 올바른 옵션은 'public' 및 'private'입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">'{0}.dll'에 대한 다중 참조는 허용되지 않습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">'{0}' 어셈블리를 읽을 수 없습니다.</target>
@@ -234,12 +284,12 @@
       </trans-unit>
       <trans-unit id="buildMultiFileRequiresNamespaceOrModule">
         <source>Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration.</source>
-        <target state="translated">라이브러리 또는 다중 파일 응용 프로그램의 파일은 네임스페이스 또는 모듈 선언으로 시작해야 합니다(예: 'namespace SomeNamespace.SubNamespace' 또는 'module SomeNamespace.SomeModule'). 응용 프로그램의 마지막 소스 파일만 선언이 없어도 됩니다.</target>
+        <target state="translated">라이브러리 또는 다중 파일 애플리케이션의 파일은 네임스페이스 또는 모듈 선언으로 시작해야 합니다(예: 'namespace SomeNamespace.SubNamespace' 또는 'module SomeNamespace.SomeModule'). 애플리케이션의 마지막 소스 파일만 선언이 없어도 됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="noEqualSignAfterModule">
         <source>Files in libraries or multiple-file applications must begin with a namespace or module declaration. When using a module declaration at the start of a file the '=' sign is not allowed. If this is a top-level module, consider removing the = to resolve this error.</source>
-        <target state="translated">라이브러리 또는 다중 파일 응용 프로그램의 파일은 네임스페이스 또는 모듈 선언으로 시작해야 합니다. 파일 시작에 모듈 선언을 사용하는 경우 '=' 기호를 사용할 수 없습니다. 최상위 모듈인 경우 =를 제거하여 이 오류를 해결하세요.</target>
+        <target state="translated">라이브러리 또는 다중 파일 애플리케이션의 파일은 네임스페이스 또는 모듈 선언으로 시작해야 합니다. 파일 시작에 모듈 선언을 사용하는 경우 '=' 기호를 사용할 수 없습니다. 최상위 모듈인 경우 =를 제거하여 이 오류를 해결하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildMultipleToplevelModules">
@@ -529,7 +579,7 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAritiesDiffer">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe arities in the signature and implementation differ. The signature specifies that '{3}' is function definition or lambda expression accepting at least {4} argument(s), but the implementation is a computed function value. To declare that a computed function value is a permitted implementation simply parenthesize its type in the signature, e.g.\n\tval {5}: int -&gt; (int -&gt; int)\ninstead of\n\tval {6}: int -&gt; int -&gt; int.</source>
-        <target state="translated">{0}' 모듈에\n    {1}이(가) 포함되어 있지만    \n해당 시그니처는\n    {2}을(를) 지정합니다.    \n시그니처와 구현의 인자 수가 서로 다릅니다. 시그니처는 '{3}'이(가) {4}개 이상의 인수를 적용하는 함수 정의 또는 람다 식임을 지정하지만 구현은 계산된 함수 값입니다. 계산된 함수 값이 허용되는 구현임을 선언하려면 시그니처에서 해당 형식을 괄호로 묶기만 하면 됩니다(예: \n\tval {6}: int -&gt; int -&gt; int\n대신\n\tval {5}: int -&gt; (int -&gt; int)).</target>
+        <target state="translated">'{0}' 모듈에\n {1}이(가) 포함되어 있지만 \n해당 시그니처는\n {2}을(를) 지정합니다. \n시그니처와 구현의 인자 수가 서로 다릅니다. 시그니처는 '{3}'이(가) {4}개 이상의 인수를 적용하는 함수 정의 또는 람다 식임을 지정하지만 구현은 계산된 함수 값입니다. 계산된 함수 값이 허용되는 구현임을 선언하려면 시그니처에서 해당 형식을 괄호로 묶기만 하면 됩니다(예: \n\tval {5}: int -&gt; (int -&gt; int)\ninstead of\n\tval {6}: int -&gt; int -&gt; int).</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityDotNetNamesDiffer">
@@ -619,7 +669,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">구현 형식이 봉인되어 있지만 시그니처는 봉인되어 있지 않음을 암시하므로 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다. 시그니처에 [&lt;Sealed&gt;] 특성을 추가해 보세요.</target>
+        <target state="translated">구현 형식이 봉인되어 있지만 시그니처는 봉인되어 있지 않음을 암시하므로 시그니처 및 구현의 '{1}' 형식 {0} 정의가 호환되지 않습니다. 시그니처에 [&lt;Sealed&gt;] 특성을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
@@ -1039,7 +1089,7 @@
       </trans-unit>
       <trans-unit id="augCustomEqNeedsObjEquals">
         <source>A type with attribute 'CustomEquality' must have an explicit implementation of at least one of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">특성 'CustomEquality'가 지정된 형식에는 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' 또는 'System.Collections.IStructuralEquatable' 중 하나 이상에 대한 명시적 구현이 있어야 합니다.</target>
+        <target state="translated">'CustomEquality' 특성이 지정된 형식에는 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' 또는 'System.Collections.IStructuralEquatable' 중 하나 이상에 대한 명시적 구현이 있어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomCompareNeedsIComp">
@@ -2454,7 +2504,7 @@
       </trans-unit>
       <trans-unit id="tcTypeParametersInferredAreNotStable">
         <source>The type parameters inferred for this value are not stable under the erasure of type abbreviations. This is due to the use of type abbreviations which drop or reorder type parameters, e.g. \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nConsider declaring the type parameters for this value explicitly, e.g.\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</source>
-        <target state="translated">이 값에 대해 유추된 형식 매개 변수는 형식 약어를 지울 경우 불안정적인 상태가 됩니다. 이는 형식 매개 변수를 삭제 또는 다시 정렬하는 형식 약어를 사용했기 때문입니다(예: \n\ttype taggedInt&lt;'a&gt; = int 또는 \n\ttype swap&lt;'a,'b&gt; = 'b * 'a).\n이 값에 대한 형식 매개 변수를 명시적으로 선언하십시오(예: \n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x)).</target>
+        <target state="translated">이 값에 대해 유추된 형식 매개 변수는 형식 약어를 지울 경우 불안정한 상태가 됩니다. 이는 형식 매개 변수를 삭제 또는 다시 정렬하는 형식 약어를 사용했기 때문입니다(예: \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a).\n이 값에 대한 형식 매개 변수를 명시적으로 선언하세요(예: \n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x)).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeParameterInvalid">
@@ -3379,7 +3429,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBinding">
         <source>'use' bindings must be of the form 'use &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">'use' 바인딩의 형식은 'use &lt;var&gt; = &lt;expr&gt;'이어야 합니다.</target>
+        <target state="translated">'use' 바인딩은 'use &lt;var&gt; = &lt;expr&gt;' 형식이어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAbstractMembersIllegalInAugmentation">
@@ -3499,7 +3549,7 @@
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
         <source>A declaration may only be given a value in a signature if the declaration has the [&lt;Literal&gt;] attribute</source>
-        <target state="translated">선언에 [&lt;Literal&gt;] 특성이 있는 경우에만 선언의 시그니처에 값을 지정할 수 있습니다.</target>
+        <target state="translated">[&lt;Literal&gt;] 특성이 있는 경우에만 선언의 시그니처에 값을 지정할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcThreadStaticAndContextStaticMustBeStatic">
@@ -3749,7 +3799,7 @@
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationHasTypeParametersMissingOnType">
         <source>This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C&lt;'a&gt; = C of ...'.</source>
-        <target state="translated">이 형식 약어에는 간략화되는 형식에 나타나지 않는 하나 이상의 선언된 형식 매개 변수가 있습니다. 형식 약어는 간략화되는 형식에 있는 모든 선언된 형식 매개 변수를 사용해야 합니다. 하나 이상의 형식 매개 변수를 제거하거나 내부 형식을 래핑하는 구체적인 형식 정의(예: 'type C&lt;'a&gt; = C of ...')를 사용하세요.</target>
+        <target state="translated">이 형식 약어에는 간략화되는 형식에 나타나지 않는 하나 이상의 선언된 형식 매개 변수가 있습니다. 형식 약어는 간략화되는 형식에 있는 모든 선언된 형식 매개 변수를 사용해야 합니다. 하나 이상의 형식 매개 변수를 제거하거나 내부 형식을 래핑하는 구체적인 형식 정의(예: 'type C&lt;'a&gt; = C of ...'.)를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
@@ -3889,7 +3939,7 @@
       </trans-unit>
       <trans-unit id="tcReservedSyntaxForAugmentation">
         <source>The syntax 'type X with ...' is reserved for augmentations. Types whose representations are hidden but which have members are now declared in signatures using 'type X = ...'. You may also need to add the '[&lt;Sealed&gt;] attribute to the type definition in the signature</source>
-        <target state="translated">'type X with ...' 구문은 확대를 위해 예약되었습니다. 표현이 숨겨져 있지만 멤버를 가지고 있는 형식은 이제 'type X = ...'를 사용하여 시그니처에 선언됩니다. 시그니처에 있는 형식 정의에 '[&lt;Sealed&gt;] 특성을 추가해야 할 수도 있습니다.</target>
+        <target state="translated">구문은 확대를 위해 예약되었습니다. 표현이 숨겨져 있지만 멤버를 가지고 있는 형식은 이제 'type X = ...'를 사용하여 시그니처에 선언됩니다. 시그니처에 있는 형식 정의에 '[&lt;Sealed&gt;] 특성을 추가해야 할 수도 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMembersThatExtendInterfaceMustBePlacedInSeparateModule">
@@ -4199,7 +4249,7 @@
       </trans-unit>
       <trans-unit id="optsLinkresource">
         <source>Link the specified resource to this assembly where the resinfo format is &lt;file&gt;[,&lt;string name&gt;[,public|private]]</source>
-        <target state="translated">resinfo 형식이 &lt;file&gt;[,&lt;string name&gt;[,public|private]]인 경우 지정한 리소스를 이 어셈블리에 링크합니다.</target>
+        <target state="translated">resinfo 형식이 &lt;file&gt;[,&lt;string name&gt;[,public|private]]인 경우 지정한 리소스를 이 어셈블리에 연결합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
@@ -4614,7 +4664,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">{0}' 이벤트에 비표준 형식이 있습니다. 이 이벤트가 다른 CLI 언어로 선언된 경우 이벤트에 대한 명시적 {1} 및 {2} 메서드를 사용하여 이 이벤트에 액세스해야 할 수 있습니다. 이 이벤트가 F#으로 선언된 경우에는 이벤트의 형식을 'IDelegateEvent&lt;_&gt;' 또는 'IEvent&lt;_,_&gt;'의 인스턴스로 만드세요.</target>
+        <target state="translated">'{0}' 이벤트에 비표준 형식이 있습니다. 이 이벤트가 다른 CLI 언어로 선언된 경우 이벤트에 대한 명시적 {1} 및 {2} 메서드를 사용하여 이 이벤트에 액세스해야 할 수 있습니다. 이 이벤트가 F#으로 선언된 경우에는 이벤트의 형식을 'IDelegateEvent&lt;_&gt;' 또는 'IEvent&lt;_,_&gt;'의 인스턴스로 만드세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -5119,12 +5169,12 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
         <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="needs-review-translation">형식 매개 변수는 형식 이름 바로 옆에 배치해야 합니다(예: type \"C   &lt;'T&gt;\"가 아니라 \"type C&lt;'T&gt;\").</target>
+        <target state="translated">형식 이름과 형식 매개 변수 사이의 공백을 제거하세요(예: type \"C   &lt;'T&gt;\"가 아니라 \"type C&lt;'T&gt;\"). 형식 매개 변수는 형식 이름 바로 옆에 배치해야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="needs-review-translation">형식 인수는 형식 이름 바로 옆에 배치해야 합니다(예: \"C  &lt;'T&gt;\"가 아니라 \"C&lt;'T&gt;\").</target>
+        <target state="translated">형식 이름과 형식 매개 변수 사이의 공백을 제거하세요(예: \"C &lt;'T&gt;\"가 아니라 \"C&lt;'T&gt;\"). 형식 매개 변수는 형식 이름 바로 옆에 배치해야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -5272,11 +5322,6 @@
         <target state="translated">DLLImport 바인딩은 모듈의 클래스 또는 함수 정의에서 정적 멤버여야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">mscorlib.dll 또는 FSharp.Core.dll이 명시적으로 참조될 경우 {0} 옵션도 전달해야 합니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">FSharp.Core에서 FSharp.Core.sigdata를 찾을 수 없습니다. 파일이 {0}에 있어야 합니다. 이 파일이 더 이상 필요하지 않은 최신 버전의 FSharp.Core로의 업그레이드를 고려해 보세요.</target>
@@ -5329,7 +5374,7 @@
       </trans-unit>
       <trans-unit id="parsMissingGreaterThan">
         <source>Unmatched '&lt;'. Expected closing '&gt;'</source>
-        <target state="translated">'&lt;'가 일치하지 않습니다. 닫는 '&gt;'가 필요합니다.</target>
+        <target state="translated">'&lt;'의 짝이 맞지 않습니다. 닫는 '&gt;'가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
@@ -5524,7 +5569,7 @@
       </trans-unit>
       <trans-unit id="fscResxSourceFileDeprecated">
         <source>Passing a .resx file ({0}) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an &lt;EmbeddedResource&gt; item in the .fsproj project file.</source>
-        <target state="translated">더 이상 .resx 파일({0})이 컴파일러에 소스 파일로 사용되지 않습니다. resgen.exe를 사용하여 .resx 파일을 .resources 파일로 변환해 --resource 옵션으로 전달하세요. MSBuild를 사용하는 경우 .fsproj 프로젝트 파일의 &lt;EmbeddedResource&gt; 항목을 통해 이 작업을 수행할 수 있습니다.</target>
+        <target state="translated">더 이상 .resx 파일({0})이 컴파일러에 소스 파일로 전달되지 않습니다. resgen.exe를 사용하여 .resx 파일을 .resources 파일로 변환해 --resource 옵션으로 전달하세요. MSBuild를 사용하는 경우 .fsproj 프로젝트 파일의 &lt;EmbeddedResource&gt; 항목을 통해 이 작업을 수행할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">
@@ -5538,7 +5583,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Determinstic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
+        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
         <target state="translated">결정적 빌드는 이식 가능한 PDB만 지원합니다(--debug:portable 또는 --debug:embedded).</target>
         <note />
       </trans-unit>
@@ -5689,7 +5734,7 @@
       </trans-unit>
       <trans-unit id="etDirectReferenceToGeneratedTypeNotAllowed">
         <source>A direct reference to the generated type '{0}' is not permitted. Instead, use a type definition, e.g. 'type TypeAlias = &lt;path&gt;'. This indicates that a type provider adds generated types to your assembly.</source>
-        <target state="translated">생성된 형식 '{0}'을(를) 직접 참조할 수는 없습니다. 형식 정의를 사용하십시오(예: 'type TypeAlias = &lt;path&gt;'). 이 정의는 형식 공급자가 생성된 형식을 어셈블리에 추가함을 나타냅니다.</target>
+        <target state="translated">생성된 형식 '{0}'을(를) 직접 참조할 수는 없습니다. 대신 형식 정의를 사용하세요(예: 'type TypeAlias = &lt;path&gt;'). 이 정의는 형식 공급자가 생성된 형식을 어셈블리에 추가함을 나타냅니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProvidedTypeHasUnexpectedPath">
@@ -5909,7 +5954,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeJoin">
         <source>{0} var in collection {1} (outerKey = innerKey). Note that parentheses are required after '{2}'</source>
-        <target state="translated">{0} var in collection {1} (outerKey = innerKey). '{2}' 다음에 괄호가 필요합니다.</target>
+        <target state="translated">{0} var in collection {1} (outerKey = innerKey). '{2}' 뒤에 괄호가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="customOperationTextLikeGroupJoin">
@@ -5989,7 +6034,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElse">
         <source>Unexpected end of input in 'else' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">조건식의 'else' 분기에 예기치 않은 입력의 끝이 있습니다. 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'이 필요합니다.</target>
+        <target state="translated">조건식의 'else' 분기에 예기치 않은 입력의 끝이 있습니다. 'if &lt;expr&gt; then &lt;expr&gt;' 또는 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'이 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFunBody">
@@ -6129,7 +6174,7 @@
       </trans-unit>
       <trans-unit id="chkNoByrefsOfByrefs">
         <source>Type '{0}' is illegal because in byref&lt;T&gt;, T cannot contain byref types.</source>
-        <target state="translated">byref&lt;T&gt;에서 T는 byref 형식을 포함할 수 없으므로 '{0}' 형식은 잘못되었습니다.</target>
+        <target state="translated">'{0}' 형식은 byref&lt;T&gt;에서 안에 있을 수 없습니다. T는 byref 형식을 포함할 수 없기 때문입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastopsMaxArrayThirtyTwo">
@@ -6324,7 +6369,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
         <source>The union case '{0}' does not have a field named '{1}'.</source>
-        <target state="needs-review-translation">공용 구조체 케이스/예외 '{0}'에 이름이 '{1}'인 필드가 없습니다.</target>
+        <target state="translated">공용 구조체 케이스 '{0}'에 '{1}' 필드가 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6464,7 +6509,7 @@
       </trans-unit>
       <trans-unit id="considerUpcastOperator">
         <source>The conversion from {0} to {1} is a compile-time safe upcast, not a downcast. Consider using the :&gt; (upcast) operator instead of the :?&gt; (downcast) operator.</source>
-        <target state="translated">{0}에서 {1}(으)로의 변환은 컴파일 시간에 안전한 업캐스트이며 다운캐스트가 아닙니다. :?&gt;(다운캐스트) 연산자가 아닌 :&gt;(업캐스트) 연산자를 사용하세요.</target>
+        <target state="translated">{0}에서 {1}(으)로의 변환은 컴파일 시간에 안전한 업캐스트이며 다운캐스트가 아닙니다. :?&gt; (다운캐스트) 연산자가 아닌 :?&gt; (업캐스트) 연산자를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRecImplied">
@@ -6704,7 +6749,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
         <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
-        <target state="review-required-translation">비동기 워크플로에 사용되어 비동기 계산 결과에 이름을 바인딩하거나, 기타 계산 식에서 계산 형식인 결과에 이름을 바인딩하는 데 사용됩니다.</target>
+        <target state="translated">계산 식에 사용되어 다른 계산 식 결과에 이름을 바인딩합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6784,12 +6829,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
         <source>Used to provide a value for the result of the containing computation expression.</source>
-        <target state="review-required-translation">계산 식의 결과로 제공하는 값을 나타내는 데 사용됩니다.</target>
+        <target state="translated">포함하는 계산 식의 결과에 대한 값을 제공하는 데 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
         <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
-        <target state="review-required-translation">계산할 때, 포함하는 계산 식의 결과를 제공하는 계산 식을 나타내는 데 사용됩니다.</target>
+        <target state="translated">포함하는 계산 식의 결과에 대한 값을 제공하는 데 사용되지만, 값 자체는 다른 계산 식의 결과에서 가져온 것입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6834,12 +6879,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 let 대신 사용됩니다.</target>
+        <target state="translated">IDisposable을 구현하는 값에 let 대신 사용되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
         <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
-        <target state="review-required-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 기타 계산 식 및 비동기 워크플로에서 let! 대신 사용됩니다.</target>
+        <target state="translated">IDisposable을 구현하는 계산 식 결과를 위해 계산 식에서 let! 대신 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -7054,82 +7099,127 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedBraceBar">
         <source>Unmatched '{{|'</source>
-        <target state="new">Unmatched '{{|'</target>
+        <target state="translated">'{{|'의 짝이 맞지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoAnonRecdField">
         <source>anonymous record field</source>
-        <target state="new">anonymous record field</target>
+        <target state="translated">무명 레코드 필드</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
         <source>The exception '{0}' does not have a field named '{1}'.</source>
-        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <target state="translated">'{0}' 예외에 '{1}'(이)라는 필드가 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternsDoNotHaveFields">
         <source>Active patterns do not have fields. This syntax is invalid.</source>
-        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+        <target state="translated">활성 패턴에 필드가 없습니다. 이 구문은 유효하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
         <source>The constructor does not have a field named '{0}'.</source>
-        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <target state="translated">생성자에 '{0}'(이)라는 필드가 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdCcuMismatch">
         <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <target state="translated">두 무명 레코드 형식은 서로 다른 어셈블리 '{0}' 및 '{1}'에서 가져왔습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <target state="translated">두 무명 레코드 형식의 필드 이름 '{0}' 및 '{1}' 집합이 일치하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <target state="translated">byref 확장 메서드 '{0}'을(를) 호출할 수 없습니다. 첫 번째 매개 변수는 변경할 수 있거나 읽기 전용이 아닌 byref 형식인 값이 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
         <source>Byref types are not allowed to have optional type extensions.</source>
-        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <target state="translated">byref 형식에는 선택적 형식 확장을 사용할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
         <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
-        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <target state="translated">첫 번째 매개 변수가 byref 형식이므로 '{0}' 확장 메서드를 부분적으로 적용할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotInheritAttribute">
         <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
-        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <target state="translated">이 형식을 특성을 상속하지 않으므로 다른 .NET 언어에서 올바로 작동하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdExpr">
         <source>Invalid anonymous record expression</source>
-        <target state="new">Invalid anonymous record expression</target>
+        <target state="translated">잘못된 무명 레코드 식</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdType">
         <source>Invalid anonymous record type</source>
-        <target state="new">Invalid anonymous record type</target>
+        <target state="translated">잘못된 무명 레코드 형식</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateNeedsRecordType">
         <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
-        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+        <target state="translated">무명 레코드를 만드는 복사 및 업데이트 식의 입력은 무명 레코드이거나 레코드여야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionParameterType">
         <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">'{0}' 매개 변수에 잘못된 형식 '{1}'이(가) 있습니다. 이 형식은 공통 IL의 규칙에서 허용하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionReturnType">
         <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">함수 또는 메서드에 잘못된 반환 형식 '{0}'이(가) 있습니다. 이는 공통 IL의 규칙에서 허용하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveral">
+        <source>No implementation was given for those members: {0}</source>
+        <target state="translated">멤버 {0}에 지정된 구현이 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
+        <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
+        <target state="translated">멤버 {0}에 지정된 구현이 없습니다. 모든 인터페이스 멤버가 구현되어 적절한 'interface' 선언에 나열되어야 합니다(예: 'interface ... with member ...').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
+        <source>No implementation was given for those members (some results omitted): {0}</source>
+        <target state="translated">멤버 {0}에 지정된 구현이 없습니다(일부 결과는 생략됨).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
+        <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
+        <target state="translated">멤버 {0}에 지정된 구현이 없습니다(일부 결과는 생략됨). 모든 인터페이스 멤버가 구현되어 적절한 'interface' 선언에 나열되어야 합니다(예: 'interface ... with member ...').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">식에 이름이 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">'nameof' 연산자는 첫 번째 클래스 함수 값으로 사용할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsPathMap">
+        <source>Maps physical paths to source path names output by the compiler</source>
+        <target state="translated">컴파일러에서 실제 경로를 소스 경로 이름 출력에 매핑합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
+        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
+        <target state="translated">--pathmap은 이식 가능한 PDB에만 사용할 수 있습니다(--debug:portable 또는 --debug:embedded).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidPathMapFormat">
+        <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
+        <target state="translated">잘못된 경로 맵입니다. 매핑은 쉼표로 구분되어야 하며 'path=sourcePath' 형식이어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn">

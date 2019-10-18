@@ -125,3 +125,16 @@ namespace FSharpFuncTests
         public static Func<int, string, byte, sbyte, Int16, int> f5 = new Func<int, string, byte, sbyte, Int16, int>((int arg1, string arg2, byte arg3, sbyte arg4, Int16 arg5) => arg1 + arg2.Length + 1 + arg3 + arg4 + arg5);
     }
 }
+
+namespace StructTests
+{
+    public struct NonReadOnlyStruct
+    {
+        public int X { get; set; }
+
+        public void M(int x)
+        {
+            X = x;
+        }
+    }
+}

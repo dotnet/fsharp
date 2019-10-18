@@ -21,41 +21,45 @@ type ITaskItem =
     abstract member CopyMetadataTo : ITaskItem -> unit
     abstract member CloneCustomMetadata : IDictionary
 
-namespace Microsoft.Build.Utilities
-open Microsoft.Build.Framework
-open Microsoft.FSharp.Core.ReflectionAdapters
-open System
-open System.Collections
-open System.Reflection
+module Utilities =
+    open Microsoft.Build.Framework
+    open System
+    open System.Collections
+    open System.Reflection
 
-type TaskItem (itemSpec:string) =
-    let assembly = Assembly.Load(new AssemblyName("Microsoft.Build.Utilities.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"))
-    let buildUtilitiesTaskType = assembly.GetType("Microsoft.Build.Utilities.Task")
-    let instance = Activator.CreateInstance(buildUtilitiesTaskType, [|itemSpec|])
+    type System.Object with
+        member this.GetPropertyValue(propName) = this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
+        member this.SetPropertyValue(propName, propValue) = this.GetType().GetProperty(propName, BindingFlags.Public).SetValue(this, propValue, null)
+        member this.GetMethod(methodName, argTypes) = this.GetType().GetMethod(methodName, argTypes, [||])
 
-    interface ITaskItem with
-        member this.ItemSpec
-            with get () :string = (instance.GetPropertyValue("ItemSpec") :?> string)
-            and set (value:string) =  (instance.SetPropertyValue("ItemSpec", value)); ()
-        member this.MetadataNames
-            with get () :ICollection = (instance.GetPropertyValue("MetadataNames") :?> ICollection)
-        member this.MetadataCount
-            with get () :int = (instance.GetPropertyValue("MetadataCount") :?> int)
-        member this.CopyMetadataTo(iTaskItem) =
-            let m = buildUtilitiesTaskType.GetMethod("CopyMetadataTo", [| typeof<ITaskItem> |])
-            m.Invoke(instance, [|iTaskItem :>obj|]) |> ignore
-        member this.CloneCustomMetadata =
-            let m = buildUtilitiesTaskType.GetMethod("CloneCustomMetadata", [||])
-            (m.Invoke(instance,[||])) :?>IDictionary
-        member this.GetMetadata(metadataName) =
-            let m = buildUtilitiesTaskType.GetMethod("GetMetadata", [|typeof<string>|])
-            (m.Invoke(instance,[|metadataName|])) :?>string
-        member this.RemoveMetadata(metadataName) =
-            let m = buildUtilitiesTaskType.GetMethod("RemoveMetadata", [|typeof<string>|])
-            (m.Invoke(instance,[|metadataName|])) :?>string |>ignore
-        member this.SetMetadata(metadataName, metadataValue) =
-            let m = buildUtilitiesTaskType.GetMethod("SetMetadata", [|typeof<string>;typeof<string>|])
-            (m.Invoke(instance,[|metadataName; metadataValue|])) |>ignore
+    type TaskItem (itemSpec:string) =
+        let assembly = Assembly.Load(new AssemblyName("Microsoft.Build.Utilities.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"))
+        let buildUtilitiesTaskType = assembly.GetType("Microsoft.Build.Utilities.Task")
+        let instance = Activator.CreateInstance(buildUtilitiesTaskType, [|itemSpec|])
+
+        interface ITaskItem with
+            member this.ItemSpec
+                with get () :string = (instance.GetPropertyValue("ItemSpec") :?> string)
+                and set (value:string) =  (instance.SetPropertyValue("ItemSpec", value)); ()
+            member this.MetadataNames
+                with get () :ICollection = (instance.GetPropertyValue("MetadataNames") :?> ICollection)
+            member this.MetadataCount
+                with get () :int = (instance.GetPropertyValue("MetadataCount") :?> int)
+            member this.CopyMetadataTo(iTaskItem) =
+                let m = buildUtilitiesTaskType.GetMethod("CopyMetadataTo", [| typeof<ITaskItem> |])
+                m.Invoke(instance, [|iTaskItem :>obj|]) |> ignore
+            member this.CloneCustomMetadata =
+                let m = buildUtilitiesTaskType.GetMethod("CloneCustomMetadata", [||])
+                (m.Invoke(instance,[||])) :?>IDictionary
+            member this.GetMetadata(metadataName) =
+                let m = buildUtilitiesTaskType.GetMethod("GetMetadata", [|typeof<string>|])
+                (m.Invoke(instance,[|metadataName|])) :?>string
+            member this.RemoveMetadata(metadataName) =
+                let m = buildUtilitiesTaskType.GetMethod("RemoveMetadata", [|typeof<string>|])
+                (m.Invoke(instance,[|metadataName|])) :?>string |>ignore
+            member this.SetMetadata(metadataName, metadataValue) =
+                let m = buildUtilitiesTaskType.GetMethod("SetMetadata", [|typeof<string>;typeof<string>|])
+                (m.Invoke(instance,[|metadataName; metadataValue|])) |>ignore
 
 namespace FSharp.Compiler
 open System
@@ -66,13 +70,13 @@ open System.Linq
 open System.Runtime.Versioning
 open FSComp
 open Microsoft.Win32
+open Microsoft.Build.Framework.Utilities
 
 module internal MsBuildAdapters = 
 
-    open Microsoft.FSharp.Core.ReflectionAdapters
-
     /// <summary>
-    /// Used to specify the targeted version of the .NET Framework for some methods of ToolLocationHelper.
+    /// Used to specify the targeted version of the .NET Framework for some methods of ToolLocationHelper.  This is meant to mimic
+    /// the official version here: https://source.dot.net/#q=TargetDotNetFrameworkVersion.
     /// </summary>
     type public TargetDotNetFrameworkVersion =
     | Version11 = 0
@@ -89,7 +93,7 @@ module internal MsBuildAdapters =
     | Version47 = 11
     | Version471 = 12
     | Version472 = 13
-    | VersionLatest = 8  //TargetDotNetFrameworkVersion.Version461
+    | VersionLatest = 13  //TargetDotNetFrameworkVersion.Version472
 
     /// <summary>
     /// Used to specify the targeted bitness of the .NET Framework for some methods of ToolLocationHelper
@@ -101,7 +105,6 @@ module internal MsBuildAdapters =
 
 module internal ToolLocationHelper =
     open Microsoft.Build.Framework
-    open Microsoft.FSharp.Core.ReflectionAdapters
     open System.Linq
     open System.Reflection
     open MsBuildAdapters
@@ -118,7 +121,11 @@ module internal ToolLocationHelper =
     let dotNetFrameworkVersion451 = Version(4, 5, 1)
     let dotNetFrameworkVersion452 = Version(4, 5, 2)
     let dotNetFrameworkVersion46  = Version(4, 6)
-    let dotNetFrameworkVersion461  = Version(4, 6, 1)
+    let dotNetFrameworkVersion461 = Version(4, 6, 1)
+    let dotNetFrameworkVersion462 = Version(4, 6, 2)
+    let dotNetFrameworkVersion47  = Version(4, 7)
+    let dotNetFrameworkVersion471 = Version(4, 7, 1)
+    let dotNetFrameworkVersion472 = Version(4, 7, 2)
 
     // visual studio versions.
     let visualStudioVersion100 = new Version(10, 0);
@@ -210,6 +217,10 @@ module internal ToolLocationHelper =
         | TargetDotNetFrameworkVersion.Version452 -> dotNetFrameworkVersion452
         | TargetDotNetFrameworkVersion.Version46 -> dotNetFrameworkVersion46
         | TargetDotNetFrameworkVersion.Version461 -> dotNetFrameworkVersion461
+        | TargetDotNetFrameworkVersion.Version462 -> dotNetFrameworkVersion462
+        | TargetDotNetFrameworkVersion.Version47 -> dotNetFrameworkVersion47
+        | TargetDotNetFrameworkVersion.Version471 -> dotNetFrameworkVersion471
+        | TargetDotNetFrameworkVersion.Version472 -> dotNetFrameworkVersion472
         | _ -> raise (getArgumentException version)
 
     let complusInstallRoot = Environment.GetEnvironmentVariable("COMPLUS_INSTALLROOT")
@@ -360,7 +371,7 @@ module internal ToolLocationHelper =
         // Doesn't need to be virtual @@@@@
         abstract member GetPathToDotNetFramework: DotNetFrameworkArchitecture -> string
         default this.GetPathToDotNetFramework arch =
-            match this.pathsToDotNetFramework.TryGetValue(arch) with
+            match this.pathsToDotNetFramework.TryGetValue arch with
             | true, x -> x
             | _ ->
                 if not (CheckForFrameworkInstallation this.dotNetFrameworkRegistryKey this.dotNetFrameworkSetupRegistryInstalledName) then null
@@ -749,11 +760,15 @@ module internal ToolLocationHelper =
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion452 visualStudioVersion150     // v4.5.2
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion140     // v4.6
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion461 visualStudioVersion150     // v4.6.1
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion462 visualStudioVersion150     // v4.6.2
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion47  visualStudioVersion150     // v4.7
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion471 visualStudioVersion150     // v4.7.1
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion472 visualStudioVersion150     // v4.7.2
         |]
         array.ToDictionary<DotNetFrameworkSpec, Version>(fun spec -> spec.Version)
 
     let getDotNetFrameworkSpec version =
-        match dotNetFrameworkSpecDict.TryGetValue(version) with
+        match dotNetFrameworkSpecDict.TryGetValue version with
         | true, x -> x
         | _ -> raise (getArgumentException version)
 

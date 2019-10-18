@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../VSPackage.resx">
     <body>
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 pour F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Microsoft Visual F# Tools 10.4 pour F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 pour F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Microsoft Visual F# Tools 10.4 pour F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Visual F# Tools 10.2 pour F# 4.5</target>
+        <source>Visual F# Tools 10.4 for F# 4.6</source>
+        <target state="translated">Visual F# Tools 10.4 pour F# 4.6</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

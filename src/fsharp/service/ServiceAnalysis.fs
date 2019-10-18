@@ -99,17 +99,27 @@ module UnusedOpens =
              | :? FSharpMemberOrFunctionOrValue as fv when fv.IsExtensionMember -> 
                 // Extension members should be taken into account even though they have a prefix (as they do most of the time)
                 true
+
              | :? FSharpMemberOrFunctionOrValue as fv when not fv.IsModuleValueOrMember -> 
                 // Local values can be ignored
                 false
+
              | :? FSharpMemberOrFunctionOrValue when su.IsFromDefinition -> 
                 // Value definitions should be ignored
                 false
+
              | :? FSharpGenericParameter -> 
                 // Generic parameters can be ignored, they never come into scope via 'open'
                 false
+
              | :? FSharpUnionCase when su.IsFromDefinition -> 
                 false
+
+             | :? FSharpField as field when
+                     field.DeclaringEntity.IsSome && field.DeclaringEntity.Value.IsFSharpRecord ->
+                // Record fields are used in name resolution
+                true
+
              | _ ->
                 // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
                 // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because

@@ -3,7 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
     <OutputType>Library</OutputType>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
@@ -12,9 +13,11 @@
     <PreRelease>true</PreRelease>
 
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>xunit</UnitTestType>
+    <UnitTestType>nunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
     <IsPackable>true</IsPackable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseUrl></PackageLicenseUrl>
 
     <!-- must be false so FsCheck can be loaded -->
     <SignAssembly>false</SignAssembly>
@@ -29,6 +32,7 @@
   <ItemGroup>
     <Compile Include="NUnitFrameworkShims.fs" />
     <Compile Include="LibraryTestFx.fs" />
+
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
@@ -77,8 +81,9 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
     <Compile Include="StructTuples.fs" />
-    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp')) and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
-    <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4')) and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
+
+    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp'))" />
+    <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
 
   <ItemGroup>
@@ -87,23 +92,17 @@
 
   <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' == 'true'">
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <PackageReference Include="FsCheck" Version="$(FsCheckPackageVersion)" />
+    <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' != 'true'">
-    <PackageReference Include="FSharp.Core" Version="4.6.0" />
-    <PackageReference Include="FsCheck" Version="3.0.0-alpha4" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" PrivateAssets="All" />
-  </ItemGroup>
+   <PackageReference Include="FSharp.Core" Version="4.6.0" />
+   <PackageReference Include="FsCheck" Version="3.0.0-alpha4" />
+ </ItemGroup>
 
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
     <PackageReference Include="xunit" Version="2.4.1"  PrivateAssets="All" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1"  PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(UnitTestType)' != 'xunit'">
-    <PackageReference Include="nunit" Version="3.11.0" PrivateAssets="All" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.11.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

@@ -5,9 +5,8 @@
     <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
-    <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
+    <DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
   </PropertyGroup>
 
   <ItemGroup>

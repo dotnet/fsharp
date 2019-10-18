@@ -2,7 +2,7 @@
 // Regression test for FSharp1.0#1076
 // Usage of >> and .
 // No spaces between >> and .
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light
 

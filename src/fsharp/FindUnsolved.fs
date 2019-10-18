@@ -21,6 +21,8 @@ type cenv =
       denv: DisplayEnv 
       mutable unsolved: Typars }
 
+    override x.ToString() = "<cenv>"
+
 /// Walk types, collecting type variables
 let accTy cenv _env ty =
     let normalizedTy = tryNormalizeMeasureInType cenv.g ty
@@ -35,24 +37,24 @@ let accTypeInst cenv env tyargs =
 let rec accExpr   (cenv:cenv) (env:env) expr =     
     let expr = stripExpr expr 
     match expr with
-    | Expr.Sequential (e1,e2,_,_,_) -> 
+    | Expr.Sequential (e1, e2, _, _, _) -> 
         accExpr cenv env e1 
         accExpr cenv env e2
 
-    | Expr.Let (bind,body,_,_) ->  
+    | Expr.Let (bind, body, _, _) ->  
         accBind cenv env bind  
         accExpr cenv env body
 
-    | Expr.Const (_,_,ty) -> 
+    | Expr.Const (_, _, ty) -> 
         accTy cenv env ty 
     
-    | Expr.Val (_v,_vFlags,_m) -> ()
+    | Expr.Val (_v, _vFlags, _m) -> ()
 
-    | Expr.Quote(ast,_,_,_m,ty) -> 
+    | Expr.Quote (ast, _, _, _m, ty) -> 
         accExpr cenv env ast
         accTy cenv env ty
 
-    | Expr.Obj (_,ty,basev,basecall,overrides,iimpls,_m) -> 
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _m) -> 
         accTy cenv env ty
         accExpr cenv env basecall
         accMethods cenv env basev overrides 
@@ -65,43 +67,43 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
         // tailcall
         accExpr cenv env argLast
 
-    | Expr.Op (c,tyargs,args,m) ->
-        accOp cenv env (c,tyargs,args,m) 
+    | Expr.Op (c, tyargs, args, m) ->
+        accOp cenv env (c, tyargs, args, m) 
 
-    | Expr.App(f,fty,tyargs,argsl,_m) ->
+    | Expr.App (f, fty, tyargs, argsl, _m) ->
         accTy cenv env fty
         accTypeInst cenv env tyargs
         accExpr cenv env f
         accExprs cenv env argsl
 
-    | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_body,m,rty) -> 
-        let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
+    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, rty) -> 
+        let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy m argvs rty 
         accLambdas cenv env topValInfo expr ty
 
-    | Expr.TyLambda(_,tps,_body,_m,rty)  -> 
-        let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 
+    | Expr.TyLambda (_, tps, _body, _m, rty)  -> 
+        let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
         accTy cenv env rty
         let ty = mkForallTyIfNeeded tps rty 
         accLambdas cenv env topValInfo expr ty
 
-    | Expr.TyChoose(_tps,e1,_m)  -> 
+    | Expr.TyChoose (_tps, e1, _m)  -> 
         accExpr cenv env e1 
 
-    | Expr.Match(_,_exprm,dtree,targets,m,ty) -> 
+    | Expr.Match (_, _exprm, dtree, targets, m, ty) -> 
         accTy cenv env ty
         accDTree cenv env dtree
         accTargets cenv env m ty targets
 
-    | Expr.LetRec (binds,e,_m,_) ->  
+    | Expr.LetRec (binds, e, _m, _) ->  
         accBinds cenv env binds
         accExpr cenv env e
 
-    | Expr.StaticOptimization (constraints,e2,e3,_m) -> 
+    | Expr.StaticOptimization (constraints, e2, e3, _m) -> 
         accExpr cenv env e2
         accExpr cenv env e3
         constraints |> List.iter (function 
-            | TTyconEqualsTycon(ty1,ty2) -> 
+            | TTyconEqualsTycon(ty1, ty2) -> 
                 accTy cenv env ty1
                 accTy cenv env ty2
             | TTyconIsStruct(ty1) -> 
@@ -112,42 +114,42 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
 and accMethods cenv env baseValOpt l = 
     List.iter (accMethod cenv env baseValOpt) l
 
-and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig,_attribs,_tps,vs,e,_m)) = 
+and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig, _attribs, _tps, vs, e, _m)) = 
     vs |> List.iterSquared (accVal cenv env)
     accExpr cenv env e
 
 and accIntfImpls cenv env baseValOpt l = 
     List.iter (accIntfImpl cenv env baseValOpt) l
 
-and accIntfImpl cenv env baseValOpt (ty,overrides) = 
+and accIntfImpl cenv env baseValOpt (ty, overrides) = 
     accTy cenv env ty
     accMethods cenv env baseValOpt overrides 
 
-and accOp cenv env (op,tyargs,args,_m) =
+and accOp cenv env (op, tyargs, args, _m) =
     // Special cases 
     accTypeInst cenv env tyargs
     accExprs cenv env args
     match op with 
     // Handle these as special cases since mutables are allowed inside their bodies 
-    | TOp.ILCall (_,_,_,_,_,_,_,_,enclTypeArgs,methTypeArgs,tys) ->
+    | TOp.ILCall (_, _, _, _, _, _, _, _, enclTypeArgs, methTypeArgs, tys) ->
         accTypeInst cenv env enclTypeArgs
         accTypeInst cenv env methTypeArgs
         accTypeInst cenv env tys
-    | TOp.TraitCall(TTrait(tys,_nm,_,argtys,rty,_sln)) -> 
+    | TOp.TraitCall (TTrait(tys, _nm, _, argtys, rty, _sln)) -> 
         argtys |> accTypeInst cenv env 
         rty |> Option.iter (accTy cenv env)
         tys |> List.iter (accTy cenv env)
         
-    | TOp.ILAsm (_,tys) ->
+    | TOp.ILAsm (_, tys) ->
         accTypeInst cenv env tys
     | _ ->    ()
 
 and accLambdas cenv env topValInfo e ety =
     match e with
-    | Expr.TyChoose(_tps,e1,_m)  -> accLambdas cenv env topValInfo e1 ety      
+    | Expr.TyChoose (_tps, e1, _m)  -> accLambdas cenv env topValInfo e1 ety      
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps,ctorThisValOpt,baseValOpt,vsl,body,bodyty = destTopLambda cenv.g cenv.amap topValInfo (e, ety) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda cenv.g cenv.amap topValInfo (e, ety) 
         accTy cenv env bodyty
         vsl |> List.iterSquared (accVal cenv env)
         baseValOpt |> Option.iter (accVal cenv env)
@@ -162,36 +164,36 @@ and accExprs cenv env exprs =
 and accTargets cenv env m ty targets = 
     Array.iter (accTarget cenv env m ty) targets
 
-and accTarget cenv env _m _ty (TTarget(_vs,e,_)) = 
+and accTarget cenv env _m _ty (TTarget(_vs, e, _)) = 
     accExpr cenv env e
 
 and accDTree cenv env x =
     match x with 
-    | TDSuccess (es,_n) -> accExprs cenv env es
-    | TDBind(bind,rest) -> accBind cenv env bind; accDTree cenv env rest 
-    | TDSwitch (e,cases,dflt,m) -> accSwitch cenv env (e,cases,dflt,m)
+    | TDSuccess (es, _n) -> accExprs cenv env es
+    | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest 
+    | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
 
-and accSwitch cenv env (e,cases,dflt,_m) =
+and accSwitch cenv env (e, cases, dflt, _m) =
     accExpr cenv env e
-    cases |> List.iter (fun (TCase(discrim,e)) -> accDiscrim cenv env discrim; accDTree cenv env e) 
+    cases |> List.iter (fun (TCase(discrim, e)) -> accDiscrim cenv env discrim; accDTree cenv env e) 
     dflt |> Option.iter (accDTree cenv env) 
 
 and accDiscrim cenv env d =
     match d with 
-    | DecisionTreeTest.UnionCase(_ucref,tinst) -> accTypeInst cenv env tinst 
-    | DecisionTreeTest.ArrayLength(_,ty) -> accTy cenv env ty
+    | DecisionTreeTest.UnionCase(_ucref, tinst) -> accTypeInst cenv env tinst 
+    | DecisionTreeTest.ArrayLength(_, ty) -> accTy cenv env ty
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> ()
-    | DecisionTreeTest.IsInst (srcty,tgty) -> accTy cenv env srcty; accTy cenv env tgty
+    | DecisionTreeTest.IsInst (srcty, tgty) -> accTy cenv env srcty; accTy cenv env tgty
     | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _) -> 
         accExpr cenv env exp
         accTypeInst cenv env tys
 
-and accAttrib cenv env (Attrib(_,_k,args,props,_,_,_m)) = 
-    args |> List.iter (fun (AttribExpr(expr1,expr2)) -> 
+and accAttrib cenv env (Attrib(_, _k, args, props, _, _, _m)) = 
+    args |> List.iter (fun (AttribExpr(expr1, expr2)) -> 
         accExpr cenv env expr1
         accExpr cenv env expr2)
-    props |> List.iter (fun (AttribNamedArg(_nm,ty,_flg,AttribExpr(expr,expr2))) -> 
+    props |> List.iter (fun (AttribNamedArg(_nm, ty, _flg, AttribExpr(expr, expr2))) -> 
         accExpr cenv env expr
         accExpr cenv env expr2
         accTy cenv env ty)
@@ -199,7 +201,7 @@ and accAttrib cenv env (Attrib(_,_k,args,props,_,_,_m)) =
 and accAttribs cenv env attribs = 
     List.iter (accAttrib cenv env) attribs
 
-and accValReprInfo cenv env (ValReprInfo(_,args,ret)) =
+and accValReprInfo cenv env (ValReprInfo(_, args, ret)) =
     args |> List.iterSquared (accArgReprInfo cenv env)
     ret |> accArgReprInfo cenv env
 
@@ -244,11 +246,11 @@ and accModuleOrNamespaceDefs cenv env x =
 
 and accModuleOrNamespaceDef cenv env x = 
     match x with 
-    | TMDefRec(_,tycons,mbinds,_m) -> 
+    | TMDefRec(_, tycons, mbinds, _m) -> 
         accTycons cenv env tycons
         accModuleOrNamespaceBinds cenv env mbinds 
-    | TMDefLet(bind,_m)  -> accBind cenv env bind 
-    | TMDefDo(e,_m)  -> accExpr cenv env e
+    | TMDefLet(bind, _m)  -> accBind cenv env bind 
+    | TMDefDo(e, _m)  -> accExpr cenv env e
     | TMAbstract(def)  -> accModuleOrNamespaceExpr cenv env def
     | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
 
