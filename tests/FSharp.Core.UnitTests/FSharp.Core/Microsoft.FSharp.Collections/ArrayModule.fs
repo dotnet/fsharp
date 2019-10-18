@@ -62,12 +62,19 @@ type ArrayModule() =
 
         ()
 
+
+    [<Test>]
+    member this.test() = 
+        let arr = [|1;2;3|]
+        Assert.AreEqual(arr.[^1..], [|1;2|])
+
+
     [<Test>]
     member this.Append() =
         // integer array
         let intArray = Array.append [| 1; 2 |] [| 3; 4 |]
         Assert.IsTrue( (intArray = [| 1; 2; 3; 4 |]) )
-        
+
         // string array
         let strArray = Array.append [| "a"; "b" |] [| "C"; "D" |]
         Assert.IsTrue( (strArray = [| "a"; "b"; "C"; "D" |]) )

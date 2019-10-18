@@ -14,7 +14,8 @@ open System
 
 let arr = [|1;2;3|]
 //Console.WriteLine(arr.Length - 1)
-Console.WriteLine(arr.[^1..])
+let arr2 = arr.[^1..]
+Console.WriteLine(arr2)
             """
 
 
