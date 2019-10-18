@@ -5099,34 +5099,6 @@ namespace Microsoft.FSharp.Core
                 let finish4 = (match finish4 with None -> bound4 + Array4DLength4 target - 1 | Some n -> n) 
                 SetArray4DSub target start1 start2 start3 start4 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) (finish4 - start4 + 1) source
 
-            type ``[,,]``<'T> with
-                member source.GetSlice(index1:int, start2:int option, finish2:int option, start3:int option, finish3:int option) = 
-                    GetArraySlice3DFixedSingle source start2 finish2 start3 finish3 index1 1 2
-                member source.GetSlice(start1:int option, finish1:int option, index2: int, start3:int option, finish3:int option) = 
-                    GetArraySlice3DFixedSingle source start1 finish1 start3 finish3 index2 0 2
-                member source.GetSlice(start1:int option, finish1:int option, start2:int option, finish2:int option, index3: int) = 
-                    GetArraySlice3DFixedSingle source start1 finish1 start2 finish2 index3 0 1
-                
-                member source.GetSlice(index1:int, index2:int, start3:int option, finish3:int option) = 
-                    GetArraySlice3DFixedDouble source start3 finish3 index1 index2 2
-                member source.GetSlice(index1:int, start2:int option, finish2:int option, index3:int) = 
-                    GetArraySlice3DFixedDouble source start2 finish2 index1 index3 1
-                member source.GetSlice(start1:int option, finish1:int option, index2:int, index3:int) = 
-                    GetArraySlice3DFixedDouble source start1 finish1 index2 index3 0
-                
-                member target.SetSlice(index1: int, start2: int option, finish2: int option, start3: int option, finish3: int option, source: 'T[,]) = 
-                    SetArraySlice3DFixedSingle target source index1 start2 finish2 start3 finish3 1 2
-                member target.SetSlice(start1: int option, finish1: int option, index2: int, start3: int option, finish3: int option, source: 'T[,]) =
-                    SetArraySlice3DFixedSingle target source index2 start1 finish1 start3 finish3 0 2
-                member target.SetSlice(start1: int option, finish1: int option, start2: int option, finish2: int option, index3: int, source: 'T[,]) =
-                    SetArraySlice3DFixedSingle target source index3 start1 finish1 start2 finish2 0 1
-                
-                member target.SetSlice(index1: int, index2: int, start3: int option, finish3: int option, source: 'T[])
-                    = SetArraySlice3DFixedDouble target source index1 index2 start3 finish3 2
-                member target.SetSlice(index1: int, start2: int option, finish2: int option, index3: int, source: 'T[])
-                    = SetArraySlice3DFixedDouble target source index1 index3 start2 finish2 1
-                member target.SetSlice(start1: int option, finish1: int option,  index2: int, index3: int, source: 'T[])
-                    = SetArraySlice3DFixedDouble target source index2 index3 start1 finish1 0
                 
             let inline GetStringSlice (source: string) start finish =
                 let start, finish = ComputeSlice 0 start finish source.Length
@@ -5718,6 +5690,40 @@ namespace Microsoft.FSharp.Core
              when ^T : decimal     = 
                          (let x = (retype x : decimal) in
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
+
+    [<AutoOpen>]
+    module ArrayExtensions = 
+        open Operators.OperatorIntrinsics
+
+        type ``[,,]``<'T> with
+            member source.GetSlice(index1:int, start2:int option, finish2:int option, start3:int option, finish3:int option) = 
+                GetArraySlice3DFixedSingle source start2 finish2 start3 finish3 index1 1 2
+            member source.GetSlice(start1:int option, finish1:int option, index2: int, start3:int option, finish3:int option) = 
+                GetArraySlice3DFixedSingle source start1 finish1 start3 finish3 index2 0 2
+            member source.GetSlice(start1:int option, finish1:int option, start2:int option, finish2:int option, index3: int) = 
+                GetArraySlice3DFixedSingle source start1 finish1 start2 finish2 index3 0 1
+            
+            member source.GetSlice(index1:int, index2:int, start3:int option, finish3:int option) = 
+                GetArraySlice3DFixedDouble source start3 finish3 index1 index2 2
+            member source.GetSlice(index1:int, start2:int option, finish2:int option, index3:int) = 
+                GetArraySlice3DFixedDouble source start2 finish2 index1 index3 1
+            member source.GetSlice(start1:int option, finish1:int option, index2:int, index3:int) = 
+                GetArraySlice3DFixedDouble source start1 finish1 index2 index3 0
+            
+            member target.SetSlice(index1: int, start2: int option, finish2: int option, start3: int option, finish3: int option, source: 'T[,]) = 
+                SetArraySlice3DFixedSingle target source index1 start2 finish2 start3 finish3 1 2
+            member target.SetSlice(start1: int option, finish1: int option, index2: int, start3: int option, finish3: int option, source: 'T[,]) =
+                SetArraySlice3DFixedSingle target source index2 start1 finish1 start3 finish3 0 2
+            member target.SetSlice(start1: int option, finish1: int option, start2: int option, finish2: int option, index3: int, source: 'T[,]) =
+                SetArraySlice3DFixedSingle target source index3 start1 finish1 start2 finish2 0 1
+            
+            member target.SetSlice(index1: int, index2: int, start3: int option, finish3: int option, source: 'T[])
+                = SetArraySlice3DFixedDouble target source index1 index2 start3 finish3 2
+            member target.SetSlice(index1: int, start2: int option, finish2: int option, index3: int, source: 'T[])
+                = SetArraySlice3DFixedDouble target source index1 index3 start2 finish2 1
+            member target.SetSlice(start1: int option, finish1: int option,  index2: int, index3: int, source: 'T[])
+                = SetArraySlice3DFixedDouble target source index2 index3 start1 finish1 0
+
 
 
 namespace Microsoft.FSharp.Control

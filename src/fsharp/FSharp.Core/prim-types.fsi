@@ -2738,22 +2738,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
         /// and dynamic invocations of other F# operators</summary>
         module OperatorIntrinsics =
-            type ``[,,]``<'T> with
-                member GetSlice : (int * int option * int option * int option * int option) -> 'T[,]
-                member GetSlice : (int option * int option *  int * int option * int option) -> 'T[,]
-                member GetSlice : (int option * int option * int option * int option * int) -> 'T[,]
-
-                member GetSlice : (int * int * int option * int option) -> 'T[] 
-                member GetSlice : (int * int option * int option * int) -> 'T[] 
-                member GetSlice : (int option * int option * int * int) -> 'T[] 
-
-                member SetSlice : (int *  int option *  int option *  int option *  int option *  'T[,]) -> unit 
-                member SetSlice : (int option *  int option *  int *  int option *  int option *  'T[,]) -> unit
-                member SetSlice : (int option *  int option *  int option *  int option *  int *  'T[,]) -> unit
-
-                member SetSlice : (int *  int *  int option *  int option *  'T[]) -> unit
-                member SetSlice : (int *  int option *  int option *  int *  'T[]) -> unit
-                member SetSlice : (int option *  int option *  int *  int *  'T[]) -> unit
+            
 
 
             /// <summary>Gets a slice of an array</summary>
@@ -3441,6 +3426,25 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             [<CompiledName("ToChar")>]
             val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
+
+    [<AutoOpen>]
+    module ArrayExtensions = 
+        type ``[,,]``<'T> with
+                member GetSlice : int * int option * int option * int option * int option -> 'T[,]
+                member GetSlice : int option * int option *  int * int option * int option -> 'T[,]
+                member GetSlice : int option * int option * int option * int option * int -> 'T[,]
+
+                member GetSlice : int * int * int option * int option -> 'T[] 
+                member GetSlice : int * int option * int option * int -> 'T[] 
+                member GetSlice : int option * int option * int * int -> 'T[] 
+
+                member SetSlice : int *  int option *  int option *  int option *  int option *  'T[,] -> unit 
+                member SetSlice : int option *  int option *  int *  int option *  int option *  'T[,] -> unit
+                member SetSlice : int option *  int option *  int option *  int option *  int *  'T[,] -> unit
+
+                member SetSlice : int *  int *  int option *  int option *  'T[] -> unit
+                member SetSlice : int *  int option *  int option *  int *  'T[] -> unit
+                member SetSlice : int option *  int option *  int *  int *  'T[] -> unit
 
 
 namespace Microsoft.FSharp.Control
