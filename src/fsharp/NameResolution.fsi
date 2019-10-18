@@ -163,6 +163,7 @@ type NameResolutionEnv =
     static member Empty : g:TcGlobals -> NameResolutionEnv
     member DisplayEnv : DisplayEnv
     member FindUnqualifiedItem : string -> Item
+    member TryFindUnqualifiedItem: string -> Item option
 
 type FullyQualifiedFlag =
   | FullyQualified

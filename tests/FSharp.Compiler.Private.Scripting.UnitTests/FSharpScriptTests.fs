@@ -107,7 +107,7 @@ type InteractiveTests() =
         let result, errors = script.Eval("System.IO.File.ReadAllText(\"not-a-file-path-that-can-be-found-on-disk.txt\")")
         Assert.IsEmpty(errors)
         match result with
-        | Ok(_) -> Assert.Fail("expected a failure")
+        | Ok(v) -> Assert.Fail(sprintf "expected a failure, got %A" v)
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
 
     [<Test>]
@@ -132,3 +132,12 @@ type InteractiveTests() =
         Assert.True(wasCancelled)
         Assert.LessOrEqual(sw.ElapsedMilliseconds, sleepTime)
         Assert.AreEqual(None, result)
+
+    [<Test>]
+    member _.``Top level thrown exceptions are returned appropriately``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("raise (new System.NotImplementedException())")
+        Assert.IsEmpty(errors)
+        match result with
+        | Ok(v) -> Assert.Fail(sprintf "expected a failure, got %A" v)
+        | Error(ex) -> Assert.IsInstanceOf<NotImplementedException>(ex)

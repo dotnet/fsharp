@@ -398,6 +398,8 @@ type NameResolutionEnv =
 
     member nenv.FindUnqualifiedItem nm = nenv.eUnqualifiedItems.[nm]
 
+    member nenv.TryFindUnqualifiedItem nm = nenv.eUnqualifiedItems.TryFind(nm)
+
     /// Get the table of types, indexed by name and arity
     member nenv.TyconsByDemangledNameAndArity fq =
         match fq with

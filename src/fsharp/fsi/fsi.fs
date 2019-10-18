@@ -1189,14 +1189,17 @@ type internal FsiDynamicCompiler
         let itName = "it" 
 
         // Construct the code that saves the 'it' value into the 'SaveIt' register.
-        let defs = fsiDynamicCompiler.BuildItBinding expr
+        let defs =
+            match expr with
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.Ident(i), _, m) when i.idText = "raise" -> [SynModuleDecl.DoExpr(NoSequencePointAtInvisibleBinding, expr, m)]
+            | _ -> fsiDynamicCompiler.BuildItBinding expr
 
         // Evaluate the overall definitions.
         let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs) |> fst
         // Snarf the type for 'it' via the binding
-        match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with 
-        | NameResolution.Item.Value vref -> 
-             if not tcConfig.noFeedback then 
+        match istate.tcState.TcEnvFromImpls.NameEnv.TryFindUnqualifiedItem itName with
+        | Some(NameResolution.Item.Value vref) ->
+             if not tcConfig.noFeedback then
                  valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, istate.emEnv, istate.ilxGenerator, vref.Deref)
 
              /// Clear the value held in the previous "it" binding, if any, as long as it has never been referenced.
