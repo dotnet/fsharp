@@ -11,21 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="nunit.framework">
-      <Private>True</Private>
-      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup Condition="!$(TargetDotnetProfile.Contains('portable'))">
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40'" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="NunitHelpers.fs" />
     <Compile Include="CompilerTestHelpers.fs" />
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
