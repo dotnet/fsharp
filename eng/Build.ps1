@@ -48,6 +48,7 @@ param (
     [switch]$testCoreClr,
     [switch]$testCambridge,
     [switch]$testCompiler,
+    [switch]$testDependencyManager,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
     [switch]$testVs,
@@ -82,6 +83,7 @@ function Print-Usage() {
     Write-Host "  -testAll                  Run all tests"
     Write-Host "  -testCambridge            Run Cambridge tests"
     Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
+    Write-Host "  -testDependencyManager    Run FSharp.DependencyManager.UnitTests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
@@ -122,6 +124,7 @@ function Process-Arguments() {
         $script:testAll = $False
         $script:testCambridge = $False
         $script:testCompiler = $False
+        $script:testDependencyManager = $False
         $script:testDesktop = $False
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
@@ -339,6 +342,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
@@ -348,6 +352,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
@@ -383,6 +388,13 @@ try {
             TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         }
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
+    if ($testDependencyManager) {
+        if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        }
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
     if ($testCambridge) {
