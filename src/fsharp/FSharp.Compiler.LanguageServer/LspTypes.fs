@@ -5,8 +5,9 @@ namespace FSharp.Compiler.LanguageServer
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json
 
-// Interfaces as defined at https://microsoft.github.io/language-server-protocol/specification.  The properties on
-// these types are camlCased to match the underlying JSON properties to avoid attributes on every field:
+// Interfaces as defined at https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/.
+// The properties on these types are camlCased to match the underlying JSON properties to avoid attributes on every
+// field:
 //   [<JsonProperty("camlCased")>]
 
 /// Represents a zero-based line and column of a text document.
@@ -32,7 +33,7 @@ type Diagnostic =
     { range: Range
       severity: int option
       code: string
-      source: string option // "F#"
+      source: string option
       message: string
       relatedInformation: DiagnosticRelatedInformation[] option }
     static member Error = 1
@@ -46,7 +47,7 @@ type PublishDiagnosticsParams =
 
 type ClientCapabilities =
     { workspace: JToken option // TODO: WorkspaceClientCapabilities
-      textDocument: JToken option // TODO: TextDocumentCapabilities
+      textDocument: JToken option // TODO: TextDocumentClientCapabilities, publishDiagnostics: { relatedInformation: bool option }
       experimental: JToken option
       supportsVisualStudioExtensions: bool option }
 

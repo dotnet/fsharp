@@ -3,9 +3,10 @@
 namespace FSharp.Compiler.Scripting
 
 open System
+open System.Threading
 open FSharp.Compiler.Interactive.Shell
 
-type FSharpScript(?captureInput: bool, ?captureOutput: bool) as this =
+type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: string[]) as this =
     let outputProduced = Event<string>()
     let errorProduced = Event<string>()
 
@@ -17,6 +18,7 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool) as this =
     do stderr.LineWritten.Add errorProduced.Trigger
     let captureInput = defaultArg captureInput false
     let captureOutput = defaultArg captureOutput false
+    let additionalArgs = defaultArg additionalArgs [||]
     let savedInput = Console.In
     let savedOutput = Console.Out
     let savedError = Console.Error
@@ -29,8 +31,11 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool) as this =
         ())()
 
     let config = FsiEvaluationSession.GetDefaultConfiguration()
-    let argv = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:netcore"; "--quiet" |]
+    let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:netcore"; "--quiet" |]
+    let argv = Array.append baseArgs additionalArgs
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
+
+    member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
 
     member __.ProvideInput = stdin.ProvideInput
 
@@ -38,8 +43,9 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool) as this =
 
     member __.ErrorProduced = errorProduced.Publish
 
-    member __.Eval(code: string) =
-        let ch, errors = fsi.EvalInteractionNonThrowing code
+    member __.Eval(code: string, ?cancellationToken: CancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        let ch, errors = fsi.EvalInteractionNonThrowing(code, cancellationToken)
         match ch with
         | Choice1Of2 v -> Ok(v), errors
         | Choice2Of2 ex -> Error(ex), errors

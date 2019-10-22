@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="CodeGenerator_UnableToGetCodeDomProvider">
         <source>Unable to find a code generator (CodeDomProvider).</source>
-        <target state="translated">Code-Generator (CodeDomProvider) kann nicht gefunden werden.</target>
+        <target state="translated">Es wurde kein Code-Generator (CodeDomProvider) gefunden.</target>
         <note />
       </trans-unit>
       <trans-unit id="Configuration_CantSaveTemporaryConfigurations">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="ReferenceGroup_AsyncOpPending">
         <source>The requested operation is not valid while an asynchronous operation is in progress.</source>
-        <target state="translated">Der angeforderte Vorgang ist unzulässig, während ein asynchroner Vorgang läuft.</target>
+        <target state="translated">Der angeforderte Vorgang ist unzulässig, während ein asynchroner Vorgang ausgeführt wird.</target>
         <note />
       </trans-unit>
       <trans-unit id="CSRDlg_MultipleURL">

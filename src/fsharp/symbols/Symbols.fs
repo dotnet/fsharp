@@ -188,7 +188,11 @@ module Impl =
 
 type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) = 
     member x.Contents g = denv g
+
     static member Empty = FSharpDisplayContext(fun g -> DisplayEnv.Empty g)
+
+    member x.WithShortTypeNames shortNames =
+         FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
 
 
 // delay the realization of 'item' in case it is unresolved

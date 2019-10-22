@@ -6,10 +6,6 @@ open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
-#if FX_RESHAPED_REFLECTION
-open ReflectionAdapters
-#endif
-
 #if NETCOREAPP2_0
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
@@ -71,14 +67,10 @@ let sysLib nm =
 #if !NETCOREAPP2_0
     if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
         let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
-        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\" + nm + ".dll"
+        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\" + nm + ".dll"
     else
 #endif
-#if FX_NO_RUNTIMEENVIRONMENT
         let sysDir = System.AppContext.BaseDirectory
-#else
-        let sysDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-#endif
         let (++) a b = System.IO.Path.Combine(a,b)
         sysDir ++ nm + ".dll" 
 

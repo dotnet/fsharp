@@ -124,23 +124,4 @@
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
-  <Target Name="CopyCtoFile" BeforeTargets="CopyLocalizationResources" DependsOnTargets="VSCTCompile">
-    <Copy SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')" DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" />
-  </Target>
-
-  <Target Name="CopyLocalizationResources" BeforeTargets="CoreResGen">
-    <ItemGroup>
-      <LocalizationResources Include="MenusAndCommands.vsct" />
-    </ItemGroup>
-    <Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutputPath)\%(Filename)%(Extension)')" />
-  </Target>
-
-  <Target Name="EnsureResourceNameHasCulture" BeforeTargets="MergeCtoResource">
-    <ItemGroup>
-      <_GeneratedCTOFilesWithCulture Update="%(Identity)">
-        <ResourceName>%(ResourceName).%(Culture)</ResourceName>
-      </_GeneratedCTOFilesWithCulture>
-    </ItemGroup>
-  </Target>
-
 </Project>

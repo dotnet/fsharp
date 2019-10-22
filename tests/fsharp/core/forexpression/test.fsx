@@ -19,6 +19,7 @@ let testData    =
 let expectedArraySum        = 167167000 // Find an expression for this sum from count
 let expectedRangeSum        = ((count + 1) * count) / 2
 let expectedStringSum       = 30
+let expectedWildCard        = count + 1
 
 let getTestData (inner : int [] -> #seq<int>) (outer : #seq<int> [] -> #seq<'U>) =
     (testData |> Array.map inner) |> outer
@@ -109,11 +110,7 @@ let sumOverRange () =
 let sumOverString () =
     let mutable sum = 0
     for i in testString do
-#if NETCOREAPP
-        sum <- sum + ((int (i :?> char)) - (int '0'))
-#else
         sum <- sum + ((int i) - (int '0'))
-#endif
     sum
 
 let arraySum                = sumOverArray ()

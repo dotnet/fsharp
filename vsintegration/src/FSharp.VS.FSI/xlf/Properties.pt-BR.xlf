@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="translated">F# Interative de 64 bits</target>
+        <target state="translated">F# Interativo de 64 bits</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">Se estiver definido como true, e o computador atual for 64 bits, execute o F# Interactive como um processo de 64 bits.  (Caso contrário, o F# Interactive será um processo de 32 bits.)</target>
+        <target state="translated">Se estiver definido como true, e o computador atual for 64 bits, execute o F# Interativo como um processo de 64 bits. (Caso contrário, o F# Interactive será um processo de 32 bits.)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
-        <target state="translated">Opções interativas F#</target>
+        <target state="translated">Opções do F# Interativo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">Impede que os assemblies referenciados sejam bloqueados pelo processo de F# interativo.</target>
+        <target state="translated">Impede que os assemblies referenciados sejam bloqueados pelo processo do F# Interativo.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">

@@ -381,40 +381,6 @@ namespace Microsoft.FSharp.Core
 
     module PrimReflectionAdapters =
 
-#if FX_RESHAPED_REFLECTION
-        
-        open System.Reflection
-        open System.Linq
-
-        // copied from BasicInlinedOperations
-        let inline box     (x:'T) = (# "box !0" type ('T) x : obj #)
-        let inline unboxPrim<'T>(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
-
-        type System.Type with
-
-            member inline this.IsGenericType = this.GetTypeInfo().IsGenericType
-
-            member inline this.IsValueType = this.GetTypeInfo().IsValueType
-
-            member inline this.IsSealed = this.GetTypeInfo().IsSealed
-
-            member inline this.IsAssignableFrom(otherType: Type) = this.GetTypeInfo().IsAssignableFrom(otherType.GetTypeInfo())
-
-            member inline this.GetGenericArguments() = this.GetTypeInfo().GenericTypeArguments
-
-            member inline this.GetProperty(name) = this.GetTypeInfo().GetProperty(name)
-
-            member inline this.GetMethod(name:string, parameterTypes: Type[]) = this.GetTypeInfo().GetMethod(name, parameterTypes)
-
-            member inline this.GetSingleStaticMethodByTypes(name:string, parameterTypes: Type[]) = this.GetTypeInfo().GetMethod(name, parameterTypes)
-
-            member inline this.GetSingleMethod(name:string, bindingFlags: System.Reflection.BindingFlags) =
-               this.GetTypeInfo().GetMethod(name, bindingFlags)
-
-            member inline this.GetCustomAttributes(attributeType: Type, inherits: bool) : obj[] = 
-                unboxPrim<_> (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attributeType, inherits).ToArray()))
-
-#else
         type System.Type with
             
             // Note, this differs slightly from the nettstandard1.6 FX_RESHAPED_REFLECTION case as it looks for non-public methods.
@@ -424,7 +390,6 @@ namespace Microsoft.FSharp.Core
 
             member inline this.GetSingleMethod(name:string, bindingFlags: System.Reflection.BindingFlags) =
                this.GetTypeInfo().GetMethod(name, bindingFlags)
-#endif
 
     open PrimReflectionAdapters
 
@@ -579,12 +544,8 @@ namespace Microsoft.FSharp.Core
                 ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
-          
-        
+
         open IntrinsicOperators
-#if FX_RESHAPED_REFLECTION
-        open PrimReflectionAdapters
-#endif
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK
         module IntrinsicFunctions =        
             
@@ -912,78 +873,6 @@ namespace Microsoft.FSharp.Core
 
             /// specialcase: Core implementation of structural comparison on arbitrary arrays.
             and GenericComparisonArbArrayWithComparer (comp:GenericComparer) (x:System.Array) (y:System.Array) : int  =
-#if FX_NO_ARRAY_LONG_LENGTH            
-                if x.Rank = 1 && y.Rank = 1 then 
-                    let lenx = x.Length
-                    let leny = y.Length 
-                    let c = intOrder lenx leny 
-                    if c <> 0 then c else
-                    let basex = (x.GetLowerBound(0))
-                    let basey = (y.GetLowerBound(0))
-                    let c = intOrder basex basey
-                    if c <> 0 then c else
-                    let rec check i =
-                       if i >= lenx then 0 else 
-                       let c = GenericCompare comp ((x.GetValue(i + basex)),(y.GetValue(i + basey)))
-                       if c <> 0 then c else check (i + 1)
-                    check 0
-                elif x.Rank = 2 && y.Rank = 2 then 
-                    let lenx0 = x.GetLength(0)
-                    let leny0 = y.GetLength(0)
-                    let c = intOrder lenx0 leny0 
-                    if c <> 0 then c else
-                    let lenx1 = x.GetLength(1)
-                    let leny1 = y.GetLength(1)
-                    let c = intOrder lenx1 leny1 
-                    if c <> 0 then c else
-                    let basex0 = (x.GetLowerBound(0))
-                    let basex1 = (x.GetLowerBound(1))
-                    let basey0 = (y.GetLowerBound(0))
-                    let basey1 = (y.GetLowerBound(1))
-                    let c = intOrder basex0 basey0
-                    if c <> 0 then c else
-                    let c = intOrder basex1 basey1
-                    if c <> 0 then c else
-                    let rec check0 i =
-                       let rec check1 j = 
-                           if j >= lenx1 then 0 else
-                           let c = GenericCompare comp ((x.GetValue(i + basex0,j + basex1)), (y.GetValue(i + basey0,j + basey1)))
-                           if c <> 0 then c else check1 (j + 1)
-                       if i >= lenx0 then 0 else 
-                       let c = check1 0
-                       if c <> 0 then c else
-                       check0 (i + 1)
-                    check0 0
-                else
-                    let c = intOrder x.Rank y.Rank
-                    if c <> 0 then c else
-                    let ndims = x.Rank
-                    // check lengths 
-                    let rec precheck k = 
-                        if k >= ndims then 0 else
-                        let c = intOrder (x.GetLength(k)) (y.GetLength(k))
-                        if c <> 0 then c else
-                        let c = intOrder (x.GetLowerBound(k)) (y.GetLowerBound(k))
-                        if c <> 0 then c else
-                        precheck (k+1)
-                    let c = precheck 0 
-                    if c <> 0 then c else
-                    let idxs : int[] = zeroCreate ndims 
-                    let rec checkN k baseIdx i lim =
-                       if i >= lim then 0 else
-                       set idxs k (baseIdx + i)
-                       let c = 
-                           if k = ndims - 1
-                           then GenericCompare comp ((x.GetValue(idxs)), (y.GetValue(idxs)))
-                           else check (k+1) 
-                       if c <> 0 then c else 
-                       checkN k baseIdx (i + 1) lim
-                    and check k =
-                       if k >= ndims then 0 else
-                       let baseIdx = x.GetLowerBound(k)
-                       checkN k baseIdx 0 (x.GetLength(k))
-                    check 0
-#else
                 if x.Rank = 1 && y.Rank = 1 then 
                     let lenx = x.LongLength
                     let leny = y.LongLength 
@@ -1016,11 +905,11 @@ namespace Microsoft.FSharp.Core
                     let c = int64Order basex1 basey1
                     if c <> 0 then c else
                     let rec check0 i =
-                       let rec check1 j = 
+                       let rec check1 j =
                            if j >=. lenx1 then 0 else
                            let c = GenericCompare comp ((x.GetValue(i +. basex0,j +. basex1)), (y.GetValue(i +. basey0,j +. basey1)))
                            if c <> 0 then c else check1 (j +. 1L)
-                       if i >=. lenx0 then 0 else 
+                       if i >=. lenx0 then 0 else
                        let c = check1 0L
                        if c <> 0 then c else
                        check0 (i +. 1L)
@@ -1029,8 +918,8 @@ namespace Microsoft.FSharp.Core
                     let c = intOrder x.Rank y.Rank
                     if c <> 0 then c else
                     let ndims = x.Rank
-                    // check lengths 
-                    let rec precheck k = 
+                    // check lengths
+                    let rec precheck k =
                         if k >= ndims then 0 else
                         let c = int64Order (x.GetLongLength(k)) (y.GetLongLength(k))
                         if c <> 0 then c else
@@ -1054,10 +943,9 @@ namespace Microsoft.FSharp.Core
                        let baseIdx = x.GetLowerBound(k)
                        checkN k (int64 baseIdx) 0L (x.GetLongLength(k))
                     check 0
-#endif                
-              
+
             /// optimized case: Core implementation of structural comparison on object arrays.
-            and GenericComparisonObjArrayWithComparer (comp:GenericComparer) (x:obj[]) (y:obj[]) : int  =
+            and GenericComparisonObjArrayWithComparer (comp:GenericComparer) (x:obj[]) (y:obj[]) : int =
                 let lenx = x.Length 
                 let leny = y.Length 
                 let c = intOrder lenx leny 
@@ -1066,8 +954,8 @@ namespace Microsoft.FSharp.Core
                     let mutable i = 0
                     let mutable res = 0  
                     while i < lenx do 
-                        let c = GenericCompare comp ((get x i), (get y i)) 
-                        if c <> 0 then (res <- c; i <- lenx) 
+                        let c = GenericCompare comp ((get x i), (get y i))
+                        if c <> 0 then (res <- c; i <- lenx)
                         else i <- i + 1
                     res
 
@@ -1089,7 +977,7 @@ namespace Microsoft.FSharp.Core
             type GenericComparer with
                 interface System.Collections.IComparer with
                     override c.Compare(x:obj,y:obj) = GenericCompare c (x,y)
-            
+
             /// The unique object for comparing values in PER mode (where local exceptions are thrown when NaNs are compared)
             let fsComparerPER        = GenericComparer(true)  
 
@@ -1434,63 +1322,6 @@ namespace Microsoft.FSharp.Core
 
             /// specialcase: Core implementation of structural equality on arbitrary arrays.
             and GenericEqualityArbArray er (iec:System.Collections.IEqualityComparer) (x:System.Array) (y:System.Array) : bool =
-#if FX_NO_ARRAY_LONG_LENGTH
-                if x.Rank = 1 && y.Rank = 1 then 
-                    // check lengths 
-                    let lenx = x.Length
-                    let leny = y.Length 
-                    (int32Eq lenx leny) &&
-                    // check contents
-                    let basex = x.GetLowerBound(0)
-                    let basey = y.GetLowerBound(0)
-                    (int32Eq basex basey) &&
-                    let rec check i = (i >= lenx) || (GenericEqualityObj er iec ((x.GetValue(basex + i)),(y.GetValue(basey + i))) && check (i + 1))
-                    check 0                    
-                elif x.Rank = 2 && y.Rank = 2 then 
-                    // check lengths 
-                    let lenx0 = x.GetLength(0)
-                    let leny0 = y.GetLength(0)
-                    (int32Eq lenx0 leny0) && 
-                    let lenx1 = x.GetLength(1)
-                    let leny1 = y.GetLength(1)
-                    (int32Eq lenx1 leny1) && 
-                    let basex0 = x.GetLowerBound(0)
-                    let basex1 = x.GetLowerBound(1)
-                    let basey0 = y.GetLowerBound(0)
-                    let basey1 = y.GetLowerBound(1)
-                    (int32Eq basex0 basey0) && 
-                    (int32Eq basex1 basey1) && 
-                    // check contents
-                    let rec check0 i =
-                       let rec check1 j = (j >= lenx1) || (GenericEqualityObj er iec ((x.GetValue(basex0 + i,basex1 + j)), (y.GetValue(basey0 + i,basey1 + j))) && check1 (j + 1))
-                       (i >= lenx0) || (check1 0 && check0 (i + 1))
-                    check0 0
-                else 
-                    (x.Rank = y.Rank) && 
-                    let ndims = x.Rank
-                    // check lengths 
-                    let rec precheck k = 
-                        (k >= ndims) || 
-                        (int32Eq (x.GetLength(k)) (y.GetLength(k)) && 
-                         int32Eq (x.GetLowerBound(k)) (y.GetLowerBound(k)) && 
-                         precheck (k+1))
-                    precheck 0 &&
-                    let idxs : int32[] = zeroCreate ndims 
-                    // check contents
-                    let rec checkN k baseIdx i lim =
-                       (i >= lim) ||
-                       (set idxs k (baseIdx + i);
-                        (if k = ndims - 1 
-                         then GenericEqualityObj er iec ((x.GetValue(idxs)),(y.GetValue(idxs)))
-                         else check (k+1)) && 
-                        checkN k baseIdx (i + 1) lim)
-                    and check k = 
-                       (k >= ndims) || 
-                       (let baseIdx = x.GetLowerBound(k)
-                        checkN k baseIdx 0 (x.GetLength(k)))
-                           
-                    check 0
-#else
                 if x.Rank = 1 && y.Rank = 1 then 
                     // check lengths 
                     let lenx = x.LongLength
@@ -1499,9 +1330,9 @@ namespace Microsoft.FSharp.Core
                     // check contents
                     let basex = int64 (x.GetLowerBound(0))
                     let basey = int64 (y.GetLowerBound(0))
-                    (int64Eq basex basey) &&                    
+                    (int64Eq basex basey) &&
                     let rec check i = (i >=. lenx) || (GenericEqualityObj er iec ((x.GetValue(basex +. i)),(y.GetValue(basey +. i))) && check (i +. 1L))
-                    check 0L                    
+                    check 0L
                 elif x.Rank = 2 && y.Rank = 2 then 
                     // check lengths 
                     let lenx0 = x.GetLongLength(0)
@@ -1522,16 +1353,16 @@ namespace Microsoft.FSharp.Core
                        (i >=. lenx0) || (check1 0L && check0 (i +. 1L))
                     check0 0L
                 else 
-                    (x.Rank = y.Rank) && 
+                    (x.Rank = y.Rank) &&
                     let ndims = x.Rank
-                    // check lengths 
-                    let rec precheck k = 
-                        (k >= ndims) || 
-                        (int64Eq (x.GetLongLength(k)) (y.GetLongLength(k)) && 
-                         int32Eq (x.GetLowerBound(k)) (y.GetLowerBound(k)) && 
+                    // check lengths
+                    let rec precheck k =
+                        (k >= ndims) ||
+                        (int64Eq (x.GetLongLength(k)) (y.GetLongLength(k)) &&
+                         int32Eq (x.GetLowerBound(k)) (y.GetLowerBound(k)) &&
                          precheck (k+1))
                     precheck 0 &&
-                    let idxs : int64[] = zeroCreate ndims 
+                    let idxs : int64[] = zeroCreate ndims
                     // check contents
                     let rec checkN k baseIdx i lim =
                        (i >=. lim) ||
@@ -1544,10 +1375,8 @@ namespace Microsoft.FSharp.Core
                        (k >= ndims) || 
                        (let baseIdx = x.GetLowerBound(k)
                         checkN k (int64 baseIdx) 0L (x.GetLongLength(k)))
-                           
                     check 0
-#endif                    
-              
+
             /// optimized case: Core implementation of structural equality on object arrays.
             and GenericEqualityObjArray er iec (x:obj[]) (y:obj[]) : bool =
                 let lenx = x.Length 
@@ -3501,7 +3330,6 @@ namespace Microsoft.FSharp.Core
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit(func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
 
-#if !FX_NO_CONVERTER
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
 
@@ -3511,7 +3339,6 @@ namespace Microsoft.FSharp.Core
         static member FromConverter (converter: System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
 
         static member ToConverter (func: ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
-#endif
 
         static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
 
@@ -3527,9 +3354,7 @@ namespace Microsoft.FSharp.Core
 
         static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 
-#if !FX_NO_CONVERTER
         static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
-#endif
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
@@ -4827,26 +4652,12 @@ namespace Microsoft.FSharp.Core
         module Attributes = 
             open System.Runtime.CompilerServices
 
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-            [<assembly: System.Runtime.CompilerServices.DefaultDependency(System.Runtime.CompilerServices.LoadHint.Always)>] 
-#endif
-
-#if !FX_NO_COMVISIBLE
             [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
-#endif            
             [<assembly: System.CLSCompliant(true)>]
-
-#if BE_SECURITY_TRANSPARENT
             [<assembly: System.Security.SecurityTransparent>] // assembly is fully transparent
 #if CROSS_PLATFORM_COMPILER
 #else
             [<assembly: System.Security.SecurityRules(System.Security.SecurityRuleSet.Level2)>] // v4 transparency; soon to be the default, but not yet
-#endif
-#else
-#if !FX_NO_SECURITY_PERMISSIONS
-            // REVIEW: Need to choose a specific permission for the action to be applied to
-            [<assembly: System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.RequestMinimum)>]
-#endif
 #endif
             do ()
 
@@ -4878,6 +4689,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeOf")>]
         let inline typeof<'T> = BasicInlinedOperations.typeof<'T>
 
+        [<CompiledName("NameOf")>]
+        let inline nameof (_: 'T) : string = raise (Exception "may not call directly, should always be optimized away")
+
         [<CompiledName("MethodHandleOf")>]
         let methodhandleof (_call: ('T -> 'TResult)) : System.RuntimeMethodHandle = raise (Exception "may not call directly, should always be optimized away")
 
@@ -4896,7 +4710,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Identity")>]
         let id x = x
 
-#if !FX_NO_SYSTEM_CONSOLE
         // std* are TypeFunctions with the effect of reading the property on instantiation.
         // So, direct uses of stdout should capture the current System.Console.Out at that point.
         [<CompiledName("ConsoleIn")>]
@@ -4907,10 +4720,8 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("ConsoleError")>]
         let stderr<'T> = System.Console.Error
-#endif
-            
 
-        module Unchecked = 
+        module Unchecked =
 
             [<CompiledName("Unbox")>]
             let inline unbox<'T> (v:obj) = unboxPrim<'T> v
@@ -5248,13 +5059,10 @@ namespace Microsoft.FSharp.Core
                  // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
-        module OperatorIntrinsics =  
-            
+        module OperatorIntrinsics =
+
             open System.Collections
-#if FX_RESHAPED_REFLECTION
-            open PrimReflectionAdapters
-#endif
-            
+
             let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
             let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
 

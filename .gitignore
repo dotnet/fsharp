@@ -100,7 +100,9 @@ ossreadme*.txt
 *.log
 *.jrs
 *.chk
-*.bak
+*.bak                                                     
+*.vserr
+*.err
 *.orig
 *.mdf
 *.ldf
@@ -128,3 +130,4 @@ msbuild.binlog
 /fcs/FSharp.Compiler.Service.netstandard/*.fs
 /fcs/FSharp.Compiler.Service.netstandard/*.fsi
 /.ionide/
+**/.DS_Store

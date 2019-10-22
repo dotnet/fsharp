@@ -116,133 +116,137 @@ type ValFlags(flags: int64) =
     new (recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal) =
         let flags = 
                      (match baseOrThis with
-                                        | BaseVal ->                         0b0000000000000000000L
-                                        | CtorThisVal ->                     0b0000000000000000010L
-                                        | NormalVal ->                       0b0000000000000000100L
-                                        | MemberThisVal ->                   0b0000000000000000110L) |||
-                     (if isCompGen then                                      0b0000000000000001000L 
-                      else                                                   0b00000000000000000000L) |||
+                                        | BaseVal ->                         0b00000000000000000000L
+                                        | CtorThisVal ->                     0b00000000000000000010L
+                                        | NormalVal ->                       0b00000000000000000100L
+                                        | MemberThisVal ->                   0b00000000000000000110L) |||
+                     (if isCompGen then                                      0b00000000000000001000L 
+                      else                                                   0b000000000000000000000L) |||
                      (match inlineInfo with
-                                        | ValInline.PseudoVal ->             0b0000000000000000000L
-                                        | ValInline.Always ->                0b0000000000000010000L
-                                        | ValInline.Optional ->              0b0000000000000100000L
-                                        | ValInline.Never ->                 0b0000000000000110000L) |||
+                                        | ValInline.PseudoVal ->             0b00000000000000000000L
+                                        | ValInline.Always ->                0b00000000000000010000L
+                                        | ValInline.Optional ->              0b00000000000000100000L
+                                        | ValInline.Never ->                 0b00000000000000110000L) |||
                      (match isMutable with
-                                        | Immutable ->                       0b0000000000000000000L
-                                        | Mutable   ->                       0b0000000000001000000L) |||
+                                        | Immutable ->                       0b00000000000000000000L
+                                        | Mutable   ->                       0b00000000000001000000L) |||
 
                      (match isModuleOrMemberBinding with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000000000010000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000000000010000000L) |||
                      (match isExtensionMember with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000000000100000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000000000100000000L) |||
                      (match isIncrClassSpecialMember with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000000001000000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000000001000000000L) |||
                      (match isTyFunc with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000000010000000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000000010000000000L) |||
 
                      (match recValInfo with
-                                     | ValNotInRecScope     ->               0b0000000000000000000L
-                                     | ValInRecScope true   ->               0b0000000100000000000L
-                                     | ValInRecScope false  ->               0b0000001000000000000L) |||
+                                     | ValNotInRecScope     ->               0b00000000000000000000L
+                                     | ValInRecScope true   ->               0b00000000100000000000L
+                                     | ValInRecScope false  ->               0b00000001000000000000L) |||
 
                      (match allowTypeInst with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000100000000000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000100000000000000L) |||
 
                      (match isGeneratedEventVal with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0100000000000000000L)                                        
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00100000000000000000L)                                        
 
         ValFlags flags
 
     member x.BaseOrThisInfo = 
-                                  match (flags       &&&                     0b0000000000000000110L) with 
-                                                             |               0b0000000000000000000L -> BaseVal
-                                                             |               0b0000000000000000010L -> CtorThisVal
-                                                             |               0b0000000000000000100L -> NormalVal
-                                                             |               0b0000000000000000110L -> MemberThisVal
+                                  match (flags       &&&                     0b00000000000000000110L) with 
+                                                             |               0b00000000000000000000L -> BaseVal
+                                                             |               0b00000000000000000010L -> CtorThisVal
+                                                             |               0b00000000000000000100L -> NormalVal
+                                                             |               0b00000000000000000110L -> MemberThisVal
                                                              | _          -> failwith "unreachable"
 
 
 
-    member x.IsCompilerGenerated =      (flags       &&&                     0b0000000000000001000L) <> 0x0L
+    member x.IsCompilerGenerated =      (flags       &&&                     0b00000000000000001000L) <> 0x0L
 
     member x.SetIsCompilerGenerated isCompGen = 
-            let flags =                 (flags       &&&                  ~~~0b0000000000000001000L) |||
+            let flags =                 (flags       &&&                  ~~~0b00000000000000001000L) |||
                                         (match isCompGen with
-                                          | false           ->               0b0000000000000000000L
-                                          | true            ->               0b0000000000000001000L)
+                                          | false           ->               0b00000000000000000000L
+                                          | true            ->               0b00000000000000001000L)
             ValFlags flags
 
     member x.InlineInfo = 
-                                  match (flags       &&&                     0b0000000000000110000L) with 
-                                                             |               0b0000000000000000000L -> ValInline.PseudoVal
-                                                             |               0b0000000000000010000L -> ValInline.Always
-                                                             |               0b0000000000000100000L -> ValInline.Optional
-                                                             |               0b0000000000000110000L -> ValInline.Never
+                                  match (flags       &&&                     0b00000000000000110000L) with 
+                                                             |               0b00000000000000000000L -> ValInline.PseudoVal
+                                                             |               0b00000000000000010000L -> ValInline.Always
+                                                             |               0b00000000000000100000L -> ValInline.Optional
+                                                             |               0b00000000000000110000L -> ValInline.Never
                                                              | _          -> failwith "unreachable"
 
     member x.MutabilityInfo = 
-                                  match (flags       &&&                     0b0000000000001000000L) with 
-                                                             |               0b0000000000000000000L -> Immutable
-                                                             |               0b0000000000001000000L -> Mutable
+                                  match (flags       &&&                     0b00000000000001000000L) with 
+                                                             |               0b00000000000000000000L -> Immutable
+                                                             |               0b00000000000001000000L -> Mutable
                                                              | _          -> failwith "unreachable"
 
 
     member x.IsMemberOrModuleBinding = 
-                                  match (flags       &&&                     0b0000000000010000000L) with 
-                                                             |               0b0000000000000000000L -> false
-                                                             |               0b0000000000010000000L -> true
+                                  match (flags       &&&                     0b00000000000010000000L) with 
+                                                             |               0b00000000000000000000L -> false
+                                                             |               0b00000000000010000000L -> true
                                                              | _          -> failwith "unreachable"
 
 
-    member x.WithIsMemberOrModuleBinding = ValFlags(flags |||                0b0000000000010000000L)
+    member x.WithIsMemberOrModuleBinding = ValFlags(flags |||                0b00000000000010000000L)
 
 
-    member x.IsExtensionMember        = (flags       &&&                     0b0000000000100000000L) <> 0L
+    member x.IsExtensionMember        = (flags       &&&                     0b00000000000100000000L) <> 0L
 
-    member x.IsIncrClassSpecialMember = (flags       &&&                     0b0000000001000000000L) <> 0L
+    member x.IsIncrClassSpecialMember = (flags       &&&                     0b00000000001000000000L) <> 0L
 
-    member x.IsTypeFunction           = (flags       &&&                     0b0000000010000000000L) <> 0L
+    member x.IsTypeFunction           = (flags       &&&                     0b00000000010000000000L) <> 0L
 
-    member x.RecursiveValInfo =   match (flags       &&&                     0b0000001100000000000L) with 
-                                                             |               0b0000000000000000000L -> ValNotInRecScope
-                                                             |               0b0000000100000000000L -> ValInRecScope true
-                                                             |               0b0000001000000000000L -> ValInRecScope false
+    member x.RecursiveValInfo =   match (flags       &&&                     0b00000001100000000000L) with 
+                                                             |               0b00000000000000000000L -> ValNotInRecScope
+                                                             |               0b00000000100000000000L -> ValInRecScope true
+                                                             |               0b00000001000000000000L -> ValInRecScope false
                                                              | _                   -> failwith "unreachable"
 
     member x.WithRecursiveValInfo recValInfo = 
             let flags = 
-                     (flags       &&&                                     ~~~0b0000001100000000000L) |||
+                     (flags       &&&                                    ~~~0b00000001100000000000L) |||
                      (match recValInfo with
-                                     | ValNotInRecScope     ->               0b0000000000000000000L
-                                     | ValInRecScope true  ->               0b0000000100000000000L
-                                     | ValInRecScope false ->               0b0000001000000000000L) 
+                                     | ValNotInRecScope     ->              0b00000000000000000000L
+                                     | ValInRecScope true  ->               0b00000000100000000000L
+                                     | ValInRecScope false ->               0b00000001000000000000L) 
             ValFlags flags
 
-    member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b0000010000000000000L) <> 0L
+    member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b00000010000000000000L) <> 0L
 
-    member x.WithMakesNoCriticalTailcalls =               ValFlags(flags ||| 0b0000010000000000000L)
+    member x.WithMakesNoCriticalTailcalls =               ValFlags(flags ||| 0b00000010000000000000L)
 
-    member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b0000100000000000000L) <> 0L
+    member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b00000100000000000000L) <> 0L
 
-    member x.HasBeenReferenced                =                   (flags &&& 0b0001000000000000000L) <> 0L
+    member x.HasBeenReferenced                =                   (flags &&& 0b00001000000000000000L) <> 0L
 
-    member x.WithHasBeenReferenced                     =  ValFlags(flags ||| 0b0001000000000000000L)
+    member x.WithHasBeenReferenced                     =  ValFlags(flags ||| 0b00001000000000000000L)
 
-    member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b0010000000000000000L) <> 0L
+    member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b00010000000000000000L) <> 0L
 
-    member x.WithIsCompiledAsStaticPropertyWithoutField = ValFlags(flags ||| 0b0010000000000000000L)
+    member x.WithIsCompiledAsStaticPropertyWithoutField = ValFlags(flags ||| 0b00010000000000000000L)
 
-    member x.IsGeneratedEventVal =                                (flags &&& 0b0100000000000000000L) <> 0L
+    member x.IsGeneratedEventVal =                                (flags &&& 0b00100000000000000000L) <> 0L
 
-    member x.IsFixed                                =             (flags &&& 0b1000000000000000000L) <> 0L
+    member x.IsFixed                                =             (flags &&& 0b01000000000000000000L) <> 0L
 
-    member x.WithIsFixed                               =  ValFlags(flags ||| 0b1000000000000000000L)
+    member x.WithIsFixed                               =  ValFlags(flags ||| 0b01000000000000000000L)
+
+    member x.IgnoresByrefScope                         =          (flags &&& 0b10000000000000000000L) <> 0L
+
+    member x.WithIgnoresByrefScope                     =  ValFlags(flags ||| 0b10000000000000000000L)
 
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
@@ -250,7 +254,7 @@ type ValFlags(flags: int64) =
         // Clear the IsCompiledAsStaticPropertyWithoutField, only used to determine whether to use a true field for a value, and to eliminate the optimization info for observable bindings
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
-                                                      (flags       &&&    ~~~0b0011001100000000000L) 
+                                                      (flags       &&&    ~~~0b10011001100000000000L) 
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -423,9 +427,9 @@ type EntityFlags(flags: int64) =
     /// These two bits represents the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike                      = (flags       &&&     0b000000011000000L) 
                                                                 |> function 
-                                                                      | 0b000000011000000L -> Some true
-                                                                      | 0b000000010000000L -> Some false
-                                                                      | _                  -> None
+                                                                      | 0b000000011000000L -> ValueSome true
+                                                                      | 0b000000010000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
 
     /// Adjust the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.WithIsByRefLike flag = 
@@ -436,14 +440,14 @@ type EntityFlags(flags: int64) =
                       | false ->                                        0b000000010000000L) 
             EntityFlags flags
 
-    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly                       = (flags       &&&     0b000001100000000L) 
                                                                 |> function 
-                                                                      | 0b000001100000000L -> Some true
-                                                                      | 0b000001000000000L -> Some false
-                                                                      | _                  -> None
+                                                                      | 0b000001100000000L -> ValueSome true
+                                                                      | 0b000001000000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
 
-    /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.WithIsReadOnly flag = 
             let flags = 
                      (flags       &&&                                ~~~0b000001100000000L) |||
@@ -452,8 +456,24 @@ type EntityFlags(flags: int64) =
                       | false ->                                        0b000001000000000L) 
             EntityFlags flags
 
+    /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly                = (flags       &&&     0b000110000000000L) 
+                                                                |> function 
+                                                                      | 0b000110000000000L -> ValueSome true
+                                                                      | 0b000100000000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
+
+    /// Adjust the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.WithIsAssumedReadOnly flag = 
+            let flags = 
+                     (flags       &&&                                ~~~0b000110000000000L) |||
+                     (match flag with
+                      | true  ->                                        0b000110000000000L
+                      | false ->                                        0b000100000000000L) 
+            EntityFlags flags
+
     /// Get the flags as included in the F# binary metadata
-    member x.PickledBits =                         (flags       &&&  ~~~0b000001111000100L)
+    member x.PickledBits =                         (flags       &&&  ~~~0b000111111000100L)
 
 
 #if DEBUG
@@ -1065,11 +1085,17 @@ and /// Represents a type definition, exception definition, module definition or
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.SetIsByRefLike b = x.entity_flags <- x.entity_flags.WithIsByRefLike b 
 
-    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly = x.entity_flags.TryIsReadOnly
 
-    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.SetIsReadOnly b = x.entity_flags <- x.entity_flags.WithIsReadOnly b 
+
+    /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly = x.entity_flags.TryIsAssumedReadOnly
+
+    /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.SetIsAssumedReadOnly b = x.entity_flags <- x.entity_flags.WithIsAssumedReadOnly b 
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true | _ -> false
@@ -1446,7 +1472,10 @@ and
       IsSealed: bool 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-      IsInterface: bool 
+      IsAbstract:  bool 
+
+      /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+      IsInterface:  bool 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
       IsStructOrEnum: bool 
@@ -2009,6 +2038,7 @@ and Construct =
               IsStructOrEnum = st.PUntaint((fun st -> st.IsValueType || st.IsEnum), m)
               IsInterface = st.PUntaint((fun st -> st.IsInterface), m)
               IsSealed = st.PUntaint((fun st -> st.IsSealed), m)
+              IsAbstract = st.PUntaint((fun st -> st.IsAbstract), m)
               IsClass = st.PUntaint((fun st -> st.IsClass), m)
               IsErased = isErased
               IsSuppressRelocate = isSuppressRelocate }
@@ -2740,6 +2770,9 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     /// Indicates if the value is pinned/fixed
     member x.IsFixed = x.val_flags.IsFixed
 
+    /// Indicates if the value will ignore byref scoping rules
+    member x.IgnoresByrefScope = x.val_flags.IgnoresByrefScope
+
     /// Indicates if this value allows the use of an explicit type instantiation (i.e. does it itself have explicit type arguments,
     /// or does it have a signature?)
     member x.PermitsExplicitTypeInstantiation = x.val_flags.PermitsExplicitTypeInstantiation
@@ -2962,6 +2995,8 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.WithIsCompiledAsStaticPropertyWithoutField
 
     member x.SetIsFixed() = x.val_flags <- x.val_flags.WithIsFixed
+
+    member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
 
     member x.SetValReprInfo info = 
         match x.val_opt_data with
@@ -3566,11 +3601,17 @@ and
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.SetIsByRefLike b = x.Deref.SetIsByRefLike b
 
-    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    /// The on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly = x.Deref.TryIsReadOnly
 
-    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.SetIsReadOnly b = x.Deref.SetIsReadOnly b
+
+    /// The on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly = x.Deref.TryIsAssumedReadOnly
+
+    /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.SetIsAssumedReadOnly b = x.Deref.SetIsAssumedReadOnly b
 
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
     /// which in F# is called a 'unknown representation' type).

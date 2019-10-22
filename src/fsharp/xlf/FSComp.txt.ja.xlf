@@ -4,17 +4,52 @@
     <body>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="translated">F# {1} の {0}</target>
+        <target state="translated">F# {1} のための {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">言語バージョンで許可された値を表示し、'最新' や 'プレビュー' などの言語バージョンを指定する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">サポートされる言語バージョン:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">--langversion の値 '{0}' が認識されません。完全なリストについては、--langversion:? を使用してください</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">メンバー定義に予期しない記号 '.' があります。'with'、'=' またはその他のトークンが必要です。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">PDB に格納されているソース ファイル チェックサムを計算するためのアルゴリズムを指定します。サポートされる値は次のとおりです: SHA1 または SHA256 (既定)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">アルゴリズム '{0}' はサポートされていません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -229,12 +264,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
-        <target state="translated">マネージ リソースの認識されないプライバシー設定 '{0}'。有効なオプションは 'public' および 'private' です。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">'{0}.dll' に対する複数の参照は許可されていません</target>
+        <target state="translated">マネージド リソースの認識されないプライバシー設定 '{0}'。有効なオプションは 'public' および 'private' です。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -254,7 +284,7 @@
       </trans-unit>
       <trans-unit id="buildMultiFileRequiresNamespaceOrModule">
         <source>Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration.</source>
-        <target state="translated">ライブラリまたは複数ファイル アプリケーション内のファイルは、名前空間またはモジュールの宣言から開始する必要があります (例: 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'。アプリケーションの最後のソース ファイルのみ、このような宣言を省略できます。</target>
+        <target state="translated">ライブラリまたは複数ファイル アプリケーション内のファイルは、名前空間またはモジュールの宣言から開始する必要があります (例: 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule')。アプリケーションの最後のソース ファイルのみ、このような宣言を省略できます。</target>
         <note />
       </trans-unit>
       <trans-unit id="noEqualSignAfterModule">
@@ -2279,7 +2309,7 @@
       </trans-unit>
       <trans-unit id="parsSyntaxModuleStructEndDeprecated">
         <source>The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'</source>
-        <target state="translated">F# コードでは 'module ... = struct .. end' という構文は使用されません。'module ... = begin .. end' を使用してください。</target>
+        <target state="translated">F# コードでは ... 'module ... = struct .. end' という構文は使用されません。'module ... = begin .. end' を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSyntaxModuleSigEndDeprecated">
@@ -3534,8 +3564,7 @@
       </trans-unit>
       <trans-unit id="tcUninitializedValFieldsMustBeMutable">
         <source>Uninitialized 'val' fields must be mutable and marked with the '[&lt;DefaultValue&gt;]' attribute. Consider using a 'let' binding instead of a 'val' field.</source>
-        <target state="translated">初期化されていない 'val' フィールドは変更可能で、'[&lt;DefaultValue&gt;]' 属性によってマークされている必要があります。'val' フィールドの代わりに 'let' 
-バインディングの使用を検討してください。</target>
+        <target state="translated">初期化されていない 'val' フィールドは変更可能で、'[&lt;DefaultValue&gt;]' 属性によってマークされている必要があります。'val' フィールドの代わりに 'let' バインディングの使用を検討してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticValFieldsMustBeMutableAndPrivate">
@@ -5140,13 +5169,12 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
         <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">型名と型パラメーター間のスペースを削除します。たとえば、\"C   &lt;'T&gt;\" ではなく \"type C&lt;'T&gt;\" と入力します。型パラメーターは型名に隣接していなければなりません。</target>
+        <target state="translated">型名と型パラメーターの間のスペースを削除します。たとえば、\"C &lt;'T&gt;\" ではなく \"C&lt;'T&gt;\" とします。型パラメーターは型名に隣接して配置する必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">型名と型パラメーターの間のスペースを削除します。たとえば、
-\"C &lt;'T&gt;\" ではなく \"C&lt;'T&gt;\" とします。型パラメーターは型名に隣接して配置する必要があります。</target>
+        <target state="translated">型名と型パラメーターの間のスペースを削除します。たとえば、\"C &lt;'T&gt;\" ではなく \"C&lt;'T&gt;\" とします。型パラメーターは型名に隣接して配置する必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -5292,11 +5320,6 @@
       <trans-unit id="tcDllImportNotAllowed">
         <source>DLLImport bindings must be static members in a class or function definitions in a module</source>
         <target state="translated">DLLImport 束縛はモジュール内のクラスまたは関数定義の静的メンバーであることが必要です</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">mscorlib.dll または FSharp.Core.dll が明示的に参照される場合は、{0} オプションも渡す必要があります</target>
         <note />
       </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
@@ -7172,6 +7195,16 @@
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
         <target state="translated">これらのメンバーに実装が指定されていません (一部の結果が省略されました): {0} すべてのインターフェイス メンバーは実装され、適切な 'interface' 宣言でリストされている必要があります。例: 'interface ... with member ...'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">式に名前がありません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">'nameof' 演算子をファーストクラスの関数値として使用することは許可されていません。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">
