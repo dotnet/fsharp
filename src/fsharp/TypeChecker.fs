@@ -6337,32 +6337,57 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         | [SynIndexerArg.One h] -> SynExpr.Paren (h, range0, None, idxRange)
         | _ -> SynExpr.Paren (SynExpr.Tuple (false, GetIndexArgs indexArgs @ Option.toList vopt, [], idxRange), range0, None, idxRange)
 
-    let generateReverseOffset (arr: Ident) (offset: SynExpr) (range: range) = 
-        SynExpr.App(
-            ExprAtomicFlag.NonAtomic,
-            false,
-            SynExpr.App(
-                ExprAtomicFlag.NonAtomic,
-                true,
-                SynExpr.Ident(Ident("op_Subtraction", range)),
-                SynExpr.LongIdent(
-                    false,
-                    LongIdentWithDots(
-                        [arr; Ident("Length", range)], [range]
-                    ),
-                    None,
-                    range
-                ),
-                range
-            ),
-            offset,
-            range
-        )
+    // xs.Length - offset - 1
+    let generateReverseOffset (xsId: SynExpr) (offset: SynExpr) (range: range) = 
+        let subtract = "-"
+        let length = mkSynDot range range xsId (mkSynId range "Length")
+        let one = SynExpr.Const(SynConst.Int32(1), range)
+
+        mkSynInfix range
+            (mkSynInfix range
+                length
+                subtract
+                one)
+            subtract
+            offset
+             
+//        SynExpr.App(
+//            ExprAtomicFlag.NonAtomic,
+//            false,
+//            SynExpr.App(
+//                ExprAtomicFlag.NonAtomic,
+//                true,
+//                SynExpr.Ident(Ident("op_Subtraction", range)),
+//                SynExpr.App(
+//                    ExprAtomicFlag.NonAtomic,
+//                    false,
+//                    SynExpr.App(
+//                        ExprAtomicFlag.NonAtomic,
+//                        true,
+//                        SynExpr.Ident(Ident("op_Subtraction", range)),
+//                        SynExpr.LongIdent(
+//                            false,
+//                            LongIdentWithDots(
+//                                [arr; Ident("Length", range)], [range]
+//                            ),
+//                            None,
+//                            range
+//                        ),
+//                        range
+//                    ),
+//                    SynExpr.Const(SynConst.Int32(1), range),
+//                    range
+//                ),
+//                range
+//            ),
+//            offset,
+//            range
+//        )
 
     let expandedIndexArgs = (GetIndexArgs indexArgs) |> List.map (fun expr -> 
-        match expr, e1 with 
-        | SynExpr.App(atomicFlag, isInfix, funcExpr, SynExpr.ReverseIndex(offsetExpr, range, _), outerRange), SynExpr.Ident(collectionIdent) -> 
-             SynExpr.App(atomicFlag, isInfix, funcExpr, (generateReverseOffset collectionIdent offsetExpr range), outerRange)
+        match expr with 
+        | SynExpr.App(atomicFlag, isInfix, funcExpr, SynExpr.ReverseIndex(offsetExpr, range, _), outerRange) -> 
+             SynExpr.App(atomicFlag, isInfix, funcExpr, (generateReverseOffset e1 offsetExpr range), outerRange)
         | _ -> expr
     )
 

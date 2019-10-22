@@ -12,9 +12,9 @@ module DONOTCHECKIN =
             """
 open System
 
-let arr = [|1;2;3|]
-//Console.WriteLine(arr.Length - 1)
-let arr2 = arr.[^1..]
+let arr = Array3D.create 2 2 2 0
+Console.WriteLine(arr.Length - 1 - 2)
+let arr2 = arr.[^1.. ,*,*]
 Console.WriteLine(arr2)
             """
 
