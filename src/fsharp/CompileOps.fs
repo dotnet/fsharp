@@ -2011,7 +2011,6 @@ type CcuLoadFailureAction =
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
-      mutable autoResolveOpenDirectivesToDlls: bool
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string (* normally "." *)
@@ -2178,7 +2177,6 @@ type TcConfigBuilder =
           stackReserveSize = None
           conditionalCompilationDefines = []
           implicitIncludeDir = String.Empty
-          autoResolveOpenDirectivesToDlls = false
           openDebugInformationForLaterStaticLinking = false
           defaultFSharpBinariesDir = String.Empty
           compilingFslib = false
@@ -2621,7 +2619,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     let systemAssemblies = systemAssemblies
 
     member x.primaryAssembly = data.primaryAssembly
-    member x.autoResolveOpenDirectivesToDlls = data.autoResolveOpenDirectivesToDlls
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir
