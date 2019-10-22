@@ -3,8 +3,10 @@
 namespace FSharp.Compiler.Scripting.UnitTests
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
@@ -107,3 +109,26 @@ type InteractiveTests() =
         match result with
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
+
+    [<Test>]
+    member _.``Evaluation can be cancelled``() =
+        use script = new FSharpScript()
+        let sleepTime = 10000
+        let mutable result = None
+        let mutable wasCancelled = false
+        use tokenSource = new CancellationTokenSource()
+        let eval () =
+            try
+                result <- Some(script.Eval(sprintf "System.Threading.Thread.Sleep(%d)\n2" sleepTime, tokenSource.Token))
+                // if execution gets here (which it shouldn't), the value `2` will be returned
+            with
+            | :? OperationCanceledException -> wasCancelled <- true
+        let sw = Stopwatch.StartNew()
+        let evalTask = Task.Run(eval)
+        // cancel and wait for finish
+        tokenSource.Cancel()
+        evalTask.GetAwaiter().GetResult()
+        // ensure we cancelled and didn't complete the sleep or evaluation
+        Assert.True(wasCancelled)
+        Assert.LessOrEqual(sw.ElapsedMilliseconds, sleepTime)
+        Assert.AreEqual(None, result)
