@@ -151,11 +151,11 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "netcoreapp2.1"
+        $script:bootstrapTfm = "netcoreapp3.0"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "netcoreapp2.1") {
+    if ($bootstrapTfm -eq "netcoreapp3.0") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -259,7 +259,7 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
 }
 
 function BuildCompiler() {
-    if ($bootstrapTfm -eq "netcoreapp2.1") {
+    if ($bootstrapTfm -eq "netcoreapp3.0") {
         $dotnetPath = InitializeDotNetCli
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
         $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
@@ -268,10 +268,10 @@ function BuildCompiler() {
         $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
         $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
-        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp2.1" + $argNoRestore + $argNoIncremental
+        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
 
-        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp2.1" + $argNoRestore + $argNoIncremental
+        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
     }
 }
@@ -312,11 +312,6 @@ try {
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
-
-        # enable us to build netcoreapp2.1 product binaries
-        $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
-        InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
-        InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
     }
 
     if ($bootstrap) {
