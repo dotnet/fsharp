@@ -23,14 +23,14 @@
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.6</FSPackageMajorVersion>
+    <FSPackageMajorVersion>10.7</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>3</VSMinorVersion>
+    <VSMinorVersion>4</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -155,7 +155,7 @@
     <MicrosoftVisualStudioUtilitiesVersion>16.1.28917.181</MicrosoftVisualStudioUtilitiesVersion>
     <MicrosoftVisualStudioValidationVersion>15.3.58</MicrosoftVisualStudioValidationVersion>
     <MicrosoftVisualStudioWCFReferenceInteropVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropVersion>
-    <MicrosoftVSSDKBuildToolsVersion>16.0.2264</MicrosoftVSSDKBuildToolsVersion>
+    <MicrosoftVSSDKBuildToolsVersion>16.3.2099</MicrosoftVSSDKBuildToolsVersion>
     <VSSDKDebuggerVisualizersVersion>12.0.4</VSSDKDebuggerVisualizersVersion>
     <VSSDKVSLangProjVersion>7.0.4</VSSDKVSLangProjVersion>
     <VSSDKVSLangProj8Version>8.0.4</VSSDKVSLangProj8Version>
