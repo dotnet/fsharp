@@ -250,7 +250,6 @@ type VersionFlag =
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
-      mutable autoResolveOpenDirectivesToDlls: bool
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
@@ -417,7 +416,6 @@ type TcConfigBuilder =
 // Immutable TcConfig
 type TcConfig =
     member primaryAssembly: PrimaryAssembly
-    member autoResolveOpenDirectivesToDlls: bool
     member noFeedback: bool
     member stackReserveSize: int32 option
     member implicitIncludeDir: string
