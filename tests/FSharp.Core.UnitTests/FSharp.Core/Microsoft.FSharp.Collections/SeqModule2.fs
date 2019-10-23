@@ -123,16 +123,16 @@ type SeqModule2() =
         let IntRarr = ResizeArray(IntSeq)
         if Seq.last IntRarr <> 9 then Assert.Fail()
                  
-        // string Array
+        // string IList
         let strRarr = ResizeArray(strSeq) 
         if Seq.last strRarr <> "third" then Assert.Fail()
          
-        // Empty Array
-        let emptyRarr = ResizeArray<'a>()
+        // Empty IList
+        let emptyRarr = ResizeArray<unit>()
         CheckThrowsArgumentException ( fun() -> Seq.last emptyRarr)
       
-        // null Array
-        let nullRarr: ResizeArray<'a> = null
+        // null IList
+        let nullRarr: ResizeArray<unit> = null
         CheckThrowsArgumentNullException (fun () ->Seq.last nullRarr) 
         () 
 
@@ -163,16 +163,16 @@ type SeqModule2() =
         let intResult = Seq.tryLast IntArr
         Assert.AreEqual(9, intResult.Value)
                  
-        // string Seq
+        // string Array
         let strResult = Seq.tryLast (Array.ofSeq (seq ["first"; "second";  "third"]))
         Assert.AreEqual("third", strResult.Value)
          
-        // Empty Seq
+        // Empty Array
         let emptyResult = Seq.tryLast Array.empty
         Assert.IsTrue(emptyResult.IsNone)
       
-        // null Seq
-        let nullArr:array<'a> = null
+        // null Array
+        let nullArr:array<unit> = null
         CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullArr |> ignore) 
         () 
 
@@ -182,16 +182,16 @@ type SeqModule2() =
         let intResult = Seq.tryLast IntRarr
         Assert.AreEqual(9, intResult.Value)
                  
-        // string Seq
+        // string IList
         let strResult = Seq.tryLast (ResizeArray (seq ["first"; "second";  "third"]))
         Assert.AreEqual("third", strResult.Value)
          
-        // Empty Seq
-        let emptyResult = Seq.tryLast (ResizeArray<'a>())
+        // Empty IList
+        let emptyResult = Seq.tryLast (ResizeArray<unit>())
         Assert.IsTrue(emptyResult.IsNone)
       
-        // null Seq
-        let nullRarr:ResizeArray<'a> = null
+        // null IList
+        let nullRarr:ResizeArray<unit> = null
         CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullRarr |> ignore) 
         () 
 
