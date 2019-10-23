@@ -1381,55 +1381,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
             checkNonNull "source" source
-            match source with
-            | :? ('T[]) as a -> 
-                if a.Length = 0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                else a.[a.Length - 1]
-            | :? ('T IList) as a -> //ResizeArray and other collections 
-                if a.Count = 0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                else a.[a.Count - 1]
-            | :? ('T list) as a ->
-                let rec listLast (list: 'T list) = // copied from List.last which is not available here (compilation order)
-                    match list with
-                    | [x] -> x
-                    | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString  
-                    | _ :: tail -> listLast tail // inlined ? tail recursive?                                   
-                listLast a             
-            | _ -> 
-                use e = source.GetEnumerator()
-                if e.MoveNext() then
-                    let mutable res = e.Current
-                    while (e.MoveNext()) do res <- e.Current
-                    res
-                else
-                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            match Microsoft.FSharp.Primitives.Basics.Seq.tryLast source with
+            | ValueSome x -> x
+            | ValueNone -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
         
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
             checkNonNull "source" source
-            match source with
-            | :? ('T[]) as a -> 
-                if a.Length = 0 then None
-                else Some(a.[a.Length - 1])
-            | :? ('T IList) as a -> //ResizeArray and other collections
-                if a.Count = 0 then None
-                else Some(a.[a.Count - 1])
-            | :? ('T list) as a ->                 
-                let rec listTryLast (list: 'T list) = // copied from List.tryLast which is not available here (compilation order)
-                    match list with
-                    | [x] -> Some x
-                    | [] -> None
-                    | _ :: tail -> listTryLast tail //tail recursive? inlined?                    
-                listTryLast a  
-            | _ -> 
-                use e = source.GetEnumerator()
-                if e.MoveNext() then
-                    let mutable res = e.Current
-                    while (e.MoveNext()) do res <- e.Current
-                    Some(res)
-                else
-                    None
-
+            match Microsoft.FSharp.Primitives.Basics.Seq.tryLast source with
+            | ValueSome x -> Some x
+            | ValueNone -> None
+            
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
             checkNonNull "source" source
