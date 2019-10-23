@@ -1391,7 +1391,7 @@ namespace Microsoft.FSharp.Collections
             | :? ('T list) as a ->  
                 match a with 
                 |[] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                | _ -> List.last a.              
+                | _ -> List.last a             
             | _ -> 
                 use e = source.GetEnumerator()
                 if e.MoveNext() then
