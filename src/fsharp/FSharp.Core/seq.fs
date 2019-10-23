@@ -1377,7 +1377,13 @@ namespace Microsoft.FSharp.Collections
                       invalidArg "source" (SR.GetString(SR.notEnoughElements))
                   while e.MoveNext() do
                       yield e.Current }
-
+        
+        let rec private listLast (list: 'T list) = // copied from List.last which is not available here (compilation order)
+            match list with
+            | [x] -> x
+            | _ :: tail -> listLast tail
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString 
+                    
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
             checkNonNull "source" source
@@ -1388,10 +1394,8 @@ namespace Microsoft.FSharp.Collections
             | :? ('T IList) as a -> //ResizeArray and other collections 
                 if a.Count = 0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 else a.[a.Count - 1]
-            | :? ('T list) as a ->  
-                match a with 
-                |[] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                | _ -> List.last a             
+            | :? ('T list) as a ->
+                listLast a             
             | _ -> 
                 use e = source.GetEnumerator()
                 if e.MoveNext() then
@@ -1401,6 +1405,12 @@ namespace Microsoft.FSharp.Collections
                 else
                     invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
+        let rec private listTryLast (list: 'T list) = // copied from List.tryLast which is not available here (compilation order)
+            match list with
+            | [x] -> Some x
+            | _ :: tail -> listTryLast tail
+            | [] -> None
+        
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
             checkNonNull "source" source
@@ -1411,7 +1421,8 @@ namespace Microsoft.FSharp.Collections
             | :? ('T IList) as a -> //ResizeArray and other collections
                 if a.Count = 0 then None
                 else Some(a.[a.Count - 1])
-            | :? ('T list) as a -> List.tryLast a  
+            | :? ('T list) as a ->                 
+                listTryLast a  
             | _ -> 
                 use e = source.GetEnumerator()
                 if e.MoveNext() then
