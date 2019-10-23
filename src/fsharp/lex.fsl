@@ -235,8 +235,6 @@ rule token args skip = parse
      { MATCH_BANG }
  | "and!"
      { AND_BANG(false) }
- | "anduse!"
-     { AND_BANG(true) }
  | ident '!' 
      { let tok = Keywords.KeywordOrIdentifierToken args lexbuf (lexemeTrimRight lexbuf 1) 
        match tok with 

@@ -1,5 +1,5 @@
 // #ErrorMessages
-//<Expects id="FS3245" status="error" span="(12,9)">'return!' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</Expects>
+//<Expects id="FS0708" status="error" span="(12,9)">This control construct may only be used if the computation expression builder defines a 'ReturnFrom' method</Expects>
 
 namespace ApplicativeComputationExpressions
 

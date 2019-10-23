@@ -771,9 +771,6 @@ and
     /// F# syntax: let! pat = expr in expr
     /// F# syntax: use! pat = expr in expr
     /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
-    /// F# syntax: use! pat = expr and! ... and! ... and! pat = expr in expr
-    /// F# syntax: let! pat = expr anduse! ... and! ... and! pat = expr in expr
-    /// F# syntax: use! pat = expr and! ... anduse! ... and! pat = expr in expr
     /// Computation expressions only
     | LetOrUseBang of bindSeqPoint: SequencePointInfoForBinding * isUse: bool * isFromSource: bool * SynPat * rhs:SynExpr * range:range * andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * body:SynExpr
 
