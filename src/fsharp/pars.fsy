@@ -3084,9 +3084,7 @@ morebinders:
        let m = rhs parseState 1 (* TODO Pretty sure this is wrong *)
        (spBind,$1,true,$2,$4,m) :: $7 }
 
-  /* TODO What if there's an error halfway through the list of and! bindings? Probably okay since each and! is out of scope of the other */
-
-  | %prec prec_no_more_attr_bindings /* TODO Make a prec_no_more_andbang_bindings or something */
+  | %prec prec_no_more_attr_bindings
       { [] }
 
 declExpr:
