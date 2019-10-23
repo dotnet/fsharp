@@ -3335,12 +3335,35 @@ let x = query { for bbbb in abbbbc(*D0*) do
     [<Test>]
     member public this.``CompletionInDifferentEnvs5``() = 
         AssertCtrlSpaceCompleteContains
-            ["let foo = async { return 2 }"
-             "let bar = async { return 5 }"
-             "async { let! x = foo"
-             "        and! y = bar"
-             "        return "]
+            ["type Builder() ="
+             "    member x.MergeSources(a: 'T1, b: 'T2) = (a,b)"
+             "    member x.Bind(a: 'T1, f: 'T1 -> 'T2) = f a"
+             "    member x.Return(a: 'T) = a"
+             "let builder = Builder()"
+             "let foo = builder { return 2 }"
+             "let bar = builder { return 5 }"
+             "builder { let! x = foo"
+             "          and! y = bar"
+             "          return "]
              "return "
+            ["x";"y"]
+            [] 
+
+    [<Test>]
+    // Same as CompletionInDifferentEnvs5 but with yield instead of return
+    member public this.``CompletionInDifferentEnvs5b``() = 
+        AssertCtrlSpaceCompleteContains
+            ["type Builder() ="
+             "    member x.MergeSources(a: 'T1, b: 'T2) = (a,b)"
+             "    member x.Bind(a: 'T1, f: 'T1 -> 'T2) = f a"
+             "    member x.Yield(a: 'T) = a"
+             "let builder = Builder()"
+             "let foo = builder { yield 2 }"
+             "let bar = builder { yield 5 }"
+             "builder { let! x = foo"
+             "          and! y = bar"
+             "          yield "]
+             "yield "
             ["x";"y"]
             [] 
 

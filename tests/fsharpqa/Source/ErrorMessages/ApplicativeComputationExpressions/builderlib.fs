@@ -107,7 +107,6 @@ type EventuallyBuilder() =
     member __.TryWith(e,handler) = Eventually.tryWith e handler
     member __.TryFinally(e,compensation) =  Eventually.tryFinally e compensation
     member __.Using(resource:System.IDisposable,e) = Eventually.tryFinally (e resource) resource.Dispose
-    member __.ApplyUsing(resource:System.IDisposable,f) = Eventually.applyUsing resource f
     member __.While(gd,e) = Eventually.doWhile gd e
     member __.For(xs,f) = Eventually.doFor xs f
     member __.Delay(f) = Eventually.delay f

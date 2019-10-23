@@ -3046,32 +3046,6 @@ recover:
    | error { debugPrint("recovering via error"); true }  
    | EOF { debugPrint("recovering via EOF"); false }
 
-binders:
-  | BINDER headBindingPattern EQUALS typedSeqExprBlock IN opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let
-     { let spBind = SequencePointAtBinding(rhs2 parseState 1 5)
-       let m = unionRanges (rhs parseState 1) $8.Range
-       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4,m,$7,$8) }
-
-  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let
-     { $5 (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
-       let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
-       let m = unionRanges (rhs parseState 1) $8.Range
-       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4,m,$7,$8) }
-
-  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP morebinders error %prec expr_let
-     { // error recovery that allows intellisense when writing incomplete computation expressions
-       let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
-       let mAll = unionRanges (rhs parseState 1) (rhs parseState 7) // TODO Check this range
-       let m = $4.Range.EndRange // zero-width range
-       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4, mAll, $7, SynExpr.ImplicitZero m) }
-
-  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let 
-     { // error recovery that allows intellisense when writing incomplete computation expressions 
-       let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range) 
-       let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
-       let m = $4.Range.EndRange // zero-width range
-       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4, mAll, [], SynExpr.ImplicitZero m) }
-
 morebinders:
   | AND_BANG headBindingPattern EQUALS typedSeqExprBlock IN morebinders %prec expr_let /* TODO Check precedence */
      { let spBind = SequencePointAtBinding(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
@@ -3379,8 +3353,30 @@ declExpr:
   | YIELD_BANG declExpr
      { SynExpr.YieldOrReturnFrom (($1,not $1), $2, unionRanges (rhs parseState 1) $2.Range) } 
 
-  | binders
-     { $1 }
+  | BINDER headBindingPattern EQUALS typedSeqExprBlock IN opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let
+     { let spBind = SequencePointAtBinding(rhs2 parseState 1 5)
+       let m = unionRanges (rhs parseState 1) $8.Range
+       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4,m,$7,$8) }
+
+  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let
+     { $5 (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
+       let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
+       let m = unionRanges (rhs parseState 1) $8.Range
+       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4,m,$7,$8) }
+
+  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP morebinders error %prec expr_let
+     { // error recovery that allows intellisense when writing incomplete computation expressions
+       let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
+       let mAll = unionRanges (rhs parseState 1) (rhs parseState 7) // TODO Check this range
+       let m = $4.Range.EndRange // zero-width range
+       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4, mAll, $7, SynExpr.ImplicitZero m) }
+
+  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let 
+     { // error recovery that allows intellisense when writing incomplete computation expressions 
+       let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range) 
+       let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
+       let m = $4.Range.EndRange // zero-width range
+       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4, mAll, [], SynExpr.ImplicitZero m) }
 
   | DO_BANG typedSeqExpr IN opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
      { let spBind = NoSequencePointAtDoBinding

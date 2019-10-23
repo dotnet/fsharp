@@ -32,28 +32,6 @@ type TraceCore() =
 
     member builder.Trace x = trace.Add(x)
 
-(*
-    member builder.MapTryFinally(body, compensation) =
-        try
-            body ()
-        finally
-            compensation ()
-
-    /// Doesn't actually do any disposing here, since we are just interesting
-    /// in checking the order of events in this test
-    member builder.ApplyUsing(resource, body) =
-        builder.Trace TraceOp.EnterUsing resource
-        let body' = fun () ->
-            builder.Trace TraceOp.StartUsingBody resource
-            let res = body resource
-            builder.Trace TraceOp.EndUsingBody resource
-            res
-        builder.MapTryFinally(body', fun () ->
-            builder.Trace TraceOp.ExitUsing resource
-            (*resource.Dispose()*)
-            ())
-*)
-
 type TraceApplicativeCore() =
     inherit TraceCore()
 
