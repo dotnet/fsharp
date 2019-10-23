@@ -143,11 +143,11 @@ type SeqModule2() =
          
         // Empty list
         let emptylist: list<unit> = []
-        CheckThrowsArgumentException ( fun() -> Seq.last emptyRlist)
+        CheckThrowsArgumentException ( fun() -> Seq.last emptylist)
       
         // null list
         let nulllist: list<unit> = Unchecked.defaultof<list<unit>>
-        CheckThrowsArgumentNullException (fun () ->Seq.last nullRarr) 
+        CheckThrowsArgumentNullException (fun () ->Seq.last nulllist) 
         () 
         
 
@@ -187,7 +187,7 @@ type SeqModule2() =
       
         // null Array
         let nullArr:array<unit> = null
-        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullArr |> ignore) 
+        CheckThrowsArgumentNullException (fun () -> Seq.tryLast nullArr |> ignore) 
 
 
         // ------ Test for IList -----
