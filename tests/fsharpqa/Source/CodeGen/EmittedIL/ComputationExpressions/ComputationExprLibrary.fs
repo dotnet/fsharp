@@ -103,19 +103,19 @@ module Eventually =
         tryFinally (delay (fun () -> loop ie)) (fun _ -> ie.Dispose())
 
 type EventuallyBuilder() = 
-    member __.Bind(e,k) = Eventually.bind k e
-    member __.Apply(f,x) = Eventually.apply f x
-    member __.Return(v) = Eventually.Done v
-    member __.ReturnFrom(e:Eventually<_>) = e
-    member __.Combine(e1,e2) = e1 |> Eventually.bind (fun () -> e2)
-    member __.TryWith(e,handler) = Eventually.tryWith e handler
-    member __.TryFinally(e,compensation) =  Eventually.tryFinally e compensation
-    member __.Using(resource:System.IDisposable,e) = Eventually.tryFinally (e resource) resource.Dispose
-    member __.ApplyUsing(resource:System.IDisposable,f) = Eventually.applyUsing resource f
-    member __.While(gd,e) = Eventually.doWhile gd e
-    member __.For(xs,f) = Eventually.doFor xs f
-    member __.Delay(f) = Eventually.delay f
-    member __.Zero() = Eventually.Done ()
+    member x.Bind(e,k) = Eventually.bind k e
+    member x.Apply(f,arg) = Eventually.apply f arg
+    member x.Return(v) = Eventually.Done v
+    member x.ReturnFrom(e:Eventually<_>) = e
+    member x.Combine(e1,e2) = e1 |> Eventually.bind (fun () -> e2)
+    member x.TryWith(e,handler) = Eventually.tryWith e handler
+    member x.TryFinally(e,compensation) =  Eventually.tryFinally e compensation
+    member x.Using(resource:System.IDisposable,e) = Eventually.tryFinally (e resource) resource.Dispose
+    member x.ApplyUsing(resource:System.IDisposable,f) = Eventually.applyUsing resource f
+    member x.While(gd,e) = Eventually.doWhile gd e
+    member x.For(xs,f) = Eventually.doFor xs f
+    member x.Delay(f) = Eventually.delay f
+    member x.Zero() = Eventually.Done ()
 
 
 [<AutoOpen>]

@@ -14,8 +14,7 @@ type TraceOp =
 
 /// A pseudo identity functor
 type 'a Trace =
-    Trace of 'a
-    with
+    | Trace of 'a
     override this.ToString () =
         sprintf "%+A" this
 

@@ -164,7 +164,7 @@ module Structure =
             | Attribute           -> "Attribute"
             | Interface           -> "Interface"
             | HashDirective       -> "HashDirective"
-            | LetOrUseBang   -> "LetOrUseBang"
+            | LetOrUseBang        -> "LetOrUseBang"
             | TypeExtension       -> "TypeExtension"
             | YieldOrReturn       -> "YieldOrReturn"
             | YieldOrReturnBang   -> "YieldOrReturnBang"

@@ -3357,7 +3357,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
             (**)
     [<Test>]
-    member public this.``Bug229433.AfterMismatchedParensCauseWeirdParseTreeAndExceptionDuringTypecheck``() =
+    member public this.``Bug229433.AfterMismatchedParensCauseWeirdParseTreeAndExceptionDuringTypecheck``() =        
         AssertAutoCompleteContains [ """
             type T() =
                 member this.Bar() = ()

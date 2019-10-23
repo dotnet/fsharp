@@ -453,8 +453,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %nonassoc paren_pat_colon
 %nonassoc paren_pat_attribs
 %left OR BAR_BAR JOIN_IN
-%left AND   /* check */
-%left AND_BANG   /* check */
+%left AND
+%left AND_BANG
 %left  AMP AMP_AMP 
 %nonassoc pat_conj
 %nonassoc expr_not
