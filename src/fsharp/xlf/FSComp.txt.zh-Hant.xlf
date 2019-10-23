@@ -7,6 +7,16 @@
         <target state="translated">F # {1} 的 {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">顯示語言版本允許的值，指定 'latest' 或 'preview' 等語言版本</target>
@@ -30,16 +40,6 @@
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">成員定義中的非預期符號 '.'。預期為 'with'、'=' 或其他語彙基元。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceFormatError">
-        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceHeaderMalformed">
-        <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
@@ -270,11 +270,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">受控資源的無法辨識隱私設定 '{0}'，有效的選項是 'public' 和 'private'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">不允許多次參考 '{0}.dll'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -5330,11 +5325,6 @@
       <trans-unit id="tcDllImportNotAllowed">
         <source>DLLImport bindings must be static members in a class or function definitions in a module</source>
         <target state="translated">DLLImport 繫結必須是類別中的靜態成員或模組中的函式定義</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">如果明確參考了 mscorlib.dll 或 FSharp.Core.dll，就必須同時傳遞 {0} 選項</target>
         <note />
       </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">

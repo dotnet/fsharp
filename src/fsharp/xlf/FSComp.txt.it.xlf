@@ -7,6 +7,16 @@
         <target state="translated">{0} per F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Visualizza i valori consentiti per la versione del linguaggio. Specificare la versione del linguaggio, ad esempio 'latest' o 'preview'</target>
@@ -30,16 +40,6 @@
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Simbolo '.' imprevisto nella definizione di membro. È previsto 'with', '=' o un altro token.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceFormatError">
-        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceHeaderMalformed">
-        <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
@@ -270,11 +270,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">Impostazione di privacy '{0}' non riconosciuta per una risorsa gestita. Le opzioni valide sono 'public' e 'private'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Non sono consentiti più riferimenti a '{0}.dll'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -5330,11 +5325,6 @@
       <trans-unit id="tcDllImportNotAllowed">
         <source>DLLImport bindings must be static members in a class or function definitions in a module</source>
         <target state="translated">I binding DLLImport devono essere membri statici in una classe o definizioni di funzione in un modulo</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="needs-review-translation">Quando si fa riferimento in modo esplicito a mscorlib.dll o FSharp.Core.dll è necessario passare anche l'opzione {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">

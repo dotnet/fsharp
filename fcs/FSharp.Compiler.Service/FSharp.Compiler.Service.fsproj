@@ -26,7 +26,7 @@
     <Authors>Microsoft Corporation; F# community contributors</Authors>
     <PackageLicenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/fsharp/FSharp.Compiler.Service</PackageProjectUrl>
-    <PackageIconUrl>https://raw.github.com/fsharp/FSharp.Compiler.Service/master/misc/logo.png</PackageIconUrl>
+    <PackageIcon>logo.png</PackageIcon>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -39,6 +39,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\misc\logo.png" Pack="true" Visible="false" PackagePath="" />
     <Compile Include="..\FSharp.Compiler.Service\AssemblyInfo.fs">
       <Link>AssemblyInfo/AssemblyInfo.fs</Link>
     </Compile>

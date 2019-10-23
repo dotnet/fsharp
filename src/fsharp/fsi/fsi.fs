@@ -1141,44 +1141,50 @@ type internal FsiDynamicCompiler
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
 
         // Find all new declarations the EvaluationListener
+        let mutable itValue = None
         try
             let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports, declaredImpls)
             let contentFile = contents.ImplementationFiles.[0]
+
             // Skip the "FSI_NNNN"
-            match contentFile.Declarations with 
-            | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] -> 
+            match contentFile.Declarations with
+            | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] ->
                 let cenv = SymbolEnv(newState.tcGlobals, newState.tcState.Ccu, Some newState.tcState.CcuSig, newState.tcImports)
-                for decl in modDecls do 
-                    match decl with 
+                for decl in modDecls do
+                    match decl with
                     | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (v,_,_) ->
                         // Report a top-level function or value definition
-                      if v.IsModuleValueOrMember && not v.IsMember then 
-                        let fsiValueOpt = 
-                            match v.Item with 
-                            | Item.Value vref ->
-                                let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
-                                match optValue with
-                                | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(cenv, vref.Type)))
-                                | None -> None 
-                            | _ -> None
+                        if v.IsModuleValueOrMember && not v.IsMember then
+                            let fsiValueOpt =
+                                match v.Item with
+                                | Item.Value vref ->
+                                    let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
+                                    match optValue with
+                                    | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(cenv, vref.Type)))
+                                    | None -> None 
+                                | _ -> None
 
-                        let symbol = FSharpSymbol.Create(cenv, v.Item)
-                        let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
-                        fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
+                            if v.CompiledName = "it" then
+                                itValue <- fsiValueOpt
+
+                            let symbol = FSharpSymbol.Create(cenv, v.Item)
+                            let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
+                            fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
+
                     | FSharpImplementationFileDeclaration.Entity (e,_) ->
                         // Report a top-level module or namespace definition
                         let symbol = FSharpSymbol.Create(cenv, e.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
                         fsi.TriggerEvaluation (None, symbolUse, decl)
+
                     | FSharpImplementationFileDeclaration.InitAction _ ->
                         // Top level 'do' bindings are not reported as incremental declarations
                         ()
             | _ -> ()
         with _ -> ()
 
-        newState
-      
-     
+        newState, Completed itValue
+
     /// Evaluate the given expression and produce a new interactive state.
     member fsiDynamicCompiler.EvalParsedExpression (ctok, errorLogger: ErrorLogger, istate, expr: SynExpr) =
         let tcConfig = TcConfig.Create (tcConfigB, validate=false)
@@ -1188,13 +1194,13 @@ type internal FsiDynamicCompiler
         let defs = fsiDynamicCompiler.BuildItBinding expr
 
         // Evaluate the overall definitions.
-        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs)
+        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs) |> fst
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with 
         | NameResolution.Item.Value vref -> 
              if not tcConfig.noFeedback then 
                  valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, istate.emEnv, istate.ilxGenerator, vref.Deref)
-             
+
              /// Clear the value held in the previous "it" binding, if any, as long as it has never been referenced.
              match prevIt with
              | Some prevVal when not prevVal.Deref.HasBeenReferenced -> 
@@ -1391,7 +1397,6 @@ type internal FsiDynamicCompiler
 
 type ControlEventHandler = delegate of int -> bool
 
-
 // One strange case: when a TAE happens a strange thing 
 // occurs the next read from stdin always returns
 // 0 bytes, i.e. the channel will look as if it has been closed.  So we check
@@ -1545,22 +1550,14 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) = 
 
-#if NETSTANDARD
-        ignore tcConfigB
-        ignore tcImports
-        ignore fsiDynamicCompiler
-        ignore fsiConsoleOutput
-        { new System.IDisposable with 
-             member x.Dispose() = () }
-#else
         let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName:string) = 
 
            try 
                // Grab the name of the assembly
                let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-               let simpleAssemName = fullAssemName.Split([| ',' |]).[0]          
+               let simpleAssemName = fullAssemName.Split([| ',' |]).[0]
                if !progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..." 
-               
+
                // Special case: Mono Windows Forms attempts to load an assembly called something like "Windows.Forms.resources"
                // We can't resolve this, so don't try.
                // REVIEW: Suggest 4481, delete this special case.
@@ -1576,7 +1573,7 @@ module internal MagicAssemblyResolution =
                // Otherwise continue
                let assemblyReferenceTextDll = (simpleAssemName + ".dll") 
                let assemblyReferenceTextExe = (simpleAssemName + ".exe") 
-               let overallSearchResult =           
+               let overallSearchResult =
 
                    // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
                    // once an assembly has been referenced.
@@ -1620,15 +1617,15 @@ module internal MagicAssemblyResolution =
                    | Some(assembly) -> OkResult([],Choice2Of2 assembly)
                    | None -> 
 #endif
-                   
+
                    // As a last resort, try to find the reference without an extension
                    match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
                    | Some(resolvedPath) -> 
                        OkResult([],Choice1Of2 resolvedPath)
                    | None -> 
-                   
+
                    ErrorResult([],Failure (FSIstrings.SR.fsiFailedToResolveAssembly(simpleAssemName)))
-                           
+
                match overallSearchResult with 
                | ErrorResult _ -> null
                | OkResult _ -> 
@@ -1639,8 +1636,8 @@ module internal MagicAssemblyResolution =
                        assemblyLoadFrom assemblyName
                    | Choice2Of2 assembly -> 
                        assembly
-                   
-           with e -> 
+
+           with e ->
                stopProcessingRecovery e range0
                null
 
@@ -1651,12 +1648,11 @@ module internal MagicAssemblyResolution =
             // during compilation. So we recover the CompilationThreadToken here.
             let ctok = AssumeCompilationThreadWithoutEvidence ()
             ResolveAssembly (ctok, rangeStdin, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
-        
+
         AppDomain.CurrentDomain.add_AssemblyResolve(handler)
 
         { new System.IDisposable  with 
              member x.Dispose() = AppDomain.CurrentDomain.remove_AssemblyResolve(handler) }
-#endif
 
 //----------------------------------------------------------------------------
 // Reading stdin 
@@ -1766,6 +1762,8 @@ type internal FsiInteractionProcessor
 
     let referencedAssemblies = Dictionary<string, DateTime>()
 
+    let assemblyReferencedEvent = Control.Event<string>()
+
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
@@ -1851,7 +1849,7 @@ type internal FsiInteractionProcessor
 
             | IDefns (defs,_) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
-                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
+                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
@@ -1961,7 +1959,8 @@ type internal FsiInteractionProcessor
     /// 
     /// #directive comes through with other definitions as a SynModuleDecl.HashDirective.
     /// We split these out for individual processing.
-    let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: ErrorLogger, lastResult:option<FsiInteractionStepStatus>)  =
+    let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: ErrorLogger, lastResult:option<FsiInteractionStepStatus>, cancellationToken: CancellationToken)  =
+        cancellationToken.ThrowIfCancellationRequested()
         let action,nextAction,istate = 
             match action with
             | None                                      -> None,None,istate
@@ -2008,7 +2007,7 @@ type internal FsiInteractionProcessor
           | Some action, _ ->
               let istate,cont = ExecInteraction (ctok, tcConfig, istate, action, errorLogger)
               match cont with
-                | Completed _                  -> execParsedInteractions (ctok, tcConfig, istate, nextAction, errorLogger, Some cont)
+                | Completed _                  -> execParsedInteractions (ctok, tcConfig, istate, nextAction, errorLogger, Some cont, cancellationToken)
                 | CompletedWithReportedError e -> istate,CompletedWithReportedError e             (* drop nextAction on error *)
                 | EndOfFile                    -> istate,defaultArg lastResult (Completed None)   (* drop nextAction on EOF *)
                 | CtrlC                        -> istate,CtrlC                                    (* drop nextAction on CtrlC *)
@@ -2035,9 +2034,9 @@ type internal FsiInteractionProcessor
            stopProcessingRecovery e range0;
            istate, CompletedWithReportedError e
 
-    let mainThreadProcessParsedInteractions ctok errorLogger (action, istate) = 
+    let mainThreadProcessParsedInteractions ctok errorLogger (action, istate) cancellationToken = 
       istate |> mainThreadProcessAction ctok (fun ctok tcConfig istate ->
-        execParsedInteractions (ctok, tcConfig, istate, action, errorLogger, None))
+        execParsedInteractions (ctok, tcConfig, istate, action, errorLogger, None, cancellationToken))
 
     let parseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
@@ -2070,8 +2069,8 @@ type internal FsiInteractionProcessor
     /// During processing of startup scripts, this runs on the main thread.
     ///
     /// This is blocking: it reads until one chunk of input have been received, unless IsPastEndOfStream is true
-    member __.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter, errorLogger) =
-
+    member __.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter, errorLogger, ?cancellationToken: CancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
         if tokenizer.LexBuffer.IsPastEndOfStream then 
             let stepStatus = 
                 if fsiInterruptController.FsiInterruptStdinState = StdinEOFPermittedBecauseCtrlCRecentlyPressed then 
@@ -2095,7 +2094,7 @@ type internal FsiInteractionProcessor
 
                 // After we've unblocked and got something to run we switch 
                 // over to the run-thread (e.g. the GUI thread) 
-                let res = istate  |> runCodeOnMainThread (fun ctok istate -> mainThreadProcessParsedInteractions ctok errorLogger (action, istate)) 
+                let res = istate  |> runCodeOnMainThread (fun ctok istate -> mainThreadProcessParsedInteractions ctok errorLogger (action, istate) cancellationToken)
 
                 if !progress then fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res;
                 res)
@@ -2164,9 +2163,10 @@ type internal FsiInteractionProcessor
     /// Send a dummy interaction through F# Interactive, to ensure all the most common code generation paths are 
     /// JIT'ed and ready for use.
     member __.LoadDummyInteraction(ctok, errorLogger) =
-        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []), Completed None) |> fst)
+        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []) |> fst, Completed None) |> fst)
         
-    member __.EvalInteraction(ctok, sourceText, scriptFileName, errorLogger) =
+    member __.EvalInteraction(ctok, sourceText, scriptFileName, errorLogger, ?cancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
         use _unwind2 = ErrorLogger.PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
@@ -2175,7 +2175,7 @@ type internal FsiInteractionProcessor
         currState 
         |> InteractiveCatch errorLogger (fun istate ->
             let expr = ParseInteraction tokenizer
-            mainThreadProcessParsedInteractions ctok errorLogger (expr, istate) )
+            mainThreadProcessParsedInteractions ctok errorLogger (expr, istate) cancellationToken)
         |> commitResult
 
     member this.EvalScript (ctok, scriptPath, errorLogger) =
@@ -2303,6 +2303,8 @@ type internal FsiInteractionProcessor
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
+    member __.AssemblyReferenceAdded = assemblyReferencedEvent.Publish
+
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -2352,6 +2354,11 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
         if restart then runLoop() 
 
     runLoop();
+
+/// Thrown when there was an error compiling the given code in FSI.
+type FsiCompilationException(message: string, errorInfos: FSharpErrorInfo[] option) =
+    inherit System.Exception(message)
+    member __.ErrorInfos = errorInfos
 
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
@@ -2516,21 +2523,22 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let fsiInteractionProcessor = FsiInteractionProcessor(fsi, tcConfigB, fsiOptions, fsiDynamicCompiler, fsiConsolePrompt, fsiConsoleOutput, fsiInterruptController, fsiStdinLexerProvider, lexResourceManager, initialInteractiveState) 
 
     let commitResult res =
-        match res with 
+        match res with
         | Choice1Of2 r -> r
-        | Choice2Of2 None -> failwith "Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing"
+        | Choice2Of2 None -> raise (FsiCompilationException(FSIstrings.SR.fsiOperationFailed(), None))
         | Choice2Of2 (Some userExn) -> raise userExn
 
-    let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res = 
+    let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res =
         let errs = errorLogger.GetErrors()
-        let userRes = 
-            match res with 
+        let errorInfos = ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs, true)
+        let userRes =
+            match res with
             | Choice1Of2 r -> Choice1Of2 r
-            | Choice2Of2 None -> Choice2Of2 (System.Exception "Operation could not be completed due to earlier error")
+            | Choice2Of2 None -> Choice2Of2 (FsiCompilationException(FSIstrings.SR.fsiOperationCouldNotBeCompleted(), Some errorInfos) :> exn)
             | Choice2Of2 (Some userExn) -> Choice2Of2 userExn
 
         // 'true' is passed for "suggestNames" because we want the FSI session to suggest names for misspellings and it won't affect IDE perf much
-        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs, true)
+        userRes, errorInfos
 
     let dummyScriptFileName = "input.fsx"
 
@@ -2659,25 +2667,26 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.EvalExpression(ctok, sourceText, dummyScriptFileName, errorLogger)
         |> commitResultNonThrowing errorOptions dummyScriptFileName errorLogger
 
-    member x.EvalInteraction(sourceText) : unit =
+    member x.EvalInteraction(sourceText, ?cancellationToken) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
-
-        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger) 
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger, cancellationToken)
         |> commitResult
         |> ignore
 
-    member x.EvalInteractionNonThrowing(sourceText) =
+    member x.EvalInteractionNonThrowing(sourceText, ?cancellationToken) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger)
+        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger, cancellationToken)
         |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
 
     member x.EvalScript(scriptPath) : unit =

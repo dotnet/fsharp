@@ -71,7 +71,6 @@ module SurfaceArea =
 
         // public types only
         let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
-        let typenames = new System.Collections.Generic.List<string>()
 
         // extract canonical string form for every public member of every type
         let getTypeMemberStrings (t : Type) =
@@ -100,6 +99,7 @@ module SurfaceArea =
 
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
+        printfn "Verify"
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
 
@@ -124,37 +124,38 @@ module SurfaceArea =
         // If both sets are empty, the surface areas match so allow the test to pass.
         if Set.isEmpty unexpectedlyMissing
           && Set.isEmpty unexpectedlyPresent then
-            Assert.Pass ()
+            // pass
+            ()
+        else
 
-        let logFile =
-            let workDir = TestContext.CurrentContext.WorkDirectory
-            sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
-        System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
+            let logFile =
+                let workDir = TestContext.CurrentContext.WorkDirectory
+                sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
+            System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
-        // The surface areas don't match; prepare an easily-readable output message.
-        let msg =
-            let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
-            let sb = System.Text.StringBuilder ()
-            Printf.bprintf sb "Assembly: %A" asm
-            newLine sb
-            sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
-            Printf.bprintf sb "    windiff %s %s" fileName logFile
-            newLine sb
-            newLine sb
-            sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
-            for s in unexpectedlyMissing do
+            // The surface areas don't match; prepare an easily-readable output message.
+            let msg =
+                let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
+                let sb = System.Text.StringBuilder ()
+                Printf.bprintf sb "Assembly: %A" asm
                 newLine sb
-                sb.Append "    " |> ignore
-                sb.Append s |> ignore
-            newLine sb
-            newLine sb
-            sb.Append "Unexpectedly present (actual, not expected):" |> ignore
-            for s in unexpectedlyPresent do
+                sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
+                Printf.bprintf sb "    windiff %s %s" fileName logFile
                 newLine sb
-                sb.Append "    " |> ignore
-                sb.Append s |> ignore
-            newLine sb
-            sb.ToString ()
+                newLine sb
+                sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
+                for s in unexpectedlyMissing do
+                    newLine sb
+                    sb.Append "    " |> ignore
+                    sb.Append s |> ignore
+                newLine sb
+                newLine sb
+                sb.Append "Unexpectedly present (actual, not expected):" |> ignore
+                for s in unexpectedlyPresent do
+                    newLine sb
+                    sb.Append "    " |> ignore
+                    sb.Append s |> ignore
+                newLine sb
+                sb.ToString ()
 
-        Assert.Fail msg
-        ()
+            failwith msg

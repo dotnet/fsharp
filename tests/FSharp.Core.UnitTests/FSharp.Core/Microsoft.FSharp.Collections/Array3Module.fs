@@ -408,3 +408,79 @@ type Array3Module() =
         shouldBeEmpty m1.[3..,*,*] 
         shouldBeEmpty m1.[.. -1,*,*]  
 
+    member this.SlicingSingleFixed1() =
+        let m1 = (array3d [| 
+                            [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                               [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                            [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                               [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.; 0.; 0.; 0. ; 0.;|]
+        m1.[0,0,*] <- newSlice
+        Assert.AreEqual(m1.[1,0,0], 10.0)
+        Assert.AreEqual(m1.[0,0,*], newSlice)
+        
+    [<Test>]
+    member this.SlicingSingleFixed2() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.;|]
+        m1.[0,*,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        Assert.AreEqual(m1.[0,*,0], newSlice)
+
+    [<Test>]
+    member this.SlicingSingleFixed3() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.|]
+        m1.[*,0,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        Assert.AreEqual(m1.[*,0,0], newSlice)
+
+    [<Test>]
+    member this.SlicingDoubleFixed1() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.; 0.; 0.; 0. ; 0.;|]; [|0.; 0.; 0.; 0.; 0. ; 0.;|] |]
+        m1.[0,*,*] <- newSlice
+        Assert.AreEqual(m1.[1,0,0], 10.0)
+        if m1.[0,*,*] <> newSlice then Assert.Fail()
+        
+    [<Test>]
+    member this.SlicingDoubleFixed2() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.;|]; [|0.; 0.;|] |]
+        m1.[*,*,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        if m1.[*,*,0] <> newSlice then Assert.Fail()
+
+    [<Test>]
+    member this.SlicingDoubleFixed3() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.; 0.; 0.; 0. ; 0.;|]; [|0.; 0.; 0.; 0.; 0. ; 0.;|] |]
+        m1.[*,0,*] <- newSlice
+        Assert.AreEqual(m1.[0,1,0], 11.0)
+        if m1.[*,0,*] <> newSlice then Assert.Fail()

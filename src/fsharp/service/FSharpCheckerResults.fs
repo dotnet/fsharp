@@ -717,8 +717,9 @@ type internal TypeCheckInfo
                            | None | Some [] ->
                                let globalItems = 
                                    allSymbols() 
-                                   |> List.filter (fun x -> not x.Symbol.IsExplicitlySuppressed)
-                                   |> List.filter (fun x -> 
+                                   |> List.filter (fun x ->
+                                        not x.Symbol.IsExplicitlySuppressed &&
+
                                         match x.Symbol with
                                         | :? FSharpMemberOrFunctionOrValue as m when m.IsConstructor && filterCtors = ResolveTypeNamesToTypeRefs -> false 
                                         | _ -> true)

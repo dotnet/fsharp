@@ -120,18 +120,42 @@ module Utilities =
         roots |> Array.tryFind(fun root -> msbuildPathExists root) |> msbuildOption
 #else
     let dotnetHostPath =
+        // How to find dotnet.exe --- woe is me; probing rules make me sad.
+        // Algorithm:
+        // 1. Look for DOTNET_HOST_PATH environment variable
+        //    this is the main user programable override .. provided by user to find a specific dotnet.exe
+        // 2. Probe for are we part of an .NetSDK install
+        //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
+        //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
+        // 3. We are loaded in-process to some other application ... Eg. try .net
+        //    See if the host is dotnet.exe ... from netcoreapp3.0 on this is fairly unlikely
+        // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
+        //
         if isRunningOnCoreClr then
             match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
-            | value when not (String.IsNullOrEmpty(value)) -> Some value                           // Value set externally
+            | value when not (String.IsNullOrEmpty(value)) ->
+                Some value                           // Value set externally
             | _ ->
-                let main = Process.GetCurrentProcess().MainModule
-                if main.ModuleName.StartsWith("dotnet") then
-                    Some main.FileName
+                // Probe for netsdk install
+                let dotnetLocation =
+                    let dotnetApp =
+                        let platform = Environment.OSVersion.Platform
+                        if platform = PlatformID.Unix then "dotnet" else "dotnet.exe"
+                    let assemblyLocation = typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location
+                    Path.Combine(assemblyLocation, "../../..", dotnetApp)
+
+                if File.Exists(dotnetLocation) then
+                    Some dotnetLocation
                 else
-                    None
-            else
-                None
+                    let main = Process.GetCurrentProcess().MainModule
+                    if main.ModuleName ="dotnet" then
+                        Some main.FileName
+                    else
+                        Some dotnet
+        else
+            None
 #endif
+
     let executeBuild pathToExe arguments workingDir =
         match pathToExe with
         | Some path ->
@@ -149,11 +173,9 @@ module Utilities =
             p.Start() |> ignore
             p.WaitForExit()
             p.ExitCode = 0
-
         | None -> false
 
     let buildProject projectPath binLogging =
-
         let binLoggingArguments =
             match binLogging with
             | true -> "/bl"

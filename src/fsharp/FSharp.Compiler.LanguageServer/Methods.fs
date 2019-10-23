@@ -8,8 +8,10 @@ open System.Threading
 open Newtonsoft.Json.Linq
 open StreamJsonRpc
 
-// https://microsoft.github.io/language-server-protocol/specification
-type Methods(state: State) =
+// https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/
+type Methods() =
+
+    let state = State()
 
     /// Helper to run Async<'T> with a CancellationToken.
     let runAsync (cancellationToken: CancellationToken) (computation: Async<'T>) = Async.StartAsTask(computation, cancellationToken=cancellationToken)
@@ -29,8 +31,10 @@ type Methods(state: State) =
             [<Optional; DefaultParameterValue(null: JToken)>] initializationOptions: JToken,
             capabilities: ClientCapabilities,
             [<Optional; DefaultParameterValue(null: string)>] trace: string,
-            [<Optional; DefaultParameterValue(null: WorkspaceFolder[])>] workspaceFolders: WorkspaceFolder[]
+            [<Optional; DefaultParameterValue(null: WorkspaceFolder[])>] workspaceFolders: WorkspaceFolder[],
+            [<Optional; DefaultParameterValue(CancellationToken())>] cancellationToken: CancellationToken
         ) =
+        state.Initialize rootPath rootUri (fun projectOptions -> TextDocument.PublishDiagnostics(state, projectOptions) |> Async.Start)
         { InitializeResult.capabilities = ServerCapabilities.DefaultCapabilities() }
 
     [<JsonRpcMethod("initialized")>]
@@ -63,5 +67,6 @@ type Methods(state: State) =
         (
             options: Options
         ) =
-        sprintf "got options %A" options |> Console.Error.WriteLine
+        eprintfn "got options %A" options
         state.Options <- options
+        state.InvalidateAllProjects()

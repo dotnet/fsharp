@@ -315,10 +315,3 @@ let main argv = 0"""
             Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
         )
-
-    [<Test>]
-    let ``hello world``() =
-        CompileExeAndRun
-            """
-(printfn "Hello, world.")
-            """
