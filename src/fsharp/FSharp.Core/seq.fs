@@ -1381,24 +1381,40 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
-                res
-            else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            match source with
+            | :? ('T[]) as a -> 
+                if a.Length=0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                else a.[a.Length-1]
+            | :? IList<'T> as a -> 
+                if a.Count=0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                else a.[a.Count-1]
+            | _ -> 
+                use e = source.GetEnumerator()
+                if e.MoveNext() then
+                    let mutable res = e.Current
+                    while (e.MoveNext()) do res <- e.Current
+                    res
+                else
+                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
-                Some res
-            else
-                None
+            match source with
+            | :? ('T[]) as a -> 
+                if a.Length=0 then None
+                else Some(a.[a.Length-1])
+            | :? IList<'T> as a -> 
+                if a.Count=0 then None
+                else Some(a.[a.Count-1])
+            | _ -> 
+                use e = source.GetEnumerator()
+                if e.MoveNext() then
+                    let mutable res = e.Current
+                    while (e.MoveNext()) do res <- e.Current
+                    Some(res)
+                else
+                    None
 
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
