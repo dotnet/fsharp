@@ -99,8 +99,7 @@ type SeqModule2() =
         // null Seq
         let nullSeq:seq<'a> = null
         CheckThrowsArgumentNullException (fun () ->Seq.last nullSeq) 
-        () 
-        
+                
         
         // ------ Test for Array -----
         let IntArr = Array.ofSeq IntSeq                     
@@ -117,8 +116,7 @@ type SeqModule2() =
         // null Array
         let nullArr: array<'a> = null
         CheckThrowsArgumentNullException (fun () ->Seq.last nullArr) 
-        () 
-
+        
         // ---- Test for IList -----
         let IntRarr = ResizeArray(IntSeq)
         if Seq.last IntRarr <> 9 then Assert.Fail()
@@ -134,7 +132,24 @@ type SeqModule2() =
         // null IList
         let nullRarr: ResizeArray<unit> = null
         CheckThrowsArgumentNullException (fun () ->Seq.last nullRarr) 
+        
+        // ---- Test for list -----
+        let Intlist = List.ofSeq(IntSeq)
+        if Seq.last Intlist <> 9 then Assert.Fail()
+                 
+        // string list
+        let strlist = List.ofSeq(strSeq) 
+        if Seq.last strlist <> "third" then Assert.Fail()
+         
+        // Empty list
+        let emptylist: list<unit> = []
+        CheckThrowsArgumentException ( fun() -> Seq.last emptyRlist)
+      
+        // null list
+        let nulllist: list<unit> = Unchecked.defaultof<list<unit>>
+        CheckThrowsArgumentNullException (fun () ->Seq.last nullRarr) 
         () 
+        
 
     [<Test>]
     member this.TryLast() =
@@ -155,8 +170,7 @@ type SeqModule2() =
       
         // null Seq
         let nullSeq:seq<'a> = null
-        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullSeq |> ignore) 
-        () 
+        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullSeq |> ignore)
 
         // ------ Test for Array -----
         let IntArr = Array.ofSeq IntSeq                     
@@ -164,7 +178,7 @@ type SeqModule2() =
         Assert.AreEqual(9, intResult.Value)
                  
         // string Array
-        let strResult = Seq.tryLast (Array.ofSeq (seq ["first"; "second";  "third"]))
+        let strResult = Seq.tryLast (Array.ofSeq (["first"; "second";  "third"]))
         Assert.AreEqual("third", strResult.Value)
          
         // Empty Array
@@ -174,7 +188,6 @@ type SeqModule2() =
         // null Array
         let nullArr:array<unit> = null
         CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullArr |> ignore) 
-        () 
 
 
         // ------ Test for IList -----
@@ -183,7 +196,7 @@ type SeqModule2() =
         Assert.AreEqual(9, intResult.Value)
                  
         // string IList
-        let strResult = Seq.tryLast (ResizeArray (seq ["first"; "second";  "third"]))
+        let strResult = Seq.tryLast (ResizeArray (["first"; "second";  "third"]))
         Assert.AreEqual("third", strResult.Value)
          
         // Empty IList
@@ -193,9 +206,25 @@ type SeqModule2() =
         // null IList
         let nullRarr:ResizeArray<unit> = null
         CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullRarr |> ignore) 
+        
+        // ------ Test for list -----
+        let Intlist= List.ofSeq( IntSeq )
+        let intResult = Seq.tryLast Intlist
+        Assert.AreEqual(9, intResult.Value)
+                 
+        // string list
+        let strResult = Seq.tryLast ["first"; "second";  "third"]
+        Assert.AreEqual("third", strResult.Value)
+         
+        // Empty list
+        let emptylist: list<unit> = []
+        let emptyResult = Seq.tryLast emptylist
+        Assert.IsTrue(emptyResult.IsNone)
+      
+        // null list
+        let nulllist: list<unit> = Unchecked.defaultof<list<unit>>
+        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullList |> ignore) 
         () 
-
-
 
 
         
