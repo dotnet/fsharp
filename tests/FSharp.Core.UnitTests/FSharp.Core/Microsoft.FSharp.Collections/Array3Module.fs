@@ -26,9 +26,9 @@ type Array3Module() =
 
 
     let VerifyDimensions arr x y z =
-        if Array3D.length1 arr <> x then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array3D.length2 arr <> y then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array3D.length3 arr <> z then Assert.Fail("Array3D does not have expected dimensions.")
+        if Array3D.length1 arr <> x then Assert.Fail("Expected length1 to be " + (Array3D.length1 arr).ToString() + " but got " + x.ToString())
+        if Array3D.length2 arr <> y then Assert.Fail("Expected length2 to be " + (Array3D.length2 arr).ToString() + " but got " + x.ToString())
+        if Array3D.length3 arr <> z then Assert.Fail("Expected length3 to be " + (Array3D.length3 arr).ToString() + " but got " + x.ToString())
         ()
 
     let shouldBeEmpty arr = 
@@ -457,7 +457,7 @@ type Array3Module() =
         let newSlice = array2D [| [|0.; 0.; 0.; 0.; 0. ; 0.;|]; [|0.; 0.; 0.; 0.; 0. ; 0.;|] |]
         m1.[0,*,*] <- newSlice
         Assert.AreEqual(m1.[1,0,0], 10.0)
-        if m1.[0,*,*] <> newSlice then Assert.Fail()
+        shouldEqual m1.[0,*,*] newSlice
         
     [<Test>]
     member this.SlicingDoubleFixed2() =
@@ -470,7 +470,7 @@ type Array3Module() =
         let newSlice = array2D [| [|0.; 0.;|]; [|0.; 0.;|] |]
         m1.[*,*,0] <- newSlice
         Assert.AreEqual(m1.[0,0,1], 2.0)
-        if m1.[*,*,0] <> newSlice then Assert.Fail()
+        shouldEqual m1.[*,*,0] newSlice
 
     [<Test>]
     member this.SlicingDoubleFixed3() =
@@ -483,4 +483,4 @@ type Array3Module() =
         let newSlice = array2D [| [|0.; 0.; 0.; 0.; 0. ; 0.;|]; [|0.; 0.; 0.; 0.; 0. ; 0.;|] |]
         m1.[*,0,*] <- newSlice
         Assert.AreEqual(m1.[0,1,0], 11.0)
-        if m1.[*,0,*] <> newSlice then Assert.Fail()
+        shouldEqual m1.[*,0,*] newSlice
