@@ -2,21 +2,21 @@
 
 //#Expects: Success
 // << OUTPUT
-//Trace 3, .Return; Apply; Apply.
+//Trace 3, [|MergeSources; ApplicativeBind; ApplicativeReturn|]
 //OUTPUT
 
+module LetBangAndBang
 open ApplicativeBuilderLib
 
-module LetBangAndBang =
 
-    let () =
-        let tracer = TraceBuilder()
+let () =
+    let tracer = TraceApplicative()
 
-        let ceResult : int Trace =
-            tracer {
-                let! x = Trace 3
-                and! y = Trace true
-                return if y then x else -1
-            }
+    let ceResult : Trace<int> =
+        tracer {
+            let! x = Trace 3
+            and! y = Trace true
+            return if y then x else -1
+        }
 
-        printfn "%+A, %+A" ceResult (tracer.GetTrace ())
+    printfn "%+A, %+A" ceResult (tracer.GetTrace ())

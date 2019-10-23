@@ -1,11 +1,14 @@
-// #ErrorMessages
-//<Expects id="FS0010" status="error" span="(11,5)">Unexpected symbol '}' in expression.</Expects>
+// #Misc #AppCE
+
+//#Expects: Success
 
 namespace ApplicativeComputationExpressions
 
-module E_NoReturn =
+module LetBangAndBangNotTerminatedWithReturn =
 
+    let f x y = Eventually.Done (x + y)
     eventually {
         let! x = Eventually.NotYetDone (fun () -> Eventually.Done 4)
         and! y = Eventually.Done 6
+        return! f x y
     }

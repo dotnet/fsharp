@@ -47,9 +47,19 @@
         <target state="translated">Algoritmo '{0}' sem suporte</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAndBangNotSupported">
+        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
+        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="new">Attributes cannot be applied to type extensions.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
+        <source>use! may not be combined with and!</source>
+        <target state="new">use! may not be combined with and!</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -7220,31 +7230,6 @@
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
         <target state="translated">Mapa de caminho inválido. Os mapeamentos devem ser separados por vírgulas e do formato 'path=sourcePath'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn">
-        <source>Expecting 'and!', 'anduse!' or 'return' but saw something else. Applicative computation expressions must be of the form 'let! &lt;pat1&gt; = &lt;expr2&gt; and! &lt;pat2&gt; = &lt;expr2&gt; and! ... and! &lt;patN&gt; = &lt;exprN&gt; return &lt;exprBody&gt;'.</source>
-        <target state="new">Expecting 'and!', 'anduse!' or 'return' but saw something else. Applicative computation expressions must be of the form 'let! &lt;pat1&gt; = &lt;expr2&gt; and! &lt;pat2&gt; = &lt;expr2&gt; and! ... and! &lt;patN&gt; = &lt;exprN&gt; return &lt;exprBody&gt;'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidAndUseBangBinding">
-        <source>Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;' or 'anduse! &lt;var&gt; = &lt;expr&gt;'.</source>
-        <target state="new">Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;' or 'anduse! &lt;var&gt; = &lt;expr&gt;'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression">
-        <source>'{0}' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</source>
-        <target state="new">'{0}' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsNoBodyInApplicativeComputationExpression">
-        <source>No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</source>
-        <target state="new">No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcMoreAfterReturnInApplicativeComputationExpression">
-        <source>Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.</source>
-        <target state="new">Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.</target>
         <note />
       </trans-unit>
     </body>

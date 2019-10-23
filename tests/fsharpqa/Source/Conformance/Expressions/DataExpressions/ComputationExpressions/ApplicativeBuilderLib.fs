@@ -1,40 +1,39 @@
 namespace ApplicativeBuilderLib
 
 /// Used for tracking what operations a Trace builder was asked to perform
+[<RequireQualifiedAccess>]
 type TraceOp =
-    | Apply
-    | Return
+    | ApplicativeBind
+    | ApplicativeReturn
+    | ApplicativeCombine
+    | ApplicativeYield of obj
     | EnterUsing of resource : obj
     | StartUsingBody of resource : obj
     | EndUsingBody of resource : obj
     | ExitUsing of resource : obj
-    | Bind
+    | MergeSources
+    | MonadicBind
+    | MonadicReturn
     | Run
     | Delay
 
 /// A pseudo identity functor
-type 'a Trace =
+type Trace<'a> =
     | Trace of 'a
     override this.ToString () =
         sprintf "%+A" this
 
 /// A builder which records what operations it is asked to perform
-type TraceBuilder =
+type TraceCore() =
 
-    val mutable trace : TraceOp list
-    new () = { trace = [] }
+    let mutable trace = ResizeArray<_>()
 
-    member __.GetTrace () = List.rev __.trace
+    member builder.GetTrace () = trace.ToArray()
 
-    member __.Apply(Trace f, Trace x) =
-        __.trace <- Apply :: __.trace
-        Trace (f x)
+    member builder.Trace x = trace.Add(x)
 
-    member __.Return(x) =
-        __.trace <- Return :: __.trace
-        Trace x
-
-    member __.MapTryFinally(body, compensation) =
+(*
+    member builder.MapTryFinally(body, compensation) =
         try
             body ()
         finally
@@ -42,47 +41,94 @@ type TraceBuilder =
 
     /// Doesn't actually do any disposing here, since we are just interesting
     /// in checking the order of events in this test
-    member __.ApplyUsing(resource(*:#System.IDisposable*), body) =
-        __.trace <- EnterUsing resource :: __.trace
+    member builder.ApplyUsing(resource, body) =
+        builder.Trace TraceOp.EnterUsing resource
         let body' = fun () ->
-            __.trace <- StartUsingBody resource :: __.trace
+            builder.Trace TraceOp.StartUsingBody resource
             let res = body resource
-            __.trace <- EndUsingBody resource :: __.trace
+            builder.Trace TraceOp.EndUsingBody resource
             res
-        __.MapTryFinally(body', fun () ->
-            __.trace <- ExitUsing resource :: __.trace
+        builder.MapTryFinally(body', fun () ->
+            builder.Trace TraceOp.ExitUsing resource
             (*resource.Dispose()*)
             ())
+*)
 
-type TraceWithDelayAndRunBuilder() =
-    inherit TraceBuilder()
+type TraceApplicativeCore() =
+    inherit TraceCore()
 
-    member __.Run(x) =
-        __.trace <- Run :: __.trace
+    member builder.MergeSources(Trace x1, Trace x2) =
+        builder.Trace TraceOp.MergeSources
+        Trace (x1, x2)
+
+    member builder.Bind(Trace x, f) =
+        builder.Trace TraceOp.ApplicativeBind
+        Trace (f x)
+
+
+type TraceApplicative() =
+    inherit TraceCore()
+
+    member builder.MergeSources(Trace x1, Trace x2) =
+        builder.Trace TraceOp.MergeSources
+        Trace (x1, x2)
+
+    member builder.Bind(Trace x, f) =
+        builder.Trace TraceOp.ApplicativeBind
+        Trace (f x)
+
+    member builder.Return(x) =
+        builder.Trace TraceOp.ApplicativeReturn
+        x
+type TraceApplicativeMonoid() =
+    inherit TraceApplicativeCore()
+
+    member builder.Yield(x) =
+        builder.Trace (TraceOp.ApplicativeYield x)
+        [x]
+
+    member builder.Combine(Trace x1, Trace x2) =
+        builder.Trace TraceOp.ApplicativeCombine
+        Trace (x1 @ x2)
+
+type TraceApplicativeWithDelayAndRun() =
+    inherit TraceApplicative()
+
+    member builder.Run(x) =
+        builder.Trace TraceOp.Run
         x
 
-    member __.Delay(thunk) =
-        __.trace <- Delay :: __.trace
+    member builder.Delay(thunk) =
+        builder.Trace TraceOp.Delay
         thunk ()
 
-type TraceWithDelayBuilder() =
-    inherit TraceBuilder()
+type TraceApplicativeWithDelay() =
+    inherit TraceApplicative()
 
-    member __.Delay(thunk) =
-        __.trace <- Delay :: __.trace
+    member builder.Delay(thunk) =
+        builder.Trace TraceOp.Delay
         thunk ()
 
-type TraceWithRunBuilder() =
-    inherit TraceBuilder()
+type TraceApplicativeWithRun() =
+    inherit TraceApplicative()
 
-    member __.Run(x) =
-        __.trace <- Run :: __.trace
+    member builder.Run(x) =
+        builder.Trace TraceOp.Run
         x
 
-type MonadicTraceBuilder() =
-    inherit TraceBuilder()
+type TraceMonadic() =
+    inherit TraceCore()
 
-    member __.Bind(x : 'a Trace, f : 'a -> 'b Trace) : 'b Trace =
-        __.trace <- Bind :: __.trace
+    member builder.MergeSources(Trace x1, Trace x2) =
+        builder.Trace TraceOp.MergeSources
+        Trace (x1, x2)
+
+    member builder.Bind(x : 'a Trace, f : 'a -> 'b Trace) : 'b Trace =
+        builder.Trace TraceOp.MonadicBind
         let (Trace x') = x
         f x'
+
+    member builder.Return(x: 'T) : Trace<'T> =
+        builder.Trace TraceOp.MonadicReturn
+        Trace x
+

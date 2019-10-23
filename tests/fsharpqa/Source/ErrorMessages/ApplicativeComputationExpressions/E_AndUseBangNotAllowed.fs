@@ -1,5 +1,5 @@
 // #ErrorMessages
-//<Expects id="FS0708" status="error" span="(11,13)">This control construct may only be used if the computation expression builder defines a 'ApplyUsing' method</Expects>
+//<Expects id="FS1141" status="error" span="(11,13)">Identifiers followed by '!' are reserved for future use</Expects>
 
 namespace ApplicativeComputationExpressions
 

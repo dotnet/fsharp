@@ -251,7 +251,7 @@ module Structure =
                     yield! [ for (_,_,_,_,eAndBang,_) in es do yield eAndBang ]
                 ]
                 |> List.iter (fun e ->
-                    // for `let!`, `use!`, `and!` or `anduse!` the pattern begins at the end of the
+                    // for `let!`, `use!` or `and!` the pattern begins at the end of the
                     // keyword so that this scope can be used without adjustment if there is no `=`
                     // on the same line. If there is an `=` the range will be adjusted during the
                     // tooltip creation

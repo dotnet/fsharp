@@ -2,21 +2,21 @@
 
 //#Expects: Success
 // << OUTPUT
-//Trace 3, .Return; Apply; Apply; Run.
+//Trace 3, [|MergeSources; ApplicativeBind; ApplicativeReturn; Run|]
 //OUTPUT
+
+module ApplicativeWithRun
 
 open ApplicativeBuilderLib
 
-module DelayAndRun =
+let () =
+    let tracerWithRun = TraceApplicativeWithRun()
 
-    let () =
-        let tracerWithRun = TraceWithRunBuilder()
+    let ceResult : int Trace =
+        tracerWithRun {
+            let! x = Trace 3
+            and! y = Trace true
+            return if y then x else -1
+        }
 
-        let ceResult : int Trace =
-            tracerWithRun {
-                let! x = Trace 3
-                and! y = Trace true
-                return if y then x else -1
-            }
-
-        printfn "%+A, %+A" ceResult (tracerWithRun.GetTrace ())
+    printfn "%+A, %+A" ceResult (tracerWithRun.GetTrace ())

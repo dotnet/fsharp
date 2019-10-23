@@ -1,9 +1,10 @@
 // #ErrorMessages
-//<Expects id="FS0708" status="error" span="(11,13)">This control construct may only be used if the computation expression builder defines a 'Apply' method</Expects>
+//<Expects id="FS0708" status="error" span="(11,22)">This control construct may only be used if the computation expression builder defines a 'MergeSources' method</Expects>
+
 
 namespace ApplicativeComputationExpressions
 
-module E_ApplyNotDefinedOnBuilder =
+module MergeSourcesNotDefinedOnBuilder =
 
     let example =
         eventuallyNoApply {

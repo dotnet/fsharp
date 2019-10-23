@@ -1466,6 +1466,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3251,chkNoFirstClassNameOf,"Using the 'nameof' operator as a first-class function value is not permitted."
 3300,chkInvalidFunctionParameterType,"The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL."
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
+3344,tcAndBangNotSupported,"This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature."
 3345,tcInvalidUseBangBindingNoAndBangs,"use! may not be combined with and!"
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 fSharpBannerVersion,"%s for F# %s"

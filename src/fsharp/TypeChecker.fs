@@ -8364,16 +8364,22 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in ...' -->
         //     build.Bind(build.MergeSources(expr1, expr2), ...)
-        | SynExpr.LetOrUseBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letBindRange, ((_ :: _) as andBangBindings), bodyExpr) ->
-            let sources = letRhsExpr :: [for (_, _, _, _, andExpr, _) in andBangBindings -> andExpr ]
-            let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
-            let mergedSources = mkSynCall "MergeSources" sourcesRange sources
-            let consumePats = [for (_, _, _, andPat, _, _) in andBangBindings -> andPat ]
-            let consumePat = SynPat.Tuple(false, consumePats, letPat.Range)
-            let bodyExprT = transNoQueryOps bodyExpr
-            let consumeExpr = SynExpr.MatchLambda(false, letBindRange, [Clause(consumePat, None, bodyExprT, letPat.Range, SequencePointAtTarget)], letSpBind, letBindRange)
-            let bindExpr = mkSynCall "Bind" comp.Range [mergedSources; consumeExpr]
-            Some (translatedCtxt bindExpr)
+        | SynExpr.LetOrUseBang(letSpBind, false, _, letPat, letRhsExpr, letBindRange, ((_ :: _) as andBangBindings), bodyExpr) ->
+            if cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then
+                let bindRange = match letSpBind with SequencePointAtBinding m -> m | _ -> letRhsExpr.Range
+                let sources = letRhsExpr :: [for (_, _, _, _, andExpr, _) in andBangBindings -> andExpr ]
+                let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
+                if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "MergeSources" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("MergeSources"), bindRange))
+                if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Bind" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
+                let mergedSources = mkSynCall "MergeSources" sourcesRange sources
+                let consumePats = letPat :: [for (_, _, _, andPat, _, _) in andBangBindings -> andPat ]
+                let consumePat = SynPat.Tuple(false, consumePats, letPat.Range)
+                let bodyExprT = transNoQueryOps bodyExpr
+                let consumeExpr = SynExpr.MatchLambda(false, letBindRange, [Clause(consumePat, None, bodyExprT, letPat.Range, SequencePointAtTarget)], letSpBind, letBindRange)
+                let bindExpr = mkSynCall "Bind" bindRange [mergedSources; consumeExpr]
+                Some (translatedCtxt bindExpr)
+            else
+                error(Error(FSComp.SR.tcAndBangNotSupported(), comp.Range))
 
         | SynExpr.Match (spMatch, expr, clauses, m) ->
             let mMatch = match spMatch with SequencePointAtBinding mMatch -> mMatch | _ -> m
