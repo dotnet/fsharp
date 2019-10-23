@@ -5696,19 +5696,19 @@ namespace Microsoft.FSharp.Core
             member source.GetSlice(start1:int option, finish1:int option, index2:int, index3:int) = 
                 GetArraySlice3DFixedDouble source start1 finish1 index2 index3 0
             
-            member target.SetSlice(index1: int, start2: int option, finish2: int option, start3: int option, finish3: int option, source: 'T[,]) = 
+            member target.SetSlice(index1: int, start2: int option, finish2: int option, start3: int option, finish3: int option, source: 'T[,]) =
                 SetArraySlice3DFixedSingle target source index1 start2 finish2 start3 finish3 1 2
             member target.SetSlice(start1: int option, finish1: int option, index2: int, start3: int option, finish3: int option, source: 'T[,]) =
                 SetArraySlice3DFixedSingle target source index2 start1 finish1 start3 finish3 0 2
             member target.SetSlice(start1: int option, finish1: int option, start2: int option, finish2: int option, index3: int, source: 'T[,]) =
                 SetArraySlice3DFixedSingle target source index3 start1 finish1 start2 finish2 0 1
             
-            member target.SetSlice(index1: int, index2: int, start3: int option, finish3: int option, source: 'T[])
-                = SetArraySlice3DFixedDouble target source index1 index2 start3 finish3 2
-            member target.SetSlice(index1: int, start2: int option, finish2: int option, index3: int, source: 'T[])
-                = SetArraySlice3DFixedDouble target source index1 index3 start2 finish2 1
-            member target.SetSlice(start1: int option, finish1: int option,  index2: int, index3: int, source: 'T[])
-                = SetArraySlice3DFixedDouble target source index2 index3 start1 finish1 0
+            member target.SetSlice(index1: int, index2: int, start3: int option, finish3: int option, source: 'T[]) =
+                SetArraySlice3DFixedDouble target source index1 index2 start3 finish3 2
+            member target.SetSlice(index1: int, start2: int option, finish2: int option, index3: int, source: 'T[]) = 
+                SetArraySlice3DFixedDouble target source index1 index3 start2 finish2 1
+            member target.SetSlice(start1: int option, finish1: int option, index2: int, index3: int, source: 'T[]) = 
+                SetArraySlice3DFixedDouble target source index2 index3 start1 finish1 0
 
 
 namespace Microsoft.FSharp.Control
