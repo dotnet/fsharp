@@ -1385,9 +1385,10 @@ namespace Microsoft.FSharp.Collections
             | :? ('T[]) as a -> 
                 if a.Length = 0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 else a.[a.Length - 1]
-            | :? IList<'T> as a -> 
+            | :? ('T IList) as a -> //ResizeArray and other collections 
                 if a.Count = 0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 else a.[a.Count - 1]
+            | :? list<'T> as a -> List.last a                
             | _ -> 
                 use e = source.GetEnumerator()
                 if e.MoveNext() then
@@ -1404,9 +1405,10 @@ namespace Microsoft.FSharp.Collections
             | :? ('T[]) as a -> 
                 if a.Length = 0 then None
                 else Some(a.[a.Length - 1])
-            | :? IList<'T> as a -> 
+            | :? ('T IList) as a -> //ResizeArray and other collections
                 if a.Count = 0 then None
                 else Some(a.[a.Count - 1])
+            | :? ('T list) as a -> List.tryLast a  
             | _ -> 
                 use e = source.GetEnumerator()
                 if e.MoveNext() then
