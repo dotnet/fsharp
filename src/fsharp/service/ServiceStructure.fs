@@ -245,7 +245,7 @@ module Structure =
             | SynExpr.DoBang (e, r) ->
                 rcheck Scope.Do Collapse.Below r <| Range.modStart 3 r
                 parseExpr e
-            | SynExpr.LetOrUseBang (_,_,_,pat,eLet,_,es,eBody) ->
+            | SynExpr.LetOrUseBang (_, _, _, pat, eLet, es, eBody, _) ->
                 [
                     yield eLet
                     yield! [ for (_,_,_,_,eAndBang,_) in es do yield eAndBang ]

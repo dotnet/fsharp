@@ -896,7 +896,7 @@ module InterfaceStubGenerator =
                 | SynExpr.DoBang (synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, _synPat, synExpr1, _range, synExprAndBangs, synExpr2) -> 
+                | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, _synPat, synExpr1, synExprAndBangs, synExpr2, _range) -> 
                     [
                         yield synExpr1
                         for (_,_,_,_,eAndBang,_) in synExprAndBangs do

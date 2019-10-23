@@ -772,7 +772,7 @@ and
     /// F# syntax: use! pat = expr in expr
     /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
     /// Computation expressions only
-    | LetOrUseBang of bindSeqPoint: SequencePointInfoForBinding * isUse: bool * isFromSource: bool * SynPat * rhs:SynExpr * range:range * andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * body:SynExpr
+    | LetOrUseBang of bindSeqPoint: SequencePointInfoForBinding * isUse: bool * isFromSource: bool * SynPat * rhs: SynExpr * andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * body:SynExpr * range: range 
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of  matchSeqPoint: SequencePointInfoForBinding * expr: SynExpr * clauses: SynMatchClause list * range: range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
