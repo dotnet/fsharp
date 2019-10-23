@@ -1388,7 +1388,10 @@ namespace Microsoft.FSharp.Collections
             | :? ('T IList) as a -> //ResizeArray and other collections 
                 if a.Count = 0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 else a.[a.Count - 1]
-            | :? list<'T> as a -> List.last a                
+            | :? ('T list) as a ->  
+                match a with 
+                |[] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                | _ -> List.last a.              
             | _ -> 
                 use e = source.GetEnumerator()
                 if e.MoveNext() then
