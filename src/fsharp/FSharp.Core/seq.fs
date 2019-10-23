@@ -1383,10 +1383,10 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             match source with
             | :? ('T[]) as a -> 
-                if a.Length=0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                if a.Length = 0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 else a.[a.Length - 1]
             | :? IList<'T> as a -> 
-                if a.Count=0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                if a.Count = 0 then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 else a.[a.Count - 1]
             | _ -> 
                 use e = source.GetEnumerator()
@@ -1402,10 +1402,10 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             match source with
             | :? ('T[]) as a -> 
-                if a.Length=0 then None
+                if a.Length = 0 then None
                 else Some(a.[a.Length - 1])
             | :? IList<'T> as a -> 
-                if a.Count=0 then None
+                if a.Count = 0 then None
                 else Some(a.[a.Count - 1])
             | _ -> 
                 use e = source.GetEnumerator()
