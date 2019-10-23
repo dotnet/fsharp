@@ -146,8 +146,8 @@ type SeqModule2() =
         CheckThrowsArgumentException ( fun() -> Seq.last emptylist)
       
         // null list
-        let nulllist: list<unit> = Unchecked.defaultof<list<unit>>
-        CheckThrowsArgumentNullException (fun () ->Seq.last nulllist) 
+        let nullList: list<unit> = Unchecked.defaultof<list<unit>>
+        CheckThrowsArgumentNullException (fun () ->Seq.last nullList) 
         () 
         
 
@@ -222,7 +222,7 @@ type SeqModule2() =
         Assert.IsTrue(emptyResult.IsNone)
       
         // null list
-        let nulllist: list<unit> = Unchecked.defaultof<list<unit>>
+        let nullList: list<unit> = Unchecked.defaultof<list<unit>>
         CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullList |> ignore) 
         () 
 
