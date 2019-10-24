@@ -26,13 +26,13 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Last")>]
         let last (list: 'T list) =
-            match Microsoft.FSharp.Primitives.Basics.List.tryLast list with
+            match Microsoft.FSharp.Primitives.Basics.List.tryLastV list with
             | ValueSome x -> x
             | ValueNone -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
         [<CompiledName("TryLast")>]
         let rec tryLast (list: 'T list) =
-            match Microsoft.FSharp.Primitives.Basics.List.tryLast list with
+            match Microsoft.FSharp.Primitives.Basics.List.tryLastV list with
             | ValueSome x -> Some x
             | ValueNone -> None            
 

@@ -988,11 +988,11 @@ module internal List =
             takeWhileFreshConsTail cons p xs
             cons
 
-    let rec tryLast (list: 'T list) = 
+    let rec tryLastV (list: 'T list) = 
         match list with
         | [] -> ValueNone
         | [x] -> ValueSome x        
-        | _ :: tail -> tryLast tail           
+        | _ :: tail -> tryLastV tail           
 
 module internal Array =
 
@@ -1195,7 +1195,7 @@ module internal Array =
             res
 
 module internal Seq =
-    let tryLast (source : seq<_>) =
+    let tryLastV (source : seq<_>) =
         //checkNonNull "source" source //done in main Seq.tryLast
         match source with
         | :? ('T[]) as a -> 
@@ -1206,7 +1206,7 @@ module internal Seq =
             if a.Count = 0 then ValueNone
             else ValueSome(a.[a.Count - 1])
         
-        | :? ('T list) as a -> List.tryLast a 
+        | :? ('T list) as a -> List.tryLastV a 
         
         | _ -> 
             use e = source.GetEnumerator()

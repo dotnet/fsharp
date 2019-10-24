@@ -1381,14 +1381,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
             checkNonNull "source" source
-            match Microsoft.FSharp.Primitives.Basics.Seq.tryLast source with
+            match Microsoft.FSharp.Primitives.Basics.Seq.tryLastV source with
             | ValueSome x -> x
             | ValueNone -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
         
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
             checkNonNull "source" source
-            match Microsoft.FSharp.Primitives.Basics.Seq.tryLast source with
+            match Microsoft.FSharp.Primitives.Basics.Seq.tryLastV source with
             | ValueSome x -> Some x
             | ValueNone -> None
             
