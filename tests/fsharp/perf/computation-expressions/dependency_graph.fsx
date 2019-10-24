@@ -180,3 +180,13 @@ let test msg f =
 
 test "using and!" test1
 test "using let!" test2
+
+//inp1.Dependees.Length = 1
+//inp2.Dependees.Length = 1
+//total recalcs using and! = 2000
+//total nodes using and! = 1
+//----
+//inp1.Dependees.Length = 1
+//inp2.Dependees.Length = 2000
+//total recalcs using let! = 6000
+//total nodes using let! = 4003
