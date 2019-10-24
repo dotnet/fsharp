@@ -49,17 +49,6 @@ module Eventually =
         | Done x -> k x 
         | NotYetDone work -> NotYetDone (fun () -> bind k (work()))
 
-    let rec apply f e = 
-        match f, e with 
-        | Done f, Done x -> Done (f x)
-        | Done _, NotYetDone work -> NotYetDone (fun () -> apply f (work()))
-        | NotYetDone work, _ -> NotYetDone (fun () -> apply (work()) e)
-    
-    let rec map f e =
-        match e with
-        | Done x -> Done (f x)
-        | NotYetDone work -> NotYetDone (fun () -> map f (work()))
-
     let fold f acc seq = 
         (Done acc,seq) ||> Seq.fold  (fun acc x -> acc |> bind (fun acc -> f acc x))
         
@@ -86,12 +75,6 @@ module Eventually =
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
 
-    let applyUsing (resource:System.IDisposable) f =
-        try
-            f resource
-        finally
-            resource.Dispose()
-    
     let rec doWhile f e =    
         if f() then e |> bind (fun () -> doWhile f e) else Eventually.Done ()
     
@@ -104,7 +87,6 @@ module Eventually =
 
 type EventuallyBuilder() = 
     member x.Bind(e,k) = Eventually.bind k e
-    member x.Apply(f,arg) = Eventually.apply f arg
     member x.Return(v) = Eventually.Done v
     member x.ReturnFrom(e:Eventually<_>) = e
     member x.Combine(e1,e2) = e1 |> Eventually.bind (fun () -> e2)

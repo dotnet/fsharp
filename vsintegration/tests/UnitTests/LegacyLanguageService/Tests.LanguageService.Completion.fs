@@ -3367,17 +3367,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["x";"y"]
             [] 
 
-    [<Test>]
-    member public this.``CompletionInDifferentEnvs6``() =
-        AssertCtrlSpaceCompleteContains
-            ["let foo = async { return 6 }"
-             "let bar = async { return 6 }"
-             "async { let! x = foo"
-             "        and! y = "]
-             "and! y = "
-            ["foo";"bar"]
-            [(*"x"*)]
-
             (**)
     [<Test>]
     member public this.``Bug229433.AfterMismatchedParensCauseWeirdParseTreeAndExceptionDuringTypecheck``() =        

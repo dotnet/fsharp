@@ -48,7 +48,7 @@ module internal BlockStructure =
         | Scope.TryFinally
         | Scope.TryInTryFinally
         | Scope.FinallyInTryFinally
-        | Scope.IfThenElse -> FSharpBlockTypes.Conditional
+        | Scope.IfThenElse-> FSharpBlockTypes.Conditional
         | Scope.Tuple
         | Scope.ArrayOrList
         | Scope.CompExprInternal
