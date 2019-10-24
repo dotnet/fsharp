@@ -62,6 +62,11 @@
         <target state="new">use! may not be combined with and!</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRequireMergeSourcesOrBindN">
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
+        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">'{0}' 네임스페이스가 정의되지 않았습니다.</target>

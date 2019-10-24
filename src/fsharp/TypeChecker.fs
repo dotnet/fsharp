@@ -8369,15 +8369,61 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 let bindRange = match letSpBind with SequencePointAtBinding m -> m | _ -> letRhsExpr.Range
                 let sources = letRhsExpr :: [for (_, _, _, _, andExpr, _) in andBangBindings -> andExpr ]
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
-                if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "MergeSources" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("MergeSources"), bindRange))
-                if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Bind" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
-                let mergedSources = mkSynCall "MergeSources" sourcesRange sources
-                let consumePats = letPat :: [for (_, _, _, andPat, _, _) in andBangBindings -> andPat ]
-                let consumePat = SynPat.Tuple(false, consumePats, letPat.Range)
+                let bindNName = "Bind"+string (sources.Length)
+                let hasBindN = not (isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad bindNName builderTy))
+                let pats = letPat :: [for (_, _, _, andPat, _, _) in andBangBindings -> andPat ]
                 let bodyExprT = transNoQueryOps bodyExpr
-                let consumeExpr = SynExpr.MatchLambda(false, letBindRange, [Clause(consumePat, None, bodyExprT, letPat.Range, SequencePointAtTarget)], letSpBind, letBindRange)
-                let bindExpr = mkSynCall "Bind" bindRange [mergedSources; consumeExpr]
-                Some (translatedCtxt bindExpr)
+                if hasBindN then 
+                    let consumePat = SynPat.Tuple(false, pats, letPat.Range)
+                    let consumeExpr = SynExpr.MatchLambda(false, letBindRange, [Clause(consumePat, None, bodyExprT, letPat.Range, SequencePointAtTarget)], letSpBind, letBindRange)
+                    let bindExpr = mkSynCall bindNName bindRange (sources @ [consumeExpr])
+                    Some (translatedCtxt bindExpr)
+                else
+                    // Look for MergeSources, MergeSources3, ...
+                    let mkMergeSourcesName n = if n = 2 then "MergeSources" else "MergeSources"+(string n)
+
+                    let maxMergeSources =
+                        let rec loop (n: int) = 
+                            let mergeSourcesName = mkMergeSourcesName n
+                            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad mergeSourcesName builderTy) then
+                                (n-1)
+                            else
+                                loop (n+1)
+                        loop 2
+
+                    if maxMergeSources = 1 then error(Error(FSComp.SR.tcRequireMergeSourcesOrBindN(bindNName), bindRange))
+
+                    let rec mergeSources (sourcesAndPats: (SynExpr * SynPat) list) = 
+                        let numSourcesAndPats = sourcesAndPats.Length
+                        assert (numSourcesAndPats <> 0)
+                        if numSourcesAndPats = 1 then 
+                            sourcesAndPats.[0]
+                        elif numSourcesAndPats <= maxMergeSources then 
+                            // Call MergeSources2(e1, e2), MergeSources3(e1, e2, e3) etc
+                            let mergeSourcesName = mkMergeSourcesName numSourcesAndPats
+                            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad mergeSourcesName builderTy) then
+                                error(Error(FSComp.SR.tcRequireMergeSourcesOrBindN(bindNName), bindRange))
+                            let source = mkSynCall mergeSourcesName sourcesRange (List.map fst sourcesAndPats)
+                            let pat = SynPat.Tuple(false, List.map snd sourcesAndPats, letPat.Range)
+                            source, pat
+                        else
+                            // Call MergeSourcesMax(e1, e2, e3, e4, (...))
+                            let nowSourcesAndPats, laterSourcesAndPats = List.splitAt (maxMergeSources - 1) sourcesAndPats
+                            let mergeSourcesName = mkMergeSourcesName maxMergeSources
+                            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad mergeSourcesName builderTy) then
+                                error(Error(FSComp.SR.tcRequireMergeSourcesOrBindN(bindNName), bindRange))
+                            let laterSource, laterPat = mergeSources laterSourcesAndPats
+                            let source = mkSynCall mergeSourcesName sourcesRange (List.map fst nowSourcesAndPats @ [laterSource])
+                            let pat = SynPat.Tuple(false, List.map snd nowSourcesAndPats @ [laterPat], letPat.Range)
+                            source, pat
+
+                    let mergedSources, consumePat = mergeSources (List.zip sources pats)
+                    
+                    // Build the `Bind` call
+                    let consumeExpr = SynExpr.MatchLambda(false, letBindRange, [Clause(consumePat, None, bodyExprT, letPat.Range, SequencePointAtTarget)], letSpBind, letBindRange)
+                    if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Bind" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
+                    let bindExpr = mkSynCall "Bind" bindRange [mergedSources; consumeExpr]
+                    Some (translatedCtxt bindExpr)
             else
                 error(Error(FSComp.SR.tcAndBangNotSupported(), comp.Range))
 

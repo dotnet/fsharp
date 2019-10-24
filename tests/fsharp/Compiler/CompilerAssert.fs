@@ -179,6 +179,7 @@ let main argv = 0"""
                 try File.Delete inputFilePath with | _ -> ()
                 try File.Delete outputFilePath with | _ -> ()
 
+
     let Pass (source: string) =
         lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
@@ -236,14 +237,16 @@ let main argv = 0"""
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
-    let CompileExeAndRun (source: string) =
-        compile true [||] source (fun (errors, outputExe) ->
+    let CompileExeAndRunWithOptions options (source: string) =
+        compile true options source (fun (errors, outputExe) ->
 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
             executeBuiltApp outputExe
         )
+
+    let CompileExeAndRun source = CompileExeAndRunWithOptions [| |] source
 
     let CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
         compile false options source (fun (errors, outputFilePath) ->
