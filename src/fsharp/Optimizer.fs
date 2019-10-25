@@ -1932,7 +1932,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 /// Optimize/analyze an object expression
 and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m) =
     let basecallR, basecallinfo = OptimizeExpr cenv env basecall
-    let overridesR, overrideinfos = OptimizeMethods cenv env baseValOpt overrides
+    let overridesR, overrideinfos = OptimizeObjectExprMethods cenv env baseValOpt overrides
     let iimplsR, iimplsinfos = OptimizeInterfaceImpls cenv env baseValOpt iimpls
     let exprR=mkObjExpr(ty, baseValOpt, basecallR, overridesR, iimplsR, m)
     exprR, { TotalSize=closureTotalSize + basecallinfo.TotalSize + AddTotalSizes overrideinfos + AddTotalSizes iimplsinfos
@@ -1942,10 +1942,10 @@ and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m)
              Info=UnknownValue}
 
 /// Optimize/analyze the methods that make up an object expression
-and OptimizeMethods cenv env baseValOpt methods = 
-    OptimizeList (OptimizeMethod cenv env baseValOpt) methods
+and OptimizeObjectExprMethods cenv env baseValOpt methods = 
+    OptimizeList (OptimizeObjectExprMethod cenv env baseValOpt) methods
 
-and OptimizeMethod cenv env baseValOpt (TObjExprMethod(slotsig, attribs, tps, vs, e, m) as tmethod) = 
+and OptimizeObjectExprMethod cenv env baseValOpt (TObjExprMethod(slotsig, attribs, tps, vs, e, m) as tmethod) = 
     let env = {env with latestBoundId=Some tmethod.Id; functionVal = None}
     let env = BindTypeVarsToUnknown tps env
     let env = BindInternalValsToUnknown cenv vs env
@@ -1965,7 +1965,7 @@ and OptimizeInterfaceImpls cenv env baseValOpt iimpls =
 
 /// Optimize/analyze the interface implementations that form part of an object expression
 and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) = 
-    let overridesR, overridesinfos = OptimizeMethods cenv env baseValOpt overrides
+    let overridesR, overridesinfos = OptimizeObjectExprMethods cenv env baseValOpt overrides
     (ty, overridesR), 
     { TotalSize = AddTotalSizes overridesinfos
       FunctionSize = 1
