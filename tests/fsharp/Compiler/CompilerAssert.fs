@@ -143,7 +143,7 @@ let main argv = 0"""
             ProjectId = None
             SourceFiles = [|"test.fs"|]
 #if !NETCOREAPP
-            OtherOptions = [|"--preferreduilang:en-US";"--warn:5"|]
+            OtherOptions = [|"--preferreduilang:en-US";"--warn:5";"--optimize-"|]
 #else
             OtherOptions =
                 let assemblies = getNetCoreAppReferences |> Array.map (fun x -> sprintf "-r:%s" x)
