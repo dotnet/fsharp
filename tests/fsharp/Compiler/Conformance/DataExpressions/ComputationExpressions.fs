@@ -9,16 +9,21 @@ open FSharp.Compiler.SourceCodeServices
 module ``ComputationExpressions`` =
     let tmp = 1
 
-    let applicativeLib = """
+    let applicativeLib  (opts: {| includeMergeSourcesOverloads: bool |}) = 
+        """
 /// Used for tracking what operations a Trace builder was asked to perform
 [<RequireQualifiedAccess>]
 type TraceOp =
     | ApplicativeBind
     | ApplicativeBind2
+    | ApplicativeBindReturn
+    | ApplicativeBind2Return
     | ApplicativeReturn
     | ApplicativeCombine
     | ApplicativeYield
-    | MergeSources of int
+    | MergeSources
+    | MergeSources3
+    | MergeSources4
     | MonadicBind
     | MonadicBind2
     | MonadicReturn
@@ -36,63 +41,38 @@ type TraceCore() =
 
     let mutable trace = ResizeArray<_>()
 
-    member builder.GetTrace () = trace.ToArray()
+    member _.GetTrace () = trace.ToArray()
 
-    member builder.Trace x = trace.Add(x)
+    member _.Trace x = trace.Add(x)
 
 type TraceMergeSourcesCore() =
     inherit TraceCore()
 
     member builder.MergeSources(x1: Trace<'T1>, x2: Trace<'T2>) : Trace<'T1 * 'T2> =
-        builder.Trace (TraceOp.MergeSources 2)
+        builder.Trace TraceOp.MergeSources
         Trace (x1.Value, x2.Value) 
+        """ + (if opts.includeMergeSourcesOverloads then """
 
+    // Note the struct tuple is acceptable
     member builder.MergeSources3(x1: Trace<'T1>, x2: Trace<'T2>, x3: Trace<'T3>) : Trace<struct ('T1 * 'T2 * 'T3)> =
-        builder.Trace (TraceOp.MergeSources 3)
+        builder.Trace TraceOp.MergeSources3
         Trace (struct (x1.Value, x2.Value, x3.Value))
 
     member builder.MergeSources4(x1: Trace<'T1>, x2: Trace<'T2>, x3: Trace<'T3>, x4: Trace<'T4>) : Trace<'T1 * 'T2 * 'T3 * 'T4> =
-        builder.Trace (TraceOp.MergeSources 4)
+        builder.Trace TraceOp.MergeSources4
         Trace (x1.Value, x2.Value, x3.Value, x4.Value)
-
-
-type TraceApplicativeCore() =
-    inherit TraceMergeSourcesCore()
-
-    // Note that per the RFC in true applicatives the 'Bind' and 'Return' have non-standard types
-    member builder.Bind(x: Trace<'T1>, f: 'T1 -> 'T2) : Trace<'T2> =
-        builder.Trace TraceOp.ApplicativeBind
-        Trace (f x.Value)
-
-    // Note that per the RFC in true applicatives the 'Bind' and 'Return' have non-standard types
-    member builder.Bind2(x1: Trace<'T1>, x2: Trace<'T2>, f: 'T1 * 'T2 -> 'T3) : Trace<'T3> =
-        builder.Trace TraceOp.ApplicativeBind2
-        Trace (f (x1.Value, x2.Value))
+        """ else "") + """
 
 type TraceApplicative() =
-    inherit TraceApplicativeCore()
+    inherit TraceMergeSourcesCore()
 
-    // Note that per the RFC in true applicatives the 'Return' has non-standard types 'T -> 'T
-    member builder.Return(x: 'T) : 'T =
-        builder.Trace TraceOp.ApplicativeReturn
-        x
+    member builder.BindReturn(x: Trace<'T1>, f: 'T1 -> 'T2) : Trace<'T2> =
+        builder.Trace TraceOp.ApplicativeBindReturn
+        Trace (f x.Value)
 
-type TraceApplicativeMonoid() =
-    inherit TraceApplicativeCore()
-
-    // Note that per the RFC in true applicatives the 'Yield' has non-standard type 'T -> 'T list
-    member builder.Yield(x: 'T) : 'T list =
-        builder.Trace TraceOp.ApplicativeYield
-        [x]
-
-    // Note that per the RFC in true applicatives the 'Combine' has non-standard type 'T list * 'T list-> 'T list
-    member builder.Combine(x1: 'T list, x2: 'T list) =
-        builder.Trace TraceOp.ApplicativeCombine
-        x1 @ x2
-
-    member builder.Delay(thunk) =
-        builder.Trace TraceOp.Delay
-        thunk ()
+    member builder.Bind2Return(x1: Trace<'T1>, x2: Trace<'T2>, f: 'T1 * 'T2 -> 'T3) : Trace<'T3> =
+        builder.Trace TraceOp.ApplicativeBind2Return
+        Trace (f (x1.Value, x2.Value))
 
 type TraceApplicativeWithDelayAndRun() =
     inherit TraceApplicative()
@@ -119,7 +99,7 @@ type TraceApplicativeWithRun() =
         builder.Trace TraceOp.Run
         x
 
-type TraceMonadic() =
+type TraceMultiBindingMonadic() =
     inherit TraceMergeSourcesCore()
 
     member builder.Bind(x : Trace<'T1>, f : 'T1 -> Trace<'T2>) : Trace<'T2> =
@@ -134,17 +114,65 @@ type TraceMonadic() =
         builder.Trace TraceOp.MonadicReturn
         Trace x
 
+type TraceMultiBindingMonoid() =
+    inherit TraceMergeSourcesCore()
+
+    member builder.Bind(x : Trace<'T1>, f : 'T1 -> Trace<'T2>) : Trace<'T2> =
+        builder.Trace TraceOp.MonadicBind
+        f x.Value
+
+    member builder.Bind2(x1 : 'T1 Trace, x2 : 'T2 Trace, f : 'T1 * 'T2 -> Trace<'T3>) : Trace<'T3> =
+        builder.Trace TraceOp.MonadicBind2
+        f (x1.Value, x2.Value)
+
+    member builder.Yield(x: 'T) : Trace<'T list> =
+        builder.Trace TraceOp.ApplicativeYield
+        Trace [x]
+
+    member builder.Combine(x1: Trace<'T list>, x2: Trace<'T list>) : Trace<'T list> =
+        builder.Trace TraceOp.ApplicativeCombine
+        Trace (x1.Value @ x2.Value)
+
+    member builder.Delay(thunk) =
+        builder.Trace TraceOp.Delay
+        thunk ()
+
+    member builder.Zero() =
+        Trace []
+
+type TraceApplicativeNoMergeSources() =
+    inherit TraceCore()
+
+    member builder.BindReturn(x: Trace<'T1>, f: 'T1 -> 'T2) : Trace<'T2> =
+        builder.Trace TraceOp.ApplicativeBind
+        Trace (f x.Value)
+
+type TraceApplicativeNoBindReturn() =
+    inherit TraceCore()
+
+    member builder.MergeSources(x1: Trace<'T1>, x2: Trace<'T2>) : Trace<'T1 * 'T2> =
+        builder.Trace TraceOp.MergeSources
+        Trace (x1.Value, x2.Value) 
+
+
 let check msg actual expected = if actual <> expected then failwithf "FAILED %s, expected %A, got %A" msg expected actual
-"""
+        """
 
-    let ApplicativeLibTest source =
-        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview" |]
-            (applicativeLib + source)
+    let includeAll = {| includeMergeSourcesOverloads = true |}
+    let includeMinimal = {| includeMergeSourcesOverloads = false |}
 
+    let ApplicativeLibTest opts source =
+        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview" |] (applicativeLib opts + source)
+
+    let ApplicativeLibErrorTest opts source errors =
+        let lib = applicativeLib opts
+        // Adjust the expected errors for the number of lines in the library
+        let libLineAdjust = lib |> Seq.filter (fun c -> c = '\n') |> Seq.length
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| "/langversion:preview" |] libLineAdjust (lib + source) errors
 
     [<Test>]
     let ``AndBang TraceApplicative`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicative()
 
@@ -156,14 +184,14 @@ let ceResult : Trace<int> =
     }
 
 check "fewljvwerjl1" ceResult.Value 3
-check "fewljvwerj12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2; TraceOp.ApplicativeReturn|]
+check "fewljvwerj12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return|]
             """
 
     [<Test>]
-    let ``AndBang TraceApplicativeMonoid`` () =
-        ApplicativeLibTest """
+    let ``AndBang TraceMultiBindingMonoid`` () =
+        ApplicativeLibTest includeAll """
 
-let tracer = TraceApplicativeMonoid()
+let tracer = TraceMultiBindingMonoid()
 
 let ceResult : Trace<int list> =
     tracer {
@@ -174,14 +202,14 @@ let ceResult : Trace<int list> =
     }
 
 check "fewljvwerjl5" ceResult.Value [3; 5]
-check "fewljvwerj16" (tracer.GetTrace ()) [|TraceOp.Delay; TraceOp.ApplicativeBind2; TraceOp.ApplicativeYield; TraceOp.Delay; TraceOp.ApplicativeYield; TraceOp.ApplicativeCombine|]
+check "fewljvwerj16" (tracer.GetTrace ()) [|TraceOp.Delay; TraceOp.MonadicBind2; TraceOp.ApplicativeYield; TraceOp.Delay; TraceOp.ApplicativeYield; TraceOp.ApplicativeCombine|]
             """
 
     [<Test>]
-    let ``AndBang TraceMonadic`` () =
-        ApplicativeLibTest """
+    let ``AndBang TraceMultiBindingMonadic`` () =
+        ApplicativeLibTest includeAll """
 
-let tracer = TraceMonadic()
+let tracer = TraceMultiBindingMonadic()
 
 let ceResult : Trace<int> =
     tracer {
@@ -202,10 +230,10 @@ check "gwrhjkrwpoiwer2" (tracer.GetTrace ())  [|TraceOp.MonadicBind; TraceOp.Mon
 
 
     [<Test>]
-    let ``AndBang TraceMonadic TwoBind`` () =
-        ApplicativeLibTest """
+    let ``AndBang TraceMultiBindingMonadic TwoBind`` () =
+        ApplicativeLibTest includeAll """
 
-let tracer = TraceMonadic()
+let tracer = TraceMultiBindingMonadic()
 
 let ceResult : Trace<int> =
     tracer {
@@ -228,7 +256,7 @@ check "gwrhjkrwpoiwer39" (tracer.GetTrace ())  [|TraceOp.MonadicBind; TraceOp.Mo
 
     [<Test>]
     let ``AndBang TraceApplicativeWithDelayAndRun`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicativeWithDelayAndRun()
 
@@ -240,12 +268,12 @@ let ceResult : Trace<int> =
     }
 
 check "vlkjrrlwevlk23" ceResult.Value 3
-check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.ApplicativeBind2; TraceOp.ApplicativeReturn; TraceOp.Run|]
+check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.ApplicativeBind2Return; TraceOp.Run|]
         """
 
     [<Test>]
     let ``AndBang TraceApplicativeWithDelay`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicativeWithDelay()
 
@@ -257,12 +285,12 @@ let ceResult : int Trace =
     }
 
 check "vlkjrrlwevlk23" ceResult.Value 3
-check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.ApplicativeBind2; TraceOp.ApplicativeReturn|]
+check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.ApplicativeBind2Return|]
         """
 
     [<Test>]
     let ``AndBang TraceApplicativeWithRun`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicativeWithRun()
 
@@ -274,13 +302,13 @@ let ceResult : int Trace =
     }
 
 check "vwerweberlk3" ceResult.Value 3
-check "vwerweberlk4" (tracer.GetTrace ())  [|TraceOp.ApplicativeBind2; TraceOp.ApplicativeReturn; TraceOp.Run |]
+check "vwerweberlk4" (tracer.GetTrace ())  [|TraceOp.ApplicativeBind2Return; TraceOp.Run |]
         """
 
 
     [<Test>]
     let ``AndBang TraceApplicative Size 3`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicative()
 
@@ -293,12 +321,29 @@ let ceResult =
     }
 
 check "fewljvwerjl7" ceResult.Value 3
-check "fewljvwerj18" (tracer.GetTrace ()) [|TraceOp.MergeSources 3; TraceOp.ApplicativeBind; TraceOp.ApplicativeReturn|]
+check "fewljvwerj18" (tracer.GetTrace ()) [|TraceOp.MergeSources3; TraceOp.ApplicativeBindReturn|]
         """
 
     [<Test>]
+    let ``AndBang TraceApplicative Size 3 minimal`` () =
+        ApplicativeLibTest includeMinimal """
+
+let tracer = TraceApplicative()
+
+let ceResult =
+    tracer {
+        let! x = Trace 3
+        and! y = Trace true
+        and! z = Trace 5
+        return if y then x else z
+    }
+
+check "fewljvwerjl7" ceResult.Value 3
+check "fewljvwerj18" (tracer.GetTrace ()) [|TraceOp.MergeSources; TraceOp.MergeSources; TraceOp.ApplicativeBindReturn|]
+        """
+    [<Test>]
     let ``AndBang TraceApplicative Size 4`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicative()
 
@@ -312,12 +357,12 @@ let ceResult =
     }
 
 check "fewljvwerjl191" ceResult.Value 3
-check "fewljvwerj1192" (tracer.GetTrace ()) [|TraceOp.MergeSources 4; TraceOp.ApplicativeBind; TraceOp.ApplicativeReturn|]
+check "fewljvwerj1192" (tracer.GetTrace ()) [|TraceOp.MergeSources4; TraceOp.ApplicativeBindReturn|]
         """
 
     [<Test>]
     let ``AndBang TraceApplicative Size 5`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicative()
 
@@ -332,12 +377,12 @@ let ceResult : Trace<int> =
     }
 
 check "fewljvwerjl193" ceResult.Value 16
-check "fewljvwerj1194" (tracer.GetTrace ()) [|TraceOp.MergeSources 2; TraceOp.MergeSources 4; TraceOp.ApplicativeBind; TraceOp.ApplicativeReturn|]
+check "fewljvwerj1194" (tracer.GetTrace ()) [|TraceOp.MergeSources; TraceOp.MergeSources4; TraceOp.ApplicativeBindReturn|]
         """
 
     [<Test>]
     let ``AndBang TraceApplicative Size 6`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicative()
 
@@ -353,12 +398,12 @@ let ceResult : Trace<int> =
     }
 
 check "fewljvwerjl195" ceResult.Value 25
-check "fewljvwerj1196" (tracer.GetTrace ()) [|TraceOp.MergeSources 3; TraceOp.MergeSources 4; TraceOp.ApplicativeBind; TraceOp.ApplicativeReturn|]
+check "fewljvwerj1196" (tracer.GetTrace ()) [|TraceOp.MergeSources3; TraceOp.MergeSources4; TraceOp.ApplicativeBindReturn|]
         """
 
     [<Test>]
     let ``AndBang TraceApplicative Size 10`` () =
-        ApplicativeLibTest """
+        ApplicativeLibTest includeAll """
 
 let tracer = TraceApplicative()
 
@@ -378,5 +423,147 @@ let ceResult : Trace<int> =
     }
 
 check "fewljvwerjl197" ceResult.Value 35
-check "fewljvwerj1198" (tracer.GetTrace ()) [|TraceOp.MergeSources 4; TraceOp.MergeSources 4; TraceOp.MergeSources 4; TraceOp.ApplicativeBind; TraceOp.ApplicativeReturn|]
+check "fewljvwerj1198" (tracer.GetTrace ()) [|TraceOp.MergeSources4; TraceOp.MergeSources4; TraceOp.MergeSources4; TraceOp.ApplicativeBindReturn|]
     """
+
+
+    [<Test>]
+    let ``AndBang Negative TraceApplicative missing MergeSources`` () =
+        ApplicativeLibErrorTest includeAll """
+let tracer = TraceApplicativeNoMergeSources()
+
+let _ = 
+    tracer {
+        let! x = Trace 1
+        and! y = Trace 2
+        return x + y
+    }
+    """
+            [|(FSharpErrorSeverity.Error, 3343, (6, 9, 6, 25), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSource' and 'Bind' methods")|]
+
+    [<Test>]
+    let ``AndBang Negative TraceApplicative missing Bind and BindReturn`` () =
+        ApplicativeLibErrorTest includeAll """
+let tracer = TraceApplicativeNoBindReturn()
+
+let _ = 
+    tracer {
+        let! x = Trace 1
+        and! y = Trace 2
+        return x + y
+    }
+    """
+            [|(FSharpErrorSeverity.Error, 708, (6, 9, 6, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method")|]
+
+
+    [<Test>]
+    let ``AndBang Negative TraceApplicative with bad construct`` () =
+        ApplicativeLibErrorTest includeAll """
+
+let tracer = TraceApplicativeNoBindReturn()
+
+let _ = 
+    tracer {
+        let! x = Trace 1 // this is a true bind, check the error message here
+        let! x2 = Trace 1
+        return x + y
+    }
+    """
+            [| FSharpErrorSeverity.Error, 708, (7, 9, 7, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method" |]
+
+    [<Test>]
+    let ``AndBang TraceApplicative with do-bang`` () =
+        ApplicativeLibErrorTest includeAll """
+let tracer = TraceApplicative()
+
+let _ = 
+    tracer {
+        do! Trace() 
+        and! x = Trace 1
+        and! y = Trace 2
+        return x + y
+    }
+    """
+            [|(FSharpErrorSeverity.Error, 10, (7, 9, 7, 13),"Unexpected keyword 'and!' in expression. Expected '}' or other token.");
+              (FSharpErrorSeverity.Error, 604, (5, 12, 5, 13), "Unmatched '{'");
+              (FSharpErrorSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in implementation file")|]
+
+    [<Test>]
+    let ``AndBang Negative TraceApplicative let betweeen let! and and!`` () =
+        ApplicativeLibErrorTest includeAll """
+let tracer = TraceApplicative()
+
+let _ = 
+    tracer {
+        let! x = Trace 1
+        let _ = 42
+        and! y = Trace 2
+        return x + y
+    }
+    """
+            [| (FSharpErrorSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in expression") |]
+
+
+    [<Test>]
+    let ``AndBang Negative TraceApplicative no return`` () =
+        ApplicativeLibErrorTest includeAll """
+let tracer = TraceApplicative()
+
+let _ = 
+    tracer {
+        let! x = Trace 1
+        and! y = Trace 2
+    }
+    """
+            [|(FSharpErrorSeverity.Error, 10, (8, 5, 8, 6), "Unexpected symbol '}' in expression")|]
+
+    [<Test>]
+    let ``AndBang TraceApplicative conditional return`` () =
+        ApplicativeLibTest includeAll """
+let tracer = TraceApplicative()
+
+let ceResult = 
+    tracer {
+        let! x = Trace 1
+        and! y = Trace 2
+        if x = 1 then 
+            return y
+        else 
+            return 4
+    }
+check "grwerjkrwejgk" ceResult.Value 2
+    """
+
+    [<Test>]
+    let ``AndBang TraceApplicative match return`` () =
+        ApplicativeLibTest includeAll """
+let tracer = TraceApplicative()
+
+let ceResult = 
+    tracer {
+        let! x = Trace 1
+        and! y = Trace 2
+        match x with 
+        | 1 -> return y
+        | _ -> return 4
+    }
+check "grwerjkrwejgk42" ceResult.Value 2
+    """
+
+    [<Test>]
+    let ``AndBang TraceApplicative incomplete match return`` () =
+        ApplicativeLibTest includeAll """
+#nowarn "25"
+
+let tracer = TraceApplicative()
+
+let ceResult = 
+    tracer {
+        let! x = Trace 1
+        and! y = Trace 2
+        match x with 
+        | 1 -> return y
+    }
+check "grwerjkrwejgk42" ceResult.Value 2
+    """
+

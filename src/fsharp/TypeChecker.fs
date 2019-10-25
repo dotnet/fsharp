@@ -8336,13 +8336,14 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Using"), bindRange))
             Some (translatedCtxt (mkSynCall "Using" bindRange [rhsExpr; consumeExpr ]))
 
-        // 'let! pat = expr in expr' --> build.Bind(e1, (fun _argN -> match _argN with pat -> expr))
+        // 'let! pat = expr in expr' 
+        //    --> build.Bind(e1, (fun _argN -> match _argN with pat -> expr))
+        //  or
+        //    --> build.BindReturn(e1, (fun _argN -> match _argN with pat -> expr-without-return))
         | SynExpr.LetOrUseBang (spBind, false, isFromSource, pat, rhsExpr, [], innerComp, _) -> 
 
             let bindRange = match spBind with SequencePointAtBinding m -> m | _ -> rhsExpr.Range
             if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
-            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Bind" builderTy) then
-                error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
                 
             // Add the variables to the query variable space, on demand
             let varSpace = 
@@ -8381,6 +8382,10 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 error(Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs(), comp.Range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in ...' -->
+        //     build.BindN(expr1, expr2, ...)
+        // or
+        //     build.BindNReturn(expr1, expr2, ...)
+        // or
         //     build.Bind(build.MergeSources(expr1, expr2), ...)
         | SynExpr.LetOrUseBang(letSpBind, false, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, _letBindRange) ->
             if cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then
@@ -8456,9 +8461,6 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
                     let mergedSources, consumePat = mergeSources (List.zip sources pats)
                     
-                    if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Bind" builderTy) then
-                        error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
-
                     // Build the 'Bind' or 'BindReturn' call
                     Some (transBind q varSpace bindRange "Bind" [mergedSources] consumePat letSpBind innerComp translatedCtxt)
             else
@@ -8567,7 +8569,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
         let innerRange = innerComp.Range
         
-        match convertSimpleReturnToExpr varSpace innerComp with 
+        match (if cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then convertSimpleReturnToExpr varSpace innerComp else None) with 
         | Some innerExpr when 
               (let bindName = bindName + "Return"
                not (isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad bindName  builderTy))) ->
