@@ -965,13 +965,15 @@ classMemberSpfn:
        SynMemberSig.Inherit ($4,unionRanges (rhs parseState 3) ($4).Range) }
 
   | opt_attributes opt_declVisibility VAL fieldDecl 
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-       let fld = $4 $1 false 
-       SynMemberSig.ValField(fld,rhs2 parseState 3 4) }
+     { let wholeRange = rhs2 parseState 1 4
+       if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       let fld = $4 $1 false wholeRange 
+       SynMemberSig.ValField (fld, rhs2 parseState 3 4) }
 
   | opt_attributes opt_declVisibility STATIC VAL fieldDecl 
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-       SynMemberSig.ValField($5 $1 true,rhs2 parseState 3 5) }
+     { let wholeRange = rhs2 parseState 1 5
+       if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       SynMemberSig.ValField($5 $1 true wholeRange, rhs2 parseState 3 5) }
 
   | opt_attributes  opt_declVisibility STATIC typeKeyword tyconSpfn 
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
@@ -2365,18 +2367,18 @@ recdFieldDeclList:
 
 /* A field declaration in a record type */
 recdFieldDecl: 
-  | opt_attributes  fieldDecl
-     { let fld = $2 $1 false 
-       let (Field(a,b,c,d,e,f,vis,g)) = fld 
-       if Option.isSome vis then errorR(Error(FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations(),rhs parseState 2))
-       Field(a,b,c,d,e,f,None,g)  }
+  | opt_attributes fieldDecl
+     { let wholeRange = rhs2 parseState 1 2
+       let fld = $2 $1 false wholeRange
+       let (Field (a, b, c, d, e, f, vis, wholeRange)) = fld
+       if Option.isSome vis then errorR (Error (FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations (), rhs parseState 2))
+       Field (a, b, c, d, e, f, None, wholeRange) }
 
 /* Part of a field or val declaration in a record type or object type */
 fieldDecl: 
   | opt_mutable opt_access ident COLON  typ 
-     { let mRhs = rhs2 parseState 3 5 
-       let xmlDoc = grabXmlDoc(parseState,3)
-       (fun attrs stat -> Field(attrs, stat,Some $3,$5,$1,xmlDoc,$2,mRhs)) }
+     { let xmlDoc = grabXmlDoc (parseState, 3)
+       fun attrs stat wholeRange -> Field(attrs, stat, Some $3, $5, $1, xmlDoc, $2, wholeRange) }
 
 
 /* An exception definition */
