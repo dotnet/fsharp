@@ -968,12 +968,12 @@ classMemberSpfn:
      { let wholeRange = rhs2 parseState 1 4
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
        let fld = $4 $1 false wholeRange 
-       SynMemberSig.ValField (fld, rhs2 parseState 3 4) }
+       SynMemberSig.ValField (fld, wholeRange) }
 
   | opt_attributes opt_declVisibility STATIC VAL fieldDecl 
      { let wholeRange = rhs2 parseState 1 5
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       SynMemberSig.ValField($5 $1 true wholeRange, rhs2 parseState 3 5) }
+       SynMemberSig.ValField($5 $1 true wholeRange, wholeRange) }
 
   | opt_attributes  opt_declVisibility STATIC typeKeyword tyconSpfn 
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
