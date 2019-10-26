@@ -395,7 +395,7 @@ let SetOptimizeOn(tcConfigB: TcConfigBuilder) =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 6 }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = Optimizer.LambdaInlineThresholdDefault }
     tcConfigB.doDetuple <- true
     tcConfigB.doTLR <- true
     tcConfigB.doFinalSimplify <- true

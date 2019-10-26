@@ -2353,9 +2353,7 @@ and CodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, al
         CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs,
                                    (fun cgbuf eenv -> GenExpr cenv cgbuf eenv spReq expr0 sequel0),
                                    expr0.Range)
-    code                               
-
-
+    code      
 
 //--------------------------------------------------------------------------
 // Generate sequels
@@ -4305,9 +4303,65 @@ and GenGenericParams cenv eenv tps =
 and GenGenericArgs m (tyenv: TypeReprEnv) tps =
     tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv.[c, m]))
 
+and DelayGenMethodForLambda cenv mgbuf eenv args =
+    cenv.delayedGenMethods.Enqueue(fun cenv -> GenMethodForLambda cenv mgbuf eenv args)
+
+and GenMethodForLambda cenv mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m) =
+    let g = cenv.g
+    let ilCloBody = CodeGenMethodForExpr cenv mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
+    let ilCloTypeRef = cloinfo.cloSpec.TypeRef
+    let cloTypeDefs =
+        if isLocalTypeFunc then
+
+            // Work out the contract type and generate a class with an abstract method for this type
+            let (ilContractGenericParams, ilContractMethTyargs, ilContractTySpec: ILTypeSpec, ilContractFormalRetTy) = GenNamedLocalTypeFuncContractInfo cenv eenv m cloinfo
+            let ilContractTypeRef = ilContractTySpec.TypeRef
+            let ilContractTy = mkILFormalBoxedTy ilContractTypeRef ilContractGenericParams
+            let ilContractCtor = mkILNonGenericEmptyCtor None g.ilg.typ_Object
+
+            let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, ilContractMethTyargs, [], mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
+            let ilContractTypeDef =
+                ILTypeDef(name = ilContractTypeRef.Name,
+                          layout = ILTypeDefLayout.Auto,
+                          attributes = enum 0,
+                          genericParams = ilContractGenericParams,
+                          customAttrs = mkILCustomAttrs [mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ],
+                          fields = emptyILFields,
+                          events= emptyILEvents,
+                          properties = emptyILProperties,
+                          methods= mkILMethods ilContractMeths,
+                          methodImpls= emptyILMethodImpls,
+                          nestedTypes=emptyILTypeDefs,
+                          implements = [],
+                          extends= Some g.ilg.typ_Object,
+                          securityDecls= emptyILSecurityDecls)
+
+            // the contract type is an abstract type and not sealed
+            let ilContractTypeDef =
+                ilContractTypeDef
+                    .WithAbstract(true)
+                    .WithAccess(ComputeTypeAccess ilContractTypeRef true)
+                    .WithSerializable(true)
+                    .WithSpecialName(true)
+                    .WithLayout(ILTypeDefLayout.Auto)
+                    .WithInitSemantics(ILTypeInit.BeforeField)
+                    .WithEncoding(ILDefaultPInvokeEncoding.Auto)
+
+            mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
+        
+            let ilCtorBody = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy, [])), None )
+            let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, cloinfo.localTypeFuncDirectILGenericParams, [], mkILReturn (cloinfo.cloILFormalRetTy), MethodBody.IL ilCloBody) ]
+            let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.cloILFreeVars, cloinfo.ilCloLambdas, ilCtorBody, cloMethods, [], ilContractTy, [])
+            cloTypeDefs
+        
+        else
+            GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.cloILFreeVars, cloinfo.ilCloLambdas, ilCloBody, [], [], g.ilg.typ_Object, [])
+    CountClosure()
+    for cloTypeDef in cloTypeDefs do
+        mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
+
 /// Generate the closure class for a function
 and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr =
-    let g = cenv.g
     match expr with
     | Expr.Lambda (_, _, _, _, _, m, _)
     | Expr.TyLambda (_, _, _, m, _) ->
@@ -4319,57 +4373,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
           | Some v -> [(v, BranchCallClosure (cloinfo.cloArityInfo))]
           | _ -> []
 
-        let ilCloBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
-        let ilCloTypeRef = cloinfo.cloSpec.TypeRef
-        let cloTypeDefs =
-            if isLocalTypeFunc then
-
-                // Work out the contract type and generate a class with an abstract method for this type
-                let (ilContractGenericParams, ilContractMethTyargs, ilContractTySpec: ILTypeSpec, ilContractFormalRetTy) = GenNamedLocalTypeFuncContractInfo cenv eenv m cloinfo
-                let ilContractTypeRef = ilContractTySpec.TypeRef
-                let ilContractTy = mkILFormalBoxedTy ilContractTypeRef ilContractGenericParams
-                let ilContractCtor = mkILNonGenericEmptyCtor None g.ilg.typ_Object
-
-                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, ilContractMethTyargs, [], mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
-                let ilContractTypeDef =
-                    ILTypeDef(name = ilContractTypeRef.Name,
-                              layout = ILTypeDefLayout.Auto,
-                              attributes = enum 0,
-                              genericParams = ilContractGenericParams,
-                              customAttrs = mkILCustomAttrs [mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ],
-                              fields = emptyILFields,
-                              events= emptyILEvents,
-                              properties = emptyILProperties,
-                              methods= mkILMethods ilContractMeths,
-                              methodImpls= emptyILMethodImpls,
-                              nestedTypes=emptyILTypeDefs,
-                              implements = [],
-                              extends= Some g.ilg.typ_Object,
-                              securityDecls= emptyILSecurityDecls)
-
-                // the contract type is an abstract type and not sealed
-                let ilContractTypeDef =
-                    ilContractTypeDef
-                        .WithAbstract(true)
-                        .WithAccess(ComputeTypeAccess ilContractTypeRef true)
-                        .WithSerializable(true)
-                        .WithSpecialName(true)
-                        .WithLayout(ILTypeDefLayout.Auto)
-                        .WithInitSemantics(ILTypeInit.BeforeField)
-                        .WithEncoding(ILDefaultPInvokeEncoding.Auto)
-
-                cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
-            
-                let ilCtorBody = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy, [])), None )
-                let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, cloinfo.localTypeFuncDirectILGenericParams, [], mkILReturn (cloinfo.cloILFormalRetTy), MethodBody.IL ilCloBody) ]
-                let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.cloILFreeVars, cloinfo.ilCloLambdas, ilCtorBody, cloMethods, [], ilContractTy, [])
-                cloTypeDefs
-            
-            else
-                GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.cloILFreeVars, cloinfo.ilCloLambdas, ilCloBody, [], [], g.ilg.typ_Object, [])
-        CountClosure()
-        for cloTypeDef in cloTypeDefs do
-            cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
+        DelayGenMethodForLambda cenv cgbuf.mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m)
         cloinfo, m
 
     | _ -> failwith "GenLambda: not a lambda"

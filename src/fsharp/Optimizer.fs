@@ -278,6 +278,8 @@ let [<Literal>] localOptDefault = true
 
 let [<Literal>] crossModuleOptDefault = true
 
+let [<Literal>] LambdaInlineThresholdDefault = 6
+
 type OptimizationSettings = 
     { abstractBigTargets : bool
       
@@ -315,7 +317,7 @@ type OptimizationSettings =
           bigTargetSize = 100  
           veryBigExprSize = 3000 
           crossModuleOptUser = None
-          lambdaInlineThreshold = 6
+          lambdaInlineThreshold = LambdaInlineThresholdDefault
           reportingPhase = false
           reportNoNeedToTailcall = false
           reportFunctionSizes = false
@@ -418,6 +420,14 @@ type IncrementalOptimizationEnv =
           globalModuleInfos = LayeredMap.Empty }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
+
+let SetAbstractBigTargetsOn cenv =
+    { cenv with 
+        settings = 
+            { cenv.settings with
+                abstractBigTargets = true
+            }
+    }
 
 //-------------------------------------------------------------------------
 // IsPartialExprVal - is the expr fully known?
@@ -2911,6 +2921,15 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
         let env = BindTypeVarsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
+
+        let cenv =
+            match env.functionVal with
+            // If the lambda is compiler generated and we are in the reporing phase, allow lambda to be split.
+            // As an example, allows generated GetHashCode/Equals/CompareTo/etc methods to be split even if optimizations were off.
+            // This helps prevent stack overflows in IlxGen.fs.
+            | Some (v, _) when v.IsCompilerGenerated && cenv.settings.reportingPhase -> SetAbstractBigTargetsOn cenv
+            | _ -> cenv
+
         let env = BindInternalValsToUnknown cenv (Option.toList baseValOpt) env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
         let exprR = mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
