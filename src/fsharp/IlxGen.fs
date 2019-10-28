@@ -2560,13 +2560,6 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
         ProcessSequencePointForExpr cenv cgbuf sp expr
 
     match expr with 
-    | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
-        GenExprs cenv cgbuf eenv argsFront
-        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (* canProcessSequencePoint *) true (contf << (fun Fake -> 
-            GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
-            GenSequel cenv eenv.cloc cgbuf sequel
-            Fake))
-
     | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
         // Compiler generated sequential executions result in suppressions of sequence points on both
         // left and right of the sequence
@@ -2610,8 +2603,14 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
     | LinearMatchExpr (spBind, exprm, tree, tg1, e2, spTg2, m, ty) ->
         GenMatch cenv cgbuf eenv (spBind, exprm, tree, [|tg1;TTarget([], e2, spTg2)|], m, ty) sequel
         contf Fake
-    //| Expr.Match (spBind, exprm, tree, targets, m, ty) ->
-    //    GenMatch cenv cgbuf eenv (spBind, exprm, tree, targets, m, ty) sequel
+
+    | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
+        GenExprs cenv cgbuf eenv argsFront
+        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (* canProcessSequencePoint *) true (contf << (fun Fake -> 
+            GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
+            GenSequel cenv eenv.cloc cgbuf sequel
+            Fake))
+
     | _ -> 
         GenExpr cenv cgbuf eenv sp expr sequel
         contf Fake
@@ -4376,7 +4375,10 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
           | Some v -> [(v, BranchCallClosure (cloinfo.cloArityInfo))]
           | _ -> []
 
-        DelayGenMethodForLambda cenv cgbuf.mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m)
+        if cenv.exprRecursionDepth > 0 then
+            DelayGenMethodForLambda cenv cgbuf.mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m)
+        else
+            GenMethodForLambda cenv cgbuf.mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m)
         cloinfo, m
 
     | _ -> failwith "GenLambda: not a lambda"
