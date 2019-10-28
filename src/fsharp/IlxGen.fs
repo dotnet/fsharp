@@ -1913,8 +1913,7 @@ let CodeGenThen cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, c
     (* Call the given code generator *)
     codeGenFunction cgbuf { eenv with withinSEH = false
                                       liveLocals = IntMap.empty()
-                                      innerVals = innerVals
-                                      inLoop = false }
+                                      innerVals = innerVals }
 
     let locals, maxStack, lab2pc, code, exnSpecs, hasSequencePoints = cgbuf.Close()
 
@@ -2212,6 +2211,15 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | None ->
 
   match expr with
+  // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
+  // This is because the element of expansion happens to be the final thing generated in most cases. However
+  // for large lists we have to process the linearity separately
+  | Expr.Sequential _
+  | Expr.Let _
+  | LinearOpExpr _ 
+  | LinearMatchExpr _ -> 
+      GenLinearExpr cenv cgbuf eenv sp expr sequel (* canProcessSequencePoint *) false id |> ignore<FakeUnit>
+
   | Expr.Const (c, m, ty) ->
       GenConstant cenv cgbuf eenv (c, m, ty) sequel
   | Expr.Match (spBind, exprm, tree, targets, m, ty) ->
@@ -2234,14 +2242,6 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
       GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel
   | Expr.Val (v, _, m) -> 
       GenGetVal cenv cgbuf eenv (v, m) sequel
-
-  // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
-  // This is because the element of expansion happens to be the final thing generated in most cases. However
-  // for large lists we have to process the linearity separately
-  | Expr.Sequential _
-  | Expr.Let _
-  | LinearOpExpr _ -> 
-      GenLinearExpr cenv cgbuf eenv sp expr sequel (* canProcessSequencePoint *) false id |> ignore<FakeUnit>
 
   | Expr.Op (op, tyargs, args, m) -> 
       match op, args, tyargs with 
@@ -2555,6 +2555,10 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
 
 and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf: FakeUnit -> FakeUnit) =
     let expr = stripExpr expr
+
+    if canProcessSequencePoint then
+        ProcessSequencePointForExpr cenv cgbuf sp expr
+
     match expr with 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
         GenExprs cenv cgbuf eenv argsFront
@@ -2564,9 +2568,6 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
             Fake))
 
     | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
-        if canProcessSequencePoint then
-            ProcessSequencePointForExpr cenv cgbuf sp expr
-
         // Compiler generated sequential executions result in suppressions of sequence points on both
         // left and right of the sequence
         let spAction, spExpr =
@@ -2585,9 +2586,6 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
             contf Fake
 
     | Expr.Let (bind, body, _, _) ->
-        if canProcessSequencePoint then
-            ProcessSequencePointForExpr cenv cgbuf sp expr
-
         // This case implemented here to get a guaranteed tailcall
         // Make sure we generate the sequence point outside the scope of the variable
         let startScope, endScope as scopeMarks = StartDelayedLocalScope "let" cgbuf
@@ -2609,6 +2607,11 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
         // Generate the body
         GenLinearExpr cenv cgbuf eenv spBody body (EndLocalScope(sequel, endScope)) (* canProcessSequencePoint *) true contf
 
+    | LinearMatchExpr (spBind, exprm, tree, tg1, e2, spTg2, m, ty) ->
+        GenMatch cenv cgbuf eenv (spBind, exprm, tree, [|tg1;TTarget([], e2, spTg2)|], m, ty) sequel
+        contf Fake
+    //| Expr.Match (spBind, exprm, tree, targets, m, ty) ->
+    //    GenMatch cenv cgbuf eenv (spBind, exprm, tree, targets, m, ty) sequel
     | _ -> 
         GenExpr cenv cgbuf eenv sp expr sequel
         contf Fake
