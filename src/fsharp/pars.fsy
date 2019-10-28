@@ -194,7 +194,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <string> PERCENT_OP BINDER 
 %token <string * bool> LQUOTE RQUOTE  RQUOTE_DOT 
 %token BAR_BAR UPCAST DOWNCAST NULL RESERVED MODULE NAMESPACE DELEGATE CONSTRAINT BASE
-%token AND AS ASSERT OASSERT ASR BEGIN DO DONE DOWNTO ELSE ELIF END DOT_DOT
+%token AND AS ASSERT OASSERT ASR BEGIN DO DONE DOWNTO ELSE ELIF END DOT_DOT DOT_DOT_HAT
 %token EXCEPTION FALSE FOR FUN FUNCTION IF IN JOIN_IN FINALLY DO_BANG 
 %token LAZY OLAZY  MATCH MATCH_BANG  MUTABLE NEW OF 
 %token OPEN OR REC THEN TO TRUE TRY TYPE VAL INLINE INTERFACE INSTANCE CONST
@@ -3612,8 +3612,8 @@ minusExpr:
   | DOWNCAST  minusExpr 
       { SynExpr.InferredDowncast ($2,unionRanges (rhs parseState 1) $2.Range)}   
 
-  | INFIX_AT_HAT_OP minusExpr 
-      { SynExpr.ReverseIndex ($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)}
+  // | INFIX_AT_HAT_OP minusExpr 
+      // { SynExpr.ReverseIndex ($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)}
 
   | appExpr 
       { $1 }
@@ -3771,11 +3771,19 @@ optRange:
   | declExpr DOT_DOT declExpr 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 3) (Some $3)) }
 
+  | declExpr DOT_DOT INFIX_AT_HAT_OP declExpr 
+      { let reverseIndex = SynExpr.ReverseIndex($4, rhs parseState 3, unionRanges (rhs parseState 3) $4.Range)
+        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 3) (Some reverseIndex)) }
+
   | declExpr DOT_DOT 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 2) None) }
 
   | DOT_DOT declExpr 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 2) (Some $2)) }
+      
+  | DOT_DOT INFIX_AT_HAT_OP declExpr 
+      { let reverseIndex = SynExpr.ReverseIndex($3, rhs parseState 2, unionRanges (rhs parseState 2) $3.Range)
+        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex)) }
 
   | STAR 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 1) None) }

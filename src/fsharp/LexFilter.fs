@@ -428,10 +428,10 @@ type TokenTup =
     /// Returns a token 'tok' with the same position as this token, except that 
     /// it is shifted by specified number of characters from the left and from the right
     /// Note: positive value means shift to the right in both cases
-    member x.UseShiftedLocation(tok, shiftLeft, shiftRight) = 
+    member x.UseShiftedLocation(tok, shiftStart, shiftEnd) = 
         let tokState = x.LexbufState 
-        TokenTup(tok, LexbufState(tokState.StartPos.ShiftColumnBy shiftLeft,
-                                 tokState.EndPos.ShiftColumnBy shiftRight, false), x.LastTokenPos)
+        TokenTup(tok, LexbufState(tokState.StartPos.ShiftColumnBy shiftStart,
+                                 tokState.EndPos.ShiftColumnBy shiftEnd, false), x.LastTokenPos)
         
 
 
@@ -2157,6 +2157,14 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
 
               delayToken (lessTokenTup.UseLocation(HIGH_PRECEDENCE_TYAPP))
               delayToken (tokenTup)
+              true
+
+          // ..^1 will get parsed as DOT_DOT_HAT 1 while 1..^2 will get parsed as 1 DOT_DOT HAT 2
+          // because of processing rule underneath this.
+          | (DOT_DOT_HAT) -> 
+              let hatPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
+              delayToken(new TokenTup(INFIX_AT_HAT_OP("^"), hatPos, tokenTup.LastTokenPos))
+              delayToken(tokenTup.UseShiftedLocation(DOT_DOT, 0, -1))
               true
 
           // Split this token to allow "1..2" for range specification 
