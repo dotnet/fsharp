@@ -12,9 +12,20 @@ module DONOTCHECKIN =
 open System
 
 let arr = Array3D.create 2 2 2 2 
-let arr2 = arr.[1..^1, ..^1, *]
+let arr2 = arr.[1..^1, ..^1, ^1..]
 Console.WriteLine(arr2)
             """
+    [<Test>]
+    let testSyn() =
+        CompilerAssert.CompileExeAndRun
+            """
+open System
+
+let arr = [|1;2|]
+Console.WriteLine(Array.get arr 1)
+            """
+
+
 
 
 
@@ -25,7 +36,7 @@ Console.WriteLine(arr2)
 open System
 
 let arr = [|1;2;3|]
-let arr2 = arr.[..^1]
+let arr2 = arr.[1..^1]
 Console.WriteLine(arr2)
             """
 

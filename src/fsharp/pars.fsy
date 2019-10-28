@@ -3771,19 +3771,32 @@ optRange:
   | declExpr DOT_DOT declExpr 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 3) (Some $3)) }
 
+  | INFIX_AT_HAT_OP declExpr DOT_DOT INFIX_AT_HAT_OP declExpr 
+      { let reverseIndex1 = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)
+        let reverseIndex2 = SynExpr.ReverseIndex($5, rhs parseState 4, unionRanges (rhs parseState 4) $5.Range)
+        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex1), mkSynOptionalExpr (rhs parseState 5) (Some reverseIndex2)) }
+
+  | INFIX_AT_HAT_OP declExpr DOT_DOT declExpr 
+      { let reverseIndex = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 3) $2.Range)
+        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex), mkSynOptionalExpr (rhs parseState 4) (Some $4)) }
+
   | declExpr DOT_DOT INFIX_AT_HAT_OP declExpr 
       { let reverseIndex = SynExpr.ReverseIndex($4, rhs parseState 3, unionRanges (rhs parseState 3) $4.Range)
-        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 3) (Some reverseIndex)) }
+        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 4) (Some reverseIndex)) }
 
-  | declExpr DOT_DOT 
+   | declExpr DOT_DOT 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 2) None) }
+
+   | INFIX_AT_HAT_OP declExpr DOT_DOT 
+      { let reverseIndex = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)
+        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex), mkSynOptionalExpr (rhs parseState 3) None) }
 
   | DOT_DOT declExpr 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 2) (Some $2)) }
       
   | DOT_DOT INFIX_AT_HAT_OP declExpr 
       { let reverseIndex = SynExpr.ReverseIndex($3, rhs parseState 2, unionRanges (rhs parseState 2) $3.Range)
-        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex)) }
+        SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 3) (Some reverseIndex)) }
 
   | STAR 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 1) None) }

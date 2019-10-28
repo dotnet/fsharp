@@ -6337,19 +6337,23 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         | [SynIndexerArg.One h] -> SynExpr.Paren (h, range0, None, idxRange)
         | _ -> SynExpr.Paren (SynExpr.Tuple (false, GetIndexArgs indexArgs @ Option.toList vopt, [], idxRange), range0, None, idxRange)
 
-    // xs.Length - offset - 1
-    let generateReverseOffset (xsId: SynExpr) (offset: SynExpr) (range: range) = 
+    // xs.GetReverseIndex(offset) - 1
+    let generateReverseOffset (xsId: SynExpr) (offset: SynExpr) (dim: int) (range: range) = 
         let subtract = "-"
-        let length = mkSynDot range range xsId (mkSynId range "Length")
         let one = SynExpr.Const(SynConst.Int32(1), range)
+        let dimExpr = SynExpr.Const(SynConst.Int32(dim), range)
+        
+        let getReverseIndex = 
+            mkSynApp2
+                (mkSynDot range range xsId (mkSynId range "GetReverseIndex"))
+                dimExpr
+                offset
+                range
 
         mkSynInfix range
-            (mkSynInfix range
-                length
-                subtract
-                one)
+            getReverseIndex
             subtract
-            offset
+            one
              
 //        SynExpr.App(
 //            ExprAtomicFlag.NonAtomic,

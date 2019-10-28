@@ -354,7 +354,7 @@ module public FSharp.Compiler.PrettyNaming
     let IsValidPrefixOperatorUse s =
         if String.IsNullOrEmpty s then false else
         match s with 
-        | "?+" | "?-" | "+" | "-" | "+." | "-." | "%" | "%%" | "&" | "&&" | "^" -> true
+        | "?+" | "?-" | "+" | "-" | "+." | "-." | "%" | "%%" | "&" | "&&" -> true
         | _ ->
             s.[0] = '!'
             // The check for the first character here could be eliminated since it's covered
@@ -364,7 +364,7 @@ module public FSharp.Compiler.PrettyNaming
     let IsValidPrefixOperatorDefinitionName s = 
         if String.IsNullOrEmpty s then false else
         match s with 
-        | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" | "~^" -> true
+        | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
         | _ ->
             (s.[0] = '!' && s <> "!=")
             // The check for the first character here could be eliminated since it's covered
