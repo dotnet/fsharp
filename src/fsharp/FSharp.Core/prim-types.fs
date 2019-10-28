@@ -5589,6 +5589,19 @@ namespace Microsoft.FSharp.Core
                          (let x = (retype x : decimal) in
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
+        [<AutoOpen>]
+        module ArrayExtensions =
+            type ``[,,]``<'T> with
+            member arr.GetReverseIndex(dim: int)(offset: int) = 
+                let len = 
+                    match dim with
+                    | 0 -> GetArray3DLength1 arr
+                    | 1 -> GetArray3DLength2 arr
+                    | 2 -> GetArray3DLength2 arr
+                    | _ -> raise (System.IndexOutOfRangeException())
+
+                len - offset - 1
+
 
 namespace Microsoft.FSharp.Control
 

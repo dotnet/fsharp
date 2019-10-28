@@ -2735,6 +2735,11 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("KeyValuePattern")>]
         val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
 
+        [<AutoOpen>]
+        module ArrayExtensions = 
+            type ``[,,]``<'T> with
+                member GetReverseIndex: int -> int -> int
+
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
         /// and dynamic invocations of other F# operators</summary>
         module OperatorIntrinsics =
