@@ -1849,11 +1849,11 @@ let MakeSimpleVals cenv env names =
     let vspecMap = NameMap.map fst values
     values, vspecMap
     
-let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
+let MakeAndPublishSimpleVals cenv env m names =
     
     let values, vspecMap = 
-        if not mergeNamesInOneNameresEnv then MakeSimpleVals cenv env names
-        else
+        //if not mergeNamesInOneNameresEnv then MakeSimpleVals cenv env names
+        //else
             // reason: now during typecheck we create new name resolution environment for all components of tupled arguments in lambda. 
             // When trying to find best environment for the given position first we pick the most deeply nested scope that contains given position 
             // (and that will be lambda body - correct one), then we look for the better subtree on the left hand side 
@@ -6272,7 +6272,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, m) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy
         let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
-        let envinner, _, vspecMap = MakeAndPublishSimpleVals cenv env m names true
+        let envinner, _, vspecMap = MakeAndPublishSimpleVals cenv env m names 
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy cenv.g v.Type, v)
         let envinner = if isMember then envinner else ExitFamilyRegion envinner
         let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner resultTy takenNames tpenv bodyExpr
@@ -10698,7 +10698,7 @@ and TcAndPatternCompileMatchClauses mExpr matchm actionOnFailure cenv inputExprO
 and TcMatchPattern cenv inputTy env tpenv (pat: SynPat, optWhenExpr) =
     let m = pat.Range
     let patf', (tpenv, names, _) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false) (tpenv, Map.empty, Set.empty) inputTy pat
-    let envinner, values, vspecMap = MakeAndPublishSimpleVals cenv env m names false
+    let envinner, values, vspecMap = MakeAndPublishSimpleVals cenv env m names 
     let optWhenExpr', tpenv = 
         match optWhenExpr with
         | Some whenExpr ->
