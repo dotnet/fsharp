@@ -48,6 +48,12 @@ type DependencyManagerLineParserTests() =
         Assert.AreEqual("1.2.3.4", pr.Version)
 
     [<Test>]
+    member __.``Parse implicitly specified package name and implicitly specified version number``() =
+        let pr = parseSingleReference "MyPackage, 1.2.3.4"
+        Assert.AreEqual("MyPackage", pr.Include)
+        Assert.AreEqual("1.2.3.4", pr.Version)
+
+    [<Test>]
     member __.``Parse single restore source``() =
         let pr = parseSingleReference "MyPackage, RestoreSources=MyRestoreSource"
         Assert.AreEqual("MyRestoreSource", pr.RestoreSources)

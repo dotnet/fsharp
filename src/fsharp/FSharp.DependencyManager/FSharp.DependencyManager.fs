@@ -44,7 +44,7 @@ module FSharpDependencyManager =
             let validatePackageName package packageName =
                 if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
                     raise (ArgumentException(sprintf "PackageManager can not reference the System Package '%s'" packageName))  // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-            let rec parsePackageReferenceOption' (options: (string option * string option) list) (packageReference: PackageReference option) =
+            let rec parsePackageReferenceOption' (options: (string option * string option) list) (implicitArgumentCount: int) (packageReference: PackageReference option) =
                 let current =
                     match packageReference with
                     | Some p -> p
@@ -58,21 +58,27 @@ module FSharpDependencyManager =
                         validatePackageName v "System.ValueTuple"
                         validatePackageName v "NETStandard.Library"
                         Some { current with Include = v }
+                    let setVersion v = Some { current with Version = v }
                     match opt with
-                    | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest
+                    | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "include", None -> raise (ArgumentException(sprintf "%s requires a value" "Include"))               // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-                    | Some "version", Some v -> Some { current with Version = v } |> parsePackageReferenceOption' rest
+                    | Some "version", Some v -> setVersion v |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "version", None -> raise (ArgumentException(sprintf "%s requires a value" "Version"))               // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-                    | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest
+                    | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "restoresources", None -> raise (ArgumentException(sprintf "%s requires a value" "RestoreSources")) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-                    | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest
+                    | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "bl", Some v ->
                         binLogging <- v.ToLowerInvariant() = "true"
-                        parsePackageReferenceOption' rest packageReference
-                    | None, Some v -> addInclude v |> parsePackageReferenceOption' rest
-                    | _ -> parsePackageReferenceOption' rest packageReference
+                        parsePackageReferenceOption' rest implicitArgumentCount packageReference
+                    | None, Some v ->
+                        match implicitArgumentCount with
+                        | 0 -> addInclude v
+                        | 1 -> setVersion v
+                        | _ -> raise (ArgumentException(sprintf "Unable to apply implicit argument number %d" (implicitArgumentCount + 1))) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                        |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
+                    | _ -> parsePackageReferenceOption' rest implicitArgumentCount packageReference
             let options = getOptions line
-            parsePackageReferenceOption' options None
+            parsePackageReferenceOption' options 0 None
         lines
         |> List.choose parsePackageReferenceOption
         |> (fun l -> l, binLogging)
