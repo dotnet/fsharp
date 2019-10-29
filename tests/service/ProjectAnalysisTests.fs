@@ -1535,9 +1535,9 @@ let ``Test project 5 all symbols`` () =
             ("val |Float|_|", "ActivePatterns.( |Float|_| )", "file1", ((13, 5), (13, 14)),
              ["defn"]); ("val str", "str", "file1", ((19, 17), (19, 20)), ["defn"]);
             ("val str", "str", "file1", ((20, 9), (20, 12)), []);
-            ("val f", "f", "file1", ((21, 11), (21, 12)), ["defn"]);
             ("symbol Float", "ActivePatterns.( |Float|_| ).Float", "file1",
              ((21, 5), (21, 10)), ["pattern"]);
+            ("val f", "f", "file1", ((21, 11), (21, 12)), ["defn"]);
             ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
              "file1", ((21, 16), (21, 23)), []);
             ("val f", "f", "file1", ((21, 46), (21, 47)), []);
@@ -1824,11 +1824,11 @@ let ``Test project 8 all symbols`` () =
                 ("parameter yyy", "yyy", "file1", ((5, 17), (5, 20)), [], []);
                 ("val b", "b", "file1", ((5, 4), (5, 5)), ["defn"], ["val"]);
                 ("val b", "b", "file1", ((8, 10), (8, 11)), [], ["val"]);
+                ("B", "B", "file1", ((10, 6), (10, 7)), ["pattern"], []);
                 ("parameter xxx", "xxx", "file1", ((10, 9), (10, 12)), ["pattern"], []);
                 ("parameter yyy", "yyy", "file1", ((10, 18), (10, 21)), ["pattern"], []);
                 ("val b", "b", "file1", ((10, 24), (10, 25)), ["defn"], []);
                 ("val a", "a", "file1", ((10, 15), (10, 16)), ["defn"], []);
-                ("B", "B", "file1", ((10, 6), (10, 7)), ["pattern"], []);
                 ("val x", "x", "file1", ((7, 4), (7, 5)), ["defn"], ["val"]);
                 ("NamedUnionFields", "NamedUnionFields", "file1", ((2, 7), (2, 23)),
                  ["defn"], ["module"])|]
