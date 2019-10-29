@@ -5289,7 +5289,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             try
                 let c' = TcConst cenv ty m env c
                 (fun _ -> TPat_const (c', m)), (tpenv, names, takenNames)
-            with _ ->
+            with e ->
+                errorRecovery e m
                 (fun _ -> TPat_error m), (tpenv, names, takenNames)
 
     | SynPat.Wild m ->
@@ -5342,7 +5343,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             match names2.TryGetValue id1.idText with 
             | true, PrelimValScheme1 (id2, _, ty2, _, _, _, _, _, _, _, _) ->
                 try UnifyTypes cenv env id2.idRange ty1 ty2
-                with _ -> ()
+                with e -> errorRecovery e m
             | _ -> ())
 
         let names = NameMap.layer names1 names2
@@ -5354,7 +5355,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         (fun values -> TPat_conjs (List.map (fun f -> f values) pats', m)), acc
 
     | SynPat.LongIdent (LongIdentWithDots(longId, _), _, tyargs, args, vis, m) ->
-        if Option.isSome tyargs then errorR (Error (FSComp.SR.tcInvalidTypeArgumentUsage (), m)) // todo: use better range
+        if Option.isSome tyargs then errorR (Error (FSComp.SR.tcInvalidTypeArgumentUsage (), m))
         let warnOnUpperForId = 
             match args with
             | SynConstructorArgs.Pats [] -> warnOnUpper
@@ -5629,7 +5630,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
             let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argTys args
             (fun values -> TPat_tuple (tupInfo, List.map (fun f -> f values) args', argTys, m)), acc
-        with _ ->
+        with e ->
+            errorRecovery e m
             let _, acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (NewInferenceTypes args) args
             (fun _ -> TPat_error m), acc
 
@@ -5666,7 +5668,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
     | SynPat.Null m ->
         try AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace ty
-        with _ -> ()
+        with e -> errorRecovery e m
         (fun _ -> TPat_null m), (tpenv, names, takenNames)
 
     | SynPat.InstanceMember (_, _, _, _, m) -> 
