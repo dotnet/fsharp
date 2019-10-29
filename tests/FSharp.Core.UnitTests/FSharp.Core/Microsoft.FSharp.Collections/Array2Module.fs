@@ -582,7 +582,7 @@ type Array2Module() =
     member this.``Slicing with reverse index in both slice expr behaves as expected``()  = 
         let arr = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
 
-        Assert.That(arr.[..^1, ^1..^0], Is.EquivalentTo(arr.[..3, 3..4]))
+        Assert.That(arr.[..^1, ^1..^0], Is.EquivalentTo(arr.[..0, 3..4]))
 
     //[<Test>]
     //member this.``Slicing with reverse index in fixed index behaves as expected``()  = 

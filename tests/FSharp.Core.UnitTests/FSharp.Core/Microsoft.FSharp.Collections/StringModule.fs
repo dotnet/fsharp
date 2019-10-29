@@ -183,3 +183,9 @@ type StringModule() =
 
         let e3 = String.length null
         Assert.AreEqual(0, e3)
+
+    [<Test>]
+    member this.``Slicing with both index reverse behaves as expected``()  = 
+        let str = "abcde"
+
+        Assert.That(str.[^3..^1], Is.EquivalentTo(str.[1..3]))

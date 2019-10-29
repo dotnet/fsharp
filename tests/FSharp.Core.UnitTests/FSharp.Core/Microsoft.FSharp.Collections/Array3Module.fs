@@ -330,3 +330,9 @@ type Array3Module() =
         CheckThrowsArgumentException(fun () -> Array3D.zeroCreate 1 1 -1 |> ignore)
         
         ()
+
+    [<Test>]
+    member this.``Slicing with reverse index in all 3 slice expr behaves as expected``()  = 
+        let arr = Array3D.create 5 5 5 1
+
+        Assert.That(arr.[..^1, ^1..^0, ^2..], Is.EquivalentTo(arr.[..3, 3..4, 2..]))
