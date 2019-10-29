@@ -3801,6 +3801,10 @@ optRange:
   | STAR 
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 1) None) }
 
+  | INFIX_AT_HAT_OP declExpr %prec slice_expr
+      { let reverseIndex = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)
+        SynIndexerArg.One(reverseIndex)}
+
   | declExpr %prec slice_expr
       { SynIndexerArg.One($1) }
 

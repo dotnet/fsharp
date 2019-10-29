@@ -2739,6 +2739,13 @@ namespace Microsoft.FSharp.Core
         module ArrayExtensions = 
             type ``[,,]``<'T> with
                 member GetReverseIndex: int -> int -> int
+            type ``[,]``<'T> with
+                member GetReverseIndex: int -> int -> int
+            type ``[]``<'T> with
+                member GetReverseIndex: int -> int -> int
+            type System.String with
+                member GetReverseIndex: int -> int -> int
+
 
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
         /// and dynamic invocations of other F# operators</summary>

@@ -3159,6 +3159,8 @@ namespace Microsoft.FSharp.Collections
                 if i > j then [] else
                 PrivateListHelpers.sliceTake (j-i) (PrivateListHelpers.sliceSkip i l)
 
+        member l.GetReverseIndex(_: int) (offset: int) = l.Length - offset - 1
+
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
 
@@ -5592,15 +5594,31 @@ namespace Microsoft.FSharp.Core
         [<AutoOpen>]
         module ArrayExtensions =
             type ``[,,]``<'T> with
-            member arr.GetReverseIndex(dim: int)(offset: int) = 
-                let len = 
-                    match dim with
-                    | 0 -> GetArray3DLength1 arr
-                    | 1 -> GetArray3DLength2 arr
-                    | 2 -> GetArray3DLength2 arr
-                    | _ -> raise (System.IndexOutOfRangeException())
+                member arr.GetReverseIndex(dim: int)(offset: int) = 
+                    let len = 
+                        match dim with
+                        | 0 -> GetArray3DLength1 arr
+                        | 1 -> GetArray3DLength2 arr
+                        | 2 -> GetArray3DLength2 arr
+                        | _ -> raise (System.IndexOutOfRangeException())
 
-                len - offset - 1
+                    len - offset - 1
+
+            type ``[,]``<'T> with
+                member arr.GetReverseIndex(dim: int)(offset: int) = 
+                    let len = 
+                        match dim with
+                        | 0 -> GetArray2DLength1 arr
+                        | 1 -> GetArray2DLength2 arr
+                        | _ -> raise (System.IndexOutOfRangeException())
+
+                    len - offset - 1
+
+            type ``[]``<'T> with
+                member arr.GetReverseIndex (_: int)(offset: int) = arr.Length - offset - 1
+        
+            type System.String with
+                member str.GetReverseIndex (_: int) (offset: int) = str.Length - offset - 1
 
 
 namespace Microsoft.FSharp.Control

@@ -63,10 +63,10 @@ type ArrayModule() =
         ()
 
 
-    [<Test>]
-    member this.test() = 
-        let arr = [|1;2;3|]
-        Assert.AreEqual(arr.[0..^1], [|1;2|])
+    //[<Test>]
+    //member this.test() = 
+        //let arr = [|1;2;3|]
+        //Assert.AreEqual(arr.[0..^1], [|1;2|])
 
 
     [<Test>]
@@ -1684,3 +1684,55 @@ type ArrayModule() =
         // null array
         let nullArr = null:string[]
         CheckThrowsArgumentNullException (fun () -> Array.contains "empty" nullArr |> ignore)
+
+    [<Test>]
+    member this.``Slicing with first index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.That(arr.[^3..], Is.EquivalentTo(arr.[1..]))
+
+    
+    [<Test>]
+    member this.``Slicing with second index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.That(arr.[..^1], Is.EquivalentTo(arr.[..3]))
+
+    
+    [<Test>]
+    member this.``Slicing with both index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.That(arr.[^3..^1], Is.EquivalentTo(arr.[1..3]))
+
+    [<Test>]
+    member this.``Set slice with first index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[^3..] <- [| 9;8;7;6 |]
+        arr2.[1..] <- [| 9;8;7;6 |]
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    
+    [<Test>]
+    member this.``Set slice with second index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[..^1] <- [| 9;8;7;6 |]
+        arr2.[..3] <- [| 9;8;7;6 |]
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    
+    [<Test>]
+    member this.``Set slice with both index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[^3..^1] <- [| 8;7;6 |]
+        arr2.[1..3] <- [| 8;7;6 |]
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
