@@ -5266,12 +5266,14 @@ and TcPatAndRecover warnOnUpper cenv (env: TcEnv) topValInfo vFlags (tpenv, name
         //solveTypAsError cenv env.DisplayEnv m ty
         (fun _ -> TPat_error m), (tpenv, names, takenNames)
 
-/// Type check a pattern. Patterns are type-checked in three phases:
-/// 1. TcPat builds a List.map from simple variable names to inferred types for those variables.
-///    It also returns a function to perform the second phase.
-/// 2. The second phase assumes the caller has built the actual value_spec's for the values being defined,
-///    and has decided if the types of these variables are to be generalized. The caller hands this information to
-///    the second-phase function in terms of a List.map from names to actual value specifications.
+/// Typecheck a pattern. Patterns are type-checked in three phases: 
+/// 1. TcPat builds a List.map from simple variable names to inferred types for 
+///   those variables. It also returns a function to perform the second phase.
+/// 2. The second phase assumes the caller has built the actual value_spec's 
+///    for the values being defined, and has decided if the types of these 
+///    variables are to be generalized. The caller hands this information to
+///    the second-phase function in terms of a List.map from names to actual
+///    value specifications. 
 and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty pat = 
     let ad = env.eAccessRights
     match pat with 
