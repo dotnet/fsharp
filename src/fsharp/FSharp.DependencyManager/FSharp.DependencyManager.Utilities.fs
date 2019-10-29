@@ -65,7 +65,9 @@ module Utilities =
                 insideSQ <- not insideSQ                            // keep reading
             | _ -> ()
 
-        result |> Seq.map(fun option -> split option)
+        result
+        |> List.ofSeq
+        |> List.map (fun option -> split option)
 
     // Path to the directory containing the fsharp compilers
     let fsharpCompilerPath = Path.GetDirectoryName(typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location)

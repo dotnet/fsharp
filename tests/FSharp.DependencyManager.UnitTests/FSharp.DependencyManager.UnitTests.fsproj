@@ -13,7 +13,8 @@
   <ItemGroup>
     <Compile Include="TextHelpers.fs" />
     <Compile Include="FSharpScript.fs" />
-    <Compile Include="FSharp.DependencyManager.UnitTests.fs" />
+    <Compile Include="DependencyManagerInteractiveTests.fs" />
+    <Compile Include="DependencyManagerLineParserTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
