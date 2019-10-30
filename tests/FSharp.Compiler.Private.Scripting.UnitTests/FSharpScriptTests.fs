@@ -182,10 +182,10 @@ module Imports =
     extern uint32 GetCurrentProcessId()
 
     [<DllImport(""c"")>]
-    extern getpid()
+    extern uint32 getpid()
 
 // Will throw exception if fails
-if RuntimeInformation.IsOSPlatform(OSPlatform.) then
+if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
     printfn ""Current process: %d"" (Imports.GetCurrentProcessId())
 else
     printfn ""Current process: %d"" (Imports.getpid())
