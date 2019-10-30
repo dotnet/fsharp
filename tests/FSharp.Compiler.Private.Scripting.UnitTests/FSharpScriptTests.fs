@@ -178,17 +178,17 @@ open System
 open System.Runtime.InteropServices
 
 module Imports =
-    [<DllImport("kernel32.dll")>]
+    [<DllImport(""kernel32.dll"")>]
     extern uint32 GetCurrentProcessId()
 
-    [<DllImport("c")>]
+    [<DllImport(""c"")>]
     extern getpid()
 
 // Will throw exception if fails
 if RuntimeInformation.IsOSPlatform(OSPlatform.) then
-    printfn "Current process: %d" (Imports.GetCurrentProcessId())
+    printfn ""Current process: %d"" (Imports.GetCurrentProcessId())
 else
-    printfn "Current process: %d" (Imports.getpid())
+    printfn ""Current process: %d"" (Imports.getpid())
 123
 "
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
