@@ -170,6 +170,34 @@ printfn ""%A"" result
         Assert.AreEqual(123, value.ReflectionValue :?> int32)
 #endif
 
+
+    [<Test>]
+    member __.``Simple pinvoke should not be impacted by native resolver``() =
+        let code = @"
+open System
+open System.Runtime.InteropServices
+
+module Imports =
+    [<DllImport("kernel32.dll")>]
+    extern uint32 GetCurrentProcessId()
+
+    [<DllImport("c")>]
+    extern getpid()
+
+// Will throw exception if fails
+if RuntimeInformation.IsOSPlatform(OSPlatform.) then
+    printfn "Current process: %d" (Imports.GetCurrentProcessId())
+else
+    printfn "Current process: %d" (Imports.getpid())
+123
+"
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable assemblyRefCount = 0;
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.AreEqual(123, value.ReflectionValue :?> int32)
+
+
     [<Test>]
     member _.``Evaluation can be cancelled``() =
         use script = new FSharpScript()

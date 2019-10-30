@@ -1665,18 +1665,22 @@ module internal MagicAssemblyResolution =
 
 #if NETSTANDARD
         let probingFileNames (name: string) =
+            // coreclr native library probing algorithm: https://github.com/dotnet/coreclr/blob/9773db1e7b1acb3ec75c9cc0e36bd62dcbacd6d5/src/System.Private.CoreLib/shared/System/Runtime/Loader/LibraryNameVariation.Unix.cs
             let isRooted = Path.IsPathRooted name
-            let useSuffix s = not (name.Contains(s + ".") || name.EndsWith(s))      // linux devs often append version # to libraries I.e mydll.so.5.3.2
-            let usePrefix = not (name.Contains(@"\") || name.Contains(@"/"))        // If name has directory information no add no prefix
+            let useSuffix s = not (name.Contains(s + ".") || name.EndsWith(s))          // linux devs often append version # to libraries I.e mydll.so.5.3.2
+            let usePrefix = name.IndexOf(Path.DirectorySeparatorChar) = -1              // If name has directory information no add no prefix
+                            && name.IndexOf(Path.AltDirectorySeparatorChar) = -1
+                            && name.IndexOf(Path.PathSeparator) = -1
+                            && name.IndexOf(Path.VolumeSeparatorChar) = -1
             let prefix = [| "lib" |]
             let suffix = [|
                     if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
                         ".dll"
                         ".exe"
                     elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then
-                        ".so"
-                    else
                         ".dylib"
+                    else
+                        ".so"
                 |]
 
             [|
@@ -1712,7 +1716,6 @@ module internal MagicAssemblyResolution =
         //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
         //
         // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
-        //
         let probingRids =
             let processArchitecture = RuntimeInformation.ProcessArchitecture
             let baseRid =
