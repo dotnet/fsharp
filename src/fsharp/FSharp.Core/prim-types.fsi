@@ -1925,6 +1925,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="endIndex">The end index.</param>
         /// <returns>The sub list specified by the input indices.</returns>
         member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
+
+        member GetReverseIndex: int -> int -> int
         
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
         /// <param name="head">A new head value for the list.</param>

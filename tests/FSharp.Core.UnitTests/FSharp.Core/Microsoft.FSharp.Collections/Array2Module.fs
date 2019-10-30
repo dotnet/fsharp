@@ -584,8 +584,58 @@ type Array2Module() =
 
         Assert.That(arr.[..^1, ^1..^0], Is.EquivalentTo(arr.[..0, 3..4]))
 
-    //[<Test>]
-    //member this.``Slicing with reverse index in fixed index behaves as expected``()  = 
-    //    let arr = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+    [<Test>]
+    member this.``Slicing with reverse index in fixed index behaves as expected``()  = 
+        let arr = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
 
-    //    Assert.That(arr.[^1, ^1..^0], Is.EquivalentTo(arr.[3, 3..4]))
+        Assert.That(arr.[^1, ^1..^0], Is.EquivalentTo(arr.[0, 3..4]))
+
+    [<Test>]
+    member this.``Slicing with reverse index and non reverse fixed index behaves as expected``()  = 
+        let arr = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+
+        Assert.That(arr.[1, ^1..^0], Is.EquivalentTo(arr.[1, 3..4]))
+
+    [<Test>]
+    member this.``Set slice with reverse index in one slice expr behaves as expected``()  = 
+        let arr1 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+        let arr2 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+
+        let setArray = array2D [[10;11]; [12;13]]
+        arr1.[*, ^1..^0] <- setArray
+        arr2.[*, ^1..^0] <- setArray
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    [<Test>]
+    member this.``Set slice with reverse index in both slice expr behaves as expected``()  = 
+        let arr1 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+        let arr2 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+
+        let setArray = array2D [[10;11]; [12;13]]
+        arr1.[0..^0, ^1..^0] <- setArray
+        arr2.[0..^0, ^1..^0] <- setArray
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    [<Test>]
+    member this.``Set slice with reverse index in fixed index behaves as expected``()  = 
+        let arr1 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+        let arr2 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+
+        let setArray = [|12;13|]
+        arr1.[^1, ^1..^0] <- setArray
+        arr2.[^1, ^1..^0] <- setArray
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    [<Test>]
+    member this.``Set slice with reverse index in and non reverse fixed index behaves as expected``()  = 
+        let arr1 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+        let arr2 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
+
+        let setArray = [|12;13|]
+        arr1.[1, ^1..^0] <- setArray
+        arr2.[1, ^1..^0] <- setArray
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))

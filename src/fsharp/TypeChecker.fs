@@ -6330,74 +6330,42 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
     let isString = typeEquiv cenv.g cenv.g.string_ty e1ty 
 
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges 
-    let GetIndexArgs (es: SynIndexerArg list) = [ for e in es do yield! e.Exprs ]
-    let MakeIndexParam vopt = 
-        match indexArgs with 
-        | [] -> failwith "unexpected empty index list"
-        | [SynIndexerArg.One h] -> SynExpr.Paren (h, range0, None, idxRange)
-        | _ -> SynExpr.Paren (SynExpr.Tuple (false, GetIndexArgs indexArgs @ Option.toList vopt, [], idxRange), range0, None, idxRange)
+    //let GetIndexArgs (es: SynIndexerArg list) = [ for e in es do yield! e.Exprs ]
 
     // xs.GetReverseIndex dim offset - 1
-    let generateReverseOffset (xsId: SynExpr) (offset: SynExpr) (dim: int) (range: range) = 
+    let reverseExpr (dim: int) (offset: SynExpr) (range: range) = 
         let dimExpr = SynExpr.Const(SynConst.Int32(dim), range)
+        let xsId = e1
         mkSynApp2
             (mkSynDot range range xsId (mkSynId range "GetReverseIndex"))
             dimExpr
             offset
             range
 
-             
-//        SynExpr.App(
-//            ExprAtomicFlag.NonAtomic,
-//            false,
-//            SynExpr.App(
-//                ExprAtomicFlag.NonAtomic,
-//                true,
-//                SynExpr.Ident(Ident("op_Subtraction", range)),
-//                SynExpr.App(
-//                    ExprAtomicFlag.NonAtomic,
-//                    false,
-//                    SynExpr.App(
-//                        ExprAtomicFlag.NonAtomic,
-//                        true,
-//                        SynExpr.Ident(Ident("op_Subtraction", range)),
-//                        SynExpr.LongIdent(
-//                            false,
-//                            LongIdentWithDots(
-//                                [arr; Ident("Length", range)], [range]
-//                            ),
-//                            None,
-//                            range
-//                        ),
-//                        range
-//                    ),
-//                    SynExpr.Const(SynConst.Int32(1), range),
-//                    range
-//                ),
-//                range
-//            ),
-//            offset,
-//            range
-//        )
+    let rewriteReverseIndex (expr: SynExpr) (dim: int) = 
+        match expr with
+        | SynExpr.App(atomicFlag, isInfix, funcExpr, SynExpr.ReverseIndex(offsetExpr, range, _), outerRange) -> 
+            SynExpr.App(atomicFlag, isInfix, funcExpr, reverseExpr dim offsetExpr range, outerRange)
+        | SynExpr.ReverseIndex(offsetExpr, range, _) ->
+            reverseExpr dim offsetExpr range 
+        | _ -> expr
 
     let expandedIndexArgs = 
         indexArgs 
-        |> List.mapi( fun pos indexerArg -> 
-            indexerArg.Exprs |> List.map( fun expr -> 
+        |> List.mapi ( fun pos indexerArg ->
+            indexerArg.Exprs |> List.collect(fun expr -> 
                 match expr with
-                | SynExpr.App(atomicFlag, isInfix, funcExpr, SynExpr.ReverseIndex(offsetExpr, range, _), outerRange) -> 
-                    SynExpr.App(atomicFlag, isInfix, funcExpr, (generateReverseOffset e1 offsetExpr pos range), outerRange)
-                | _ -> expr
-            ))
+                | SynExpr.Tuple(_, exprs, _, _) -> exprs |> List.mapi(fun dim expr -> rewriteReverseIndex expr dim)
+                | _ -> [rewriteReverseIndex expr pos]
+                )
+            )
         |> List.collect (id)
     
-    
-    //(GetIndexArgs indexArgs) |> List.map (fun expr -> 
-    //    match expr with 
-    //    | SynExpr.App(atomicFlag, isInfix, funcExpr, SynExpr.ReverseIndex(offsetExpr, range, _), outerRange) -> 
-    //         SynExpr.App(atomicFlag, isInfix, funcExpr, (generateReverseOffset e1 offsetExpr range), outerRange)
-    //    | _ -> expr
-    //)
+    let MakeIndexParam setSliceArrayOption = 
+       match indexArgs with 
+       | [] -> failwith "unexpected empty index list"
+       | [SynIndexerArg.One h] -> SynExpr.Paren (rewriteReverseIndex h 0, range0, None, idxRange)
+       | _ -> SynExpr.Paren (SynExpr.Tuple (false, expandedIndexArgs @ Option.toList setSliceArrayOption, [], idxRange), range0, None, idxRange)
 
     let attemptArrayString = 
         if isArray || isString then 
