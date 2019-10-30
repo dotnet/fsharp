@@ -67,3 +67,12 @@ type DependencyManagerLineParserTests() =
     member __.``Parse script``() =
         let pr = parseSingleReference "MyPackage, Script=SomeScript"
         Assert.AreEqual("SomeScript", pr.Script)
+
+    [<Test>]
+    member __.``Include strings that look different but parse the same are reduced to a single item``() =
+        let prs, _ =
+            [ "MyPackage, Version=1.2.3.4"
+              "Include=MyPackage, Version=1.2.3.4" ]
+            |> FSharpDependencyManager.parsePackageReference
+        let pr = prs.Single()
+        Assert.AreEqual("MyPackage", pr.Include)

@@ -81,6 +81,7 @@ module FSharpDependencyManager =
             parsePackageReferenceOption' options 0 None
         lines
         |> List.choose parsePackageReferenceOption
+        |> List.distinct
         |> (fun l -> l, binLogging)
 
 type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string option) =
@@ -127,7 +128,6 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
             |> FSharpDependencyManager.parsePackageReference
         let packageReferenceLines =
             packageReferences
-            |> List.distinct
             |> List.map FSharpDependencyManager.formatPackageReference
             |> Seq.concat
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
