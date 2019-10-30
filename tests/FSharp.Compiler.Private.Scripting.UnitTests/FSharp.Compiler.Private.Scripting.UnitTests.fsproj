@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Compile Include="FSharpScriptTests.fs" />
+    <None Include="housing.csv"  CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
