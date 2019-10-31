@@ -166,7 +166,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | Some v -> yield v
 
         // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
-        // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
+        // when an F# script references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
         // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
         yield "netstandard"
         yield "System.Runtime"          // lots of types

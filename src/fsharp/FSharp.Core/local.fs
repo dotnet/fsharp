@@ -988,6 +988,12 @@ module internal List =
             takeWhileFreshConsTail cons p xs
             cons
 
+    let rec tryLastV (list: 'T list) = 
+        match list with
+        | [] -> ValueNone
+        | [x] -> ValueSome x        
+        | _ :: tail -> tryLastV tail           
+
 module internal Array =
 
     open System
@@ -1187,3 +1193,26 @@ module internal Array =
                 res.[i] <- subUnchecked !startIndex minChunkSize array
                 startIndex := !startIndex + minChunkSize
             res
+
+module internal Seq =
+    let tryLastV (source : seq<_>) =
+        //checkNonNull "source" source //done in main Seq.tryLast
+        match source with
+        | :? ('T[]) as a -> 
+            if a.Length = 0 then ValueNone
+            else ValueSome(a.[a.Length - 1])
+        
+        | :? ('T IList) as a -> //ResizeArray and other collections
+            if a.Count = 0 then ValueNone
+            else ValueSome(a.[a.Count - 1])
+        
+        | :? ('T list) as a -> List.tryLastV a 
+        
+        | _ -> 
+            use e = source.GetEnumerator()
+            if e.MoveNext() then
+                let mutable res = e.Current
+                while (e.MoveNext()) do res <- e.Current
+                ValueSome(res)
+            else
+                ValueNone

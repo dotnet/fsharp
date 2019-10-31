@@ -36,7 +36,7 @@ let runPerl arguments =
 
     use perlProcess =
         ProcessStartInfo(
-            FileName = Path.Combine(nugetCache, "StrawberryPerl64", "5.22.2.1", "Tools", "perl", "bin", "perl.exe"),
+            FileName = Path.Combine(nugetCache, "StrawberryPerl", "5.28.0.1", "bin", "perl.exe"),
             Arguments = (arguments |> Array.map(fun a -> @"""" + a + @"""") |> String.concat " "),
             WorkingDirectory = Path.Combine(rootFolder, "tests", "fsharpqa", "source"),
             RedirectStandardOutput = true,
