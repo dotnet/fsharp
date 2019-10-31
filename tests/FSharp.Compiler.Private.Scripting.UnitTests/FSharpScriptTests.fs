@@ -111,6 +111,15 @@ type InteractiveTests() =
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
 
     [<Test>]
+    member __.``Nuget reference fires multiple events``() =
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable assemblyRefCount = 0;
+        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
+        script.Eval("#r \"nuget:include=NUnitLite, version=3.11.0\"") |> ignoreValue
+        script.Eval("0") |> ignoreValue
+        Assert.GreaterOrEqual(assemblyRefCount, 2)
+
+    [<Test>]
     member _.``Evaluation can be cancelled``() =
         use script = new FSharpScript()
         let sleepTime = 10000

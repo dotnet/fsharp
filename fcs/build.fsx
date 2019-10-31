@@ -31,7 +31,7 @@ let dotnetExePath =
     if File.Exists(pathToCli) then
         pathToCli
     else
-        DotNetCli.InstallDotNetSDK "2.2.105"
+        DotNetCli.InstallDotNetSDK "3.0.100"
 
 let runDotnet workingDir args =
     let result =
@@ -92,9 +92,10 @@ Target "BuildVersion" (fun _ ->
 
 Target "Build" (fun _ ->
     runDotnet __SOURCE_DIRECTORY__ "build ../src/buildtools/buildtools.proj -v n -c Proto"
-    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp2.1/fslex.dll"
-    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp2.1/fsyacc.dll"
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "build FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
+    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp3.0/fslex.dll"
+    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp3.0/fsyacc.dll"
+    let binLogPath = __SOURCE_DIRECTORY__ + "/../artifacts/log/Release/fcs-build.binlog"
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "build FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s /bl:%s" fslexPath fsyaccPath binLogPath)
 )
 
 Target "Test" (fun _ ->

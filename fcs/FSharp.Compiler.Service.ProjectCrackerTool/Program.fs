@@ -6,7 +6,7 @@ open System.Runtime.Serialization.Json
 
 module Program =
 
-#if !NETCOREAPP2_0
+#if !NETCOREAPP
     let addMSBuildv14BackupResolution () =
         let onResolveEvent = new ResolveEventHandler(fun sender evArgs ->
             let requestedAssembly = AssemblyName(evArgs.Name)
@@ -40,7 +40,7 @@ module Program =
         let asText = Array.exists (fun (s: string) -> s = "--text") argv
         let argv = Array.filter (fun (s: string) -> s <> "--text") argv
 
-#if !NETCOREAPP2_0
+#if !NETCOREAPP
         addMSBuildv14BackupResolution ()
 #endif
         crackAndSendOutput asText argv
