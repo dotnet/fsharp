@@ -37,7 +37,7 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
     let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--quiet" |]
 #endif
     let argv = Array.append baseArgs additionalArgs
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
+    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
     member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
 
