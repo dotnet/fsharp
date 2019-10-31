@@ -78,9 +78,9 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     let nameProperty     = nameProperty.GetValue >> string
     let keyProperty      = keyProperty.GetValue >> string
 
-    let dependencyAddingEvent = new Event<_>()
-    let dependencyAddedEvent = new Event<_>()
-    let dependencyFailedEvent = new Event<_>()
+    let dependencyAddingEvent = Event<_>()
+    let dependencyAddedEvent = Event<_>()
+    let dependencyFailedEvent = Event<_>()
 
     static member InstanceMaker (theType: System.Type, outputDir: string option) =
         match ReflectionHelper.getAttributeNamed theType dependencyManagerAttributeName,
