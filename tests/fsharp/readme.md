@@ -36,6 +36,7 @@ These tests build, compile, peverify and run fsi.
 
 Below the Compiler directory there is a set of tests built on the compiler service.  They are nunit and instead of executing the compiler and fsi using files on disk the tests are built from memory.  These tests use the CompilerAssert framework and look similar to:
 
+This test verifies that a warning is produces when a value is implicitly discarded.  The line ````x = 20``` looks like an assignment but in F# is a test for equality it yields and discards the value false.
 ````
     [<Test>]
     let ``Unused compare with immutable when assignment might be intended``() =
