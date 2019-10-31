@@ -4,12 +4,14 @@
 module internal FSharp.Compiler.DependencyManagerIntegration
 
 open FSharp.Compiler.Range
-open System
 
 type IDependencyManagerProvider =
-    abstract Name : string
+    abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies : scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+    abstract DependencyAdding: IEvent<string * string>
+    abstract DependencyAdded: IEvent<string * string>
+    abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
 type ReferenceType =

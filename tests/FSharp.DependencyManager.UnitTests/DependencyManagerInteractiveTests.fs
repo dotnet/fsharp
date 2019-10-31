@@ -4,8 +4,8 @@ namespace FSharp.DependencyManager.UnitTests
 
 open System
 open System.IO
-open System.Threading
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
@@ -22,12 +22,14 @@ type DependencyManagerInteractiveTests() =
 
     let ignoreValue = getValue >> ignore
 
+    let scriptHost () = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+
     [<Test>]
     member __.``SmokeTest - #r nuget``() =
         let text = """
 #r @"nuget:System.Collections.Immutable, version=1.5.0"
 0"""
-        use script = new FSharpScript()
+        use script = scriptHost()
         let mutable assemblyResolveEventCount = 0
         let mutable foundAssemblyReference = false
         Event.add (fun (assembly: string) ->
@@ -46,7 +48,7 @@ type DependencyManagerInteractiveTests() =
         let text = """
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
 0"""
-        use script = new FSharpScript()
+        use script = scriptHost()
         let mutable assemblyResolveEventCount = 0
         Event.add (fun (assembly: string) ->
             assemblyResolveEventCount <- assemblyResolveEventCount + 1)
@@ -56,3 +58,57 @@ type DependencyManagerInteractiveTests() =
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(0, value.ReflectionValue :?> int)
         Assert.AreEqual(0, assemblyResolveEventCount)
+
+    [<Test>]
+    member __.``Dependency add events successful``() =
+        let referenceText = "System.Collections.Immutable, version=1.5.0"
+        let text = referenceText |> sprintf """
+#r @"nuget:%s"
+0"""
+        use script = scriptHost()
+        let mutable dependencyAddingEventCount = 0
+        let mutable dependencyAddedEventCount = 0
+        let mutable foundDependencyAdding = false
+        let mutable foundDependencyAdded = false
+        Event.add (fun (dep: string * string) ->
+            let key, dependency = dep
+            dependencyAddingEventCount <- dependencyAddingEventCount + 1
+            foundDependencyAdding <- foundDependencyAdding || (key = "nuget" && dependency = referenceText))
+            script.DependencyAdding
+        Event.add (fun (dep: string * string) ->
+            let key, dependency = dep
+            dependencyAddedEventCount <- dependencyAddedEventCount + 1
+            foundDependencyAdded <- foundDependencyAdded || (key = "nuget" && dependency = referenceText))
+            script.DependencyAdded
+        script.Eval(text) |> getValue |> ignore
+        Assert.AreEqual(1, dependencyAddingEventCount)
+        Assert.AreEqual(1, dependencyAddedEventCount)
+        Assert.AreEqual(true, foundDependencyAdding)
+        Assert.AreEqual(true, foundDependencyAdded)
+
+    [<Test>]
+    member __.``Dependency add events failed``() =
+        let referenceText = "System.Collections.Immutable.DoesNotExist, version=1.5.0"
+        let text = referenceText |> sprintf """
+#r @"nuget:%s"
+0"""
+        use script = scriptHost()
+        let mutable dependencyAddingEventCount = 0
+        let mutable dependencyFailedEventCount = 0
+        let mutable foundDependencyAdding = false
+        let mutable foundDependencyFailed = false
+        Event.add (fun (dep: string * string) ->
+            let key, dependency = dep
+            dependencyAddingEventCount <- dependencyAddingEventCount + 1
+            foundDependencyAdding <- foundDependencyAdding || (key = "nuget" && dependency = referenceText))
+            script.DependencyAdding
+        Event.add (fun (dep: string * string) ->
+            let key, dependency = dep
+            dependencyFailedEventCount <- dependencyFailedEventCount + 1
+            foundDependencyFailed <- foundDependencyFailed || (key = "nuget" && dependency = referenceText))
+            script.DependencyFailed
+        script.Eval(text) |> getValue |> ignore
+        Assert.AreEqual(1, dependencyAddingEventCount)
+        Assert.AreEqual(1, dependencyFailedEventCount)
+        Assert.AreEqual(true, foundDependencyAdding)
+        Assert.AreEqual(true, foundDependencyFailed)

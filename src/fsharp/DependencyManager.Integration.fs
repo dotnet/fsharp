@@ -4,11 +4,11 @@
 module internal FSharp.Compiler.DependencyManagerIntegration
 
 open System
-open System.Reflection
 open System.IO
+open System.Reflection
+open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open Internal.Utilities.FSharpEnvironment
-open FSharp.Compiler.DotNetFrameworkDependencies
 
 // Contract strings
 let dependencyManagerPattern = "*DependencyManager*.dll"
@@ -60,9 +60,12 @@ module ReflectionHelper =
 
 (* Shape of Dependency Manager contract, resolved using reflection *)
 type internal IDependencyManagerProvider =
-    abstract Name : string
+    abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies : scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+    abstract DependencyAdding: IEvent<string * string>
+    abstract DependencyAdded: IEvent<string * string>
+    abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
 type ReferenceType =
@@ -74,6 +77,10 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
     let nameProperty     = nameProperty.GetValue >> string
     let keyProperty      = keyProperty.GetValue >> string
+
+    let dependencyAddingEvent = new Event<_>()
+    let dependencyAddedEvent = new Event<_>()
+    let dependencyFailedEvent = new Event<_>()
 
     static member InstanceMaker (theType: System.Type, outputDir: string option) =
         match ReflectionHelper.getAttributeNamed theType dependencyManagerAttributeName,
@@ -91,9 +98,18 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     interface IDependencyManagerProvider with
         member __.Name     = instance |> nameProperty
         member __.Key      = instance |> keyProperty
-        member __.ResolveDependencies(scriptDir, mainScriptName, scriptName, packageManagerTextLines, tfm) =
+        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, packageManagerTextLines, tfm) =
+            let key = (this :> IDependencyManagerProvider).Key
+            let eventValue = String.Join("\n", packageManagerTextLines)
+            dependencyAddingEvent.Trigger(key, eventValue)
             let arguments = [| box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines; box tfm |]
-            resolveDeps.Invoke(instance, arguments) :?> _
+            let succeeded, generatedScripts, additionalIncludeFolders = resolveDeps.Invoke(instance, arguments) :?> _
+            if succeeded then dependencyAddedEvent.Trigger(key, eventValue)
+            else dependencyFailedEvent.Trigger(key, eventValue)
+            succeeded, generatedScripts, additionalIncludeFolders
+        member __.DependencyAdding = dependencyAddingEvent.Publish
+        member __.DependencyAdded = dependencyAddedEvent.Publish
+        member __.DependencyFailed = dependencyFailedEvent.Publish
 
 // Resolution Path = Location of FSharp.Compiler.Private.dll
 let assemblySearchPaths = lazy (

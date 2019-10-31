@@ -964,11 +964,16 @@ type internal FsiDynamicCompiler
     let assemblyName = "FSI-ASSEMBLY"
 
     let assemblyReferenceAddedEvent = Control.Event<string>()
+    let dependencyAddingEvent = Control.Event<string * string>()
+    let dependencyAddedEvent = Control.Event<string * string>()
+    let dependencyFailedEvent = Control.Event<string * string>()
 
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
 
     let mutable needsPackageResolution = false
+
+    let mutable subscribedDependencyManagers = HashSet<string>()
 
     let generateDebugInfo = tcConfigB.debuginfo
 
@@ -1295,6 +1300,11 @@ type internal FsiDynamicCompiler
                     let removeErrorLinesFromScript () =
                         tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
                     try
+                        let newDependencyManager = subscribedDependencyManagers.Add(packageManagerKey)
+                        if newDependencyManager then
+                            Event.add dependencyAddingEvent.Trigger packageManager.DependencyAdding
+                            Event.add dependencyAddedEvent.Trigger packageManager.DependencyAdded
+                            Event.add dependencyFailedEvent.Trigger packageManager.DependencyFailed
                         match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx" m packageManagerTextLines with
                         | None -> istate // error already reported
                         | Some (succeeded, generatedScripts, additionalIncludeFolders) ->    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1302,7 +1312,7 @@ type internal FsiDynamicCompiler
                                 tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
                             else
                                 removeErrorLinesFromScript ()
-                            for folder in additionalIncludeFolders do 
+                            for folder in additionalIncludeFolders do
                                 tcConfigB.AddIncludePath(m, folder, "")
                             if generatedScripts.Length > 0 then
                                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, generatedScripts, lexResourceManager, errorLogger)
@@ -1395,6 +1405,12 @@ type internal FsiDynamicCompiler
         valuePrinter.FormatValue(obj, objTy)
 
     member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
+
+    member __.DependencyAdding = dependencyAddingEvent.Publish
+
+    member __.DependencyAdded = dependencyAddedEvent.Publish
+
+    member __.DependencyFailed = dependencyFailedEvent.Publish
 
 //----------------------------------------------------------------------------
 // ctrl-c handling
@@ -2842,8 +2858,21 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         |> commitResultNonThrowing errorOptions scriptPath errorLogger
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
+    [<CLIEvent>]
     /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
     member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
+
+    [<CLIEvent>]
+    /// Event fires at the start of adding a dependency via the dependency manager.
+    member __.DependencyAdding = fsiDynamicCompiler.DependencyAdding
+
+    [<CLIEvent>]
+    /// Event fires at the successful completion of adding a dependency via the dependency manager.
+    member __.DependencyAdded = fsiDynamicCompiler.DependencyAdded
+
+    [<CLIEvent>]
+    /// Event fires at the failure to adding a dependency via the dependency manager.
+    member __.DependencyFailed = fsiDynamicCompiler.DependencyFailed
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any
