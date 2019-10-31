@@ -39,7 +39,17 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
     let argv = Array.append baseArgs additionalArgs
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
+    [<CLIEvent>]
     member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
+
+    [<CLIEvent>]
+    member __.DependencyAdding = fsi.DependencyAdding
+
+    [<CLIEvent>]
+    member __.DependencyAdded = fsi.DependencyAdded
+
+    [<CLIEvent>]
+    member __.DependencyFailed = fsi.DependencyFailed
 
     member __.ProvideInput = stdin.ProvideInput
 
