@@ -9,9 +9,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.CompilerServices
     open System.Collections.Generic
-#if FX_RESHAPED_REFLECTION
-    open System.Reflection
-#endif
+    
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
@@ -27,18 +25,16 @@ namespace Microsoft.FSharp.Collections
         let length (list: 'T list) = list.Length
 
         [<CompiledName("Last")>]
-        let rec last (list: 'T list) =
-            match list with
-            | [x] -> x
-            | _ :: tail -> last tail
-            | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
+        let last (list: 'T list) =
+            match Microsoft.FSharp.Primitives.Basics.List.tryLastV list with
+            | ValueSome x -> x
+            | ValueNone -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
         [<CompiledName("TryLast")>]
         let rec tryLast (list: 'T list) =
-            match list with
-            | [x] -> Some x
-            | _ :: tail -> tryLast tail
-            | [] -> None
+            match Microsoft.FSharp.Primitives.Basics.List.tryLastV list with
+            | ValueSome x -> Some x
+            | ValueNone -> None            
 
         [<CompiledName("Reverse")>]
         let rev list = Microsoft.FSharp.Primitives.Basics.List.rev list
@@ -71,11 +67,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (list:'T list) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then countByValueType projection list
                 else countByRefType   projection list
 
@@ -446,11 +438,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (list:'T list) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then groupByValueType projection list
                 else groupByRefType   projection list
 

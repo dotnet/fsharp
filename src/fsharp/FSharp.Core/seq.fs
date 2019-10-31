@@ -1071,11 +1071,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (source:seq<'T>) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then mkDelayedSeq (fun () -> groupByValueType projection source)
                 else mkDelayedSeq (fun () -> groupByRefType   projection source)
 
@@ -1164,11 +1160,7 @@ namespace Microsoft.FSharp.Collections
         let countBy (projection:'T->'Key) (source:seq<'T>) =
             checkNonNull "source" source
 
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then mkDelayedSeq (fun () -> countByValueType projection source)
                 else mkDelayedSeq (fun () -> countByRefType   projection source)
 
@@ -1385,29 +1377,21 @@ namespace Microsoft.FSharp.Collections
                       invalidArg "source" (SR.GetString(SR.notEnoughElements))
                   while e.MoveNext() do
                       yield e.Current }
-
+                           
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
-                res
-            else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-
+            match Microsoft.FSharp.Primitives.Basics.Seq.tryLastV source with
+            | ValueSome x -> x
+            | ValueNone -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+        
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
-                Some res
-            else
-                None
-
+            match Microsoft.FSharp.Primitives.Basics.Seq.tryLastV source with
+            | ValueSome x -> Some x
+            | ValueNone -> None
+            
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
             checkNonNull "source" source

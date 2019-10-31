@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="PPG_BuildTitle">
         <source>Build</source>
-        <target state="translated">Kompiluj</target>
+        <target state="translated">Kompilacja</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_BuildEventsTitle">

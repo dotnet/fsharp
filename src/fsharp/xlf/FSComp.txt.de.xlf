@@ -4,7 +4,52 @@
     <body>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="new">{0} for F# {1}</target>
+        <target state="translated">{0} für F# {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">Zeigen Sie die zulässigen Werte für die Sprachversion an. Geben Sie die Sprachversion als "latest" oder "preview" an.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">Unterstützte Sprachversionen:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">Unbekannter Wert "{0}" für "--langversion". Verwenden Sie "--langversion:?", um die vollständige Liste anzuzeigen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">Unerwartetes Symbol "." in der Memberdefinition. Erwartet wurde "with", "=" oder ein anderes Token.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsChecksumAlgorithm">
+        <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
+        <target state="translated">Geben Sie einen Algorithmus für die Berechnung der Quelldateiprüfsumme an, welcher in PDB gespeichert ist. Unterstützte Werte sind: SHA1 oder SHA256 (Standard)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnknownChecksumAlgorithm">
+        <source>Algorithm '{0}' is not supported</source>
+        <target state="translated">Algorithmus "{0}" wird nicht unterstützt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="new">Attributes cannot be applied to type extensions.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -144,7 +189,7 @@
       </trans-unit>
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
-        <target state="new">Use reference assemblies for .NET framework references when available (Enabled by default).</target>
+        <target state="translated">Verweisassemblys für .NET Framework-Verweise verwenden, wenn verfügbar (standardmäßig aktiviert).</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -220,11 +265,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">Unbekannte Datenschutzeinstellung "{0}" für verwaltete Ressource; gültige Optionen sind "public" und "private".</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Mehrere Verweise auf "{0}.dll" sind nicht zulässig</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -309,7 +349,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
         <source>Invalid directive. Expected '#time', '#time \"on\"' or '#time \"off\"'.</source>
-        <target state="translated">Ungültige Direktive. Erwartet wurde "#time", "#time \"on\"" oder '#time \"off\"".</target>
+        <target state="translated">Ungültige Direktive. Erwartet wurde "#time", '#time \"on\"' oder '#time \"off\"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDirectivesInModulesAreIgnored">
@@ -3934,7 +3974,7 @@
       </trans-unit>
       <trans-unit id="tcLetAndDoRequiresImplicitConstructionSequence">
         <source>This definition may only be used in a type with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">Diese Definition kann nur in einem Typ mit einem primären Konstruktor verwendet werden. Ziehen Sie in Betracht, Argumente zur Typdefinition hinzuzufügen, z. B. "type X(args) = ...".</target>
+        <target state="translated">Diese Definition kann nur in einem Typ mit einem primären Konstruktor verwendet werden. Ziehen Sie in Betracht, Argumente zur Typdefinition hinzuzufügen, z.B. "type X(args) = ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationsCannotHaveAugmentations">
@@ -4389,7 +4429,7 @@
       </trans-unit>
       <trans-unit id="optsHelpBannerInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="translated">- EINGABEDATEIEN -</target>
+        <target state="translated">– EINGABEDATEIEN –</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerResources">
@@ -4399,7 +4439,7 @@
       </trans-unit>
       <trans-unit id="optsHelpBannerCodeGen">
         <source>- CODE GENERATION -</source>
-        <target state="translated">- CODEGENERIERUNG -</target>
+        <target state="translated">- CODE GENERATION -</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerAdvanced">
@@ -4409,17 +4449,17 @@
       </trans-unit>
       <trans-unit id="optsHelpBannerMisc">
         <source>- MISCELLANEOUS -</source>
-        <target state="translated">- VERSCHIEDENES -</target>
+        <target state="translated">– VERSCHIEDENES –</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerLanguage">
         <source>- LANGUAGE -</source>
-        <target state="translated">- SPRACHE -</target>
+        <target state="translated">– SPRACHE –</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelpBannerErrsAndWarns">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="translated">- FEHLER UND WARNUNGEN -</target>
+        <target state="translated">– FEHLER UND WARNUNGEN –</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownArgumentToTheTestSwitch">
@@ -4944,7 +4984,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="translated">Dies ist kein gültiges numerisches Literal. Die folgenden numerischen Literale sind z. B. gültig: 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <target state="translated">Dies ist kein gültiges numerisches Literal. Die folgenden numerischen Literale sind z.B. gültig: 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -5129,12 +5169,12 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
         <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">Entfernen Sie die Leerzeichen zwischen dem Typnamen und dem Typparameter, z. B. "\"type C&lt;'T&gt;\"", statt "type \"C   &lt;'T&gt;\"". Typparameter müssen direkt an den Typnamen angeschlossen werden.</target>
+        <target state="translated">Entfernen Sie die Leerzeichen zwischen dem Typnamen und dem Typparameter, z.B. "\"type C&lt;'T&gt;\"", statt "type \"C   &lt;'T&gt;\"". Typparameter müssen direkt an den Typnamen angeschlossen werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">Entfernen Sie die Leerzeichen zwischen dem Typnamen und Typparameter, z. B. "\"C&lt;'T&gt;\"" statt "\"C &lt;'T&gt;\"". Typparameter müssen direkt an den Typnamen angeschlossen werden.</target>
+        <target state="translated">Entfernen Sie die Leerzeichen zwischen dem Typnamen und Typparameter, z.B. "\"C&lt;'T&gt;\"" statt "\"C &lt;'T&gt;\"". Typparameter müssen direkt an den Typnamen angeschlossen werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -5280,11 +5320,6 @@
       <trans-unit id="tcDllImportNotAllowed">
         <source>DLLImport bindings must be static members in a class or function definitions in a module</source>
         <target state="translated">Bei DLLImport-Bindungen muss es sich um statische Member von Klassen- oder Funktionsdefinitionen eines Moduls handeln.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">Wenn explizit auf "mscorlib.dll" oder "FSharp.Core.dll" verwiesen wird, muss auch die Option "{0}" übergeben werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
@@ -5539,7 +5574,7 @@
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">
         <source>Static linking may not be used on an assembly referencing mscorlib (e.g. a .NET Framework assembly) when generating an assembly that references System.Runtime (e.g. a .NET Core or Portable assembly).</source>
-        <target state="translated">Statische Verknüpfungen dürfen beim Generieren einer Assembly mit Verweis auf System.Runtime (z. B. eine .NET Core- oder eine portierbare Assembly) nicht für eine Assembly verwendet werden, die auf mscorlib verweist (z. B. eine .NET Framework-Assembly).</target>
+        <target state="translated">Statische Verknüpfungen dürfen beim Generieren einer Assembly mit Verweis auf System.Runtime (z.B. eine .NET Core- oder eine portierbare Assembly) nicht für eine Assembly verwendet werden, die auf mscorlib verweist (z.B. eine .NET Framework-Assembly).</target>
         <note />
       </trans-unit>
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
@@ -5549,7 +5584,7 @@
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
         <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="needs-review-translation">Deterministische Builds unterstützen nur portierbare PDbs ("--debug:portable" oder "--debug:embedded").</target>
+        <target state="translated">Deterministische Builds unterstützen nur portierbare PDBs ("--debug:portable" oder "--debug:embedded").</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -6124,7 +6159,7 @@
       </trans-unit>
       <trans-unit id="tcAutoPropertyRequiresImplicitConstructionSequence">
         <source>'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">'member val'-Definitionen sind nur in Typen mit einem primären Konstruktor zulässig. Möglicherweise sollten Sie Ihrer Typdefinition Argumente hinzufügen, z. B. 'type X(args) = ...'.</target>
+        <target state="translated">'member val'-Definitionen sind nur in Typen mit einem primären Konstruktor zulässig. Möglicherweise sollten Sie Ihrer Typdefinition Argumente hinzufügen, z.B. 'type X(args) = ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMutableOnAutoPropertyShouldBeGetSet">
@@ -6179,7 +6214,7 @@
       </trans-unit>
       <trans-unit id="tcUnrecognizedQueryOperator">
         <source>This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.</source>
-        <target state="translated">Dies ist kein bekannter Abfrageoperator. Abfrageoperatoren sind Bezeichner wie z. B. 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' und 'averageBy', die mithilfe der entsprechenden Methoden für den Typ 'QueryBuilder' definiert werden.</target>
+        <target state="translated">Dies ist kein bekannter Abfrageoperator. Abfrageoperatoren sind Bezeichner wie z.B. 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' und 'averageBy', die mithilfe der entsprechenden Methoden für den Typ 'QueryBuilder' definiert werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTryWithMayNotBeUsedInQueries">
@@ -6219,7 +6254,7 @@
       </trans-unit>
       <trans-unit id="tcUnrecognizedQueryBinaryOperator">
         <source>Arguments to query operators may require parentheses, e.g. 'where (x &gt; y)' or 'groupBy (x.Length / 10)'</source>
-        <target state="translated">Argumente für Abfrageoperatoren erfordern möglicherweise Klammern, z. B. "where (x &gt; y)" oder "groupBy (x.Length / 10)".</target>
+        <target state="translated">Argumente für Abfrageoperatoren erfordern möglicherweise Klammern, z.B. "where (x &gt; y)" oder "groupBy (x.Length / 10)".</target>
         <note />
       </trans-unit>
       <trans-unit id="crefNoSetOfHole">
@@ -6804,7 +6839,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
         <source>Used in query expressions to specify what fields or columns to extract. Note that this is a contextual keyword, which means that it is not actually a reserved word and it only acts like a keyword in appropriate context.</source>
-        <target state="translated">Wird in Abfrageausdrücken verwendet, um festzulegen, welche Felder oder Spalten extrahiert werden. Dies ist kontextabhängiges Schlüsselwort, d. h. es ist kein reserviertes Wort und funktioniert nur im entsprechenden Kontext als Schlüsselwort. </target>
+        <target state="translated">Wird in Abfrageausdrücken verwendet, um festzulegen, welche Felder oder Spalten extrahiert werden. Dies ist kontextabhängiges Schlüsselwort, d. h. es ist kein reserviertes Wort und funktioniert nur im entsprechenden Kontext als Schlüsselwort.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStatic">
@@ -7024,7 +7059,7 @@
       </trans-unit>
       <trans-unit id="tastValueMustBeLocal">
         <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
-        <target state="translated">Ein in einem Modul definierter Wert muss änderbar sein, um die Adresse anzunehmen, z. B. "let mutable x = ...".</target>
+        <target state="translated">Ein in einem Modul definierter Wert muss änderbar sein, um die Adresse anzunehmen, z.B. "let mutable x = ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
@@ -7162,19 +7197,29 @@
         <target state="translated">Für folgende Member wurde keine Implementierung angegeben (einige Ergebnisse ausgelassen): {0} Beachten Sie, dass alle Schnittstellenmember implementiert und in einer entsprechenden interface-Deklaration aufgeführt werden müssen, z.B. "interface ... with member ...".</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">Ausdruck hat keinen Namen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">Die Verwendung des Operators "nameof" als erstklassiger Funktionswert ist nicht zulässig.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
-        <target state="new">Maps physical paths to source path names output by the compiler</target>
+        <target state="translated">Ordnet der Ausgabe von Quellpfadnamen des Compilers physische Pfade zu</target>
         <note />
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
+        <target state="translated">--pathmap kann nur mit portablen PDB-Dateien verwendet werden (--debug:portable oder --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
-        <target state="new">Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</target>
+        <target state="translated">Ungültige Pfadzuordnung. Zuordnungen müssen durch Kommas getrennt werden und das Format 'path=sourcePath' aufweisen</target>
         <note />
       </trans-unit>
     </body>

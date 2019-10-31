@@ -10,12 +10,14 @@ open Internal.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -61,7 +63,7 @@ val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> Ast.Qualifi
 
 val PrependPathToInput: Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
-/// State used to de-deuplicate module names along a list of file names
+/// State used to de-deduplicate module names along a list of file names
 type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
@@ -248,16 +250,12 @@ type VersionFlag =
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
-      mutable autoResolveOpenDirectivesToDlls: bool
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
       mutable openDebugInformationForLaterStaticLinking: bool
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
-      mutable compilingFslib20: string option
-      mutable compilingFslib40: bool
-      mutable compilingFslibNoBigInt: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
@@ -337,6 +335,7 @@ type TcConfigBuilder =
       mutable maxErrors: int
       mutable abortOnError: bool
       mutable baseAddress: int32 option
+      mutable checksumAlgorithm: HashAlgorithm
  #if DEBUG
       mutable showOptimizationData: bool
 #endif
@@ -384,6 +383,8 @@ type TcConfigBuilder =
       mutable noConditionalErasure: bool
 
       mutable pathMap : PathMap
+
+      mutable langVersion : LanguageVersion
     }
 
     static member Initial: TcConfigBuilder
@@ -415,16 +416,12 @@ type TcConfigBuilder =
 // Immutable TcConfig
 type TcConfig =
     member primaryAssembly: PrimaryAssembly
-    member autoResolveOpenDirectivesToDlls: bool
     member noFeedback: bool
     member stackReserveSize: int32 option
     member implicitIncludeDir: string
     member openDebugInformationForLaterStaticLinking: bool
     member fsharpBinariesDir: string
     member compilingFslib: bool
-    member compilingFslib20: string option
-    member compilingFslib40: bool
-    member compilingFslibNoBigInt: bool
     member useIncrementalBuilder: bool
     member includes: string list
     member implicitOpens: string list
@@ -497,6 +494,7 @@ type TcConfig =
 
     member maxErrors: int
     member baseAddress: int32 option
+    member checksumAlgorithm: HashAlgorithm
 #if DEBUG
     member showOptimizationData: bool
 #endif
@@ -546,6 +544,7 @@ type TcConfig =
     member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     member useSdkRefs: bool
+    member langVersion: LanguageVersion
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 
@@ -675,7 +674,7 @@ val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string * assemblyReferenceAdded: (string -> unit) -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput: 

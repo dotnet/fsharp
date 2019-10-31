@@ -98,31 +98,31 @@ module Check =
     
     /// Throw <c>System.InvalidOperationException()</c> if argument is <c>None</c>.
     /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
-    let NotNone argname (arg:'T option) : 'T = 
+    let NotNone argName (arg:'T option) : 'T = 
         match arg with 
-        | None -> raise (new System.InvalidOperationException(argname))
+        | None -> raise (new System.InvalidOperationException(argName))
         | Some x -> x
 
     /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
-    let ArgumentNotNull arg argname = 
+    let ArgumentNotNull arg argName = 
         match box(arg) with 
-        | null -> raise (new System.ArgumentNullException(argname))
+        | null -> raise (new System.ArgumentNullException(argName))
         | _ -> ()
        
         
     /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
-    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argname = 
-        ArgumentNotNull arr argname
+    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName = 
+        ArgumentNotNull arr argName
         if (0 = arr.Length) then
-            raise (new System.ArgumentOutOfRangeException(argname))
+            raise (new System.ArgumentOutOfRangeException(argName))
 
     /// Throw <c>System.ArgumentNullException()</c> if string argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is string argument is empty.
-    let StringArgumentNotNullOrEmpty (s:string) argname = 
-        ArgumentNotNull s argname
+    let StringArgumentNotNullOrEmpty (s:string) argName = 
+        ArgumentNotNull s argName
         if s.Length = 0 then
-            raise (new System.ArgumentNullException(argname))
+            raise (new System.ArgumentNullException(argName))
 
 //-------------------------------------------------------------------------
 // Library 
@@ -378,10 +378,10 @@ let nullableSlotFull x = x
 type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
-let inline cached cache resf = 
+let inline cached cache resF = 
     match box cache.cacheVal with 
     | null -> 
-        let res = resf() 
+        let res = resF() 
         cache.cacheVal <- nullableSlotFull res 
         res
     | _ -> 
@@ -419,11 +419,11 @@ module internal AsyncUtil =
         | AsyncCanceled of OperationCanceledException
 
         static member Commit(res:AsyncResult<'T>) =
-            Async.FromContinuations (fun (cont, econt, ccont) ->
+            Async.FromContinuations (fun (cont, eCont, cCont) ->
                     match res with
                     | AsyncOk v -> cont v
-                    | AsyncException exn -> econt exn
-                    | AsyncCanceled exn -> ccont exn)
+                    | AsyncException exn -> eCont exn
+                    | AsyncCanceled exn -> cCont exn)
 
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
     [<Sealed>]
@@ -446,7 +446,7 @@ module internal AsyncUtil =
                     else
                         result <- Some res
                         // Invoke continuations in FIFO order
-                        // Continuations that Async.FromContinuations provide do QUWI/SynchContext.Post,
+                        // Continuations that Async.FromContinuations provide do QUWI/SyncContext.Post,
                         // so the order is not overly relevant but still. 
                         List.rev savedConts)
             let postOrQueue (sc:SynchronizationContext, cont) =
@@ -513,9 +513,7 @@ module UnmanagedProcessExecutionOptions =
     extern UInt32 private GetLastError()
 
     // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
-#if !FX_NO_SECURITY_PERMISSIONS
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>] 
-#endif
     let EnableHeapTerminationOnCorruption() =
         if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
             System.Environment.Version.Major < 3) then // and CLR not 3.0 or higher 

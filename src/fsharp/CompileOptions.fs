@@ -9,6 +9,7 @@ open System
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
@@ -17,6 +18,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops 
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.IlxGen
@@ -522,9 +524,11 @@ let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
 let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
+let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
+let tagLangVersionValues = "{?|version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -812,28 +816,41 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 //----------------------
 
 let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
-      
+
 let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
        ("mlcompatibility", tagNone,
         OptionUnit (fun () -> tcConfigB.mlCompatibility<-true; tcConfigB.TurnWarningOff(rangeCmdArgs, "62")), None,
         Some (FSComp.SR.optsMlcompatibility()))
 
+/// LanguageVersion management
+let setLanguageVersion (specifiedVersion) =
+
+    let languageVersion = new LanguageVersion(specifiedVersion)
+    let dumpAllowedValues () =
+        printfn "%s" (FSComp.SR.optsSupportedLangVersions())
+        for v in languageVersion.ValidOptions do printfn "%s" v
+        for v in languageVersion.ValidVersions do printfn "%s" v
+        exit 0
+
+    if specifiedVersion = "?" then dumpAllowedValues ()
+    if not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    languageVersion
+
 let languageFlags tcConfigB =
     [
-        CompilerOption
-            ("checked", tagNone,
-             OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None,
-             Some (FSComp.SR.optsChecked()))
-        
-        CompilerOption
-            ("define", tagString,
-             OptionString (defineSymbol tcConfigB), None,
-             Some (FSComp.SR.optsDefine()))
-        
+        // -langversion:?                Display the allowed values for language version
+        // -langversion:<string>         Specify language version such as
+        //                               'default' (latest major version), or
+        //                               'latest' (latest version, including minor versions),
+        //                               'preview' (features for preview)
+        //                               or specific versions like '4.7'
+        CompilerOption("langversion", tagLangVersionValues, OptionString (fun switch -> tcConfigB.langVersion <- setLanguageVersion(switch)), None, Some (FSComp.SR.optsLangVersion()))
+
+        CompilerOption("checked", tagNone, OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsChecked()))
+        CompilerOption("define", tagString, OptionString (defineSymbol tcConfigB), None, Some (FSComp.SR.optsDefine()))
         mlCompatibilityFlag tcConfigB
     ]
-    
 
 // OptionBlock: Advanced user options
 //-----------------------------------
@@ -932,6 +949,16 @@ let advancedFlagsFsc tcConfigB =
                   ("baseaddress", tagAddress,
                    OptionString (fun s -> tcConfigB.baseAddress <- Some(int32 s)), None,
                    Some (FSComp.SR.optsBaseaddress()))
+
+        yield CompilerOption
+                  ("checksumalgorithm", tagAlgorithm,
+                   OptionString (fun s ->
+                       tcConfigB.checksumAlgorithm <-
+                        match s.ToUpperInvariant() with
+                        | "SHA1" -> HashAlgorithm.Sha1
+                        | "SHA256" -> HashAlgorithm.Sha256
+                        | _ -> error(Error(FSComp.SR.optsUnknownChecksumAlgorithm s, rangeCmdArgs))), None,
+                        Some (FSComp.SR.optsChecksumAlgorithm()))
 
         yield noFrameworkFlag true tcConfigB
 
@@ -1205,10 +1232,9 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
         Some(InternalCommandLineOption("metadataversion", rangeCmdArgs)), None)
   ]
 
-  
 // OptionBlock: Deprecated flags (fsc, service only)
 //--------------------------------------------------
-    
+
 let compilingFsLibFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
         ("compiling-fslib", tagNone,
@@ -1219,23 +1245,14 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
             IlxSettings.ilxCompilingFSharpCoreLib := true),
          Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 
-let compilingFsLib20Flag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-20", tagNone,
-         OptionString (fun s -> tcConfigB.compilingFslib20 <- Some s ),
-         Some(InternalCommandLineOption("--compiling-fslib-20", rangeCmdArgs)), None)
+let compilingFsLib20Flag =
+    CompilerOption ("compiling-fslib-20", tagNone, OptionString (fun _ -> () ), None, None)
 
-let compilingFsLib40Flag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-40", tagNone,
-         OptionUnit (fun () -> tcConfigB.compilingFslib40 <- true ),
-         Some(InternalCommandLineOption("--compiling-fslib-40", rangeCmdArgs)), None)
+let compilingFsLib40Flag =
+    CompilerOption ("compiling-fslib-40", tagNone, OptionUnit (fun () -> ()), None, None)
 
-let compilingFsLibNoBigIntFlag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-nobigint", tagNone,
-         OptionUnit (fun () -> tcConfigB.compilingFslibNoBigInt <- true ),
-         Some(InternalCommandLineOption("--compiling-fslib-nobigint", rangeCmdArgs)), None)
+let compilingFsLibNoBigIntFlag =
+    CompilerOption ("compiling-fslib-nobigint", tagNone, OptionUnit (fun () -> () ), None, None)
 
 let mlKeywordsFlag = 
     CompilerOption
@@ -1250,7 +1267,7 @@ let gnuStyleErrorsFlag tcConfigB =
          Some(DeprecatedCommandLineOptionNoDescription("--gnu-style-errors", rangeCmdArgs)), None)
 
 let deprecatedFlagsBoth tcConfigB =
-    [ 
+    [
       CompilerOption
          ("light", tagNone,
           OptionUnit (fun () -> tcConfigB.light <- Some true),
@@ -1266,7 +1283,7 @@ let deprecatedFlagsBoth tcConfigB =
           OptionUnit (fun () -> tcConfigB.light <- Some false),
           Some(DeprecatedCommandLineOptionNoDescription("--no-indentation-syntax", rangeCmdArgs)), None) 
     ]
-          
+
 let deprecatedFlagsFsi tcConfigB = deprecatedFlagsBoth tcConfigB
 
 let deprecatedFlagsFsc tcConfigB =
@@ -1299,9 +1316,9 @@ let deprecatedFlagsFsc tcConfigB =
         Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None)
 
     compilingFsLibFlag tcConfigB
-    compilingFsLib20Flag tcConfigB 
-    compilingFsLib40Flag tcConfigB
-    compilingFsLibNoBigIntFlag tcConfigB
+    compilingFsLib20Flag
+    compilingFsLib40Flag
+    compilingFsLibNoBigIntFlag
 
     CompilerOption
        ("version", tagString,
@@ -1604,16 +1621,10 @@ let ReportTime (tcConfig:TcConfig) descr =
         | Some("fsc-oom") -> raise(System.OutOfMemoryException())
         | Some("fsc-an") -> raise(System.ArgumentNullException("simulated"))
         | Some("fsc-invop") -> raise(System.InvalidOperationException())
-#if FX_REDUCED_EXCEPTIONS
-#else
         | Some("fsc-av") -> raise(System.AccessViolationException())
-#endif
         | Some("fsc-aor") -> raise(System.ArgumentOutOfRangeException())
         | Some("fsc-dv0") -> raise(System.DivideByZeroException())
-#if FX_REDUCED_EXCEPTIONS
-#else
         | Some("fsc-nfn") -> raise(System.NotFiniteNumberException())
-#endif
         | Some("fsc-oe") -> raise(System.OverflowException())
         | Some("fsc-atmm") -> raise(System.ArrayTypeMismatchException())
         | Some("fsc-bif") -> raise(System.BadImageFormatException())
@@ -1659,7 +1670,7 @@ let ReportTime (tcConfig:TcConfig) descr =
 // OPTIMIZATION - support - addDllToOptEnv
 //----------------------------------------------------------------------------
 
-let AddExternalCcuToOpimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
+let AddExternalCcuToOptimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
     match ccuinfo.FSharpOptimizationData.Force() with 
     | None -> optEnv
     | Some data -> Optimizer.BindCcu ccuinfo.FSharpViewOfMetadata data optEnv tcGlobals
@@ -1671,7 +1682,7 @@ let AddExternalCcuToOpimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) 
 let GetInitialOptimizationEnv (tcImports:TcImports, tcGlobals:TcGlobals) =
     let ccuinfos = tcImports.GetImportedAssemblies()
     let optEnv = Optimizer.IncrementalOptimizationEnv.Empty
-    let optEnv = List.fold (AddExternalCcuToOpimizationEnv tcGlobals) optEnv ccuinfos 
+    let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) optEnv ccuinfos 
     optEnv
    
 let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles) =

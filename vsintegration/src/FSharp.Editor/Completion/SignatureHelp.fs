@@ -9,6 +9,7 @@ open System.Collections.Generic
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.SignatureHelp
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Shell
@@ -19,7 +20,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
 [<Shared>]
-[<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpSignatureHelpProvider>)>]
 type internal FSharpSignatureHelpProvider 
     [<ImportingConstructor>]
     (
@@ -188,7 +189,7 @@ type internal FSharpSignatureHelpProvider
         return Some items
     }
 
-    interface ISignatureHelpProvider with
+    interface IFSharpSignatureHelpProvider with
         member this.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ',' 
         member this.IsRetriggerCharacter(c) = c = ')' || c = '>' || c = '='
 
@@ -200,7 +201,7 @@ type internal FSharpSignatureHelpProvider
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
 
                 let triggerTypedChar = 
-                    if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = SignatureHelpTriggerReason.TypeCharCommand then
+                    if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = FSharpSignatureHelpTriggerReason.TypeCharCommand then
                         Some triggerInfo.TriggerCharacter.Value
                     else None
 
@@ -211,27 +212,13 @@ type internal FSharpSignatureHelpProvider
                     |> Array.map (fun (hasParamArrayArg, doc, prefixParts, separatorParts, suffixParts, parameters, descriptionParts) ->
                             let parameters = parameters 
                                                 |> Array.map (fun (paramName, isOptional, _typeText, paramDoc, displayParts) -> 
-                                                SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
-                            SignatureHelpItem(isVariadic=hasParamArrayArg, documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
+                                                FSharpSignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
+                            FSharpSignatureHelpItem(isVariadic=hasParamArrayArg, documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
 
-                return SignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
+                return FSharpSignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
               with ex -> 
                 Assert.Exception(ex)
                 return! None
             } 
             |> Async.map Option.toObj
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
-
-open System.ComponentModel.Composition
-open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Text.Classification
-open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHelp.Presentation
-
-// Enable colorized signature help for F# buffers
-
-[<Export(typeof<IClassifierProvider>)>]
-[<ContentType(FSharpConstants.FSharpSignatureHelpContentTypeName)>]
-type internal FSharpSignatureHelpClassifierProvider [<ImportingConstructor>] (typeMap) =
-    interface IClassifierProvider with
-        override __.GetClassifier (buffer: ITextBuffer) =
-            buffer.Properties.GetOrCreateSingletonProperty(fun _ -> SignatureHelpClassifier(buffer, typeMap) :> _)

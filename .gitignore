@@ -100,7 +100,9 @@ ossreadme*.txt
 *.log
 *.jrs
 *.chk
-*.bak
+*.bak                                                     
+*.vserr
+*.err
 *.orig
 *.mdf
 *.ldf
@@ -117,7 +119,8 @@ source_link.json
 .vs/
 System.ValueTuple.dll
 tests/fsharpqa/testenv/bin/System.ValueTuple.dll
-*/.fake
+**/.fake
+.ionide
 /fcs/packages/
 */paket-files/
 /fcs/TestResult.xml
@@ -127,3 +130,4 @@ msbuild.binlog
 /fcs/FSharp.Compiler.Service.netstandard/*.fs
 /fcs/FSharp.Compiler.Service.netstandard/*.fsi
 /.ionide/
+**/.DS_Store

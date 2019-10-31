@@ -143,9 +143,9 @@ let NewCounter nm =
 
 let CountClosure = NewCounter "closures"
 
-let CountMethodDef = NewCounter "IL method defintitions corresponding to values"
+let CountMethodDef = NewCounter "IL method definitions corresponding to values"
 
-let CountStaticFieldDef = NewCounter "IL field defintitions corresponding to values"
+let CountStaticFieldDef = NewCounter "IL field definitions corresponding to values"
 
 let CountCallFuncInstructions = NewCounter "callfunc instructions (indirect calls)"
 
@@ -225,7 +225,7 @@ type cenv =
       amap: ImportMap
       
       /// A callback for TcVal in the typechecker. Used to generalize values when finding witnesses. 
-      /// It is unfortunate this is needed but it is until we supply witnesses through the compiation.
+      /// It is unfortunate this is needed but it is until we supply witnesses through the compilation.
       TcVal: ConstraintSolver.TcValF
       
       /// The TAST for the assembly being emitted
@@ -252,6 +252,8 @@ type cenv =
       /// Delayed Method Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
       delayedGenMethods: Queue<cenv -> unit>
     }
+
+    override x.ToString() = "<cenv>"
 
 
 let mkTypeOfExpr cenv m ilty =
@@ -395,7 +397,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
           uint16 666
 
     /// Add an additional type parameter to the environment. If the parameter is a units-of-measure parameter
-    /// then it is ignored, since it doesn't corespond to a .NET type parameter.
+    /// then it is ignored, since it doesn't correspond to a .NET type parameter.
     member tyenv.AddOne (tp: Typar) =
         if IsNonErasedTypar tp then
             TypeReprEnv(reprs.Add (tp.Stamp, uint16 count), count + 1)
@@ -771,17 +773,26 @@ and NamedLocalIlxClosureInfo =
     | NamedLocalIlxClosureInfoGenerator of (IlxGenEnv -> IlxClosureInfo)
     | NamedLocalIlxClosureInfoGenerated of IlxClosureInfo
 
+    override __.ToString() = "<NamedLocalIlxClosureInfo>"
+
 /// Indicates the overall representation decisions for all the elements of a namespace of module
 and ModuleStorage =
-    { Vals: Lazy<NameMap<ValStorage>>
-      SubModules: Lazy<NameMap<ModuleStorage>> }
+    { 
+      Vals: Lazy<NameMap<ValStorage>>
+      
+      SubModules: Lazy<NameMap<ModuleStorage>>
+    }
+
+    override __.ToString() = "<ModuleStorage>"
 
 /// Indicate whether a call to the value can be implemented as
 /// a branch. At the moment these are only used for generating branch calls back to
 /// the entry label of the method currently being generated when a direct tailcall is
 /// made in the method itself.
 and BranchCallItem =
+
     | BranchCallClosure of ArityInfo
+
     | BranchCallMethod of
         // Argument counts for compiled form of F# method or value
         ArityInfo *
@@ -793,6 +804,8 @@ and BranchCallItem =
         int *
         // num obj args
         int
+
+    override __.ToString() = "<BranchCallItem>"
   
 /// Represents a place we can branch to
 and Mark =
@@ -832,7 +845,16 @@ and IlxGenEnv =
 
       /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
       withinSEH: bool
+
+      /// Are we inside of a recursive let binding, while loop, or a for loop?
+      isInLoop: bool
     }
+
+    override __.ToString() = "<IlxGenEnv>"
+
+let SetIsInLoop isInLoop eenv =
+    if eenv.isInLoop = isInLoop then eenv
+    else { eenv with isInLoop = isInLoop }
 
 let ReplaceTyenv tyenv (eenv: IlxGenEnv) = {eenv with tyenv = tyenv }
 
@@ -1001,7 +1023,7 @@ let ComputeStorageForFSharpMember amap g topValInfo memberInfo (vref: ValRef) m 
     let mspec, _, _, paramInfos, retInfo, methodArgTys = GetMethodSpecForMemberVal amap g memberInfo vref
     Method (topValInfo, vref, mspec, m, paramInfos, methodArgTys, retInfo)
 
-/// Compute the representation information for an F#-declared function in a module or an F#-decalared extension member.
+/// Compute the representation information for an F#-declared function in a module or an F#-declared extension member.
 /// Note, there is considerable overlap with ComputeStorageForFSharpMember/GetMethodSpecForMemberVal and these could be
 /// rationalized.
 let ComputeStorageForFSharpFunctionOrFSharpExtensionMember amap (g:TcGlobals) cloc topValInfo (vref: ValRef) m =
@@ -1028,7 +1050,7 @@ let IsFSharpValCompiledAsMethod g (v: Val) =
         | _ -> true
 
 /// Determine how a top level value is represented, when it is being represented
-/// as a method. This depends on its type and other representation inforrmation.
+/// as a method. This depends on its type and other representation information.
 /// If it's a function or is polymorphic, then it gets represented as a
 /// method (possibly and instance method). Otherwise it gets represented as a
 /// static field and property.
@@ -1080,7 +1102,7 @@ let ComputeStorageForNonLocalTopVal amap g cloc modref (v: Val) =
     | None -> error(InternalError("ComputeStorageForNonLocalTopVal, expected an arity for " + v.LogicalName, v.Range))
     | Some _ -> ComputeStorageForTopVal (amap, g, None, false, NoShadowLocal, mkNestedValRef modref v, cloc)
 
-/// Determine how all the F#-decalred top level values, functions and members are represented, for an external module or namespace.
+/// Determine how all the F#-declared top level values, functions and members are represented, for an external module or namespace.
 let rec AddStorageForNonLocalModuleOrNamespaceRef amap g cloc acc (modref: ModuleOrNamespaceRef) (modul: ModuleOrNamespace) =
     let acc =
         (acc, modul.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions) ||> List.fold (fun acc smodul ->
@@ -1184,7 +1206,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrement
 // Generate debugging marks
 //--------------------------------------------------------------------------
 
-/// Generate IL debuging information.
+/// Generate IL debugging information.
 let GenILSourceMarker (g: TcGlobals) (m: range) =
     ILSourceMarker.Create(document=g.memoize_file m.FileIndex,
                           line=m.StartLine,
@@ -1193,7 +1215,7 @@ let GenILSourceMarker (g: TcGlobals) (m: range) =
                           endLine= m.EndLine,
                           endColumn=m.EndColumn+1)
 
-/// Optionally generate IL debuging information.
+/// Optionally generate IL debugging information.
 let GenPossibleILSourceMarker cenv m =
     if cenv.opts.generateDebugSymbols then
         Some (GenILSourceMarker cenv.g m )
@@ -1498,14 +1520,14 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
         scriptInitFspecs <- (fieldSpec, range) :: scriptInitFspecs
     
     /// This initializes the script in #load and fsc command-line order causing their
-    /// sideeffects to be executed.
+    /// side effects to be executed.
     member mgbuf.AddInitializeScriptsInOrderToEntryPoint () =
         // Get the entry point and initialized any scripts in order.
         match explicitEntryPointInfo with
         | Some tref ->
-            let IntializeCompiledScript(fspec, m) =
+            let InitializeCompiledScript(fspec, m) =
                 mgbuf.AddExplicitInitToSpecificMethodDef((fun (md: ILMethodDef) -> md.IsEntryPoint), tref, fspec, GenPossibleILSourceMarker cenv m, [], [])          
-            scriptInitFspecs |> List.iter IntializeCompiledScript
+            scriptInitFspecs |> List.iter InitializeCompiledScript
         | None -> ()
 
     member __.GenerateRawDataValueType (cloc, size) =
@@ -2205,7 +2227,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
             | ValStorage.Local _ -> true
             | _ -> false
         ) ->
-      // application of local type functions with type parameters = measure types and body = local value - inine the body
+      // application of local type functions with type parameters = measure types and body = local value - inline the body
       GenExpr cenv cgbuf eenv sp v sequel
   | Expr.App (f,fty, tyargs, args, m) -> 
       GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel
@@ -2714,7 +2736,7 @@ and GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel =
            GenExpr cenv cgbuf eenv SPSuppress e Continue
            let ilToTy = GenType cenv.amap m eenv.tyenv tgty
            // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
-           // is required, but we still push the coerce'd type on to the code gen buffer.
+           // is required, but we still push the coerced type on to the code gen buffer.
            CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) []
            GenSequel cenv eenv.cloc cgbuf sequel
        ) else (
@@ -3434,6 +3456,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
 //--------------------------------------------------------------------------
 
 and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
+    let eenv = SetIsInLoop true eenv
     let g = cenv.g
 
     // The JIT/NGen eliminate array-bounds checks for C# loops of form:
@@ -3524,6 +3547,7 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
 //--------------------------------------------------------------------------
 
 and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
+    let eenv = SetIsInLoop true eenv
     let finish = CG.GenerateDelayMark cgbuf "while_finish"
     let startTest = CG.GenerateMark cgbuf "startTest"
 
@@ -4612,7 +4636,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
 
 and IsNamedLocalTypeFuncVal g (v: Val) expr =
     not v.IsCompiledAsTopLevel &&
-    IsGenericValWithGenericContraints g v &&
+    IsGenericValWithGenericConstraints g v &&
     (match stripExpr expr with Expr.TyLambda _ -> true | _ -> false)
 
 /// Generate the information relevant to the contract portion of a named local type function
@@ -5126,6 +5150,7 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
 
 /// Generate letrec bindings
 and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
+    let eenv = SetIsInLoop true eenv
     // Fix up recursion for non-toplevel recursive bindings
     let bindsPossiblyRequiringFixup =
         allBinds |> List.filter (fun b ->
@@ -5374,8 +5399,8 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
     | _ ->
         let storage = StorageForVal cenv.g m vspec eenv
         match storage, rhsExpr with
-        // locals are zero-init, no need to initialize them
-        | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc ->
+        // locals are zero-init, no need to initialize them, except if you are in a loop and the local is mutable.
+        | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc && not (eenv.isInLoop && vspec.IsMutable) ->
             CommitStartScope cgbuf startScopeMarkOpt
         | _ ->
             GenBindingRhs cenv cgbuf eenv SPSuppress vspec rhsExpr
@@ -6557,14 +6582,14 @@ and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname,
         | Some mainInfo ->
 
             // Generate an explicit main method. If necessary, make a class constructor as
-            // well for the bindings earlier in the file containing the entrypoint.
+            // well for the bindings earlier in the file containing the entry point.
             match mgbuf.GetExplicitEntryPointInfo() with
 
             // Final file, explicit entry point: place the code in a .cctor, and add code to main that forces the .cctor (if topCode has initialization effect).
             | Some tref ->       
                 if doesSomething then
                     lazyInitInfo.Add (fun fspec feefee seqpt ->
-                        // This adds the explicit init of the .cctor to the explicit entrypoint main method
+                        // This adds the explicit init of the .cctor to the explicit entry point main method
                         mgbuf.AddExplicitInitToSpecificMethodDef((fun md -> md.IsEntryPoint), tref, fspec, GenPossibleILSourceMarker cenv m, feefee, seqpt))
 
                     let cctorMethDef = mkILClassCtor (MethodBody.IL topCode)
@@ -7094,7 +7119,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                       //printfn "sprintf not found"
                       ()
                   | _, None ->
-                      //printfn "new formatnot found"
+                      //printfn "new format not found"
                       ()
                   | _ ->
                       //printfn "neither found, or non-method"
@@ -7408,7 +7433,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
           // do not emit serialization related members if target framework lacks SerializationInfo or StreamingContext
           match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
           | Some serializationInfoType, Some streamingContextType ->
-            let ilCtorDefForSerialziation =
+            let ilCtorDefForSerialization =
                 mkILCtor(ILMemberAccess.Family,
                         [mkILParamNamed("info", serializationInfoType);mkILParamNamed("context", streamingContextType)],
                         mkMethodBody
@@ -7419,13 +7444,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                                 mkLdarg 2us
                                 mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [serializationInfoType; streamingContextType])) ],
                            None))
-            
-//#if BE_SECURITY_TRANSPARENT
-            [ilCtorDefForSerialziation]
-//#else
+
+            [ilCtorDefForSerialization]
 (*
             let getObjectDataMethodForSerialization =
-        
                 let ilMethodDef =
                     mkILNonGenericVirtualMethod
                         ("GetObjectData", ILMemberAccess.Public,
@@ -7447,13 +7469,13 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                     { ilMethodDef with
                            SecurityDecls=mkILSecurityDecls [ IL.mkPermissionSet g.ilg (ILSecurityAction.Demand, [(securityPermissionAttributeType, [("SerializationFormatter", g.ilg.typ_Bool, ILAttribElem.Bool true)])])]
                            HasSecurity=true }
-            [ilCtorDefForSerialziation; getObjectDataMethodForSerialization]
+            [ilCtorDefForSerialization; getObjectDataMethodForSerialization]
 *)
 //#endif            
           | _ -> []
 
         let ilTypeName = tref.Name
-    
+
         let interfaces = exnc.ImmediateInterfaceTypesOfFSharpTycon |> List.map (GenType cenv.amap m eenv.tyenv)
         let tdef =
           mkILGenericClass
@@ -7512,7 +7534,8 @@ let GetEmptyIlxGenEnv (ilg: ILGlobals) ccu =
       liveLocals=IntMap.empty()
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
-      withinSEH = false }
+      withinSEH = false
+      isInLoop = false }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list
@@ -7621,8 +7644,8 @@ let defaultOf =
 /// Top-level val bindings are stored (for example) in static fields.
 /// In the FSI case, these fields are be created and initialised, so we can recover the object.
 /// IlxGen knows how v was stored, and then ilreflect knows how this storage was generated.
-/// IlxGen converts (v: Tast.Val) to AbsIL datastructures.
-/// Ilreflect converts from AbsIL datastructures to emitted Type, FieldInfo, MethodInfo etc.
+/// IlxGen converts (v: Tast.Val) to AbsIL data structures.
+/// Ilreflect converts from AbsIL data structures to emitted Type, FieldInfo, MethodInfo etc.
 let LookupGeneratedValue (amap: ImportMap) (ctxt: ExecutionContext) eenv (v: Val) =
   try
     // Convert the v.Type into a System.Type according to ilxgen and ilreflect.

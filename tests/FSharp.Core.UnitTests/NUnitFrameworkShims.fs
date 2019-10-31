@@ -5,11 +5,10 @@ namespace NUnit.Framework
 open System
 open System.Collections.Generic
 open System.Linq
-
 #if XUNIT
 open Xunit
 
-(* The threading tests under XUnit seem prone to be verey Flakey *)
+(* The threading tests under XUnit seem prone to be very Flakey *)
 [<assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)>]
 do ()
 

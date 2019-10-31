@@ -12,10 +12,6 @@ open System.Reflection
 open System.Threading
 open System.Runtime.CompilerServices
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 // Logical shift right treating int32 as unsigned integer.
 // Code that uses this should probably be adjusted to use unsigned integer types.
 let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
@@ -168,12 +164,12 @@ module Array =
     /// pass an array byref to reverse it in place
     let revInPlace (array: 'T []) =
         if Array.isEmpty array then () else
-        let arrlen, revlen = array.Length-1, array.Length/2 - 1
-        for idx in 0 .. revlen do
+        let arrLen, revLen = array.Length-1, array.Length/2 - 1
+        for idx in 0 .. revLen do
             let t1 = array.[idx] 
-            let t2 = array.[arrlen-idx]
+            let t2 = array.[arrLen-idx]
             array.[idx] <- t2
-            array.[arrlen-idx] <- t1
+            array.[arrLen-idx] <- t1
 
     /// Async implementation of Array.map.
     let mapAsync (mapping : 'T -> Async<'U>) (array : 'T[]) : Async<'U[]> =
@@ -257,12 +253,6 @@ module Option =
     let attempt (f: unit -> 'T) = try Some (f()) with _ -> None
         
 module List = 
-
-    //let item n xs = List.nth xs n
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
     let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
     
@@ -634,7 +624,7 @@ type CompilationThreadToken() = interface ExecutionToken
 let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
 
 /// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
-/// This reprents code that may potentially not need to be executed on the compilation thread.
+/// This represents code that may potentially not need to be executed on the compilation thread.
 let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent (_ctok: CompilationThreadToken) = ()
 
 /// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
@@ -1271,11 +1261,6 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
 [<AutoOpen>]
 module Shim =
-
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
     type IFileSystem = 
 

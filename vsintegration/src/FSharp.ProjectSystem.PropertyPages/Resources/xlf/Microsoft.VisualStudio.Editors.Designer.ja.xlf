@@ -2930,7 +2930,7 @@ app.config ファイルでの新しい値は '{1}' です
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
         <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
-        <target state="translated">この引き上げられたアクセス許可が原因で、選択されたゾーンでのアプリケーションの実行は失敗します。詳細については、ヘルプ リンクをクリックしてください。</target>
+        <target state="translated">要求されたこの引き上げられたアクセス許可が原因で、選択されたゾーンでのアプリケーションの実行は失敗します。詳細については、ヘルプ リンクをクリックしてください。</target>
         <note />
       </trans-unit>
     </body>

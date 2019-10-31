@@ -174,7 +174,7 @@ function BuildSolution() {
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp2.1" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp3.0" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -195,6 +195,7 @@ function BuildSolution() {
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
+        /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
 }
@@ -224,13 +225,14 @@ function UpdatePath() {
     TestAndAddToPath "$ArtifactsDir\bin\fsiAnyCpu\$configuration\net472"
 }
 
-function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net472\publish\fsi.exe"
+function VerifyAssemblyVersionsAndSymbols() {
+    $assemblyVerCheckPath = Join-Path $ArtifactsDir "Bootstrap\AssemblyCheck\AssemblyCheck.dll"
 
     # Only verify versions on CI or official build
     if ($ci -or $official) {
-        $asmVerCheckPath = "$RepoRoot\scripts"
-        Exec-Console $fsiPath """$asmVerCheckPath\AssemblyVersionCheck.fsx"" -- ""$ArtifactsDir"""
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+        Exec-Console $dotnetExe """$assemblyVerCheckPath"" ""$ArtifactsDir"""
     }
 }
 
@@ -276,6 +278,25 @@ function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
 }
 
+function EnablePreviewSdks() {
+  if (Test-Path variable:global:_MSBuildExe) {
+    return
+  }
+  $vsInfo = LocateVisualStudio
+  if ($vsInfo -eq $null) {
+    # Preview SDKs are allowed when no Visual Studio instance is installed
+    return
+  }
+
+  $vsId = $vsInfo.instanceId
+  $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
+
+  $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
+  Create-Directory $instanceDir
+  $sdkFile = Join-Path $instanceDir "sdk.txt"
+  'UsePreviews=True' | Set-Content $sdkFile
+}
+
 try {
     Process-Arguments
 
@@ -287,8 +308,9 @@ try {
 
     if ($ci) {
         Prepare-TempDir
+        EnablePreviewSdks
 
-        # enable us to build netcoreapp2.1 binaries
+        # enable us to build netcoreapp2.1 product binaries
         $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
         InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
         InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
@@ -307,15 +329,16 @@ try {
     }
 
     if ($build) {
-        VerifyAssemblyVersions
+        VerifyAssemblyVersionsAndSymbols
     }
 
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "netcoreapp2.1"
+    $coreclrTargetFramework = "netcoreapp3.0"
 
     if ($testDesktop -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
@@ -324,6 +347,7 @@ try {
     if ($testCoreClr) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
@@ -335,7 +359,8 @@ try {
         $resultsLog = "test-net40-fsharpqa-results.log"
         $errorLog = "test-net40-fsharpqa-errors.log"
         $failLog = "test-net40-fsharpqa-errors"
-        $perlExe = "$env:USERPROFILE\.nuget\packages\StrawberryPerl64\5.22.2.1\Tools\perl\bin\perl.exe"
+        $perlPackageRoot = "$env:USERPROFILE\.nuget\packages\StrawberryPerl\5.28.0.1";
+        $perlExe = "$perlPackageRoot\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
@@ -343,6 +368,7 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
+        $env:PERL5LIB = "$perlPackageRoot\vendor\lib"
         Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
         Pop-Location
     }

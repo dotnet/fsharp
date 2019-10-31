@@ -50,6 +50,8 @@ type [<Class>] public FSharpDisplayContext =
     internal new : denv: (TcGlobals -> Tastops.DisplayEnv) -> FSharpDisplayContext
     static member Empty: FSharpDisplayContext
 
+    member WithShortTypeNames: bool -> FSharpDisplayContext
+
 /// Represents a symbol in checked F# source code or a compiled .NET component. 
 ///
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase
@@ -85,7 +87,7 @@ type [<Class>] public FSharpSymbol =
 
     /// Return true if two symbols are effectively the same when referred to in F# source code text.  
     /// This sees through signatures (a symbol in a signature will be considered effectively the same as 
-    /// the matching symbol in an implementation).  In addition, other equivalances are applied
+    /// the matching symbol in an implementation).  In addition, other equivalences are applied
     /// when the same F# source text implies the same declaration name - for example, constructors 
     /// are considered to be effectively the same symbol as the corresponding type definition.
     ///

@@ -12,13 +12,9 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Tests won't run without this, at least on OSX, see https://github.com/NuGet/Home/issues/4837#issuecomment-354536302 -->
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
-    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_PROJECTCRACKER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ReshapedReflection.fs">
-      <Link>ReshapedReflection.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>

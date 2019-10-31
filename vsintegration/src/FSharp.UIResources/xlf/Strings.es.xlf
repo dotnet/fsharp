@@ -42,6 +42,11 @@
         <target state="translated">Listas de finalización</target>
         <note />
       </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="new">Diagnostics</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">Rendimiento</target>
@@ -104,7 +109,7 @@
       </trans-unit>
       <trans-unit id="Text_hover">
         <source>Text hover</source>
-        <target state="new">Text hover</target>
+        <target state="translated">Texto al pasar el puntero</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -199,7 +204,7 @@
       </trans-unit>
       <trans-unit id="Use_out_of_process_language_server">
         <source>(Preview) Use out of process language server</source>
-        <target state="new">(Preview) Use out of process language server</target>
+        <target state="translated">(Versión preliminar) Usar el servidor de lenguaje fuera del proceso</target>
         <note />
       </trans-unit>
     </body>

@@ -47,7 +47,7 @@ let p =
            Age = 18)
             """
             [|
-                FSharpErrorSeverity.Error, 39, (7, 12, 7, 16), "The value or constructor 'Name' is not defined."
+                FSharpErrorSeverity.Error, 39, (7, 12, 7, 16), "The value or constructor 'Name' is not defined. Maybe you want one of the following:\r\n   nan"
                 FSharpErrorSeverity.Warning, 20, (7, 12, 7, 25), "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'."
                 FSharpErrorSeverity.Error, 39, (8, 12, 8, 15), "The value or constructor 'Age' is not defined."
                 FSharpErrorSeverity.Error, 501, (7, 5, 8, 21), "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'. If some of the arguments are meant to assign values to properties, consider separating those arguments with a comma (',')."

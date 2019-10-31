@@ -140,9 +140,7 @@ module internal ExtensionTyping =
 
     let StripException (e: exn) =
         match e with
-#if !FX_REDUCED_EXCEPTIONS
         |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
-#endif
         |   :? TypeInitializationException as e -> e.InnerException
         |   _ -> e
 
@@ -417,6 +415,7 @@ module internal ExtensionTyping =
         member __.IsEnum = x.IsEnum
         member __.IsClass = x.IsClass
         member __.IsSealed = x.IsSealed
+        member __.IsAbstract = x.IsAbstract
         member __.IsInterface = x.IsInterface
         member __.GetArrayRank() = x.GetArrayRank()
         member __.GenericParameterPosition = x.GenericParameterPosition
@@ -905,7 +904,7 @@ module internal ExtensionTyping =
             let namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
             let fullName = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName) |> unmarshal
             ValidateExpectedName m expectedPath expectedName st
-            // Must be able to call (GetMethods|GetEvents|GetPropeties|GetNestedTypes|GetConstructors)(bindingFlags).
+            // Must be able to call (GetMethods|GetEvents|GetProperties|GetNestedTypes|GetConstructors)(bindingFlags).
             let usedMembers : Tainted<ProvidedMemberInfo>[] = 
                 // These are the members the compiler will actually use
                 [| for x in TryTypeMemberArray(st, fullName, "GetMethods", m, fun st -> st.GetMethods()) -> x.Coerce m

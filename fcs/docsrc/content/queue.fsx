@@ -36,7 +36,7 @@ These use cross-threaded access to the TAST data produced by other FSharpChecker
 Some tools throw a lot of interactive work at the FSharpChecker operations queue. 
 If you are writing such a component, consider running your project against a debug build
 of FSharp.Compiler.Service.dll to see the Trace.WriteInformation messages indicating the length of the
-operations queuea and the time to process requests.
+operations queue and the time to process requests.
 
 For those writing interactive editors which use FCS, you 
 should be cautious about operations that request a check of  the entire project.

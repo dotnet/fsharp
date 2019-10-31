@@ -31,7 +31,7 @@ val typeEquiv       :            TcGlobals  -> TType          -> TType         -
 /// Check the equivalence of two units-of-measure
 val measureEquiv    :            TcGlobals  -> Measure  -> Measure -> bool
 
-/// Reduce a type to its more anonical form subject to an erasure flag, inference equations and abbreviations
+/// Reduce a type to its more canonical form subject to an erasure flag, inference equations and abbreviations
 val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 
 /// Build a function type
@@ -120,7 +120,7 @@ val mkMutableCompGenLocal : range -> string -> TType -> Val * Expr
 
 /// Make a new mutable compiler-generated local value, 'let' bind it to an expression 
 /// 'invisibly' (no sequence point etc.), and build an expression to reference it
-val mkCompGenLocalAndInvisbleBind : TcGlobals -> string -> range -> Expr -> Val * Expr * Binding 
+val mkCompGenLocalAndInvisibleBind : TcGlobals -> string -> range -> Expr -> Val * Expr * Binding 
 
 /// Build a lambda expression taking multiple values
 val mkMultiLambda : range -> Val list -> Expr * TType -> Expr
@@ -368,6 +368,9 @@ val convertToTypeWithMetadataIfPossible : TcGlobals -> TType -> TType
 exception DefensiveCopyWarning of string * range 
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
+
+/// Helper to create an expression that dereferences an address.
+val mkDerefAddrExpr: mAddrGet: range -> expr: Expr -> mExpr: range -> exprTy: TType -> Expr
 
 /// Helper to take the address of an expression
 val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool * bool
@@ -1147,7 +1150,7 @@ type SignatureRepackageInfo =
     { /// The list of corresponding values
       RepackagedVals: (ValRef * ValRef) list
 
-      /// The list of corresponding modules, namespacea and type definitions
+      /// The list of corresponding modules, namespaces and type definitions
       RepackagedEntities: (TyconRef * TyconRef) list  }
 
     /// The empty table
@@ -1216,7 +1219,7 @@ val IsHiddenVal       : (Remap * SignatureHidingInfo) list -> Val -> bool
 /// Determine if a record field is hidden by a signature
 val IsHiddenRecdField : (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
 
-/// Adjust marks in expressions, replacing all marks by thegiven mark.
+/// Adjust marks in expressions, replacing all marks by the given mark.
 /// Used when inlining.
 val remarkExpr : range -> Expr -> Expr
  
@@ -1247,7 +1250,7 @@ val mkAddrGet  : range -> ValRef -> Expr
 /// &localv           
 val mkValAddr  : range -> readonly: bool -> ValRef -> Expr
 
-/// Build an exression representing the read of an instance class or record field.
+/// Build an expression representing the read of an instance class or record field.
 /// First take the address of the record expression if it is a struct.
 val mkRecdFieldGet : TcGlobals -> Expr * RecdFieldRef * TypeInst * range -> Expr
 
@@ -1277,7 +1280,7 @@ val AdjustArityOfLambdaBody : TcGlobals -> int -> Val list -> Expr -> Val list *
 /// Make an application expression, doing beta reduction by introducing let-bindings
 val MakeApplicationAndBetaReduce : TcGlobals -> Expr * TType * TypeInst list * Exprs * range -> Expr
 
-/// COmbine two static-resolution requirements on a type parameter
+/// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq : TyparStaticReq -> TyparStaticReq -> TyparStaticReq
 
 /// Layout for internal compiler debugging purposes
@@ -1388,7 +1391,7 @@ val mkVoidPtrTy  : TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType      : TcGlobals -> TType -> TType
 
-/// Determine is a type is an option type
+/// Determine if a type is an option type
 val isOptionTy     : TcGlobals -> TType -> bool
 
 /// Take apart an option type
@@ -1396,6 +1399,15 @@ val destOptionTy   : TcGlobals -> TType -> TType
 
 /// Try to take apart an option type
 val tryDestOptionTy : TcGlobals -> TType -> ValueOption<TType>
+
+/// Determine is a type is a System.Nullable type
+val isNullableTy : TcGlobals -> TType -> bool
+
+/// Try to take apart a System.Nullable type
+val tryDestNullableTy: TcGlobals -> TType -> ValueOption<TType>
+
+/// Take apart a System.Nullable type
+val destNullableTy: TcGlobals -> TType -> TType
 
 /// Determine if a type is a System.Linq.Expression type
 val isLinqExpressionTy     : TcGlobals -> TType -> bool
@@ -1469,10 +1481,10 @@ val destListTy : TcGlobals -> TType -> TType
 /// Build an array type of the given rank
 val mkArrayTy : TcGlobals -> int -> TType -> range -> TType
 
-/// Check if a type definition is one of the artifical type definitions used for array types of different ranks 
+/// Check if a type definition is one of the artificial type definitions used for array types of different ranks 
 val isArrayTyconRef : TcGlobals -> TyconRef -> bool
 
-/// Determine the rank of one of the artifical type definitions used for array types
+/// Determine the rank of one of the artificial type definitions used for array types
 val rankOfArrayTyconRef : TcGlobals -> TyconRef -> int
 
 /// Determine if a type is the F# unit type
@@ -2206,7 +2218,7 @@ val RewriteExpr : ExprRewritingEnv -> Expr -> Expr
 
 val RewriteImplFile : ExprRewritingEnv -> TypedImplFile -> TypedImplFile
 
-val IsGenericValWithGenericContraints: TcGlobals -> Val -> bool
+val IsGenericValWithGenericConstraints: TcGlobals -> Val -> bool
 
 type Entity with 
 
@@ -2231,6 +2243,8 @@ val (|EnumExpr|_|) : TcGlobals -> Expr -> Expr option
 val (|TypeOfExpr|_|) : TcGlobals -> Expr -> TType option
 
 val (|TypeDefOfExpr|_|) : TcGlobals -> Expr -> TType option
+val (|NameOfExpr|_|) : TcGlobals -> Expr -> TType option
+val (|SeqExpr|_|) : TcGlobals -> Expr -> unit option
 
 val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 
@@ -2293,3 +2307,4 @@ val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
+val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool

@@ -19,39 +19,21 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.NavigateTo
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.PatternMatching
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.NavigateTo
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string, kind: string, additionalInfo: string) =
-    interface INavigableItem with
-        member __.Glyph = glyph
-        /// The tagged parts to display for this item. If default, the line of text from <see cref="Document"/> is used.
-        member __.DisplayTaggedParts = ImmutableArray.Create (TaggedText(TextTags.Text, name))
-        /// Return true to display the file path of <see cref="Document"/> and the span of <see cref="SourceSpan"/> when displaying this item.
-        member __.DisplayFileLocation = true
-        /// This is intended for symbols that are ordinary symbols in the language sense, and may be used by code, but that are simply declared 
-        /// implicitly rather than with explicit language syntax.  For example, a default synthesized constructor in C# when the class contains no
-        /// explicit constructors.
-        member __.IsImplicitlyDeclared = false
-        member __.Document = document
-        member __.SourceSpan = sourceSpan
-        member __.ChildItems = ImmutableArray<INavigableItem>.Empty
+    inherit FSharpNavigableItem(glyph, ImmutableArray.Create (TaggedText(TextTags.Text, name)), document, sourceSpan)
+
     member __.Name = name
     member __.Kind = kind
     member __.AdditionalInfo = additionalInfo
 
-type internal NavigateToSearchResult(item: NavigableItem, matchKind: NavigateToMatchKind) =
-    interface INavigateToSearchResult with
-        member __.AdditionalInformation = item.AdditionalInfo
-        member __.Kind = item.Kind
-        member __.MatchKind = matchKind
-        member __.IsCaseSensitive = false
-        member __.Name = item.Name
-        member __.NameMatchSpans = ImmutableArray<_>.Empty
-        member __.SecondarySort = null
-        member __.Summary = null
-        member __.NavigableItem = upcast item
+type internal NavigateToSearchResult(item: NavigableItem, matchKind: FSharpNavigateToMatchKind) =
+    inherit FSharpNavigateToSearchResult(item.AdditionalInfo, item.Kind, matchKind, item.Name, item)
 
 module private Index =
     [<System.Diagnostics.DebuggerDisplay("{DebugString()}")>]
@@ -73,18 +55,18 @@ module private Index =
                 if res = 0 then a.Offset.CompareTo(b.Offset) else res }
 
     type IIndexedNavigableItems =
-        abstract Find: searchValue: string -> INavigateToSearchResult []
+        abstract Find: searchValue: string -> FSharpNavigateToSearchResult []
         abstract AllItems: NavigableItem []
 
     let private navigateToSearchResultComparer =
-        { new IEqualityComparer<INavigateToSearchResult> with 
-            member __.Equals(x: INavigateToSearchResult, y: INavigateToSearchResult) =
+        { new IEqualityComparer<FSharpNavigateToSearchResult> with 
+            member __.Equals(x: FSharpNavigateToSearchResult, y: FSharpNavigateToSearchResult) =
                 match x, y with
                 | null, _ | _, null -> false
                 | _ -> x.NavigableItem.Document.Id = y.NavigableItem.Document.Id &&
                        x.NavigableItem.SourceSpan = y.NavigableItem.SourceSpan
             
-            member __.GetHashCode(x: INavigateToSearchResult) =
+            member __.GetHashCode(x: FSharpNavigateToSearchResult) =
                 if isNull x then 0
                 else 23 * (17 * 23 + x.NavigableItem.Document.Id.GetHashCode()) + x.NavigableItem.SourceSpan.GetHashCode() }
 
@@ -115,11 +97,11 @@ module private Index =
                          let entry = entries.[index]
                          let matchKind = 
                              if entry.Offset = 0 then
-                                 if entry.Length = searchValue.Length then NavigateToMatchKind.Exact
-                                 else NavigateToMatchKind.Prefix
-                             else NavigateToMatchKind.Substring
+                                 if entry.Length = searchValue.Length then FSharpNavigateToMatchKind.Exact
+                                 else FSharpNavigateToMatchKind.Prefix
+                             else FSharpNavigateToMatchKind.Substring
                          let item = entry.Item
-                         result.Add (NavigateToSearchResult(item, matchKind) :> INavigateToSearchResult) |> ignore
+                         result.Add (NavigateToSearchResult(item, matchKind) :> FSharpNavigateToSearchResult) |> ignore
                     
                      // in case if there are multiple matching items binary search might return not the first one.
                      // in this case we'll walk backwards searching for the applicable answers
@@ -140,17 +122,17 @@ module private Index =
 module private Utils =
 
     let navigateToItemKindToRoslynKind = function
-        | NavigateTo.NavigableItemKind.Module -> NavigateToItemKind.Module
-        | NavigateTo.NavigableItemKind.ModuleAbbreviation -> NavigateToItemKind.Module
-        | NavigateTo.NavigableItemKind.Exception -> NavigateToItemKind.Class
-        | NavigateTo.NavigableItemKind.Type -> NavigateToItemKind.Class
-        | NavigateTo.NavigableItemKind.ModuleValue -> NavigateToItemKind.Field
-        | NavigateTo.NavigableItemKind.Field -> NavigateToItemKind.Field
-        | NavigateTo.NavigableItemKind.Property -> NavigateToItemKind.Property
-        | NavigateTo.NavigableItemKind.Constructor -> NavigateToItemKind.Method
-        | NavigateTo.NavigableItemKind.Member -> NavigateToItemKind.Method
-        | NavigateTo.NavigableItemKind.EnumCase -> NavigateToItemKind.EnumItem
-        | NavigateTo.NavigableItemKind.UnionCase -> NavigateToItemKind.EnumItem
+        | NavigateTo.NavigableItemKind.Module -> FSharpNavigateToItemKind.Module
+        | NavigateTo.NavigableItemKind.ModuleAbbreviation -> FSharpNavigateToItemKind.Module
+        | NavigateTo.NavigableItemKind.Exception -> FSharpNavigateToItemKind.Class
+        | NavigateTo.NavigableItemKind.Type -> FSharpNavigateToItemKind.Class
+        | NavigateTo.NavigableItemKind.ModuleValue -> FSharpNavigateToItemKind.Field
+        | NavigateTo.NavigableItemKind.Field -> FSharpNavigateToItemKind.Field
+        | NavigateTo.NavigableItemKind.Property -> FSharpNavigateToItemKind.Property
+        | NavigateTo.NavigableItemKind.Constructor -> FSharpNavigateToItemKind.Method
+        | NavigateTo.NavigableItemKind.Member -> FSharpNavigateToItemKind.Method
+        | NavigateTo.NavigableItemKind.EnumCase -> FSharpNavigateToItemKind.EnumItem
+        | NavigateTo.NavigableItemKind.UnionCase -> FSharpNavigateToItemKind.EnumItem
 
     let navigateToItemKindToGlyph = function
         | NavigateTo.NavigableItemKind.Module -> Glyph.ModulePublic
@@ -182,7 +164,7 @@ module private Utils =
 
     type PerDocumentSavedData = { Hash: int; Items: Index.IIndexedNavigableItems }
 
-[<ExportLanguageService(typeof<INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate>, FSharpConstants.FSharpLanguageName); Shared>]
+[<Export(typeof<IFSharpNavigateToSearchService>)>]
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
     (
@@ -190,7 +172,7 @@ type internal FSharpNavigateToSearchService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    let kindsProvided = ImmutableHashSet.Create(NavigateToItemKind.Module, NavigateToItemKind.Class, NavigateToItemKind.Field, NavigateToItemKind.Property, NavigateToItemKind.Method, NavigateToItemKind.Enum, NavigateToItemKind.EnumItem) :> IImmutableSet<string>
+    let kindsProvided = ImmutableHashSet.Create(FSharpNavigateToItemKind.Module, FSharpNavigateToItemKind.Class, FSharpNavigateToItemKind.Field, FSharpNavigateToItemKind.Property, FSharpNavigateToItemKind.Method, FSharpNavigateToItemKind.Enum, FSharpNavigateToItemKind.EnumItem) :> IImmutableSet<string>
 
     // Save the backing navigation data in a memory cache held in a sliding window
     let itemsByDocumentId = new MemoryCache("FSharp.Editor.FSharpNavigateToSearchService")
@@ -237,15 +219,15 @@ type internal FSharpNavigateToSearchService
                 return indexedItems }
 
     let patternMatchKindToNavigateToMatchKind = function
-        | PatternMatchKind.Exact -> NavigateToMatchKind.Exact
-        | PatternMatchKind.Prefix -> NavigateToMatchKind.Prefix
-        | PatternMatchKind.Substring -> NavigateToMatchKind.Substring
-        | PatternMatchKind.CamelCase -> NavigateToMatchKind.Regular
-        | PatternMatchKind.Fuzzy -> NavigateToMatchKind.Regular
-        | _ -> NavigateToMatchKind.Regular
+        | PatternMatchKind.Exact -> FSharpNavigateToMatchKind.Exact
+        | PatternMatchKind.Prefix -> FSharpNavigateToMatchKind.Prefix
+        | PatternMatchKind.Substring -> FSharpNavigateToMatchKind.Substring
+        | PatternMatchKind.CamelCase -> FSharpNavigateToMatchKind.Regular
+        | PatternMatchKind.Fuzzy -> FSharpNavigateToMatchKind.Regular
+        | _ -> FSharpNavigateToMatchKind.Regular
 
-    interface INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate with
-        member __.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
+    interface IFSharpNavigateToSearchService with
+        member __.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsByProject(project, cancellationToken)
                 let! items =
@@ -268,7 +250,7 @@ type internal FSharpNavigateToSearchService
                                   |> Array.Parallel.collect (fun x -> 
                                       patternMatcher.GetMatches(x.Name)
                                       |> Seq.map (fun pm ->
-                                          NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> INavigateToSearchResult)
+                                          NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult)
                                       |> Seq.toArray) |]
 
                 return items |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
@@ -277,7 +259,7 @@ type internal FSharpNavigateToSearchService
             |> Async.map Seq.toImmutableArray
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
-        member __.SearchDocumentAsync(document, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
+        member __.SearchDocumentAsync(document, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken)
                 let! items = getCachedIndexedNavigableItems(document, parsingOptions, kinds) |> liftAsync

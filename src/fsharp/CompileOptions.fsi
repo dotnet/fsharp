@@ -76,7 +76,7 @@ val SetTargetProfile  : TcConfigBuilder -> string -> unit
 val GetGeneratedILModuleName : CompilerTarget -> string -> string
 
 val GetInitialOptimizationEnv : TcImports * TcGlobals -> IncrementalOptimizationEnv
-val AddExternalCcuToOpimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
+val AddExternalCcuToOptimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
 val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list -> TypedAssemblyAfterOptimization * Optimizer.LazyModuleInfo * IncrementalOptimizationEnv 
 
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxGen.IlxAssemblyGenerator

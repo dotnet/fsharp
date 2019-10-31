@@ -299,6 +299,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       yield! walkTrySeqPt spTry
                       yield! walkFinallySeqPt spFinally
 
+                  | SynExpr.SequentialOrImplicitYield (spSeq, e1, e2, _, _)
                   | SynExpr.Sequential (spSeq, _, e1, e2, _) -> 
                       yield! walkExpr (match spSeq with SuppressSequencePointOnStmtOfSequential -> false | _ -> true) e1
                       yield! walkExpr (match spSeq with SuppressSequencePointOnExprOfSequential -> false | _ -> true) e2
@@ -595,10 +596,10 @@ module UntypedParseImpl =
             AstTraversal.Traverse(pos, parseTree, walker)
 
     // Given a cursor position here:
-    //    f(x)   .   iden
+    //    f(x)   .   ident
     //                   ^
     // walk the AST to find the position here:
-    //    f(x)   .   iden
+    //    f(x)   .   ident
     //       ^
     // On success, return Some (thatPos, boolTrueIfCursorIsAfterTheDotButBeforeTheIdentifier)
     // If there's no dot, return None, so for example

@@ -10,12 +10,13 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open SymbolHelpers
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = PredefinedCodeFixProviderNames.SimplifyNames); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "SimplifyNames"); Shared>]
 type internal FSharpSimplifyNameCodeFixProvider() =
     inherit CodeFixProvider()
-    let fixableDiagnosticId = IDEDiagnosticIds.SimplifyNamesDiagnosticId
+    let fixableDiagnosticId = FSharpIDEDiagnosticIds.SimplifyNamesDiagnosticId
         
     override __.FixableDiagnosticIds = ImmutableArray.Create(fixableDiagnosticId)
 

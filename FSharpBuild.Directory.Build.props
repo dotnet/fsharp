@@ -75,6 +75,7 @@
     <RepositoryUrl Condition="'$(RepositoryUrl)' == ''">https://github.com/Microsoft/visualfsharp</RepositoryUrl>
     <RepositoryType Condition="'$(RepositoryType)' == ''">git</RepositoryType>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(FSharpSourceBuild)' == 'true' AND '$(RepositoryCommit)' == ''">
     <_DotGitDir>$(RepoRoot).git</_DotGitDir>
     <_HeadFileContent Condition="Exists('$(_DotGitDir)/HEAD')">$([System.IO.File]::ReadAllText('$(_DotGitDir)/HEAD').Trim())</_HeadFileContent>
@@ -87,10 +88,14 @@
   <PropertyGroup>
     <NoWarn Condition="'$(Language)' == 'F#'">$(NoWarn);FS2003</NoWarn><!-- warning when AssemblyInformationalVersion looks like '1.2.3-dev' -->
     <NoCompilerStandardLib>true</NoCompilerStandardLib><!-- necessary for resource generation using csc.exe -->
-    <DebugType>portable</DebugType>
+    <DebugType>embedded</DebugType>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+    <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
   </PropertyGroup>
 
   <!-- SDK targets override -->

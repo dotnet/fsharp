@@ -42,6 +42,11 @@
         <target state="translated">完成清單</target>
         <note />
       </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="new">Diagnostics</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">效能</target>
@@ -104,7 +109,7 @@
       </trans-unit>
       <trans-unit id="Text_hover">
         <source>Text hover</source>
-        <target state="new">Text hover</target>
+        <target state="translated">文字暫留</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -199,7 +204,7 @@
       </trans-unit>
       <trans-unit id="Use_out_of_process_language_server">
         <source>(Preview) Use out of process language server</source>
-        <target state="new">(Preview) Use out of process language server</target>
+        <target state="translated">(預覽) 使用處理序語言伺服器</target>
         <note />
       </trans-unit>
     </body>
