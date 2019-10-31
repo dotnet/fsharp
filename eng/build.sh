@@ -258,7 +258,6 @@ function BuildSolution {
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
-    /v:$verbosity \
     /p:Configuration=$configuration \
     /p:Projects="$projects" \
     /p:RepoRoot="$repo_root" \

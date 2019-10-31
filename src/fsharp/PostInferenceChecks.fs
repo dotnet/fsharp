@@ -213,9 +213,12 @@ type cenv =
       isInternalTestSpanStackReferring: bool
 
       // outputs
-      mutable usesQuotations : bool
+      mutable usesQuotations: bool
 
-      mutable entryPointGiven: bool  }
+      mutable entryPointGiven: bool 
+      
+      /// Callback required for quotation generation
+      tcVal: ConstraintSolver.TcValF }
 
     override x.ToString() = "<cenv>"
 
@@ -963,8 +966,10 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
 
             // Translate to quotation data
             try 
-                let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No) 
-                let qdata = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast  
+                let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No) 
+                let qenv = QuotationTranslator.QuotationTranslationEnv.CreateEmpty g
+                // TODO: do we need to bind witnesses here
+                let qdata = QuotationTranslator.ConvExprPublic qscope qenv ast  
                 let typeDefs, spliceTypes, spliceExprs = qscope.Close()
                 match savedConv.Value with 
                 | None -> savedConv:= Some (typeDefs, List.map fst spliceTypes, List.map fst spliceExprs, qdata)
@@ -1748,13 +1753,16 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                       match bindRhs with 
                       | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
                       | _ -> [], bindRhs, ety
-                    let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
-                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.Yes) 
-                    QuotationTranslator.ConvExprPublic qscope env taue  |> ignore
+                    let qenv = QuotationTranslator.QuotationTranslationEnv.CreateEmpty g
+                    let qenv = qenv.BindTypars tps
+                    let witnessInfos = GetTraitWitnessInfosOfTypars g [] tps
+                    let qenv = qenv.BindWitnessInfos witnessInfos
+                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.Yes) 
+                    QuotationTranslator.ConvExprPublic qscope qenv taue  |> ignore
                     let _, _, argExprs = qscope.Close()
                     if not (isNil argExprs) then 
                         errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
-                    QuotationTranslator.ConvMethodBase qscope env (v.CompiledName g.CompilerGlobalState, v) |> ignore
+                    QuotationTranslator.ConvMethodBase qscope qenv (v.CompiledName g.CompilerGlobalState, v) |> ignore
                 with 
                   | QuotationTranslator.InvalidQuotedTerm e -> 
                           errorR e
@@ -2287,7 +2295,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 
@@ -2303,7 +2311,8 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           viewCcu= viewCcu
           isLastCompiland=isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
-          entryPointGiven=false}
+          entryPointGiven=false
+          tcVal = tcVal}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
     // This is because pre-resolving allows tycon equality to be determined by pointer equality on the entities.
@@ -2326,10 +2335,10 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           reflect=false
           external=false 
           returnScope = 0
-          isInAppExpr = false }
+          isInAppExpr = false  }
 
     CheckModuleExpr cenv env mexpr
     CheckAttribs cenv env extraAttribs
-    if cenv.usesQuotations && QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat g = QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus then 
+    if cenv.usesQuotations && not (QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat(g).SupportsDeserializeEx) then 
         viewCcu.UsesFSharp20PlusQuotations <- true
     cenv.entryPointGiven, cenv.anonRecdTypes

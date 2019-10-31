@@ -714,6 +714,8 @@ namespace Microsoft.FSharp.Core
         /// <returns>NoDynamicInvocationAttribute</returns>
         new : unit -> NoDynamicInvocationAttribute
 
+        new : isLegacy: bool -> NoDynamicInvocationAttribute
+
     /// <summary>This attribute is used to indicate that references to the elements of a module, record or union 
     /// type require explicit qualified access.</summary>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
@@ -801,7 +803,7 @@ namespace Microsoft.FSharp.Core
     type int64<[<Measure>] 'Measure> = int64
 
     /// <summary>Represents a managed pointer in F# code.</summary>
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -812,7 +814,7 @@ namespace Microsoft.FSharp.Core
     type byref<'T> = (# "!0&" #)
 
     /// Represents the types of byrefs in F# 4.5+
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -820,7 +822,7 @@ namespace Microsoft.FSharp.Core
     module ByRefKinds = 
 
         /// Represents a byref that can be written
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -828,7 +830,7 @@ namespace Microsoft.FSharp.Core
         type Out
 
         /// Represents a byref that can be read
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -836,7 +838,7 @@ namespace Microsoft.FSharp.Core
         type In
 
         /// Represents a byref that can be both read and written
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+#if BUILDING_WITH_LKG
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -1063,30 +1065,106 @@ namespace Microsoft.FSharp.Core
         [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
         val GenericOneDynamic : unit -> 'T 
 
-        /// <summary>A compiler intrinsic that implements dynamic invocations to the '+' operator.</summary>
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '+' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val AdditionDynamic : x:'T1 -> y:'T2 -> 'U
 
-        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '+' operator.</summary>
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '-' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val CheckedAdditionDynamic : x:'T1 -> y:'T2 -> 'U
+        val SubtractionDynamic : x:'T1 -> y:'T2 -> 'U
 
-        /// <summary>A compiler intrinsic that implements dynamic invocations to the '*' operator.</summary>
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '*' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val MultiplyDynamic : x:'T1 -> y:'T2 -> 'U
 
-        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '*' operator.</summary>
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '/' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val DivisionDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the unary '-' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val UnaryNegationDynamic : value:'T -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '%' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val ModulusDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '+' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val CheckedAdditionDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '-' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val CheckedSubtractionDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '*' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val CheckedMultiplyDynamic : x:'T1 -> y:'T2 -> 'U
 
-        /// <summary>A compiler intrinsic that implements dynamic invocations for the DivideByInt primitive.</summary>
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked unary '-' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val CheckedUnaryNegationDynamic : value:'T -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '&lt;&lt;&lt;' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpLeftShiftDynamic : value:'T1 -> shift:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '&gt;&gt;&gt;' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpRightShiftDynamic : value:'T1 -> shift:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '&&&' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpBitwiseAndDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '|||' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpBitwiseOrDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '^^^' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpBitwiseExclusiveOrDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '~~~' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpLogicalNotDynamic : value:'T1 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to conversion operators when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpExplicitDynamic : value:'T1 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpLessThanDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpGreaterThanDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;=' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpLessThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;=' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpGreaterThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpEqualityDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val OpInequalityDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations for the DivideByInt primitive when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val DivideByIntDynamic : x:'T -> y:int -> 'T
 
         /// <summary>Resolves to the zero value for any primitive numeric type or any type with a static member called 'Zero'</summary>
         val inline GenericZero< ^T > : ^T when ^T : (static member Zero : ^T) 
 
-        /// <summary>Resolves to the value 'one' for any primitive numeric type or any type with a static member called 'One'</summary>
+        /// <summary>Resolves to the value one for any primitive numeric type or any type with a static member called One</summary>
         val inline GenericOne< ^T > : ^T when ^T : (static member One : ^T) 
         
         val internal anyToStringShowingNull : 'T -> string
@@ -1096,6 +1174,1440 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The input int.</param>
         /// <returns>The division result.</returns>
         val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
+
+#if !BUILDING_WITH_LKG
+        [<Class>]
+        /// <summary>Representative witnesses for traits solved by the F# compiler</summary>
+        type BuiltInWitnesses = 
+                        
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: float * y: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: float32 * y: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: char * y: char -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: string * y: string -> string 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Addition: x: decimal * y: decimal -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>            
+            static member inline op_Multiply: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: float * y: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: float32 * y: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Multiply: x: decimal * y: decimal -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_UnaryNegation: value: int32 -> int32
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_UnaryNegation: value: float -> float
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_UnaryNegation: value: float32 -> float32
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_UnaryNegation: value: int64 -> int64
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_UnaryNegation: value: int16 -> int16
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_UnaryNegation: value: nativeint -> nativeint
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_UnaryNegation: value: sbyte -> sbyte
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_UnaryNegation: value: decimal -> decimal
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: float * y: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: float32 * y: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Subtraction: x: decimal * y: decimal -> decimal 
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: float * y: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: float32 * y: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Division: x: decimal * y: decimal -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: float * y: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: float32 * y: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Modulus: x: decimal * y: decimal -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: float * y: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: float32 * y: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: char * y: char -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedAddition: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>            
+            static member inline op_CheckedMultiply: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: float * y: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: float32 * y: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedMultiply: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedUnaryNegation: value: int32 -> int32
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedUnaryNegation: value: float -> float
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedUnaryNegation: value: float32 -> float32
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedUnaryNegation: value: int64 -> int64
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedUnaryNegation: value: int16 -> int16
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedUnaryNegation: value: nativeint -> nativeint
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedUnaryNegation: value: sbyte -> sbyte
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: float * y: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: float32 * y: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_CheckedSubtraction: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: byte * shift: int -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: sbyte * shift: int -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: int16 * shift: int -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: uint16 * shift: int -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: int32 * shift: int -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: uint32 * shift: int -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: int64 * shift: int -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: uint64 * shift: int -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: nativeint * shift: int -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LeftShift: value: unativeint * shift: int -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: byte * shift: int -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: sbyte * shift: int -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: int16 * shift: int -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: uint16 * shift: int -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: int32 * shift: int -> int32
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: uint32 * shift: int -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: int64 * shift: int -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: uint64 * shift: int -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: nativeint * shift: int -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_RightShift: value: unativeint * shift: int -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseAnd: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_BitwiseOr: x: byte * y: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: int32 * y: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: int64 * y: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: uint64 * y: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: uint32 * y: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: int16 * y: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: uint16 * y: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: nativeint * y: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: unativeint * y: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: sbyte * y: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_ExclusiveOr: x: byte * y: byte -> byte
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LogicalNot: value: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> byte 
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> sbyte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> uint16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> int16 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> uint32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> int32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> uint64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> int64 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> float32 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: decimal -> float 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: decimal -> decimal 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> unativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> nativeint 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: float32 -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int64 -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int32 -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: int16 -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: nativeint -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: sbyte -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint64 -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint32 -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: uint16 -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: char -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: unativeint -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: byte -> char 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: bool * y: bool -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: sbyte * y: sbyte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: int16 * y: int16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: int32 * y: int32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: int64 * y: int64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: byte * y: byte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: uint16 * y: uint16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: uint32 * y: uint32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: uint64 * y: uint64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: unativeint * y: unativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: nativeint * y: nativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: float * y: float -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: float32 * y: float32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: char * y: char -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: decimal * y: decimal -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThan: x: string * y: string -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: bool * y: bool -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: sbyte * y: sbyte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: int16 * y: int16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: int32 * y: int32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: int64 * y: int64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: nativeint * y: nativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: byte * y: byte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: uint16 * y: uint16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: uint32 * y: uint32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: uint64 * y: uint64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: unativeint * y: unativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: float * y: float -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: float32 * y: float32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: char * y: char -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: decimal * y: decimal -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThan: x: string * y: string -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: bool * y: bool -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: sbyte * y: sbyte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: int16 * y: int16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: int32 * y: int32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: int64 * y: int64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: nativeint * y: nativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: byte * y: byte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: uint16 * y: uint16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: uint32 * y: uint32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: uint64 * y: uint64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: unativeint * y: unativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: float * y: float -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: float32 * y: float32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: char * y: char -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: decimal * y: decimal -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_LessThanOrEqual: x: string * y: string -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: bool * y: bool -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: sbyte * y: sbyte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: int16 * y: int16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: int32 * y: int32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: int64 * y: int64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: nativeint * y: nativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: byte * y: byte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: uint16 * y: uint16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: uint32 * y: uint32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: uint64 * y: uint64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: unativeint * y: unativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: float * y: float -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: float32 * y: float32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: char * y: char -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: decimal * y: decimal -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_GreaterThanOrEqual: x: string * y: string -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: bool * y: bool -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: sbyte * y: sbyte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: int16 * y: int16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: int32 * y: int32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: int64 * y: int64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: byte * y: byte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: uint16 * y: uint16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: uint32 * y: uint32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: uint64 * y: uint64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: float * y: float -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: float32 * y: float32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: char * y: char -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: nativeint * y: nativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: unativeint * y: unativeint -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: string * y: string -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Equality: x: decimal * y: decimal -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: bool * y: bool -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: sbyte * y: sbyte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: int16 * y: int16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: int32 * y: int32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: int64 * y: int64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: byte * y: byte -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: uint16 * y: uint16 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: uint32 * y: uint32 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: uint64 * y: uint64 -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: float * y: float -> bool
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: float32 * y: float32 -> bool
+                        
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: char * y: char -> bool
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: nativeint * y: nativeint -> bool
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: unativeint * y: unativeint -> bool
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: string * y: string -> bool
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Inequality: x: decimal * y: decimal -> bool
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline DivideByInt: x: float * y: int -> float
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline DivideByInt: x: float32 * y: int -> float32
+            
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline DivideByInt: x: decimal * y: int -> decimal
+#endif
 
         /// <summary>For compiler use only</summary>
         module (* internal *) ErrorStrings = 
@@ -2731,6 +4243,7 @@ namespace Microsoft.FSharp.Core
         /// input types the operation requires an appropriate static conversion method on the input type.</summary>
         /// <param name="value">The input value.</param>
         /// <returns>The converted char.</returns>
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
         val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
@@ -3169,14 +4682,14 @@ namespace Microsoft.FSharp.Core
             /// <summary>Overloaded unary negation (checks for overflow)</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The negated value.</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline ( ~- ) : value:^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
 
             /// <summary>Overloaded subtraction operator (checks for overflow)</summary>
             /// <param name="x">The first value.</param>
             /// <param name="y">The second value.</param>
             /// <returns>The first value minus the second value.</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline ( - ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Overloaded addition operator (checks for overflow)</summary>
@@ -3189,7 +4702,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="x">The first value.</param>
             /// <param name="y">The second value.</param>
             /// <returns>The product of the two input values.</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline ( * ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Converts the argument to <c>byte</c>. This is a direct, checked conversion for all 
@@ -3198,7 +4711,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted byte</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToByte")>]
             val inline byte       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int
 
@@ -3208,7 +4721,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted sbyte</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToSByte")>]
             val inline sbyte      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
 
@@ -3218,7 +4731,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int16</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt16")>]
             val inline int16      : value:^T -> int16      when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
 
@@ -3228,7 +4741,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint16</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt16")>]
             val inline uint16     : value:^T -> uint16     when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
 
@@ -3238,7 +4751,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt")>]
             val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
 
@@ -3248,7 +4761,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int32</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt32")>]
             val inline int32      : value:^T -> int32      when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
 
@@ -3258,7 +4771,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint32</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt32")>]
             val inline uint32     : value:^T -> uint32     when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
 
@@ -3268,7 +4781,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int64</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt64")>]
             val inline int64      : value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
@@ -3278,7 +4791,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint64</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt64")>]
             val inline uint64     : value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
 
@@ -3287,7 +4800,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted nativeint</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToIntPtr")>]
             val inline nativeint  : value:^T -> nativeint  when ^T : (static member op_Explicit : ^T -> nativeint)  and default ^T : int
 
@@ -3296,7 +4809,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted unativeint</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUIntPtr")>]
             val inline unativeint : value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
 
@@ -3306,7 +4819,7 @@ namespace Microsoft.FSharp.Core
             /// appropriate static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted char</returns>
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToChar")>]
             val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 

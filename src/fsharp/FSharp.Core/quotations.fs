@@ -164,6 +164,10 @@ and
     | NewObjectOp   of ConstructorInfo
     | InstanceMethodCallOp of MethodInfo
     | StaticMethodCallOp of MethodInfo
+    /// A new Call node type in F# 5.0, storing extra information about witnesses
+    | InstanceMethodCallWOp of MethodInfo * MethodInfo * int
+    /// A new Call node type in F# 5.0, storing extra information about witnesses
+    | StaticMethodCallWOp of MethodInfo * MethodInfo * int
     | CoerceOp     of Type
     | NewArrayOp    of Type
     | NewDelegateOp   of Type
@@ -182,7 +186,7 @@ and
     | WithValueOp of obj * Type
     | DefaultValueOp of Type
 
-and [<CompiledName("FSharpExpr")>]
+and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
     Expr(term:Tree, attribs:Expr list) =
     member x.Tree = term
     member x.CustomAttributes = attribs
@@ -194,6 +198,30 @@ and [<CompiledName("FSharpExpr")>]
                 match t1, t2 with
                 // We special-case ValueOp to ensure that ValueWithName = Value
                 | CombTerm(ValueOp(v1, ty1, _), []), CombTerm(ValueOp(v2, ty2, _), []) -> (v1 = v2) && (ty1 = ty2)
+
+                // We strip off InstanceMethodCallWOp to ensure that CallWithWitness = Call
+                | CombTerm(InstanceMethodCallWOp(minfo1, _minfoW1, nWitnesses1), obj1::args1WithoutObj), _ ->
+                    if nWitnesses1 <= args1WithoutObj.Length then
+                        let args1WithoutWitnesses = List.skip nWitnesses1 args1WithoutObj
+                        eq (CombTerm(InstanceMethodCallOp(minfo1), obj1::args1WithoutWitnesses)) t2
+                    else 
+                        false
+
+                // We strip off InstanceMethodCallWOp to ensure that CallWithWitness = Call
+                | _, CombTerm(InstanceMethodCallWOp(minfo2, _minfoW2, nWitnesses2), obj2::args2WithoutObj) when nWitnesses2 <= args2WithoutObj.Length ->
+                    let args2WithoutWitnesses = List.skip nWitnesses2 args2WithoutObj
+                    eq t1 (CombTerm(InstanceMethodCallOp(minfo2), obj2::args2WithoutWitnesses))
+
+                // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
+                | CombTerm(StaticMethodCallWOp(minfo1, _minfoW1, nWitnesses1), args1), _ when nWitnesses1 <= args1.Length ->
+                    let argsWithoutWitnesses1 = List.skip nWitnesses1 args1
+                    eq (CombTerm(StaticMethodCallOp(minfo1), argsWithoutWitnesses1)) t2
+
+                // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
+                | _, CombTerm(StaticMethodCallWOp(minfo2, _minfoW2, nWitnesses2), args2) when nWitnesses2 <= args2.Length ->
+                    let argsWithoutWitnesses2 = List.skip nWitnesses2 args2
+                    eq t1 (CombTerm(StaticMethodCallOp(minfo2), argsWithoutWitnesses2))
+
                 | CombTerm(c1, es1), CombTerm(c2, es2) -> c1 = c2 && es1.Length = es2.Length && (es1 = es2)
                 | VarTerm v1, VarTerm v2 -> (v1 = v2)
                 | LambdaTerm (v1, e1), LambdaTerm(v2, e2) -> (v1 = v2) && (e1 = e2)
@@ -208,11 +236,13 @@ and [<CompiledName("FSharpExpr")>]
     override x.ToString() = x.ToString false
 
     member x.ToString full =
-        Microsoft.FSharp.Text.StructuredPrintfImpl.Display.layout_to_string Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions.Default (x.GetLayout full)
+        Display.layout_to_string FormatOptions.Default (x.GetLayout(full))
+
+    member x.DebugText = x.ToString(false)
 
     member x.GetLayout long =
-        let expr (e:Expr ) = e.GetLayout long
-        let exprs (es:Expr list) = es |> List.map expr
+        let expr (e: Expr) = e.GetLayout(long)
+        let exprs (es: Expr list) = es |> List.map expr
         let parens ls = bracketL (commaListL ls)
         let pairL l1 l2 = bracketL (l1 ^^ sepL Literals.comma ^^ l2)
         let listL ls = squareBracketL (commaListL ls)
@@ -226,7 +256,7 @@ and [<CompiledName("FSharpExpr")>]
         let (|E|) (e: Expr) = e.Tree
         let (|Lambda|_|) (E x) = match x with LambdaTerm(a, b) -> Some (a, b) | _ -> None
         let (|IteratedLambda|_|) (e: Expr) = qOneOrMoreRLinear (|Lambda|_|) e
-        let ucaseL (unionCase:UnionCaseInfo) = (if long then objL unionCase else wordL (tagUnionCase unionCase.Name))
+        let ucaseL (unionCase: UnionCaseInfo) = (if long then objL unionCase else wordL (tagUnionCase unionCase.Name))
         let minfoL (minfo: MethodInfo) = if long then objL minfo else wordL (tagMethod minfo.Name)
         let cinfoL (cinfo: ConstructorInfo) = if long then objL cinfo else wordL (tagMethod cinfo.DeclaringType.Name)
         let pinfoL (pinfo: PropertyInfo) = if long then objL pinfo else wordL (tagProperty pinfo.Name)
@@ -250,17 +280,30 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(ValueOp(v, _, Some nm), []) -> combL "ValueWithName" [objL v; wordL (tagLocal nm)]
         | CombTerm(ValueOp(v, _, None), []) -> combL "Value" [objL v]
         | CombTerm(WithValueOp(v, _), [defn]) -> combL "WithValue" [objL v; expr defn]
-        | CombTerm(InstanceMethodCallOp minfo, obj :: args) -> combL "Call" [someL obj; minfoL minfo; listL (exprs args)]
-        | CombTerm(StaticMethodCallOp minfo, args) -> combL "Call" [noneL; minfoL minfo; listL (exprs args)]
-        | CombTerm(InstancePropGetOp pinfo, (obj :: args)) -> combL "PropertyGet" [someL obj; pinfoL pinfo; listL (exprs args)]
-        | CombTerm(StaticPropGetOp pinfo, args) -> combL "PropertyGet" [noneL; pinfoL pinfo; listL (exprs args)]
-        | CombTerm(InstancePropSetOp pinfo, (obj :: args)) -> combL "PropertySet" [someL obj; pinfoL pinfo; listL (exprs args)]
-        | CombTerm(StaticPropSetOp pinfo, args) -> combL "PropertySet" [noneL; pinfoL pinfo; listL (exprs args)]
-        | CombTerm(InstanceFieldGetOp finfo, [obj]) -> combL "FieldGet" [someL obj; finfoL finfo]
-        | CombTerm(StaticFieldGetOp finfo, []) -> combL "FieldGet" [noneL; finfoL finfo]
-        | CombTerm(InstanceFieldSetOp finfo, [obj;v]) -> combL "FieldSet" [someL obj; finfoL finfo; expr v;]
-        | CombTerm(StaticFieldSetOp finfo, [v]) -> combL "FieldSet" [noneL; finfoL finfo; expr v;]
-        | CombTerm(CoerceOp ty, [arg]) -> combL "Coerce" [ expr arg; typeL ty]
+
+        | CombTerm(InstanceMethodCallOp(minfo), obj::args) ->
+            combL "Call"     [someL obj; minfoL minfo; listL (exprs args)]
+        
+        | CombTerm(StaticMethodCallOp(minfo), args) ->
+            combL "Call" [noneL; minfoL minfo; listL (exprs args)]
+
+        | CombTerm(InstanceMethodCallWOp(minfo, _minfoW, nWitnesses), obj::argsWithoutObj) when nWitnesses <= argsWithoutObj.Length ->
+            let argsWithoutWitnesses = List.skip nWitnesses argsWithoutObj
+            combL "Call" [someL obj; minfoL minfo; listL (exprs argsWithoutWitnesses)]
+
+        | CombTerm(StaticMethodCallWOp(minfo, _minfoW, nWitnesses), args) when nWitnesses <= args.Length  ->
+            let argsWithoutWitnesses = List.skip nWitnesses args
+            combL "Call" [noneL; minfoL minfo; listL (exprs argsWithoutWitnesses)]
+
+        | CombTerm(InstancePropGetOp(pinfo), (obj::args)) -> combL "PropertyGet"  [someL obj; pinfoL pinfo; listL (exprs args)]
+        | CombTerm(StaticPropGetOp(pinfo), args) -> combL "PropertyGet"  [noneL;     pinfoL pinfo; listL (exprs args)]
+        | CombTerm(InstancePropSetOp(pinfo), (obj::args)) -> combL "PropertySet"  [someL obj; pinfoL pinfo; listL (exprs args)]
+        | CombTerm(StaticPropSetOp(pinfo), args) -> combL "PropertySet"  [noneL;     pinfoL pinfo; listL (exprs args)]
+        | CombTerm(InstanceFieldGetOp(finfo), [obj]) -> combL "FieldGet" [someL obj; finfoL finfo]
+        | CombTerm(StaticFieldGetOp(finfo), []) -> combL "FieldGet" [noneL;     finfoL finfo]
+        | CombTerm(InstanceFieldSetOp(finfo), [obj;v]) -> combL "FieldSet" [someL obj; finfoL finfo; expr v;]
+        | CombTerm(StaticFieldSetOp(finfo), [v]) -> combL "FieldSet" [noneL;     finfoL finfo; expr v;]
+        | CombTerm(CoerceOp(ty), [arg]) -> combL "Coerce"  [ expr arg; typeL ty]
         | CombTerm(NewObjectOp cinfo, args) -> combL "NewObject" ([ cinfoL cinfo ] @ exprs args)
         | CombTerm(DefaultValueOp ty, args) -> combL "DefaultValue" ([ typeL ty ] @ exprs args)
         | CombTerm(NewArrayOp ty, args) -> combL "NewArray" ([ typeL ty ] @ exprs args)
@@ -290,8 +333,6 @@ and [<CompiledName("FSharpExpr")>]
         | HoleTerm _ -> wordL (tagLocal "_")
         | CombTerm(QuoteOp _, args) -> combL "Quote" (exprs args)
         | _ -> failwithf "Unexpected term in layout %A" x.Tree
-
-
 
 and [<CompiledName("FSharpExpr`1")>]
     Expr<'T>(term:Tree, attribs) =
@@ -333,7 +374,7 @@ module Patterns =
     let ES ts = List.map E ts
 
     let (|E|) (e: Expr) = e.Tree
-    let (|ES|) (es: list<Expr>) = es |> List.map (fun e -> e.Tree)
+    let (|ES|) (es: Expr list) = es |> List.map (fun e -> e.Tree)
     let (|FrontAndBack|_|) es =
         let rec loop acc xs = match xs with [] -> None | [h] -> Some (List.rev acc, h) | h :: t -> loop (h :: acc) t
         loop [] es
@@ -504,10 +545,40 @@ module Patterns =
         | E(CombTerm(NewObjectOp ty, e)) -> Some(ty, e) | _ -> None
 
     [<CompiledName("CallPattern")>]
-    let (|Call|_|) input =
+    let (|Call|_|)          input =
         match input with
         | E(CombTerm(StaticMethodCallOp minfo, args)) -> Some(None, minfo, args)
-        | E(CombTerm(InstanceMethodCallOp minfo, (obj :: args))) -> Some(Some obj, minfo, args)
+
+        | E(CombTerm(InstanceMethodCallOp minfo, (obj::args))) -> Some(Some(obj), minfo, args)
+
+        // A StaticMethodCallWOp matches as if it were a StaticMethodCallOp
+        | E(CombTerm(StaticMethodCallWOp (minfo, _minfoW, nWitnesses), args)) when nWitnesses <= args.Length  ->
+            Some(None, minfo, List.skip nWitnesses args)
+
+        // A InstanceMethodCallWOp matches as if it were a InstanceMethodCallOp
+        | E(CombTerm(InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), obj::argsWithoutObj)) when nWitnesses <= argsWithoutObj.Length  ->
+            let argsWithoutWitnesses = List.skip nWitnesses argsWithoutObj
+            Some (Some obj, minfo, argsWithoutWitnesses)
+
+        | _ -> None
+
+    [<CompiledName("CallWithWitnessesPattern")>]
+    let (|CallWithWitnesses|_|)          input =
+        match input with
+        | E(CombTerm(StaticMethodCallWOp (minfo, minfoW, nWitnesses), args)) ->
+            if args.Length >= nWitnesses then
+                let witnessArgs, argsWithoutWitnesses = List.splitAt nWitnesses args
+                Some(None, minfo, minfoW, witnessArgs, argsWithoutWitnesses)
+            else
+                None
+
+        | E(CombTerm(InstanceMethodCallWOp (minfo, minfoW, nWitnesses), obj::argsWithoutObj)) ->
+            if argsWithoutObj.Length >= nWitnesses then
+                let witnessArgs, argsWithoutWitnesses = List.splitAt nWitnesses argsWithoutObj
+                Some (Some obj, minfo, minfoW, witnessArgs, argsWithoutWitnesses)
+            else
+                None
+
         | _ -> None
 
     let (|LetRaw|_|) input =
@@ -618,6 +689,8 @@ module Patterns =
             | NewObjectOp ctor, _ -> ctor.DeclaringType
             | InstanceMethodCallOp minfo, _ -> minfo.ReturnType |> removeVoid
             | StaticMethodCallOp minfo, _ -> minfo.ReturnType |> removeVoid
+            | InstanceMethodCallWOp (_, minfoW, _), _ -> minfoW.ReturnType |> removeVoid
+            | StaticMethodCallWOp (_, minfoW, _), _ -> minfoW.ReturnType |> removeVoid
             | CoerceOp ty, _ -> ty
             | SequentialOp, [_;b] -> typeOf b
             | ForIntegerRangeLoopOp, _ -> typeof<Unit>
@@ -663,7 +736,7 @@ module Patterns =
         if (not (assignableFrom expectedType receivedType)) then
           invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
-    let checkArgs (paramInfos: ParameterInfo[]) (args:list<Expr>) =
+    let checkArgs (paramInfos: ParameterInfo[]) (args:Expr list) =
         if (paramInfos.Length <> args.Length) then invalidArg "args" (SR.GetString(SR.QincorrectNumArgs))
         List.iter2
             ( fun (p:ParameterInfo) a -> checkTypesWeakSR p.ParameterType (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam)))
@@ -754,7 +827,7 @@ module Patterns =
         mkFE1 (TupleGetOp (ty, n)) x
 
     // Records
-    let mkNewRecord (ty, args:list<Expr>) =
+    let mkNewRecord (ty, args:Expr list) =
         let mems = FSharpType.GetRecordFields(ty, publicOrPrivateBindingFlags)
         if (args.Length <> mems.Length) then invalidArg  "args" (SR.GetString(SR.QincompatibleRecordLength))
         List.iter2 (fun (minfo:PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "recd" (SR.GetString(SR.QtmmIncorrectArgForRecord))) (Array.toList mems) args
@@ -762,7 +835,7 @@ module Patterns =
 
 
     // Discriminated unions
-    let mkNewUnionCase (unionCase:UnionCaseInfo, args:list<Expr>) =
+    let mkNewUnionCase (unionCase:UnionCaseInfo, args:Expr list) =
         if Unchecked.defaultof<UnionCaseInfo> = unionCase then raise (new ArgumentNullException())
         let sargs = unionCase.GetFields()
         if (args.Length <> sargs.Length) then invalidArg  "args" (SR.GetString(SR.QunionNeedsDiffNumArgs))
@@ -805,7 +878,7 @@ module Patterns =
         | true -> mkFE1 (StaticFieldSetOp finfo) value
         | false -> invalidArg  "finfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstanceFieldSet (obj, finfo:FieldInfo, value:Expr) =
+    let mkInstanceFieldSet (obj, finfo: FieldInfo, value: Expr) =
         if Unchecked.defaultof<FieldInfo> = finfo then raise (new ArgumentNullException())
         checkTypesSR (typeOf value) finfo.FieldType "value" (SR.GetString(SR.QtmmBadFieldType))
         match finfo.IsStatic with
@@ -814,15 +887,15 @@ module Patterns =
             mkFE2 (InstanceFieldSetOp finfo) (obj, value)
         | true -> invalidArg  "finfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkCtorCall (ci:ConstructorInfo, args:list<Expr>) =
+    let mkCtorCall (ci: ConstructorInfo, args: Expr list) =
         if Unchecked.defaultof<ConstructorInfo> = ci then raise (new ArgumentNullException())
         checkArgs (ci.GetParameters()) args
         mkFEN (NewObjectOp ci) args
 
-    let mkDefaultValue (ty:Type) =
+    let mkDefaultValue (ty: Type) =
         mkFE0 (DefaultValueOp ty)
 
-    let mkStaticPropGet (pinfo:PropertyInfo, args:list<Expr>) =
+    let mkStaticPropGet (pinfo:PropertyInfo, args:Expr list) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanRead) then invalidArg  "pinfo" (SR.GetString(SR.QreadingSetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -830,7 +903,7 @@ module Patterns =
         | true -> mkFEN (StaticPropGetOp  pinfo) args
         | false -> invalidArg  "pinfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstancePropGet (obj, pinfo:PropertyInfo, args:list<Expr>) =
+    let mkInstancePropGet (obj, pinfo:PropertyInfo, args:Expr list) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanRead) then invalidArg  "pinfo" (SR.GetString(SR.QreadingSetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -840,7 +913,7 @@ module Patterns =
             mkFEN (InstancePropGetOp pinfo) (obj :: args)
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkStaticPropSet (pinfo:PropertyInfo, args:list<Expr>, value:Expr) =
+    let mkStaticPropSet (pinfo:PropertyInfo, args:Expr list, value:Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanWrite) then invalidArg  "pinfo" (SR.GetString(SR.QwritingGetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -848,7 +921,7 @@ module Patterns =
         | true -> mkFEN (StaticPropSetOp pinfo) (args@[value])
         | false -> invalidArg  "pinfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstancePropSet (obj, pinfo:PropertyInfo, args:list<Expr>, value:Expr) =
+    let mkInstancePropSet (obj, pinfo:PropertyInfo, args:Expr list, value:Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanWrite) then invalidArg  "pinfo" (SR.GetString(SR.QwritingGetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -858,7 +931,7 @@ module Patterns =
             mkFEN (InstancePropSetOp pinfo) (obj :: (args@[value]))
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkInstanceMethodCall (obj, minfo:MethodInfo, args:list<Expr>) =
+    let mkInstanceMethodCall (obj, minfo: MethodInfo, args: Expr list) =
         if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
         checkArgs (minfo.GetParameters()) args
         match minfo.IsStatic with
@@ -867,11 +940,27 @@ module Patterns =
             mkFEN (InstanceMethodCallOp minfo) (obj :: args)
         | true -> invalidArg  "minfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkStaticMethodCall (minfo:MethodInfo, args:list<Expr>) =
+    let mkInstanceMethodCallW (obj, minfo: MethodInfo, minfoW: MethodInfo, nWitnesses: int, args: Expr list) =
+        if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
+        checkArgs (minfoW.GetParameters()) args
+        match minfoW.IsStatic with
+        | false ->
+            checkObj minfo obj
+            mkFEN (InstanceMethodCallWOp (minfo, minfoW, nWitnesses)) (obj::args)
+        | true -> invalidArg  "minfo" (SR.GetString(SR.QstaticWithReceiverObject))
+
+    let mkStaticMethodCall (minfo: MethodInfo, args: Expr list) =
         if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
         checkArgs (minfo.GetParameters()) args
         match minfo.IsStatic with
         | true -> mkFEN (StaticMethodCallOp minfo) args
+        | false -> invalidArg  "minfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
+
+    let mkStaticMethodCallW (minfo: MethodInfo, minfoW: MethodInfo, nWitnesses: int, args: Expr list) =
+        if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
+        checkArgs (minfoW.GetParameters()) args
+        match minfo.IsStatic with
+        | true -> mkFEN (StaticMethodCallWOp (minfo, minfoW, nWitnesses)) args
         | false -> invalidArg  "minfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
     let mkForLoop (v:Var, lowerBound, upperBound, body) =
@@ -893,7 +982,7 @@ module Patterns =
         mkFE1 (NewDelegateOp ty) e
 
     let mkLet (v, e, b) =
-        checkBind (v, e)
+        checkBind (v, e);
         mkLetRaw (e, mkLambda(v, b))
 
     //let mkLambdas(vs, b) = mkRLinear mkLambdaRaw (vs, (b:>Expr))
@@ -903,7 +992,7 @@ module Patterns =
         | [x] -> mkApplication (f, x)
         | _ -> mkApplication (f, mkNewTuple args)
 
-    let mkApplications(f: Expr, es:list<list<Expr>>) = mkLLinear mkTupledApplication (f, es)
+    let mkApplications(f: Expr, es:list<Expr list>) = mkLLinear mkTupledApplication (f, es)
 
     let mkIteratedLambdas(vs, b) = mkRLinear  mkLambda (vs, b)
 
@@ -968,8 +1057,8 @@ module Patterns =
                 let res = typesEqual (resT :: argTs) (haveResT :: haveArgTs)
                 res
             // return MethodInfo for (generic) type's (generic) method
-            match List.tryFind select methInfos with
-            | None          -> raise <| System.InvalidOperationException (SR.GetString SR.QcannotBindToMethod)
+            match List.tryFind select methInfos with    
+            | None -> raise <| System.InvalidOperationException (SR.GetString SR.QcannotBindToMethod)
             | Some methInfo -> methInfo
 
     let bindMethodHelper (parentT: Type, nm, marity, argtys, rty) =
@@ -997,11 +1086,6 @@ module Patterns =
 
     // tries to locate unique function in a given type
     // in case of multiple candidates returns None so bindModuleFunctionWithCallSiteArgs will be used for more precise resolution
-    let bindModuleFunction (ty:Type, nm) =
-        match ty.GetMethods staticBindingFlags |> Array.filter (fun mi -> mi.Name = nm) with
-        | [||] -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
-        | [| res |] -> Some res
-        | _ -> None
 
     let bindModuleFunctionWithCallSiteArgs (ty:Type, nm, argTypes : Type list, tyArgs : Type list) =
         let argTypes = List.toArray argTypes
@@ -1301,8 +1385,8 @@ module Patterns =
         | _ -> invalidArg "tys" (SR.GetString(SR.QexpectedOneType))
 
     let mkNamedTycon (tcName, assembly:Assembly) =
-        match assembly.GetType tcName with
-        | null  ->
+        match assembly.GetType(tcName) with
+        | null ->
             // For some reason we can get 'null' returned here even when a type with the right name exists... Hence search the slow way...
             match (assembly.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with
             | Some ty -> ty
@@ -1351,7 +1435,7 @@ module Patterns =
     let rec u_dtype st : (int -> Type) -> Type =
         let tag = u_byte_as_int st
         match tag with
-        | 0 -> u_int st |> (fun x env     -> env x)
+        | 0 -> u_int st |> (fun x env -> env x)
         | 1 -> u_tup2 u_tyconstSpec (u_list u_dtype) st |> (fun (a, b) env -> a (appL b env))
         | _ -> failwith "u_dtype"
 
@@ -1389,44 +1473,34 @@ module Patterns =
     let rec u_Expr st =
         let tag = u_byte_as_int st
         match tag with
-        | 0 ->
-            let a = u_constSpec st
-            let b = u_dtypes st
-            let args = u_list u_Expr st
-            (fun (env:BindingEnv) ->
-                let args = List.map (fun e -> e env) args
-                let a =
-                    match a with
-                    | Unique v -> v
-                    | Ambiguous f ->
-                        let argTys = List.map typeOf args
-                        f argTys
-                let tyargs = b env.typeInst
-                E (CombTerm (a tyargs, args)))
-        | 1 ->
-            let x = u_VarRef st
-            (fun env -> E(VarTerm (x env)))
-        | 2 ->
-            let a = u_VarDecl st
-            let b = u_Expr st
-            (fun env -> let v = a env in E(LambdaTerm(v, b (addVar env v))))
-        | 3 ->
-            let a = u_dtype st
-            let idx = u_int st
-            (fun env -> E(HoleTerm(a env.typeInst, idx)))
-        | 4 ->
-            let a = u_Expr st
-            (fun env -> mkQuote(a env, true))
-        | 5 ->
-            let a = u_Expr st
-            let attrs = u_list u_Expr st
-            (fun env -> let e = (a env) in EA(e.Tree, (e.CustomAttributes @ List.map (fun attrf -> attrf env) attrs)))
-        | 6 ->
-            let a = u_dtype st
-            (fun env -> mkVar(Var.Global("this", a env.typeInst)))
-        | 7 ->
-            let a = u_Expr st
-            (fun env -> mkQuote(a env, false))
+        | 0 -> u_tup3 u_opSpec u_dtypes (u_list u_Expr) st
+                |> (fun (a, b, args) (env:BindingEnv) ->
+                    let args = List.map (fun e -> e env) args
+                    let a =
+                        match a with
+                        | Unique v -> v
+                        | Ambiguous f ->
+                            let argTys = List.map typeOf args
+                            f argTys
+                    let tyargs = b env.typeInst
+                    E(CombTerm(a tyargs, args )))
+        | 1 -> let x = u_VarRef st
+               (fun env -> E(VarTerm (x env)))
+        | 2 -> let a = u_VarDecl st
+               let b = u_Expr st
+               (fun env -> let v = a env in E(LambdaTerm(v, b (addVar env v))))
+        | 3 -> let a = u_dtype st
+               let idx = u_int st
+               (fun env -> E(HoleTerm(a env.typeInst, idx)))
+        | 4 -> let a = u_Expr st
+               (fun env -> mkQuote(a env, true))
+        | 5 -> let a = u_Expr st
+               let attrs = u_list u_Expr st
+               (fun env -> let e = (a env) in EA(e.Tree, (e.CustomAttributes @ List.map (fun attrf -> attrf env) attrs)))
+        | 6 -> let a = u_dtype st
+               (fun env -> mkVar(Var.Global("this", a env.typeInst)))
+        | 7 -> let a = u_Expr st
+               (fun env -> mkQuote(a env, false))
         | _ -> failwith "u_Expr"
 
     and u_VarDecl st =
@@ -1449,13 +1523,39 @@ module Patterns =
         let case, i = u_tup2 u_UnionCaseInfo u_int st
         (fun tyargs -> getUnionCaseInfoField(case tyargs, i))
 
-    and u_ModuleDefn st =
+    and u_ModuleDefn witnessInfo st =
         let (ty, nm, isProp) = u_tup3 u_NamedType u_string u_bool st
         if isProp then Unique(StaticPropGetOp(bindModuleProperty(ty, nm)))
         else
-        match bindModuleFunction(ty, nm) with
-        | Some mi -> Unique(StaticMethodCallOp mi)
-        | None -> Ambiguous(fun argTypes tyargs -> StaticMethodCallOp(bindModuleFunctionWithCallSiteArgs(ty, nm, argTypes, tyargs)))
+        let meths = ty.GetMethods staticBindingFlags |> Array.filter (fun mi -> mi.Name = nm)
+        match meths with
+        | [||] ->
+            raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
+        | [| minfo |] ->
+            match witnessInfo with
+            | None ->
+                Unique(StaticMethodCallOp(minfo))
+            | Some (nmW, nWitnesses) ->
+                let methsW = ty.GetMethods(staticBindingFlags) |> Array.filter (fun mi -> mi.Name = nmW)
+                match methsW with
+                | [||] ->
+                    raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nmW, ty.ToString()))
+                | [| minfoW |] ->
+                    Unique(StaticMethodCallWOp(minfo, minfoW, nWitnesses))
+                | _ ->
+                    Ambiguous(fun argTypes tyargs ->
+                        let minfoW = bindModuleFunctionWithCallSiteArgs(ty, nm, argTypes, tyargs)
+                        StaticMethodCallWOp(minfo, minfoW, nWitnesses))
+        | _ ->
+            Ambiguous(fun argTypes tyargs ->
+                match witnessInfo with
+                | None ->
+                    let minfo = bindModuleFunctionWithCallSiteArgs(ty, nm, argTypes, tyargs)
+                    StaticMethodCallOp minfo
+                | Some (nmW, nWitnesses) ->
+                    let minfo = bindModuleFunctionWithCallSiteArgs(ty, nm, List.skip nWitnesses argTypes, tyargs)
+                    let minfoW = bindModuleFunctionWithCallSiteArgs(ty, nmW, argTypes, tyargs)
+                    StaticMethodCallWOp(minfo, minfoW, nWitnesses))
 
     and u_MethodInfoData st =
         u_tup5 u_NamedType (u_list u_dtype) u_dtype u_string u_int st
@@ -1470,10 +1570,10 @@ module Patterns =
         let tag = u_byte_as_int st
         match tag with
         | 0 ->
-            match u_ModuleDefn st with
-            | Unique(StaticMethodCallOp minfo) -> (minfo :> MethodBase)
-            | Unique(StaticPropGetOp pinfo) -> (pinfo.GetGetMethod true :> MethodBase)
-            | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
+            match u_ModuleDefn None st with
+            | Unique (StaticMethodCallOp minfo) -> (minfo :> MethodBase)
+            | Unique (StaticPropGetOp pinfo) -> (pinfo.GetGetMethod(true) :> MethodBase)
+            | Ambiguous _ -> raise (System.Reflection.AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 ->
             let ((tc, _, _, methName, _) as data) = u_MethodInfoData st
@@ -1487,26 +1587,44 @@ module Patterns =
             let data = u_CtorInfoData st
             let cinfo = bindGenericCtor data
             (cinfo :> MethodBase)
+        | 3 ->
+            let methNameW = u_string st
+            let nWitnesses = u_int st
+            match u_ModuleDefn (Some (methNameW, nWitnesses)) st with
+            | Unique(StaticMethodCallOp(minfo)) -> (minfo :> MethodBase)
+            | Unique(StaticMethodCallWOp(_minfo, minfoW, _)) -> (minfoW :> MethodBase)
+            | Unique(StaticPropGetOp(pinfo)) -> (pinfo.GetGetMethod(true) :> MethodBase)
+            | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
+            | _ -> failwith "unreachable"
         | _ -> failwith "u_MethodBase"
 
 
-    and u_constSpec st =
+    and instModuleDefnOp r tyargs =
+        match r with
+        | StaticMethodCallOp(minfo) -> StaticMethodCallOp(instMeth(minfo, tyargs))
+        | StaticMethodCallWOp(minfo, minfoW, n) -> StaticMethodCallWOp(instMeth(minfo, tyargs), instMeth(minfoW, tyargs), n)
+        // OK to throw away the tyargs here since this only non-generic values in modules get represented by static properties
+        | x -> x
+
+    and u_opSpec st =
         let tag = u_byte_as_int st
         if tag = 1 then
-            let bindModuleDefn r tyargs =
-                match r with
-                | StaticMethodCallOp minfo -> StaticMethodCallOp(instMeth(minfo, tyargs))
-                // OK to throw away the tyargs here since this only non-generic values in modules get represented by static properties
-                | x -> x
-            match u_ModuleDefn st with
-            | Unique r -> Unique(bindModuleDefn r)
-            | Ambiguous f -> Ambiguous(fun argTypes tyargs -> bindModuleDefn (f argTypes tyargs) tyargs)
+            match u_ModuleDefn None st with
+            | Unique r -> Unique (instModuleDefnOp r)
+            | Ambiguous f -> Ambiguous (fun argTypes tyargs -> instModuleDefnOp (f argTypes tyargs) tyargs)
+        elif tag = 51 then
+            let nmW = u_string st
+            let nWitnesses = u_int st
+            match u_ModuleDefn (Some (nmW, nWitnesses)) st with
+            | Unique r -> Unique(instModuleDefnOp r)
+            | Ambiguous f -> Ambiguous(fun argTypes tyargs -> instModuleDefnOp (f argTypes tyargs) tyargs)
         else
         let constSpec =
             match tag with
             | 0 -> u_void st |> (fun () NoTyArgs -> IfThenElseOp)
+            // 1 taken above
             | 2 -> u_void st |> (fun () NoTyArgs -> LetRecOp)
-            | 3 -> u_NamedType st |> (fun x tyargs -> NewRecordOp (mkNamedType (x, tyargs)))
+            | 3 -> u_NamedType st |> (fun x tyargs -> NewRecordOp (mkNamedType(x, tyargs)))
             | 4 -> u_RecdField st |> (fun prop tyargs -> InstancePropGetOp(prop tyargs))
             | 5 -> u_UnionCaseInfo st |> (fun unionCase tyargs -> NewUnionCaseOp(unionCase tyargs))
             | 6 -> u_UnionCaseField st |> (fun prop tyargs -> InstancePropGetOp(prop tyargs) )
@@ -1528,9 +1646,9 @@ module Patterns =
             | 22 -> u_int64 st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
             | 23 -> u_uint64 st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
             | 24 -> u_void st |> (fun () NoTyArgs -> mkLiftedValueOpG ((), typeof<unit>))
-            | 25 -> u_PropInfoData st |> (fun (a, b, c, d) tyargs -> let pinfo = bindProp(a, b, c, d, tyargs) in if pinfoIsStatic pinfo then StaticPropGetOp pinfo else InstancePropGetOp pinfo)
-            | 26 -> u_CtorInfoData st |> (fun (a, b) tyargs  -> NewObjectOp (bindCtor(a, b, tyargs)))
-            | 28 -> u_void st |> (fun () (OneTyArg ty) -> CoerceOp ty)
+            | 25 -> u_PropInfoData st |> (fun (a, b, c, d) tyargs -> let pinfo = bindProp (a, b, c, d, tyargs) in if pinfoIsStatic pinfo then StaticPropGetOp(pinfo) else InstancePropGetOp(pinfo))
+            | 26 -> u_CtorInfoData st |> (fun (a, b) tyargs -> NewObjectOp (bindCtor (a, b, tyargs)))
+            | 28 -> u_void st |> (fun () (OneTyArg(ty)) -> CoerceOp ty)
             | 29 -> u_void st |> (fun () NoTyArgs -> SequentialOp)
             | 30 -> u_void st |> (fun () NoTyArgs -> ForIntegerRangeLoopOp)
             | 31 -> u_MethodInfoData st |> (fun p tyargs -> let minfo = bindMeth(p, tyargs) in if minfo.IsStatic then StaticMethodCallOp minfo else InstanceMethodCallOp minfo)
@@ -1552,7 +1670,14 @@ module Patterns =
             | 47 -> u_void st |> (fun () NoTyArgs -> TryFinallyOp)
             | 48 -> u_void st |> (fun () NoTyArgs -> TryWithOp)
             | 49 -> u_void st |> (fun () NoTyArgs -> VarSetOp)
-            | _ -> failwithf "u_constSpec, unrecognized tag %d" tag
+            | 50 ->
+                u_tup3 u_MethodInfoData u_MethodInfoData u_int st |> (fun (m1, m2, n) tyargs ->
+                    let minfo = bindMeth (m1, tyargs)
+                    let minfoW = bindMeth (m2, tyargs)
+                    if minfo.IsStatic then StaticMethodCallWOp(minfo, minfoW, n)
+                    else InstanceMethodCallWOp(minfo, minfoW, n))
+            // 51 taken above
+            | _ -> failwithf "u_opSpec, unrecognized tag %d" tag
         Unique constSpec
 
     let u_ReflectedDefinition = u_tup2 u_MethodBase u_Expr
@@ -1776,6 +1901,16 @@ type Expr with
     static member Call (obj:Expr, methodInfo:MethodInfo, arguments) =
         checkNonNull "methodInfo" methodInfo
         mkInstanceMethodCall (obj, methodInfo, arguments)
+
+    static member CallWithWitnesses (methodInfo:MethodInfo, methodInfoWithWitnesses:MethodInfo, witnessArguments, arguments) =
+        checkNonNull "methodInfo" methodInfo
+        checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
+        mkStaticMethodCallW (methodInfo, methodInfoWithWitnesses, List.length witnessArguments, witnessArguments@arguments)
+
+    static member CallWithWitnesses (obj:Expr, methodInfo:MethodInfo, methodInfoWithWitnesses:MethodInfo, witnessArguments, arguments) =
+        checkNonNull "methodInfo" methodInfo
+        checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
+        mkInstanceMethodCallW (obj, methodInfo, methodInfoWithWitnesses, List.length witnessArguments, witnessArguments@arguments)
 
     static member Coerce (source:Expr, target:Type) =
         checkNonNull "target" target
@@ -2096,9 +2231,11 @@ module ExprShape =
             | InstanceFieldSetOp finfo, [obj;v] -> mkInstanceFieldSet(obj, finfo, v)
             | StaticFieldSetOp finfo, [v] -> mkStaticFieldSet(finfo, v)
             | NewObjectOp minfo, _ -> mkCtorCall(minfo, arguments)
-            | DefaultValueOp ty, _ -> mkDefaultValue ty
+            | DefaultValueOp ty, _ -> mkDefaultValue(ty)
             | StaticMethodCallOp minfo, _ -> mkStaticMethodCall(minfo, arguments)
-            | InstanceMethodCallOp minfo, obj :: args -> mkInstanceMethodCall(obj, minfo, args)
+            | InstanceMethodCallOp minfo, obj::args -> mkInstanceMethodCall(obj, minfo, args)
+            | StaticMethodCallWOp (minfo, minfoW, n), _ -> mkStaticMethodCallW(minfo, minfoW, n, arguments)
+            | InstanceMethodCallWOp (minfo, minfoW, n), obj::args -> mkInstanceMethodCallW(obj, minfo, minfoW, n, args)
             | CoerceOp ty, [arg] -> mkCoerce(ty, arg)
             | NewArrayOp ty, _ -> mkNewArray(ty, arguments)
             | NewDelegateOp ty, [arg] -> mkNewDelegate(ty, arg)
