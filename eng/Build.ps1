@@ -359,7 +359,8 @@ try {
         $resultsLog = "test-net40-fsharpqa-results.log"
         $errorLog = "test-net40-fsharpqa-errors.log"
         $failLog = "test-net40-fsharpqa-errors"
-        $perlExe = "$env:USERPROFILE\.nuget\packages\StrawberryPerl64\5.22.2.1\Tools\perl\bin\perl.exe"
+        $perlPackageRoot = "$env:USERPROFILE\.nuget\packages\StrawberryPerl\5.28.0.1";
+        $perlExe = "$perlPackageRoot\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
@@ -367,6 +368,7 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
+        $env:PERL5LIB = "$perlPackageRoot\vendor\lib"
         Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
         Pop-Location
     }

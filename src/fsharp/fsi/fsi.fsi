@@ -125,10 +125,10 @@ type FsiEvaluationSession =
     /// <summary>Create an FsiEvaluationSession, reading from the given text input, writing to the given text output and error writers</summary>
     /// 
     /// <param name="fsiConfig">The dynamic configuration of the evaluation session</param>
-    /// <param name="argv">The commmand line arguments for the evaluation session</param>
+    /// <param name="argv">The command line arguments for the evaluation session</param>
     /// <param name="inReader">Read input from the given reader</param>
     /// <param name="outWriter">Write output to the given writer</param>
-    /// <param name="collectible">Optionally make the dynamic assmbly for the session collectible</param>
+    /// <param name="collectible">Optionally make the dynamic assembly for the session collectible</param>
     static member Create : fsiConfig: FsiEvaluationSessionHostConfig * argv:string[] * inReader:TextReader * outWriter:TextWriter * errorWriter: TextWriter * ?collectible: bool * ?legacyReferenceResolver: ReferenceResolver.Resolver -> FsiEvaluationSession
 
     /// A host calls this to request an interrupt on the evaluation thread.
@@ -177,7 +177,7 @@ type FsiEvaluationSession =
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors are sent to the output writer. Parsing is performed on the current thread, and execution is performed 
-    /// sycnhronously on the 'main' thread.
+    /// synchronously on the 'main' thread.
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
@@ -187,7 +187,7 @@ type FsiEvaluationSession =
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors and warnings are collected apart from any exception arising from execution
     /// which is returned via a Choice. Parsing is performed on the current thread, and execution is performed 
-    /// sycnhronously on the 'main' thread.
+    /// synchronously on the 'main' thread.
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
@@ -222,7 +222,7 @@ type FsiEvaluationSession =
     /// Get a handle to the resolved view of the current signature of the incrementally generated assembly.
     member CurrentPartialAssemblySignature : FSharpAssemblySignature
 
-    /// Get a handle to the dynamicly generated assembly
+    /// Get a handle to the dynamically generated assembly
     member DynamicAssembly : System.Reflection.Assembly
 
     /// A host calls this to determine if the --gui parameter is active
@@ -320,7 +320,7 @@ module Settings =
 
     /// A default implementation of the 'fsi' object, used by GetDefaultConfiguration().  Note this
     /// is a different object to FSharp.Compiler.Interactive.Settings.fsi in FSharp.Compiler.Interactive.Settings.dll,
-    /// which can be used as an alternative implementation of the interactiev settings if passed as a parameter
+    /// which can be used as an alternative implementation of the interactive settings if passed as a parameter
     /// to GetDefaultConfiguration(fsiObj).
     val fsi : InteractiveSettings
 
