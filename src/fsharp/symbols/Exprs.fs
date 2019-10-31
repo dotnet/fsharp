@@ -533,7 +533,7 @@ module FSharpExprConvert =
             let env = env.BindTypars (Seq.zip tps gps |> Seq.toList)
             E.TypeLambda(gps, ConvExpr cenv env b) 
 
-        | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy cenv.g ty -> 
+        | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, _, m) when isDelegateTy cenv.g ty -> 
             let f = mkLambdas m tps tmvs (e, GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
             let fR = ConvExpr cenv env f 
             let tyargR = ConvType cenv ctyp 
@@ -545,7 +545,7 @@ module FSharpExprConvert =
         | Expr.TyChoose _  -> 
             ConvExprPrim cenv env (ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
 
-        | Expr.Obj (_lambdaId, ty, _basev, basecall, overrides, iimpls, _m)      -> 
+        | Expr.Obj (_lambdaId, ty, _basev, basecall, overrides, iimpls, _stateVars, _m)      -> 
             let basecallR = ConvExpr cenv env basecall
             let ConvertMethods methods = 
                 [ for (TObjExprMethod(slotsig, _, tps, tmvs, body, _)) in methods -> 

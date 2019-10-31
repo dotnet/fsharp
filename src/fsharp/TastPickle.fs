@@ -2384,7 +2384,7 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.ArrayLength (n, ty)       -> p_byte 4 st; p_tup2 p_int p_ty (n, ty) st
     | DecisionTreeTest.ActivePatternCase _                   -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
 
-and p_target (TTarget(a, b, _)) st = p_tup2 p_Vals p_expr (a, b) st
+and p_target (TTarget(a, b, _, _)) st = p_tup2 p_Vals p_expr (a, b) st
 and p_bind (TBind(a, b, _)) st = p_tup2 p_Val p_expr (a, b) st
 
 and p_lval_op_kind x st =
@@ -2415,7 +2415,7 @@ and u_dtree_discrim st =
     | 4 -> u_tup2 u_int u_ty st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim"
 
-and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, SuppressSequencePointAtTarget))
+and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, SuppressSequencePointAtTarget, None))
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, NoSequencePointAtStickyBinding)
 
@@ -2560,7 +2560,7 @@ and p_expr expr st =
     | Expr.LetRec (a, b, c, _)            -> p_byte 7 st; p_tup3 p_binds p_expr p_dummy_range (a, b, c) st
     | Expr.Let (a, b, c, _)               -> p_byte 8 st; p_tup3 p_bind p_expr p_dummy_range (a, b, c) st
     | Expr.Match (_, a, b, c, d, e)         -> p_byte 9 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty (a, b, c, d, e) st
-    | Expr.Obj (_, b, c, d, e, f, g)          -> p_byte 10 st; p_tup6 p_ty (p_option p_Val) p_expr p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
+    | Expr.Obj (_, b, c, d, e, f, _stateVars, g) -> p_byte 10 st; p_tup6 p_ty (p_option p_Val) p_expr p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
     | Expr.StaticOptimization (a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr p_expr p_dummy_range (a, b, c, d) st
     | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr p_dummy_range (a, b, c) st
     | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
@@ -2624,7 +2624,7 @@ and u_expr st =
             let e = u_methods st
             let f = u_intfs st
             let g = u_dummy_range st
-            Expr.Obj (newUnique(), b, c, d, e, f, g)
+            Expr.Obj (newUnique(), b, c, d, e, f, [], g)
     | 11 -> let a = u_constraints st
             let b = u_expr st
             let c = u_expr st
