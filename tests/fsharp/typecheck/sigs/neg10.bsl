@@ -35,9 +35,9 @@ neg10.fs(54,17,54,20): typecheck error FS0060: Override implementations in augme
 
 neg10.fs(66,19,66,21): typecheck error FS0069: Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.
 
-neg10.fs(77,27,77,34): typecheck error FS0896: Enumerations cannot have members
+neg10.fs(77,13,77,34): typecheck error FS0896: Enumerations cannot have members
 
-neg10.fs(84,20,84,29): typecheck error FS0896: Enumerations cannot have members
+neg10.fs(84,13,84,29): typecheck error FS0896: Enumerations cannot have members
 
 neg10.fs(90,23,90,41): typecheck error FS0907: Enumerations cannot have interface declarations
 
@@ -45,11 +45,11 @@ neg10.fs(99,23,99,29): typecheck error FS0907: Enumerations cannot have interfac
 
 neg10.fs(107,10,107,17): typecheck error FS0964: Type abbreviations cannot have augmentations
 
-neg10.fs(109,27,109,34): typecheck error FS0895: Type abbreviations cannot have members
+neg10.fs(109,13,109,34): typecheck error FS0895: Type abbreviations cannot have members
 
 neg10.fs(114,10,114,17): typecheck error FS0964: Type abbreviations cannot have augmentations
 
-neg10.fs(116,20,116,29): typecheck error FS0895: Type abbreviations cannot have members
+neg10.fs(116,13,116,29): typecheck error FS0895: Type abbreviations cannot have members
 
 neg10.fs(120,10,120,17): typecheck error FS0964: Type abbreviations cannot have augmentations
 

@@ -2883,7 +2883,7 @@ namespace Microsoft.FSharp.Core
     //-------------------------------------------------------------------------
 
     [<DefaultAugmentation(false)>]
-    [<DebuggerDisplay("Some({Value})")>]
+    [<DebuggerDisplay("{DebugDisplay,nq}")>]
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Option")>]
     [<StructuralEquality; StructuralComparison>]
@@ -2907,6 +2907,11 @@ namespace Microsoft.FSharp.Core
         static member Some (value) : 'T option = Some(value)
 
         static member op_Implicit (value) : 'T option = Some(value)
+        
+        member private x.DebugDisplay =
+            match x with
+            | None -> "None"
+            | Some _ -> String.Format("Some({0})", anyToStringShowingNull x.Value)
 
         override x.ToString() = 
            // x is non-null, hence Some
@@ -2924,7 +2929,7 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<Struct>]
     [<CompiledName("FSharpValueOption`1")>]
-    [<DebuggerDisplay("ValueSome({Value})")>]
+    [<DebuggerDisplay("{DebugDisplay,nq}")>]
     type ValueOption<'T> =
         | ValueNone : 'T voption
         | ValueSome : 'T -> 'T voption
@@ -2942,11 +2947,17 @@ namespace Microsoft.FSharp.Core
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member x.IsSome = match x with ValueSome _ -> true | _ -> false
 
-        static member op_Implicit (value) : 'T option = Some(value)
+        static member op_Implicit (value) : 'T voption = ValueSome(value)
+        
+        member private x.DebugDisplay =
+            match x with
+            | ValueNone -> "ValueNone"
+            | ValueSome _ -> String.Format("ValueSome({0})", anyToStringShowingNull x.Value)
 
-        override x.ToString() = 
-           // x is non-null, hence ValueSome
-           "ValueSome("^anyToStringShowingNull x.Value^")"
+        override x.ToString() =
+            match x with
+            | ValueNone -> "ValueNone"
+            | ValueSome _ -> anyToStringShowingNull x.Value
 
     and 'T voption = ValueOption<'T>
 

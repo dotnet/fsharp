@@ -47,7 +47,7 @@ let code_instr2instr_ty2ty  (finstr,fty) (c:ILCode) =
            Exceptions = c.Exceptions |> List.map (fun e -> { e with Clause = e.Clause |> (function ILExceptionClause.TypeCatch (ilty, b) -> ILExceptionClause.TypeCatch (fty ilty, b) | cl -> cl) }) } 
 
 // --------------------------------------------------------------------
-// Standard morphisms - mapping tyes etc.
+// Standard morphisms - mapping types etc.
 // -------------------------------------------------------------------- 
 
 let rec ty_tref2tref f x  = 

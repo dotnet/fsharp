@@ -286,7 +286,7 @@ let addFreeItemOfTy ty eUngeneralizableItems =
     if isEmptyFreeTyvars fvs then eUngeneralizableItems 
     else UngeneralizableItem(fun () -> freeInType CollectAllNoCaching ty) :: eUngeneralizableItems
 
-/// Add the contents of a module type to the TcEnv, i.e. register the contants as ungeneralizable.
+/// Add the contents of a module type to the TcEnv, i.e. register the contents as ungeneralizable.
 /// Add a module type to the TcEnv, i.e. register it as ungeneralizable.
 let addFreeItemOfModuleTy mtyp eUngeneralizableItems = 
     let fvs = freeInModuleTy mtyp
@@ -410,7 +410,7 @@ let AddNonLocalCcu g amap scopem env assemblyName (ccu: CcuThunk, internalsVisib
         { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.Yes false g amap env.eAccessRights scopem true env.eNameResEnv tcrefs }
     env
 
-/// Adjust the TcEnv to account for a fully processed "namespace" declaration in thie file
+/// Adjust the TcEnv to account for a fully processed "namespace" declaration in this file
 let AddLocalRootModuleOrNamespace tcSink g amap scopem env (mtyp: ModuleOrNamespaceType) = 
     // Compute the top-rooted module or namespace references
     let modrefs = mtyp.ModuleAndNamespaceDefinitions |> List.map mkLocalModRef
@@ -1278,7 +1278,7 @@ let GeneralizedTypeForTypeScheme typeScheme =
     let (TypeScheme(generalizedTypars, tau)) = typeScheme
     mkForallTyIfNeeded generalizedTypars tau
 
-/// Create a type scheme for somthing that is not generic
+/// Create a type scheme for something that is not generic
 let NonGenericTypeScheme ty = TypeScheme([], ty)
 
 //-------------------------------------------------------------------------
@@ -2456,7 +2456,7 @@ type NormalizedBinding =
   | NormalizedBinding of 
       SynAccess option *
       SynBindingKind *
-      bool * (* pesudo/mustinline value? *)
+      bool * (* pseudo/mustinline value? *)
       bool * (* mutable *)
       SynAttribute list * 
       XmlDoc *
@@ -3966,10 +3966,10 @@ let EliminateInitializationGraphs
 // Check the shape of an object constructor and rewrite calls 
 //------------------------------------------------------------------------- 
 
-let CheckAndRewriteObjectCtor g env (ctorLambaExpr: Expr) =
+let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
 
-    let m = ctorLambaExpr.Range
-    let tps, vsl, body, returnTy = stripTopLambda (ctorLambaExpr, tyOfExpr g ctorLambaExpr)
+    let m = ctorLambdaExpr.Range
+    let tps, vsl, body, returnTy = stripTopLambda (ctorLambdaExpr, tyOfExpr g ctorLambdaExpr)
 
     // Rewrite legitimate self-construction calls to CtorValUsedAsSelfInit 
     let error (expr: Expr) = 
@@ -4180,7 +4180,7 @@ type NewSlotsOK =
     | NoNewSlots
 
 
-type ImplictlyBoundTyparsAllowed = 
+type ImplicitlyBoundTyparsAllowed = 
     | NewTyparsOKButWarnIfNotRigid 
     | NewTyparsOK 
     | NoNewTypars
@@ -5806,7 +5806,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     // LanguageFeatures.ImplicitYield do not require this validation
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
     let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
-    let validateExpressionWithIfRequiresParenethesis = not implicitYieldEnabled
+    let validateExpressionWithIfRequiresParenthesis = not implicitYieldEnabled
     let acceptDeprecatedIfThenExpression = not implicitYieldEnabled
 
     match synExpr with 
@@ -6022,7 +6022,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems as body), _) -> 
             match body with
             | SimpleSemicolonSequence cenv false _ -> ()
-            | _ when validateExpressionWithIfRequiresParenethesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
+            | _ when validateExpressionWithIfRequiresParenthesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
             | _ -> ()
 
             let replacementExpr = 
@@ -9314,7 +9314,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                 -> false
 
 
-        // Propagte the known application structure into function types
+        // Propagate the known application structure into function types
         Propagate cenv overallTy env tpenv (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) delayed
 
         // Take all simple arguments and process them before applying the constraint.
@@ -9362,7 +9362,8 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                 if isByrefTy g vty then 
                     destByrefTy g vty 
                 else 
-                    if not vref.IsMutable then error (ValNotMutable(env.DisplayEnv, vref, mStmt))
+                    if not vref.IsMutable then
+                        errorR (ValNotMutable (env.DisplayEnv, vref, mStmt))
                     vty 
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false vty2 env tpenv e2
@@ -9415,15 +9416,15 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             if meths.IsEmpty then 
                 let meths = pinfos |> GettersOfPropInfos
                 let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
-                if isByrefMethReturnSetter then
-                    // x.P <- ... byref setter
-                    if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-                    TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
-                else
-                    error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                if not isByrefMethReturnSetter then
+                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                // x.P <- ... byref setter
+                if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
+                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
             else
                 let args = if pinfo.IsIndexer then args else []
-                if isNil meths then error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                if isNil meths then
+                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
                 // Note: static calls never mutate a struct object argument
                 TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
         | _ -> 
@@ -9600,12 +9601,11 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
             if meths.IsEmpty then 
                 let meths = pinfos |> GettersOfPropInfos
                 let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy cenv.g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
-                if isByrefMethReturnSetter then
-                    // x.P <- ... byref setter
-                    if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-                    TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed 
-                else
-                    error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                if not isByrefMethReturnSetter then
+                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                // x.P <- ... byref setter
+                if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
+                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed 
             else
                 let args = if pinfo.IsIndexer then args else []
                 let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
@@ -9700,7 +9700,7 @@ and TcEventValueThen cenv overallTy env tpenv mItem mExprAndItem objDetails (ein
         | None -> f []
         | Some (objExpr, objExprTy) -> mkCompGenLetIn mItem "eventTarget" objExprTy objExpr (fun (_, ve) -> f [ve]) 
 
-    // Bind the object target expression to make sure we only run its sdie effects once, and to make 
+    // Bind the object target expression to make sure we only run its side effects once, and to make 
     // sure if it's a mutable reference then we dereference it - see FSharp 1.0 bug 942 
     let expr = 
         bindObjArgs (fun objVars -> 
@@ -9849,7 +9849,7 @@ and TcMethodApplication
             // The arguments are passed as if they are curried with arity [numberOfIndexParameters;1], however in the TAST, indexed property setters
             // are uncurried and have arity [numberOfIndexParameters+1].
             //
-            // Here we work around this mismatch by crunching all property argument lists to uncirred form. 
+            // Here we work around this mismatch by crunching all property argument lists to uncurried form. 
             // Ideally the problem needs to be solved at its root cause at the callsites to this function
             let unnamedCurriedCallerArgs, namedCurriedCallerArgs = 
                 if isProp then 
@@ -11173,7 +11173,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
 /// RECAP:
 ///   The LHS of let-bindings are patterns.
 ///   These patterns could fail, e.g. "let Some x = ...".
-///   So letbindings could contain a fork at a match construct, with one branch being the match failure.
+///   So let bindings could contain a fork at a match construct, with one branch being the match failure.
 ///   If bindings are linearised, then this fork is pushed to the RHS.
 ///   In this case, the let bindings type check to a sequence of bindings.
 and TcLetBindings cenv env containerInfo declKind tpenv (binds, bindsm, scopem) =
@@ -11416,7 +11416,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
     let vis = CombineVisibilityAttribs vis1 vis2 mBinding
 
     // Check if we're defining a member, in which case generate the internal unique 
-    // name for the member and the information about which type it is agumenting 
+    // name for the member and the information about which type it is augmenting 
       
     match tcrefContainerInfo, memberFlagsOpt with 
     | (Some(MemberOrValContainerInfo(tcref, optIntfSlotTy, baseValOpt, _safeInitInfo, declaredTyconTypars)), Some memberFlags) -> 
@@ -11636,7 +11636,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
     let isComplete = ComputeIsComplete enclosingDeclaredTypars declaredTypars ty
     
     // NOTE: The type scheme here is normally not 'complete'!!!! The type is more or less just a type variable at this point. 
-    // NOTE: toparity, type and typars get fixed-up after inference 
+    // NOTE: top arity, type and typars get fixed-up after inference 
     let prelimTyscheme = TypeScheme(enclosingDeclaredTypars@declaredTypars, ty)
     let partialValReprInfo = TranslateTopValSynInfo mBinding (TcAttributes cenv envinner) valSynInfo
     let topValInfo = UseSyntacticArity declKind prelimTyscheme partialValReprInfo
@@ -11813,7 +11813,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
         // -    This table is usually much smaller than the number of remaining forward declarations ? e.g. in the pathological case you mentioned below this table is size 1. 
         // -    If a forward declaration does not have an entry in this table then its type can't involve any inference variables from the declarations we have already checked. 
         // -    So by scanning the domain of this table we can reduce the complexity down to something like O(n * average-number-of-forward-calls). 
-        // -    For a fully connected programs or programs where every forward declaration is subject to a forward call, this would be quadratic. However we do not expect callgraphs to be like this in practice
+        // -    For a fully connected programs or programs where every forward declaration is subject to a forward call, this would be quadratic. However we do not expect call graphs to be like this in practice
         // 
         // Hence we use the recursive-uses table to guide the process of scraping forward references for frozen types
         // If the is no entry in the recursive use table then a forward binding has never been used and
@@ -12180,8 +12180,8 @@ and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
             
         let results = 
            EliminateInitializationGraphs 
-             (fun _ -> failwith "unreachable 2 - no type definitions in recursivve group")
-             (fun _ _ -> failwith "unreachable 3 - no type definitions in recursivve group")
+             (fun _ -> failwith "unreachable 2 - no type definitions in recursive group")
+             (fun _ _ -> failwith "unreachable 3 - no type definitions in recursive group")
              id
              (fun morpher oldBinds -> morpher oldBinds)
              cenv.g mustHaveArity env.DisplayEnv [MutRecShape.Lets bindsWithoutLaziness] bindsm
@@ -12540,7 +12540,7 @@ module IncrClassChecking =
             TyconRef: TyconRef
 
             /// The type parameters allocated for the implicit instance constructor. 
-            /// These may be equated with other (WillBeRigid) type parameters through equirecursive inference, and so 
+            /// These may be equated with other (WillBeRigid) type parameters through equi-recursive inference, and so 
             /// should always be renormalized/canonicalized when used.
             InstanceCtorDeclaredTypars: Typars     
 
@@ -12582,7 +12582,7 @@ module IncrClassChecking =
 
     /// Check and elaborate the "left hand side" of the implicit class construction 
     /// syntax.
-    let TcImplictCtorLhs_Phase2A(cenv, env, tpenv, tcref: TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy) =
+    let TcImplicitCtorLhs_Phase2A(cenv, env, tpenv, tcref: TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy) =
 
         let baseValOpt = 
             match GetSuperTypeOfType cenv.g cenv.amap m objTy with 
@@ -13164,12 +13164,12 @@ module IncrClassChecking =
                           // Note: the recursive calls are made via members on the object
                           // or via access to fields. This means the recursive loop is "broken", 
                           // and we can collapse to sequential bindings 
-                          let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ValNowWithRepresentation bind.Var) // inscope before
+                          let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ValNowWithRepresentation bind.Var) // in scope before
                           let actions, methodBinds = binds |> List.map (TransBind reps) |> List.unzip // since can occur in RHS of own defns 
                           actions, reps, methodBinds
                       else 
                           let actions, methodBinds = binds |> List.map (TransBind reps) |> List.unzip
-                          let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ValNowWithRepresentation bind.Var) // inscope after
+                          let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ValNowWithRepresentation bind.Var) // in scope after
                           actions, reps, methodBinds
                   let methodBinds = List.concat methodBinds
                   if isStatic then 
@@ -13439,16 +13439,16 @@ module MutRecBindingChecking =
                 // Class members can access protected members of the implemented type 
                 // Class members can access private members in the ty
                 let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
-                let initalEnvForTycon = MakeInnerEnvForTyconRef envForDecls tcref isExtrinsic 
+                let initialEnvForTycon = MakeInnerEnvForTyconRef envForDecls tcref isExtrinsic 
 
                 // Re-add the type constructor to make it take precedence for record label field resolutions
                 // This does not apply to extension members: in those cases the relationship between the record labels
                 // and the type is too extruded
                 let envForTycon = 
                     if isExtrinsic then 
-                        initalEnvForTycon
+                        initialEnvForTycon
                     else
-                        AddLocalTyconRefs true g cenv.amap tcref.Range [tcref] initalEnvForTycon
+                        AddLocalTyconRefs true g cenv.amap tcref.Range [tcref] initialEnvForTycon
 
                 // Make fresh version of the class type for type checking the members and lets *
                 let _, copyOfTyconTypars, _, objTy, thisTy = FreshenObjectArgType cenv tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
@@ -13477,7 +13477,7 @@ module MutRecBindingChecking =
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
                             // Phase2A: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
-                            let incrClassCtorLhs = TcImplictCtorLhs_Phase2A(cenv, envForTycon, tpenv, tcref, vis, attrs, spats, thisIdOpt, baseValOpt, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy)
+                            let incrClassCtorLhs = TcImplicitCtorLhs_Phase2A(cenv, envForTycon, tpenv, tcref, vis, attrs, spats, thisIdOpt, baseValOpt, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy)
                             // Phase2A: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
                             let envForTycon = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
                             let innerState = (Some incrClassCtorLhs, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
@@ -14451,7 +14451,7 @@ module TyconConstraintInference =
                            yield tycon.Stamp ]
 
         // Initially, don't assume that the equality relation is dependent on any type variables
-        let initialAsssumedTypars = Set.empty
+        let initialAssumedTypars = Set.empty
 
         // Repeatedly eliminate structural type definitions whose structural component types no longer support 
         // comparison. On the way record type variables which are support the comparison relation.
@@ -14557,7 +14557,7 @@ module TyconConstraintInference =
             else 
                 loop newSet !assumedTyparsAcc
 
-        let uneliminatedTycons, assumedTyparsActual = loop initialAssumedTycons initialAsssumedTypars
+        let uneliminatedTycons, assumedTyparsActual = loop initialAssumedTycons initialAssumedTypars
 
         // OK, we're done, Record the results for the type variable which provide the support
         for tyconStamp in uneliminatedTycons do
@@ -14598,7 +14598,7 @@ module TyconConstraintInference =
                     if tp.Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then 
                         true
 
-                    // Within structural types, type parameters can be optimistically assumed to have ewquality
+                    // Within structural types, type parameters can be optimistically assumed to have equality
                     // We record the ones for which we have made this assumption.
                     elif tycon.Typars(tycon.Range) |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
                         assumedTyparsAcc := (!assumedTyparsAcc).Add(tp.Stamp)
@@ -15415,7 +15415,7 @@ module EstablishTypeDefinitionCores =
         with e -> 
             errorRecovery e m
 
-    // Third phase: check and publish the supr types. Run twice, once before constraints are established
+    // Third phase: check and publish the super types. Run twice, once before constraints are established
     // and once after
     let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns: MutRecShape<(_ * (Tycon * (Attribs * _)) option), _, _, _, _> list) = 
         let checkCxs = if (pass = SecondPass) then CheckCxs else NoCheckCxs
@@ -15545,7 +15545,7 @@ module EstablishTypeDefinitionCores =
             let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
             
             // REVIEW: for hasMeasureableAttr we need to be stricter about checking these
-            // are only used on exactly the right kinds of type definitions and not inconjunction with other attributes.
+            // are only used on exactly the right kinds of type definitions and not in conjunction with other attributes.
             let hasMeasureableAttr = HasFSharpAttribute g g.attrib_MeasureableAttribute attrs
             let hasCLIMutable = HasFSharpAttribute g g.attrib_CLIMutableAttribute attrs
             
@@ -16433,7 +16433,7 @@ module TcDeclarations =
                       | SynMemberDefn.Inherit _ 
                       | SynMemberDefn.AbstractSlot _ -> false)
 
-                // Convert autoproperties to let bindings in the pre-list
+                // Convert auto properties to let bindings in the pre-list
                 let rec preAutoProps memb =
                     match memb with 
                     | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, _, xmlDoc, _access, synExpr, _mGetSet, mWholeAutoProp) -> 
@@ -16460,7 +16460,7 @@ module TcDeclarations =
                     | SynMemberDefn.ImplicitInherit _ -> [memb]
                     | _ -> []
 
-                // Convert autoproperties to member bindings in the post-list
+                // Convert auto properties to member bindings in the post-list
                 let rec postAutoProps memb =
                     match memb with 
                     | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, memberFlags, xmlDoc, access, _synExpr, mGetSetOpt, _mWholeAutoProp) ->

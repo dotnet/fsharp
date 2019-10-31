@@ -1367,7 +1367,7 @@ let p_tys = (p_list p_ty)
 let fill_p_attribs, p_attribs = p_hole()
 
 // In F# 4.5, the type of the "this" pointer for structs is considered to be inref for the purposes of checking the implementation
-// of the struct.  However for backwards compat reaons we can't serialize this as the type.
+// of the struct.  However for backwards compat reasons we can't serialize this as the type.
 let checkForInRefStructThisArg st ty =
     let g = st.oglobals
     let _, tauTy = tryDestForallTy g ty
@@ -2162,7 +2162,7 @@ and u_entity_spec_data st : Entity =
                        entity_xmldoc= defaultArg x15 XmlDoc.Empty
                        entity_xmldocsig = System.String.Empty
                        entity_tycon_abbrev = x8
-                       entity_accessiblity = x4a
+                       entity_accessibility = x4a
                        entity_tycon_repr_accessibility = x4b
                        entity_exn_info = x14 }
     }

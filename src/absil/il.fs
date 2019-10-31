@@ -2961,7 +2961,7 @@ let mkILNonGenericEmptyCtor tag superTy =
     mkILCtor (ILMemberAccess.Public, [], mkMethodBody (false, [], 8, nonBranchingInstrsToCode ctor, tag))
 
 // --------------------------------------------------------------------
-// Make a static, top level monomophic method - very useful for
+// Make a static, top level monomorphic method - very useful for
 // creating helper ILMethodDefs for internal use.
 // --------------------------------------------------------------------
 
@@ -3323,7 +3323,7 @@ let mkILSimpleModule assemblyName modname dll subsystemVersion useHighEntropyVA 
 // [instructions_to_code] makes the basic block structure of code from
 // a primitive array of instructions. We
 // do this be iterating over the instructions, pushing new basic blocks
-// everytime we encounter an address that has been recorded
+// every time we encounter an address that has been recorded
 // [bbstartToCodeLabelMap].
 //-----------------------------------------------------------------------
 

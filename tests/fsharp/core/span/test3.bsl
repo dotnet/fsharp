@@ -10,5 +10,5 @@ test3.fsx(47,21,47,27): typecheck error FS0027: This value is not mutable. Consi
 test3.fsx(46,26,46,27): typecheck error FS0193: Type constraint mismatch. The type 
     'Span<int>'    
 is not compatible with type
-    'seq<'a>'    
+    'seq<int>'    
 

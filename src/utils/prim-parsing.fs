@@ -339,7 +339,7 @@ module internal Implementation =
                     if errorSuppressionCountDown > 0 then 
                         errorSuppressionCountDown <- errorSuppressionCountDown - 1
 #if DEBUG
-                        if Flags.debug then Console.WriteLine("shifting, reduced errorRecoverylevel to {0}\n", errorSuppressionCountDown)
+                        if Flags.debug then Console.WriteLine("shifting, reduced errorRecoveryLevel to {0}\n", errorSuppressionCountDown)
 #endif
                     let nextState = actionValue action                                     
                     if not haveLookahead then failwith "shift on end of input!"

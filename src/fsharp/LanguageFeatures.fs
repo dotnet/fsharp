@@ -61,7 +61,7 @@ type LanguageVersion (specifiedVersion) =
         match specifiedVersion with
         | "?" -> 0m
         | "preview" -> previewVersion
-        | "default" -> latestVersion
+        | "default" -> defaultVersion
         | "latest" -> latestVersion
         | "latestmajor" -> latestMajorVersion
         | _ ->
@@ -95,4 +95,4 @@ type LanguageVersion (specifiedVersion) =
             |]
 
     /// Get the specified LanguageVersion
-    member __.SpecifiedVerson = specified
+    member __.SpecifiedVersion = specified
