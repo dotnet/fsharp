@@ -421,14 +421,6 @@ type IncrementalOptimizationEnv =
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
-let SetAbstractBigTargetsOn cenv =
-    { cenv with 
-        settings = 
-            { cenv.settings with
-                abstractBigTargets = true
-            }
-    }
-
 //-------------------------------------------------------------------------
 // IsPartialExprVal - is the expr fully known?
 //------------------------------------------------------------------------- 
