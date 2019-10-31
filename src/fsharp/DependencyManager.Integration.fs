@@ -100,12 +100,14 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Key      = instance |> keyProperty
         member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, packageManagerTextLines, tfm) =
             let key = (this :> IDependencyManagerProvider).Key
-            let eventValue = String.Join("\n", packageManagerTextLines)
-            dependencyAddingEvent.Trigger(key, eventValue)
+            let triggerEvent (evt: Event<string * string>) =
+                for prLine in packageManagerTextLines do
+                    evt.Trigger(key, prLine)
+            triggerEvent dependencyAddingEvent
             let arguments = [| box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines; box tfm |]
             let succeeded, generatedScripts, additionalIncludeFolders = resolveDeps.Invoke(instance, arguments) :?> _
-            if succeeded then dependencyAddedEvent.Trigger(key, eventValue)
-            else dependencyFailedEvent.Trigger(key, eventValue)
+            if succeeded then triggerEvent dependencyAddedEvent
+            else triggerEvent dependencyFailedEvent
             succeeded, generatedScripts, additionalIncludeFolders
         member __.DependencyAdding = dependencyAddingEvent.Publish
         member __.DependencyAdded = dependencyAddedEvent.Publish

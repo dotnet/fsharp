@@ -80,7 +80,7 @@ type DependencyManagerInteractiveTests() =
             dependencyAddedEventCount <- dependencyAddedEventCount + 1
             foundDependencyAdded <- foundDependencyAdded || (key = "nuget" && dependency = referenceText))
             script.DependencyAdded
-        script.Eval(text) |> getValue |> ignore
+        script.Eval(text) |> ignoreValue
         Assert.AreEqual(1, dependencyAddingEventCount)
         Assert.AreEqual(1, dependencyAddedEventCount)
         Assert.AreEqual(true, foundDependencyAdding)
@@ -107,8 +107,17 @@ type DependencyManagerInteractiveTests() =
             dependencyFailedEventCount <- dependencyFailedEventCount + 1
             foundDependencyFailed <- foundDependencyFailed || (key = "nuget" && dependency = referenceText))
             script.DependencyFailed
-        script.Eval(text) |> getValue |> ignore
+        script.Eval(text) |> ignoreValue
         Assert.AreEqual(1, dependencyAddingEventCount)
         Assert.AreEqual(1, dependencyFailedEventCount)
         Assert.AreEqual(true, foundDependencyAdding)
         Assert.AreEqual(true, foundDependencyFailed)
+
+    [<Test>]
+    member __.``Dependency add events aren't repeated``() =
+        use script = scriptHost()
+        let mutable dependencyAddingEventCount = 0
+        Event.add (fun _ -> dependencyAddingEventCount <- dependencyAddingEventCount + 1) script.DependencyAdding
+        script.Eval("#r \"nuget:System.Collections.Immutable, Version=1.5.0\"") |> ignoreValue
+        script.Eval("#r \"nuget:Newtonsoft.Json, Version=9.0.1\"\n0") |> ignoreValue
+        Assert.AreEqual(2, dependencyAddingEventCount)
