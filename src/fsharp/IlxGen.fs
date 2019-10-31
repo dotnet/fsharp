@@ -2222,8 +2222,6 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
 
   | Expr.Const (c, m, ty) ->
       GenConstant cenv cgbuf eenv (c, m, ty) sequel
-  //| Expr.Match (spBind, exprm, tree, targets, m, ty) ->
-    //  GenMatch cenv cgbuf eenv (spBind, exprm, tree, targets, m, ty) sequel
   | Expr.LetRec (binds, body, m, _) ->
       GenLetRec cenv cgbuf eenv (binds, body, m) sequel
   | Expr.Lambda _ | Expr.TyLambda _ ->
