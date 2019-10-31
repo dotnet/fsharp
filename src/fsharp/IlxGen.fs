@@ -4383,9 +4383,6 @@ and GenGenericParams cenv eenv tps =
 and GenGenericArgs m (tyenv: TypeReprEnv) tps =
     tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv.[c, m]))
 
-and DelayGenMethodForLambda cenv mgbuf eenv args =
-    cenv.delayedGenMethods.Enqueue(fun cenv -> GenMethodForLambda cenv mgbuf eenv args)
-
 and GenMethodForLambda cenv mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m) =
     let g = cenv.g
     let ilCloBody = CodeGenMethodForExpr cenv mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
@@ -4453,10 +4450,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
           | Some v -> [(v, BranchCallClosure (cloinfo.cloArityInfo))]
           | _ -> []
 
-        if cenv.exprRecursionDepth > 0 then
-            DelayGenMethodForLambda cenv cgbuf.mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m)
-        else
-            GenMethodForLambda cenv cgbuf.mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m)
+        GenMethodForLambda cenv cgbuf.mgbuf eenv (entryPointInfo, cloinfo, eenvinner, body, isLocalTypeFunc, m)
         cloinfo, m
 
     | _ -> failwith "GenLambda: not a lambda"
