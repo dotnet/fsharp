@@ -190,13 +190,19 @@ let parseAndCheckScript (file, input) =
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
     try Directory.CreateDirectory(location) |> ignore with _ -> ()
-    let projPath = Path.Combine(location, name + ".fsproj")
     let filePath = Path.Combine(location, name + ".fs")
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
+
+open FSharp.Compiler.Ast
+
+let parseSourceCodeAndGetModule (source: string) =
+    match parseSourceCode ("test", source) with
+    | Some (ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, [ moduleOrNamespace ], _))) -> moduleOrNamespace
+    | _ -> failwith "Could not get module decls"
 
 /// Extract range info 
 let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
