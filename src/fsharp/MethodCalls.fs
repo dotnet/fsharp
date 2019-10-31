@@ -498,6 +498,9 @@ type CalledMeth<'T>
 
     member x.TotalNumAssignedNamedArgs = x.ArgSets |> List.sumBy (fun x -> x.NumAssignedNamedArgs)
 
+    override x.ToString() = "call to " + minfo.ToString()
+
+
 let NamesOfCalledArgs (calledArgs: CalledArg list) = 
     calledArgs |> List.choose (fun x -> x.NameOpt) 
 
@@ -1035,12 +1038,12 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
     retTy
     
 /// Build a call to an F# method.
-let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
+let BuildFSharpMethodCall g m (vref: ValRef) valUseFlags declaringTypeInst minst args =
     let vexp = Expr.Val (vref, valUseFlags, m)
     let vexpty = vref.Type
-    let tpsorig, tau =  vref.TypeScheme
-    let vtinst = argsOfAppTy g ty @ minst
-    if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch", m))
+    let tpsorig,tau =  vref.TypeScheme
+    let vtinst = declaringTypeInst @ minst
+    if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected typar length mismatch",m))
     let expr = mkTyAppExpr m (vexp, vexpty) vtinst
     let exprty = instType (mkTyparInst tpsorig vtinst) tau
     BuildFSharpMethodApp g m vref expr exprty args
@@ -1050,15 +1053,20 @@ let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
 /// calls to the type-directed solutions to member constraints.
 let MakeMethInfoCall amap m minfo minst args =
     let valUseFlags = NormalValUse // correct unless if we allow wild trait constraints like "T has a ctor and can be used as a parent class" 
+
     match minfo with 
-    | ILMeth(g, ilminfo, _) -> 
+
+    | ILMeth(g,ilminfo,_) -> 
         let direct = not minfo.IsVirtual
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         BuildILMethInfoCall g amap m isProp ilminfo valUseFlags minst  direct args |> fst
-    | FSMeth(g, ty, vref, _) -> 
-        BuildFSharpMethodCall g m (ty, vref) valUseFlags minst args |> fst
-    | DefaultStructCtor(_, ty) -> 
-       mkDefault (m, ty)
+
+    | FSMeth(g, _, vref, _) -> 
+        BuildFSharpMethodCall g m vref valUseFlags minfo.DeclaringTypeInst minst args |> fst
+
+    | DefaultStructCtor(_,ty) -> 
+       mkDefault (m,ty)
+
 #if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap, mi, _, m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 

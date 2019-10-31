@@ -1778,8 +1778,6 @@ module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnnown
 
     let inline Test2< ^t> a = Test<X, ^t> a
 
-    // NOTE, this is seen to be a bug, see https://github.com/Microsoft/visualfsharp/issues/3814
-    // The result should be 2.  
     // This test has been added to pin down current behaviour pending a future bug fix.
     check "slvde0vver90u1" (Test2<int> 0) 1
     check "slvde0vver90u2" (Test2<int64> 0L) 1

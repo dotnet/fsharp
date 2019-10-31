@@ -1707,7 +1707,6 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     let optSettings = tcConfig.optSettings 
     let optSettings = { optSettings with abstractBigTargets = tcConfig.doTLR }
     let optSettings = { optSettings with reportingPhase = true }
-            
     let results, (optEnvFirstLoop, _, _, _) = 
         ((optEnv0, optEnv0, optEnv0, SignatureHidingInfo.Empty), implFiles) 
         

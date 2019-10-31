@@ -472,6 +472,8 @@ type TyconRefMap<'T> =
     /// Determine if the map is empty
     member IsEmpty : bool
 
+    member Contents : StampMap<'T>
+
     /// The empty map
     static member Empty : TyconRefMap<'T>
 
@@ -487,6 +489,8 @@ type TyconRefMultiMap<'T> =
 
     /// Make a new map, containing a new entry for the given type definition
     member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
+
+    member Contents : TyconRefMap<'T list>
 
     /// The empty map
     static member Empty : TyconRefMultiMap<'T>
@@ -529,9 +533,18 @@ type ValRemap = ValMap<ValRef>
 [<NoEquality; NoComparison>]
 type Remap =
     { tpinst : TyparInst
+
+      /// Values to remap
       valRemap: ValRemap
+
+      /// TyconRefs to remap
       tyconRefRemap : TyconRefRemap
-      removeTraitSolutions: bool }
+
+      /// Remove existing trait solutions?
+      removeTraitSolutions: bool 
+
+      /// A map indicating how to fill in extSlns for traits as we copy an expression. Indexed by the member name of the trait
+      extSlnsMap: Map<string, TraitPossibleExtensionMemberSolutions> }
 
     static member Empty : Remap
 
@@ -552,6 +565,7 @@ val instTypes              : TyparInst -> TypeInst -> TypeInst
 val instTyparConstraints  : TyparInst -> TyparConstraint list -> TyparConstraint list 
 
 val instTrait              : TyparInst -> TraitConstraintInfo -> TraitConstraintInfo 
+val instValRef              : TyparInst -> ValRef -> ValRef
 
 //-------------------------------------------------------------------------
 // From typars to types 
@@ -1208,16 +1222,16 @@ val MakeExportRemapping : CcuThunk -> ModuleOrNamespace -> Remap
 val ApplyExportRemappingToEntity :  TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace 
 
 /// Determine if a type definition is hidden by a signature
-val IsHiddenTycon     : TcGlobals -> (Remap * SignatureHidingInfo) list -> Tycon -> bool
+val IsHiddenTycon: (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
 /// Determine if the representation of a type definition is hidden by a signature
-val IsHiddenTyconRepr : TcGlobals -> (Remap * SignatureHidingInfo) list -> Tycon -> bool
+val IsHiddenTyconRepr: (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
 /// Determine if a member, function or value is hidden by a signature
-val IsHiddenVal       : (Remap * SignatureHidingInfo) list -> Val -> bool
+val IsHiddenVal: (Remap * SignatureHidingInfo) list -> Val -> bool
 
 /// Determine if a record field is hidden by a signature
-val IsHiddenRecdField : (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
+val IsHiddenRecdField: (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
 
 /// Adjust marks in expressions, replacing all marks by the given mark.
 /// Used when inlining.
@@ -1453,6 +1467,10 @@ type TypeDefMetadata =
 
 /// Extract metadata from a type definition
 val metadataOfTycon : Tycon -> TypeDefMetadata
+
+#if EXTENSIONTYPING
+val extensionInfoOfTy : TcGlobals -> TType -> TyconRepresentation
+#endif
 
 /// Extract metadata from a type
 val metadataOfTy : TcGlobals -> TType -> TypeDefMetadata

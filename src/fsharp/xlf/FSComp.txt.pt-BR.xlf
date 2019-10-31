@@ -5287,11 +5287,6 @@
         <target state="translated">O atributo 'System.Diagnostics.ConditionalAttribute' somente é válido em classes de métodos ou atributos</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
-        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
-        <target state="translated">Membros de extensão não podem fornecer sobrecargas de operadores. Considere definir o operador como parte da definição de tipo.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
         <target state="translated">O nome do arquivo MDB deve ser &lt;assembly-file-name&gt;.mdb. A opção --pdb será ignorada.</target>
