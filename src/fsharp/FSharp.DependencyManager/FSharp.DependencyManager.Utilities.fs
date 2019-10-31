@@ -249,7 +249,6 @@ $(PACKAGEREFERENCES)
       <TfmSpecificPackageFile Include=""@(_ResolvedOutputFiles)"">
          <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedOutputFiles.NearestTargetFramework)/%(_ResolvedOutputFiles.FileName)%(_ResolvedOutputFiles.Extension)</PackagePath>
       </TfmSpecificPackageFile>
-
     </ItemGroup>
   </Target>
 
@@ -262,6 +261,11 @@ $(PACKAGEREFERENCES)
            <PackageRoot>$(%(FsxResolvedFile.PackageRootProperty))</PackageRoot>
            <InitializeSourcePath>$(%(FsxResolvedFile.PackageRootProperty))\content\%(ResolvedCompileFileDefinitions.FileName)%(ResolvedCompileFileDefinitions.Extension).fsx</InitializeSourcePath>
         </FsxResolvedFile>
+        <NativeIncludeRoots
+            Include='@(RuntimeTargetsCopyLocalItems)'
+            Condition=""'%(RuntimeTargetsCopyLocalItems.AssetType)' == 'native'"">
+           <Path>$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))</Path>
+        </NativeIncludeRoots>
       </ItemGroup>
   </Target>
 
@@ -276,6 +280,8 @@ $(PACKAGEREFERENCES)
       <ReferenceLines Include='// MSBuildExtensionsPath:($(MSBuildExtensionsPath))' />
       <ReferenceLines Include='//' />
       <ReferenceLines Include='#r @""%(FsxResolvedFile.HintPath)""'                 Condition = ""%(FsxResolvedFile.NugetPackageId) != 'Microsoft.NETCore.App' and %(FsxResolvedFile.NugetPackageId) != 'FSharp.Core' and %(FsxResolvedFile.NugetPackageId) != 'System.ValueTuple' and Exists('%(FsxResolvedFile.HintPath)')"" />
+      <ReferenceLines Include='//' />
+      <ReferenceLines Include='#I @""%(NativeIncludeRoots.Path)""' />
       <ReferenceLines Include='//' />
       <ReferenceLines Include='#load @""%(FsxResolvedFile.InitializeSourcePath)""'  Condition = ""%(FsxResolvedFile.NugetPackageId) != 'Microsoft.NETCore.App' and %(FsxResolvedFile.NugetPackageId) != 'FSharp.Core' and %(FsxResolvedFile.NugetPackageId) != 'System.ValueTuple' and Exists('%(FsxResolvedFile.InitializeSourcePath)')"" />
     </ItemGroup>
