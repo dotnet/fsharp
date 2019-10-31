@@ -127,7 +127,7 @@ module internal FSharpEnvironment =
 
     let tryRegKey(subKey:string) = 
 
-        //if we are runing on mono simply return None
+        //if we are running on mono simply return None
         // GetDefaultRegistryStringValueViaDotNet will result in an access denied by default, 
         // and Get32BitRegistryStringValueViaPInvoke will fail due to Advapi32.dll not existing
         if runningOnMono then None else
@@ -192,7 +192,7 @@ module internal FSharpEnvironment =
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
         try
-            // FSharp.Compiler support setting an appkey for compiler location. I've never seen this used.
+            // FSharp.Compiler support setting an appKey for compiler location. I've never seen this used.
             let result = tryAppConfig "fsharp-compiler-location"
             match result with
             | Some _ ->  result
@@ -215,23 +215,23 @@ module internal FSharpEnvironment =
         with e -> None
 
 
-    // Apply the given function to the registry entry corresponding to the subkey.
+    // Apply the given function to the registry entry corresponding to the subKey.
     // The reg key is disposed at the end of the scope.
-    let useKey subkey f =
-        let key = Registry.LocalMachine.OpenSubKey subkey
-        try f key
-        finally
-            match key with
-            | null -> ()
+    let useKey subKey f =
+        let key = Registry.LocalMachine.OpenSubKey subKey
+        try f key 
+        finally 
+            match key with 
+            | null -> () 
             | _ -> key.Dispose()
 
     // Check if the framework version 4.5 or above is installed at the given key entry 
-    let IsNetFx45OrAboveInstalledAt subkey =
+    let IsNetFx45OrAboveInstalledAt subKey =
       try
-        useKey subkey (fun regkey ->
-            match regkey with
+        useKey subKey (fun regKey ->
+            match regKey with
             | null -> false
-            | _ -> regkey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
+            | _ -> regKey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
       with _ -> false
  
     // Check if the framework version 4.5 or above is installed
