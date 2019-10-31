@@ -5,6 +5,7 @@ open System.IO
 open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FsUnit
 
 #if NETCOREAPP2_0
 let readRefs (folder : string) (projectFile: string) =
@@ -302,6 +303,34 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
              if compGen || not x.IsCompilerGenerated then 
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen e.NestedEntities ]
+
+
+let getSymbolUses (source: string) =
+    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+let getSymbols (source: string) =
+    getSymbolUses source
+    |> Array.map (fun symbolUse -> symbolUse.Symbol)
+
+
+let getSymbolName (symbol: FSharpSymbol) =
+    match symbol with
+    | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.LogicalName
+    | :? FSharpEntity as entity -> Some entity.LogicalName
+    | :? FSharpGenericParameter as parameter -> Some parameter.Name
+    | :? FSharpParameter as parameter -> parameter.Name
+    | :? FSharpStaticParameter as parameter -> Some parameter.Name
+    | :? FSharpActivePatternCase as case -> Some case.Name
+    | :? FSharpUnionCase as case -> Some case.Name
+    | _ -> None
+
+
+let assertContainsSymbolWithName name source =
+    getSymbols source
+    |> Array.choose getSymbolName
+    |> Array.contains name
+    |> shouldEqual true
 
 
 let coreLibAssemblyName =
