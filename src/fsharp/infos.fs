@@ -1077,7 +1077,7 @@ type MethInfo =
     /// For an extension method this includes all type parameters, even if it is extending a generic type.
     member x.GenericArity =  x.FormalMethodTypars.Length
 
-    member x.IsProtectedAccessiblity =
+    member x.IsProtectedAccessibility =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsProtectedAccessibility
         | FSMeth _ -> false
@@ -2476,7 +2476,7 @@ type EventInfo =
 
     /// Test whether two event infos have the same underlying definition.
     /// Must be compatible with ItemsAreEffectivelyEqual relation.
-    static member EventInfosUseIdenticalDefintions x1 x2 =
+    static member EventInfosUseIdenticalDefinitions x1 x2 =
         match x1, x2 with
         | FSEvent(g, pi1, vrefa1, vrefb1), FSEvent(_, pi2, vrefa2, vrefb2) ->
             PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2 && valRefEq g vrefa1 vrefa2 && valRefEq g vrefb1 vrefb2

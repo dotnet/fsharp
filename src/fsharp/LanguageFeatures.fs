@@ -100,4 +100,4 @@ type LanguageVersion (specifiedVersion) =
             |]
 
     /// Get the specified LanguageVersion
-    member __.SpecifiedVerson = specified
+    member __.SpecifiedVersion = specified
