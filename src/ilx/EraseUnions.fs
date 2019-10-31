@@ -9,10 +9,8 @@ module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
 
 open System.Collections.Generic
 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open System.Reflection
 

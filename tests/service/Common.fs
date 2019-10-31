@@ -77,7 +77,6 @@ let sysLib nm =
 
 [<AutoOpen>]
 module Helpers = 
-    open System
     type DummyType = A | B
     let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
 
