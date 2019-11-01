@@ -43,6 +43,9 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
     member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
 
     [<CLIEvent>]
+    member __.IncludePathAdded = fsi.IncludePathAdded
+
+    [<CLIEvent>]
     member __.DependencyAdding = fsi.DependencyAdding
 
     [<CLIEvent>]

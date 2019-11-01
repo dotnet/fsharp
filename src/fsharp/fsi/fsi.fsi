@@ -239,6 +239,10 @@ type FsiEvaluationSession =
     member AssemblyReferenceAdded: IEvent<string>
 
     [<CLIEvent>]
+    /// Event fires every time a path is added to the include search list, e.g., via `#I`.
+    member IncludePathAdded: IEvent<string>
+
+    [<CLIEvent>]
     /// Event fires at the start of adding a dependency via the dependency manager.
     member DependencyAdding: IEvent<string * string>
 
