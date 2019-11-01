@@ -62,13 +62,19 @@ type UsingMSBuild() as this =
     member private this.VerifyErrorListCountAtOpenProject(fileContents : string, num : int) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
         let errorList = GetErrors(project)
+        let errorTexts = new System.Text.StringBuilder()
         for error in errorList do
             printfn "%A" error.Severity
-            printf "%s\n" (error.ToString()) 
-        if (num = errorList.Length) then 
-                ()
-            else
-                failwithf "The error list number is not the expected %d" num
+            let s = error.ToString()
+            errorTexts.AppendLine s |> ignore
+            printf "%s\n" s 
+
+        if num <> errorList.Length then 
+            failwithf "The error list number is not the expected %d but %d%s%s" 
+                num 
+                errorList.Length
+                System.Environment.NewLine
+                (errorTexts.ToString())
 
     //Verify the warning list Count
     member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : list<string>) = 

@@ -5,8 +5,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -31,10 +31,10 @@
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
     <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
       <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
-      <Pattern1>{{FSharpCoreShippedPackageVersion}}</Pattern1>
-      <Replacement1>$(FSharpCoreShippedPackageVersion)</Replacement1>
-      <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
-      <Replacement2>$(FSharpCorePreviewPackageVersion)</Replacement2>
+      <Pattern1>{{FSharpCoreShippedVersion}}</Pattern1>
+      <Replacement1>$(FSharpCoreShippedVersion)</Replacement1>
+      <Pattern2>{{FSharpCorePreviewVersion}}</Pattern2>
+      <Replacement2>$(FSharpCorePreviewVersion)</Replacement2>
     </NoneSubstituteText>
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

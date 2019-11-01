@@ -289,6 +289,14 @@ stages:
             clean: true
           - script: fcs\build.cmd TestAndNuget
             displayName: Build / Test
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\log'
+              ArtifactName: 'Windows FCS logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: not(succeeded())
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -309,6 +317,14 @@ stages:
         #    clean: true
         #  - script: ./fcs/build.sh Build
         #    displayName: Build
+        #  - task: PublishBuildArtifacts@1
+        #    displayName: Publish Logs
+        #    inputs:
+        #      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log'
+        #      ArtifactName: 'Linux FCS logs'
+        #      publishLocation: Container
+        #    continueOnError: true
+        #    condition: not(succeeded())
 
         - job: MacOS_FCS
           pool:
@@ -321,6 +337,14 @@ stages:
             clean: true
           - script: ./fcs/build.sh Build
             displayName: Build
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log'
+              ArtifactName: 'Mac FCS logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: not(succeeded())
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
@@ -340,6 +364,6 @@ stages:
   - template: eng/release/insert-into-vs.yml
     parameters:
       componentBranchName: refs/heads/release/dev16.4
-      insertTargetBranch: master
+      insertTargetBranch: rel/d16.4
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'

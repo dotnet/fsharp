@@ -781,7 +781,7 @@ let ``Test Unoptimized Declarations Project1`` () =
 
 
 [<Test>]
-//#if NETCOREAPP2_0
+//#if NETCOREAPP
 //[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 //#endif
 let ``Test Optimized Declarations Project1`` () =
@@ -2893,7 +2893,7 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
 
 #if NOT_YET_ENABLED
 
-#if !NO_PROJECTCRACKER && !NETCOREAPP2_0
+#if !NO_PROJECTCRACKER && !NETCOREAPP
 
 [<Test>]
 let ``Check use of type provider that provides calls to F# code`` () = 

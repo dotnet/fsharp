@@ -16,11 +16,14 @@ module internal ExtensionTyping =
     open FSharp.Compiler.Range
     open FSharp.Compiler.AbstractIL.IL
     open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
+    open Internal.Utilities.FSharpEnvironment  
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
-    exception ProvidedTypeResolution of range * System.Exception 
-    exception ProvidedTypeResolutionNoRange of System.Exception 
+    exception ProvidedTypeResolution of range * System.Exception
+    exception ProvidedTypeResolutionNoRange of System.Exception
+
+    let toolingCompatiblePaths() = toolingCompatiblePaths ()
 
     /// Represents some of the configuration parameters passed to type provider components 
     type ResolutionEnvironment =
@@ -28,101 +31,18 @@ module internal ExtensionTyping =
           outputFile                : string option
           showResolutionMessages    : bool
           referencedAssemblies      : string[]
-          temporaryFolder           : string } 
-
-
-    // Specify the tooling-compatible fragments of a path such as:
-    //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
-    //     tools/fsharp41/net461/MyProvider.DesignTime.dll
-    // See https://github.com/Microsoft/visualfsharp/issues/3736
-
-    // Represents the FF#-compiler <-> type provider protocol.
-    // When the API or protocol updates, add a new version moniker to the front of the list here.
-    let toolingCompatibleTypeProviderProtocolMonikers() = 
-        [ "fsharp41" ] 
-
-    // Detect the host tooling context
-    let toolingCompatibleVersions() = 
-        if typeof<obj>.Assembly.GetName().Name = "mscorlib" then 
-            [ "net461"; "net452"; "net451"; "net45"; "netstandard2.0"]
-        elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then 
-            [ "netcoreapp2.0"; "netstandard2.0"]
-        else
-            System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
-            [  "netstandard2.0"]
-
-
-    let toolingCompatiblePaths() = 
-        [ for protocol in toolingCompatibleTypeProviderProtocolMonikers() do
-            for netRuntime in toolingCompatibleVersions() do 
-                yield Path.Combine("typeproviders", protocol, netRuntime)
-                yield Path.Combine("tools", protocol, netRuntime)
-        ]
+          temporaryFolder           : string }
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
-    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m: range) =
+    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
 
         // Report an error, blaming the particular type provider component
         let raiseError (e: exn) =
             raise (TypeProviderError(FSComp.SR.etProviderHasWrongDesignerAssembly(typeof<TypeProviderAssemblyAttribute>.Name, designTimeAssemblyNameString, e.Message), runTimeAssemblyFileName, m))
 
-        // Find and load the designer assembly for the type provider component.
-        //
-        // We look in the directories stepping up from the location of the runtime assembly.
+        let designTimeAssemblyOpt = getTypeProviderAssembly (runTimeAssemblyFileName, designTimeAssemblyNameString, compilerToolPaths, raiseError)
 
-        let loadFromLocation designTimeAssemblyPath =
-            try
-                Some (FileSystem.AssemblyLoadFrom designTimeAssemblyPath)
-            with e ->
-                raiseError e
-
-        let rec searchParentDirChain dir designTimeAssemblyName = 
-            seq { 
-                for subdir in toolingCompatiblePaths() do
-                    let designTimeAssemblyPath  = Path.Combine (dir, subdir, designTimeAssemblyName)
-                    if FileSystem.SafeExists designTimeAssemblyPath then 
-                        yield loadFromLocation designTimeAssemblyPath
-                match Path.GetDirectoryName dir with
-                | s when s = "" || s = null || Path.GetFileName dir = "packages" || s = dir -> ()
-                | parentDir -> yield! searchParentDirChain parentDir designTimeAssemblyName 
-            } 
-
-        let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName = 
-            let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
-            searchParentDirChain runTimeAssemblyPath  designTimeAssemblyName
-            |> Seq.tryHead
-            |> function 
-               | Some res -> res 
-               | None -> 
-                // The search failed, just load from the first location and report an error
-                let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
-                loadFromLocation (Path.Combine (runTimeAssemblyPath, designTimeAssemblyName))
-
-        let designTimeAssemblyOpt = 
-
-            if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
-                loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyNameString
-            else
-                // Cover the case where the ".dll" extension has been left off and no version etc. has been used in the assembly
-                // string specification.  The Name=FullName comparison is particularly strange, and was there to support
-                // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
-                // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
-                // and will always succeed.  
-                let name = System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyNameString)
-                if name.Name.Equals(name.FullName, StringComparison.OrdinalIgnoreCase) then
-                    let designTimeAssemblyName = designTimeAssemblyNameString+".dll"
-                    loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName
-                else
-                    // Load from the GAC using Assembly.Load.  This is legacy since type provider design-time components are
-                    // never in the GAC these days and  "x.DesignTIme, Version= ..." specifications are never used.
-                    try
-                        let asmName = System.Reflection.AssemblyName designTimeAssemblyNameString
-                        Some (FileSystem.AssemblyLoad asmName)
-                    with e ->
-                        raiseError e
-
-        // If we've find a design-time assembly, look for the public types with TypeProviderAttribute
         match designTimeAssemblyOpt with
         | Some loadedDesignTimeAssembly ->
             try
@@ -193,7 +113,8 @@ module internal ExtensionTyping =
              isInteractive: bool, 
              systemRuntimeContainsType : string -> bool, 
              systemRuntimeAssemblyVersion : System.Version, 
-             m: range) =         
+             compilerToolPaths: string list,
+             m:range) =
 
         let providerSpecs = 
                 try
@@ -213,7 +134,7 @@ module internal ExtensionTyping =
                       | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
                           ()
                       | Some _, _ ->
-                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m) do
+                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m, compilerToolPaths) do
                             let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                             match box resolver with 
                             | null -> ()
@@ -222,7 +143,7 @@ module internal ExtensionTyping =
                           () ]
 
                 with :? TypeProviderError as tpe ->
-                    tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )                        
+                    tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )
                     []
 
         let providers = Tainted<_>.CreateAll providerSpecs

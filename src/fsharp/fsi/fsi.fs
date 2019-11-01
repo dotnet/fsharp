@@ -17,6 +17,11 @@ open System.IO
 open System.Text
 open System.Threading
 open System.Reflection
+open System.Runtime.CompilerServices
+#if NETSTANDARD
+open System.Runtime.Loader
+#endif
+
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Diagnostics
@@ -950,9 +955,16 @@ type internal FsiDynamicCompiler
     let assemblyName = "FSI-ASSEMBLY"
 
     let assemblyReferenceAddedEvent = Control.Event<string>()
+    let dependencyAddingEvent = Control.Event<string * string>()
+    let dependencyAddedEvent = Control.Event<string * string>()
+    let dependencyFailedEvent = Control.Event<string * string>()
 
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
+
+    let mutable needsPackageResolution = false
+
+    let mutable subscribedDependencyManagers = HashSet<string>()
 
     let generateDebugInfo = tcConfigB.debuginfo
 
@@ -1106,6 +1118,7 @@ type internal FsiDynamicCompiler
         [mkSynId rangeStdin (FsiDynamicModulePrefix + sprintf "%04d" i)]
 
     member __.DynamicAssemblyName = assemblyName
+
     member __.DynamicAssembly = (assemblyBuilder :> Assembly)
 
     member __.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs) =
@@ -1249,6 +1262,58 @@ type internal FsiDynamicCompiler
         resolutions,
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
 
+
+    member __.EvalDependencyManagerTextFragment (packageManager:DependencyManagerIntegration.IDependencyManagerProvider,m,path: string) =
+        let path = DependencyManagerIntegration.removeDependencyManagerKey packageManager.Key path
+
+        match tcConfigB.packageManagerLines |> Map.tryFind packageManager.Key with
+        | Some lines -> tcConfigB.packageManagerLines <- Map.add packageManager.Key (lines @ [false, path, m]) tcConfigB.packageManagerLines
+        | _ -> tcConfigB.packageManagerLines <- Map.add packageManager.Key [false, path, m] tcConfigB.packageManagerLines
+
+        needsPackageResolution <- true
+
+    member fsiDynamicCompiler.CommitDependencyManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger) = 
+        if not needsPackageResolution then istate else
+        needsPackageResolution <- false
+
+        tcConfigB.packageManagerLines |> Seq.fold(fun istate kv ->
+            let inline snd3 (_, b, _) = b
+            let packageManagerKey, packageManagerLines = kv.Key, kv.Value
+            match packageManagerLines with
+            | [] -> istate
+            | (_, _, m)::_ ->
+                match DependencyManagerIntegration.tryFindDependencyManagerByKey tcConfigB.compilerToolPaths tcConfigB.outputDir m packageManagerKey with
+                | None ->
+                    errorR(DependencyManagerIntegration.createPackageManagerUnknownError tcConfigB.compilerToolPaths tcConfigB.outputDir packageManagerKey m)
+                    istate
+                | Some packageManager ->
+                    let packageManagerTextLines = packageManagerLines |> List.map snd3
+                    let removeErrorLinesFromScript () =
+                        tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
+                    try
+                        let newDependencyManager = subscribedDependencyManagers.Add(packageManagerKey)
+                        if newDependencyManager then
+                            Event.add dependencyAddingEvent.Trigger packageManager.DependencyAdding
+                            Event.add dependencyAddedEvent.Trigger packageManager.DependencyAdded
+                            Event.add dependencyFailedEvent.Trigger packageManager.DependencyFailed
+                        match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx" m packageManagerTextLines with
+                        | None -> istate // error already reported
+                        | Some (succeeded, generatedScripts, additionalIncludeFolders) ->    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                            if succeeded then
+                                tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
+                            else
+                                removeErrorLinesFromScript ()
+                            for folder in additionalIncludeFolders do
+                                tcConfigB.AddIncludePath(m, folder, "")
+                            if generatedScripts.Length > 0 then
+                                fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, generatedScripts, lexResourceManager, errorLogger)
+                            else istate
+                    with _ ->
+                        // An exception occured during processing, so remove the lines causing the error from the package manager list.
+                        removeErrorLinesFromScript ()
+                        reraise ()
+            ) istate
+
     member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
         WithImplicitHome
            (tcConfigB, directoryName sourceFile) 
@@ -1256,6 +1321,7 @@ type internal FsiDynamicCompiler
                ProcessMetaCommandsFromInput 
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
                     (fun st (m,nm) -> snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, nm))),
+                    (fun st (packageManagerPrefix,m,nm) -> fsiDynamicCompiler.EvalDependencyManagerTextFragment (packageManagerPrefix,m,nm); st),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
       
@@ -1331,12 +1397,17 @@ type internal FsiDynamicCompiler
 
     member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
 
+    member __.DependencyAdding = dependencyAddingEvent.Publish
+
+    member __.DependencyAdded = dependencyAddedEvent.Publish
+
+    member __.DependencyFailed = dependencyFailedEvent.Publish
+
 //----------------------------------------------------------------------------
 // ctrl-c handling
 //----------------------------------------------------------------------------
 
 type ControlEventHandler = delegate of int -> bool
-
 
 // One strange case: when a TAE happens a strange thing 
 // occurs the next read from stdin always returns
@@ -1477,10 +1548,27 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
 // - The requesting assembly (that is, the assembly that is returned by the ResolveEventArgs.RequestingAssembly property) 
 //   was loaded without context. 
 // 
+// On the coreclr we add an UnmanagedDll Resoution handler to ensure that native dll's can be searched for,
+// the desktop version of the Clr does not support this mechanism.
+//
 // For information about contexts, see the Assembly.LoadFrom(String) method overload.
 
 module internal MagicAssemblyResolution =
-    // FxCop identifies Assembly.LoadFrom.
+
+#if NETSTANDARD
+    // Cut down AssemblyLoadContext, for loading native libraries
+    type FsiNativeAssemblyLoadContext () =
+        inherit AssemblyLoadContext()
+
+        member this.LoadNativeLibrary(path: string): IntPtr =
+            base.LoadUnmanagedDllFromPath(path)
+
+        override _.Load(_path: AssemblyName): Assembly =
+            raise (NotImplementedException())
+
+        static member NativeLoadContext = new FsiNativeAssemblyLoadContext()
+#endif
+
     // See bug 5501 for details on decision to use UnsafeLoadFrom here.
     // Summary:
     //  It is an explicit user trust decision to load an assembly with #r. Scripts are not run automatically (for example, by double-clicking in explorer).
@@ -1491,7 +1579,7 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) = 
 
-        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName:string) = 
+        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
 
            try 
                // Grab the name of the assembly
@@ -1582,18 +1670,127 @@ module internal MagicAssemblyResolution =
                stopProcessingRecovery e range0
                null
 
+#if NETSTANDARD
+        let probingFileNames (name: string) =
+            // coreclr native library probing algorithm: https://github.com/dotnet/coreclr/blob/9773db1e7b1acb3ec75c9cc0e36bd62dcbacd6d5/src/System.Private.CoreLib/shared/System/Runtime/Loader/LibraryNameVariation.Unix.cs
+            let isRooted = Path.IsPathRooted name
+            let useSuffix s = not (name.Contains(s + ".") || name.EndsWith(s))          // linux devs often append version # to libraries I.e mydll.so.5.3.2
+            let usePrefix = name.IndexOf(Path.DirectorySeparatorChar) = -1              // If name has directory information no add no prefix
+                            && name.IndexOf(Path.AltDirectorySeparatorChar) = -1
+                            && name.IndexOf(Path.PathSeparator) = -1
+                            && name.IndexOf(Path.VolumeSeparatorChar) = -1
+            let prefix = [| "lib" |]
+            let suffix = [|
+                    if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+                        ".dll"
+                        ".exe"
+                    elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then
+                        ".dylib"
+                    else
+                        ".so"
+                |]
+
+            [|
+                yield name                                                                              // Bare name
+                if not (isRooted) then
+                    for s in suffix do
+                        if useSuffix s then                                                             // Suffix without prefix
+                            yield (sprintf "%s%s" name s)
+                            if usePrefix then
+                                for p in prefix do                                                      // Suffix with prefix
+                                    yield (sprintf "%s%s%s" p name s)
+                        elif usePrefix then
+                            for p in prefix do                                                          // Prefix
+                                yield (sprintf "%s%s" p name)
+            |]
+
+        // Directories to start probing in
+        // Algorithm:
+        //  Search for native libraries using:
+        //  1. Include directories
+        //  2. compilerToolPath directories
+        //  3. reference dll's
+        //  4. The implicit include directory
+        let probingRoots =
+            seq {
+                yield! tcConfigB.includes
+                yield! tcConfigB.compilerToolPaths
+                yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
+                yield tcConfigB.implicitIncludeDir
+            } |>Seq.distinct
+
+        // Computer valid dotnet-rids for this environment:
+        //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+        //
+        // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
+        let probingRids =
+            let processArchitecture = RuntimeInformation.ProcessArchitecture
+            let baseRid =
+                if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then "win"
+                elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then "osx"
+                else "linux"
+            let platformRid =
+                match processArchitecture with
+                | Architecture.X64 ->  baseRid + "-x64"
+                | Architecture.X86 -> baseRid + "-x86"
+                | Architecture.Arm64 -> baseRid + "-arm64"
+                | _ -> baseRid + "arm"
+            [| "any"; baseRid; platformRid |]
+
+        let resolveUnmanagedDll (assembly : Assembly) (name : string) : IntPtr =
+            ignore assembly
+
+            // Enumerate probing roots looking for a dll that matches the probing name in the probed locations
+            let probeForNativeLibrary root rid name =
+                // Look for name in root
+                probingFileNames name |> Array.tryPick(fun name ->
+                    let path = Path.Combine(root, "runtimes", rid, "native", name)
+                    if File.Exists(path) then
+                        Some path
+                    else
+                        None)
+
+            let probe =
+                probingRoots |> Seq.tryPick(fun root ->
+                    probingFileNames name |> Seq.tryPick(fun name ->
+                        let path = Path.Combine(root, name)
+                        if File.Exists(path) then
+                            Some path
+                        else
+                            probingRids |> Seq.tryPick(fun rid -> probeForNativeLibrary root rid name)))
+
+            match probe with
+            | Some path -> FsiNativeAssemblyLoadContext.NativeLoadContext.LoadNativeLibrary(path)
+            | None -> IntPtr.Zero
+#endif
+
         let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
-        let handler = new ResolveEventHandler(fun _ args -> 
+        let resolveAssembly = new ResolveEventHandler(fun _ args ->
             // Explanation: our understanding is that magic assembly resolution happens  
             // during compilation. So we recover the CompilationThreadToken here.
             let ctok = AssumeCompilationThreadWithoutEvidence ()
             ResolveAssembly (ctok, rangeStdin, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
 
-        AppDomain.CurrentDomain.add_AssemblyResolve(handler)
+        AppDomain.CurrentDomain.add_AssemblyResolve(resolveAssembly)
 
-        { new System.IDisposable  with 
-             member x.Dispose() = AppDomain.CurrentDomain.remove_AssemblyResolve(handler) }
+#if NETSTANDARD
+        // netstandard 2.1 has this property, unfortunately we don't build with that yet
+        //public event Func<Assembly, string, IntPtr> ResolvingUnmanagedDll
+        let resolveUnmanagedHandler = Func<System.Reflection.Assembly,string,IntPtr> (resolveUnmanagedDll)
+        let eventInfo = typeof<AssemblyLoadContext>.GetEvent("ResolvingUnmanagedDll")
+        if not (isNull eventInfo) then
+            eventInfo.AddEventHandler(AssemblyLoadContext.Default, resolveUnmanagedHandler)
+#endif
+
+        { new System.IDisposable with
+            member x.Dispose() =
+                AppDomain.CurrentDomain.remove_AssemblyResolve(resolveAssembly)
+#if NETSTANDARD
+                if not (isNull eventInfo) then
+                        eventInfo.RemoveEventHandler(AssemblyLoadContext.Default, resolveUnmanagedHandler)
+#endif
+        }
 
 //----------------------------------------------------------------------------
 // Reading stdin 
@@ -1703,6 +1900,8 @@ type internal FsiInteractionProcessor
 
     let referencedAssemblies = Dictionary<string, DateTime>()
 
+    let assemblyReferencedEvent = Control.Event<string>()
+
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
@@ -1776,37 +1975,57 @@ type internal FsiInteractionProcessor
 
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
-        istate |> InteractiveCatch errorLogger (fun istate -> 
+        istate |> InteractiveCatch errorLogger (fun istate ->
             match action with 
             | IDefns ([  ],_) ->
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 istate,Completed None
+
             | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],_) ->
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
+
             | IDefns (defs,_) -> 
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
-                let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
-                resolutions |> List.iter (fun ar -> 
-                    let format = 
-                        if tcConfig.shadowCopyReferences then
-                            let resolvedPath = ar.resolvedPath.ToUpperInvariant()
-                            let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
-                            match referencedAssemblies.TryGetValue resolvedPath with
-                            | false, _ -> 
-                                referencedAssemblies.Add(resolvedPath, fileTime)
-                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                            | true, time when time <> fileTime ->
-                                FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
-                            | _ ->
-                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                        else
-                            FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
-                    fsiConsoleOutput.uprintnfnn "%s" format)
-                istate,Completed None
+            | IHash (ParsedHashDirective(("reference" | "r"), [path], m), _) -> 
+                match DependencyManagerIntegration.tryFindDependencyManagerInPath tcConfigB.compilerToolPaths tcConfigB.outputDir m (path:string) with
+                | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager ->
+                   if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                       fsiDynamicCompiler.EvalDependencyManagerTextFragment(packageManager, m, path)
+                       istate,Completed None
+                   else
+                       errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                       istate, Completed None
+
+                | DependencyManagerIntegration.ReferenceType.UnknownType -> 
+                    // error already reported
+                    istate,Completed None
+
+                | DependencyManagerIntegration.ReferenceType.Library path ->
+                    let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
+                    resolutions |> List.iter (fun ar -> 
+                        let format =
+                            if tcConfig.shadowCopyReferences then
+                                let resolvedPath = ar.resolvedPath.ToUpperInvariant()
+                                let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
+                                match referencedAssemblies.TryGetValue resolvedPath with
+                                | false, _ -> 
+                                    referencedAssemblies.Add(resolvedPath, fileTime)
+                                    FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                                | true, time when time <> fileTime ->
+                                    FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
+                                | _ ->
+                                    FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                            else
+                                FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
+                        fsiConsoleOutput.uprintnfnn "%s" format)
+                    istate,Completed None
 
             | IHash (ParsedHashDirective("I",[path],m),_) -> 
                 tcConfigB.AddIncludePath (m,path, tcConfig.implicitIncludeDir)
@@ -2222,6 +2441,8 @@ type internal FsiInteractionProcessor
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
+    member __.AssemblyReferenceAdded = assemblyReferencedEvent.Publish
+
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -2316,7 +2537,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | None -> SimulatedMSBuildReferenceResolver.getResolver()
         | Some rr -> rr
 
-    let tcConfigB = 
+    let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 
             defaultFSharpBinariesDir=defaultFSharpBinariesDir, 
             reduceMemoryUsage=ReduceMemoryFlag.Yes, 
@@ -2412,8 +2633,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     /// The lock stops the type checker running at the same time as the server intellisense implementation.
     let tcLockObject = box 7 // any new object will do
-    
-    let resolveAssemblyRef (aref: ILAssemblyRef) = 
+
+    let resolveAssemblyRef (aref: ILAssemblyRef) =
         // Explanation: This callback is invoked during compilation to resolve assembly references
         // We don't yet propagate the ctok through these calls (though it looks plausible to do so).
         let ctok = AssumeCompilationThreadWithoutEvidence ()
@@ -2426,7 +2647,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
 
-    let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef) 
+    let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef)
 
     let fsiInterruptController = FsiInterruptController(fsiOptions, fsiConsoleOutput)
 
@@ -2628,8 +2849,21 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         |> commitResultNonThrowing errorOptions scriptPath errorLogger
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
+    [<CLIEvent>]
     /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
     member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
+
+    [<CLIEvent>]
+    /// Event fires at the start of adding a dependency via the dependency manager.
+    member __.DependencyAdding = fsiDynamicCompiler.DependencyAdding
+
+    [<CLIEvent>]
+    /// Event fires at the successful completion of adding a dependency via the dependency manager.
+    member __.DependencyAdded = fsiDynamicCompiler.DependencyAdded
+
+    [<CLIEvent>]
+    /// Event fires at the failure to adding a dependency via the dependency manager.
+    member __.DependencyFailed = fsiDynamicCompiler.DependencyFailed
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any
@@ -2645,9 +2879,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// A background thread is started by this thread to read from the inReader and/or console reader.
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2004:RemoveCallsToGCKeepAlive")>]
-    member x.Run() = 
+    member x.Run() =
         progress := condition "FSHARP_INTERACTIVE_PROGRESS"
-    
+
         // Explanation: When Run is called we do a bunch of processing. For fsi.exe
         // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the
         // unique compilation thread.  For other users of FsiEvaluationSession it is reasonable to assume that
@@ -2699,12 +2933,11 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // to be explicitly kept alive.
         GC.KeepAlive fsiInterruptController.EventHandlers
 
-
     static member Create(fsiConfig, argv, inReader, outWriter, errorWriter, ?collectible, ?legacyReferenceResolver) = 
         new FsiEvaluationSession(fsiConfig, argv, inReader, outWriter, errorWriter, defaultArg collectible false, legacyReferenceResolver)
-    
+
     static member GetDefaultConfiguration(fsiObj:obj) = FsiEvaluationSession.GetDefaultConfiguration(fsiObj, true)
-    
+
     static member GetDefaultConfiguration(fsiObj:obj, useFsiAuxLib: bool) =
         // We want to avoid modifying FSharp.Compiler.Interactive.Settings to avoid republishing that DLL.
         // So we access these via reflection
@@ -2727,8 +2960,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
               member __.EventLoopScheduleRestart() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "ScheduleRestart"
               member __.UseFsiAuxLib = useFsiAuxLib
               member __.GetOptionalConsoleReadLine(_probe) = None }
-
-
 //-------------------------------------------------------------------------------
 // If no "fsi" object for the configuration is specified, make the default
 // configuration one which stores the settings in-process 
@@ -2738,7 +2969,7 @@ module Settings =
         abstract Run : unit -> bool
         abstract Invoke : (unit -> 'T) -> 'T 
         abstract ScheduleRestart : unit -> unit
-    
+
     // fsi.fs in FSHarp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interactive.Settings.dll 
     // by providing an optional reimplementation of the functionality
 
@@ -2784,7 +3015,6 @@ module Settings =
                  runSignal.Dispose()
                  exitSignal.Dispose()
                  doneSignal.Dispose()
-                     
 
 
     [<Sealed>]
