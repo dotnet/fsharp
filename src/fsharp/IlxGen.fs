@@ -2572,6 +2572,21 @@ and GenAfterMatch cenv cgbuf eenv afterJoin stackAfterJoin sequelAfterJoin =
 
     GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
 
+and GenDecisionTreeTargetQueue cenv cgbuf (targetQueue: Queue<_>) eenv afterJoin stackAfterJoin sequelAfterJoin contf =
+    if targetQueue.Count > 0 then
+        let f = targetQueue.Dequeue ()
+        let genTargetInfoOpt = f ()
+        match genTargetInfoOpt with
+        | Some (eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget) -> 
+            GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake ->
+                GenDecisionTreeTargetQueue cenv cgbuf targetQueue eenv afterJoin stackAfterJoin sequelAfterJoin contf
+            )
+        | _ -> 
+            GenDecisionTreeTargetQueue cenv cgbuf targetQueue eenv afterJoin stackAfterJoin sequelAfterJoin contf
+    else
+        GenAfterMatch cenv cgbuf eenv afterJoin stackAfterJoin sequelAfterJoin
+        contf Fake
+
 and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf: FakeUnit -> FakeUnit) =
     let expr = stripExpr expr
     match expr with 
@@ -2661,23 +2676,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
             //        Each branch-RHS (targets) may contribute to the stack, leaving it in the "stackAfterJoin" state, for the join point.
             //        Since code is branching and joining, the cgbuf stack is maintained manually.
             let targetQueue = GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequelOnBranches
-
-            let rec popTargetQueue () =
-                if targetQueue.Count > 0 then
-                    let f = targetQueue.Dequeue ()
-                    let genTargetInfoOpt = f ()
-                    match genTargetInfoOpt with
-                    | Some (eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget) -> 
-                        GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake ->
-                            popTargetQueue ()
-                        )
-                    | _ -> 
-                        popTargetQueue ()
-                else
-                    GenAfterMatch cenv cgbuf eenv afterJoin stackAfterJoin sequelAfterJoin
-                    contf Fake
-                        
-            popTargetQueue ()
+            GenDecisionTreeTargetQueue cenv cgbuf targetQueue eenv afterJoin stackAfterJoin sequelAfterJoin contf
 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
         if canProcessSequencePoint then
