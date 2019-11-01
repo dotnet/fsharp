@@ -9,28 +9,33 @@ open NUnit.Framework
 [<TestFixture>]
 type DependencyManagerLineParserTests() =
 
-    let parseBinLoggingFlag text =
-        let _, binLogging = FSharpDependencyManager.parsePackageReference [text]
-        binLogging
+    let parseBinLogPath text =
+        let _, binLogPath = FSharpDependencyManager.parsePackageReference [text]
+        binLogPath
 
     let parseSingleReference text =
         let packageReferences, _ = FSharpDependencyManager.parsePackageReference [text]
         packageReferences.Single()
 
     [<Test>]
-    member __.``Binary logging defaults to false``() =
-        let _, binLogging = FSharpDependencyManager.parsePackageReference []
-        Assert.False(binLogging)
+    member __.``Binary logging defaults to disabled``() =
+        let _, binLogPath = FSharpDependencyManager.parsePackageReference []
+        Assert.AreEqual(None, binLogPath)
 
     [<Test>]
-    member __.``Binary logging can be set to true``() =
-        let binLogging = parseBinLoggingFlag "bl=true"
-        Assert.True(binLogging)
+    member __.``Binary logging can be set to default path``() =
+        let binLogPath = parseBinLogPath "bl=true"
+        Assert.AreEqual(Some (None: string option), binLogPath)
 
     [<Test>]
-    member __.``Binary logging can be set to false``() =
-        let binLogging = parseBinLoggingFlag "bl=false"
-        Assert.False(binLogging)
+    member __.``Binary logging can be disabled``() =
+        let binLogPath = parseBinLogPath "bl=false"
+        Assert.AreEqual(None, binLogPath)
+
+    [<Test>]
+    member __.``Binary logging can be set to specific location``() =
+        let binLogPath = parseBinLogPath "bl=path/to/file.binlog"
+        Assert.AreEqual(Some(Some "path/to/file.binlog"), binLogPath)
 
     [<Test>]
     member __.``Parse explicitly specified package name``() =

@@ -39,7 +39,7 @@ module FSharpDependencyManager =
         }
 
     let parsePackageReference (lines: string list) =
-        let mutable binLogging = false
+        let mutable binLogPath = None
         let parsePackageReferenceOption (line: string) =
             let validatePackageName package packageName =
                 if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
@@ -67,8 +67,14 @@ module FSharpDependencyManager =
                     | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "restoresources", None -> raise (ArgumentException(sprintf "%s requires a value" "RestoreSources")) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
                     | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "bl", Some v ->
-                        binLogging <- v.ToLowerInvariant() = "true"
+                    | Some "bl", value ->
+                        match value with
+                        | Some v when v.ToLowerInvariant() = "true" -> binLogPath <- Some None // auto-generated logging location
+                        | Some v when v.ToLowerInvariant() = "false" -> binLogPath <- None // no logging
+                        | Some path -> binLogPath <- Some(Some path) // explicit logging location
+                        | None ->
+                            // parser shouldn't get here, but if that ever changes, this branch will hit if just the string "bl" was parsed so this is ok
+                            binLogPath <- Some None // auto-generated logging location
                         parsePackageReferenceOption' rest implicitArgumentCount packageReference
                     | None, Some v ->
                         match implicitArgumentCount with
@@ -82,7 +88,7 @@ module FSharpDependencyManager =
         lines
         |> List.choose parsePackageReferenceOption
         |> List.distinct
-        |> (fun l -> l, binLogging)
+        |> (fun l -> l, binLogPath)
 
 type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string option) =
 
@@ -122,7 +128,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.ResolveDependencies(_scriptDir:string, _mainScriptName:string, _scriptName:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list =
 
-        let packageReferences, binLogging =
+        let packageReferences, binLogPath =
             packageManagerTextLines
             |> List.ofSeq
             |> FSharpDependencyManager.parsePackageReference
@@ -147,7 +153,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
             writeFile (Path.Combine(scriptsPath, "Library.fs")) generateLibrarySource
             writeFile fsProjectPath generateProjBody
 
-            let succeeded, resultingFsx = buildProject fsProjectPath binLogging
+            let succeeded, resultingFsx = buildProject fsProjectPath binLogPath
             let fsx =
                 match resultingFsx with
                 | Some fsx -> [fsx]
