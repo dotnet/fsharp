@@ -847,14 +847,14 @@ and IlxGenEnv =
       withinSEH: bool
 
       /// Are we inside of a recursive let binding, while loop, or a for loop?
-      inLoop: bool
+      isInLoop: bool
     }
 
     override __.ToString() = "<IlxGenEnv>"
 
-let SetInLoop inLoop eenv =
-    if eenv.inLoop = inLoop then eenv
-    else { eenv with inLoop = inLoop }
+let SetIsInLoop isInLoop eenv =
+    if eenv.isInLoop = isInLoop then eenv
+    else { eenv with isInLoop = isInLoop }
 
 let ReplaceTyenv tyenv (eenv: IlxGenEnv) = {eenv with tyenv = tyenv }
 
@@ -1911,9 +1911,9 @@ let CodeGenThen cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, c
     let innerVals = entryPointInfo |> List.map (fun (v, kind) -> (v, (kind, start)))
 
     (* Call the given code generator *)
-    codeGenFunction cgbuf { eenv with withinSEH = false
-                                      liveLocals = IntMap.empty()
-                                      innerVals = innerVals }
+    codeGenFunction cgbuf {eenv with withinSEH=false
+                                     liveLocals=IntMap.empty()
+                                     innerVals = innerVals}
 
     let locals, maxStack, lab2pc, code, exnSpecs, hasSequencePoints = cgbuf.Close()
 
@@ -3535,7 +3535,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
 //--------------------------------------------------------------------------
 
 and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
-    let eenv = SetInLoop true eenv
+    let eenv = SetIsInLoop true eenv
     let g = cenv.g
 
     // The JIT/NGen eliminate array-bounds checks for C# loops of form:
@@ -3626,7 +3626,7 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
 //--------------------------------------------------------------------------
 
 and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
-    let eenv = SetInLoop true eenv
+    let eenv = SetIsInLoop true eenv
     let finish = CG.GenerateDelayMark cgbuf "while_finish"
     let startTest = CG.GenerateMark cgbuf "startTest"
 
@@ -5193,7 +5193,7 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
 
 /// Generate letrec bindings
 and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
-    let eenv = SetInLoop true eenv
+    let eenv = SetIsInLoop true eenv
     // Fix up recursion for non-toplevel recursive bindings
     let bindsPossiblyRequiringFixup =
         allBinds |> List.filter (fun b ->
@@ -5443,7 +5443,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         let storage = StorageForVal cenv.g m vspec eenv
         match storage, rhsExpr with
         // locals are zero-init, no need to initialize them, except if you are in a loop and the local is mutable.
-        | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc && not (eenv.inLoop && vspec.IsMutable) ->
+        | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc && not (eenv.isInLoop && vspec.IsMutable) ->
             CommitStartScope cgbuf startScopeMarkOpt
         | _ ->
             GenBindingRhs cenv cgbuf eenv SPSuppress vspec rhsExpr
@@ -7578,7 +7578,7 @@ let GetEmptyIlxGenEnv (ilg: ILGlobals) ccu =
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false
-      inLoop = false }
+      isInLoop = false }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list
