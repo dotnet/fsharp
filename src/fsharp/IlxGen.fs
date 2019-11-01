@@ -5121,13 +5121,14 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
 and GenDecisionTreeCases cgbuf stackAtTargets eenv defaultTargetOpt caseLabels cases =
     assert(cgbuf.GetCurrentStack() = stackAtTargets) // cgbuf stack should be unchanged over tests. [bug://1750].
 
-    let decisions =
+    let defaultDecisions =
         match defaultTargetOpt with
         | Some defaultTarget -> [(None, eenv, defaultTarget)]
         | None -> []
 
-    (decisions, caseLabels, cases) 
-    |||> List.fold2 (fun decisions caseLabel (TCase(_, caseTree)) -> decisions @ [(Some caseLabel, eenv, caseTree)])
+    (caseLabels, cases)
+    ||> List.map2 (fun caseLabel (TCase(_, caseTree)) -> (Some caseLabel, eenv, caseTree))
+    |> List.append defaultDecisions
 
 // Used for the peephole optimization below
 and (|BoolExpr|_|) = function Expr.Const (Const.Bool b1, _, _) -> Some b1 | _ -> None
