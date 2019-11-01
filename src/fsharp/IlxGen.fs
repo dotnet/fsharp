@@ -4858,42 +4858,44 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
         // go to the join point
         Br afterJoin, afterJoin, stackAfterJoin, sequel
 
+and GenPostponedAndQueueTargets cenv cgbuf (queue: Queue<_>) targetInfos stackAtTargets sequel =
+    match targetInfos with
+    | [] -> None
+    | (KeyValue(_, (targetInfo, isTargetPostponed))) :: rest ->
+        if isTargetPostponed then 
+            queue.Enqueue(fun () -> GenPostponedAndQueueTargets cenv cgbuf queue rest stackAtTargets sequel)
+            Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
+        else
+            GenPostponedAndQueueTargets cenv cgbuf queue rest stackAtTargets sequel
+
+and GenDecisionTreesAndQueueTargets cenv cgbuf (queue: Queue<_>) targetInfos decisions stackAtTargets targets repeatSP sequel =
+    match decisions with
+    | [] -> 
+        let sortedTargetInfos = 
+            targetInfos 
+            |> Seq.sortBy (fun (KeyValue(targetIdx, _)) -> targetIdx)
+            |> List.ofSeq
+
+        GenPostponedAndQueueTargets cenv cgbuf queue sortedTargetInfos stackAtTargets sequel
+            
+    | (inplabOpt, eenv, tree) :: rest ->
+        match tree with
+        | TDSuccess(es, targetIdx) ->
+            let targetInfos, genTargetInfoOpt = GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel
+            match genTargetInfoOpt with
+            | Some _ ->
+                queue.Enqueue(fun () -> GenDecisionTreesAndQueueTargets cenv cgbuf queue targetInfos rest stackAtTargets targets repeatSP sequel)
+                genTargetInfoOpt
+            | _ ->
+                GenDecisionTreesAndQueueTargets cenv cgbuf queue targetInfos rest stackAtTargets targets repeatSP sequel
+        | _ ->
+            let newDecisions = GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree targets repeatSP targetInfos sequel
+            GenDecisionTreesAndQueueTargets cenv cgbuf queue targetInfos (newDecisions @ rest) stackAtTargets targets repeatSP sequel
+
 // Accumulate the decision graph as we go
 and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel : (Queue<unit -> (IlxGenEnv * EmitSequencePointState * Expr * sequel) option>) =
-    let rec genDecisions targetInfos decisions (queue: Queue<_>) =
-        match decisions with
-        | [] -> 
-            let remaining = 
-                targetInfos 
-                |> Seq.sortBy (fun (KeyValue(targetIdx, _)) -> targetIdx)
-                |> Seq.filter (fun (KeyValue(_, (_, isTargetPostponed))) -> isTargetPostponed)
-                |> List.ofSeq
-
-            let rec genRemaining remaining (queue: Queue<_>) =
-                match remaining with
-                | [] -> None
-                | (KeyValue(_, (targetInfo, _))) :: rest ->
-                    queue.Enqueue(fun () -> genRemaining rest queue)
-                    Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
-
-            genRemaining remaining queue
-            
-        | (inplabOpt, eenv, tree) :: rest ->
-            match tree with
-            | TDSuccess(es, targetIdx) ->
-                let targetInfos, genTargetInfoOpt = GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel
-                match genTargetInfoOpt with
-                | Some _ ->
-                    queue.Enqueue(fun () -> genDecisions targetInfos rest queue)
-                    genTargetInfoOpt
-                | _ ->
-                    genDecisions targetInfos rest queue
-            | _ ->
-                let newDecisions = GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree targets repeatSP targetInfos sequel
-                genDecisions targetInfos (newDecisions @ rest) queue
-
     let queue = Queue()
-    queue.Enqueue (fun () -> genDecisions (IntMap.empty()) [(None, eenv, tree)] queue)
+    queue.Enqueue (fun () -> GenDecisionTreesAndQueueTargets cenv cgbuf queue (IntMap.empty()) [(None, eenv, tree)] stackAtTargets targets repeatSP sequel)
     queue
 
 and TryFindTargetInfo targetInfos n =
