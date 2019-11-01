@@ -62,7 +62,3 @@ val UnionOptimizationInfos: seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
 val ExprHasEffect: TcGlobals -> Expr -> bool
 
 val internal u_CcuOptimizationInfo : TastPickle.ReaderState -> CcuOptimizationInfo
-
-// REVIEW: We need to put the literal at the end of a file due to a bug that causes a compiler error when a literal is put in the middle other signature constructs.
-[<Literal>]
-val LambdaInlineThresholdDefault : int = 6
