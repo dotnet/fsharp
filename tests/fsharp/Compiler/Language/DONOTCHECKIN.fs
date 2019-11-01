@@ -12,7 +12,7 @@ module DONOTCHECKIN =
 open System
 
 let lst = [1;2;3]
-let arr2 = lst.[^1..]
+let arr2 = lst.[1]
 Console.WriteLine(arr2)
             """
 
@@ -24,6 +24,7 @@ open System
 
 let arr = array2D [ [1;2;3]; [3;2;1]]
 let arr2 = arr.[1, ^1]
+if arr2 <> 2 then failwith "wut"
 Console.WriteLine(arr2)
             """
  

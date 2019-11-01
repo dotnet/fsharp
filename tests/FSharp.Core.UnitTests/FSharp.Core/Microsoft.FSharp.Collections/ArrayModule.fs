@@ -1706,6 +1706,18 @@ type ArrayModule() =
         Assert.That(arr.[^3..^1], Is.EquivalentTo(arr.[1..3]))
 
     [<Test>]
+    member this.``Slicing with first index reverse and second index non reverse behaves as expected``()=
+        let arr = [|1;2;3;4;5|]
+
+        Assert.That(arr.[^3..4], Is.EquivalentTo(arr.[1..4]))
+
+    [<Test>]
+    member this.``Slicing with first index non reverse and second index reverse behaves as expected``()=
+        let arr = [|1;2;3;4;5|]
+
+        Assert.That(arr.[3..^0], Is.EquivalentTo(arr.[3..4]))
+
+    [<Test>]
     member this.``Set slice with first index reverse behaves as expected``()  = 
         let arr1 = [| 1;2;3;4;5 |]
         let arr2 = [| 1;2;3;4;5 |]
@@ -1736,3 +1748,16 @@ type ArrayModule() =
         arr2.[1..3] <- [| 8;7;6 |]
 
         Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    [<Test>]
+    member this.``Get item with reverse index behaves as expected``() = 
+        let arr = [|1;2;3;4;5|]
+
+        Assert.That(arr.[^1], Is.EqualTo(4))
+
+    [<Test>]
+    member this.``Set item with reverse index behaves as expected``() = 
+        let arr = [|1;2;3;4;5|]
+
+        arr.[^0] <- 9
+        Assert.That(arr.[4], Is.EqualTo(9))

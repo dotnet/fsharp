@@ -189,3 +189,9 @@ type StringModule() =
         let str = "abcde"
 
         Assert.That(str.[^3..^1], Is.EquivalentTo(str.[1..3]))
+
+    [<Test>]
+    member this.``Indexer with reverse index behaves as expected``() =
+        let str = "abcde"
+
+        Assert.That(str.[^1], Is.EqualTo('d'))

@@ -3772,7 +3772,8 @@ optRange:
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 3) (Some $3)) }
 
   | INFIX_AT_HAT_OP declExpr DOT_DOT INFIX_AT_HAT_OP declExpr 
-      { let reverseIndex1 = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)
+      { //if $1 <> "^" || $4 <> "^" then reportParseErrorAt (unionRanges (rhs parseState 4) (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator())
+        let reverseIndex1 = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)
         let reverseIndex2 = SynExpr.ReverseIndex($5, rhs parseState 4, unionRanges (rhs parseState 4) $5.Range)
         SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex1), mkSynOptionalExpr (rhs parseState 5) (Some reverseIndex2)) }
 

@@ -639,3 +639,29 @@ type Array2Module() =
         arr2.[1, ^1..^0] <- setArray
 
         Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    [<Test>]
+    member this.``Set item with reverse index in one dim behaves as expected``() =
+        let arr = array2D [[1;2;3]; [3;2;1]]
+
+        arr.[^1, 0] <- 9
+        Assert.That(arr.[0, 0], Is.EqualTo(9))
+
+    [<Test>]
+    member this.``Set item with reverse index in all dims behaves as expected``()=
+        let arr = array2D [[1;2;3]; [3;2;1]]
+
+        arr.[^0, ^0] <- 9
+        Assert.That(arr.[1,2], Is.EqualTo(9))
+
+    [<Test>]
+    member this.``Get item with reverse index in one dim behaves as expected``() =
+        let arr = array2D [[1;2;3]; [4;5;6]]
+
+        Assert.That(arr.[^0, 0], Is.EqualTo(4))
+
+    [<Test>]
+    member this.``Get item with reverse index in all dims behaves as expected``()=
+        let arr = array2D [[1;2;3]; [4;5;6]]
+
+        Assert.That(arr.[^1, ^1], Is.EqualTo(2))

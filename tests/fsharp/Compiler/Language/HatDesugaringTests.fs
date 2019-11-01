@@ -5,7 +5,7 @@ open NUnit.Framework
 //[<TestFixture>]
 //module HatDesugaringTests =
 
-//    //[<Test>]
-//    //let ``
+//    [<Test>]
+//    let ``Users s
 
 

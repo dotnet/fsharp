@@ -336,3 +336,34 @@ type Array3Module() =
         let arr = Array3D.create 5 5 5 1
 
         Assert.That(arr.[..^1, ^1..^0, ^2..], Is.EquivalentTo(arr.[..3, 3..4, 2..]))
+
+    [<Test>]
+    member this.``Set slice with reverse index in all 3 slice expr behaves as expected``()  = 
+        let arr1 = Array3D.create 5 5 5 1
+        let arr2 = Array3D.create 5 5 5 1
+
+        let setSlice = Array3D.create 2 2 2 0
+
+        arr1.[^1..^0, ^2..^3, ^1..^2] <- setSlice
+        arr2.[^1..^0, ^2..^3, ^1..^2] <- setSlice
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    [<Test>]
+    member this.``Indexer with reverse index in one dim behaves as expected``() = 
+        let arr1 = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
+ 
+        Assert.That(arr1.[^1,0,0], Is.EqualTo(300))
+
+    [<Test>]
+    member this.``Indexer with reverse index in all dim behaves as expected``() = 
+        let arr1 = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
+ 
+        Assert.That(arr1.[^0,^1,^0], Is.EqualTo(434))
+
+    [<Test>]
+    member this.``Set item with reverse index in all dims behave as expected``() = 
+        let arr1 = Array3D.create 5 5 5 2
+
+        arr1.[^1,^0,^0] <- 9
+        Assert.That(arr1.[3,4,4], Is.EqualTo(9))
