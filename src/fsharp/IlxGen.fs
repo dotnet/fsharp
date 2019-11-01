@@ -2551,42 +2551,6 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
     GenAllocUnionCaseCore cenv cgbuf eenv (c,tyargs,args.Length,m)
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenAfterMatch cenv cgbuf eenv afterJoin stackAfterJoin sequelAfterJoin =
-    CG.SetMarkToHere cgbuf afterJoin
-
-    //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
-    CG.SetStack cgbuf stackAfterJoin
-    // If any values are left on the stack after the join then we're certainly going to do something with them
-    // For example, we may be about to execute a 'stloc' for
-    //
-    //   let y2 = if System.DateTime.Now.Year < 2000 then 1 else 2
-    //
-    // or a 'stelem' for
-    //
-    //   arr.[0] <- if System.DateTime.Now.Year > 2000 then 1 else 2
-    //
-    // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
-    // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
-    if not (isNil stackAfterJoin) then
-        cgbuf.EmitStartOfHiddenCode()
-
-    GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
-
-and GenDecisionTreeTargetQueue cenv cgbuf (targetQueue: Queue<_>) eenv afterJoin stackAfterJoin sequelAfterJoin contf =
-    if targetQueue.Count > 0 then
-        let f = targetQueue.Dequeue ()
-        let genTargetInfoOpt = f ()
-        match genTargetInfoOpt with
-        | Some (eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget) -> 
-            GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake ->
-                GenDecisionTreeTargetQueue cenv cgbuf targetQueue eenv afterJoin stackAfterJoin sequelAfterJoin contf
-            )
-        | _ -> 
-            GenDecisionTreeTargetQueue cenv cgbuf targetQueue eenv afterJoin stackAfterJoin sequelAfterJoin contf
-    else
-        GenAfterMatch cenv cgbuf eenv afterJoin stackAfterJoin sequelAfterJoin
-        contf Fake
-
 and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf: FakeUnit -> FakeUnit) =
     let expr = stripExpr expr
     match expr with 
@@ -2675,8 +2639,27 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
             //        match-testing (dtrees) should not contribute to the stack.
             //        Each branch-RHS (targets) may contribute to the stack, leaving it in the "stackAfterJoin" state, for the join point.
             //        Since code is branching and joining, the cgbuf stack is maintained manually.
-            let targetQueue = GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequelOnBranches
-            GenDecisionTreeTargetQueue cenv cgbuf targetQueue eenv afterJoin stackAfterJoin sequelAfterJoin contf
+            GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequelOnBranches (contf << (fun Fake -> 
+                CG.SetMarkToHere cgbuf afterJoin
+
+                //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
+                CG.SetStack cgbuf stackAfterJoin
+                // If any values are left on the stack after the join then we're certainly going to do something with them
+                // For example, we may be about to execute a 'stloc' for
+                //
+                //   let y2 = if System.DateTime.Now.Year < 2000 then 1 else 2
+                //
+                // or a 'stelem' for
+                //
+                //   arr.[0] <- if System.DateTime.Now.Year > 2000 then 1 else 2
+                //
+                // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
+                // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
+                if not (isNil stackAfterJoin) then
+                    cgbuf.EmitStartOfHiddenCode()
+
+                GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
+                Fake))
 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
         if canProcessSequencePoint then
@@ -4857,17 +4840,19 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
         // go to the join point
         Br afterJoin, afterJoin, stackAfterJoin, sequel
 
-and GenPostponedAndQueueTargets cenv cgbuf (queue: Queue<_>) targetInfos stackAtTargets sequel =
+and GenPostponedDecisionTreeTargets cenv cgbuf targetInfos stackAtTargets sequel (contf: FakeUnit -> FakeUnit) : FakeUnit =
     match targetInfos with
-    | [] -> None
+    | [] -> contf Fake
     | (KeyValue(_, (targetInfo, isTargetPostponed))) :: rest ->
         if isTargetPostponed then 
-            queue.Enqueue(fun () -> GenPostponedAndQueueTargets cenv cgbuf queue rest stackAtTargets sequel)
-            Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
+            let eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget = GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel
+            GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake ->
+                GenPostponedDecisionTreeTargets cenv cgbuf rest stackAtTargets sequel contf
+            )
         else
-            GenPostponedAndQueueTargets cenv cgbuf queue rest stackAtTargets sequel
+            GenPostponedDecisionTreeTargets cenv cgbuf rest stackAtTargets sequel contf
 
-and GenDecisionTreesAndQueueTargets cenv cgbuf (queue: Queue<_>) targetInfos decisions stackAtTargets targets repeatSP sequel =
+and GenDecisionTreesAndTargets cenv cgbuf targetInfos decisions stackAtTargets targets repeatSP sequel contf =
     match decisions with
     | [] -> 
         let sortedTargetInfos = 
@@ -4875,27 +4860,26 @@ and GenDecisionTreesAndQueueTargets cenv cgbuf (queue: Queue<_>) targetInfos dec
             |> Seq.sortBy (fun (KeyValue(targetIdx, _)) -> targetIdx)
             |> List.ofSeq
 
-        GenPostponedAndQueueTargets cenv cgbuf queue sortedTargetInfos stackAtTargets sequel
+        GenPostponedDecisionTreeTargets cenv cgbuf sortedTargetInfos stackAtTargets sequel contf
             
     | (inplabOpt, eenv, tree) :: rest ->
         match tree with
         | TDSuccess(es, targetIdx) ->
             let targetInfos, genTargetInfoOpt = GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel
             match genTargetInfoOpt with
-            | Some _ ->
-                queue.Enqueue(fun () -> GenDecisionTreesAndQueueTargets cenv cgbuf queue targetInfos rest stackAtTargets targets repeatSP sequel)
-                genTargetInfoOpt
+            | Some (eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget) ->
+                GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake ->
+                    GenDecisionTreesAndTargets cenv cgbuf targetInfos rest stackAtTargets targets repeatSP sequel contf
+                )
             | _ ->
-                GenDecisionTreesAndQueueTargets cenv cgbuf queue targetInfos rest stackAtTargets targets repeatSP sequel
+                GenDecisionTreesAndTargets cenv cgbuf targetInfos rest stackAtTargets targets repeatSP sequel contf
         | _ ->
             let newDecisions = GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree targets repeatSP targetInfos sequel
-            GenDecisionTreesAndQueueTargets cenv cgbuf queue targetInfos (newDecisions @ rest) stackAtTargets targets repeatSP sequel
+            GenDecisionTreesAndTargets cenv cgbuf targetInfos (newDecisions @ rest) stackAtTargets targets repeatSP sequel contf
 
 // Accumulate the decision graph as we go
-and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel : (Queue<unit -> (IlxGenEnv * EmitSequencePointState * Expr * sequel) option>) =
-    let queue = Queue()
-    queue.Enqueue (fun () -> GenDecisionTreesAndQueueTargets cenv cgbuf queue (IntMap.empty()) [(None, eenv, tree)] stackAtTargets targets repeatSP sequel)
-    queue
+and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel contf =
+    GenDecisionTreesAndTargets cenv cgbuf (IntMap.empty()) [(None, eenv, tree)] stackAtTargets targets repeatSP sequel contf
 
 and TryFindTargetInfo targetInfos n =
     match IntMap.tryFind n targetInfos with
