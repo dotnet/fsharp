@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CompileOptions
 
+open System
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompileOps
@@ -12,7 +13,7 @@ open FSharp.Compiler.TcGlobals
 
 //----------------------------------------------------------------------------
 // Compiler Option Parser
-//--------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 // For command-line options that can be suffixed with +/-
 [<RequireQualifiedAccess>]
@@ -76,7 +77,7 @@ val SetTargetProfile  : TcConfigBuilder -> string -> unit
 val GetGeneratedILModuleName : CompilerTarget -> string -> string
 
 val GetInitialOptimizationEnv : TcImports * TcGlobals -> IncrementalOptimizationEnv
-val AddExternalCcuToOpimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
+val AddExternalCcuToOptimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
 val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list -> TypedAssemblyAfterOptimization * Optimizer.LazyModuleInfo * IncrementalOptimizationEnv 
 
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxGen.IlxAssemblyGenerator
@@ -89,7 +90,7 @@ val NormalizeAssemblyRefs : CompilationThreadToken * TcImports -> (AbstractIL.IL
 // Miscellany
 val ignoreFailureOnMono1_1_16 : (unit -> unit) -> unit
 val mutable enableConsoleColoring : bool
-val DoWithColor : System.ConsoleColor -> (unit -> 'a) -> 'a
+val DoWithColor : ConsoleColor -> (unit -> 'a) -> 'a
 val DoWithErrorColor : bool -> (unit -> 'a) -> 'a
 val ReportTime : TcConfig -> string -> unit
 val GetAbbrevFlagSet : TcConfigBuilder -> bool -> Set<string>

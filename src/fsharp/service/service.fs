@@ -55,7 +55,7 @@ type FSharpProjectOptions =
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
       UnresolvedReferences : UnresolvedReferencesSet option
-      OriginalLoadReferences: (range * string) list
+      OriginalLoadReferences: (range * string * string) list
       ExtraProjectInfo : obj option
       Stamp : int64 option
     }
@@ -131,7 +131,7 @@ module Helpers =
         && FSharpProjectOptions.UseSameProject(o1,o2)
 
 module CompileHelpers =
-    let mkCompilationErorHandlers() = 
+    let mkCompilationErrorHandlers() = 
         let errors = ResizeArray<_>()
 
         let errorSink isError exn = 
@@ -164,7 +164,7 @@ module CompileHelpers =
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag. 
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)  = 
     
-        let errors, errorLogger, loggerProvider = mkCompilationErorHandlers()
+        let errors, errorLogger, loggerProvider = mkCompilationErrorHandlers()
         let result = 
             tryCompile errorLogger (fun exiter -> 
                 mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)true, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.No, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
@@ -173,7 +173,7 @@ module CompileHelpers =
 
     let compileFromAsts (ctok, legacyReferenceResolver, asts, assemblyName, outFile, dependencies, noframework, pdbFile, executable, tcImportsCapture, dynamicAssemblyCreator) =
 
-        let errors, errorLogger, loggerProvider = mkCompilationErorHandlers()
+        let errors, errorLogger, loggerProvider = mkCompilationErrorHandlers()
     
         let executable = defaultArg executable true
         let target = if executable then CompilerTarget.ConsoleExe else CompilerTarget.Dll
@@ -205,7 +205,7 @@ module CompileHelpers =
                 TypeDefs = ilxMainModule.TypeDefs.AsList |> List.filter (fun td -> not (isTypeNameForGlobalFunctions td.Name)) |> mkILTypeDefs
                 Resources=mkILResources [] }
 
-        // The function used to resolve typees while emitting the code
+        // The function used to resolve types while emitting the code
         let assemblyResolver s = 
             match tcImportsRef.Value.Value.TryFindExistingFullyQualifiedPathByExactAssemblyRef (ctok, s) with 
             | Some res -> Some (Choice1Of2 res)
@@ -385,7 +385,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
              areSame=AreSameForChecking3,
              areSimilar=AreSubsumable3)
 
-    /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interleaving chunck queued to Reactor).
+    /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interleaving chunk queued to Reactor).
     let beingCheckedFileTable = 
         ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>
             (HashIdentity.FromFunctions
@@ -687,7 +687,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                          tcErrors,
                          reactorOps,
                          keepAssemblyContents,
-                         Option.get tcProj.LastestCcuSigForFile, 
+                         Option.get tcProj.LatestCcuSigForFile, 
                          tcProj.TcState.Ccu, 
                          tcProj.TcImports, 
                          tcProj.TcEnvAtEnd.AccessRights,
@@ -1167,7 +1167,7 @@ type FSharpChecker(legacyReferenceResolver,
 
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, initialSourceFiles, argv)
-        FSharpParsingOptions.FromTcConfigBuidler(tcConfigBuilder, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
+        FSharpParsingOptions.FromTcConfigBuilder(tcConfigBuilder, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
 
     member ic.GetParsingOptionsFromCommandLineArgs(argv, ?isInteractive: bool) =
         ic.GetParsingOptionsFromCommandLineArgs([], argv, ?isInteractive=isInteractive)

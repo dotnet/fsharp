@@ -1,6 +1,6 @@
 <Project>
 
-    <UsingTask TaskName="Fsi" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+  <UsingTask TaskName="Fsi" AssemblyFile="$(FSharpBuildAssemblyFile)" />
 
     <Target
         Name="RunFSharpScript"
@@ -35,8 +35,8 @@
           <Output TaskParameter="CommandLineArgs" ItemName="FsiCommandLineArgs" />
         </Fsi>
 
-        <ItemGroup>
-            <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
-        </ItemGroup>
-    </Target>
+      <ItemGroup>
+          <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
+      </ItemGroup>
+  </Target>
 </Project>

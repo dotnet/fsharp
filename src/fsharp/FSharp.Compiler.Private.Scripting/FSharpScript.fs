@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Scripting
 
 open System
+open System.Threading
 open FSharp.Compiler.Interactive.Shell
 
 type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: string[]) as this =
@@ -30,11 +31,25 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
         ())()
 
     let config = FsiEvaluationSession.GetDefaultConfiguration()
+#if NETSTANDARD
     let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:netcore"; "--quiet" |]
+#else
+    let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--quiet" |]
+#endif
     let argv = Array.append baseArgs additionalArgs
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
+    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
+    [<CLIEvent>]
     member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
+
+    [<CLIEvent>]
+    member __.DependencyAdding = fsi.DependencyAdding
+
+    [<CLIEvent>]
+    member __.DependencyAdded = fsi.DependencyAdded
+
+    [<CLIEvent>]
+    member __.DependencyFailed = fsi.DependencyFailed
 
     member __.ProvideInput = stdin.ProvideInput
 
@@ -42,8 +57,9 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
 
     member __.ErrorProduced = errorProduced.Publish
 
-    member __.Eval(code: string) =
-        let ch, errors = fsi.EvalInteractionNonThrowing code
+    member __.Eval(code: string, ?cancellationToken: CancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        let ch, errors = fsi.EvalInteractionNonThrowing(code, cancellationToken)
         match ch with
         | Choice1Of2 v -> Ok(v), errors
         | Choice2Of2 ex -> Error(ex), errors

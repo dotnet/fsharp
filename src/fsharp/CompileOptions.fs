@@ -6,6 +6,7 @@ module internal FSharp.Compiler.CompileOptions
 
 open Internal.Utilities
 open System
+open System.IO
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
@@ -502,8 +503,10 @@ let SetDebugSwitch (tcConfigB: TcConfigBuilder) (dtype: string option) (s: Optio
 let SetEmbedAllSourceSwitch (tcConfigB: TcConfigBuilder) switch = 
     if (switch = OptionSwitch.On) then tcConfigB.embedAllSource <- true else tcConfigB.embedAllSource <- false
 
-let setOutFileName tcConfigB s = 
-    tcConfigB.outputFile <- Some s
+let setOutFileName tcConfigB path =
+    let outputDir = Path.GetDirectoryName(path)
+    tcConfigB.outputDir <- Some outputDir
+    tcConfigB.outputFile <- Some path
 
 let setSignatureFile tcConfigB s = 
     tcConfigB.printSignature <- true 
@@ -559,17 +562,24 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
 // OptionBlock: Input files
 //-------------------------
 
-let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
-    [ CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
+let inputFileFlagsBoth (tcConfigB : TcConfigBuilder) = [
+    CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
+    CompilerOption("compilertool", tagFile, OptionString (fun s -> tcConfigB.AddCompilerToolsByPath s), None, Some (FSComp.SR.optsCompilerTool()))
     ]
 
-let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB 
+let referenceFlagAbbrev (tcConfigB : TcConfigBuilder) =
+    CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some(FSComp.SR.optsShortFormOf("--reference")))
+
+let compilerToolFlagAbbrev (tcConfigB : TcConfigBuilder) =
+    CompilerOption("t", tagFile, OptionString (fun s -> tcConfigB.AddCompilerToolsByPath s), None, Some(FSComp.SR.optsShortFormOf("--compilertool")))
+
+let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
 let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
 #if NETSTANDARD
-        [ CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs())) ]
+    [ CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs())) ]
 #else
-        List.empty<CompilerOption>
+    List.empty<CompilerOption>
 #endif
 
 let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
@@ -1670,7 +1680,7 @@ let ReportTime (tcConfig:TcConfig) descr =
 // OPTIMIZATION - support - addDllToOptEnv
 //----------------------------------------------------------------------------
 
-let AddExternalCcuToOpimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
+let AddExternalCcuToOptimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
     match ccuinfo.FSharpOptimizationData.Force() with 
     | None -> optEnv
     | Some data -> Optimizer.BindCcu ccuinfo.FSharpViewOfMetadata data optEnv tcGlobals
@@ -1682,7 +1692,7 @@ let AddExternalCcuToOpimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) 
 let GetInitialOptimizationEnv (tcImports:TcImports, tcGlobals:TcGlobals) =
     let ccuinfos = tcImports.GetImportedAssemblies()
     let optEnv = Optimizer.IncrementalOptimizationEnv.Empty
-    let optEnv = List.fold (AddExternalCcuToOpimizationEnv tcGlobals) optEnv ccuinfos 
+    let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) optEnv ccuinfos 
     optEnv
    
 let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles) =

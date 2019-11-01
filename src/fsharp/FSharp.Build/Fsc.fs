@@ -27,6 +27,7 @@ type public Fsc () as this =
     let mutable checksumAlgorithm: string = null
     let mutable codePage : string = null
     let mutable commandLineArgs : ITaskItem list = []
+    let mutable compilerTools: ITaskItem [] = [||]
     let mutable debugSymbols = false
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
@@ -162,6 +163,12 @@ type public Fsc () as this =
 
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
+
+        // CompilerTools
+        if compilerTools <> null then 
+            for item in compilerTools do
+                builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
+
         // References
         if references <> null then 
             for item in references do
@@ -275,6 +282,11 @@ type public Fsc () as this =
     member fsc.CodePage
         with get() = codePage
         and set(s) = codePage <- s
+
+    // -r <string>: Reference an F# or .NET assembly.
+    member fsc.CompilerTools
+        with get() = compilerTools
+        and set(a) = compilerTools <- a
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member fsc.DebugSymbols
