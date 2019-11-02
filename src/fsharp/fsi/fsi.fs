@@ -405,7 +405,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
         // Note: The value may be (null:Object).
         // Note: A System.Type allows the value printer guide printing of nulls, e.g. as None or [].
         //-------
-        // IlxGen knows what the v:Val was converted to w.r.t. AbsIL datastructures.
+        // IlxGen knows what the v:Val was converted to w.r.t. AbsIL data structures.
         // Ilreflect knows what the AbsIL was generated to.
         // Combining these allows for obtaining the (obj,objTy) by reflection where possible.
         // This assumes the v:Val was given appropriate storage, e.g. StaticField.
@@ -1254,7 +1254,7 @@ type internal FsiDynamicCompiler
             with e ->
                 tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
-        let optEnv = List.fold (AddExternalCcuToOpimizationEnv tcGlobals) istate.optEnv ccuinfos
+        let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) istate.optEnv ccuinfos
         istate.ilxGenerator.AddExternalCcus (ccuinfos |> List.map (fun ccuinfo -> ccuinfo.FSharpViewOfMetadata)) 
         resolutions,
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
@@ -1401,7 +1401,7 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
 
     member controller.InstallKillThread(threadToKill:Thread, pauseMilliseconds:int) =
 
-        // Fsi Interupt handler
+        // Fsi Interrupt handler
         let raiseCtrlC() =
             use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
             fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiInterrupt())
@@ -1623,11 +1623,11 @@ type internal FsiStdinLexerProvider
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
 
-    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readf = 
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF = 
         UnicodeLexing.FunctionAsLexbuf
           (isFeatureSupported, (fun (buf: char[], start, len) ->
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
-            let inputOption = try Some(readf()) with :? EndOfStreamException -> None
+            let inputOption = try Some(readF()) with :? EndOfStreamException -> None
             inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
             match inputOption with 
             |  Some(null) | None -> 
@@ -2699,7 +2699,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             DriveFsiEventLoop (fsi, fsiConsoleOutput )
 
         else // not interact
-            if !progress then fprintfn fsiConsoleOutput.Out "Run: not interact, loading intitial files..."
+            if !progress then fprintfn fsiConsoleOutput.Out "Run: not interact, loading initial files..."
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, errorLogger)
 
             if !progress then fprintfn fsiConsoleOutput.Out "Run: done..."
@@ -2749,7 +2749,7 @@ module Settings =
         abstract Invoke : (unit -> 'T) -> 'T 
         abstract ScheduleRestart : unit -> unit
     
-    // fsi.fs in FSHarp.Compiler.Sevice.dll avoids a hard dependency on FSharp.Compiler.Interactive.Settings.dll 
+    // fsi.fs in FSHarp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interactive.Settings.dll 
     // by providing an optional reimplementation of the functionality
 
     // An implementation of IEventLoop suitable for the command-line console
