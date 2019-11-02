@@ -189,7 +189,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <char> CHAR
 %token <System.Decimal> DECIMAL 
 %token <(string * string)> BIGNUM
-%token <bool> LET YIELD YIELD_BANG 
+%token <bool> LET YIELD YIELD_BANG AND_BANG
 %token <bool> LESS GREATER /* here the bool indicates if the tokens are part of a type application or type parameter declaration, e.g. C<int>, detected by the lex filter */
 %token <string> PERCENT_OP BINDER 
 %token <string * bool> LQUOTE RQUOTE  RQUOTE_DOT 
@@ -218,6 +218,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 /* for offside rule */
 %token <bool> OLET      /* LexFilter #light converts 'LET' tokens to 'OLET' when starting (CtxtLetDecl(blockLet=true)) */
 %token <string> OBINDER /* LexFilter #light converts 'BINDER' tokens to 'OBINDER' when starting (CtxtLetDecl(blockLet=true)) */
+%token <bool> OAND_BANG /* LexFilter #light converts 'AND_BANG' tokens to 'OAND_BANG' when starting (CtxtLetDecl(blockLet=true)) */
 %token ODO              /* LexFilter #light converts 'DO' tokens to 'ODO' */
 %token ODO_BANG         /* LexFilter #light converts 'DO_BANG' tokens to 'ODO_BANG' */
 %token OTHEN            /* LexFilter #light converts 'THEN' tokens to 'OTHEN' */
@@ -452,7 +453,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %nonassoc paren_pat_colon
 %nonassoc paren_pat_attribs
 %left OR BAR_BAR JOIN_IN
-%left AND   /* check */
+%left AND
+%left AND_BANG
 %left  AMP AMP_AMP 
 %nonassoc pat_conj
 %nonassoc expr_not
@@ -3059,6 +3061,20 @@ recover:
    | error { debugPrint("recovering via error"); true }  
    | EOF { debugPrint("recovering via EOF"); false }
 
+morebinders:
+  | AND_BANG headBindingPattern EQUALS typedSeqExprBlock IN morebinders %prec expr_let
+     { let spBind = SequencePointAtBinding(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
+       let m = rhs parseState 1 (* TODO Pretty sure this is wrong *)
+       (spBind,$1,true,$2,$4,m) :: $6 }
+
+  | OAND_BANG headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP morebinders %prec expr_let
+     { $5 "and!" (rhs parseState 1)  // report unterminated error
+       let spBind = SequencePointAtBinding(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
+       let m = rhs parseState 1 (* TODO Pretty sure this is wrong *)
+       (spBind,$1,true,$2,$4,m) :: $7 }
+
+  | %prec prec_no_more_attr_bindings
+      { [] }
 
 declExpr:
   | defnBindings IN typedSeqExpr  %prec expr_let 
@@ -3352,27 +3368,44 @@ declExpr:
   | YIELD_BANG declExpr
      { SynExpr.YieldOrReturnFrom (($1,not $1), $2, unionRanges (rhs parseState 1) $2.Range) } 
 
-  | BINDER headBindingPattern EQUALS typedSeqExprBlock IN opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
-     { let spBind = SequencePointAtBinding(rhs2 parseState 1 5)
-       let m = unionRanges (rhs parseState 1) $7.Range
-       SynExpr.LetOrUseBang (spBind,($1 = "use"),true,$2,$4,$7,m) }
+  | YIELD recover
+     { let mYieldAll = rhs parseState 1
+       SynExpr.YieldOrReturn (($1, not $1), arbExpr("yield", mYieldAll), mYieldAll) } 
 
-  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
+  | YIELD_BANG recover
+     { let mYieldAll = rhs parseState 1
+       SynExpr.YieldOrReturnFrom (($1, not $1), arbExpr("yield!", mYieldAll), mYieldAll) } 
+
+  | BINDER headBindingPattern EQUALS typedSeqExprBlock IN opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let
+     { let spBind = SequencePointAtBinding(rhs2 parseState 1 5)
+       let m = unionRanges (rhs parseState 1) $8.Range
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m) }
+
+  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let
      { $5 (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error 
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
-       let m = unionRanges (rhs parseState 1) $7.Range
-       SynExpr.LetOrUseBang (spBind,($1 = "use"),true,$2,$4,$7,m) }
+       let m = unionRanges (rhs parseState 1) $8.Range
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m) }
+
+/*
+  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP morebinders error %prec expr_let
+     { // error recovery that allows intellisense when writing incomplete computation expressions
+       let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
+       let mAll = unionRanges (rhs parseState 1) (rhs parseState 7) // TODO Check this range
+       let m = $4.Range.EndRange // zero-width range
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, SynExpr.ImplicitZero m, mAll) }
+*/
 
   | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let 
      { // error recovery that allows intellisense when writing incomplete computation expressions 
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range) 
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
-       SynExpr.LetOrUseBang (spBind,($1 = "use"),true,$2,$4, SynExpr.ImplicitZero m, mAll) }
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, [], SynExpr.ImplicitZero m, mAll) }
 
   | DO_BANG typedSeqExpr IN opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
      { let spBind = NoSequencePointAtDoBinding
-       SynExpr.LetOrUseBang (spBind,false,true,SynPat.Const(SynConst.Unit,$2.Range),$2,$5, unionRanges (rhs parseState 1) $5.Range) }
+       SynExpr.LetOrUseBang(spBind, false, true, SynPat.Const(SynConst.Unit,$2.Range), $2, [], $5, unionRanges (rhs parseState 1) $5.Range) }
 
   | ODO_BANG typedSeqExprBlock hardwhiteDefnBindingsTerminator %prec expr_let 
      { SynExpr.DoBang ($2, unionRanges (rhs parseState 1) $2.Range) }

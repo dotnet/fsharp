@@ -322,9 +322,12 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       yield! walkExpr false e2 
                       yield! walkExpr false e3 
 
-                  | SynExpr.LetOrUseBang  (spBind, _, _, _, e1, e2, _) -> 
+                  | SynExpr.LetOrUseBang (spBind, _, _, _, e1, es, e2, _) -> 
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
+                      for (andBangSpBind,_,_,_,eAndBang,_) in es do
+                          yield! walkBindSeqPt andBangSpBind
+                          yield! walkExpr true eAndBang
                       yield! walkExpr true e2
 
                   | SynExpr.MatchBang (spBind, e, cl, _) ->
@@ -880,7 +883,14 @@ module UntypedParseImpl =
             | SynExpr.Match (_, e, synMatchClauseList, _)
             | SynExpr.MatchBang (_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
-            | SynExpr.LetOrUseBang (_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
+            | SynExpr.LetOrUseBang(_, _, _, _, e1, es, e2, _) ->
+                [
+                    yield e1
+                    for (_,_,_,_,eAndBang,_) in es do
+                        yield eAndBang
+                    yield e2
+                ]
+                |> List.tryPick (walkExprWithKind parentKind) 
             | SynExpr.DoBang (e, _) -> walkExprWithKind parentKind e
             | SynExpr.TraitCall (ts, sign, e, _) ->
                 List.tryPick walkTypar ts 
