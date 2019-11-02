@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array3D module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx

@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Control.Async module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 
 open System
 open System.Threading

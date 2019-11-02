@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.List type
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open System.Collections

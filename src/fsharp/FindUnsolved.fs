@@ -54,7 +54,7 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
         accExpr cenv env ast
         accTy cenv env ty
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _m) -> 
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, _m) -> 
         accTy cenv env ty
         accExpr cenv env basecall
         accMethods cenv env basev overrides 
@@ -164,7 +164,7 @@ and accExprs cenv env exprs =
 and accTargets cenv env m ty targets = 
     Array.iter (accTarget cenv env m ty) targets
 
-and accTarget cenv env _m _ty (TTarget(_vs, e, _)) = 
+and accTarget cenv env _m _ty (TTarget(_vs, e, _, _)) = 
     accExpr cenv env e
 
 and accDTree cenv env x =
