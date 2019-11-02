@@ -4,7 +4,6 @@ namespace FSharp.Compiler
 
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Threading
@@ -18,7 +17,6 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeChecker

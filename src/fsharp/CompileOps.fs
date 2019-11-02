@@ -4938,7 +4938,6 @@ type CodeContext =
     
 
 module private ScriptPreprocessClosure = 
-    open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
     type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 

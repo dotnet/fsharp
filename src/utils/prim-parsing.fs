@@ -4,11 +4,9 @@
 
 namespace  Internal.Utilities.Text.Parsing
 
-open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 
 open System
-open System.Collections.Generic
 
 exception RecoverableParseError
 exception Accept of obj

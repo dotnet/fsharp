@@ -7,7 +7,6 @@
 module FSharp.Compiler.Service.Tests.AssemblyReaderShim
 #endif
 
-open FSharp.Compiler.Service.Tests.Common
 open FsUnit
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open NUnit.Framework

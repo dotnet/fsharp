@@ -491,8 +491,6 @@ type OpenStatementInsertionPoint =
     | Nearest
 
 module ParsedInput =
-    open FSharp.Compiler
-    open FSharp.Compiler.Ast
 
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
