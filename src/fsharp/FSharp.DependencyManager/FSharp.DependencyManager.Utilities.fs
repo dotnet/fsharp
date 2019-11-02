@@ -258,13 +258,13 @@ $(PACKAGEREFERENCES)
       <ItemGroup>
         <FsxResolvedFile Include='@(ResolvedCompileFileDefinitions)'>
            <PackageRootProperty>Pkg$([System.String]::Copy('%(ResolvedCompileFileDefinitions.NugetPackageId)').Replace('.','_'))</PackageRootProperty>
-           <PackageRoot>$(%(FsxResolvedFile.PackageRootProperty))</PackageRoot>
+           <PackageRoot>$([MSBuild]::EnsureTrailingSlash('$(%(FsxResolvedFile.PackageRootProperty))'))</PackageRoot>
            <InitializeSourcePath>$(%(FsxResolvedFile.PackageRootProperty))\content\%(ResolvedCompileFileDefinitions.FileName)%(ResolvedCompileFileDefinitions.Extension).fsx</InitializeSourcePath>
         </FsxResolvedFile>
         <NativeIncludeRoots
             Include='@(RuntimeTargetsCopyLocalItems)'
             Condition=""'%(RuntimeTargetsCopyLocalItems.AssetType)' == 'native'"">
-           <Path>$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))</Path>
+           <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
         </NativeIncludeRoots>
       </ItemGroup>
   </Target>
@@ -279,11 +279,12 @@ $(PACKAGEREFERENCES)
       <ReferenceLines Include='// MSBuildSDKsPath:($(MSBuildSDKsPath))' />
       <ReferenceLines Include='// MSBuildExtensionsPath:($(MSBuildExtensionsPath))' />
       <ReferenceLines Include='//' />
-      <ReferenceLines Include='#r @""%(FsxResolvedFile.HintPath)""'                 Condition = ""%(FsxResolvedFile.NugetPackageId) != 'Microsoft.NETCore.App' and %(FsxResolvedFile.NugetPackageId) != 'FSharp.Core' and %(FsxResolvedFile.NugetPackageId) != 'System.ValueTuple' and Exists('%(FsxResolvedFile.HintPath)')"" />
+      <ReferenceLines Include='#r @""%(FsxResolvedFile.HintPath)""' Condition = ""'%(FsxResolvedFile.NugetPackageId)' != '' and '%(FsxResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(FsxResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(FsxResolvedFile.NugetPackageId)' != 'System.ValueTuple' and Exists('%(FsxResolvedFile.HintPath)')"" KeepDuplicates='false' />
       <ReferenceLines Include='//' />
-      <ReferenceLines Include='#I @""%(NativeIncludeRoots.Path)""' />
+      <ReferenceLines Include='#I @""%(FsxResolvedFile.PackageRoot)""' Condition= ""'%(FsxResolvedFile.PackageRoot)' != ''"" KeepDuplicates='false' />
+      <ReferenceLines Include='#I @""%(NativeIncludeRoots.Path)""' Condition= ""'%(NativeIncludeRoots.Path)' != ''"" KeepDuplicates='false' />
       <ReferenceLines Include='//' />
-      <ReferenceLines Include='#load @""%(FsxResolvedFile.InitializeSourcePath)""'  Condition = ""%(FsxResolvedFile.NugetPackageId) != 'Microsoft.NETCore.App' and %(FsxResolvedFile.NugetPackageId) != 'FSharp.Core' and %(FsxResolvedFile.NugetPackageId) != 'System.ValueTuple' and Exists('%(FsxResolvedFile.InitializeSourcePath)')"" />
+      <ReferenceLines Include='#load @""%(FsxResolvedFile.InitializeSourcePath)""'  Condition = ""'%(FsxResolvedFile.InitializeSourcePath)' != '' and '%(FsxResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(FsxResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(FsxResolvedFile.NugetPackageId)' != 'System.ValueTuple' and Exists('%(FsxResolvedFile.InitializeSourcePath)')"" KeepDuplicates='false' />
     </ItemGroup>
 
     <WriteLinesToFile Lines='@(ReferenceLines)' File='$(MSBuildProjectFullPath).fsx' Overwrite='True' WriteOnlyWhenDifferent='True' />
