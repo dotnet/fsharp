@@ -30,7 +30,6 @@ module Tests.Service.Editor
 open NUnit.Framework
 open FsUnit
 open System
-open System.IO
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
@@ -1319,3 +1318,40 @@ let ``FSharpField.IsNameGenerated`` () =
      "type U = Case of string * Item2: string * string * Name: string",
         ["Item1", true; "Item2", false; "Item3", true; "Name", false]]
     |> List.iter (fun (source, expected) -> checkFields source |> shouldEqual expected)
+
+
+[<Test>]
+let ``ValNoMutable recovery`` () =
+    let source = """
+let x = 1
+x <-
+    let y = 1
+    y
+"""
+    assertContainsSymbolWithName "y" source
+
+
+[<Test>]
+let ``PropertyCannotBeSet recovery`` () =
+    let source = """
+type T =
+    static member P = 1
+
+T.P <-
+    let y = 1
+    y
+"""
+    assertContainsSymbolWithName "y" source
+
+
+[<Test>]
+let ``FieldNotMutable recovery`` () =
+    let source = """
+type R =
+    { F: int }
+
+{ F = 1 }.F <-
+    let y = 1
+    y
+"""
+    assertContainsSymbolWithName "y" source

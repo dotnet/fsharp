@@ -328,7 +328,7 @@ type internal TcSymbolUses =
 
 /// Represents open declaration statement.
 type internal OpenDeclaration =
-    { /// Long identifier as it's presented in soruce code.
+    { /// Long identifier as it's presented in source code.
       LongId: Ident list
       
       /// Full range of the open declaration.

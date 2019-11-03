@@ -60,6 +60,7 @@ force_bootstrap=false
 ci=false
 skip_analyzers=false
 prepare_machine=false
+source_build=false
 properties=""
 
 docker=false
@@ -131,6 +132,9 @@ while [[ $# > 0 ]]; do
       ;;
     /p:*)
       properties="$properties $1"
+      if [[ "$1" == "/p:dotnetbuildfromsource=true" ]]; then
+        source_build=true
+      fi
       ;;
     *)
       echo "Invalid argument: $1"
@@ -277,7 +281,9 @@ function BuildSolution {
 InitializeDotNetCli $restore
 
 # enable us to build netcoreapp2.1 binaries
-InstallDotNetSdk $_InitializeDotNetCli 2.1.503
+if [[ "$source_build" != true ]]; then
+  InstallDotNetSdk $_InitializeDotNetCli 2.1.503
+fi
 
 BuildSolution
 

@@ -717,8 +717,9 @@ type internal TypeCheckInfo
                            | None | Some [] ->
                                let globalItems = 
                                    allSymbols() 
-                                   |> List.filter (fun x -> not x.Symbol.IsExplicitlySuppressed)
-                                   |> List.filter (fun x -> 
+                                   |> List.filter (fun x ->
+                                        not x.Symbol.IsExplicitlySuppressed &&
+
                                         match x.Symbol with
                                         | :? FSharpMemberOrFunctionOrValue as m when m.IsConstructor && filterCtors = ResolveTypeNamesToTypeRefs -> false 
                                         | _ -> true)
@@ -1352,7 +1353,7 @@ type internal TypeCheckInfo
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.ComputationExpression)
             // types get colored as types when they occur in syntactic types or custom attributes
-            // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
+            // type variables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isInterfaceTy g) -> 
@@ -1445,7 +1446,7 @@ type FSharpParsingOptions =
           CompilingFsLib = tcConfig.compilingFslib
           IsExe = tcConfig.target.IsExe }
 
-    static member FromTcConfigBuidler(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
+    static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
           SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
@@ -2103,7 +2104,7 @@ type FSharpCheckProjectResults
         let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
-    member __.TypedImplementionFiles =
+    member __.TypedImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
