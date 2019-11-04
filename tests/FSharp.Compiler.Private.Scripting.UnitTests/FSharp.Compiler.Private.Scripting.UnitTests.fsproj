@@ -12,11 +12,13 @@
 
   <ItemGroup>
     <Compile Include="FSharpScriptTests.fs" />
+    <None Include="housing.csv"  CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager\FSharp.DependencyManager.fsproj" />
   </ItemGroup>
 
 </Project>

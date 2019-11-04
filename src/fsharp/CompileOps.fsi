@@ -63,7 +63,7 @@ val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> Ast.Qualifi
 
 val PrependPathToInput: Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
-/// State used to de-deuplicate module names along a list of file names
+/// State used to de-deduplicate module names along a list of file names
 type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
@@ -250,7 +250,6 @@ type VersionFlag =
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
-      mutable autoResolveOpenDirectivesToDlls: bool
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
@@ -268,9 +267,11 @@ type TcConfigBuilder =
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
       /// Sources added into the build with #load
-      mutable loadedSources: (range * string) list
-      
+      mutable loadedSources: (range * string * string) list
+      mutable compilerToolPaths: string  list
       mutable referencedDLLs: AssemblyReference  list
+      mutable packageManagerLines: Map<string, (bool * string * range) list>
+
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
       reduceMemoryUsage: ReduceMemoryFlag
@@ -282,6 +283,7 @@ type TcConfigBuilder =
       mutable mlCompatibility:bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
+      mutable outputDir: string option
       mutable outputFile: string option
       mutable platform: ILPlatform option
       mutable prefer32Bit: bool
@@ -405,6 +407,7 @@ type TcConfigBuilder =
     member TurnWarningOff: range * string -> unit
     member TurnWarningOn: range * string -> unit
     member AddIncludePath: range * string * string -> unit
+    member AddCompilerToolsByPath: string -> unit
     member AddReferencedAssemblyByPath: range * string -> unit
     member RemoveReferencedAssemblyByPath: range * string -> unit
     member AddEmbeddedSourceFile: string -> unit
@@ -417,7 +420,6 @@ type TcConfigBuilder =
 // Immutable TcConfig
 type TcConfig =
     member primaryAssembly: PrimaryAssembly
-    member autoResolveOpenDirectivesToDlls: bool
     member noFeedback: bool
     member stackReserveSize: int32 option
     member implicitIncludeDir: string
@@ -435,6 +437,7 @@ type TcConfig =
     member conditionalCompilationDefines: string list
     member subsystemVersion: int * int
     member useHighEntropyVA: bool
+    member compilerToolPaths: string list
     member referencedDLLs: AssemblyReference list
     member reduceMemoryUsage: ReduceMemoryFlag
     member inputCodePage: int option
@@ -443,6 +446,7 @@ type TcConfig =
     member mlCompatibility:bool
     member checkOverflow:bool
     member showReferenceResolutions:bool
+    member outputDir: string option
     member outputFile: string option
     member platform: ILPlatform option
     member prefer32Bit: bool
@@ -679,8 +683,8 @@ val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk
 val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string * assemblyReferenceAdded: (string -> unit) -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
 /// Processing # commands
-val ProcessMetaCommandsFromInput: 
-    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> range * string -> unit)) 
+val ProcessMetaCommandsFromInput : 
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> DependencyManagerIntegration.IDependencyManagerProvider * range * string -> 'T) * ('T -> range * string -> unit)) 
     -> TcConfigBuilder * Ast.ParsedInput * string * 'T 
     -> 'T
 
@@ -801,7 +805,7 @@ type LoadClosure =
       Inputs: LoadClosureInput list
 
       /// The original #load references, including those that didn't resolve
-      OriginalLoadReferences: (range * string) list
+      OriginalLoadReferences: (range * string * string) list
 
       /// The #nowarns
       NoWarns: (string * range list) list
