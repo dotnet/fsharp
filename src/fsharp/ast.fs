@@ -1951,13 +1951,13 @@ let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet (arr, [sliceArg], mDot, m)
 
 let mkSynDotBrackSeqSliceGet  m mDot arr (argslist: list<SynIndexerArg>) =
-    // let notsliced=[ for arg in argslist do
-    //                    match arg with
-    //                    | SynIndexerArg.One x -> yield x
-    //                    | _ -> () ]
-    // if notsliced.Length = argslist.Length then
-        // SynExpr.DotIndexedGet (arr, [SynIndexerArg.One (SynExpr.Tuple (false, notsliced, [], unionRanges (List.head notsliced).Range (List.last notsliced).Range))], mDot, m)
-    // else
+    let notsliced=[ for arg in argslist do
+                       match arg with
+                       | SynIndexerArg.One x -> yield x
+                       | _ -> () ]
+    if notsliced.Length = argslist.Length && argslist.Length <> 1 then
+        SynExpr.DotIndexedGet (arr, [SynIndexerArg.One (SynExpr.Tuple (false, notsliced, [], unionRanges (List.head notsliced).Range (List.last notsliced).Range))], mDot, m)
+    else
     SynExpr.DotIndexedGet (arr, argslist, mDot, m)
 
 let mkSynDotParenGet lhsm dotm a b   =
