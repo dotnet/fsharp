@@ -1959,7 +1959,7 @@ let mkSynDotBrackSeqSliceGet  m mDot arr (argslist: list<SynIndexerArg>) =
                        match arg with
                        | SynIndexerArg.One x -> yield x
                        | _ -> () ]
-    if notsliced.Length = argslist.Length then
+    if notsliced.Length = argslist.Length && argslist.Length <> 1 then
         SynExpr.DotIndexedGet (arr, [SynIndexerArg.One (SynExpr.Tuple (false, notsliced, [], unionRanges (List.head notsliced).Range (List.last notsliced).Range))], mDot, m)
     else
         SynExpr.DotIndexedGet (arr, argslist, mDot, m)
