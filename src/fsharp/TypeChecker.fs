@@ -6335,12 +6335,14 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
     // xs.GetReverseIndex dim offset - 1
     let reverseExpr (dim: int) (offset: SynExpr) (range: range) = 
         let dimExpr = SynExpr.Const(SynConst.Int32(dim), range)
+        let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [dimExpr; offset], [], range), range, Some range, range)
         let xsId = e1
-        mkSynApp2
+
+        mkSynApp1
             (mkSynDot range range xsId (mkSynId range "GetReverseIndex"))
-            dimExpr
-            offset
+            sliceArgs
             range
+
 
     let rewriteReverseIndex (expr: SynExpr) (dim: int) = 
         match expr with

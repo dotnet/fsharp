@@ -1926,7 +1926,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The sub list specified by the input indices.</returns>
         member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
 
-        member GetReverseIndex: int -> int -> int
+        member GetReverseIndex: int * int -> int
         
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
         /// <param name="head">A new head value for the list.</param>
@@ -2740,13 +2740,13 @@ namespace Microsoft.FSharp.Core
         [<AutoOpen>]
         module ArrayExtensions = 
             type ``[,,]``<'T> with
-                member GetReverseIndex: int -> int -> int
+                member GetReverseIndex: int * int -> int
             type ``[,]``<'T> with
-                member GetReverseIndex: int -> int -> int
+                member GetReverseIndex: int * int -> int
             type ``[]``<'T> with
-                member GetReverseIndex: int -> int -> int
+                member GetReverseIndex: int * int -> int
             type System.String with
-                member GetReverseIndex: int -> int -> int
+                member GetReverseIndex: int * int -> int
 
 
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges

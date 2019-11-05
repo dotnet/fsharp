@@ -3159,7 +3159,7 @@ namespace Microsoft.FSharp.Collections
                 if i > j then [] else
                 PrivateListHelpers.sliceTake (j-i) (PrivateListHelpers.sliceSkip i l)
 
-        member l.GetReverseIndex(_: int) (offset: int) = l.Length - offset - 1
+        member l.GetReverseIndex(_: int, offset: int) = l.Length - offset - 1
 
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
@@ -5594,7 +5594,7 @@ namespace Microsoft.FSharp.Core
         [<AutoOpen>]
         module ArrayExtensions =
             type ``[,,]``<'T> with
-                member arr.GetReverseIndex(dim: int)(offset: int) = 
+                member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
                         | 0 -> GetArray3DLength1 arr
@@ -5605,7 +5605,7 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,]``<'T> with
-                member arr.GetReverseIndex(dim: int)(offset: int) = 
+                member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
                         | 0 -> GetArray2DLength1 arr
@@ -5615,10 +5615,10 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[]``<'T> with
-                member arr.GetReverseIndex (_: int)(offset: int) = arr.Length - offset - 1
+                member arr.GetReverseIndex (_: int, offset: int) = arr.Length - offset - 1
         
             type System.String with
-                member str.GetReverseIndex (_: int) (offset: int) = str.Length - offset - 1
+                member str.GetReverseIndex (_: int, offset: int) = str.Length - offset - 1
 
 
 namespace Microsoft.FSharp.Control

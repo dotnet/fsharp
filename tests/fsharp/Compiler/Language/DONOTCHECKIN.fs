@@ -35,7 +35,7 @@ Console.WriteLine(arr2)
 open System
 
 let arr = Array3D.create 2 2 2 2 
-let arr2 = arr.[1..^1, ..^1, ^0]
+let arr2 = arr.[1..^1, ..^1, ^0..]
 Console.WriteLine(arr2)
             """
     [<Test>]
