@@ -34,6 +34,7 @@
         </contentFiles>
     </metadata>
     <files>
+        $CommonFileElements$
         <!--
             Why is this like this?
             This package is used to deploy the fsharp compiler tools as built product.
