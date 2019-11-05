@@ -62,13 +62,6 @@ type ArrayModule() =
 
         ()
 
-
-    //[<Test>]
-    //member this.test() = 
-        //let arr = [|1;2;3|]
-        //Assert.AreEqual(arr.[0..^1], [|1;2|])
-
-
     [<Test>]
     member this.Append() =
         // integer array

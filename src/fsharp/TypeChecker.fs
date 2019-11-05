@@ -6330,7 +6330,6 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
     let isString = typeEquiv cenv.g cenv.g.string_ty e1ty 
 
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges 
-    //let GetIndexArgs (es: SynIndexerArg list) = [ for e in es do yield! e.Exprs ]
 
     // xs.GetReverseIndex dim offset - 1
     let reverseExpr (dim: int) (offset: SynExpr) (range: range) = 
@@ -6342,7 +6341,6 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             (mkSynDot range range xsId (mkSynId range "GetReverseIndex"))
             sliceArgs
             range
-
 
     let rewriteReverseIndex (expr: SynExpr) (dim: int) = 
         match expr with

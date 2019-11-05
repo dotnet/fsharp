@@ -3617,9 +3617,6 @@ minusExpr:
   | DOWNCAST  minusExpr 
       { SynExpr.InferredDowncast ($2,unionRanges (rhs parseState 1) $2.Range)}   
 
-  // | INFIX_AT_HAT_OP minusExpr 
-      // { SynExpr.ReverseIndex ($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)}
-
   | appExpr 
       { $1 }
 

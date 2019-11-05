@@ -348,8 +348,8 @@ type Array3Module() =
 
         let setSlice = Array3D.create 2 2 2 0
 
-        arr1.[^1..^0, ^2..^3, ^1..^2] <- setSlice
-        arr2.[^1..^0, ^2..^3, ^1..^2] <- setSlice
+        arr1.[^1..^0, ^2..3, 1..^2] <- setSlice
+        arr2.[3..4, 2..3, 1..2] <- setSlice
 
         Assert.That(arr1, Is.EquivalentTo(arr2))
 
@@ -371,6 +371,8 @@ type Array3Module() =
 
         arr1.[^1,^0,^0] <- 9
         Assert.That(arr1.[3,4,4], Is.EqualTo(9))
+
+    [<Test>]
     member this.SlicingSingleFixed1() =
         let m1 = (array3d [| 
                             [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
