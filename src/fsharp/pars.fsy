@@ -1925,6 +1925,11 @@ atomicPatternLongIdent:
     }
   | GLOBAL DOT pathOp  { let (LongIdentWithDots(lid,dotms)) = $3 in (None,LongIdentWithDots(ident(MangledGlobalName,rhs parseState 1) :: lid, rhs parseState 2 :: dotms)) }
   | pathOp { (None,$1) }
+  | access UNDERSCORE DOT pathOp {
+    if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
+        raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolDot())
+    let (LongIdentWithDots(lid,dotms)) = $4 in (Some($1),LongIdentWithDots(ident("_",rhs parseState 1)::lid, rhs parseState 2::dotms))
+    }  
   | access pathOp { (Some($1), $2) }
 
 

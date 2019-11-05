@@ -60,7 +60,7 @@
 "CompanyName"="Microsoft Corp."
 
 [$RootKey$\Menus]
-"{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"=", 1000_ctmenu, 1"
+"{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"=", Menus.ctmenu, 1"
 
 [$RootKey$\CLSID\{e1194663-db3c-49eb-8b45-276fcdc440ea}]
 "InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
