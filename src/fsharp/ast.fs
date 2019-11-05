@@ -1955,6 +1955,8 @@ let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet (arr, [sliceArg], mDot, m)
 
 let mkSynDotBrackSeqSliceGet  m mDot arr (argsList: list<SynIndexerArg>) =
+    // We want to be able to turn .[1,2,3] into a Tuple(1,2,3) but keep 
+    // .[1] as a const 1.
     let notSliced=[ for arg in argsList do
                        match arg with
                        | SynIndexerArg.One x -> yield x

@@ -37,7 +37,7 @@ open FSharp.Compiler.Service.Tests.Common
 
 let stringMethods = 
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
-    "GetEnumerator"; "GetHashCode"; "GetType"; "GetTypeCode"; "IndexOf";
+    "GetEnumerator"; "GetHashCode"; "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
     "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
     "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
     "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";

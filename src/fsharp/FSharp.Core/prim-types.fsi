@@ -1931,7 +1931,11 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The sub list specified by the input indices.</returns>
         member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
 
-        member GetReverseIndex: int * int -> int
+        /// <summary>Get the index corresponding to ^i.</summary>
+        /// <param name="dim">The dimension of the index.</param>
+        /// <param name="offset">The offset from the end.</param>
+        /// <returns>The corresponding index from the start.</returns>
+        member GetReverseIndex: dim: int * offset: int -> int
         
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
         /// <param name="head">A new head value for the list.</param>
@@ -2745,13 +2749,32 @@ namespace Microsoft.FSharp.Core
         [<AutoOpen>]
         module ArrayExtensions = 
             type ``[,,]``<'T> with
-                member GetReverseIndex: int * int -> int
+                /// <summary>Get the index corresponding to ^i.</summary>
+                /// <param name="dim">The dimension of the index.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                member GetReverseIndex: dim: int * offset: int -> int
+
             type ``[,]``<'T> with
+                /// <summary>Get the index corresponding to ^i.</summary>
+                /// <param name="dim">The dimension of the index.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
                 member GetReverseIndex: int * int -> int
+
             type ``[]``<'T> with
-                member GetReverseIndex: int * int -> int
+                /// <summary>Get the index corresponding to ^i.</summary>
+                /// <param name="dim">The dimension of the index.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                member GetReverseIndex: dim: int * offset: int -> int
+
             type System.String with
-                member GetReverseIndex: int * int -> int
+                /// <summary>Get the index corresponding to ^i.</summary>
+                /// <param name="dim">The dimension of the index.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                member GetReverseIndex: dim: int * offset: int -> int
 
 
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
