@@ -56,7 +56,7 @@
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
-    <Compile Include="Compiler\Language\CustomCollections.fs" />
+    <Compile Include="Compiler\Language\CustomCollectionTests.fs" />
     <Compile Include="Compiler\Language\HatDesugaringTests.fs" />
     <Compile Include="Compiler\Language\DONOTCHECKIN.fs" />
     <Compile Include="Compiler\Language\TypeAttributeTests.fs" />

@@ -38,7 +38,7 @@ Console.WriteLine(^1)
             |]
 
     [<Test>]
-    let ``Reverse slicing should not work with at symbol``() =
+    let ``Reverse slicing should not work with at symbol in 1st slice index``() =
         CompilerAssert.ParseWithErrors
             """
 module X
@@ -47,5 +47,49 @@ open System
 let list = [1;2;3]
 Console.WriteLine(list.[@1..])
             """
-            [||]
+            [|
+                FSharpErrorSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator"
+            |]
 
+    [<Test>]
+    let ``Reverse slicing should not work with at symbol in 2nd slice index``() =
+        CompilerAssert.ParseWithErrors
+            """
+module X
+open System
+
+let list = [1;2;3]
+Console.WriteLine(list.[..@1])
+            """
+            [|
+                FSharpErrorSeverity.Error, 1208, (6,25,6,28), "Invalid prefix operator"
+            |]
+
+    [<Test>]
+    let ``Reverse slicing should not work with at symbol in both slice index``() =
+        CompilerAssert.ParseWithErrors
+            """
+module X
+open System
+
+let list = [1;2;3]
+Console.WriteLine(list.[@1..@1])
+            """
+            [|
+                FSharpErrorSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator";
+                FSharpErrorSeverity.Error, 1208, (6,29,6,30), "Invalid prefix operator"
+            |]
+
+    [<Test>]
+    let ``Reverse indexing should not work with at symbol``() =
+        CompilerAssert.ParseWithErrors
+            """
+module X
+open System
+
+let list = [1;2;3]
+Console.WriteLine(list.[@11])
+            """
+            [|
+                FSharpErrorSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator"
+            |]

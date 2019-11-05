@@ -4,7 +4,7 @@ open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
-module CustomCollections =
+module CustomCollectionTests =
     [<Test>]
     let ``Custom collection with Item and GetReverseIndex should support reverse index indexing``() =
         CompilerAssert.CompileExeAndRun
