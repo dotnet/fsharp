@@ -743,7 +743,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 
        // Carrier sets cannot include constrained polymorphic values. We can't just take such a value out, so for the moment
        // we'll just abandon TLR altogether and give a warning about this condition.
-       match vals |> List.tryFind (IsGenericValWithGenericContraints g) with
+       match vals |> List.tryFind (IsGenericValWithGenericConstraints g) with
        | None -> ()
        | Some v -> raise (AbortTLR v.Range)
 
@@ -813,7 +813,7 @@ let DumpEnvPackM g envPackM =
 /// e.g. deciding whether to tuple up the environment or not.
 /// e.g. deciding whether to use known values for required sub environments.
 ///
-/// Scope for optimisating env packing here.
+/// Scope for optimization env packing here.
 /// For now, pass all environments via arguments since aiming to eliminate allocations.
 /// Later, package as tuples if arg lists get too long.
 let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =

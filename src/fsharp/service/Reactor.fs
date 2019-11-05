@@ -34,7 +34,7 @@ type Reactor() =
     let mutable pauseBeforeBackgroundWork = pauseBeforeBackgroundWorkDefault
 
     // We need to store the culture for the VS thread that is executing now, 
-    // so that when the reactor picks up a thread from the threadpool we can set the culture
+    // so that when the reactor picks up a thread from the thread pool we can set the culture
     let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
 
     let mutable bgOpCts = new CancellationTokenSource()

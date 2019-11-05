@@ -6,8 +6,6 @@ open System
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
-open System.Reflection
-
 open FSharp.DependencyManager
 open FSharp.DependencyManager.Utilities
 
@@ -15,8 +13,76 @@ module Attributes =
     [<assembly: DependencyManagerAttribute()>]
     do ()
 
-
 type PackageReference = { Include:string; Version:string; RestoreSources:string; Script:string }
+
+module FSharpDependencyManager =
+
+    let private concat (s:string) (v:string) : string =
+        match String.IsNullOrEmpty(s), String.IsNullOrEmpty(v) with
+        | false, false -> s + ";" + v
+        | false, true -> s
+        | true, false -> v
+        | _  -> ""
+
+    let formatPackageReference p =
+        let { Include=inc; Version=ver; RestoreSources=src; Script=script } = p
+        seq {
+            match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)), not (String.IsNullOrEmpty(script)) with
+            | true, true, false  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc ver
+            | true, true, true   -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc ver script
+            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc
+            | true, false, true  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc script
+            | _ -> ()
+            match not (String.IsNullOrEmpty(src)) with
+            | true -> yield sprintf @"  <PropertyGroup><RestoreAdditionalProjectSources>%s</RestoreAdditionalProjectSources></PropertyGroup>" (concat "$(RestoreAdditionalProjectSources)" src)
+            | _ -> ()
+        }
+
+    let parsePackageReference (lines: string list) =
+        let mutable binLogging = false
+        let parsePackageReferenceOption (line: string) =
+            let validatePackageName package packageName =
+                if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
+                    raise (ArgumentException(sprintf "PackageManager can not reference the System Package '%s'" packageName))  // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+            let rec parsePackageReferenceOption' (options: (string option * string option) list) (implicitArgumentCount: int) (packageReference: PackageReference option) =
+                let current =
+                    match packageReference with
+                    | Some p -> p
+                    | None -> { Include = ""; Version = "*"; RestoreSources = ""; Script = "" }
+                match options with
+                | [] -> packageReference
+                | opt :: rest ->
+                    let addInclude v =
+                        validatePackageName v "mscorlib"
+                        validatePackageName v "FSharp.Core"
+                        validatePackageName v "System.ValueTuple"
+                        validatePackageName v "NETStandard.Library"
+                        Some { current with Include = v }
+                    let setVersion v = Some { current with Version = v }
+                    match opt with
+                    | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
+                    | Some "include", None -> raise (ArgumentException(sprintf "%s requires a value" "Include"))               // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "version", Some v -> setVersion v |> parsePackageReferenceOption' rest implicitArgumentCount
+                    | Some "version", None -> raise (ArgumentException(sprintf "%s requires a value" "Version"))               // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
+                    | Some "restoresources", None -> raise (ArgumentException(sprintf "%s requires a value" "RestoreSources")) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
+                    | Some "bl", Some v ->
+                        binLogging <- v.ToLowerInvariant() = "true"
+                        parsePackageReferenceOption' rest implicitArgumentCount packageReference
+                    | None, Some v ->
+                        match implicitArgumentCount with
+                        | 0 -> addInclude v
+                        | 1 -> setVersion v
+                        | _ -> raise (ArgumentException(sprintf "Unable to apply implicit argument number %d" (implicitArgumentCount + 1))) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                        |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
+                    | _ -> parsePackageReferenceOption' rest implicitArgumentCount packageReference
+            let options = getOptions line
+            parsePackageReferenceOption' options 0 None
+        lines
+        |> List.choose parsePackageReferenceOption
+        |> List.distinct
+        |> (fun l -> l, binLogging)
 
 type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string option) =
 
@@ -48,28 +114,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
             sw.WriteLine(body)
         with | _ -> ()
 
-    let concat (s:string) (v:string) : string =
-        match String.IsNullOrEmpty(s), String.IsNullOrEmpty(v) with
-        | false, false -> s + ";" + v
-        | false, true -> s
-        | true, false -> v
-        | _  -> ""
-
     do if deleteAtExit then AppDomain.CurrentDomain.ProcessExit |> Event.add(fun _ -> deleteScripts () )
-
-    let formatPackageReference p =
-        let { Include=inc; Version=ver; RestoreSources=src; Script=script } = p
-        seq {
-            match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)),  not (String.IsNullOrEmpty(script)) with
-            | true, true, false  -> yield sprintf @"  <ItemGroup><PackageReference Include = '%s' Version = '%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc ver
-            | true, true, true   -> yield sprintf @"  <ItemGroup><PackageReference Include = '%s' Version = '%s' Script = '%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc ver script
-            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include = '%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc 
-            | true, false, true  -> yield sprintf @"  <ItemGroup><PackageReference Include = '%s' Script = '%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc script
-            | _ -> ()
-            match not (String.IsNullOrEmpty(src)) with
-            | true -> yield sprintf @"  <PropertyGroup><RestoreAdditionalProjectSources>%s</RestoreAdditionalProjectSources></PropertyGroup>" (concat "$(RestoreAdditionalProjectSources)" src)
-            | _ -> ()
-        }
 
     member __.Name = name
 
@@ -78,52 +123,14 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
     member __.ResolveDependencies(_scriptDir:string, _mainScriptName:string, _scriptName:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list =
 
         let packageReferences, binLogging =
-            let validatePackageName package packageName =
-                if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
-                    raise (ArgumentException(sprintf "PackageManager can not reference the System Package '%s'" packageName))   // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-
-            let mutable binLogging = false
-            let references = [
-                for line in packageManagerTextLines do
-                    let options = getOptions line
-                    let mutable found = false
-                    let mutable packageReference = { Include = ""; Version = "*"; RestoreSources = ""; Script = "" }
-                    for opt in options do
-                        let addInclude v =
-                            // TODO:  Consider a comprehensive list of dotnet framework packages that are disallowed
-                            validatePackageName v "mscorlib"
-                            validatePackageName v "FSharp.Core"
-                            validatePackageName v "System.ValueTuple"
-                            validatePackageName v "NETStandard.Library"
-                            found <- true
-                            packageReference <- { packageReference with Include = v }
-
-                        let addScript v = packageReference <- { packageReference with Script = v }
-                        match opt with
-                        | Some "version", Some v -> 
-                            found <- true
-                            packageReference <- { packageReference with Version = v }
-                        | Some "restoresources", Some v ->
-                            found <- true
-                            packageReference <- { packageReference with RestoreSources = concat packageReference.RestoreSources v }
-                        | Some "bl", Some v ->
-                            binLogging <-
-                                match v.ToLowerInvariant() with
-                                | "true" -> true
-                                | _ -> false
-                        | Some "include", None ->
-                            raise (ArgumentException(sprintf "%s requires a value" "Include"))                              // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-                        | Some "version", None -> 
-                            raise (ArgumentException(sprintf "%s requires a value" "Version"))                              // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-                        | Some "restoresources", None ->
-                            raise (ArgumentException(sprintf "%s requires a value" "RestoreSources"))                       // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-                        | Some "include", Some v -> addInclude v
-                        | Some "script", Some v -> addScript v
-                        | None, Some v -> addInclude v
-                        | _ -> ()
-                    if found then yield! formatPackageReference packageReference
-            ]
-            references |> List.distinct |>String.concat Environment.NewLine, binLogging
+            packageManagerTextLines
+            |> List.ofSeq
+            |> FSharpDependencyManager.parsePackageReference
+        let packageReferenceLines =
+            packageReferences
+            |> List.map FSharpDependencyManager.formatPackageReference
+            |> Seq.concat
+        let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
         // Generate a project files
         let generateAndBuildProjectArtifacts =
@@ -135,7 +142,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
             let generateProjBody =
                 generateProjectBody.Replace("$(TARGETFRAMEWORK)", tfm)
-                                   .Replace("$(PACKAGEREFERENCES)", packageReferences)
+                                   .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
 
             writeFile (Path.Combine(scriptsPath, "Library.fs")) generateLibrarySource
             writeFile fsProjectPath generateProjBody

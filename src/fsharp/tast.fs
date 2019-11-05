@@ -600,7 +600,7 @@ type EntityOptionalData =
 
       /// Indicates how visible is the entity is.
       // MUTABILITY: only for unpickle linkage
-      mutable entity_accessiblity: Accessibility   
+      mutable entity_accessibility: Accessibility   
 
       /// Field used when the 'tycon' is really an exception definition
       // 
@@ -678,7 +678,7 @@ and /// Represents a type definition, exception definition, module definition or
           entity_xmldocsig = ""
           entity_tycon_abbrev = None
           entity_tycon_repr_accessibility = TAccess []
-          entity_accessiblity = TAccess []
+          entity_accessibility = TAccess []
           entity_exn_info = TExnNone }
 
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
@@ -884,7 +884,7 @@ and /// Represents a type definition, exception definition, module definition or
     /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility =
         match x.entity_opt_data with
-        | Some optData -> optData.entity_accessiblity
+        | Some optData -> optData.entity_accessibility
         | _ -> TAccess []
 
     /// Indicates the type prefers the "tycon<a, b>" syntax for display etc. 
@@ -1049,7 +1049,7 @@ and /// Represents a type definition, exception definition, module definition or
                        entity_xmldocsig = tg.entity_xmldocsig
                        entity_tycon_abbrev = tg.entity_tycon_abbrev
                        entity_tycon_repr_accessibility = tg.entity_tycon_repr_accessibility
-                       entity_accessiblity = tg.entity_accessiblity
+                       entity_accessibility = tg.entity_accessibility
                        entity_exn_info = tg.entity_exn_info }
         | None -> ()
 
@@ -1235,8 +1235,8 @@ and /// Represents a type definition, exception definition, module definition or
                 let rec top racc p = 
                     match p with 
                     | [] -> ILTypeRef.Create(sref, [], textOfPath (List.rev (item :: racc)))
-                    | (h, istype) :: t -> 
-                        match istype with 
+                    | (h, isType) :: t -> 
+                        match isType with 
                         | FSharpModuleWithSuffix | ModuleOrType -> 
                             let outerTypeName = (textOfPath (List.rev (h :: racc)))
                             ILTypeRef.Create(sref, (outerTypeName :: List.map (fun (nm, _) -> nm) t), item)
@@ -1910,7 +1910,7 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
         cacheOptRef tyconsByAccessNamesCache (fun () -> 
              LayeredMultiMap.Empty.AddAndMarkAsCollapsible (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> KeyTyconByAccessNames tc.LogicalName tc)))
 
-    // REVIEW: we can remove this lookup and use AllEntitiedByMangledName instead?
+    // REVIEW: we can remove this lookup and use AllEntitiesByMangledName instead?
     member mtyp.TypesByMangledName = 
         let addTyconByMangledName (x: Tycon) tab = NameMap.add x.LogicalName x tab 
         cacheOptRef tyconsByMangledNameCache (fun () -> 
@@ -2090,7 +2090,7 @@ and Construct =
             entity_opt_data =
                 match kind, access with
                 | TyparKind.Type, TAccess [] -> None
-                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_accessiblity = access } } 
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_accessibility = access } } 
 #endif
 
     static member NewModuleOrNamespace cpath access (id: Ident) xml attribs mtype = 
@@ -2112,7 +2112,7 @@ and Construct =
             entity_opt_data =
                 match xml, access with
                 | XmlDoc [||], TAccess [] -> None
-                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessiblity = access } } 
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessibility = access } } 
 
 and 
     [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -2398,7 +2398,7 @@ and
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TraitConstraintInfo = 
 
-    /// TTrait(tys, nm, memFlags, argtys, rty, colution)
+    /// TTrait(tys, nm, memFlags, argtys, rty, solution)
     ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
@@ -5733,7 +5733,7 @@ let NewExn cpath (id: Ident) access repr attribs doc =
         entity_opt_data =
             match doc, access, repr with
             | XmlDoc [||], TAccess [], TExnNone -> None
-            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = doc; entity_accessiblity = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
+            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = doc; entity_accessibility = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
 
 /// Create a new TAST RecdField node for an F# class, struct or record field
 let NewRecdField stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
@@ -5771,7 +5771,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_opt_data =
             match kind, docOption, reprAccess, access with
             | TyparKind.Type, XmlDoc [||], TAccess [], TAccess [] -> None
-            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessiblity=access } } 
+            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessibility=access } } 
 
 
 let NewILTycon nlpath (nm, m) tps (scoref: ILScopeRef, enc, tdef: ILTypeDef) mtyp =
@@ -5871,7 +5871,7 @@ let CombineCcuContentFragments m l =
             let entities = 
                 [ for e1 in mty1.AllEntities do 
                       match tab2.TryGetValue e1.LogicalName with
-                      | true, e2 -> yield CombineEntites path e1 e2
+                      | true, e2 -> yield CombineEntities path e1 e2
                       | _ -> yield e1
                   for e2 in mty2.AllEntities do 
                       match tab1.TryGetValue e2.LogicalName with
@@ -5888,7 +5888,7 @@ let CombineCcuContentFragments m l =
         | _-> 
             error(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path), m))
 
-    and CombineEntites path (entity1: Entity) (entity2: Entity) = 
+    and CombineEntities path (entity1: Entity) (entity2: Entity) = 
 
         match entity1.IsModuleOrNamespace, entity2.IsModuleOrNamespace with
         | true, true -> 
