@@ -6,6 +6,15 @@ open FSharp.Compiler.SourceCodeServices
 [<TestFixture>]
 module CustomCollectionTests =
     [<Test>]
+    let test1()=
+        CompilerAssert.CompileExeAndRun
+            """
+open System
+
+let b = [1;2].[0,0]
+        """
+
+    [<Test>]
     let ``Custom collection with Item and GetReverseIndex should support reverse index indexing``() =
         CompilerAssert.CompileExeAndRun
             """

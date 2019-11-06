@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
-// Some general F# utilities for mangling / demangling / manipulating names.
+// Some general F# utilities for mangling / unmangling / manipulating names.
 //--------------------------------------------------------------------------
 
 /// Anything to do with special names of identifiers and other lexical rules 
@@ -371,7 +371,16 @@ module public FSharp.Compiler.PrettyNaming
             // by the call to String.forall; it is a fast check used to avoid the call if possible.
             || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
         
-    let IsPrefixOperator s = IsValidPrefixOperatorDefinitionName s
+    let IsPrefixOperator s =
+        if String.IsNullOrEmpty s then false else
+        let s = DecompileOpName s
+        match s with 
+        | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
+        | _ ->
+            (s.[0] = '!' && s <> "!=")
+            // The check for the first character here could be eliminated since it's covered
+            // by the call to String.forall; it is a fast check used to avoid the call if possible.
+            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
 
     let IsPunctuation s =
         if String.IsNullOrEmpty s then false else
