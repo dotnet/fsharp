@@ -1304,7 +1304,7 @@ let u_ILInstr st =
 // Pickle/unpickle for F# types and module signatures
 //---------------------------------------------------------------------------
 
-let p_Map_core pk pv (xs: Map<_, _>) st =
+let p_Map_core pk pv xs st =
     xs |> Map.iter (fun k v -> pk k st; pv v st)
 
 let p_Map pk pv x st =
