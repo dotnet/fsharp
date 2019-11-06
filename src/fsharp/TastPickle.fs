@@ -1305,9 +1305,7 @@ let u_ILInstr st =
 //---------------------------------------------------------------------------
 
 let p_Map_core pk pv (xs: Map<_, _>) st =
-    for x in xs do
-        pk x.Key st
-        pv x.Value st
+    xs |> Map.iter (fun k v -> pk k st; pv v st)
 
 let p_Map pk pv x st =
     p_int (Map.count x) st
@@ -1317,9 +1315,7 @@ let p_qlist pv = p_wrap QueueList.toList (p_list pv)
 let p_namemap p = p_Map p_string p
 
 let u_Map_core uk uv n st =
-    Map.ofSeq (seq {
-        for _ in 1..n do
-            yield (uk st, uv st) })
+    Map.ofSeq (seq { for _ in 1..n -> (uk st, uv st) })
 
 let u_Map uk uv st = 
     let n = u_int st
