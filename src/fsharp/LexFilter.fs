@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// LexFilter - process the token stream prior to parsing.
-/// Implements the offside rule and a copule of other lexical transformations.
+/// Implements the offside rule and a couple of other lexical transformations.
 module internal FSharp.Compiler.LexFilter
 
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.Ast
@@ -630,15 +628,15 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
     //--------------------------------------------------------------------------
 
     let pushCtxt tokenTup (newCtxt: Context) =
-        let rec unindentationLimit strict stack = 
+        let rec undentationLimit strict stack = 
             match newCtxt, stack with 
             | _, [] -> PositionWithColumn(newCtxt.StartPos, -1) 
 
             // ignore Vanilla because a SeqBlock is always coming 
-            | _, (CtxtVanilla _ :: rest) -> unindentationLimit strict rest
+            | _, (CtxtVanilla _ :: rest) -> undentationLimit strict rest
 
-            | _, (CtxtSeqBlock _ :: rest) when not strict -> unindentationLimit strict rest
-            | _, (CtxtParen _ :: rest) when not strict -> unindentationLimit strict rest
+            | _, (CtxtSeqBlock _ :: rest) when not strict -> undentationLimit strict rest
+            | _, (CtxtParen _ :: rest) when not strict -> undentationLimit strict rest
 
             // 'begin match' limited by minimum of two  
             // '(match' limited by minimum of two  
@@ -658,7 +656,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
 
             // Otherwise 'function ...' places no limit until we hit a CtxtLetDecl etc... (Recursive) 
             | (CtxtMatchClauses _), (CtxtFunction _ :: rest)
-                      -> unindentationLimit false rest
+                      -> undentationLimit false rest
 
             // 'try ... with' limited by 'try'  
             | _, (CtxtMatchClauses _ :: (CtxtTry _ as limitCtxt) :: _rest)
@@ -666,7 +664,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
 
             // 'fun ->' places no limit until we hit a CtxtLetDecl etc... (Recursive) 
             | _, (CtxtFun _ :: rest)
-                      -> unindentationLimit false rest
+                      -> undentationLimit false rest
 
             // 'f ...{' places no limit until we hit a CtxtLetDecl etc... 
             // 'f ...[' places no limit until we hit a CtxtLetDecl etc... 
@@ -674,7 +672,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             | _, (CtxtParen ((LBRACE | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: rest)
             | _, (CtxtParen ((LBRACE | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
             | _, (CtxtSeqBlock _ :: CtxtParen((LBRACE | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
-                      -> unindentationLimit false rest
+                      -> undentationLimit false rest
 
             // MAJOR PERMITTED UNDENTATION This is allowing:
             //   if x then y else
@@ -696,7 +694,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             | CtxtWithAsAugment _, ((CtxtInterfaceHead _ | CtxtMemberHead _ | CtxtException _ | CtxtTypeDefns _) as limitCtxt :: _rest)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol) 
 
-            // Permit unindentation via parentheses (or begin/end) following a 'then', 'else' or 'do':
+            // Permit undentation via parentheses (or begin/end) following a 'then', 'else' or 'do':
             //        if nr > 0 then (  
             //              nr <- nr - 1
             //              acc <- d
@@ -719,7 +717,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             //         end
 
             | _, ((CtxtWithAsAugment _ | CtxtThen _ | CtxtElse _ | CtxtDo _ ) :: rest)
-                      -> unindentationLimit false rest
+                      -> undentationLimit false rest
 
 
             // '... (function ->' places no limit until we hit a CtxtLetDecl etc....  (Recursive)
@@ -737,7 +735,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             //           0
             //          | 2 -> ...       <---- not allowed
             | _, (CtxtFunction _ :: rest)
-                      -> unindentationLimit false rest
+                      -> undentationLimit false rest
 
             // 'module ... : sig'    limited by 'module' 
             // 'module ... : struct' limited by 'module' 
@@ -811,7 +809,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
         // always already pushed a SeqBlock at this position.
         | CtxtVanilla _ -> ()
         | _ -> 
-            let p1 = unindentationLimit true offsideStack
+            let p1 = undentationLimit true offsideStack
             let c2 = newCtxt.StartCol
             if c2 < p1.Column then 
                 warn tokenTup 
@@ -2161,8 +2159,8 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
 
           // Split this token to allow "1..2" for range specification 
           | INT32_DOT_DOT (i, v) ->
-              let dotdotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)
-              delayToken(new TokenTup(DOT_DOT, dotdotPos, tokenTup.LastTokenPos))
+              let dotDotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)
+              delayToken(new TokenTup(DOT_DOT, dotDotPos, tokenTup.LastTokenPos))
               delayToken(tokenTup.UseShiftedLocation(INT32(i, v), 0, -2))
               true
           // Split @>. and @@>. into two 

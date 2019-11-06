@@ -127,13 +127,13 @@ module NavigationImpl =
             FSharpNavigationDeclarationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), (addItemName(id.idText))
 
         // Process let-binding
-        let processBinding isMember enclosingEntityKind isAbstract (Binding(_, _, _, _, _, _, SynValData(memebrOpt, _, _), synPat, _, synExpr, _, _)) =
+        let processBinding isMember enclosingEntityKind isAbstract (Binding(_, _, _, _, _, _, SynValData(memberOpt, _, _), synPat, _, synExpr, _, _)) =
             let m = 
                 match synExpr with 
                 | SynExpr.Typed (e, _, _) -> e.Range // fix range for properties with type annotations
                 | _ -> synExpr.Range
 
-            match synPat, memebrOpt with
+            match synPat, memberOpt with
             | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), Some(flags) when isMember -> 
                 let icon, kind =
                   match flags.MemberKind with
@@ -632,7 +632,7 @@ module NavigateTo =
             | SynMemberSig.Inherit _
             | SynMemberSig.Interface _ -> ()
     
-        and walkImplFileInpit (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = 
+        and walkImplFileInput (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = 
             let container = { Type = ContainerType.File; Name = fileName }
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespace item container
@@ -732,7 +732,7 @@ module NavigateTo =
 
         match parsedInput with
         | ParsedInput.SigFile input -> walkSigFileInput input
-        | ParsedInput.ImplFile input -> walkImplFileInpit input
+        | ParsedInput.ImplFile input -> walkImplFileInput input
     
         result.ToArray()
 

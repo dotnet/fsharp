@@ -4,7 +4,6 @@
 module internal Internal.Utilities.EditDistance
 
 open System
-open System.Collections.Generic
 
 /// Given an offset and a radius from that offset, does mChar exist in that part of str?
 let inline existsInWin (mChar: char) (str: string) (offset: int) (rad: int) =
