@@ -2,12 +2,10 @@
 
 module public FSharp.Compiler.Ast
 
-open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.UnicodeLexing

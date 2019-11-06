@@ -15,7 +15,6 @@ module internal ExtensionTyping =
     open FSharp.Compiler.ErrorLogger
     open FSharp.Compiler.Range
     open FSharp.Compiler.AbstractIL.IL
-    open FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
 
     type TypeProviderDesignation = TypeProviderDesignation of string

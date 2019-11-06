@@ -10,11 +10,8 @@ module FSharp.Compiler.Service.Tests.PerfTests
 
 open NUnit.Framework
 open FsUnit
-open System
 open System.IO
-open System.Collections.Generic
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
@@ -23,7 +20,6 @@ open FSharp.Compiler.Service.Tests.Common
 let internal checker = FSharpChecker.Create()
 
 module internal Project1 = 
-    open System.IO
 
     let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(Path.GetTempFileName(), ".fs")) ]
     let base2 = Path.GetTempFileName()

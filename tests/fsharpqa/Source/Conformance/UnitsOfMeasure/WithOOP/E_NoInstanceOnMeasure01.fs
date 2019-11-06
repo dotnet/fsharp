@@ -2,7 +2,7 @@
 
 
 // Test error when adding instance methods to Measure types.
-//<Expects id="FS0897" span="(9,12)" status="error">Measure declarations may have only static members$</Expects>
+//<Expects id="FS0897" span="(9,5)" status="error">Measure declarations may have only static members$</Expects>
 
 [<Measure>]
 type kg =

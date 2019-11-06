@@ -1832,7 +1832,6 @@ module CG =
     let SetStack (cgbuf: CodeGenBuffer) s = cgbuf.SetStack s
     let GenerateMark (cgbuf: CodeGenBuffer) s = cgbuf.Mark s
 
-open CG
 
 
 //--------------------------------------------------------------------------
@@ -7622,7 +7621,6 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
 //-------------------------------------------------------------------------
 
 open System
-open System.Reflection
 
 /// The lookup* functions are the conversions available from ilreflect.
 type ExecutionContext =
