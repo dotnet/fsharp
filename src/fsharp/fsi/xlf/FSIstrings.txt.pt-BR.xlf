@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="translated">Não foi possível concluir a operação devido a um erro anterior</target>
+        <target state="translated">Não foi possível concluir a operação devido
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
