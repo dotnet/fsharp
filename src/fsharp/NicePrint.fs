@@ -47,10 +47,10 @@ module internal PrintUtilities =
         isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr || ExistsHeadTypeInEntireHierarchy g amap m ty g.tcref_System_Attribute 
 
 
-    let applyMaxMembers maxMembers (alldecls: _ list) = 
+    let applyMaxMembers maxMembers (allDecls: _ list) = 
         match maxMembers with 
-        | Some n when alldecls.Length > n -> (alldecls |> List.truncate n) @ [wordL (tagPunctuation "...")] 
-        | _ -> alldecls
+        | Some n when allDecls.Length > n -> (allDecls |> List.truncate n) @ [wordL (tagPunctuation "...")] 
+        | _ -> allDecls
 
     /// fix up a name coming from IL metadata by quoting "funny" names (keywords, otherwise invalid identifiers)
     let adjustILName n =
@@ -185,12 +185,12 @@ module private PrintIL =
         | ILType.Modified (_, _, t) -> layoutILType denv ilTyparSubst t // Just recurse through them to the contained ILType
 
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
-    and private layoutILCallingSignature denv ilTyparSubst cons (signatur: ILCallingSignature) =
+    and private layoutILCallingSignature denv ilTyparSubst cons (signature: ILCallingSignature) =
         // We need a special case for
         // constructors (Their return types are reported as `void`, but this is
         // incorrect; so if we're dealing with a constructor we require that the
         // return type be passed along as the `cons` parameter.)
-        let args = signatur.ArgTypes |> List.map (layoutILType denv ilTyparSubst) 
+        let args = signature.ArgTypes |> List.map (layoutILType denv ilTyparSubst) 
         let res = 
             match cons with
             | Some className -> 
@@ -198,7 +198,7 @@ module private PrintIL =
                 // special case for constructor return-type (viz., the class itself)
                 layoutILTypeRefName denv names ^^ (pruneParams className ilTyparSubst |> paramsL) 
             | None -> 
-                signatur.ReturnType |> layoutILType denv ilTyparSubst
+                signature.ReturnType |> layoutILType denv ilTyparSubst
         
         match args with
         | [] -> WordL.structUnit ^^ WordL.arrow ^^ res
@@ -566,7 +566,7 @@ module private PrintTypes =
             | Const.String bs -> "\"" + bs + "\"" |> tagNumericLiteral
             | Const.Unit -> "()" |> tagPunctuation
             | Const.Decimal bs -> string bs + "M" |> tagNumericLiteral
-            // either "null" or "the defaut value for a struct"
+            // either "null" or "the default value for a struct"
             | Const.Zero -> tagKeyword(if isRefTy g ty then "null" else "default")
         wordL str
 
@@ -1788,14 +1788,14 @@ module private TastDefinitionPrinting =
                                   tycon.TrueFieldsAsList
                                   |> List.filter (fun f -> not f.IsStatic)
                                   |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
-                              let alldecls = inherits @ memberImplementLs @ memberCtorLs @ instanceValsLs @ vsprs @ memberInstanceLs @ staticValsLs @ memberStaticLs
-                              if isNil alldecls then
+                              let allDecls = inherits @ memberImplementLs @ memberCtorLs @ instanceValsLs @ vsprs @ memberInstanceLs @ staticValsLs @ memberStaticLs
+                              if isNil allDecls then
                                   None
                               else
-                                  let alldecls = applyMaxMembers denv.maxMembers alldecls
-                                  let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
+                                  let allDecls = applyMaxMembers denv.maxMembers allDecls
+                                  let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil allDecls | _ -> false
                                   if emptyMeasure then None else 
-                                  let declsL = aboveListL alldecls
+                                  let declsL = aboveListL allDecls
                                   let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword "end") | None -> declsL
                                   Some declsL
                   | TUnionRepr _ -> 

@@ -64,7 +64,7 @@ type public Layout = Internal.Utilities.StructuredFormat.Layout
 type public FSharpToolTipElementData<'T> = 
     { MainDescription:  'T 
       XmlDoc: FSharpXmlDoc
-      /// typar insantiation text, to go after xml
+      /// typar instantiation text, to go after xml
       TypeMapping: 'T list
       /// Extra text, goes at the end
       Remarks: 'T option
