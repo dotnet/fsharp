@@ -2195,7 +2195,7 @@ and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
         assert (cenv.exprRecursionDepth = 1)
     with
     | :? System.InsufficientExecutionStackException ->
-        error(InternalError("Expression is too large and/or complex to emit.", expr.Range))
+        error(InternalError(sprintf "Expression is too large and/or complex to emit. Method name: '%s'. Recursive depth: %i." cgbuf.MethodName cenv.exprRecursionDepth, expr.Range))
 
 and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   let g = cenv.g
@@ -2210,10 +2210,17 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
   | None ->
 
   match expr with
+  // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
+  // This is because the element of expansion happens to be the final thing generated in most cases. However
+  // for large lists we have to process the linearity separately
+  | Expr.Sequential _
+  | Expr.Let _
+  | LinearOpExpr _ 
+  | Expr.Match _ -> 
+      GenLinearExpr cenv cgbuf eenv sp expr sequel (* canProcessSequencePoint *) false id |> ignore<FakeUnit>
+
   | Expr.Const (c, m, ty) ->
       GenConstant cenv cgbuf eenv (c, m, ty) sequel
-  | Expr.Match (spBind, exprm, tree, targets, m, ty) ->
-      GenMatch cenv cgbuf eenv (spBind, exprm, tree, targets, m, ty) sequel
   | Expr.LetRec (binds, body, m, _) ->
       GenLetRec cenv cgbuf eenv (binds, body, m) sequel
   | Expr.Lambda _ | Expr.TyLambda _ ->
@@ -2232,14 +2239,6 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
       GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel
   | Expr.Val (v, _, m) -> 
       GenGetVal cenv cgbuf eenv (v, m) sequel
-
-  // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
-  // This is because the element of expansion happens to be the final thing generated in most cases. However
-  // for large lists we have to process the linearity separately
-  | Expr.Sequential _
-  | Expr.Let _
-  | LinearOpExpr _ -> 
-      GenLinearExpr cenv cgbuf eenv sp expr sequel (* canProcessSequencePoint *) false id |> ignore<FakeUnit>
 
   | Expr.Op (op, tyargs, args, m) -> 
       match op, args, tyargs with 
@@ -2351,9 +2350,7 @@ and CodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, al
         CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs,
                                    (fun cgbuf eenv -> GenExpr cenv cgbuf eenv spReq expr0 sequel0),
                                    expr0.Range)
-    code                               
-
-
+    code      
 
 //--------------------------------------------------------------------------
 // Generate sequels
@@ -2556,13 +2553,6 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
 and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf: FakeUnit -> FakeUnit) =
     let expr = stripExpr expr
     match expr with 
-    | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
-        GenExprs cenv cgbuf eenv argsFront
-        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (* canProcessSequencePoint *) true (contf << (fun Fake -> 
-            GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
-            GenSequel cenv eenv.cloc cgbuf sequel
-            Fake))
-
     | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
         if canProcessSequencePoint then
             ProcessSequencePointForExpr cenv cgbuf sp expr
@@ -2608,6 +2598,77 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
     
         // Generate the body
         GenLinearExpr cenv cgbuf eenv spBody body (EndLocalScope(sequel, endScope)) (* canProcessSequencePoint *) true contf
+
+    | Expr.Match (spBind, _exprm, tree, targets, m, ty) ->
+        if canProcessSequencePoint then
+            ProcessSequencePointForExpr cenv cgbuf sp expr
+
+        match spBind with
+        | SequencePointAtBinding m -> CG.EmitSeqPoint cgbuf m
+        | NoSequencePointAtDoBinding
+        | NoSequencePointAtLetBinding
+        | NoSequencePointAtInvisibleBinding
+        | NoSequencePointAtStickyBinding -> ()
+
+        // The target of branch needs a sequence point.
+        // If we don't give it one it will get entirely the wrong sequence point depending on earlier codegen
+        // Note we're not interested in having pattern matching and decision trees reveal their inner working.
+        // Hence at each branch target we 'reassert' the overall sequence point that was active as we came into the match.
+        //
+        // NOTE: sadly this causes multiple sequence points to appear for the "initial" location of an if/then/else or match.
+        let activeSP = cgbuf.GetLastSequencePoint()
+        let repeatSP() =
+            match activeSP with
+            | None -> ()
+            | Some src ->
+                if activeSP <> cgbuf.GetLastSequencePoint() then
+                    CG.EmitSeqPoint cgbuf src
+
+        // First try the common cases where we don't need a join point.
+        match tree with
+        | TDSuccess _ ->
+            failwith "internal error: matches that immediately succeed should have been normalized using mkAndSimplifyMatch"
+
+        | _ ->
+            // Create a join point
+            let stackAtTargets = cgbuf.GetCurrentStack() // the stack at the target of each clause
+            let (sequelOnBranches, afterJoin, stackAfterJoin, sequelAfterJoin) = GenJoinPoint cenv cgbuf "match" eenv ty m sequel
+
+            // Stack: "stackAtTargets" is "stack prior to any match-testing" and also "stack at the start of each branch-RHS".
+            //        match-testing (dtrees) should not contribute to the stack.
+            //        Each branch-RHS (targets) may contribute to the stack, leaving it in the "stackAfterJoin" state, for the join point.
+            //        Since code is branching and joining, the cgbuf stack is maintained manually.
+            GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequelOnBranches (contf << (fun Fake -> 
+                CG.SetMarkToHere cgbuf afterJoin
+
+                //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
+                CG.SetStack cgbuf stackAfterJoin
+                // If any values are left on the stack after the join then we're certainly going to do something with them
+                // For example, we may be about to execute a 'stloc' for
+                //
+                //   let y2 = if System.DateTime.Now.Year < 2000 then 1 else 2
+                //
+                // or a 'stelem' for
+                //
+                //   arr.[0] <- if System.DateTime.Now.Year > 2000 then 1 else 2
+                //
+                // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
+                // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
+                if not (isNil stackAfterJoin) then
+                    cgbuf.EmitStartOfHiddenCode()
+
+                GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
+                Fake))
+
+    | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
+        if canProcessSequencePoint then
+            ProcessSequencePointForExpr cenv cgbuf sp expr
+
+        GenExprs cenv cgbuf eenv argsFront
+        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (* canProcessSequencePoint *) true (contf << (fun Fake -> 
+            GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
+            GenSequel cenv eenv.cloc cgbuf sequel
+            Fake))
 
     | _ -> 
         GenExpr cenv cgbuf eenv sp expr sequel
@@ -4357,12 +4418,12 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc selfv expr
                         .WithEncoding(ILDefaultPInvokeEncoding.Auto)
 
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
-            
+
                 let ilCtorBody = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy, [])), None )
                 let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, cloinfo.localTypeFuncDirectILGenericParams, [], mkILReturn (cloinfo.cloILFormalRetTy), MethodBody.IL ilCloBody) ]
                 let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.cloILFreeVars, cloinfo.ilCloLambdas, ilCtorBody, cloMethods, [], ilContractTy, [])
                 cloTypeDefs
-            
+
             else
                 GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.cloILFreeVars, cloinfo.ilCloLambdas, ilCloBody, [], [], g.ilg.typ_Object, [])
         CountClosure()
@@ -4777,69 +4838,28 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
         let afterJoin = CG.GenerateDelayMark cgbuf (pos + "_join")
         // go to the join point
         Br afterJoin, afterJoin, stackAfterJoin, sequel
-    
-and GenMatch cenv cgbuf eenv (spBind, _exprm, tree, targets, m, ty) sequel =
-
-    match spBind with
-    | SequencePointAtBinding m -> CG.EmitSeqPoint cgbuf m
-    | NoSequencePointAtDoBinding
-    | NoSequencePointAtLetBinding
-    | NoSequencePointAtInvisibleBinding
-    | NoSequencePointAtStickyBinding -> ()
-
-    // The target of branch needs a sequence point.
-    // If we don't give it one it will get entirely the wrong sequence point depending on earlier codegen
-    // Note we're not interested in having pattern matching and decision trees reveal their inner working.
-    // Hence at each branch target we 'reassert' the overall sequence point that was active as we came into the match.
-    //
-    // NOTE: sadly this causes multiple sequence points to appear for the "initial" location of an if/then/else or match.
-    let activeSP = cgbuf.GetLastSequencePoint()
-    let repeatSP() =
-        match activeSP with
-        | None -> ()
-        | Some src ->
-            if activeSP <> cgbuf.GetLastSequencePoint() then
-                CG.EmitSeqPoint cgbuf src
-
-    // First try the common cases where we don't need a join point.
-    match tree with
-    | TDSuccess _ ->
-        failwith "internal error: matches that immediately succeed should have been normalized using mkAndSimplifyMatch"
-
-    | _ ->
-        // Create a join point
-        let stackAtTargets = cgbuf.GetCurrentStack() // the stack at the target of each clause
-        let (sequelOnBranches, afterJoin, stackAfterJoin, sequelAfterJoin) = GenJoinPoint cenv cgbuf "match" eenv ty m sequel
-
-        // Stack: "stackAtTargets" is "stack prior to any match-testing" and also "stack at the start of each branch-RHS".
-        //        match-testing (dtrees) should not contribute to the stack.
-        //        Each branch-RHS (targets) may contribute to the stack, leaving it in the "stackAfterJoin" state, for the join point.
-        //        Since code is branching and joining, the cgbuf stack is maintained manually.
-        GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequelOnBranches
-        CG.SetMarkToHere cgbuf afterJoin
-
-        //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
-        CG.SetStack cgbuf stackAfterJoin
-        // If any values are left on the stack after the join then we're certainly going to do something with them
-        // For example, we may be about to execute a 'stloc' for
-        //
-        //   let y2 = if System.DateTime.Now.Year < 2000 then 1 else 2
-        //
-        // or a 'stelem' for
-        //
-        //   arr.[0] <- if System.DateTime.Now.Year > 2000 then 1 else 2
-        //
-        // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
-        // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
-        if not (isNil stackAfterJoin) then
-            cgbuf.EmitStartOfHiddenCode()
-
-        GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
 
 // Accumulate the decision graph as we go
-and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel =
-    let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets repeatSP (IntMap.empty()) sequel
-    GenPostponedDecisionTreeTargets cenv cgbuf stackAtTargets targetInfos sequel
+and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel contf =
+    GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets repeatSP (IntMap.empty()) sequel (fun targetInfos ->
+        let sortedTargetInfos = 
+            targetInfos 
+            |> Seq.sortBy (fun (KeyValue(targetIdx, _)) -> targetIdx)
+            |> List.ofSeq
+        GenPostponedDecisionTreeTargets cenv cgbuf sortedTargetInfos stackAtTargets sequel contf
+    )
+
+and GenPostponedDecisionTreeTargets cenv cgbuf targetInfos stackAtTargets sequel contf =
+    match targetInfos with
+    | [] -> contf Fake
+    | (KeyValue(_, (targetInfo, isTargetPostponed))) :: rest ->
+        if isTargetPostponed then 
+            let eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget = GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel
+            GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake ->
+                GenPostponedDecisionTreeTargets cenv cgbuf rest stackAtTargets sequel contf
+            )
+        else
+            GenPostponedDecisionTreeTargets cenv cgbuf rest stackAtTargets sequel contf
 
 and TryFindTargetInfo targetInfos n =
     match IntMap.tryFind n targetInfos with
@@ -4850,7 +4870,7 @@ and TryFindTargetInfo targetInfos n =
 ///
 /// When inplabOpt is "Some inplab", we are assuming an existing branch to "inplab" and can optionally
 /// set inplab to point to another location if no codegen is required.
-and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree targets repeatSP targetInfos sequel =
+and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree targets repeatSP targetInfos sequel (contf: Zmap<_,_> -> FakeUnit) =
     CG.SetStack cgbuf stackAtTargets              // Set the expected initial stack.
     match tree with
     | TDBind(bind, rest) ->
@@ -4863,13 +4883,18 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree
        // we effectively lose an EndLocalScope for all dtrees that go to the same target
        // So we just pretend that the variable goes out of scope here.
        CG.SetMarkToHere cgbuf endScope
-       GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv rest targets repeatSP targetInfos sequel
+       GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv rest targets repeatSP targetInfos sequel contf
 
-    | TDSuccess (es, targetIdx) ->
-       GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel
+    | TDSuccess(es, targetIdx) ->
+        let targetInfos, genTargetInfoOpt = GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel
+        match genTargetInfoOpt with
+        | Some (eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget) ->
+            GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake -> contf targetInfos)
+        | _ ->
+            contf targetInfos
 
     | TDSwitch(e, cases, dflt, m) ->
-       GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases dflt m targets repeatSP targetInfos sequel
+       GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases dflt m targets repeatSP targetInfos sequel contf
 
 and GetTarget (targets:_[]) n =
     if n >= targets.Length then failwith "GetTarget: target not found in decision tree"
@@ -4897,7 +4922,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
             vs |> List.rev |> List.iter (fun v -> GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
             CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
 
-        targetInfos
+        targetInfos, None
 
     | None ->
 
@@ -4910,24 +4935,17 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, binds, startScope, endScope)
     
         // In debug mode push all decision tree targets to after the switching
-        let isTargetPostponed =
-            if cenv.opts.localOptimizationsAreOn then
-                GenDecisionTreeTarget cenv cgbuf stackAtTargets targetIdx targetInfo sequel
-                false
+        let isTargetPostponed, genTargetInfoOpt =
+            if cenv.opts.localOptimizationsAreOn then               
+                false, Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
                 CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkBeforeBinds.CodeLabel)
-                true
+                true, None
 
         let targetInfos = IntMap.add targetIdx (targetInfo, isTargetPostponed) targetInfos
-        targetInfos
+        targetInfos, genTargetInfoOpt
 
-and GenPostponedDecisionTreeTargets cenv cgbuf stackAtTargets targetInfos sequel =
-    let targetInfos = targetInfos |> Seq.sortBy (fun (KeyValue(targetIdx, _)) -> targetIdx)
-    for (KeyValue(targetIdx, (targetInfo, isTargetPostponed))) in targetInfos do    
-        if isTargetPostponed then
-            GenDecisionTreeTarget cenv cgbuf stackAtTargets targetIdx targetInfo sequel
-
-and GenDecisionTreeTarget cenv cgbuf stackAtTargets _targetIdx (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, binds, startScope, endScope) sequel =
+and GenDecisionTreeTarget cenv cgbuf stackAtTargets (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, binds, startScope, endScope) sequel =
     CG.SetMarkToHere cgbuf targetMarkBeforeBinds
     let spExpr = (match spTarget with SequencePointAtTarget -> SPAlways | SuppressSequencePointAtTarget _ -> SPSuppress)
 
@@ -4948,10 +4966,9 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets _targetIdx (targetMarkBefore
     GenBindings cenv cgbuf eenvAtTarget binds
     CG.SetMarkToHere cgbuf targetMarkAfterBinds
     CG.SetStack cgbuf stackAtTargets
-    GenExpr cenv cgbuf eenvAtTarget spExpr successExpr (EndLocalScope(sequel, endScope))
+    (eenvAtTarget, spExpr, successExpr, (EndLocalScope(sequel, endScope)))
 
-
-and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defaultTargetOpt switchm targets repeatSP targetInfos sequel =
+and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defaultTargetOpt switchm targets repeatSP targetInfos sequel contf =
     let g = cenv.g
     let m = e.Range
     match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab
@@ -4961,7 +4978,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
       // optimize a test against a boolean value, i.e. the all-important if-then-else
       | TCase(DecisionTreeTest.Const(Const.Bool b), successTree) :: _ ->
        let failureTree = (match defaultTargetOpt with None -> cases.Tail.Head.CaseTree | Some d -> d)
-       GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None eenv (if b then successTree else failureTree) (if b then failureTree else successTree) targets repeatSP targetInfos sequel
+       GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None eenv (if b then successTree else failureTree) (if b then failureTree else successTree) targets repeatSP targetInfos sequel contf
 
       // // Remove a single test for a union case . Union case tests are always exa
       //| [ TCase(DecisionTreeTest.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone) ->
@@ -4978,7 +4995,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         let cuspec = GenUnionSpec cenv.amap m eenv.tyenv c.TyconRef tyargs
         let idx = c.Index
         let avoidHelpers = entityRefInThisAssembly g.compilingFslib c.TyconRef
-        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
+        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel contf
 
       | _ ->
         let caseLabels = List.map (fun _ -> CG.GenerateDelayMark cgbuf "switch_case") cases
@@ -5009,7 +5026,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   BI_brtrue
               | _ -> failwith "internal error: GenDecisionTreeSwitch"
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (bi, (List.head caseLabels).CodeLabel))
-            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
+            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets repeatSP targetInfos sequel caseLabels cases contf
           
         | DecisionTreeTest.ActivePatternCase _ -> error(InternalError("internal error in codegen: DecisionTreeTest.ActivePatternCase", switchm))
         | DecisionTreeTest.UnionCase (hdc, tyargs) ->
@@ -5025,7 +5042,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             let avoidHelpers = entityRefInThisAssembly g.compilingFslib hdc.TyconRef
             EraseUnions.emitDataSwitch g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec, dests)
             CG.EmitInstrs cgbuf (pop 1) Push0 [ ] // push/pop to match the line above
-            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
+            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets repeatSP targetInfos sequel caseLabels cases contf
           
         | DecisionTreeTest.Const c ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue
@@ -5068,26 +5085,30 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                     CG.EmitInstr cgbuf (pop 1) Push0 (I_switch destinationLabels)
                 else
                   error(InternalError("non-dense integer matches not implemented in codegen - these should have been removed by the pattern match compiler", switchm))
-                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
+                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets repeatSP targetInfos sequel caseLabels cases contf
             | _ -> error(InternalError("these matches should never be needed", switchm))
 
-and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel =
+and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets repeatSP targetInfos sequel caseLabels cases (contf: Zmap<_,_> -> FakeUnit) =
     assert(cgbuf.GetCurrentStack() = stackAtTargets) // cgbuf stack should be unchanged over tests. [bug://1750].
 
-    let targetInfos =
-        match defaultTargetOpt with
-        | Some defaultTarget -> GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv defaultTarget targets repeatSP targetInfos sequel
-        | None -> targetInfos
-
-    let targetInfos =
-        (targetInfos, caseLabels, cases) |||> List.fold2 (fun targetInfos caseLabel (TCase(_, caseTree)) ->
-            GenDecisionTreeAndTargetsInner cenv cgbuf (Some caseLabel) stackAtTargets eenv caseTree targets repeatSP targetInfos sequel)
-    targetInfos
+    match defaultTargetOpt with
+    | Some defaultTarget -> 
+        GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv defaultTarget targets repeatSP targetInfos sequel (fun targetInfos ->
+            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv None targets repeatSP targetInfos sequel caseLabels cases contf
+        )
+    | None ->
+        match caseLabels, cases with
+        | caseLabel :: caseLabelsTail, (TCase(_, caseTree)) :: casesTail ->
+            GenDecisionTreeAndTargetsInner cenv cgbuf (Some caseLabel) stackAtTargets eenv caseTree targets repeatSP targetInfos sequel (fun targetInfos ->
+                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv None targets repeatSP targetInfos sequel caseLabelsTail casesTail contf
+            )
+        | _ ->
+            contf targetInfos
 
 // Used for the peephole optimization below
 and (|BoolExpr|_|) = function Expr.Const (Const.Bool b1, _, _) -> Some b1 | _ -> None
 
-and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree failureTree targets repeatSP targetInfos sequel =
+and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree failureTree targets repeatSP targetInfos sequel contf =
     let g = cenv.g
     match successTree, failureTree with
 
@@ -5114,7 +5135,7 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
                    CG.EmitInstrs cgbuf (pop 0) (Push [g.ilg.typ_Bool]) [mkLdcInt32 0 ]
                    CG.EmitInstrs cgbuf (pop 1) Push0 [AI_ceq]
                  GenSequel cenv cloc cgbuf sequel
-                 targetInfos
+                 contf targetInfos
 
              | _ -> failwith "internal error: GenDecisionTreeTest during bool elim"
 
@@ -5136,9 +5157,9 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
             | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (BI_brfalse, failure.CodeLabel))
 
-        let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets repeatSP targetInfos sequel
-
-        GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets repeatSP targetInfos sequel
+        GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets repeatSP targetInfos sequel (fun targetInfos ->
+            GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets repeatSP targetInfos sequel contf
+        )
 
 /// Generate fixups for letrec bindings
 and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFieldSpec, e2, _m) =

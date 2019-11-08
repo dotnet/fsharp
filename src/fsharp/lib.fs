@@ -394,6 +394,10 @@ let inline cacheOptRef cache f =
        cache := Some res
        res 
 
+let inline tryGetCacheValue cache =
+    match box cache.cacheVal with
+    | null -> ValueNone
+    | _ -> ValueSome cache.cacheVal
 
 #if DUMPER
 type Dumper(x:obj) =
