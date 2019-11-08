@@ -4388,6 +4388,10 @@ let bindLhs opts (bind: Binding) fvs = boundLocalVal opts bind.Var fvs
 
 let freeVarsCacheCompute opts cache f = if opts.canCache then cached cache f else f()
 
+let tryGetFreeVarsCacheValue opts cache =
+    if opts.canCache then tryGetCacheValue cache
+    else ValueNone
+
 let rec accBindRhs opts (TBind(_, repr, _)) acc = accFreeInExpr opts repr acc
           
 and accFreeInSwitchCases opts csl dflt (acc: FreeVars) =
@@ -4485,13 +4489,16 @@ and accFreeInExpr (opts: FreeVarOptions) x acc =
 and accFreeInExprLinear (opts: FreeVarOptions) x acc contf =   
     // for nested let-bindings, we need to continue after the whole let-binding is processed 
     match x with
-    | Expr.Let (bind, e, _, cache) -> 
-        let contf = contf << (fun free ->
-          unionFreeVars (freeVarsCacheCompute opts cache (fun () -> bindLhs opts bind (accBindRhs opts bind free))) acc )
-        accFreeInExprLinear opts e emptyFreeVars contf
+    | Expr.Let (bind, e, _, cache) ->
+        match tryGetFreeVarsCacheValue opts cache with
+        | ValueSome free -> contf (unionFreeVars free acc)
+        | _ ->
+            accFreeInExprLinear opts e emptyFreeVars (contf << (fun free ->
+              unionFreeVars (freeVarsCacheCompute opts cache (fun () -> bindLhs opts bind (accBindRhs opts bind free))) acc
+            ))
     | _ -> 
-      // No longer linear expr
-      accFreeInExpr opts x acc |> contf
+        // No longer linear expr
+        contf (accFreeInExpr opts x acc)
     
 and accFreeInExprNonLinear opts x acc =
     match x with
