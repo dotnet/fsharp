@@ -748,7 +748,7 @@ and
     /// Computation expressions only, based on JOIN_IN token from lex filter
     | JoinIn of SynExpr * range * SynExpr * range: range
 
-    /// Used internally during type checking for translating computation expressions.
+    /// Used in parser error recovery and internally during type checking for translating computation expressions.
     | ImplicitZero of range: range
 
     /// Used internally during type checking for translating computation expressions.
