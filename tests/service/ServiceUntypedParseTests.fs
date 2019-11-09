@@ -127,25 +127,139 @@ let foo6 = ()
 [<>]
 let foo7 = ()
 """
-    match parseSourceCode ("test", source) with
-    | Some (ParsedInput.ImplFile (ParsedImplFileInput (_,_,_,_,_,[SynModuleOrNamespace (_,_,_,decls,_,_,_,_)],_))) ->
-        decls |> List.map (fun decl ->
-            match decl with
-            | SynModuleDecl.Let (_,[Binding(_,_,_,_,attributeLists,_,_,_,_,_,_,_)],_) ->
-                attributeLists |> List.map (fun list ->
-                    let r = list.Range
+    let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = parseSourceCodeAndGetModule source
+    decls |> List.map (fun decl ->
+        match decl with
+        | SynModuleDecl.Let (_,[Binding(_,_,_,_,attributeLists,_,_,_,_,_,_,_)],_) ->
+            attributeLists |> List.map (fun list ->
+                let r = list.Range
 
-                    list.Attributes.Length,
-                    ((r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)))
+                list.Attributes.Length,
+                ((r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)))
 
-            | _ -> failwith "Could not get binding")
-        |> shouldEqual
-            [ [ (1, ((2,  0),  (2, 5))) ]
-              [ (1, ((5,  0),  (5, 5))); (2, ((6, 0), (6, 7))) ]
-              [ (1, ((9,  0),  (9, 5))); (2, ((9, 6), (9, 13))) ]
-              [ (1, ((12, 0), (13, 0))) ]
-              [ (1, ((15, 0), (15, 4))) ]
-              [ (0, ((18, 0), (18, 2))) ]
-              [ (0, ((21, 0), (21, 4))) ] ]
+        | _ -> failwith "Could not get binding")
+    |> shouldEqual
+        [ [ (1, ((2,  0),  (2, 5))) ]
+          [ (1, ((5,  0),  (5, 5))); (2, ((6, 0), (6, 7))) ]
+          [ (1, ((9,  0),  (9, 5))); (2, ((9, 6), (9, 13))) ]
+          [ (1, ((12, 0), (13, 0))) ]
+          [ (1, ((15, 0), (15, 4))) ]
+          [ (0, ((18, 0), (18, 2))) ]
+          [ (0, ((21, 0), (21, 4))) ] ]
 
-    | _ -> failwith "Could not get module decls"
+
+module TypeMemberRanges =
+
+    let getTypeMemberRange source =
+        let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = parseSourceCodeAndGetModule source
+        match decls with
+        | [ SynModuleDecl.Types ([ TypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _) ], _) ] ->
+            memberDecls |> List.map (fun memberDecl ->
+                let range = memberDecl.Range
+                (range.StartLine, range.StartColumn), (range.EndLine, range.EndColumn))
+
+        | _ -> failwith "Could not get member"
+
+    
+    [<Test>]
+    let ``Member range 01 - Simple``() =
+        let source = """
+type T =
+    member x.Foo() = ()
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 23) ]
+
+    
+    [<Test>]
+    let ``Member range 02 - Static``() =
+        let source = """
+type T =
+    static member Foo() = ()
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 28) ]
+
+
+    [<Test>]
+    let ``Member range 03 - Attribute``() =
+        let source = """
+type T =
+    [<Foo>]
+    static member Foo() = ()
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (4, 28) ]
+
+
+    [<Test>]
+    let ``Member range 04 - Property``() =
+        let source = """
+type T =
+    member x.P = ()
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 19) ]
+
+
+    [<Test>]
+    let ``Member range 05 - Setter only property``() =
+        let source = """
+type T =
+    member x.P with set (value) = v <- value
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 44) ]
+
+    
+    [<Test>]
+    let ``Member range 06 - Read-write property``() =
+        let source = """
+type T =
+    member this.MyReadWriteProperty
+        with get () = x
+        and set (value) = x <- value
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (5, 36)
+                                                   (3, 4), (5, 36) ]
+
+
+    [<Test>]
+    let ``Member range 07 - Auto property``() =
+        let source = """
+type T =
+    member val Property1 = ""
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 29) ]
+
+
+    [<Test>]
+    let ``Member range 08 - Auto property with setter``() =
+        let source = """
+type T =
+    member val Property1 = "" with get, set
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 29) ]
+
+    
+    [<Test>]
+    let ``Member range 09 - Abstract slot``() =
+        let source = """
+type T =
+    abstract P: int
+    abstract M: unit -> unit
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 19)
+                                                   (4, 4), (4, 28) ]
+
+    [<Test>]
+    let ``Member range 10 - Val field``() =
+        let source = """
+type T =
+    val x: int
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 14) ]
+
+
+    [<Test>]
+    let ``Member range 11 - Ctor``() =
+        let source = """
+type T =
+    new (x:int) = ()
+"""
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 20) ]

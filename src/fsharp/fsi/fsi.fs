@@ -13,12 +13,12 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
-open System.Runtime.InteropServices
 open System.IO
 open System.Text
 open System.Threading
 open System.Reflection
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 #if NETSTANDARD
 open System.Runtime.Loader
 #endif
@@ -28,9 +28,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.Lib
 open FSharp.Compiler.AccessibilityLogic
@@ -39,15 +37,11 @@ open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Layout
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Optimizer
-open FSharp.Compiler.PostTypeCheckSemanticChecks
 open FSharp.Compiler.Range
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.Tast
@@ -58,7 +52,6 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.ReferenceResolver
 
 open Internal.Utilities
-open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
 
 //----------------------------------------------------------------------------

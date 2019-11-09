@@ -3,11 +3,7 @@
 /// Byte arrays
 namespace FSharp.Compiler.AbstractIL.Internal
 
-open System.IO
-open Internal.Utilities
 
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 
 module internal Bytes = 
     let b0 n =  (n &&& 0xFF)

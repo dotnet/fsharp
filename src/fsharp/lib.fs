@@ -5,7 +5,6 @@ module internal FSharp.Compiler.Lib
 open System.IO
 open System.Collections.Generic
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 
@@ -395,6 +394,10 @@ let inline cacheOptRef cache f =
        cache := Some res
        res 
 
+let inline tryGetCacheValue cache =
+    match box cache.cacheVal with
+    | null -> ValueNone
+    | _ -> ValueSome cache.cacheVal
 
 #if DUMPER
 type Dumper(x:obj) =

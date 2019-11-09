@@ -6,7 +6,6 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
     open System
     open System.Collections.Generic
-    open System.Diagnostics
     open System.Globalization
     open System.IO
     open System.Reflection

@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <!-- workaround for https://github.com/dotnet/wpf/issues/1718 -->
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <!-- this should be false for branch `release/dev16.2`, true otherwise -->
     <IncludeVsLanguageServer>false</IncludeVsLanguageServer>
   </PropertyGroup>
